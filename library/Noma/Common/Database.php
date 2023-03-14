@@ -47,7 +47,7 @@ final class Database
     private static function getConnection(): Connection
     {
         $config = new SqlConfig(ResourceFactory::getResourceConfig(
-            AppConfig::module('noma')->get('noma', 'resource')
+            AppConfig::module('noma')->get('database', 'resource')
         ));
 
         $config->options = [PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ];
