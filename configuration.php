@@ -1,5 +1,7 @@
 <?php
 
+/* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
+
 /** @var \Icinga\Application\Modules\Module $this */
 
 $section = $this->menuSection(
@@ -17,6 +19,20 @@ $section->add(
         'description'   => $this->translate('Configuration'),
         'url'           => 'noma/contacts'
     ]
+);
+
+$section->add(
+    N_('Events'),
+    [
+        'icon'          => 'history',
+        'description'   => $this->translate('Events'),
+        'url'           => 'noma/events'
+    ]
+);
+
+$this->provideRestriction(
+    'noma/filter/objects',
+    $this->translate('Restrict access to the objects that match the filter')
 );
 
 $this->provideConfigTab(
