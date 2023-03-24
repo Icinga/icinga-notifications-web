@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Noma\Controllers;
 
+use Icinga\Module\Noma\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Noma\Common\BaseItemList;
 use Icinga\Module\Noma\Common\Database;
 use Icinga\Module\Noma\Model\Contact;
@@ -131,6 +132,14 @@ class ContactsController extends CompatController
         }
 
         return parent::addContent($content);
+    }
+
+    public function completeAction(): void
+    {
+        $suggestions = new ObjectSuggestions();
+        $suggestions->setModel(Contact::class);
+        $suggestions->forRequest($this->getServerRequest());
+        $this->getDocument()->add($suggestions);
     }
 
     public function searchEditorAction(): void
