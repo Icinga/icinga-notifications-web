@@ -2,6 +2,23 @@
 
 /** @var \Icinga\Application\Modules\Module $this */
 
+$section = $this->menuSection(
+    'NoMa',
+    [
+        'icon' => 'bell-alt',
+        'priority' => 52
+    ]
+);
+
+$section->add(
+    N_('Configuration'),
+    [
+        'icon'          => 'wrench',
+        'description'   => $this->translate('Configuration'),
+        'url'           => 'noma/contacts'
+    ]
+);
+
 $this->provideConfigTab(
     'database',
     [
