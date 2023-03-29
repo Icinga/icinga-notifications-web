@@ -1,0 +1,61 @@
+// Style
+
+.list-item {
+  color: @text-color-light;
+
+  &:not(:first-child) > .main {
+    border-top: 1px solid @gray-light;
+  }
+
+  &:not(:first-child) .visual {
+    margin-top: 1px;
+  }
+
+  .title {
+    a {
+      color: @text-color;
+      font-weight: bold;
+
+      &:hover {
+        color: @icinga-blue;
+        text-decoration: none;
+      }
+    }
+  }
+
+  footer {
+    padding-top: .5em;
+  }
+}
+
+@media print {
+  .list-item.page-break-follows + .list-item {
+    .main {
+      border-top: 1px solid transparent;
+    }
+  }
+}
+
+// Layout
+
+.list-item {
+  .visual {
+    padding: .5em 0;
+    width: 2.5em;
+  }
+
+  .title {
+    margin-right: 1em;
+
+    p {
+      margin: 0;
+    }
+  }
+
+  footer {
+    > * {
+      font-size: .857em;
+      line-height: 1.5*.857em;
+    }
+  }
+}
