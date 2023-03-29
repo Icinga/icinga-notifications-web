@@ -56,12 +56,25 @@ abstract class BaseListItem extends BaseHtmlElement
     {
     }
 
+    protected function assembleCaption(BaseHtmlElement $caption)
+    {
+    }
+
     protected function assembleTitle(BaseHtmlElement $title): void
     {
     }
 
     protected function assembleVisual(BaseHtmlElement $visual): void
     {
+    }
+
+    protected function createCaption(): BaseHtmlElement
+    {
+        $caption = Html::tag('section', ['class' => 'caption']);
+
+        $this->assembleCaption($caption);
+
+        return $caption;
     }
 
     protected function createHeader(): BaseHtmlElement

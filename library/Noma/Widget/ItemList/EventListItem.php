@@ -70,6 +70,11 @@ class EventListItem extends BaseListItem
         ));
     }
 
+    protected function assembleCaption(BaseHtmlElement $caption)
+    {
+        $caption->add($this->item->message);
+    }
+
     protected function assembleHeader(BaseHtmlElement $header): void
     {
         $header->add($this->createTitle());
@@ -80,6 +85,7 @@ class EventListItem extends BaseListItem
     protected function assembleMain(BaseHtmlElement $main): void
     {
         $main->add($this->createHeader());
+        $main->add($this->createCaption());
         $main->add($this->createFooter());
     }
 
