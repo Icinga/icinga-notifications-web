@@ -11,7 +11,6 @@ use Icinga\Web\Notification;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
-use ipl\Web\Url;
 
 class ContactController extends CompatController
 {
@@ -39,10 +38,17 @@ class ContactController extends CompatController
         $form = (new ContactForm($this->db, $contactId))
             ->populate($contact)
             ->on(ContactForm::ON_SUCCESS, function (ContactForm $form) {
-                Notification::success(sprintf(
-                    t('Contact "%s" has successfully been saved'),
-                    $form->getElement('contact')->getValue('full_name')
-                ));
+                if ($form->getPressedSubmitElement()->getName() === 'delete') {
+                    Notification::success(sprintf(
+                        t('Deleted contact "%s" successfully'),
+                        $form->getElement('contact')->getValue('full_name')
+                    ));
+                } else {
+                    Notification::success(sprintf(
+                        t('Contact "%s" has successfully been saved'),
+                        $form->getElement('contact')->getValue('full_name')
+                    ));
+                }
 
                 $this->redirectNow('__CLOSE__');
             })->handleRequest($this->getServerRequest());
