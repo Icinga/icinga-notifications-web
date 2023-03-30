@@ -7,6 +7,7 @@ namespace Icinga\Module\Noma\Web\Form;
 use Icinga\Module\Noma\Model\Contact;
 use Icinga\Module\Noma\Model\ContactAddress;
 use Icinga\Web\Session;
+use ipl\Html\Contract\FormSubmitElement;
 use ipl\Html\FormElement\FieldsetElement;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
@@ -94,6 +95,23 @@ class ContactForm extends CompatForm
                     $this->translate('Save Changes')
             ]
         );
+        if ($this->contactId !== null) {
+            /** @var FormSubmitElement $deleteButton */
+            $deleteButton = $this->createElement(
+                'submit',
+                'delete',
+                [
+                    'label'          => $this->translate('Delete'),
+                    'class'          => 'btn-remove',
+                    'formnovalidate' => true
+                ]
+            );
+
+            $this->registerElement($deleteButton);
+            $this->getElement('submit')
+                ->getWrapper()
+                ->prepend($deleteButton);
+        }
     }
 
     public function populate($values)
@@ -132,8 +150,26 @@ class ContactForm extends CompatForm
         return $this;
     }
 
+    public function hasBeenSubmitted()
+    {
+        if ($this->getPressedSubmitElement() !== null && $this->getPressedSubmitElement()->getName() === 'delete') {
+            return true;
+        }
+
+        return parent::hasBeenSubmitted();
+    }
+
     protected function onSuccess()
     {
+        if ($this->getPressedSubmitElement()->getName() === 'delete') {
+            $this->db->beginTransaction();
+            $this->db->delete('contact_address', ['contact_id = ?' => $this->contactId]);
+            $this->db->delete('contact', ['id = ?' => $this->contactId]);
+            $this->db->commitTransaction();
+
+            return;
+        }
+
         $contactInfo = $this->getValues();
 
         $contact = $contactInfo['contact'];
