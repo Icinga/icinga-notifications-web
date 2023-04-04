@@ -47,6 +47,11 @@ class Incident extends Model
         return ['severity'];
     }
 
+    public function getDefaultSort()
+    {
+        return ['incident.started_at desc'];
+    }
+
     public function createBehaviors(Behaviors $behaviors)
     {
         $behaviors->add(new Binary(['object_id']));
@@ -62,6 +67,13 @@ class Incident extends Model
 
         $relations
             ->belongsToMany('event', Event::class)
-            ->through('incident_event');
+            ->through('incident_event')
+            ->setJoinType('LEFT');
+
+        $relations->belongsToMany('contact', Contact::class)
+            ->through('incident_contact');
+
+        $relations->hasMany('incident_contact', IncidentContact::class);
+        $relations->hasMany('incident_history', IncidentHistory::class);
     }
 }

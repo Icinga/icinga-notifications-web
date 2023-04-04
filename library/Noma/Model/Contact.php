@@ -55,5 +55,11 @@ class Contact extends Model
     public function createRelations(Relations $relations)
     {
         $relations->hasMany('contact_address', ContactAddress::class)->setJoinType('LEFT');
+
+        $relations->belongsToMany('incident', Incident::class)
+            ->through('incident_contact')
+            ->setJoinType('LEFT');
+
+        $relations->hasMany('incident_contact', IncidentContact::class);
     }
 }
