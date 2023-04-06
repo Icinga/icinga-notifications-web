@@ -1,0 +1,44 @@
+.item-list {
+  > .show-more a {
+    .rounded-corners(.25em);
+    background: @low-sat-blue;
+    text-align: center;
+
+    &:hover {
+      opacity: .8;
+      text-decoration: none;
+    }
+  }
+
+  > .page-separator:after {
+    content: "";
+    display: block;
+    width: 100%;
+    height: 1px;
+    background: @gray;
+    align-self: center;
+    margin-left: .25em;
+  }
+
+  > .page-separator a {
+    color: @gray;
+    font-weight: bold;
+
+    &:hover {
+      text-decoration: none;
+    }
+  }
+
+  > .page-separator + .list-item .main {
+    border-top: none;
+  }
+}
+
+//layout
+.item-list .list-item {
+  &.show-more a {
+    flex: 1;
+    margin: 1.5em 0;
+    padding: .5em 0;
+  }
+}
