@@ -6,14 +6,11 @@ namespace Icinga\Module\Noma\Controllers;
 
 use Icinga\Module\Noma\Common\Database;
 use Icinga\Module\Noma\Common\Links;
-use Icinga\Module\Noma\Forms\EventRuleConfigForm;
 use Icinga\Module\Noma\Forms\EventRuleForm;
 use Icinga\Module\Noma\Model\Rule;
 use Icinga\Module\Noma\Web\Control\SearchBar\ObjectSuggestions;
-use Icinga\Module\Noma\Web\Form\ContactForm;
 use Icinga\Module\Noma\Widget\ItemList\EventRuleList;
-use Icinga\Web\Notification;
-use ipl\Html\Html;
+use Icinga\Web\Session;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
@@ -29,9 +26,13 @@ class EventRulesController extends CompatController
     /** @var Filter\Rule Filter from query string parameters */
     private $filter;
 
+    /** @var Session\SessionNamespace */
+    private $sessionNamespace;
+
     public function init()
     {
         $this->assertPermission('noma/config/event-rules');
+        $this->sessionNamespace = Session::getSession()->getNamespace('noma');
     }
 
     public function indexAction()
@@ -93,11 +94,15 @@ class EventRulesController extends CompatController
     public function addAction()
     {
         $this->addTitleTab(t('Add Event Rule'));
+        $ruleId = -1;
+
+        $this->sessionNamespace->delete($ruleId);
 
         $form = (new EventRuleForm())
-            ->on(EventRuleForm::ON_SUCCESS, function () {
-                Notification::success(t('Successfully added new event rule'));
-                $this->redirectNow(Links::eventRules());
+            ->on(EventRuleForm::ON_SENT, function ($form) use ($ruleId) {
+                $values = array_merge($form->getValues(), ['rule_escalation' => [1 => []]]);
+                $this->sessionNamespace->set($ruleId, $values);
+                $this->redirectNow(Links::eventRule($ruleId));
             })->handleRequest($this->getServerRequest());
 
         $this->addContent($form);
