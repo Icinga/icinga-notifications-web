@@ -25,7 +25,7 @@ class EventController extends CompatController
         $id = $this->params->getRequired('id');
 
         $query = Event::on(Database::get())
-            ->with(['source', 'object', 'source_object', 'incident'])
+            ->with(['source', 'object', 'source_object', 'incident', 'incident.object'])
             ->filter(Filter::equal('event.id', $id));
 
         $this->applyRestrictions($query);
