@@ -1,0 +1,27 @@
+.event-source-badge {
+  position: relative;
+
+  .source-icon {
+    position: absolute;
+    height: 2em;
+    width: 2em;
+
+    &:before {
+      transform: translate(0, 25%);
+    }
+  }
+
+  .name {
+    position: relative;
+    display: inline-block;
+    height: 2em;
+    border-bottom-right-radius: 1em;
+    border-top-right-radius: 1em;
+    z-index: -99;
+
+    .ball-solid(@gray);
+    padding-left: 1.5em;
+    padding-right: 0.5em;
+    margin-left: 1em;
+  }
+}
