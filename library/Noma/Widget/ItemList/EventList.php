@@ -6,11 +6,13 @@ namespace Icinga\Module\Noma\Widget\ItemList;
 
 use Icinga\Module\Noma\Common\LoadMore;
 use Icinga\Module\Noma\Common\BaseItemList;
+use Icinga\Module\Noma\Common\NoSubjectLink;
 use ipl\Orm\ResultSet;
 
 class EventList extends BaseItemList
 {
     use LoadMore;
+    use NoSubjectLink;
 
     protected $defaultAttributes = ['class' => 'event-list'];
 

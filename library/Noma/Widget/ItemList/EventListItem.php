@@ -9,8 +9,6 @@ use Icinga\Module\Noma\Common\Links;
 use Icinga\Module\Noma\Model\Event;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
-use ipl\Html\ValidHtml;
-use ipl\Web\Widget\IcingaIcon;
 use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
 use ipl\Web\Widget\TimeAgo;
@@ -28,31 +26,67 @@ class EventListItem extends BaseListItem
 
     protected function init(): void
     {
-        $this->getAttributes()
-            ->set('data-action-item', true);
+        if (! $this->list->getNoSubjectLink()) {
+            $this->getAttributes()
+                ->set('data-action-item', true);
+        }
     }
 
     protected function assembleVisual(BaseHtmlElement $visual): void
     {
-        switch ($this->item->severity) {
-            //TODO(sd): Add icons based on severity
-            default:
-                $content = new Icon('triangle-exclamation');
+        $content = null;
+        $severity = $this->item->severity;
+        $class = 'severity-' . $severity;
+        switch ($severity) {
+            case 'ok':
+                $content = (new Icon('heart', ['class' => $class]))->setStyle('fa-regular');
+                break;
+            case 'crit':
+                $content = new Icon('circle-exclamation', ['class' => $class]);
+                break;
+            case 'warning':
+                $content = new Icon('exclamation-triangle', ['class' => $class]);
+                break;
+            case 'err':
+                $content = (new Icon('circle-xmark', ['class' => $class]))->setStyle('fa-regular');
+                break;
+            case 'debug':
+                $content = new Icon('bug-slash');
+                break;
+            case 'info':
+                $content = new Icon('info');
+                break;
+            case 'alert':
+                $content = new Icon('bell');
+                break;
+            case 'emerg':
+                $content = new Icon('tower-broadcast');
+                break;
+            case 'notice':
+                $content = new Icon('envelope');
                 break;
         }
 
-        $visual->addHtml($content);
+        if ($content) {
+            $visual->addHtml($content);
+        }
     }
 
     protected function assembleTitle(BaseHtmlElement $title): void
     {
-        $title->addHtml(Html::tag('span', [], sprintf('#%d:', $this->item->incident->id)));
+        if ($this->item->incident->id !== null) {
+            $title->addHtml(Html::tag('span', [], sprintf('#%d:', $this->item->incident->id)));
+        }
 
-        $content = new Link(
-            $this->item->object->host,
-            Links::event($this->item->id),
-            ['class' => 'subject']
-        );
+        if (! $this->list->getNoSubjectLink()) {
+            $content = new Link(
+                $this->item->object->host,
+                Links::event($this->item->id),
+                ['class' => 'subject']
+            );
+        } else {
+            $content = Html::tag('span', ['class' => 'subject'], $this->item->object->host);
+        }
 
         if ($this->item->object->service) {
             $content = Html::sprintf(
@@ -62,12 +96,17 @@ class EventListItem extends BaseListItem
             );
         }
 
+        $msg = null;
+        if ($this->item->severity === null) {
+            $msg = t('acknowledged');
+        } elseif ($this->item->severity === 'ok') {
+            $msg = t('recovered');
+        } else {
+            $msg = t('ran into a problem');
+        }
+
         $title->addHtml($content);
-        $title->addHtml(Html::tag(
-            'span',
-            ['class' => 'state'],
-            $this->item->severity ? t('ran into a problem') : t('recovered')
-        ));
+        $title->addHtml(Html::tag('span', ['class' => 'state'], $msg));
     }
 
     protected function assembleCaption(BaseHtmlElement $caption)
@@ -78,8 +117,11 @@ class EventListItem extends BaseListItem
     protected function assembleHeader(BaseHtmlElement $header): void
     {
         $header->add($this->createTitle());
-        $header->add($this->createSourceIcon());
-        $header->add(new TimeAgo($this->item->time->getTimestamp()));
+        $header->add(Html::tag(
+            'span',
+            ['class' => 'meta'],
+            [$this->item->source->getIcon(), new TimeAgo($this->item->time->getTimestamp())]
+        ));
     }
 
     protected function assembleMain(BaseHtmlElement $main): void
@@ -87,21 +129,5 @@ class EventListItem extends BaseListItem
         $main->add($this->createHeader());
         $main->add($this->createCaption());
         $main->add($this->createFooter());
-    }
-
-    protected function createSourceIcon(): ValidHtml
-    {
-        $source = $this->item->source;
-
-        $icon = Html::tag('span', ['class' => 'event-source', 'title' => $source->name ?? $source->type]);
-
-        switch ($source->type) {
-            //TODO(sd): Add icons for other known sources
-            case 'icinga':
-                $icon->add(new IcingaIcon('icinga'));
-                break;
-        }
-
-        return $icon;
     }
 }
