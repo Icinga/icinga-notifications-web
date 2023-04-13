@@ -30,6 +30,20 @@ $section->add(
     ]
 );
 
+$section->add(
+    N_('Event Rules'),
+    [
+        'icon'          => 'history',
+        'description'   => $this->translate('Event Rules'),
+        'url'           => 'noma/event-rules'
+    ]
+);
+
+$this->providePermission(
+    'noma/config/event-rules',
+    $this->translate('Allow to configure event rules')
+);
+
 $this->provideRestriction(
     'noma/filter/objects',
     $this->translate('Restrict access to the objects that match the filter')
