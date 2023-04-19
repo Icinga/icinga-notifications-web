@@ -70,7 +70,7 @@ class Event extends Model
         $relations->belongsTo('object', Objects::class);
 
         $relations
-            ->belongsToMany('incident', Incident::class)
+            ->belongsToOne('incident', Incident::class)
             ->through('incident_event')
             ->setJoinType('LEFT');
 
