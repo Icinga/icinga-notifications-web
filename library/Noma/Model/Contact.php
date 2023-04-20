@@ -61,5 +61,7 @@ class Contact extends Model
             ->setJoinType('LEFT');
 
         $relations->hasMany('incident_contact', IncidentContact::class);
+
+        $relations->hasMany('incident_history', IncidentHistory::class);
     }
 }

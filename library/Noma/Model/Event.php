@@ -66,8 +66,10 @@ class Event extends Model
 
     public function createRelations(Relations $relations)
     {
-        $relations->belongsTo('source', Source::class);
-        $relations->belongsTo('object', Objects::class);
+        $relations->belongsTo('source', Source::class)->setJoinType('LEFT');
+        $relations->belongsTo('object', Objects::class)->setJoinType('LEFT');
+
+        $relations->hasOne('incident_history', IncidentHistory::class);
 
         $relations
             ->belongsToOne('incident', Incident::class)

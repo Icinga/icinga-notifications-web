@@ -30,4 +30,9 @@ abstract class Links
     {
         return Url::fromPath('noma/incident', ['id' => $id]);
     }
+
+    public static function contact(int $id): Url
+    {
+        return Url::fromPath('noma/contact', ['id' => $id]);
+    }
 }

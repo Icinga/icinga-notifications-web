@@ -1,5 +1,23 @@
 // Layout
 
+.item-list.contact-list {
+  .list-item {
+    & > .visual {
+      flex-direction: unset;
+    }
+
+    &.minimal {
+      .main {
+        border: unset;
+      }
+
+      .visual {
+        width: unset;
+      }
+    }
+  }
+}
+
 .contact-ball {
   .ball();
   .ball-size-l();

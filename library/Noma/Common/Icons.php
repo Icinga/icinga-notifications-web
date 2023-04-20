@@ -36,9 +36,7 @@ final class Icons
 
     public const TRIGGERED = 'square-up-right';
 
-    public const PROBLEM = 'circle-exclamation';
-
-    public const RECOVERED = 'heart';
-
     public const NOTIFIED = 'paper-plane';
+
+    public const SUBSCRIBE = 'sync-alt';
 }
