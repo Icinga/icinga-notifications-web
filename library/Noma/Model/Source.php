@@ -70,10 +70,6 @@ class Source extends Model
                 break;
         }
 
-        if ($icon) {
-            $icon->addAttributes(['class' => 'source-icon']);
-        }
-
         return $icon;
     }
 }
