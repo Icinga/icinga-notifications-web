@@ -18,15 +18,14 @@
   }
 }
 
-.icon.source-icon {
-  background-color: @gray-light;
-  margin-right: 0.2em;
+.source-icon {
   .ball();
-  .ball-size-l();
+  .ball-solid(@gray-light);
 
-  line-height: unset;
+  color: @text-color;
+  margin-right: 0.2em;
 
-  &:before {
+  i.icon:before {
     margin: unset;
   }
 }
