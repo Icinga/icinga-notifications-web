@@ -8,6 +8,16 @@
   }
 }
 
+.controls {
+  &.event-detail,
+  &.incident-detail {
+    .box-shadow(0, 0, 0, 1px, @gray-lighter);
+    flex-shrink: 0;
+    z-index: 1; // The content may clip, this ensures the separator is always visible
+    height: 8em; //TODO(sd): add dynamic fix for noma
+  }
+}
+
 .icon.source-icon {
   background-color: @gray-light;
   margin-right: 0.2em;
@@ -19,6 +29,15 @@
   &:before {
     margin: unset;
   }
+}
+
+.contact-ball {
+  .ball();
+  .ball-size-l();
+  .ball-solid(@gray-semilight);
+  font-weight: bold;
+  line-height: 1.2;
+  text-transform: uppercase;
 }
 
 .severity-crit {
