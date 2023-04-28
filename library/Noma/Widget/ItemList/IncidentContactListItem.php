@@ -39,7 +39,7 @@ class IncidentContactListItem extends BaseListItem
     protected function assembleTitle(BaseHtmlElement $title): void
     {
         $title->addHtml(new Link(
-            $this->item->username,
+            $this->item->full_name,
             Url::fromPath('noma/contact', ['id' => $this->item->id]),
             ['class' => 'subject']
         ));
