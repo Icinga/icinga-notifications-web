@@ -1,11 +1,9 @@
 <?php
 
-
 /* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
 
 namespace Icinga\Module\Noma\Widget\Detail;
 
-use DateTime;
 use Exception;
 use Icinga\Module\Noma\Common\Database;
 use Icinga\Module\Noma\Common\Icons;
@@ -243,7 +241,7 @@ class IncidentQuickActions extends Form
                 'new_recipient_role'    => $newRole,
                 'old_recipient_role'    => $oldRole,
                 'message'               => $msg,
-                'time'                  => (new DateTime())->getTimestamp()
+                'time'                  => time() * 1000.0
             ]
         );
     }
