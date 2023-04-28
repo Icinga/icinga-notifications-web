@@ -174,6 +174,8 @@ class IncidentQuickActions extends Form
         } catch (Exception $e) {
             Database::get()->rollBackTransaction();
             Notification::error(sprintf(t('Failed to add role as %s'), $roleName));
+
+            return;
         }
 
         Database::get()->commitTransaction();
@@ -210,6 +212,8 @@ class IncidentQuickActions extends Form
                 $roleName === 'manager'
                     ? t('Failed to remove role manager')
                     : t('Failed to unsubscribe'));
+
+            return;
         }
 
         Database::get()->commitTransaction();
