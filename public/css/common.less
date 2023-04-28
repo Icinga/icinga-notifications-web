@@ -7,3 +7,32 @@
     padding-right: 1em;
   }
 }
+
+.icon.source-icon {
+  background-color: @gray-light;
+  margin-right: 0.2em;
+  .ball();
+  .ball-size-l();
+
+  line-height: unset;
+
+  &:before {
+    margin: unset;
+  }
+}
+
+.severity-crit {
+  color: @state-critical;
+}
+
+.severity-ok {
+  color: @state-ok;
+}
+
+.severity-err {
+  color: @state-unknown;
+}
+
+.severity-warning {
+  color: @state-warning;
+}

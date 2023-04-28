@@ -44,6 +44,18 @@
       justify-content: space-between;
     }
 
+    .caption {
+      height: 3em;
+      text-overflow: ellipsis;
+      overflow: hidden;
+
+      .line-clamp();
+
+      img {
+        max-height: 1em;
+      }
+    }
+
     footer {
       display: flex;
       justify-content: space-between;

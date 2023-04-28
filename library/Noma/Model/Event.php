@@ -70,13 +70,52 @@ class Event extends Model
         $relations->belongsTo('object', Objects::class);
 
         $relations
-            ->belongsToMany('incident', Incident::class)
+            ->belongsToOne('incident', Incident::class)
             ->through('incident_event')
-            ->setIsOne()
             ->setJoinType('LEFT');
 
         $relations
             ->belongsTo('source_object', SourceObject::class)
             ->setCandidateKey(['source_id', 'object_id']);
+    }
+
+    /**
+     * Get the severity text
+     *
+     * @return ?string
+     */
+    public function getSeverityText(): ?string
+    {
+        switch ($this->severity) {
+            case 'ok':
+                $severity = t('Ok');
+                break;
+            case 'crit':
+                $severity = t('Critical');
+                break;
+            case 'warning':
+                $severity = t('Warning');
+                break;
+            case 'err':
+                $severity = t('Error');
+                break;
+            case 'debug':
+                $severity = t('Debug');
+                break;
+            case 'info':
+                $severity = t('Information');
+                break;
+            case 'alert':
+                $severity = t('Alert');
+                break;
+            case 'emerg':
+                $severity = t('Emergency');
+                break;
+            case 'notice':
+                $severity = t('Notice');
+                break;
+        }
+
+        return $severity ?? null;
     }
 }

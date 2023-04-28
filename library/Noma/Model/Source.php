@@ -6,6 +6,8 @@ namespace Icinga\Module\Noma\Model;
 
 use ipl\Orm\Model;
 use ipl\Orm\Relations;
+use ipl\Web\Widget\IcingaIcon;
+use ipl\Web\Widget\Icon;
 
 class Source extends Model
 {
@@ -51,5 +53,27 @@ class Source extends Model
         $relations->hasMany('source_object', SourceObject::class);
         $relations->hasMany('object_extra_tag', ObjectExtraTag::class)
             ->setJoinType('LEFT');
+    }
+
+    /**
+     * Get the source icon
+     *
+     * @return ?Icon
+     */
+    public function getIcon(): ?Icon
+    {
+        $icon = null;
+        switch ($this->type) {
+            //TODO(sd): Add icons for other known sources
+            case 'icinga':
+                $icon = new IcingaIcon('icinga');
+                break;
+        }
+
+        if ($icon) {
+            $icon->addAttributes(['class' => 'source-icon']);
+        }
+
+        return $icon;
     }
 }
