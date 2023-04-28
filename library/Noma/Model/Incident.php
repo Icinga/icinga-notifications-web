@@ -67,8 +67,7 @@ class Incident extends Model
 
         $relations
             ->belongsToMany('event', Event::class)
-            ->through('incident_event')
-            ->setJoinType('LEFT');
+            ->through('incident_event');
 
         $relations->belongsToMany('contact', Contact::class)
             ->through('incident_contact');
