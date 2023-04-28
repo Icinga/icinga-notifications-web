@@ -44,6 +44,15 @@ $this->provideConfigTab(
     ]
 );
 
+$section->add(
+    N_('Incidents'),
+    [
+        'icon'          => 'th-list',
+        'description'   => $this->translate('Incidents'),
+        'url'           => 'noma/incidents'
+    ]
+);
+
 $cssDirectory = $this->getCssDir();
 $cssFiles = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(
     $cssDirectory,

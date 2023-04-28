@@ -7,6 +7,7 @@ namespace Icinga\Module\Noma\Widget\Detail;
 use Icinga\Date\DateFormatter;
 use Icinga\Module\Noma\Model\Event;
 use Icinga\Module\Noma\Widget\EventSourceBadge;
+use Icinga\Module\Noma\Widget\ItemList\IncidentList;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use ipl\Html\ValidHtml;
@@ -104,14 +105,13 @@ class EventDetail extends BaseHtmlElement
     /** @return ValidHtml[]|null */
     protected function createIncident(): ?array
     {
-        $incidentId = $this->event->incident->id;
-        if ($incidentId === null) {
+        if ($this->event->incident->id === null) {
             return null;
         }
 
         return [
             Html::tag('h2', t('Incident')),
-            sprintf('#%s Incident Item Placeholder', $incidentId)
+            new IncidentList([$this->event->incident])
         ];
     }
 

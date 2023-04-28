@@ -1,0 +1,30 @@
+.incident-detail {
+  ul.source-list {
+    display: flex;
+
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+
+    > li:not(:last-of-type) {
+      margin-right: 1em;
+    }
+  }
+
+  .incident-contact-list,
+  .incident-object-label-list {
+    .list-item {
+      &:not(:first-child) > .main {
+        border-top: 0;
+      }
+
+      .visual {
+        align-self: center;
+
+        i.icon {
+          font-size: 1em;
+        }
+      }
+    }
+  }
+}

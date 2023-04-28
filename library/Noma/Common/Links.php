@@ -20,4 +20,19 @@ abstract class Links
     {
         return Url::fromPath('noma/events');
     }
+
+    public static function incidents(): Url
+    {
+        return Url::fromPath('noma/incidents');
+    }
+
+    public static function incident(int $id): Url
+    {
+        return Url::fromPath('noma/incident', ['id' => $id]);
+    }
+
+    public static function contact(int $id): Url
+    {
+        return Url::fromPath('noma/contact', ['id' => $id]);
+    }
 }
