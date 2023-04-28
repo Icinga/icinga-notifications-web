@@ -83,4 +83,9 @@ class IncidentsController extends CompatController
         $this->getDocument()->add($editor);
         $this->setTitle(t('Adjust Filter'));
     }
+
+    protected function getPageSize($default)
+    {
+        return parent::getPageSize($default ?? 50);
+    }
 }
