@@ -6,14 +6,16 @@ namespace Icinga\Module\Noma\Widget\Detail;
 
 use Icinga\Module\Noma\Common\Database;
 use Icinga\Module\Noma\Model\Incident;
+use Icinga\Module\Noma\Model\Source;
 use Icinga\Module\Noma\Model\SourceObject;
 use Icinga\Module\Noma\Widget\EventSourceBadge;
-use Icinga\Module\Noma\Widget\ItemList\ContactList;
 use Icinga\Module\Noma\Widget\ItemList\IncidentContactList;
 use Icinga\Module\Noma\Widget\ItemList\IncidentHistoryList;
 use Icinga\Module\Noma\Widget\ItemList\ObjectLabelList;
+use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
+use ipl\Html\HtmlElement;
 use ipl\Html\Table;
 use ipl\Stdlib\Filter;
 use ipl\Web\Widget\Link;
@@ -115,15 +117,17 @@ class IncidentDetail extends BaseHtmlElement
 
     protected function createSource()
     {
-        $sources = [];
-        foreach ($this->incident->event->with('source') as $event) {
-            $source = $event->source;
-            $sources[$source->type] = new EventSourceBadge($source);
+        $list = new HtmlElement('ul', Attributes::create(['class' => 'source-list']));
+
+        $sources = Source::on(Database::get())
+            ->filter(Filter::equal('event.incident.id', $this->incident->id));
+        foreach ($sources as $source) {
+            $list->addHtml(new HtmlElement('li', null, new EventSourceBadge($source)));
         }
 
         return [
             Html::tag('h2', t('Event Sources')),
-            $sources
+            $list
         ];
     }
 
