@@ -7,6 +7,7 @@ namespace Icinga\Module\Noma\Widget\ItemList;
 use Icinga\Module\Noma\Common\BaseListItem;
 use Icinga\Module\Noma\Common\Links;
 use Icinga\Module\Noma\Model\Event;
+use Icinga\Module\Noma\Widget\SourceIcon;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use ipl\Web\Widget\Icon;
@@ -120,7 +121,11 @@ class EventListItem extends BaseListItem
         $header->add(Html::tag(
             'span',
             ['class' => 'meta'],
-            [$this->item->source->getIcon(), new TimeAgo($this->item->time->getTimestamp())]
+            [
+                (new SourceIcon(SourceIcon::SIZE_BIG))
+                    ->addHtml($this->item->source->getIcon()),
+                new TimeAgo($this->item->time->getTimestamp())
+            ]
         ));
     }
 
