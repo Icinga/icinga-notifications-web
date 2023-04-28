@@ -80,11 +80,11 @@ class IncidentListItem extends BaseListItem
                 ['class' => 'meta'],
                 [
                     'closed ',
-                    new TimeSince($this->item->recovered_at->getTimestamp())
+                    new TimeAgo($this->item->recovered_at->getTimestamp())
                 ]
             ));
         } else {
-            $header->add(new TimeAgo($this->item->started_at->getTimestamp()));
+            $header->add(new TimeSince($this->item->started_at->getTimestamp()));
         }
     }
 
