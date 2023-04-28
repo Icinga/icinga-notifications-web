@@ -57,7 +57,7 @@ class IncidentDetail extends BaseHtmlElement
     protected function createRelatedObject()
     {
         //TODO(sd): Add hook implementation
-        $list = Html::tag('ul', ['class' => 'item-list']);
+        $list = Html::tag('ul', ['class' => ['item-list', 'action-list'], 'data-base-target' => '_next']);
 
         $objects = [];
         //TODO(sd): check sortby order
@@ -99,8 +99,7 @@ class IncidentDetail extends BaseHtmlElement
 
         return [
             Html::tag('h2', t('Objects')),
-            (Html::tag('ul', ['class' => ['item-list', 'action-list'], 'data-base-target' => '_next']))
-                ->add($list)
+            $list
         ];
     }
 
