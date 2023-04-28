@@ -8,7 +8,7 @@ use Icinga\Module\Noma\Common\BaseItemList;
 
 class IncidentHistoryList extends BaseItemList
 {
-    protected $defaultAttributes = ['class' => 'incident-history-list'];
+    protected $defaultAttributes = ['class' => 'minimal'];
 
     protected function getItemClass(): string
     {

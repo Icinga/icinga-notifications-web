@@ -8,7 +8,7 @@ use Icinga\Module\Noma\Common\BaseItemList;
 
 class IncidentContactList extends BaseItemList
 {
-    protected $defaultAttributes = ['class' => 'incident-contact-list'];
+    protected $defaultAttributes = ['class' => ['minimal', 'incident-contact-list']];
 
     protected function getItemClass(): string
     {

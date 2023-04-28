@@ -8,7 +8,7 @@ use Icinga\Module\Noma\Common\BaseItemList;
 
 class ObjectLabelList extends BaseItemList
 {
-    protected $defaultAttributes = ['class' => 'incident-object-label-list'];
+    protected $defaultAttributes = ['class' => ['minimal', 'incident-object-label-list']];
 
     protected function getItemClass(): string
     {
