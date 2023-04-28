@@ -11,6 +11,7 @@ use Icinga\Module\Noma\Model\Incident;
 use Icinga\Module\Noma\Model\IncidentContact;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
+use InvalidArgumentException;
 use ipl\Html\Form;
 use ipl\Stdlib\Filter;
 use ipl\Web\Common\CsrfCounterMeasure;
@@ -30,6 +31,9 @@ class IncidentQuickActions extends Form
 
     /** @var int Current logged-in user's id */
     protected $currentUserId;
+
+    /** @var IncidentContact */
+    protected $incidentContact;
 
     public function __construct(Incident $incident, int $currentUserId)
     {
@@ -97,10 +101,8 @@ class IncidentQuickActions extends Form
     protected function assemble()
     {
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
-        $incidentContact = $this->fetchIncidentContact();
-        $role = $incidentContact ? $incidentContact->role : null;
 
-        switch ($role) {
+        switch ($this->fetchIncidentContact()->role) {
             case null:
             case 'recipient':
                 $this->assembleManageButton();
@@ -141,16 +143,16 @@ class IncidentQuickActions extends Form
     /**
      * Add the incident's contact role of given contact
      *
-     * @param ?IncidentContact $incidentContact The incident contact to add
+     * @param IncidentContact $incidentContact The incident contact to add
      * @param string $roleName The role to add
      *
      * @return void
      */
-    protected function addEntry(?IncidentContact $incidentContact, string $roleName): void
+    protected function addEntry(IncidentContact $incidentContact, string $roleName): void
     {
         Database::get()->beginTransaction();
         try {
-            if ($incidentContact) {
+            if ($incidentContact->contact_id !== null) {
                 Database::get()->update(
                     'incident_contact',
                     ['role' => $roleName],
@@ -188,6 +190,10 @@ class IncidentQuickActions extends Form
      */
     protected function removeEntry(IncidentContact $incidentContact, string $roleName): void
     {
+        if ($incidentContact->contact_id === null) {
+            throw new InvalidArgumentException('$incidentContact must be a valid contact');
+        }
+
         Database::get()->beginTransaction();
         try {
             Database::get()->delete('incident_contact', [
@@ -217,20 +223,16 @@ class IncidentQuickActions extends Form
     /**
      * Update the incident history
      *
-     * @param ?IncidentContact $incidentContact
+     * @param IncidentContact $incidentContact
      * @param string $msg
      * @param string|null $newRole
      *
      * @return void
      */
-    protected function updateHistory(?IncidentContact $incidentContact, string $msg, string $newRole = null): void
+    protected function updateHistory(IncidentContact $incidentContact, string $msg, string $newRole = null): void
     {
-        $oldRole = null;
-        $contactId = $this->currentUserId;
-        if ($incidentContact) {
-            $oldRole = $incidentContact->role;
-            $contactId = $incidentContact->contact_id;
-        }
+        $oldRole = $incidentContact->role;
+        $contactId = $incidentContact->contact_id ?? $this->currentUserId;
 
         Database::get()->insert(
             'incident_history',
@@ -249,15 +251,31 @@ class IncidentQuickActions extends Form
     /**
      * Fetch the incident's current logged-in user
      *
-     * @return ?IncidentContact
+     * @return IncidentContact
      */
-    protected function fetchIncidentContact(): ?IncidentContact
+    protected function fetchIncidentContact(): IncidentContact
     {
-        return IncidentContact::on(Database::get())
-            ->filter(Filter::all(
-                Filter::equal('contact_id', $this->currentUserId),
-                Filter::equal('incident_id', $this->incident->id))
-            )
-            ->first();
+        if ($this->incidentContact === null) {
+            $contact = IncidentContact::on(Database::get())
+                ->filter(Filter::all(
+                    Filter::equal('contact_id', $this->currentUserId),
+                    Filter::equal('incident_id', $this->incident->id))
+                )
+                ->first();
+
+            if ($contact) {
+                $this->incidentContact = $contact;
+            } else {
+                $this->incidentContact = new IncidentContact();
+
+                // Too bad that models have no values for their columns by default...
+                $this->incidentContact->setProperties(array_fill_keys(
+                    $this->incidentContact->getColumns(),
+                    null
+                ));
+            }
+        }
+
+        return $this->incidentContact;
     }
 }
