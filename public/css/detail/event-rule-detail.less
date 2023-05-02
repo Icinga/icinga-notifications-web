@@ -46,19 +46,22 @@
     padding: 0.5em;
     border: 1px solid @gray-lighter;
     border-radius: 0.5em;
+
+    .search-bar .filter-input-area {
+      max-width: 20em;
+    }
   }
 
   .add-escalation-form {
     max-width: unset;
     width: auto;
     display: inline-flex;
-    margin-left: 7.5em;
   }
 
   .escalations {
     display: inline-flex;
     flex-direction: column;
-    margin: 3em 0 0 18em;
+    margin-top: 3em;
     width: 85em;
     padding: 2em;
 
@@ -67,6 +70,7 @@
 
     > .escalation {
       display: flex;
+      align-items: center;
 
       .escalation-condition-form,
       .escalation-recipient-form {
@@ -76,15 +80,40 @@
         padding: 0.5em;
         border: 1px solid @gray-lighter;
         border-radius: 0.5em;
+        .condition:not(:last-child) {
+          margin-bottom: .4em;
 
-        select, input {
-          min-width: 10em;
-          text-align: center;
+          select, input {
+            min-width: 12.5em;
+            text-align: center;
+            height: 2.25em;
+            line-height: normal;
+            background-color: @base-gray;
+            color: @text-color-inverted;
+          }
+
+          .left-operand {
+            border-radius: 0.4em 0 0 0.4em;
+          }
+
+          .right-operand {
+            border-radius: 0 0.4em 0.4em 0;
+            margin-left: 0.1em;
+          }
+
+          .operator-input {
+            min-width: unset;
+            width: 3em;
+            border-radius: unset;
+            margin: 0 .1em;
+            background-color: @base-gray;
+            color: @text-color-inverted;
+          }
         }
-      }
 
-      .escalation-condition-form {
-        margin-right: 10em;
+        button[type="submit"] {
+          height: 2.25em;
+        }
       }
     }
   }

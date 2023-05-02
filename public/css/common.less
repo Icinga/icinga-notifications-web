@@ -62,3 +62,19 @@
 .add-new-component {
   margin: 0 0 1em 1em;
 }
+
+.right-arrow {
+  width: 8em;
+  display: inline-block;
+  background-color: @base-gray-lighter;
+  height: 0.7em;
+  margin-right: 0.4em;
+  text-align: end;
+}
+
+.right-arrow:after {
+  content: '';
+  position: absolute;
+  border: 0.4em solid transparent;
+  border-left: 0.4em solid @base-gray-lighter;
+}

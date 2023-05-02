@@ -9,41 +9,32 @@ use Icinga\Module\Noma\Model\ObjectExtraTag;
 use Icinga\Module\Noma\Util\ObjectSuggestionsCursor;
 use ipl\Web\Control\SearchBar\Suggestions;
 use ipl\Stdlib\Filter;
+use Traversable;
 
 class ExtraTagSuggestions extends Suggestions
 {
     protected function fetchValueSuggestions($column, $searchTerm, Filter\Chain $searchFilter)
     {
+        yield;
     }
 
     protected function createQuickSearchFilter($searchTerm)
     {
-        $quickFilter = Filter::any();
-
-        foreach ($this->getSearchColumns() as $column) {
-            $where = Filter::like($column->tag, $searchTerm);
-            $where->metaData()->set('columnLabel', $column->tag);
-            $quickFilter->add($where);
-        }
-
-        return $quickFilter;
+        return Filter::any();
     }
 
-    protected function getSearchColumns()
+    protected function fetchColumnSuggestions($searchTerm)
     {
-        return (new ObjectSuggestionsCursor(
+        $searchColumns = (new ObjectSuggestionsCursor(
             Database::get(),
             (new ObjectExtraTag())::on(Database::get())
                 ->columns(['tag'])
                 ->assembleSelect()
                 ->distinct()
         ));
-    }
 
-    protected function fetchColumnSuggestions($searchTerm)
-    {
         // Object Extra Tags
-        foreach ($this->getSearchColumns() as $column) {
+        foreach ($searchColumns as $column) {
             yield $column->tag => $column->tag;
         }
     }

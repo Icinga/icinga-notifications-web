@@ -34,6 +34,14 @@ class Escalations extends BaseHtmlElement
 
     public function addEscalation($position, $escalation)
     {
-        $this->escalations[$position] = Html::tag('div', ['class' => 'escalation'], $escalation);
+        $this->escalations[$position] = Html::tag(
+            'div',
+            ['class' => 'escalation'],
+            [
+                $escalation[0],
+                new RightArrow(),
+                $escalation[1]
+            ]
+        );
     }
 }

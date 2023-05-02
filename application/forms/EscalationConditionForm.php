@@ -31,7 +31,7 @@ class EscalationConditionForm extends BaseEscalationForm
                 'select',
                 'column' . $count,
                 [
-                    'class'             => 'autosubmit',
+                    'class'             => ['autosubmit', 'left-operand'],
                     'options'           => [
                         ''          => sprintf(' - %s - ', $this->translate('Please choose')),
                         'age'       => $this->translate('Escalation Age'),
@@ -48,7 +48,7 @@ class EscalationConditionForm extends BaseEscalationForm
                 'select',
                 'operator'. $count,
                 [
-                    'class'             => 'autosubmit',
+                    'class'             => ['class'     => 'operator-input', 'autosubmit'],
                     'options'           => array_combine($operators, $operators),
                     'required'          => true
                 ]
@@ -58,8 +58,8 @@ class EscalationConditionForm extends BaseEscalationForm
                 'text',
                 'value'. $count,
                 [
-                    'class'     => 'autosubmit',
-                    'required'  => true
+                    'required'  => true,
+                    'class'     => ['autosubmit', 'right-operand']
                 ]
             );
 

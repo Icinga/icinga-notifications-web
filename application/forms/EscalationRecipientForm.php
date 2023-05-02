@@ -50,7 +50,7 @@ class EscalationRecipientForm extends BaseEscalationForm
                 'select',
                 'column' . $count,
                 [
-                    'class'             => 'autosubmit',
+                    'class'             => ['autosubmit', 'left-operand'],
                     'options'           => ['' => sprintf(' - %s - ', $this->translate('Please choose'))] + $this->fetchOptions(),
                     'disabledOptions'   => [''],
                     'required'          => true
@@ -61,6 +61,7 @@ class EscalationRecipientForm extends BaseEscalationForm
                 'text',
                 'operator'. $count,
                 [
+                    'class'     => 'operator-input',
                     'value'     => '=',
                     'disabled'  => true
                 ]
@@ -70,7 +71,7 @@ class EscalationRecipientForm extends BaseEscalationForm
                 'select',
                 'value'. $count,
                 [
-                    'class'     => 'autosubmit',
+                    'class'     => ['autosubmit', 'right-operand'],
                     'options'   => [
                         ''              => sprintf(' - %s - ', $this->translate('Please choose')),
                         'email'         => 'E-Mail',

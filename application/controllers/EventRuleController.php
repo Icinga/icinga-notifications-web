@@ -106,14 +106,17 @@ class EventRuleController extends CompatController
         $this->getDocument()->add($suggestions);
     }
 
+
     /**
      * searchEditorAction for Object Extra Tags
      *
      * @return void
+     *
+     * @throws \Icinga\Exception\MissingParameterException
      */
     public function searchEditorAction(): void
     {
-        $ruleId = $this->params->shift('id');
+        $ruleId = $this->params->shiftRequired('id');
 
         $queryString = $this->params->toString();
 

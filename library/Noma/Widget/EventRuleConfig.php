@@ -194,8 +194,12 @@ class EventRuleConfig extends BaseHtmlElement
 
     protected function assemble()
     {
-        $this->add(array_slice($this->forms, 0, 3));
-///        $this->add(Html::tag('div', ['class' => 'arrow-pointer']));
+        $this->add([
+            $this->forms[0],
+            new RightArrow(),
+            $this->forms[1],
+            new RightArrow()
+        ]);
 
         $escalations = new Escalations();
 
