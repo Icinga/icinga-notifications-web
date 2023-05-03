@@ -32,8 +32,6 @@ class EventRuleConfig extends BaseHtmlElement
 
     public const ON_CHANGE = 'on_change';
 
-    public const ON_SUBMIT = 'on_submit';
-
     protected $tag = 'div';
 
     /** @var Form[]  */
@@ -112,12 +110,6 @@ class EventRuleConfig extends BaseHtmlElement
             $this->forms[] = $escalationCondition;
             $this->forms[] = $escalationRecipient;
         }
-    }
-
-    public function insertToDb()
-    {
-        //TODO(sd): this event should be added to form with submit button
-        $this->emitOnce(self::ON_SUBMIT, [$this]);
     }
 
     public function createSearchBar(): SearchBar

@@ -48,13 +48,5 @@ class EventRuleForm extends Form
                 'value'  => 'y'
             ]
         );
-
-        $this->addElement(
-            'submit',
-            'submit',
-            [
-                'label' => $this->translate('Save Changes')
-            ]
-        );
     }
 }

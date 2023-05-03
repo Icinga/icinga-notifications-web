@@ -6,10 +6,13 @@ namespace Icinga\Module\Noma\Controllers;
 
 use Icinga\Module\Noma\Common\Auth;
 use Icinga\Module\Noma\Common\Database;
+use Icinga\Module\Noma\Common\Links;
+use Icinga\Module\Noma\Forms\SaveEventRuleForm;
 use Icinga\Module\Noma\Model\ObjectExtraTag;
 use Icinga\Module\Noma\Model\Rule;
 use Icinga\Module\Noma\Web\Control\SearchBar\ExtraTagSuggestions;
 use Icinga\Module\Noma\Widget\EventRuleConfig;
+use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\Html;
 use ipl\Stdlib\Filter;
@@ -54,23 +57,41 @@ class EventRuleController extends CompatController
             );
         }
 
-        $eventRuleConfig->on(EventRuleConfig::ON_CHANGE, function ($eventRuleConfig) use ($ruleId) {
-            $this->sessionNamespace->set($ruleId, $eventRuleConfig->getConfig());
-        });
+        $saveForm = (new SaveEventRuleForm())
+            ->setShowRemoveButton()
+            ->setSubmitButtonDisabled($cache === null)
+            ->setSubmitLabel($this->translate('Save Changes'))
+            ->on(SaveEventRuleForm::ON_SUCCESS, function ($form) use ($ruleId, $eventRuleConfig) {
+                if (! $eventRuleConfig->isValid()) {
+                    $eventRuleConfig->addAttributes(['class' => 'invalid']);
+                    return;
+                }
 
-        $eventRuleConfig->on(EventRuleConfig::ON_SUBMIT, function ($eventRuleConfig) use ($ruleId) {
-            if (! $eventRuleConfig->isValid()) {
-                $eventRuleConfig->addAttributes(['class' => 'invalid']);
-                return;
-            }
+                $form->editRule($ruleId, $this->sessionNamespace->get($ruleId));
+                $this->sessionNamespace->delete($ruleId);
 
-            // DB insert here
-        });
+                Notification::success($this->translate('Successfully updated rule.'));
+                $this->sendExtraUpdates(['#col1']);
+                $this->redirectNow(Links::eventRule($ruleId));
+            })->on(SaveEventRuleForm::ON_REMOVE, function ($form) use ($ruleId) {
+                $form->removeRule($ruleId);
+                $this->sessionNamespace->delete($ruleId);
+
+                Notification::success($this->translate('Successfully removed rule.'));
+                $this->redirectNow('__CLOSE__');
+            })->handleRequest($this->getServerRequest());
+
+        $eventRuleConfig
+            ->on(EventRuleConfig::ON_CHANGE, function ($eventRuleConfig) use ($ruleId, $saveForm) {
+                $this->sessionNamespace->set($ruleId, $eventRuleConfig->getConfig());
+                $saveForm->setSubmitButtonDisabled(false);
+            });
 
         foreach ($eventRuleConfig->getForms() as $form) {
             $form->handleRequest($this->getServerRequest());
         }
 
+        $this->addControl($saveForm);
         $this->addContent($eventRuleConfig);
     }
 
