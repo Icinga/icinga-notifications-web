@@ -6,6 +6,7 @@ namespace Icinga\Module\Noma\Widget;
 
 use Icinga\Module\Noma\Common\Database;
 use Icinga\Module\Noma\Forms\AddEscalationForm;
+use Icinga\Module\Noma\Forms\AddFilterForm;
 use Icinga\Module\Noma\Forms\EscalationConditionForm;
 use Icinga\Module\Noma\Forms\EscalationRecipientForm;
 use Icinga\Module\Noma\Forms\EventRuleForm;
@@ -52,13 +53,14 @@ class EventRuleConfig extends BaseHtmlElement
     protected function createForms(): void
     {
         $config = $this->getConfig();
-        $searchBar = $this->createSearchBar()
-            ->setFilter(QueryString::parse($config['object_filter'] ?? ''))
-            ->on(Form::ON_SENT, function ($form) {
-                $this->config['object_filter'] = QueryString::render($form->getFilter());
+        $addFilter = (new AddFilterForm())
+            ->on(Form::ON_SENT, function () {
+                $this->config['showSearchbar'] = true;
 
                 $this->emit(self::ON_CHANGE, [$this]);
             });
+
+        $searchBar = $this->createSearchBar();
 
         $eventRuleForm = (new EventRuleForm())
             ->populate($config)
@@ -84,6 +86,7 @@ class EventRuleConfig extends BaseHtmlElement
 
         $this->forms = [
             $eventRuleForm,
+            $addFilter,
             $searchBar,
             $addEscalation
         ];
@@ -148,6 +151,14 @@ class EventRuleConfig extends BaseHtmlElement
             ->on(SearchBar::ON_INSERT, $columnValidator)
             ->on(SearchBar::ON_SAVE, $columnValidator);
 
+        $searchBar
+            ->setFilter(QueryString::parse($this->config['object_filter'] ?? ''))
+            ->on(Form::ON_SENT, function ($form) {
+                $this->config['object_filter'] = QueryString::render($form->getFilter());
+
+                $this->emit(self::ON_CHANGE, [$this]);
+            });
+
         return $searchBar;
     }
 
@@ -194,10 +205,12 @@ class EventRuleConfig extends BaseHtmlElement
 
     protected function assemble()
     {
+        [$eventRuleForm, $addFilter, $searchBar, $addEscalation] = $this->forms;
+
         $this->add([
-            $this->forms[0],
+            $eventRuleForm,
             new RightArrow(),
-            $this->forms[1],
+            ($this->config['showSearchbar'] ?? false) ? $searchBar : $addFilter,
             new RightArrow()
         ]);
 
