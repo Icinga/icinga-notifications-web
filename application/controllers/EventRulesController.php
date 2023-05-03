@@ -162,17 +162,26 @@ class EventRulesController extends CompatController
 
     public function addSearchEditorAction()
     {
-        $queryString = $this->params->toString();
+        $cache = $this->sessionNamespace->get(-1);
 
         $editor = EventRuleConfig::createSearchEditor(ObjectExtraTag::on(Database::get()))
-            ->setQueryString($queryString);
+            ->setQueryString($cache['object_filter'] ?? '');
 
         $editor->on(SearchEditor::ON_SUCCESS, function (SearchEditor $form) {
-            $sessionStorage = Session::getSession()->getNamespace('noma');
+            $cache = $this->sessionNamespace->get(-1);
 
-            $cache = $sessionStorage->get(-1, []);
-            $cache['object_filter'] = QueryString::render($form->getFilter());
-            $sessionStorage->set(-1, $cache);
+            $filters = $form->getFilter();
+
+            foreach ($filters as $filter) {
+                if (empty($filter->getValue())) {
+                    $filter->setValue(true);
+                }
+            }
+
+            $filterStr = QueryString::render($filters);
+            $cache['object_filter'] = ! empty($filterStr) ? rawurldecode($filterStr) : null;
+
+            $this->sessionNamespace->set(-1, $cache);
 
             $this->getResponse()
                 ->setHeader('X-Icinga-Container', '_self')

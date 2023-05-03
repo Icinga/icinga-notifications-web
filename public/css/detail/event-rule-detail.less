@@ -41,14 +41,16 @@
   .search-controls {
     margin-top: 1em;
     display: inline-flex;
-    width: 20%;
+    width: 20em;
     min-width: unset;
     padding: 0.5em;
     border: 1px solid @gray-lighter;
     border-radius: 0.5em;
 
-    .search-bar .filter-input-area {
-      max-width: 20em;
+    input.filter-input {
+      width: 20em;
+      background-color: @base-gray;
+      color: @text-color-inverted;
     }
   }
 

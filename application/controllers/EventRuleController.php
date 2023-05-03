@@ -47,12 +47,12 @@ class EventRuleController extends CompatController
             //TODO: just for tests, render correctly
             $this->addContent(Html::tag('span', 'This is cached config'));
             $eventRuleConfig = new EventRuleConfig(
-                Url::fromPath('noma/event-rule/searchEditor', ['id' => $ruleId]),
+                Url::fromPath('noma/event-rule/search-editor', ['id' => $ruleId]),
                 $cache
             );
         } else {
             $eventRuleConfig = new EventRuleConfig(
-                Url::fromPath('noma/event-rule/searchEditor', ['id' => $ruleId]),
+                Url::fromPath('noma/event-rule/search-editor', ['id' => $ruleId]),
                 $this->fromDb($ruleId)
             );
         }
@@ -142,15 +142,24 @@ class EventRuleController extends CompatController
     public function searchEditorAction(): void
     {
         $ruleId = $this->params->shiftRequired('id');
-
-        $queryString = $this->params->toString();
+        $cache = $this->sessionNamespace->get($ruleId);
 
         $editor = EventRuleConfig::createSearchEditor(ObjectExtraTag::on(Database::get()))
-            ->setQueryString($queryString);
+            ->setQueryString($cache['object_filter'] ?? '');
 
         $editor->on(SearchEditor::ON_SUCCESS, function (SearchEditor $form) use ($ruleId) {
             $cache = $this->sessionNamespace->get($ruleId);
-            $cache['object_filter'] = QueryString::render($form->getFilter());
+
+            $filters = $form->getFilter();
+
+            foreach ($filters as $filter) {
+                if (empty($filter->getValue())) {
+                    $filter->setValue(true);
+                }
+            }
+
+            $filterStr = QueryString::render($filters);
+            $cache['object_filter'] = ! empty($filterStr) ? rawurldecode($filterStr) : null;
 
             $this->sessionNamespace->set($ruleId, $cache);
             $this->getResponse()

@@ -4,23 +4,24 @@
 
 namespace Icinga\Module\Noma\Widget;
 
-use Icinga\Module\Noma\Common\Database;
 use Icinga\Module\Noma\Forms\AddEscalationForm;
 use Icinga\Module\Noma\Forms\AddFilterForm;
 use Icinga\Module\Noma\Forms\EscalationConditionForm;
 use Icinga\Module\Noma\Forms\EscalationRecipientForm;
 use Icinga\Module\Noma\Forms\EventRuleForm;
-use Icinga\Module\Noma\Model\ObjectExtraTag;
+use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Form;
+use ipl\Html\FormElement\TextElement;
 use ipl\Html\Html;
 use ipl\Orm\Query;
 use ipl\Stdlib\Events;
 use ipl\Stdlib\Filter;
 use ipl\Web\Control\SearchBar;
 use ipl\Web\Control\SearchEditor;
-use ipl\Web\Filter\QueryString;
 use ipl\Web\Url;
+use ipl\Web\Widget\Icon;
+use ipl\Web\Widget\Link;
 
 class EventRuleConfig extends BaseHtmlElement
 {
@@ -63,8 +64,6 @@ class EventRuleConfig extends BaseHtmlElement
                 $this->emit(self::ON_CHANGE, [$this]);
             });
 
-        $searchBar = $this->createSearchBar();
-
         $eventRuleForm = (new EventRuleForm())
             ->populate($config)
             ->on(Form::ON_SENT, function ($form) {
@@ -90,7 +89,6 @@ class EventRuleConfig extends BaseHtmlElement
         $this->forms = [
             $eventRuleForm,
             $addFilter,
-            $searchBar,
             $addEscalation
         ];
 
@@ -110,50 +108,6 @@ class EventRuleConfig extends BaseHtmlElement
             $this->forms[] = $escalationCondition;
             $this->forms[] = $escalationRecipient;
         }
-    }
-
-    public function createSearchBar(): SearchBar
-    {
-        $query = ObjectExtraTag::on(Database::get());
-
-        $searchBar = new SearchBar();
-
-        $searchBar->addWrapper(Html::tag('div', ['class' => 'search-controls']));
-
-        $searchBar->setSuggestionUrl(Url::fromPath(
-            "noma/event-rule/complete",
-            [
-                '_disableLayout' => true,
-                'showCompact' => true
-            ]
-        ));
-
-        $searchBar->setEditorUrl($this->searchEditorUrl);
-
-        $query->columns(['tag'])->assembleSelect()->distinct();
-
-        $columnValidator = function (SearchBar\ValidatedColumn $column) use ($query) {
-            $searchPath = $column->getSearchValue();
-
-            if ($query->filter(Filter::equal('tag', $searchPath))->count() === 0) {
-                $column->setMessage(t('Is not a valid column'));
-                $column->setSearchValue($searchPath);
-            }
-        };
-
-        $searchBar->on(SearchBar::ON_ADD, $columnValidator)
-            ->on(SearchBar::ON_INSERT, $columnValidator)
-            ->on(SearchBar::ON_SAVE, $columnValidator);
-
-        $searchBar
-            ->setFilter(QueryString::parse($this->config['object_filter'] ?? ''))
-            ->on(Form::ON_SENT, function ($form) {
-                $this->config['object_filter'] = QueryString::render($form->getFilter());
-
-                $this->emit(self::ON_CHANGE, [$this]);
-            });
-
-        return $searchBar;
     }
 
     /**
@@ -199,12 +153,38 @@ class EventRuleConfig extends BaseHtmlElement
 
     protected function assemble()
     {
-        [$eventRuleForm, $addFilter, $searchBar, $addEscalation] = $this->forms;
+        [$eventRuleForm, $addFilter, $addEscalation] = $this->forms;
+
+        $addFilterButtonOrSearchBar = $addFilter;
+        if (! empty($this->config['showSearchbar'])) {
+            $editorOpener = new Link(
+                new Icon('cog'),
+                $this->searchEditorUrl,
+                Attributes::create([
+                    'class'                 => 'search-editor-opener control-button',
+                    'title'                 => t('Adjust Filter'),
+                    'data-icinga-modal'     => true,
+                    'data-no-icinga-ajax'   => true,
+                ])
+            );
+
+            $searchBar = new TextElement(
+                'searchbar',
+                [
+                    'class'     => 'filter-input control-button',
+                    'readonly'  => true,
+                    'value'     => $this->config['object_filter'] ?? null
+                ]
+            );
+
+            $addFilterButtonOrSearchBar = Html::tag('div', ['class' => 'search-controls icinga-controls']);
+            $addFilterButtonOrSearchBar->add([$searchBar, $editorOpener]);
+        }
 
         $this->add([
             $eventRuleForm,
             new RightArrow(),
-            ($this->config['showSearchbar'] ?? false) ? $searchBar : $addFilter,
+            $addFilterButtonOrSearchBar,
             new RightArrow()
         ]);
 
