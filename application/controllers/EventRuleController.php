@@ -43,9 +43,15 @@ class EventRuleController extends CompatController
         if ($cache) {
             //TODO: just for tests, render correctly
             $this->addContent(Html::tag('span', 'This is cached config'));
-            $eventRuleConfig = new EventRuleConfig($cache);
+            $eventRuleConfig = new EventRuleConfig(
+                Url::fromPath('noma/event-rule/searchEditor', ['id' => $ruleId]),
+                $cache
+            );
         } else {
-            $eventRuleConfig = new EventRuleConfig($this->fromDb($ruleId));
+            $eventRuleConfig = new EventRuleConfig(
+                Url::fromPath('noma/event-rule/searchEditor', ['id' => $ruleId]),
+                $this->fromDb($ruleId)
+            );
         }
 
         $eventRuleConfig->on(EventRuleConfig::ON_CHANGE, function ($eventRuleConfig) use ($ruleId) {

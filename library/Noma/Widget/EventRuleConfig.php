@@ -41,12 +41,17 @@ class EventRuleConfig extends BaseHtmlElement
 
     protected $config;
 
+    /** @var Url The url to open the SearchEditor at */
+    protected $searchEditorUrl;
+
     /** @var array */
     private $escalationForms;
 
-    public function __construct($config = null)
+    public function __construct(Url $searchEditorUrl, array $config = null)
     {
         $this->config = $config ?? [];
+        $this->searchEditorUrl = $searchEditorUrl;
+
         $this->createForms();
     }
 
@@ -131,10 +136,7 @@ class EventRuleConfig extends BaseHtmlElement
             ]
         ));
 
-        $searchBar->setEditorUrl(Url::fromPath(
-            "noma/event-rule/search-editor",
-            Url::fromRequest()->getParams()->toArray(false)
-        ));
+        $searchBar->setEditorUrl($this->searchEditorUrl);
 
         $query->columns(['tag'])->assembleSelect()->distinct();
 
