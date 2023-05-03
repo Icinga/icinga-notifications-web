@@ -87,10 +87,6 @@ class EventRuleController extends CompatController
             }
         }
 
-        if (! isset($config['rule_escalation'])) {
-            $config['rule_escalation'] = [1 => []];
-        }
-
         $config['showSearchbar'] = ! empty($config['object_filter']);
 
         return $config;

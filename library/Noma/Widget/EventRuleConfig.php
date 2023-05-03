@@ -46,7 +46,7 @@ class EventRuleConfig extends BaseHtmlElement
 
     public function __construct($config = null)
     {
-        $this->config = $config;
+        $this->config = $config ?? [];
         $this->createForms();
     }
 
@@ -71,7 +71,7 @@ class EventRuleConfig extends BaseHtmlElement
                 $this->emit(self::ON_CHANGE, [$this]);
             });
 
-        $escalations = $config['rule_escalation'];
+        $escalations = $config['rule_escalation'] ?? [1 => []];
         $addEscalation = (new AddEscalationForm())
             ->on(AddEscalationForm::ON_SENT, function (AddEscalationForm $form) use ($escalations) {
                 $newPosition = (int) array_key_last($escalations) + 1;
