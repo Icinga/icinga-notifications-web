@@ -55,7 +55,7 @@ class IncidentHistoryListItem extends BaseListItem
                 $content = Html::sprintf(
                     t('%s on %s', '<service> on <host>'),
                     new Link(
-                        $event->object->host,
+                        $event->object->service,
                         Links::event($this->item->event_id),
                         ['class' => 'subject']
                     ),
