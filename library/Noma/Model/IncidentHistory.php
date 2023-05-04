@@ -26,6 +26,7 @@ class IncidentHistory extends Model
         return [
             'incident_id',
             'event_id',
+            'rule_id',
             'rule_escalation_id',
             'time',
             'type',
