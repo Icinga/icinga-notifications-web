@@ -7,7 +7,6 @@ namespace Icinga\Module\Noma\Forms;
 use Icinga\Module\Noma\Common\Database;
 use Icinga\Module\Noma\Model\Contact;
 use ipl\Html\Html;
-use ipl\Stdlib\Str;
 
 class EscalationRecipientForm extends BaseEscalationForm
 {
@@ -38,14 +37,12 @@ class EscalationRecipientForm extends BaseEscalationForm
 
     protected function assembleElements(): void
     {
-        $start = 1;
         $end = $this->count;
         if ($this->isAddPressed) {
-            $start = $this->count + 1;
-            $end = $start;
+            $end++;
         }
 
-        foreach (range($start, $end) as $count) {
+        foreach (range(1, $end) as $count) {
             $col = $this->createElement(
                 'select',
                 'column' . $count,
@@ -86,9 +83,12 @@ class EscalationRecipientForm extends BaseEscalationForm
             $this->registerElement($op);
             $this->registerElement($val);
 
-            $this->lastContent = Html::tag('div', ['class' => 'condition'], [$col, $op, $val]);
-            $this->add($this->lastContent);
+            $this->options[$count] = Html::tag('li', [$col, $op, $val, $this->createRemoveButton($count)]);
         }
+
+        $this->handleRemove();
+
+        $this->add(Html::tag('ul', ['class' => 'options'], $this->options));
     }
 
     public function getValues()
@@ -100,6 +100,10 @@ class EscalationRecipientForm extends BaseEscalationForm
 
         $values = [];
         foreach (range(1, $end) as $count) {
+            if ($this->removedOptionNumber === $count) {
+                continue; // removed option
+            }
+
             $value = [];
             $value['channel_type'] = $this->getValue('value' . $count);
 

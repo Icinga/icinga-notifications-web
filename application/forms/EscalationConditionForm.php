@@ -21,14 +21,12 @@ class EscalationConditionForm extends BaseEscalationForm
 
     protected function assembleElements(): void
     {
-        $start = 1;
         $end = $this->count;
         if ($this->isAddPressed) {
-            $start = $this->count + 1;
-            $end = $start;
+            $end++;
         }
 
-        foreach (range($start, $end) as $count) {
+        foreach (range(1, $end) as $count) {
             $col = $this->createElement(
                 'select',
                 'column' . $count,
@@ -140,26 +138,23 @@ class EscalationConditionForm extends BaseEscalationForm
 
             (new EventRuleDecorator())->decorate($val);
 
-            $this->lastContent = Html::tag('div', ['class' => 'condition'], [$col, $op, $val]);
-
-            $this->add($this->lastContent);
+            $this->options[$count] = Html::tag('li', [$col, $op, $val, $this->createRemoveButton($count)]);
         }
+
+        $this->handleRemove();
+
+        $this->add(Html::tag('ul', ['class' => 'options'], $this->options));
     }
 
-    protected function assembleAddAndRemoveButton(): void
+    protected function handleRemove(): void
     {
-        parent::assembleAddAndRemoveButton();
-        $button = $this->getPressedSubmitElement();
+        parent::handleRemove();
 
-        if ($button !== null) {
-            if ($button->getName() === 'remove' && $this->count === 0) {
-                $this->addAttributes(['class' => 'count-zero-escalation-condition-form']);
-            }
-
-            if ($button->getName() === 'add' && $this->count === 0) {
-                $this->getAttributes()
-                    ->remove('class', 'count-zero-escalation-condition-form');
-            }
+        if (empty($this->options)) {
+            $this->addAttributes(['class' => 'count-zero-escalation-condition-form']);
+        } else {
+            $this->getAttributes()
+                ->remove('class', 'count-zero-escalation-condition-form');
         }
     }
 
@@ -169,6 +164,10 @@ class EscalationConditionForm extends BaseEscalationForm
 
         if ($this->count > 0) { // if count is 0, loop runs in reverse direction
             foreach (range(1, $this->count) as $count) {
+                if ($this->removedOptionNumber === $count) {
+                    continue; // removed option
+                }
+
                 $filterStr = $this->getValue('column' . $count, 'placeholder')
                     . $this->getValue('operator' . $count)
                     . $this->getValue('value' . $count);
@@ -178,7 +177,7 @@ class EscalationConditionForm extends BaseEscalationForm
         }
 
         if ($this->isAddPressed) {
-            $filter->add(QueryString::parse('placeholder'));
+            $filter->add(QueryString::parse('placeholder='));
         }
 
         return QueryString::render($filter);

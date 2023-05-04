@@ -5,6 +5,7 @@
 namespace Icinga\Module\Noma\Forms;
 
 use Icinga\Web\Session;
+use ipl\Html\Contract\FormElement;
 use ipl\Html\Form;
 use ipl\Html\ValidHtml;
 use ipl\I18n\Translation;
@@ -26,8 +27,11 @@ abstract class BaseEscalationForm extends Form
     /** @var bool Whether the `add` button is pressed */
     protected $isAddPressed;
 
-    /** @var ValidHtml The last added wrapper */
-    protected $lastContent;
+    /** @var ValidHtml[] */
+    protected $options;
+
+    /** @var ?int The counter of removed option */
+    protected $removedOptionNumber;
 
     public function __construct(int $count)
     {
@@ -41,7 +45,7 @@ abstract class BaseEscalationForm extends Form
 
     abstract protected function assembleElements(): void;
 
-    protected function assembleAddAndRemoveButton(): void
+    protected function createAddButton(): FormElement
     {
         $addButton = $this->createElement(
             'submitButton',
@@ -56,9 +60,18 @@ abstract class BaseEscalationForm extends Form
 
         $this->registerElement($addButton);
 
+        return $addButton;
+    }
+
+    protected function createRemoveButton(int $count): ?FormElement
+    {
+        if ($this instanceof EscalationRecipientForm && ($this->count === 1 && ! $this->isAddPressed)) {
+            return null;
+        }
+
         $removeButton = $this->createElement(
             'submitButton',
-            'remove',
+            'remove_' . $count,
             [
                 'class'             => ['remove-button', 'control-button', 'spinner'],
                 'label'             => new Icon('minus'),
@@ -69,21 +82,34 @@ abstract class BaseEscalationForm extends Form
 
         $this->registerElement($removeButton);
 
+        return $removeButton;
+    }
+
+    protected function handleRemove(): void
+    {
         $button = $this->getPressedSubmitElement();
-        if ($button !== null) {
-            if ($button->getName() === 'add') {
-                $this->isAddPressed = true;
-                $this->assembleElements();
-            } elseif ($button->getName() === 'remove') {
-                $this->remove($this->lastContent);
-                $this->count--;
+
+        if ($button && $button->getName() !== 'add') {
+            [$name, $toRemove] = explode('_', $button->getName(), 2);
+
+            $this->removedOptionNumber = (int) $toRemove;
+            $optionCount = count($this->options);
+
+            for ($i = $toRemove; $i < $optionCount; $i++) {
+                $nextCount = $i + 1;
+                $this->getElement('column' . $nextCount)->setName('column' . $i);
+                $this->getElement('operator' . $nextCount)->setName('operator' . $i);
+                $this->getElement('value' . $nextCount)->setName('value' . $i);
+                
+                $this->getElement('remove_' . $nextCount)->setName('remove_' . $i);
             }
-        }
 
-        $this->add($addButton);
+            unset($this->options[$toRemove]);
 
-        if ($this->count > 1 || $this->isAddPressed || ($this instanceof EscalationConditionForm && $this->count > 0)) {
-            $this->add($removeButton);
+            if ($this instanceof EscalationRecipientForm && count($this->options) === 1) {
+                $key = array_key_last($this->options);
+                $this->options[$key]->remove($this->getElement('remove_' . $key));
+            }
         }
     }
 
@@ -92,10 +118,17 @@ abstract class BaseEscalationForm extends Form
         $this->add($this->createCsrfCounterMeasure(Session::getSession()->getId()));
         $this->add($this->createUidElement());
 
-        if ($this->count) {
+        $addButton = $this->createAddButton();
+
+        $button = $this->getPressedSubmitElement();
+        if ($button && $button->getName() === 'add') {
+            $this->isAddPressed = true;
+        }
+
+        if ($this->count || $this->isAddPressed) {
             $this->assembleElements();
         }
 
-        $this->assembleAddAndRemoveButton();
+        $this->add($addButton);
     }
 }
