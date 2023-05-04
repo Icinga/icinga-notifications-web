@@ -4,8 +4,10 @@
 
 namespace Icinga\Module\Noma\Forms;
 
+use Icinga\Module\Noma\Web\Form\EventRuleDecorator;
 use ipl\Html\Html;
 use ipl\Stdlib\Filter;
+use ipl\Validator\CallbackValidator;
 use ipl\Web\Filter\QueryString;
 
 class EscalationConditionForm extends BaseEscalationForm
@@ -33,10 +35,9 @@ class EscalationConditionForm extends BaseEscalationForm
                 [
                     'class'             => ['autosubmit', 'left-operand'],
                     'options'           => [
-                        ''          => sprintf(' - %s - ', $this->translate('Please choose')),
-                        'age'       => $this->translate('Escalation Age'),
-                        'incident'  => $this->translate('Incident'),
-                        'ack'       => $this->translate('Acknowledge')
+                        '' => sprintf(' - %s - ', $this->translate('Please choose')),
+                        'incident_severity' => $this->translate('Incident Severity'),
+                        'incident_age' => $this->translate('Incident Age')
                     ],
                     'disabledOptions'   => [''],
                     'required'          => true
@@ -48,24 +49,96 @@ class EscalationConditionForm extends BaseEscalationForm
                 'select',
                 'operator'. $count,
                 [
-                    'class'             => ['class'     => 'operator-input', 'autosubmit'],
-                    'options'           => array_combine($operators, $operators),
-                    'required'          => true
+                    'class' => ['class' => 'operator-input', 'autosubmit'],
+                    'options' => array_combine($operators, $operators),
+                    'required' => true
                 ]
             );
 
-            $val = $this->createElement(
-                'text',
-                'value'. $count,
-                [
-                    'required'  => true,
-                    'class'     => ['autosubmit', 'right-operand']
-                ]
-            );
+            switch ($this->getPopulatedValue('column' . $count)) {
+                case 'incident_severity':
+                    $val = $this->createElement(
+                        'select',
+                        'value' . $count,
+                        [
+                            'required' => true,
+                            'class' => ['autosubmit', 'right-operand'],
+                            'options' => [
+                                'ok' => $this->translate('Ok', 'noma.severity'),
+                                'debug' => $this->translate('Debug', 'noma.severity'),
+                                'info' => $this->translate('Information', 'noma.severity'),
+                                'notice' => $this->translate('Notice', 'noma.severity'),
+                                'warning' => $this->translate('Warning', 'noma.severity'),
+                                'err' => $this->translate('Error', 'noma.severity'),
+                                'crit' => $this->translate('Critical', 'noma.severity'),
+                                'alert' => $this->translate('Alert', 'noma.severity'),
+                                'emerg' => $this->translate('Emergency', 'noma.severity')
+                            ]
+                        ]
+                    );
+
+                    if (
+                        $this->getPopulatedValue('type' . $count) !== 'incident_severity'
+                        && $this->getPopulatedValue('type' . $count) !== null
+                    ) {
+                        $this->clearPopulatedValue('type' . $count);
+                        $this->clearPopulatedValue('value' . $count);
+                    }
+
+                    $this->addElement('hidden', 'type' . $count, [
+                        'ignore' => true,
+                        'value' => 'incident_severity'
+                    ]);
+
+                    break;
+                case 'incident_age':
+                    $val = $this->createElement(
+                        'text',
+                        'value'. $count,
+                        [
+                            'required' => true,
+                            'class' => ['autosubmit', 'right-operand'],
+                            'validators' => [new CallbackValidator(function ($value, $validator) {
+                                if (! preg_match('~^\d+(?:\.?\d*)?[hms]{1}$~', $value)) {
+                                    $validator->addMessage($this->translate(
+                                        'Only numbers with optional fractions (separated by a dot)'
+                                        . ' and one of these suffixes are allowed: h, m, s'
+                                    ));
+
+                                    return false;
+                                }
+
+                                return true;
+                            })]
+                        ]
+                    );
+
+                    if (
+                        $this->getPopulatedValue('type' . $count) !== 'incident_age'
+                        && $this->getPopulatedValue('type' . $count) !== null
+                    ) {
+                        $this->clearPopulatedValue('type' . $count);
+                        $this->clearPopulatedValue('value' . $count);
+                    }
+
+                    $this->addElement('hidden', 'type' . $count, [
+                        'ignore' => true,
+                        'value' => 'incident_age'
+                    ]);
+
+                    break;
+                default:
+                    $val = $this->createElement('text', 'value' . $count, [
+                        'placeholder' => $this->translate('Please make a decision'),
+                        'disabled' => true
+                    ]);
+            }
 
             $this->registerElement($col);
             $this->registerElement($op);
             $this->registerElement($val);
+
+            (new EventRuleDecorator())->decorate($val);
 
             $this->lastContent = Html::tag('div', ['class' => 'condition'], [$col, $op, $val]);
 

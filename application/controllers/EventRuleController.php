@@ -89,6 +89,11 @@ class EventRuleController extends CompatController
 
         foreach ($eventRuleConfig->getForms() as $form) {
             $form->handleRequest($this->getServerRequest());
+
+            if (! $form->hasBeenSent()) {
+                // Force validation of populated values in case we display an unsaved rule
+                $form->validatePartial();
+            }
         }
 
         $this->addControl($saveForm);
