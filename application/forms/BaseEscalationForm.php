@@ -41,13 +41,12 @@ abstract class BaseEscalationForm extends Form
 
     abstract protected function assembleElements(): void;
 
-    protected function assembleAddAndRemoveButton()
+    protected function assembleAddAndRemoveButton(): void
     {
         $addButton = $this->createElement(
             'submitButton',
             'add',
             [
-                //TODO: need changes
                 'class'             => ['add-button', 'control-button', 'spinner'],
                 'label'             => new Icon('plus'),
                 'title'             => $this->translate('Add more'),
@@ -61,7 +60,6 @@ abstract class BaseEscalationForm extends Form
             'submitButton',
             'remove',
             [
-                //TODO: need changes
                 'class'             => ['remove-button', 'control-button', 'spinner'],
                 'label'             => new Icon('minus'),
                 'title'             => $this->translate('Remove'),

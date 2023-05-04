@@ -40,7 +40,7 @@ class EventRulesController extends CompatController
         $this->sessionNamespace = Session::getSession()->getNamespace('noma');
     }
 
-    public function indexAction()
+    public function indexAction(): void
     {
         $this->addTitleTab(t('Event Rules'));
 
@@ -96,16 +96,14 @@ class EventRulesController extends CompatController
         }
     }
 
-    public function addAction()
+    public function addAction(): void
     {
         $this->addTitleTab(t('Add Event Rule'));
 
-        $sessionStorage = Session::getSession()->getNamespace('noma');
-
         if ($this->params->has('use_cache') || $this->getServerRequest()->getMethod() !== 'GET') {
-            $cache = $sessionStorage->get(-1, []);
+            $cache = $this->sessionNamespace->get(-1, []);
         } else {
-            $sessionStorage->delete(-1);
+            $this->sessionNamespace->delete(-1);
 
             $cache = [];
         }
@@ -113,21 +111,21 @@ class EventRulesController extends CompatController
         $eventRuleConfig = new EventRuleConfig(Url::fromPath('noma/event-rules/add-search-editor'), $cache);
 
         $saveForm = (new SaveEventRuleForm())
-            ->on(SaveEventRuleForm::ON_SUCCESS, function ($saveForm) use ($sessionStorage, $eventRuleConfig) {
+            ->on(SaveEventRuleForm::ON_SUCCESS, function ($saveForm) use ($eventRuleConfig) {
                 if (! $eventRuleConfig->isValid()) {
                     $eventRuleConfig->addAttributes(['class' => 'invalid']);
                     return;
                 }
 
-                $id = $saveForm->addRule($sessionStorage->get(-1));
+                $id = $saveForm->addRule($this->sessionNamespace->get(-1));
 
                 Notification::success($this->translate('Successfully added rule.'));
                 $this->sendExtraUpdates(['#col1']);
                 $this->redirectNow(Links::eventRule($id));
             })->handleRequest($this->getServerRequest());
 
-        $eventRuleConfig->on(EventRuleConfig::ON_CHANGE, function ($eventRuleConfig) use ($saveForm, $sessionStorage) {
-            $sessionStorage->set(-1, $eventRuleConfig->getConfig());
+        $eventRuleConfig->on(EventRuleConfig::ON_CHANGE, function ($eventRuleConfig) {
+            $this->sessionNamespace->set(-1, $eventRuleConfig->getConfig());
         });
 
         foreach ($eventRuleConfig->getForms() as $f) {
@@ -160,7 +158,7 @@ class EventRulesController extends CompatController
         $this->setTitle($this->translate('Adjust Filter'));
     }
 
-    public function addSearchEditorAction()
+    public function addSearchEditorAction(): void
     {
         $cache = $this->sessionNamespace->get(-1);
 

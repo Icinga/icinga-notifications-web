@@ -95,13 +95,23 @@ class EventRuleController extends CompatController
         $this->addContent($eventRuleConfig);
     }
 
-    public function fromDb($ruleId)
+    /**
+     * Create config from db
+     *
+     * @param int $ruleId
+     * @return array
+     */
+    public function fromDb(int $ruleId): array
     {
         $query = Rule::on(Database::get())
             ->withoutColumns('timeperiod_id')
             ->filter(Filter::equal('id', $ruleId));
 
         $rule = $query->first();
+        if ($rule === null) {
+            $this->httpNotFound(t('Rule not found'));
+        }
+
         $config = iterator_to_array($rule);
 
         foreach ($rule->rule_escalation as $re) {

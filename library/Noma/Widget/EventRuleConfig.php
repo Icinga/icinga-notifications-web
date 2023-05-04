@@ -35,9 +35,10 @@ class EventRuleConfig extends BaseHtmlElement
 
     protected $tag = 'div';
 
-    /** @var Form[]  */
+    /** @var Form[] */
     private $forms;
 
+    /** @var array The config  */
     protected $config;
 
     /** @var Url The url to open the SearchEditor at */
@@ -46,10 +47,10 @@ class EventRuleConfig extends BaseHtmlElement
     /** @var array */
     private $escalationForms;
 
-    public function __construct(Url $searchEditorUrl, array $config = null)
+    public function __construct(Url $searchEditorUrl, array $config = [])
     {
-        $this->config = $config ?? [];
         $this->searchEditorUrl = $searchEditorUrl;
+        $this->setConfig($config);
 
         $this->createForms();
     }
@@ -57,7 +58,7 @@ class EventRuleConfig extends BaseHtmlElement
     protected function createForms(): void
     {
         $config = $this->getConfig();
-        $addFilter = (new AddFilterForm())
+        $addFilterButton = (new AddFilterForm())
             ->on(Form::ON_SENT, function () {
                 $this->config['showSearchbar'] = true;
 
@@ -75,7 +76,7 @@ class EventRuleConfig extends BaseHtmlElement
 
         $escalations = $config['rule_escalation'] ?? [1 => []];
         $addEscalation = (new AddEscalationForm())
-            ->on(AddEscalationForm::ON_SENT, function (AddEscalationForm $form) use ($escalations) {
+            ->on(AddEscalationForm::ON_SENT, function () use ($escalations) {
                 $newPosition = (int) array_key_last($escalations) + 1;
                 $this->config['rule_escalation'][$newPosition] = [];
                 $this->escalationForms[$newPosition] = [
@@ -88,7 +89,7 @@ class EventRuleConfig extends BaseHtmlElement
 
         $this->forms = [
             $eventRuleForm,
-            $addFilter,
+            $addFilterButton,
             $addEscalation
         ];
 
@@ -130,11 +131,7 @@ class EventRuleConfig extends BaseHtmlElement
             ['_disableLayout' => true, 'showCompact' => true, 'id' => Url::fromRequest()->getParams()->get('id')]
         ));
 
-        $editor->on(SearchEditor::ON_VALIDATE_COLUMN, function (
-            Filter\Condition $condition
-        ) use (
-            $query
-        ) {
+        $editor->on(SearchEditor::ON_VALIDATE_COLUMN, function (Filter\Condition $condition) use ($query) {
             $searchPath = $condition->getColumn();
 
             if ($query->filter(Filter::equal('tag', $searchPath))->count() === 0) {
@@ -153,9 +150,9 @@ class EventRuleConfig extends BaseHtmlElement
 
     protected function assemble()
     {
-        [$eventRuleForm, $addFilter, $addEscalation] = $this->forms;
+        [$eventRuleForm, $addFilterButton, $addEscalation] = $this->forms;
 
-        $addFilterButtonOrSearchBar = $addFilter;
+        $addFilterButtonOrSearchBar = $addFilterButton;
         if (! empty($this->config['showSearchbar'])) {
             $editorOpener = new Link(
                 new Icon('cog'),
@@ -197,7 +194,7 @@ class EventRuleConfig extends BaseHtmlElement
         $this->add($escalations);
     }
 
-    public function getConfig(): ?array
+    public function getConfig(): array
     {
         return $this->config;
     }
