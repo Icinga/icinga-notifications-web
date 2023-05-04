@@ -10,34 +10,6 @@
     }
   }
 
-  .event-rule-form {
-    width: 100%;
-    max-width: unset;
-    border-bottom: 1px solid @gray-lighter;
-
-    .control-group {
-      display: inline-flex;
-      margin-right: 2em;
-
-      :last-child {
-        float: right;
-      }
-
-      .control-label-group {
-        width: auto;
-      }
-
-      input[type='text'] {
-        max-width: unset;
-        width: 25em;
-      }
-    }
-  }
-
-  .event-rule-form .control-group.form-controls {
-    float: right;
-  }
-
   .search-controls {
     margin-top: 1em;
     display: inline-flex;
@@ -54,25 +26,51 @@
     }
   }
 
-  .add-escalation-form {
-    max-width: unset;
-    width: auto;
-    display: inline-flex;
-  }
-
   .escalations {
     display: inline-flex;
     flex-direction: column;
     margin-top: 3em;
-    width: 85em;
-    padding: 2em;
+    position: relative;
+    width: 92em;
+    padding: 2em 2em 2em 0;
 
-    border: 1px solid @gray-lighter;
-    border-radius: 1.5em;
+    .vertical-line {
+      position: absolute;
+      z-index: -1;
+      top: 15%;
+      bottom: 0;
+      margin-left: 1.25em;
+    }
 
     > .escalation {
+      //position: relative;
       display: flex;
       align-items: center;
+      padding-bottom: 5em;
+
+      //> .vertical-line {
+      //  position: absolute;
+      //  margin-left: 1.25em;
+      //  z-index: -1;
+      //  top: 0;
+      //  bottom: 0;
+      //}
+
+      .right-arrow:first-child {
+        width: 2em;
+      }
+
+      .right-arrow-long {
+        width: 36em;
+      }
+
+      .right-arrow.right-arrow-long:first-child {
+        width: 36em;
+      }
+
+      .right-arrow-one-escalation:first-child {
+        width: 14.25em;
+      }
 
       .escalation-condition-form,
       .escalation-recipient-form {
@@ -82,24 +80,16 @@
         padding: 0.5em;
         border: 1px solid @gray-lighter;
         border-radius: 0.5em;
-
-        .condition {
-          .errors {
-            width: auto;
-            margin: 0;
-          }
-        }
-
         .condition:not(:last-child) {
           margin-bottom: .4em;
 
           select, input {
-            min-width: 12.5em;
+            min-width: 13em;
             text-align: center;
             height: 2.25em;
             line-height: normal;
-            background-color: @base-gray;
-            color: @text-color-inverted;
+            background: @search-term-bg;
+            color: @search-term-color;
           }
 
           .left-operand {
@@ -108,7 +98,6 @@
 
           .right-operand {
             border-radius: 0 0.4em 0.4em 0;
-            margin-left: 0.1em;
           }
 
           .operator-input {
@@ -116,19 +105,42 @@
             width: 3em;
             border-radius: unset;
             margin: 0 .1em;
-            background-color: @base-gray;
-            color: @text-color-inverted;
+            background: @search-term-bg;
+            color: @search-term-color;
           }
         }
 
         button[type="submit"] {
           height: 2.25em;
+          margin-left: 0.4em;
         }
       }
-    }
-  }
 
-  .escalations .escalation:not(:last-child) {
-    margin-bottom: 5em;
+      .escalation-condition-form.count-zero-escalation-condition-form {
+        width: fit-content;
+        border: none;
+        margin: 0;
+        padding: 0;
+
+        button[type="submit"] {
+          font-size: 3em;
+          color: @text-color;
+          border: 1px dotted @text-color;
+          margin: 0;
+        }
+
+        button[type="submit"]:hover {
+          background-color: transparent;
+          color: @icinga-blue;
+        }
+      }
+
+      .escalation-condition-form.count-zero-escalation-condition-form:after {
+        content: 'Condition';
+        margin-bottom: -2em;
+        margin-left: -6.5em;
+        align-self: self-end;
+      }
+    }
   }
 }

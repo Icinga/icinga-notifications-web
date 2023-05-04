@@ -63,13 +63,21 @@
   margin: 0 0 1em 1em;
 }
 
-.right-arrow {
-  width: 8em;
+.right-arrow,
+.horizontal-line {
   display: inline-block;
   background-color: @base-gray-lighter;
   height: 0.7em;
-  margin-right: 0.4em;
   text-align: end;
+}
+
+.right-arrow {
+  width: 8em;
+  margin-right: 0.4em;
+}
+
+.horizontal-line {
+  width: 3em;
 }
 
 .right-arrow:after {
@@ -77,4 +85,89 @@
   position: absolute;
   border: 0.4em solid transparent;
   border-left: 0.4em solid @base-gray-lighter;
+}
+
+.add-remove-escalation {
+  list-style-type: none;
+  display: inline-flex;
+  padding: 0;
+  flex-direction: column;
+  margin: 0 2.2em 0 -5.5em;
+}
+
+.vertical-line {
+  width: 0.7em;
+  background-color: @base-gray-lighter;
+}
+
+.remove-escalation-form {
+  width: fit-content;
+}
+
+.add-escalation-form {
+  width: fit-content;
+  margin-left: 32em;
+}
+
+.add-filter-form {
+  display: inline-flex;
+  width: fit-content;
+  border: none;
+  margin: 0;
+  padding: 0;
+
+  button[type="submit"] {
+    font-size: 3em;
+    color: @text-color;
+    border: 1px dotted @text-color;
+    margin: 0;
+  }
+
+  button[type="submit"]:hover {
+    background-color: transparent;
+    color: @icinga-blue;
+  }
+}
+
+.horizontal-line-long {
+  width: 14.5em;
+}
+
+.new-event-rule {
+  margin-bottom: 1em;
+}
+
+.event-rule-and-save-forms {
+  border-bottom: 1px solid @gray-lighter;
+
+  .event-rule-form {
+    display: inline-flex;
+    width: 80%;
+    max-width: unset;
+
+    .control-group {
+      display: inline-flex;
+      margin-right: 2em;
+
+      :last-child {
+        float: right;
+      }
+
+      .control-label-group {
+        width: auto;
+      }
+
+      input[type='text'] {
+        max-width: unset;
+        width: 25em;
+      }
+    }
+  }
+
+
+  .save-event-rule {
+    display: inline-flex;
+    float: right;
+    margin-top: 1em;
+  }
 }

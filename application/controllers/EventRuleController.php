@@ -7,6 +7,7 @@ namespace Icinga\Module\Noma\Controllers;
 use Icinga\Module\Noma\Common\Auth;
 use Icinga\Module\Noma\Common\Database;
 use Icinga\Module\Noma\Common\Links;
+use Icinga\Module\Noma\Forms\EventRuleForm;
 use Icinga\Module\Noma\Forms\SaveEventRuleForm;
 use Icinga\Module\Noma\Model\ObjectExtraTag;
 use Icinga\Module\Noma\Model\Rule;
@@ -14,6 +15,7 @@ use Icinga\Module\Noma\Web\Control\SearchBar\ExtraTagSuggestions;
 use Icinga\Module\Noma\Widget\EventRuleConfig;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
+use ipl\Html\Form;
 use ipl\Html\Html;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
@@ -45,7 +47,7 @@ class EventRuleController extends CompatController
 
         if ($cache) {
             //TODO: just for tests, render correctly
-            $this->addContent(Html::tag('span', 'This is cached config'));
+//            $this->addContent(Html::tag('span', 'This is cached config'));
             $eventRuleConfig = new EventRuleConfig(
                 Url::fromPath('noma/event-rule/search-editor', ['id' => $ruleId]),
                 $cache
@@ -56,6 +58,18 @@ class EventRuleController extends CompatController
                 $this->fromDb($ruleId)
             );
         }
+
+        $eventRuleForm = (new EventRuleForm())
+            ->populate($cache ?? $this->fromDb($ruleId))
+            ->on(Form::ON_SENT, function ($form) use ($eventRuleConfig) {
+                $config = $eventRuleConfig->getConfig();
+                $config['name'] = $form->getValue('name');
+                $config['is_active'] = $form->getValue('is_active');
+
+                $eventRuleConfig->setConfig($config);
+
+                $this->sessionNamespace->set(-1, $eventRuleConfig->getConfig());
+            })->handleRequest($this->getServerRequest());
 
         $saveForm = (new SaveEventRuleForm())
             ->setShowRemoveButton()
@@ -81,6 +95,12 @@ class EventRuleController extends CompatController
                 $this->redirectNow('__CLOSE__');
             })->handleRequest($this->getServerRequest());
 
+        $eventRuleFormAndSave = Html::tag('div', ['class' => 'event-rule-and-save-forms']);
+        $eventRuleFormAndSave->add([
+            $eventRuleForm,
+            $saveForm
+        ]);
+
         $eventRuleConfig
             ->on(EventRuleConfig::ON_CHANGE, function ($eventRuleConfig) use ($ruleId, $saveForm) {
                 $this->sessionNamespace->set($ruleId, $eventRuleConfig->getConfig());
@@ -96,7 +116,7 @@ class EventRuleController extends CompatController
             }
         }
 
-        $this->addControl($saveForm);
+        $this->addControl($eventRuleFormAndSave);
         $this->addContent($eventRuleConfig);
     }
 

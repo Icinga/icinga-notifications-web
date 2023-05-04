@@ -8,8 +8,8 @@ use Icinga\Module\Noma\Forms\AddEscalationForm;
 use Icinga\Module\Noma\Forms\AddFilterForm;
 use Icinga\Module\Noma\Forms\EscalationConditionForm;
 use Icinga\Module\Noma\Forms\EscalationRecipientForm;
-use Icinga\Module\Noma\Forms\EventRuleForm;
 use ipl\Html\Attributes;
+use Icinga\Module\Noma\Forms\RemoveEscalationForm;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Form;
 use ipl\Html\FormElement\TextElement;
@@ -45,9 +45,15 @@ class EventRuleConfig extends BaseHtmlElement
     protected $searchEditorUrl;
 
     /** @var array */
-    private $escalationForms;
+    private $escalationForms = [];
 
-    public function __construct(Url $searchEditorUrl, array $config = [])
+    /** @var RemoveEscalationForm[] */
+    private $removeEscalationForms;
+
+    /** @var int */
+    private $numEscalations;
+
+    public function __construct(Url $searchEditorUrl, $config = [])
     {
         $this->searchEditorUrl = $searchEditorUrl;
         $this->setConfig($config);
@@ -58,27 +64,31 @@ class EventRuleConfig extends BaseHtmlElement
     protected function createForms(): void
     {
         $config = $this->getConfig();
-        $addFilterButton = (new AddFilterForm())
+        $addFilter = (new AddFilterForm())
             ->on(Form::ON_SENT, function () {
                 $this->config['showSearchbar'] = true;
 
                 $this->emit(self::ON_CHANGE, [$this]);
             });
 
-        $eventRuleForm = (new EventRuleForm())
-            ->populate($config)
-            ->on(Form::ON_SENT, function ($form) {
-                $this->config['name'] = $form->getValue('name');
-                $this->config['is_active'] = $form->getValue('is_active');
-
-                $this->emit(self::ON_CHANGE, [$this]);
-            });
-
         $escalations = $config['rule_escalation'] ?? [1 => []];
+
+        if (! isset($this->config['rule_escalation'])) {
+            $this->config['rule_escalation'] = $escalations;
+        }
+
         $addEscalation = (new AddEscalationForm())
             ->on(AddEscalationForm::ON_SENT, function () use ($escalations) {
                 $newPosition = (int) array_key_last($escalations) + 1;
                 $this->config['rule_escalation'][$newPosition] = [];
+
+                $this->removeEscalationForms[$newPosition] =  $this->createRemoveEscalationForm($newPosition);
+
+                if ($newPosition === 2) {
+                    $this->removeEscalationForms[1] =  $this->createRemoveEscalationForm(1);
+                    $this->forms[] = $this->removeEscalationForms[1];
+                }
+
                 $this->escalationForms[$newPosition] = [
                     $this->createConditionForm($newPosition),
                     $this->createRecipientForm($newPosition)
@@ -88,12 +98,10 @@ class EventRuleConfig extends BaseHtmlElement
             });
 
         $this->forms = [
-            $eventRuleForm,
-            $addFilterButton,
+            $addFilter,
             $addEscalation
         ];
 
-        $this->escalationForms = [];
         foreach ($escalations as $position => $escalation) {
             $values = explode('|', $escalation['condition'] ?? '');
             $escalationCondition = $this->createConditionForm($position, $values);
@@ -108,6 +116,13 @@ class EventRuleConfig extends BaseHtmlElement
 
             $this->forms[] = $escalationCondition;
             $this->forms[] = $escalationRecipient;
+
+            if (count($escalations) > 1) {
+                $removeEscalation = $this->createRemoveEscalationForm($position);
+
+                $this->forms[] = $removeEscalation;
+                $this->removeEscalationForms[$position] = $removeEscalation;
+            }
         }
     }
 
@@ -131,7 +146,11 @@ class EventRuleConfig extends BaseHtmlElement
             ['_disableLayout' => true, 'showCompact' => true, 'id' => Url::fromRequest()->getParams()->get('id')]
         ));
 
-        $editor->on(SearchEditor::ON_VALIDATE_COLUMN, function (Filter\Condition $condition) use ($query) {
+        $editor->on(SearchEditor::ON_VALIDATE_COLUMN, function (
+            Filter\Condition $condition
+        ) use (
+            $query
+        ) {
             $searchPath = $condition->getColumn();
 
             if ($query->filter(Filter::equal('tag', $searchPath))->count() === 0) {
@@ -150,9 +169,10 @@ class EventRuleConfig extends BaseHtmlElement
 
     protected function assemble()
     {
-        [$eventRuleForm, $addFilterButton, $addEscalation] = $this->forms;
+        [$addFilter, $addEscalation] = $this->forms;
 
-        $addFilterButtonOrSearchBar = $addFilterButton;
+        $addFilterButtonOrSearchBar = $addFilter;
+        $horizontalLine = (new FlowLine())->getHorizontalLine();
         if (! empty($this->config['showSearchbar'])) {
             $editorOpener = new Link(
                 new Icon('cog'),
@@ -176,25 +196,33 @@ class EventRuleConfig extends BaseHtmlElement
 
             $addFilterButtonOrSearchBar = Html::tag('div', ['class' => 'search-controls icinga-controls']);
             $addFilterButtonOrSearchBar->add([$searchBar, $editorOpener]);
+        } else {
+            $horizontalLine->getAttributes()
+                ->add(['class' => 'horizontal-line-long']);
         }
 
         $this->add([
-            $eventRuleForm,
-            new RightArrow(),
+            (new FlowLine())->getRightArrow(),
             $addFilterButtonOrSearchBar,
-            new RightArrow()
+            $horizontalLine
         ]);
 
         $escalations = new Escalations();
 
         foreach ($this->escalationForms as $position => $escalation) {
-            $escalations->addEscalation($position, $escalation);
+            if (isset($this->removeEscalationForms[$position])) {
+                $escalations->addEscalation($position, $escalation, $this->removeEscalationForms[$position]);
+            } else {
+                $escalations->addEscalation($position, $escalation);
+            }
         }
 
         $this->add($escalations);
+
+        $this->add($addEscalation);
     }
 
-    public function getConfig(): array
+    public function getConfig(): ?array
     {
         return $this->config;
     }
@@ -232,6 +260,8 @@ class EventRuleConfig extends BaseHtmlElement
 
         if ($cnt !== null) {
             $form->populate($values);
+        } else {
+            $form->addAttributes(['class' => 'count-zero-escalation-condition-form']);
         }
 
         return $form;
@@ -253,5 +283,69 @@ class EventRuleConfig extends BaseHtmlElement
         }
 
         return $form;
+    }
+
+    private function createRemoveEscalationForm(int $position): RemoveEscalationForm
+    {
+        return (new RemoveEscalationForm())
+            ->addAttributes(['name' => 'remove-escalation-form-' . $position])
+            ->on(Form::ON_SENT, function ($form) use ($position) {
+                unset($this->config['rule_escalation'][$position]);
+                unset($this->escalationForms[$position]);
+                unset($this->removeEscalationForms[$position]);
+
+                if (! empty($this->config['rule_escalation'])) {
+                    $this->config['rule_escalation'] = array_combine(
+                        range(
+                            1,
+                            count($this->config['rule_escalation'])
+                        ),
+                        array_values($this->config['rule_escalation'])
+                    );
+                }
+
+                if (! empty($this->removeEscalationForms)) {
+                    $this->removeEscalationForms = array_combine(
+                        range(
+                            1,
+                            count($this->removeEscalationForms)
+                        ),
+                        array_values($this->removeEscalationForms)
+                    );
+                }
+
+                if (! empty($this->escalationForms)) {
+                    $this->escalationForms = array_combine(
+                        range(
+                            1,
+                            count($this->escalationForms)
+                        ),
+                        array_values($this->escalationForms)
+                    );
+                }
+
+                $numEscalation = count($this->escalationForms);
+
+                foreach ($this->removeEscalationForms as $position => $removeEscalationForm) {
+                    $this->removeEscalationForms[$position] = $removeEscalationForm
+                        ->setAttribute('name', 'remove-escalation-form-' . $position);
+                }
+
+                foreach ($this->escalationForms as $position => $escalationForm) {
+                    $conditionForm = $escalationForm[0]
+                        ->setAttribute('name', 'escalation-condition-form-' . $position);
+
+                    $recipientForm = $escalationForm[1]
+                        ->setAttribute('name', 'escalation-recipient-form-' . $position);
+
+                    $this->escalationForms[$position] = [$conditionForm, $recipientForm];
+                }
+
+                if ($numEscalation === 1) {
+                    unset($this->removeEscalationForms[1]);
+                }
+
+                $this->emit(self::ON_CHANGE, [$this]);
+            });
     }
 }

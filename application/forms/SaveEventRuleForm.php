@@ -22,7 +22,7 @@ class SaveEventRuleForm extends Form
     const ON_REMOVE = 'on_remove';
 
     protected $defaultAttributes = [
-        'class' => 'icinga-controls',
+        'class' => ['icinga-controls', 'save-event-rule'],
         'name'  => 'save-event-rule'
     ];
 

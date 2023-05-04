@@ -146,6 +146,23 @@ class EscalationConditionForm extends BaseEscalationForm
         }
     }
 
+    protected function assembleAddAndRemoveButton(): void
+    {
+        parent::assembleAddAndRemoveButton();
+        $button = $this->getPressedSubmitElement();
+
+        if ($button !== null) {
+            if ($button->getName() === 'remove' && $this->count === 0) {
+                $this->addAttributes(['class' => 'count-zero-escalation-condition-form']);
+            }
+
+            if ($button->getName() === 'add' && $this->count === 0) {
+                $this->getAttributes()
+                    ->remove('class', 'count-zero-escalation-condition-form');
+            }
+        }
+    }
+
     public function getValues()
     {
         $filter = Filter::any();

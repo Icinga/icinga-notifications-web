@@ -6,6 +6,7 @@ namespace Icinga\Module\Noma\Controllers;
 
 use Icinga\Module\Noma\Common\Database;
 use Icinga\Module\Noma\Common\Links;
+use Icinga\Module\Noma\Forms\EventRuleForm;
 use Icinga\Module\Noma\Forms\SaveEventRuleForm;
 use Icinga\Module\Noma\Model\ObjectExtraTag;
 use Icinga\Module\Noma\Model\Rule;
@@ -14,6 +15,8 @@ use Icinga\Module\Noma\Widget\EventRuleConfig;
 use Icinga\Module\Noma\Widget\ItemList\EventRuleList;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
+use ipl\Html\Form;
+use ipl\Html\Html;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
@@ -81,12 +84,13 @@ class EventRulesController extends CompatController
         $this->addControl($sortControl);
         $this->addControl($limitControl);
         $this->addControl($searchBar);
-        $this->addControl(
+        $this->addContent(
             (new ButtonLink(
                 t('New Event Rule'),
                 'noma/event-rules/add',
                 'plus'
             ))->setBaseTarget('_next')
+            ->addAttributes(['class' => 'new-event-rule'])
         );
 
         $this->addContent(new EventRuleList($eventRules));
@@ -110,6 +114,17 @@ class EventRulesController extends CompatController
 
         $eventRuleConfig = new EventRuleConfig(Url::fromPath('noma/event-rules/add-search-editor'), $cache);
 
+        $eventRuleForm = (new EventRuleForm())
+            ->populate($cache)
+            ->on(Form::ON_SENT, function ($form) use ($eventRuleConfig) {
+                $config = $eventRuleConfig->getConfig();
+                $config['name'] = $form->getValue('name');
+                $config['is_active'] = $form->getValue('is_active');
+
+                $eventRuleConfig->setConfig($config);
+                $this->sessionNamespace->set(-1, $eventRuleConfig->getConfig());
+            })->handleRequest($this->getServerRequest());
+
         $saveForm = (new SaveEventRuleForm())
             ->on(SaveEventRuleForm::ON_SUCCESS, function ($saveForm) use ($eventRuleConfig) {
                 if (! $eventRuleConfig->isValid()) {
@@ -132,7 +147,13 @@ class EventRulesController extends CompatController
             $f->handleRequest($this->getServerRequest());
         }
 
-        $this->addControl($saveForm);
+        $eventRuleFormAndSave = Html::tag('div', ['class' => 'event-rule-and-save-forms']);
+        $eventRuleFormAndSave->add([
+            $eventRuleForm,
+            $saveForm
+        ]);
+
+        $this->addControl($eventRuleFormAndSave);
         $this->addContent($eventRuleConfig);
     }
 

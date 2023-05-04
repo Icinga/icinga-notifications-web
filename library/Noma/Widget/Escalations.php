@@ -6,6 +6,7 @@ namespace Icinga\Module\Noma\Widget;
 
 use Icinga\Module\Noma\Common\Database;
 use Icinga\Module\Noma\Forms\EventRuleForm;
+use Icinga\Module\Noma\Forms\RemoveEscalationForm;
 use Icinga\Module\Noma\Model\ObjectExtraTag;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Form;
@@ -29,19 +30,45 @@ class Escalations extends BaseHtmlElement
 
     protected function assemble()
     {
+        $this->add((new FlowLine())->getVerticalLine());
         $this->add($this->escalations);
     }
 
-    public function addEscalation($position, $escalation)
+    public function addEscalation(int $position, array $escalation, ?RemoveEscalationForm $removeEscalationForm = null)
     {
-        $this->escalations[$position] = Html::tag(
-            'div',
-            ['class' => 'escalation'],
-            [
-                $escalation[0],
-                new RightArrow(),
-                $escalation[1]
-            ]
-        );
+        $flowLine = (new FlowLine())->getRightArrow();
+
+        if (in_array(
+            'count-zero-escalation-condition-form',
+            $escalation[0]->getAttributes()->get('class')->getValue()
+        )) {
+            $flowLine->addAttributes(['class' => 'right-arrow-long']);
+        }
+
+        if ($removeEscalationForm) {
+            $this->escalations[$position] = Html::tag(
+                'div',
+                ['class' => 'escalation'],
+                [
+                    $removeEscalationForm,
+                    $flowLine,
+                    $escalation[0],
+                    $flowLine,
+                    $escalation[1],
+                    (new FlowLine())->getVerticalLine()
+                ]
+            );
+        } else {
+            $this->escalations[$position] = Html::tag(
+                'div',
+                ['class' => 'escalation'],
+                [
+                    $flowLine->addAttributes(['class' => 'right-arrow-one-escalation']),
+                    $escalation[0],
+                    $flowLine,
+                    $escalation[1]
+                ]
+            );
+        }
     }
 }
