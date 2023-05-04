@@ -11,7 +11,6 @@ use Icinga\Module\Noma\Model\Contact;
 use Icinga\Module\Noma\Web\Form\ContactForm;
 use Icinga\Module\Noma\Widget\ItemList\ContactList;
 use Icinga\Web\Notification;
-use ipl\Orm\Query;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
@@ -111,6 +110,7 @@ class ContactsController extends CompatController
 
         $form = (new ContactForm($this->db))
             ->on(ContactForm::ON_SUCCESS, function (ContactForm $form) {
+                $form->addOrUpdateContact();
                 Notification::success(t('New contact has successfully been added'));
                 $this->redirectNow(Url::fromPath('noma/contacts'));
             })->handleRequest($this->getServerRequest());

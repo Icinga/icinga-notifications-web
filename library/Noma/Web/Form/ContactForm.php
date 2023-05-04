@@ -11,6 +11,7 @@ use ipl\Html\Contract\FormSubmitElement;
 use ipl\Html\FormElement\FieldsetElement;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
+use ipl\Validator\CallbackValidator;
 use ipl\Validator\EmailAddressValidator;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
@@ -18,6 +19,9 @@ use ipl\Web\Compat\CompatForm;
 class ContactForm extends CompatForm
 {
     use CsrfCounterMeasure;
+
+    /** @var string Emitted in case the contact should be deleted */
+    public const ON_REMOVE = 'on_remove';
 
     /** @var Connection */
     private $db;
@@ -29,6 +33,34 @@ class ContactForm extends CompatForm
     {
         $this->db = $db;
         $this->contactId = $contactId;
+
+        $this->on(self::ON_SENT, function () {
+            if ($this->hasBeenRemoved()) {
+                $this->emit(self::ON_REMOVE, [$this]);
+            }
+        });
+    }
+
+    /**
+     * Get whether the user pushed the remove button
+     *
+     * @return bool
+     */
+    private function hasBeenRemoved(): bool
+    {
+        $btn = $this->getPressedSubmitElement();
+        $csrf = $this->getElement('CSRFToken');
+
+        return $csrf !== null && $csrf->isValid() && $btn !== null && $btn->getName() === 'delete';
+    }
+
+    public function isValidEvent($event)
+    {
+        if ($event === self::ON_REMOVE) {
+            return true;
+        }
+
+        return parent::isValidEvent($event);
     }
 
     protected function assemble()
@@ -57,7 +89,18 @@ class ContactForm extends CompatForm
             'username',
             [
                 'label'    => $this->translate('Username'),
-                'required' => true
+                'validators' => [new CallbackValidator(function ($value, $validator) {
+                    $contact = Contact::on($this->db)
+                        ->filter(Filter::equal('username', $value))
+                        ->first();
+                    if ($contact !== null) {
+                        $validator->addMessage($this->translate('A contact with the same username already exists.'));
+
+                        return false;
+                    }
+
+                    return true;
+                })]
             ]
         );
 
@@ -150,26 +193,8 @@ class ContactForm extends CompatForm
         return $this;
     }
 
-    public function hasBeenSubmitted()
+    public function addOrUpdateContact()
     {
-        if ($this->getPressedSubmitElement() !== null && $this->getPressedSubmitElement()->getName() === 'delete') {
-            return true;
-        }
-
-        return parent::hasBeenSubmitted();
-    }
-
-    protected function onSuccess()
-    {
-        if ($this->getPressedSubmitElement()->getName() === 'delete') {
-            $this->db->beginTransaction();
-            $this->db->delete('contact_address', ['contact_id = ?' => $this->contactId]);
-            $this->db->delete('contact', ['id = ?' => $this->contactId]);
-            $this->db->commitTransaction();
-
-            return;
-        }
-
         $contactInfo = $this->getValues();
 
         $contact = $contactInfo['contact'];
@@ -208,6 +233,14 @@ class ContactForm extends CompatForm
             $this->insertOrUpdateAddress($type, $addressFromForm, $addressFromDb);
         }
 
+        $this->db->commitTransaction();
+    }
+
+    public function removeContact()
+    {
+        $this->db->beginTransaction();
+        $this->db->delete('contact_address', ['contact_id = ?' => $this->contactId]);
+        $this->db->delete('contact', ['id = ?' => $this->contactId]);
         $this->db->commitTransaction();
     }
 
