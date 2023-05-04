@@ -30,7 +30,6 @@ class Escalations extends BaseHtmlElement
 
     protected function assemble()
     {
-        $this->add((new FlowLine())->getVerticalLine());
         $this->add($this->escalations);
     }
 
@@ -55,7 +54,6 @@ class Escalations extends BaseHtmlElement
                     $escalation[0],
                     $flowLine,
                     $escalation[1],
-                    (new FlowLine())->getVerticalLine()
                 ]
             );
         } else {
