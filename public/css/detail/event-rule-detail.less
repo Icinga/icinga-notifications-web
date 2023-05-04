@@ -43,18 +43,28 @@
     }
 
     > .escalation {
-      //position: relative;
       display: flex;
       align-items: center;
       padding-bottom: 5em;
+      position: relative;
 
-      //> .vertical-line {
-      //  position: absolute;
-      //  margin-left: 1.25em;
-      //  z-index: -1;
-      //  top: 0;
-      //  bottom: 0;
-      //}
+      &:before {
+        content: "";
+        display: block;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: .5em;
+        margin-left: 1.5em;
+        background: @gray-lighter;
+        z-index: -1;
+      }
+
+      &:first-child:before {
+        content: "";
+        display: block;
+        top: calc(~"50% - 2.5em");
+      }
 
       .right-arrow:first-child {
         width: 2em;
