@@ -107,6 +107,19 @@
 .add-escalation-form {
   width: fit-content;
   margin-left: 32em;
+  position: relative;
+
+  &:before {
+    content: "";
+    display: block;
+    background: @gray-lighter;
+    margin-left: calc(~"1.5em + 1px");
+    top: -5em;
+    bottom: 0;
+    width: .5em;
+    position: absolute;
+    z-index: -1;
+  }
 }
 
 .add-filter-form {
