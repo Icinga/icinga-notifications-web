@@ -211,7 +211,7 @@ class ChannelForm extends CompatForm
     public function populate($values)
     {
         if ($values instanceof Channel) {
-            $values->config = json_decode($values->config);
+            $values->config = json_decode($values->config) ?? [];
         }
 
         parent::populate($values);
