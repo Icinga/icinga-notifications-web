@@ -5,9 +5,9 @@ namespace Icinga\Module\Noma\Controllers;
 use Icinga\Module\Noma\Common\Database;
 use Icinga\Module\Noma\Model\Schedule;
 use Icinga\Module\Noma\Widget\Calendar\Controls;
-use ipl\Html\Form;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
+use ipl\Web\Compat\CompatForm;
 use ipl\Web\Url;
 use ipl\Web\Widget\ButtonLink;
 
@@ -22,11 +22,13 @@ class SchedulesController extends CompatController
         $scheduleId = $this->params->get('schedule', key($schedules));
 
         if ($scheduleId) {
-            $form = new Form();
+            $form = new CompatForm();
             $form->setMethod('GET');
+            $form->addAttributes(['class' => ['inline', 'select-schedule-control']]);
             $form->addElement('select', 'schedule', [
                 'options' => $schedules,
-                'class' => 'autosubmit'
+                'class' => 'autosubmit',
+                'label' => t('Select Schedule')
             ]);
 
             $form->handleRequest($this->getServerRequest());
