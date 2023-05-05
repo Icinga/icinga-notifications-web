@@ -97,24 +97,22 @@ abstract class BaseGrid extends BaseHtmlElement
     {
         $url = $this->calendar->getAddEventUrl();
         foreach ($this->createGridSteps() as $gridStep) {
-            $content = new HtmlElement(
-                'div',
-                Attributes::create(['class' => 'content'])
-            );
-            $this->assembleGridStep($content, $gridStep);
-
             $step = new HtmlElement(
                 'div',
                 Attributes::create([
                     'class' => 'step',
                     'data-start' => $gridStep->format(DateTimeInterface::ATOM)
-                ]),
-                $content
+                ])
             );
 
             if ($url !== null) {
-                $step->addHtml(new Link(null, $url->with('start', $gridStep->format('Y-m-d\TH:i:s'))));
+                $content = new Link(null, $url->with('start', $gridStep->format('Y-m-d\TH:i:s')));
+                $step->addHtml($content);
+            } else {
+                $content = $step;
             }
+
+            $this->assembleGridStep($content, $gridStep);
 
             $grid->addHtml($step);
         }
@@ -257,6 +255,13 @@ abstract class BaseGrid extends BaseHtmlElement
 
     protected function assembleEntry(BaseHtmlElement $entry, Event $event, bool $isContinuation): void
     {
+        if (($url = $event->getUrl()) !== null) {
+            $entryContainer = new Link(null, $url);
+            $entry->addHtml($entryContainer);
+        } else {
+            $entryContainer = $entry;
+        }
+
         $title = new HtmlElement('p', Attributes::create(['class' => 'title']));
         if (! $isContinuation) {
             $title->addHtml(new HtmlElement(
@@ -277,16 +282,12 @@ abstract class BaseGrid extends BaseHtmlElement
             )
         );
 
-        $entry->addHtml(new HtmlElement(
+        $entryContainer->addHtml(new HtmlElement(
             'div',
             Attributes::create(['class' => 'content']),
             $title,
             new HtmlElement('p', Attributes::create(['class' => 'description']), Text::create($event->getDescription()))
         ));
-
-        if (($url = $event->getUrl()) !== null) {
-            $entry->addHtml(new Link(null, $url));
-        }
     }
 
     protected function roundToNearestThirtyMinute(DateTime $time): DateTime

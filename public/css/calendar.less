@@ -14,16 +14,6 @@
     }
   }
 
-  .step,
-  .entry {
-    display: grid;
-
-    .content,
-    > a {
-      grid-area: ~"1 / 1 / 2 / 2";
-    }
-  }
-
   .entry .title {
     time,
     .attendee {
@@ -81,10 +71,6 @@
 
     &::before {
       grid-area: ~"1 / 1 / 2 / 2";
-    }
-
-    .content {
-      height: 100% / @rowsPerDay;
     }
   }
 
