@@ -1,0 +1,44 @@
+.view-mode-switcher {
+  border: none;
+
+  list-style-type: none;
+  margin: 0 0 0.25em 0;
+  padding: 0;
+  display: inline-flex;
+
+  input {
+    display: none;
+  }
+
+  label {
+    color: @control-color;
+    background: @low-sat-blue;
+    padding: 14/16*.25em 14/16*.5em;
+    cursor: pointer;
+
+    &:first-of-type {
+      border-top-left-radius: 0.25em;
+      border-bottom-left-radius: 0.25em;
+    }
+
+    &:last-of-type {
+      border-top-right-radius: 0.25em;
+      border-bottom-right-radius: 0.25em;
+    }
+
+    &:not(:last-of-type) {
+      border-right: 1px solid @low-sat-blue-dark;
+    }
+
+    i {
+      // fix height for Chrome
+      display: block;
+    }
+  }
+
+  input[checked] + label {
+    background-color: @control-color;
+    color: @text-color-on-icinga-blue;
+    cursor: default;
+  }
+}
