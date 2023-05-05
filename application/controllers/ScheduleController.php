@@ -90,7 +90,14 @@ class ScheduleController extends CompatController
         $form->handleRequest($this->getServerRequest());
 
         if (empty($this->parts)) {
-            $this->addPart(Html::tag('div', ['id' => $this->getRequest()->getHeader('X-Icinga-Container')], $form));
+            $this->addPart(Html::tag(
+                'div',
+                ['id' => $this->getRequest()->getHeader('X-Icinga-Container')],
+                [
+                    Html::tag('h2', null, $this->translate('Add Event')),
+                    $form
+                ]
+            ));
         }
     }
 
@@ -131,7 +138,14 @@ class ScheduleController extends CompatController
         $form->handleRequest($this->getServerRequest());
 
         if (empty($this->parts)) {
-            $this->addPart(Html::tag('div', ['id' => $this->getRequest()->getHeader('X-Icinga-Container')], $form));
+            $this->addPart(Html::tag(
+                'div',
+                ['id' => $this->getRequest()->getHeader('X-Icinga-Container')],
+                [
+                    Html::tag('h2', null, $this->translate('Edit Event')),
+                    $form
+                ]
+            ));
         }
     }
 
