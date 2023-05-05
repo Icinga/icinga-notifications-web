@@ -26,7 +26,8 @@ class Contact extends Model
         return [
             'full_name',
             'username',
-            'color'
+            'color',
+            'default_channel'
         ];
     }
 
