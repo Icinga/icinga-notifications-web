@@ -127,6 +127,7 @@ class EscalationConditionForm extends BaseEscalationForm
                     break;
                 default:
                     $val = $this->createElement('text', 'value' . $count, [
+                        'class'       => 'right-operand',
                         'placeholder' => $this->translate('Please make a decision'),
                         'disabled' => true
                     ]);
@@ -138,7 +139,11 @@ class EscalationConditionForm extends BaseEscalationForm
 
             (new EventRuleDecorator())->decorate($val);
 
-            $this->options[$count] = Html::tag('li', [$col, $op, $val, $this->createRemoveButton($count)]);
+            $this->options[$count] = Html::tag(
+                'li',
+                ['class' => 'option'],
+                [$col, $op, $val, $this->createRemoveButton($count)]
+            );
         }
 
         $this->handleRemove();

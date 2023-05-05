@@ -1,4 +1,8 @@
 .event-rule-detail {
+  display: flex;
+  align-items: baseline;
+  margin-left: 5em;
+
   &.invalid {
     .escalations .escalation form.escalation-form {
       select,
@@ -21,7 +25,7 @@
 
     input.filter-input {
       width: 20em;
-      background-color: @base-gray;
+      background-color: @search-term-bg;
       color: @text-color-inverted;
     }
   }
@@ -31,7 +35,7 @@
     flex-direction: column;
     margin-top: 3em;
     position: relative;
-    width: 92em;
+    width: 85em;
     padding: 2em 2em 2em 0;
 
     .vertical-line {
@@ -71,21 +75,22 @@
       }
 
       .right-arrow-long {
-        width: 36em;
+        width: 40em;
       }
 
       .right-arrow.right-arrow-long:first-child {
-        width: 36em;
+        width: 47em;
       }
 
       .right-arrow-one-escalation:first-child {
-        width: 14.25em;
+        width: 15em;
       }
 
       .escalation-condition-form,
       .escalation-recipient-form {
         display: flex;
         flex-wrap: wrap;
+        width: 100%;
 
         padding: 0.5em;
         border: 1px solid @gray-lighter;
@@ -94,6 +99,20 @@
           list-style-type: none;
           padding: 0;
           margin-bottom: .4em;
+
+          .option {
+            width: max-content;
+            margin-bottom: .4em;
+            .errors {
+              display: inline-flex;
+              width: fit-content;
+              margin: 0;
+            }
+
+            .errors + .remove-button {
+              margin: 0;
+            }
+          }
 
           select, input {
             min-width: 13em;
@@ -114,6 +133,7 @@
 
           .operator-input {
             min-width: unset;
+            padding-right: 0.5em;
             width: 3em;
             border-radius: unset;
             margin: 0 .1em;
@@ -122,9 +142,16 @@
           }
         }
 
-        button[type="submit"] {
+        .remove-button {
           height: 2.25em;
-          margin-left: 0.4em;
+          margin-left: 0.5em;
+        }
+
+        .add-button {
+          width: 83.5%;
+          height: 2.25em;
+          align-items: flex-end;
+          justify-content: center;
         }
       }
 
@@ -136,6 +163,7 @@
 
         button[type="submit"] {
           font-size: 3em;
+          width: 3em;
           color: @text-color;
           border: 1px dotted @text-color;
           margin: 0;
@@ -154,5 +182,12 @@
         align-self: self-end;
       }
     }
+  }
+}
+
+.escalations-with-add-form {
+  .add-escalation-form {
+    position: relative;
+    margin-left: -0.1em;
   }
 }

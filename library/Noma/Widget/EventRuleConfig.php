@@ -237,9 +237,14 @@ class EventRuleConfig extends BaseHtmlElement
             }
         }
 
-        $this->add($escalations);
+        $escalationswithAdd = Html::tag('div', ['class' => 'escalations-with-add-form']);
 
-        $this->add($addEscalation);
+        $escalationswithAdd->add([
+            $escalations,
+            $addEscalation
+        ]);
+
+        $this->add($escalationswithAdd);
     }
 
     public function getConfig(): ?array

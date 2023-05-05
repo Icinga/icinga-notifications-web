@@ -67,32 +67,27 @@
 .horizontal-line {
   display: inline-block;
   background-color: @base-gray-lighter;
-  height: 0.7em;
+  height: 0.5em;
   text-align: end;
 }
 
 .right-arrow {
-  width: 8em;
+  width: 10em;
+  min-width: 2em;
   margin-right: 0.4em;
+  position: relative;
 }
 
 .horizontal-line {
   width: 3em;
+  min-width: 1em;
 }
 
 .right-arrow:after {
   content: '';
   position: absolute;
-  border: 0.4em solid transparent;
+  border: 0.3em solid transparent;
   border-left: 0.4em solid @base-gray-lighter;
-}
-
-.add-remove-escalation {
-  list-style-type: none;
-  display: inline-flex;
-  padding: 0;
-  flex-direction: column;
-  margin: 0 2.2em 0 -5.5em;
 }
 
 .vertical-line {
@@ -104,10 +99,15 @@
   width: fit-content;
 }
 
+#layout.minimal-layout form.icinga-form:not(.inline).remove-escalation-form:not(.inline),
+#layout.twocols:not(.wide-layout) form.icinga-form.remove-escalation-form:not(.inline) {
+  width: fit-content;
+}
+
 .add-escalation-form {
   width: fit-content;
-  margin-left: 32em;
-  position: relative;
+  position: absolute;
+  align-self: flex-end;
 
   &:before {
     content: "";
@@ -122,15 +122,23 @@
   }
 }
 
+#layout.minimal-layout form.icinga-form:not(.inline).count-zero-escalation-condition-form:not(.inline),
+#layout.twocols:not(.wide-layout) form.icinga-form.escalation-condition-form.count-zero-escalation-condition-form:not(.inline) {
+  width: fit-content;
+}
+
 .add-filter-form {
   display: inline-flex;
+  flex-wrap: wrap;
   width: fit-content;
+  height: fit-content;
   border: none;
   margin: 0;
   padding: 0;
 
   button[type="submit"] {
     font-size: 3em;
+    height: 2.25em;
     color: @text-color;
     border: 1px dotted @text-color;
     margin: 0;
@@ -142,6 +150,13 @@
   }
 }
 
+.add-filter-form:after {
+  content: 'Filter';
+  margin-bottom: -2em;
+  margin-left: -6em;
+  align-self: self-end;
+}
+
 .horizontal-line-long {
   width: 14.5em;
 }
@@ -151,11 +166,15 @@
 }
 
 .event-rule-and-save-forms {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
   border-bottom: 1px solid @gray-lighter;
+  padding-bottom: 0.5em;
 
   .event-rule-form {
     display: inline-flex;
-    width: 80%;
+    width: fit-content;
     max-width: unset;
 
     .control-group {
@@ -179,8 +198,9 @@
 
 
   .save-event-rule {
+    height: 2.25em;
     display: inline-flex;
     float: right;
-    margin-top: 1em;
+    margin: 1em 0 0 auto;
   }
 }
