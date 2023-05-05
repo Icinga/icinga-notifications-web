@@ -58,18 +58,6 @@ class EventRuleController extends CompatController
             );
         }
 
-        $eventRuleForm = (new EventRuleForm())
-            ->populate($cache ?? $this->fromDb($ruleId))
-            ->on(Form::ON_SENT, function ($form) use ($eventRuleConfig) {
-                $config = $eventRuleConfig->getConfig();
-                $config['name'] = $form->getValue('name');
-                $config['is_active'] = $form->getValue('is_active');
-
-                $eventRuleConfig->setConfig($config);
-
-                $this->sessionNamespace->set(-1, $eventRuleConfig->getConfig());
-            })->handleRequest($this->getServerRequest());
-
         $saveForm = (new SaveEventRuleForm())
             ->setShowRemoveButton()
             ->setSubmitButtonDisabled($cache === null)
@@ -92,6 +80,19 @@ class EventRuleController extends CompatController
 
                 Notification::success($this->translate('Successfully removed rule.'));
                 $this->redirectNow('__CLOSE__');
+            })->handleRequest($this->getServerRequest());
+
+        $eventRuleForm = (new EventRuleForm())
+            ->populate($cache ?? $this->fromDb($ruleId))
+            ->on(Form::ON_SENT, function ($form) use ($ruleId, $eventRuleConfig, $saveForm) {
+                $config = $eventRuleConfig->getConfig();
+                $config['name'] = $form->getValue('name');
+                $config['is_active'] = $form->getValue('is_active');
+
+                $eventRuleConfig->setConfig($config);
+
+                $this->sessionNamespace->set($ruleId, $eventRuleConfig->getConfig());
+                $saveForm->setSubmitButtonDisabled(false);
             })->handleRequest($this->getServerRequest());
 
         $eventRuleFormAndSave = Html::tag('div', ['class' => 'event-rule-and-save-forms']);
