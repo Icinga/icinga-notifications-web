@@ -71,7 +71,7 @@ class EventRuleConfig extends BaseHtmlElement
                 $this->emit(self::ON_CHANGE, [$this]);
             });
 
-        $escalations = $config['rule_escalation'] ?? [1 => []];
+        $escalations = $config['rule_escalation'] ?? [1 => ['id' => $this->generateFakeEscalationId()]];
 
         if (! isset($this->config['rule_escalation'])) {
             $this->config['rule_escalation'] = $escalations;
@@ -80,7 +80,7 @@ class EventRuleConfig extends BaseHtmlElement
         $addEscalation = (new AddEscalationForm())
             ->on(AddEscalationForm::ON_SENT, function () use ($escalations) {
                 $newPosition = (int) array_key_last($escalations) + 1;
-                $this->config['rule_escalation'][$newPosition] = [];
+                $this->config['rule_escalation'][$newPosition] = ['id' => $this->generateFakeEscalationId()];
 
                 $this->removeEscalationForms[$newPosition] =  $this->createRemoveEscalationForm($newPosition);
 
@@ -287,8 +287,10 @@ class EventRuleConfig extends BaseHtmlElement
 
     private function createRemoveEscalationForm(int $position): RemoveEscalationForm
     {
+        $escalationId = $this->config['rule_escalation'][$position]['id'];
+
         return (new RemoveEscalationForm())
-            ->addAttributes(['name' => 'remove-escalation-form-' . $position])
+            ->addAttributes(['name' => 'remove-escalation-form-' . $escalationId])
             ->on(Form::ON_SENT, function ($form) use ($position) {
                 unset($this->config['rule_escalation'][$position]);
                 unset($this->escalationForms[$position]);
@@ -325,27 +327,16 @@ class EventRuleConfig extends BaseHtmlElement
                 }
 
                 $numEscalation = count($this->escalationForms);
-
-                foreach ($this->removeEscalationForms as $position => $removeEscalationForm) {
-                    $this->removeEscalationForms[$position] = $removeEscalationForm
-                        ->setAttribute('name', 'remove-escalation-form-' . $position);
-                }
-
-                foreach ($this->escalationForms as $position => $escalationForm) {
-                    $conditionForm = $escalationForm[0]
-                        ->setAttribute('name', 'escalation-condition-form-' . $position);
-
-                    $recipientForm = $escalationForm[1]
-                        ->setAttribute('name', 'escalation-recipient-form-' . $position);
-
-                    $this->escalationForms[$position] = [$conditionForm, $recipientForm];
-                }
-
                 if ($numEscalation === 1) {
                     unset($this->removeEscalationForms[1]);
                 }
 
                 $this->emit(self::ON_CHANGE, [$this]);
             });
+    }
+
+    private function generateFakeEscalationId(): string
+    {
+        return bin2hex(random_bytes(4));
     }
 }
