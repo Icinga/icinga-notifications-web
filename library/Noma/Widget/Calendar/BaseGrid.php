@@ -231,7 +231,8 @@ abstract class BaseGrid extends BaseHtmlElement
 
                 $style->addRule(".$entryClass", [
                     'grid-area' => sprintf('~"%d / %d / %d / %d"', ...$gridArea),
-                    'background-color' => $event->getAttendee()->getColor()
+                    'background-color' => $event->getAttendee()->getColor() . dechex((int) (256 * 0.1)),
+                    'border-color' => $event->getAttendee()->getColor() . dechex((int) (256 * 0.5))
                 ]);
 
                 $entry = new HtmlElement(
