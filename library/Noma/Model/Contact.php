@@ -25,7 +25,8 @@ class Contact extends Model
     {
         return [
             'full_name',
-            'username'
+            'username',
+            'color'
         ];
     }
 
@@ -33,7 +34,8 @@ class Contact extends Model
     {
         return [
             'full_name' => t('Full Name'),
-            'username'  => t('Username')
+            'username'  => t('Username'),
+            'color'     => t('Color')
         ];
     }
 
