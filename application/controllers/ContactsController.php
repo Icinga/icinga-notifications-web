@@ -41,8 +41,6 @@ class ContactsController extends CompatController
 
     public function indexAction()
     {
-        $this->addTitleTab(t('Contacts'));
-
         $contacts = Contact::on($this->db);
 
         $contacts->withColumns(
@@ -102,6 +100,9 @@ class ContactsController extends CompatController
         }
 
         $this->setAutorefreshInterval(30);
+
+        $this->setTitle($this->translate('Contacts'));
+        $this->getTabs()->activate('contacts');
     }
 
     public function addAction()
@@ -168,5 +169,17 @@ class ContactsController extends CompatController
         }
 
         return $this->filter;
+    }
+
+    public function getTabs()
+    {
+        return parent::getTabs()
+            ->add('schedules', [
+                'label' => $this->translate('Schedules'),
+                'url'   => Url::fromPath('noma/schedules')
+            ])->add('contacts', [
+                'label' => $this->translate('Contacts'),
+                'url'   => Url::fromRequest()
+            ]);
     }
 }
