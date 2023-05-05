@@ -20,7 +20,6 @@ use ipl\Html\Html;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Control\SearchEditor;
-use ipl\Web\Filter\QueryString;
 use ipl\Web\Url;
 
 class EventRuleController extends CompatController
@@ -184,17 +183,7 @@ class EventRuleController extends CompatController
 
         $editor->on(SearchEditor::ON_SUCCESS, function (SearchEditor $form) use ($ruleId) {
             $cache = $this->sessionNamespace->get($ruleId);
-
-            $filters = $form->getFilter();
-
-            foreach ($filters as $filter) {
-                if (empty($filter->getValue())) {
-                    $filter->setValue(true);
-                }
-            }
-
-            $filterStr = QueryString::render($filters);
-            $cache['object_filter'] = ! empty($filterStr) ? rawurldecode($filterStr) : null;
+            $cache['object_filter'] = EventRuleConfig::createFilterString($form->getFilter());
 
             $this->sessionNamespace->set($ruleId, $cache);
             $this->getResponse()

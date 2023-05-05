@@ -188,17 +188,7 @@ class EventRulesController extends CompatController
 
         $editor->on(SearchEditor::ON_SUCCESS, function (SearchEditor $form) {
             $cache = $this->sessionNamespace->get(-1);
-
-            $filters = $form->getFilter();
-
-            foreach ($filters as $filter) {
-                if (empty($filter->getValue())) {
-                    $filter->setValue(true);
-                }
-            }
-
-            $filterStr = QueryString::render($filters);
-            $cache['object_filter'] = ! empty($filterStr) ? rawurldecode($filterStr) : null;
+            $cache['object_filter'] = EventRuleConfig::createFilterString($form->getFilter());
 
             $this->sessionNamespace->set(-1, $cache);
 

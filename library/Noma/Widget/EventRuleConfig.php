@@ -19,6 +19,7 @@ use ipl\Stdlib\Events;
 use ipl\Stdlib\Filter;
 use ipl\Web\Control\SearchBar;
 use ipl\Web\Control\SearchEditor;
+use ipl\Web\Filter\QueryString;
 use ipl\Web\Url;
 use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
@@ -160,6 +161,25 @@ class EventRuleConfig extends BaseHtmlElement
         });
 
         return $editor;
+    }
+
+    public static function createFilterString($filters): ?string
+    {
+        foreach ($filters as $filter) {
+            if ($filter instanceof Filter\Chain) {
+                self::createFilterString($filter);
+            } elseif (empty($filter->getValue())) {
+                $filter->setValue(true);
+            }
+        }
+
+        if ($filters instanceof Filter\Condition && empty($filters->getValue())) {
+            $filters->setValue(true);
+        }
+
+        $filterStr = QueryString::render($filters);
+
+        return ! empty($filterStr) ? $filterStr : null;
     }
 
     public function getForms(): array
