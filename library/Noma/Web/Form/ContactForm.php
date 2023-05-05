@@ -111,6 +111,19 @@ class ContactForm extends CompatForm
                 'label' => $this->translate('Color'),
                 'required' => true
             ]
+        )->addElement(
+            'select',
+            'default_channel',
+            [
+                'label'    => $this->translate('Default Channel'),
+                'required' => true,
+                'disable'  => [''],
+                'options'  => [
+                    ''           => sprintf(' - %s - ', $this->translate('Please choose')),
+                    'email'      => $this->translate('Email'),
+                    'rocketchat' => 'Rocket.Chat'
+                ]
+            ]
         );
 
         // Fieldset for addresses
@@ -172,9 +185,10 @@ class ContactForm extends CompatForm
             $formValues = [];
             if (! isset($formValues['contact'])) {
                 $formValues['contact'] = [
-                    'full_name' => $values->full_name,
-                    'username'  => $values->username,
-                    'color'     => $values->color
+                    'full_name'       => $values->full_name,
+                    'username'        => $values->username,
+                    'color'           => $values->color,
+                    'default_channel' => $values->default_channel
                 ];
             }
 
