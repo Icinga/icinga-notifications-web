@@ -35,13 +35,6 @@ class SchedulesController extends CompatController
             $this->addControl($form);
         }
 
-        $this->addControl(
-            new ButtonLink(null, Url::fromPath('noma/schedule/add'), 'plus', [
-                'data-no-icinga-ajax' => true,
-                'data-icinga-modal' => true
-            ])
-        );
-
         if ($scheduleId) {
             $this->addControl(
                 new ButtonLink(null, Url::fromPath('noma/schedule', ['id' => $scheduleId]), 'cog', [
@@ -58,6 +51,19 @@ class SchedulesController extends CompatController
                 $this->httpNotFound('Schedule not found');
             }
         }
+
+        $this->addControl(
+            new ButtonLink(
+                'New Schedule',
+                Url::fromPath('noma/schedule/add'),
+                'plus',
+                [
+                    'class' => 'add-schedule-control',
+                    'data-no-icinga-ajax' => true,
+                    'data-icinga-modal' => true
+                ]
+            )
+        );
 
         $controls = (new Controls())
             ->setAction(Url::fromRequest()->getAbsoluteUrl());
