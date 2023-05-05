@@ -211,7 +211,8 @@ class IncidentQuickActions extends Form
             Notification::error(
                 $roleName === 'manager'
                     ? t('Failed to remove role manager')
-                    : t('Failed to unsubscribe'));
+                    : t('Failed to unsubscribe')
+            );
 
             return;
         }
@@ -261,9 +262,11 @@ class IncidentQuickActions extends Form
     {
         if ($this->incidentContact === null) {
             $contact = IncidentContact::on(Database::get())
-                ->filter(Filter::all(
-                    Filter::equal('contact_id', $this->currentUserId),
-                    Filter::equal('incident_id', $this->incident->id))
+                ->filter(
+                    Filter::all(
+                        Filter::equal('contact_id', $this->currentUserId),
+                        Filter::equal('incident_id', $this->incident->id)
+                    )
                 )
                 ->first();
 

@@ -7,12 +7,12 @@ use ipl\Web\Widget\StateBall;
 
 class SourceIcon extends BaseHtmlElement
 {
-    const SIZE_TINY = StateBall::SIZE_TINY;
-    const SIZE_SMALL = StateBall::SIZE_SMALL;
-    const SIZE_MEDIUM = StateBall::SIZE_MEDIUM;
-    const SIZE_MEDIUM_LARGE = StateBall::SIZE_MEDIUM;
-    const SIZE_BIG = StateBall::SIZE_BIG;
-    const SIZE_LARGE = StateBall::SIZE_LARGE;
+    public const SIZE_TINY = StateBall::SIZE_TINY;
+    public const SIZE_SMALL = StateBall::SIZE_SMALL;
+    public const SIZE_MEDIUM = StateBall::SIZE_MEDIUM;
+    public const SIZE_MEDIUM_LARGE = StateBall::SIZE_MEDIUM;
+    public const SIZE_BIG = StateBall::SIZE_BIG;
+    public const SIZE_LARGE = StateBall::SIZE_LARGE;
 
     protected $tag = 'span';
 
