@@ -1,0 +1,62 @@
+/* Layout */
+
+.event-form {
+  fieldset[name="recipient"] > .control-group {
+    margin-bottom: 0;
+  }
+
+  .term-input-area {
+    .terms {
+      // Prevents a weird rendering issue. Without this, siblings without the .contact or .group class are also
+      // affected by any other sibling that have any of these classes. The effect is that those without are also
+      // positioned, as if they are flex items of those with the classes.
+      display: inline-flex;
+    }
+
+    label.contact,
+    label.group {
+      display: inline-flex;
+      align-items: center;
+
+      &::before {
+        z-index: 1;
+        width: 2em;
+        padding-left: .5em;
+        text-align: center;
+      }
+
+      input[type="text"] {
+        padding-left: 2em + 7/12em;
+      }
+    }
+
+    label.contact {
+      &::before {
+        width: 1.5em;
+      }
+
+      input[type="text"] {
+        padding-left: 1.5em + 7/12em;
+      }
+    }
+  }
+}
+
+/* Style */
+
+.event-form {
+  label.contact,
+  label.group {
+    &::before {
+      .fa();
+    }
+  }
+
+  label.contact::before {
+    content: "\f007";
+  }
+
+  label.group::before {
+    content: "\f0c0";
+  }
+}

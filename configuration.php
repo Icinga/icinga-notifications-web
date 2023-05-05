@@ -17,7 +17,7 @@ $section->add(
     [
         'icon'          => 'wrench',
         'description'   => $this->translate('Configuration'),
-        'url'           => 'noma/contacts'
+        'url'           => 'noma/schedules'
     ]
 );
 

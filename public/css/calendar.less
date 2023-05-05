@@ -1,0 +1,241 @@
+/* Layout */
+
+.calendar-grid {
+  @days: 7;
+
+  .header {
+    display: grid;
+    grid-gap: 1px;
+    grid-template-columns: repeat(@days, minmax(2em, 1fr));
+
+    .column-title {
+      display: flex;
+      justify-content: space-between;
+    }
+  }
+
+  .step,
+  .entry {
+    display: grid;
+
+    .content,
+    > a {
+      grid-area: ~"1 / 1 / 2 / 2";
+    }
+  }
+
+  .entry .title {
+    time,
+    .attendee {
+      margin-right: .5em;
+    }
+  }
+}
+
+.calendar-grid.month {
+  @days: 7;
+  @weeks: 6;
+  @rowsPerDay: 5;
+  @columnsPerDay: 48;
+
+  .grid,
+  .overlay {
+    display: grid;
+    grid-template-rows: repeat(@weeks * @rowsPerDay, 100% / (@weeks * @rowsPerDay));
+    grid-template-columns: repeat(@days * @columnsPerDay, minmax(0.125em, 1fr));
+  }
+
+  .step {
+    grid-row-end: span @rowsPerDay;
+    grid-column-end: span @columnsPerDay;
+
+    border-width: 0;
+    &:nth-child(-n+7),
+    &:nth-child(n+8):nth-child(-n+14),
+    &:nth-child(n+15):nth-child(-n+21),
+    &:nth-child(n+22):nth-child(-n+28),
+    &:nth-child(n+29):nth-child(-n+35) {
+      border-top-width: 1px;
+      border-left-width: 1px;
+    }
+    &:nth-last-child(-n+7) {
+      border-top-width: 1px;
+      border-bottom-width: 1px;
+      border-left-width: 1px;
+    }
+    &:nth-child(7),
+    &:nth-child(14),
+    &:nth-child(21),
+    &:nth-child(28),
+    &:nth-child(35),
+    &:last-child {
+      border-right-width: 1px;
+    }
+
+    &::before {
+      // Responsible for maintaining an intrinsic 1 / 1 aspect ratio
+      content: "";
+      padding-bottom: 100%;
+      display: block;
+    }
+
+    &::before {
+      grid-area: ~"1 / 1 / 2 / 2";
+    }
+
+    .content {
+      height: 100% / @rowsPerDay;
+    }
+  }
+
+  .entry {
+    margin-top: 1px;
+
+    &[data-row-end="31"] {
+      margin-bottom: 1px;
+    }
+    &[data-col-end="337"] {
+      margin-right: 1px;
+    }
+    &[data-col-start="1"],
+    &[data-col-start="49"],
+    &[data-col-start="97"] ,
+    &[data-col-start="145"] ,
+    &[data-col-start="193"] ,
+    &[data-col-start="241"] ,
+    &[data-col-start="289"]  {
+      margin-left: 1px;
+    }
+  }
+}
+
+.calendar-grid.week {
+  @days: 7;
+  @hours: 24;
+  @rowsPerHour: 2;
+  @columnsPerDay: 4;
+
+  .sidebar {
+    display: grid;
+    grid-template-rows: repeat(@hours, 1fr);
+
+    .row-title {
+      display: flex;
+      flex-direction: column;
+
+      .hour {
+        align-self: flex-end;
+      }
+    }
+  }
+
+  .grid,
+  .overlay {
+    display: grid;
+    grid-gap: 0 1px;
+    grid-template-rows: repeat(@hours * @rowsPerHour, 4em);
+    grid-template-columns: repeat(@days * @columnsPerDay, minmax(2em, 1fr));
+  }
+
+  .step {
+    grid-column-end: span @columnsPerDay;
+    grid-row-end: span @rowsPerHour;
+
+    border-width: 0;
+    &:nth-child(-n+7) {
+      border-width: 1px 1px 0 1px;
+    }
+    &:nth-child(n + 8):nth-child(-n + 161) {
+      border-width: 0 1px 0 1px;
+    }
+    &:nth-last-child(-n+7) {
+      border-width: 0 1px 1px 1px;
+    }
+  }
+
+  .entry {
+    &.single,
+    &.outer-left {
+      margin-left: 1px;
+    }
+
+    &.single,
+    &.outer-right {
+      margin-right: 1px;
+    }
+  }
+}
+
+.calendar-grid {
+  display: grid;
+
+  &.week {
+    grid-template-columns: 6em auto;
+    grid-template-rows: 1.5em auto;
+
+    .header {
+      grid-area: ~"1 / 2 / 2 / 3";
+    }
+
+    .sidebar {
+      grid-area: ~"2 / 1 / 3 / 2";
+    }
+
+    .grid,
+    .overlay {
+      grid-area: ~"2 / 2 / 3 / 3";
+    }
+  }
+  &.month {
+    grid-template-rows: 1.5em auto;
+
+    .header {
+      grid-area: ~"1 / 1 / 2 / 2";
+    }
+
+    .grid,
+    .overlay {
+      grid-area: ~"2 / 1 / 3 / 2";
+    }
+  }
+
+  .overlay {
+    pointer-events: none;
+
+    .entry {
+      pointer-events: all;
+    }
+  }
+}
+
+/* Design */
+
+.calendar {
+  .step {
+    border-style: solid;
+    border-color: black;
+  }
+
+  .title {
+    font-weight: bold;
+    color: @text-color-inverted;
+
+    time {
+      font-weight: normal;
+    }
+  }
+
+  .entry {
+    background: red;
+  }
+
+  .column-title {
+    .day-name {
+
+    }
+
+    .day-number {
+
+    }
+  }
+}

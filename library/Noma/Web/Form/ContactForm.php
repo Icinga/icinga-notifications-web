@@ -81,14 +81,14 @@ class ContactForm extends CompatForm
             'text',
             'full_name',
             [
-                'label'    => $this->translate('Full Name'),
+                'label' => $this->translate('Full Name'),
                 'required' => true
             ]
         )->addElement(
             'text',
             'username',
             [
-                'label'    => $this->translate('Username'),
+                'label' => $this->translate('Username'),
                 'validators' => [new CallbackValidator(function ($value, $validator) {
                     $contact = Contact::on($this->db)
                         ->filter(Filter::equal('username', $value))
@@ -101,6 +101,13 @@ class ContactForm extends CompatForm
 
                     return true;
                 })]
+            ]
+        )->addElement(
+            'color',
+            'color',
+            [
+                'label' => $this->translate('Color'),
+                'required' => true
             ]
         );
 
@@ -165,6 +172,7 @@ class ContactForm extends CompatForm
                 $formValues['contact'] = [
                     'full_name' => $values->full_name,
                     'username'  => $values->username,
+                    'color'     => $values->color
                 ];
             }
 
