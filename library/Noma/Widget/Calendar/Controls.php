@@ -25,14 +25,6 @@ class Controls extends CompatForm
     {
         $this->addAttributes(['class' => ['calendar-controls', 'inline']]);
 
-        $this->addElement('select', 'mode', [
-            'class'     => 'autosubmit',
-            'value'     => Calendar::MODE_WEEK,
-            'options'   => [
-                Calendar::MODE_WEEK => t('Calendar Week'),
-                Calendar::MODE_MONTH => t('Month')
-            ]
-        ]);
         switch ($this->getPopulatedValue('mode', Calendar::MODE_WEEK)) {
             case Calendar::MODE_MONTH:
                 $this->addElement('input', 'month', [
