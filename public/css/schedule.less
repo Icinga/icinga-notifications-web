@@ -1,5 +1,25 @@
 /* Layout */
 
+.controls {
+  &.schedule-controls {
+    .box-shadow(0, 0, 0, 1px, @gray-lighter);
+    z-index: 1; // The content may clip, this ensures the separator is always visible
+  }
+
+  .schedule-control {
+    display: flex;
+    padding-bottom: .5em;
+
+    > *:not(:last-child) {
+      margin-right: .5em;
+    }
+  }
+
+  .add-schedule-control {
+    margin-left: auto;
+  }
+}
+
 .schedule-container {
   display: flex;
 

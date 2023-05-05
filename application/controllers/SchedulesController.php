@@ -5,6 +5,7 @@ namespace Icinga\Module\Noma\Controllers;
 use Icinga\Module\Noma\Common\Database;
 use Icinga\Module\Noma\Model\Schedule;
 use Icinga\Module\Noma\Widget\Calendar\Controls;
+use ipl\Html\Html;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\CompatForm;
@@ -21,6 +22,7 @@ class SchedulesController extends CompatController
         $schedule = null;
         $scheduleId = $this->params->get('schedule', key($schedules));
 
+        $controls = Html::tag('div', ['class' => 'schedule-control']);
         if ($scheduleId) {
             $form = new CompatForm();
             $form->setMethod('GET');
@@ -32,11 +34,11 @@ class SchedulesController extends CompatController
             ]);
 
             $form->handleRequest($this->getServerRequest());
-            $this->addControl($form);
+            $controls->addHtml($form);
         }
 
         if ($scheduleId) {
-            $this->addControl(
+            $controls->addHtml(
                 new ButtonLink(null, Url::fromPath('noma/schedule', ['id' => $scheduleId]), 'cog', [
                     'data-no-icinga-ajax' => true,
                     'data-icinga-modal' => true
@@ -52,7 +54,7 @@ class SchedulesController extends CompatController
             }
         }
 
-        $this->addControl(
+        $controls->addHtml(
             new ButtonLink(
                 'New Schedule',
                 Url::fromPath('noma/schedule/add'),
@@ -65,15 +67,18 @@ class SchedulesController extends CompatController
             )
         );
 
-        $controls = (new Controls())
+        $calendarControls = (new Controls())
             ->setAction(Url::fromRequest()->getAbsoluteUrl());
         if ($this->getRequest()->getHeader('X-Icinga-Container') === 'modal-content') {
             $this->getResponse()->setHeader('X-Icinga-Modal-Layout', 'wide');
-            $controls->setBaseTarget('modal-content');
+            $calendarControls->setBaseTarget('modal-content');
         }
 
+        $this->addControl($controls);
+        $this->controls->addAttributes(['class' => 'schedule-controls']);
+
         $this->addContent(new \Icinga\Module\Noma\Widget\Schedule(
-            $controls->handleRequest($this->getServerRequest()),
+            $calendarControls->handleRequest($this->getServerRequest()),
             $schedule
         ));
 
