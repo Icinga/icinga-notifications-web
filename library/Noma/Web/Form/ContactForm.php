@@ -90,10 +90,12 @@ class ContactForm extends CompatForm
             [
                 'label'    => $this->translate('Username'),
                 'validators' => [new CallbackValidator(function ($value, $validator) {
-                    $contact = Contact::on($this->db)
-                        ->filter(Filter::equal('username', $value))
-                        ->first();
-                    if ($contact !== null) {
+                    $contact = Contact::on($this->db)->filter(Filter::equal('username', $value));
+                    if ($this->contactId) {
+                        $contact->filter(Filter::unequal('id', $this->contactId));
+                    }
+
+                    if ($contact->first() !== null) {
                         $validator->addMessage($this->translate('A contact with the same username already exists.'));
 
                         return false;
