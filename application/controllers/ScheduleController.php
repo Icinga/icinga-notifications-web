@@ -13,6 +13,7 @@ class ScheduleController extends CompatController
 {
     public function indexAction()
     {
+        $this->setTitle($this->translate('Edit Schedule'));
         $scheduleId = (int) $this->params->getRequired('id');
 
         $form = new ScheduleForm();
@@ -40,6 +41,7 @@ class ScheduleController extends CompatController
 
     public function addAction()
     {
+        $this->setTitle($this->translate('New Schedule'));
         $form = new ScheduleForm();
         $form->setAction($this->getRequest()->getUrl()->getAbsoluteUrl());
         $form->on(ScheduleForm::ON_SUCCESS, function ($form) {
