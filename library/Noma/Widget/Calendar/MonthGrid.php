@@ -70,13 +70,13 @@ class MonthGrid extends BaseGrid
     protected function createHeader(): BaseHtmlElement
     {
         $dayNames = [
-            t('Mo', 'monday'),
-            t('Tu', 'tuesday'),
-            t('We', 'wednesday'),
-            t('Th', 'thursday'),
-            t('Fr', 'friday'),
-            t('Sa', 'saturday'),
-            t('Su', 'sunday')
+            t('Mon', 'monday'),
+            t('Tue', 'tuesday'),
+            t('Wed', 'wednesday'),
+            t('Thu', 'thursday'),
+            t('Fri', 'friday'),
+            t('Sat', 'saturday'),
+            t('Sun', 'sunday')
         ];
 
         $header = new HtmlElement('div', Attributes::create(['class' => 'header']));

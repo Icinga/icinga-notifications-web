@@ -9,7 +9,13 @@ use Icinga\Module\Noma\Widget\Calendar\Event;
 use Icinga\Module\Noma\Widget\Calendar\MonthGrid;
 use Icinga\Module\Noma\Widget\Calendar\Util;
 use Icinga\Module\Noma\Widget\Calendar\WeekGrid;
+use IntlDateFormatter;
+use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
+use ipl\Html\FormattedString;
+use ipl\Html\HtmlElement;
+use ipl\Html\Text;
+use ipl\I18n\StaticTranslator;
 use ipl\Scheduler\RRule;
 use ipl\Web\Url;
 use LogicException;
@@ -67,23 +73,28 @@ class Calendar extends BaseHtmlElement
         return $this->addEventUrl;
     }
 
+    protected function getModeStart(): DateTime
+    {
+        switch ($this->getControls()->getViewMode()) {
+            case self::MODE_MONTH:
+                $month = $this->getControls()->getValue('month') ?: (new DateTime())->format('Y-m');
+
+                return DateTime::createFromFormat('Y-m-d\TH:i:s', $month . '-01T00:00:00');
+            case self::MODE_WEEK:
+            default:
+                $week = $this->getControls()->getValue('week') ?: (new DateTime())->format('Y-\WW');
+
+                return (new DateTime())->setTimestamp(strtotime($week));
+        }
+    }
+
     public function getGrid(): BaseGrid
     {
         if ($this->grid === null) {
-            $mode = $this->getControls()->getValue('mode');
-            if ($mode === self::MODE_MONTH) {
-                $month = $this->getControls()->getValue('month') ?: (new DateTime())->format('Y-m');
-                $this->grid = new MonthGrid($this, DateTime::createFromFormat(
-                    'Y-m-d\TH:i:s',
-                    $month . '-01T00:00:00'
-                ));
+            if ($this->getControls()->getViewMode() === self::MODE_MONTH) {
+                $this->grid = new MonthGrid($this, $this->getModeStart());
             } else { // $mode === self::MODE_WEEK
-                $week = $this->getControls()->getValue('week') ?: (new DateTime())->format('Y-\WW');
-                $this->grid = new WeekGrid(
-                    $this,
-                    (new DateTime())
-                        ->setTimestamp(strtotime($week))
-                );
+                $this->grid = new WeekGrid($this, $this->getModeStart());
             }
         }
 
@@ -136,8 +147,28 @@ class Calendar extends BaseHtmlElement
 
     protected function assemble()
     {
+        $modeStart = $this->getModeStart();
+
+        if (method_exists(StaticTranslator::$instance, 'getLocale')) {
+            $month = (new IntlDateFormatter(
+                StaticTranslator::$instance->getLocale(),
+                IntlDateFormatter::FULL,
+                IntlDateFormatter::FULL,
+                date_default_timezone_get(),
+                IntlDateFormatter::GREGORIAN,
+                'MMMM'
+            ))->format($modeStart);
+        } else {
+            $month = $modeStart->format('F');
+        }
+
         $this->addHtml(
             $this->getControls(),
+            new HtmlElement('h3', Attributes::create(['class' => 'calendar-title']), FormattedString::create(
+                '%s %s',
+                new HtmlElement('strong', null, Text::create($month)),
+                $modeStart->format('Y')
+            )),
             $this->getGrid()
         );
     }

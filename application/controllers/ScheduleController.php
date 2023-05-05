@@ -13,6 +13,7 @@ class ScheduleController extends CompatController
 {
     public function indexAction()
     {
+        $this->setTitle($this->translate('Edit Schedule'));
         $scheduleId = (int) $this->params->getRequired('id');
 
         $form = new ScheduleForm();
@@ -40,6 +41,7 @@ class ScheduleController extends CompatController
 
     public function addAction()
     {
+        $this->setTitle($this->translate('New Schedule'));
         $form = new ScheduleForm();
         $form->setAction($this->getRequest()->getUrl()->getAbsoluteUrl());
         $form->on(ScheduleForm::ON_SUCCESS, function ($form) {
@@ -88,7 +90,14 @@ class ScheduleController extends CompatController
         $form->handleRequest($this->getServerRequest());
 
         if (empty($this->parts)) {
-            $this->addPart(Html::tag('div', ['id' => $this->getRequest()->getHeader('X-Icinga-Container')], $form));
+            $this->addPart(Html::tag(
+                'div',
+                ['id' => $this->getRequest()->getHeader('X-Icinga-Container')],
+                [
+                    Html::tag('h2', null, $this->translate('Add Event')),
+                    $form
+                ]
+            ));
         }
     }
 
@@ -129,7 +138,14 @@ class ScheduleController extends CompatController
         $form->handleRequest($this->getServerRequest());
 
         if (empty($this->parts)) {
-            $this->addPart(Html::tag('div', ['id' => $this->getRequest()->getHeader('X-Icinga-Container')], $form));
+            $this->addPart(Html::tag(
+                'div',
+                ['id' => $this->getRequest()->getHeader('X-Icinga-Container')],
+                [
+                    Html::tag('h2', null, $this->translate('Edit Event')),
+                    $form
+                ]
+            ));
         }
     }
 

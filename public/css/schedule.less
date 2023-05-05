@@ -1,14 +1,58 @@
 /* Layout */
 
-.schedule-container {
+.controls {
+  &.schedule-controls {
+    .box-shadow(0, 0, 0, 1px, @gray-lighter);
+    z-index: 1; // The content may clip, this ensures the separator is always visible
+  }
+
+  .schedule-control {
+    display: flex;
+    padding-bottom: .5em;
+
+    > *:not(:last-child) {
+      margin-right: .5em;
+    }
+  }
+
+  .add-schedule-control {
+    margin-left: auto;
+  }
+}
+
+.schedule {
   display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  .schedule-header {
+    margin-bottom: 1em;
+  }
+}
+
+.schedule-container {
+  flex: 1 1 auto;
+  display: flex;
+  overflow: hidden;
 
   .calendar {
     flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+
+    .calendar-grid {
+      flex: 1 1 auto;
+      height: 0;
+    }
   }
 
   .event-form:not(:empty) {
     flex: 1 1 auto;
     min-width: 30%;
+    padding-left: 1em;
+
+    .icinga-form {
+      width: 100%;
+    }
   }
 }

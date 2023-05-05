@@ -12,6 +12,7 @@ use ipl\Html\HtmlElement;
 use ipl\Stdlib\Filter;
 use ipl\Web\Common\BaseTarget;
 use ipl\Web\Url;
+use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
 
 class Schedule extends BaseHtmlElement
@@ -104,9 +105,16 @@ class Schedule extends BaseHtmlElement
         $scheduleHeader = new HtmlElement('div', Attributes::create(['class' => 'schedule-header']));
         if ($this->schedule !== null) {
             $this->assembleCalendar($calendar);
-            $scheduleHeader->addHtml(new Link('Add new event', Url::fromPath('noma/schedule', [
-                'schedule' => $this->schedule->id
-            ])));
+            $scheduleHeader->addHtml(
+                new Link(
+                    [
+                        new Icon('plus'),
+                        t('Add new event')
+                    ],
+                    Url::fromPath('noma/schedule/add-event', ['schedule' => $this->schedule->id]),
+                    ['class' => 'button-link']
+                )
+            );
         }
 
         $scheduleContainer = new HtmlElement('div', Attributes::create(['class' => 'schedule-container']));
