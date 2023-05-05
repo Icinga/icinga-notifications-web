@@ -262,7 +262,7 @@ abstract class BaseGrid extends BaseHtmlElement
             $entryContainer = $entry;
         }
 
-        $title = new HtmlElement('p', Attributes::create(['class' => 'title']));
+        $title = new HtmlElement('div', Attributes::create(['class' => 'title']));
         if (! $isContinuation) {
             $title->addHtml(new HtmlElement(
                 'time',
@@ -284,9 +284,24 @@ abstract class BaseGrid extends BaseHtmlElement
 
         $entryContainer->addHtml(new HtmlElement(
             'div',
-            Attributes::create(['class' => 'content']),
+            Attributes::create(
+                [
+                    'class' => 'content',
+                    'title' => $event->getStart()->format('H:i')
+                        . ' | ' . $event->getAttendee()->getName()
+                        . ': ' . $event->getDescription()
+                ]
+            ),
             $title,
-            new HtmlElement('p', Attributes::create(['class' => 'description']), Text::create($event->getDescription()))
+            new HtmlElement(
+                'div',
+                Attributes::create(['class' => 'description']),
+                new HtmlElement(
+                    'p',
+                    Attributes::create(['title' => $event->getDescription()]),
+                    Text::create($event->getDescription())
+                )
+            )
         ));
     }
 
