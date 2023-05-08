@@ -170,7 +170,8 @@ class SaveEventRuleForm extends Form
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
 
         $this->addElement('submit', 'submit', [
-            'label' => $this->getSubmitLabel()
+            'label' => $this->getSubmitLabel(),
+            'class' => 'btn-primary'
         ]);
 
         $this->getElement('submit')
