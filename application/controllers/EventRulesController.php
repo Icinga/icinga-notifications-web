@@ -106,6 +106,8 @@ class EventRulesController extends CompatController
         $this->addTitleTab(t('Add Event Rule'));
         $this->getTabs()->setRefreshUrl(Url::fromPath('noma/event-rules/add'));
 
+        $this->controls->addAttributes(['class' => 'event-rule-detail']);
+
         if ($this->params->has('use_cache') || $this->getServerRequest()->getMethod() !== 'GET') {
             $cache = $this->sessionNamespace->get(-1, []);
         } else {

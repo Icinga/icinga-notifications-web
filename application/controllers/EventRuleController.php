@@ -41,6 +41,8 @@ class EventRuleController extends CompatController
 
         $this->addTitleTab(t('Event Rule'));
 
+        $this->controls->addAttributes(['class' => 'event-rule-detail']);
+
         $ruleId = $this->params->getRequired('id');
 
         $cache = $this->sessionNamespace->get($ruleId);
