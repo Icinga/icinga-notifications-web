@@ -6,7 +6,10 @@ namespace Icinga\Module\Noma\Forms;
 
 use Icinga\Module\Noma\Common\Database;
 use Icinga\Module\Noma\Model\Contact;
+use ipl\Html\FormElement\SelectElement;
 use ipl\Html\Html;
+use ipl\Orm\Model;
+use ipl\Stdlib\Filter;
 
 class EscalationRecipientForm extends BaseEscalationForm
 {
@@ -43,12 +46,21 @@ class EscalationRecipientForm extends BaseEscalationForm
         }
 
         foreach (range(1, $end) as $count) {
+            $recipientId = $this->createElement(
+                'hidden',
+                'id' . $count
+            );
+
+            $this->registerElement($recipientId);
+
             $col = $this->createElement(
                 'select',
                 'column' . $count,
                 [
                     'class'             => ['autosubmit', 'left-operand'],
-                    'options'           => ['' => sprintf(' - %s - ', $this->translate('Please choose'))] + $this->fetchOptions(),
+                    'options'           => [
+                        '' => sprintf(' - %s - ', $this->translate('Please choose'))
+                        ] + $this->fetchOptions(),
                     'disabledOptions'   => [''],
                     'required'          => true
                 ]
@@ -63,27 +75,62 @@ class EscalationRecipientForm extends BaseEscalationForm
                     'disabled'  => true
                 ]
             );
-
-            $val = $this->createElement(
-                'select',
-                'value'. $count,
-                [
-                    'class'     => ['autosubmit', 'right-operand'],
-                    'options'   => [
-                        ''              => sprintf(' - %s - ', $this->translate('Please choose')),
-                        'email'         => 'E-Mail',
-                        'rocket.chat'   => 'Rocket.Chat'
-                    ],
-                    'disabledOptions'   => [''],
-                    'required'          => true
-                ]
-            );
-
             $this->registerElement($col);
             $this->registerElement($op);
+
+            $contact = null;
+            if ($this->getValue('column' . $count) !== null) {
+                $contactId = substr($this->getValue('column' . $count), strlen('contact_'));
+                $contact = Contact::on(Database::get());
+                $contact->filter(Filter::equal('id', $contactId));
+
+                $contact = $contact->first();
+
+                $options = [
+                    ''            => $this->translate('Default User Channel'),
+                    'email'       => 'E-Mail',
+                    'rocket.chat' => 'Rocket.Chat'
+                ];
+            } else {
+                $options = [
+                    '' => $this->translate('Please make a decision'),
+                    'email'                => 'E-Mail',
+                    'rocket.chat'          => 'Rocket.Chat'
+                ];
+            }
+
+            if ($contact) {
+                /** @var SelectElement $val */
+                $val = $this->createElement(
+                    'select',
+                    'value'. $count,
+                    [
+                        'class'             => ['autosubmit', 'right-operand'],
+                        'options'           => $options,
+                        'disabledOptions'   => []
+                    ]
+                );
+
+                if ($this->getPopulatedValue('value'. $count, '') === '') {
+                    $val->addAttributes(['class' => 'default-channel']);
+                }
+
+
+            } else {
+                $val = $this->createElement('text', 'value' . $count, [
+                    'class'       => 'right-operand',
+                    'placeholder' => $this->translate('Please make a decision'),
+                    'disabled' => true
+                ]);
+            }
+
             $this->registerElement($val);
 
-            $this->options[$count] = Html::tag('li', [$col, $op, $val, $this->createRemoveButton($count)]);
+            $this->options[$count] = Html::tag(
+                'li',
+                ['class' => 'option'],
+                [$recipientId, $col, $op, $val, $this->createRemoveButton($count)]
+            );
         }
 
         $this->handleRemove();
@@ -106,6 +153,7 @@ class EscalationRecipientForm extends BaseEscalationForm
 
             $value = [];
             $value['channel_type'] = $this->getValue('value' . $count);
+            $value['id'] = $this->getValue('id' . $count);
 
             $columnName = $this->getValue('column' . $count);
 
@@ -140,6 +188,10 @@ class EscalationRecipientForm extends BaseEscalationForm
                     } elseif ($elementName === 'channel_type') {
                         $values['value' . $count] = $elementValue;
                     }
+                }
+
+                if (isset($condition['id'])) {
+                    $values['id' . $count] = $condition['id'];
                 }
             }
         }
