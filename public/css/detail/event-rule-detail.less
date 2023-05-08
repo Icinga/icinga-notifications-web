@@ -1,7 +1,6 @@
 .event-rule-detail {
   display: flex;
   align-items: baseline;
-  margin-left: 5em;
 
   &.invalid {
     .escalations .escalation form.escalation-form {
@@ -15,7 +14,6 @@
   }
 
   .search-controls {
-    margin-top: 1em;
     display: inline-flex;
     width: 20em;
     min-width: unset;
@@ -33,8 +31,6 @@
   .escalations {
     display: inline-flex;
     flex-direction: column;
-    margin-top: 3em;
-    position: relative;
     width: 85em;
     padding: 2em 2em 2em 0;
 
@@ -88,29 +84,31 @@
 
       .escalation-condition-form,
       .escalation-recipient-form {
-        display: flex;
-        flex-wrap: wrap;
         width: 100%;
 
         padding: 0.5em;
         border: 1px solid @gray-lighter;
         border-radius: 0.5em;
+
         .options {
           list-style-type: none;
           padding: 0;
-          margin-bottom: .4em;
+          margin: 0;
 
-          .option {
-            width: max-content;
+          > li {
+            display: flex;
             margin-bottom: .4em;
-            .errors {
-              display: inline-flex;
-              width: fit-content;
-              margin: 0;
-            }
 
-            .errors + .remove-button {
-              margin: 0;
+            &.option {
+              .errors {
+                display: inline-flex;
+                width: fit-content;
+                margin: 0;
+              }
+
+              .errors + .remove-button {
+                margin: 0;
+              }
             }
           }
 
@@ -127,12 +125,22 @@
             color: @search-term-color;
           }
 
+          select {
+            background-image: url('@{iplWebAssets}/img/select-icon.svg');
+            background-position: center right;
+            background-repeat: no-repeat;
+          }
+
           .left-operand {
             border-radius: 0.4em 0 0 0.4em;
+            margin-right: 1px;
           }
 
           .right-operand {
             border-radius: 0 0.4em 0.4em 0;
+            width: 0;
+            flex: 1 1 auto;
+            margin-left: 1px;
           }
 
           .operator-input {
@@ -140,22 +148,17 @@
             padding-right: 0.5em;
             width: 3em;
             border-radius: unset;
-            margin: 0 .1em;
+            margin: 0 1px;
             background: @search-term-bg;
             color: @search-term-color;
+
+            option { text-align: center; }
           }
         }
 
         .remove-button {
           height: 2.25em;
           margin-left: 0.5em;
-        }
-
-        .add-button {
-          width: 83.5%;
-          height: 2.25em;
-          align-items: flex-end;
-          justify-content: center;
         }
       }
 
@@ -168,22 +171,20 @@
         button[type="submit"] {
           font-size: 3em;
           width: 3em;
-          color: @text-color;
-          border: 1px dotted @text-color;
           margin: 0;
-        }
+          background: @low-sat-blue;
+          border: none;
 
-        button[type="submit"]:hover {
-          background-color: transparent;
-          color: @icinga-blue;
+          &:hover {
+            background: @low-sat-blue-dark;
+          }
         }
       }
 
       .escalation-condition-form.count-zero-escalation-condition-form:after {
         content: 'Condition';
-        margin-bottom: -2em;
-        margin-left: -6.5em;
-        align-self: self-end;
+        align-self: center;
+        margin-bottom: -1.5em;
       }
     }
   }
@@ -202,4 +203,35 @@
   background-color: @gray-lighter;
   text-align: center;
   .rounded-corners();
+}
+
+.escalation-form {
+  display: flex;
+  flex-direction: column;
+
+  .options +.add-button,
+  .remove-button {
+    background: @low-sat-blue;
+    border: none;
+    text-align: center;
+    line-height: 1.5;
+    display: block;
+
+    &:hover {
+      background: @low-sat-blue-dark;
+      color: @icinga-blue;
+    }
+  }
+
+  .options + .add-button {
+    margin-right: 3.5em;
+  }
+
+  .options li {
+    input, select {
+      &:last-child:not(.remove-button) {
+        margin-right: 3.5em;
+      }
+    }
+  }
 }
