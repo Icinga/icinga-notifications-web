@@ -4,10 +4,12 @@ namespace Icinga\Module\Noma\Forms;
 
 use Icinga\Module\Noma\Common\Database;
 use Icinga\Module\Noma\Model\RuleEscalation;
+use Icinga\Module\Noma\Model\RuleEscalationRecipient;
 use Icinga\Web\Session;
 use ipl\Html\Form;
 use ipl\Html\HtmlDocument;
 use ipl\I18n\Translation;
+use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Common\FormUid;
@@ -209,6 +211,91 @@ class SaveEventRuleForm extends Form
     }
 
     /**
+     * Insert to or update Escalations and its recipients in Db
+     *
+     * @param $ruleId
+     * @param array $escalations
+     * @param Connection $db
+     * @param bool $insert
+     *
+     * @return void
+     */
+    private function insertOrUpdateEscalations($ruleId, array $escalations, Connection $db, bool $insert = false): void
+    {
+        foreach ($escalations as $position => $escalationConfig) {
+            if ($insert) {
+                $db->insert('rule_escalation', [
+                    'rule_id' => $ruleId,
+                    'position' => $position,
+                    'condition' => $escalationConfig['condition'] ?? null,
+                    'name' => $escalationConfig['name'] ?? null,
+                    'fallback_for' => $escalationConfig['fallback_for'] ?? null
+                ]);
+
+                $escalationId = $db->lastInsertId();
+            } else {
+                $escalationId = $escalationConfig['id'];
+
+                $db->update('rule_escalation', [
+                    'position' => $position,
+                    'condition' => $escalationConfig['condition'] ?? null,
+                    'name' => $escalationConfig['name'] ?? null,
+                    'fallback_for' => $escalationConfig['fallback_for'] ?? null
+                ], ['id = ?' => $escalationId, 'rule_id = ?' => $ruleId]);
+                $recipientsToRemove = [];
+
+                $recipients = RuleEscalationRecipient::on($db)
+                    ->columns('id')
+                    ->filter(Filter::equal('rule_escalation_id', $escalationId));
+
+                foreach ($recipients as $recipient) {
+                    $recipientId = $recipient->id;
+                    $recipientInCache = array_filter(
+                        $escalationConfig['recipient'],
+                        function (array $element) use ($recipientId) {
+                            return (int) $element['id'] === $recipientId;
+                        }
+                    );
+
+                    if (empty($recipientInCache)) {
+                        // Recipients to remove from Db not in cache
+                        $recipientsToRemove[] = $recipientId;
+                    }
+                }
+
+                if (! empty($recipientsToRemove)) {
+                    $db->delete('rule_escalation_recipient', ['id IN (?)' => $recipientsToRemove]);
+                }
+            }
+
+            foreach ($escalationConfig['recipient'] ?? [] as $recipientConfig) {
+                $data = [
+                    'rule_escalation_id' => $escalationId,
+                    'channel_type' => $recipientConfig['channel_type']
+                ];
+
+                switch (true) {
+                    case isset($recipientConfig['contact_id']):
+                        $data['contact_id'] = $recipientConfig['contact_id'];
+                        break;
+                    case isset($recipientConfig['contactgroup_id']):
+                        $data['contactgroup_id'] = $recipientConfig['contactgroup_id'];
+                        break;
+                    case isset($recipientConfig['schedule_id']):
+                        $data['schedule_id'] = $recipientConfig['schedule_id'];
+                        break;
+                }
+
+                if (! isset($recipientConfig['id'])) {
+                    $db->insert('rule_escalation_recipient', $data);
+                } else {
+                    $db->update('rule_escalation_recipient', $data, ['id = ?' => $recipientConfig['id']]);
+                }
+            }
+        }
+    }
+
+    /**
      * Edit an existing event rule
      *
      * @param int $id The id of the event rule
@@ -229,52 +316,45 @@ class SaveEventRuleForm extends Form
             'is_active' => $config['is_active'] ?? 'n'
         ], ['id = ?' => $id]);
 
-        $escalations = RuleEscalation::on($db)
-            ->columns('id')
+        $escalationsFromDb = RuleEscalation::on($db)
             ->filter(Filter::equal('rule_id', $id));
 
+        $escalationsInCache = $config['rule_escalation'];
+
+        $escalationsToUpdate = [];
         $escalationsToRemove = [];
-        foreach ($escalations as $escalation) {
-            $escalationsToRemove[] = $escalation->id;
+
+        foreach ($escalationsFromDb as $escalationInDB) {
+            $escalationId = $escalationInDB->id;
+            $escalationInCache = array_filter($escalationsInCache, function (array $element) use ($escalationId) {
+                return (int) $element['id'] === $escalationId;
+            });
+
+            if ($escalationInCache) {
+                $position = array_key_first($escalationInCache);
+                // Escalations in DB to update
+                $escalationsToUpdate[$position] = $escalationInCache[$position];
+                unset($escalationsInCache[$position]);
+            } else {
+                // Escalation in DB to remove
+                $escalationsToRemove[] = $escalationId;
+            }
         }
 
-        // TODO: Update existing rows instead
+        // Escalations to add
+        $escalationsToAdd = $escalationsInCache;
+
         if (! empty($escalationsToRemove)) {
             $db->delete('rule_escalation_recipient', ['rule_escalation_id IN (?)' => $escalationsToRemove]);
+            $db->delete('rule_escalation', ['id IN (?)' => $escalationsToRemove]);
         }
 
-        $db->delete('rule_escalation', ['rule_id = ?' => $id]);
+        if (! empty($escalationsToAdd)) {
+            $this->insertOrUpdateEscalations($id, $escalationsToAdd, $db, true);
+        }
 
-        foreach ($config['rule_escalation'] ?? [] as $position => $escalationConfig) {
-            $db->insert('rule_escalation', [
-                'rule_id' => $id,
-                'position' => $position,
-                'condition' => $escalationConfig['condition'] ?? null,
-                'name' => $escalationConfig['name'] ?? null,
-                'fallback_for' => $escalationConfig['fallback_for'] ?? null
-            ]);
-            $escalationId = $db->lastInsertId();
-
-            foreach ($escalationConfig['recipient'] ?? [] as $recipientConfig) {
-                $data = [
-                    'rule_escalation_id' => $escalationId,
-                    'channel_type' => $recipientConfig['channel_type']
-                ];
-
-                switch (true) {
-                    case isset($recipientConfig['contact_id']):
-                        $data['contact_id'] = $recipientConfig['contact_id'];
-                        break;
-                    case isset($recipientConfig['contactgroup_id']):
-                        $data['contactgroup_id'] = $recipientConfig['contactgroup_id'];
-                        break;
-                    case isset($recipientConfig['schedule_id']):
-                        $data['schedule_id'] = $recipientConfig['schedule_id'];
-                        break;
-                }
-
-                $db->insert('rule_escalation_recipient', $data);
-            }
+        if (! empty($escalationsToUpdate)) {
+            $this->insertOrUpdateEscalations($id, $escalationsToUpdate, $db);
         }
 
         $db->commitTransaction();

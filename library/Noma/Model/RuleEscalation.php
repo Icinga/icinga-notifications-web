@@ -48,7 +48,7 @@ class RuleEscalation extends Model
 
     public function getDefaultSort()
     {
-        return ['name'];
+        return ['position'];
     }
 
     public function createRelations(Relations $relations)
