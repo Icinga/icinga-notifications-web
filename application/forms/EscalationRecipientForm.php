@@ -67,17 +67,7 @@ class EscalationRecipientForm extends BaseEscalationForm
                 ]
             );
 
-            $op = $this->createElement(
-                'text',
-                'operator' . $count,
-                [
-                    'class'     => 'operator-input',
-                    'value'     => '=',
-                    'disabled'  => true
-                ]
-            );
             $this->registerElement($col);
-            $this->registerElement($op);
 
             $options = [
                 ''           =>  sprintf(' - %s - ', $this->translate('Please choose')),
@@ -121,7 +111,7 @@ class EscalationRecipientForm extends BaseEscalationForm
             $this->options[$count] = Html::tag(
                 'li',
                 ['class' => 'option'],
-                [$col, $op, $val, $this->createRemoveButton($count)]
+                [$col, $val, $this->createRemoveButton($count)]
             );
         }
 
@@ -226,7 +216,6 @@ class EscalationRecipientForm extends BaseEscalationForm
             for ($i = $toRemove; $i < $optionCount; $i++) {
                 $nextCount = $i + 1;
                 $this->getElement('column' . $nextCount)->setName('column' . $i);
-                $this->getElement('operator' . $nextCount)->setName('operator' . $i);
                 $this->getElement('value' . $nextCount)->setName('value' . $i);
 
                 $this->getElement('remove_' . $nextCount)->setName('remove_' . $i);
