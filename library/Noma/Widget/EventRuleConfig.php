@@ -4,10 +4,12 @@
 
 namespace Icinga\Module\Noma\Widget;
 
+use Icinga\Module\Noma\Common\Database;
 use Icinga\Module\Noma\Forms\AddEscalationForm;
 use Icinga\Module\Noma\Forms\AddFilterForm;
 use Icinga\Module\Noma\Forms\EscalationConditionForm;
 use Icinga\Module\Noma\Forms\EscalationRecipientForm;
+use Icinga\Module\Noma\Model\Incident;
 use ipl\Html\Attributes;
 use Icinga\Module\Noma\Forms\RemoveEscalationForm;
 use ipl\Html\BaseHtmlElement;
@@ -314,8 +316,21 @@ class EventRuleConfig extends BaseHtmlElement
     {
         $escalationId = $this->config['rule_escalation'][$position]['id'];
 
-        return (new RemoveEscalationForm())
+        $incident = Incident::on(Database::get())
+            ->with('rule_escalation');
+
+        $disableRemoveButton = false;
+        if (is_int($escalationId)) {
+            $incident->filter(Filter::equal('rule_escalation.id', $escalationId));
+            if ($incident->count() > 0) {
+                $disableRemoveButton = true;
+            }
+        }
+
+
+        $form = (new RemoveEscalationForm())
             ->addAttributes(['name' => 'remove-escalation-form-' . $escalationId])
+            ->setRemoveButtonDisabled($disableRemoveButton)
             ->on(Form::ON_SENT, function ($form) use ($position) {
                 unset($this->config['rule_escalation'][$position]);
                 unset($this->escalationForms[$position]);
@@ -358,6 +373,8 @@ class EventRuleConfig extends BaseHtmlElement
 
                 $this->emit(self::ON_CHANGE, [$this]);
             });
+
+        return $form;
     }
 
     private function generateFakeEscalationId(): string

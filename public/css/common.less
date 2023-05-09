@@ -97,6 +97,13 @@
 
 .remove-escalation-form {
   width: fit-content;
+  cursor: default;
+
+  button[disabled] {
+    background: @gray-light;
+    color: @disabled-gray;
+    border: none;
+  }
 }
 
 #layout.minimal-layout form.icinga-form:not(.inline).remove-escalation-form:not(.inline),

@@ -21,20 +21,50 @@ class RemoveEscalationForm extends Form
         'class' => ['remove-escalation-form', 'icinga-form', 'icinga-controls'],
     ];
 
+    /** @var bool  */
+    private $disableRemoveButtton;
+
     protected function assemble()
     {
         $this->add($this->createCsrfCounterMeasure(Session::getSession()->getId()));
         $this->add($this->createUidElement());
-
 
         $this->addElement(
             'submitButton',
             'remove',
             [
                 'class' => ['remove-button', 'control-button', 'spinner'],
-                'label' => new Icon('minus'),
-                'title' => $this->translate('Remove escalation')
+                'label' => new Icon('minus')
             ]
         );
+
+        $this->getElement('remove')
+            ->getAttributes()
+            ->registerAttributeCallback('disabled', function () {
+                return $this->disableRemoveButtton;
+            })
+            ->registerAttributeCallback('title', function () {
+                if ($this->disableRemoveButtton) {
+                    return $this->translate(
+                        'There exist active incidents for this escalation and hence cannot be removed'
+                    );
+                }
+
+                return $this->translate('Remove escalation');
+            });
+    }
+
+    /**
+     * Method to set disabled state of remove button
+     *
+     * @param bool $disable
+     *
+     * @return $this
+     */
+    public function setRemoveButtonDisabled(bool $state = false)
+    {
+        $this->disableRemoveButtton = $state;
+
+        return $this;
     }
 }
