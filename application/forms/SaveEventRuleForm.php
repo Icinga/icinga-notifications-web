@@ -2,9 +2,11 @@
 
 namespace Icinga\Module\Noma\Forms;
 
+use Exception;
 use Icinga\Module\Noma\Common\Database;
 use Icinga\Module\Noma\Model\RuleEscalation;
 use Icinga\Module\Noma\Model\RuleEscalationRecipient;
+use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\Form;
 use ipl\Html\HtmlDocument;
@@ -207,6 +209,10 @@ class SaveEventRuleForm extends Form
      */
     public function addRule(array $config): int
     {
+        if (! isset($config['name'])) {
+            throw new Exception('Name of the event rule is not set');
+        }
+
         $db = Database::get();
 
         $db->beginTransaction();
@@ -436,5 +442,14 @@ class SaveEventRuleForm extends Form
         $db->delete('rule', ['id = ?' => $id]);
 
         $db->commitTransaction();
+    }
+
+    protected function onError()
+    {
+        foreach ($this->getMessages() as $message) {
+            if ($message instanceof Exception) {
+                Notification::error($this->translate($message->getMessage()));
+            }
+        }
     }
 }
