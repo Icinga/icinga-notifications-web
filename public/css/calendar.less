@@ -122,7 +122,7 @@
   .overlay {
     display: grid;
     grid-template-rows: repeat(@weeks * @rowsPerDay, 1fr);
-    grid-template-columns: repeat(@days * @columnsPerDay, minmax(0.125em, 1fr));
+    grid-template-columns: repeat(@days * @columnsPerDay, minmax(0, 1fr));
     overflow: hidden;
   }
 
