@@ -45,8 +45,7 @@ class EventRuleController extends CompatController
         $cache = $this->sessionNamespace->get($ruleId);
 
         if ($cache) {
-            //TODO: just for tests, render correctly
-//            $this->addContent(Html::tag('span', 'This is cached config'));
+            $this->addContent(Html::tag('div', ['class' => 'cache-notice'], t('There are unsaved changes.')));
             $eventRuleConfig = new EventRuleConfig(
                 Url::fromPath('noma/event-rule/search-editor', ['id' => $ruleId]),
                 $cache
@@ -63,6 +62,12 @@ class EventRuleController extends CompatController
             ->setSubmitButtonDisabled($cache === null)
             ->setSubmitLabel($this->translate('Save Changes'))
             ->on(SaveEventRuleForm::ON_SUCCESS, function ($form) use ($ruleId, $eventRuleConfig) {
+                if ($form->getPressedSubmitElement()->getName() === 'discard_changes') {
+                    $this->sessionNamespace->delete($ruleId);
+                    Notification::success($this->translate('Successfully discarded the pending changes.'));
+                    $this->redirectNow(Links::eventRule($ruleId));
+                }
+
                 if (! $eventRuleConfig->isValid()) {
                     $eventRuleConfig->addAttributes(['class' => 'invalid']);
                     return;

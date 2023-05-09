@@ -49,6 +49,11 @@ class SaveEventRuleForm extends Form
         });
     }
 
+    public function hasBeenSubmitted(): bool
+    {
+        return $this->hasBeenSent() && $this->getPressedSubmitElement() !== null;
+    }
+
     /**
      * Set whether to enable or disable the submit button
      *
@@ -141,12 +146,22 @@ class SaveEventRuleForm extends Form
         $additionalButtons = [];
         if ($this->showRemoveButton) {
             $removeBtn = $this->createElement('submit', 'remove', [
-                'label' => $this->translate('Remove'),
+                'label' => $this->translate('Delete Event Rule'),
                 'class' => 'btn-remove',
                 'formnovalidate' => true
             ]);
             $this->registerElement($removeBtn);
             $additionalButtons[] = $removeBtn;
+        }
+
+        if (! $this->disableSubmitButton) {
+            $clearCacheBtn = $this->createElement('submit', 'discard_changes', [
+                'label' => $this->translate('Discard Changes'),
+                'class' => 'btn-discard-changes',
+                'formnovalidate' => true
+            ]);
+            $this->registerElement($clearCacheBtn);
+            $additionalButtons[] = $clearCacheBtn;
         }
 
         $this->getElement('submit')->prependWrapper((new HtmlDocument())->setHtmlContent(...$additionalButtons));

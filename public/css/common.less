@@ -209,5 +209,23 @@
     display: inline-flex;
     float: right;
     margin: 1em 0 0 auto;
+
+    input[type="submit"]:not(:first-child) {
+      margin-left: 1em;
+
+      &:disabled {
+        background: @gray-light;
+        color: @disabled-gray;
+        cursor: default;
+      }
+
+      &.btn-remove {
+        border: none;
+      }
+
+      &.btn-discard-changes {
+        .event-rule-button();
+      }
+    }
   }
 }
