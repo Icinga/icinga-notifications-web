@@ -145,7 +145,7 @@ class ContactForm extends CompatForm
             ]
         )->addElement(
             'text',
-            'rocket.chat',
+            'rocketchat',
             [
                 'label' => $this->translate('Rocket.Chat Username'),
             ]
@@ -196,7 +196,7 @@ class ContactForm extends CompatForm
                 if (! isset($formValues['contact_address'])) {
                     $formValues['contact_address'] = [
                         'email'       => null,
-                        'rocket.chat' => null
+                        'rocketchat' => null
                     ];
                 }
 
@@ -204,8 +204,8 @@ class ContactForm extends CompatForm
                     $formValues['contact_address']['email' ] = $contactInfo->address;
                 }
 
-                if ($contactInfo->type === 'rocket.chat') {
-                    $formValues['contact_address']['rocket.chat'] = $contactInfo->address;
+                if ($contactInfo->type === 'rocketchat') {
+                    $formValues['contact_address']['rocketchat'] = $contactInfo->address;
                 }
             }
 
@@ -228,7 +228,7 @@ class ContactForm extends CompatForm
 
         $addressFromDb = [
             'email'       => null,
-            'rocket.chat' => null
+            'rocketchat' => null
         ];
 
         if ($this->contactId === null) {
@@ -247,8 +247,8 @@ class ContactForm extends CompatForm
                     $addressFromDb['email'] = [$addressRow->id, $addressRow->address];
                 }
 
-                if ($addressRow->type === 'rocket.chat') {
-                    $addressFromDb['rocket.chat'] = [$addressRow->id, $addressRow->address];
+                if ($addressRow->type === 'rocketchat') {
+                    $addressFromDb['rocketchat'] = [$addressRow->id, $addressRow->address];
                 }
             }
         }
