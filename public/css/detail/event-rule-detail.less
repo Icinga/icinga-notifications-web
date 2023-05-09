@@ -2,6 +2,10 @@
   display: flex;
   align-items: baseline;
 
+  > .right-arrow:first-child {
+    margin-top: 3.125em;
+  }
+
   &.invalid {
     .escalations .escalation form.escalation-form {
       select,
@@ -32,7 +36,6 @@
     display: inline-flex;
     flex-direction: column;
     width: 85em;
-    padding: 2em 2em 2em 0;
 
     .vertical-line {
       position: absolute;
@@ -45,7 +48,7 @@
     > .escalation {
       display: flex;
       align-items: center;
-      padding-bottom: 5em;
+      padding-bottom: 2em;
       position: relative;
 
       &:before {
@@ -55,7 +58,7 @@
         top: 0;
         bottom: 0;
         width: .5em;
-        margin-left: 1.5em;
+        margin-left: 1.25em;
         background: @gray-lighter;
         z-index: -1;
       }
@@ -63,7 +66,7 @@
       &:first-child:before {
         content: "";
         display: block;
-        top: calc(~"50% - 2.5em");
+        top: calc(~"50% - 1em");
       }
 
       .right-arrow:first-child {
@@ -71,7 +74,7 @@
       }
 
       .right-arrow-long {
-        width: 40em;
+        width: 46em;
       }
 
       .right-arrow.right-arrow-long:first-child {
@@ -169,7 +172,7 @@
         padding: 0;
 
         button[type="submit"] {
-          font-size: 3em;
+          font-size: 2em;
           width: 3em;
           margin: 0;
           background: @low-sat-blue;
@@ -185,6 +188,7 @@
         content: 'Condition';
         align-self: center;
         margin-bottom: -1.5em;
+        color: @text-color-light;
       }
     }
   }
@@ -205,22 +209,38 @@
   .rounded-corners();
 }
 
+// Collecting button styles
+.event-rule-button() {
+  color: @icinga-blue;
+  background: @low-sat-blue;
+
+  border: none;
+  text-align: center;
+  line-height: 1.5;
+  display: block;
+
+  &:hover,
+  &:focus {
+    color: @icinga-blue;
+  }
+
+  &:hover {
+    background: @low-sat-blue-dark;
+  }
+
+  &:focus {
+    outline: 3px solid fade(@icinga-blue, 50%);
+    outline-offset: 1px;
+  }
+}
+
 .escalation-form {
   display: flex;
   flex-direction: column;
 
   .options +.add-button,
   .remove-button {
-    background: @low-sat-blue;
-    border: none;
-    text-align: center;
-    line-height: 1.5;
-    display: block;
-
-    &:hover {
-      background: @low-sat-blue-dark;
-      color: @icinga-blue;
-    }
+    .event-rule-button();
   }
 
   .options + .add-button {
@@ -234,4 +254,20 @@
       }
     }
   }
+}
+
+.add-filter-form,
+.escalation-form.count-zero-escalation-condition-form {
+  button[type="submit"] {
+    font-size: 2em;
+    height: 2.25em;
+    margin: 0;
+
+    .event-rule-button();
+  }
+}
+
+.remove-escalation-form button[type="submit"],
+.add-escalation-form button[type="submit"] {
+  .event-rule-button();
 }
