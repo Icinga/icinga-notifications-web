@@ -37,6 +37,9 @@ class SaveEventRuleForm extends Form
     /** @var bool Whether to show a button to delete the rule */
     protected $showRemoveButton = false;
 
+    /** @var bool Whether to disable the remove button */
+    protected $disableRemoveButton = false;
+
     /**
      * Create a new SaveEventRuleForm
      */
@@ -64,6 +67,20 @@ class SaveEventRuleForm extends Form
     public function setSubmitButtonDisabled(bool $state = true): self
     {
         $this->disableSubmitButton = $state;
+
+        return $this;
+    }
+
+    /**
+     * Set whether to enable or disable the remove button
+     *
+     * @param bool $state
+     *
+     * @return $this
+     */
+    public function setRemoveButtonDisabled(bool $state = true): self
+    {
+        $this->disableRemoveButton = $state;
 
         return $this;
     }
@@ -151,6 +168,20 @@ class SaveEventRuleForm extends Form
                 'formnovalidate' => true
             ]);
             $this->registerElement($removeBtn);
+
+            $this->getElement('remove')
+                ->getAttributes()
+                ->registerAttributeCallback('disabled', function () {
+                    return $this->disableRemoveButton;
+                })
+                ->registerAttributeCallback('title', function () {
+                    if ($this->disableRemoveButton) {
+                        return $this->translate(
+                            'There exist active incidents for this event rule and hence cannot be deleted'
+                        );
+                    }
+                });
+
             $additionalButtons[] = $removeBtn;
         }
 

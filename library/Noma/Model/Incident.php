@@ -76,6 +76,10 @@ class Incident extends Model
         $relations->hasMany('incident_history', IncidentHistory::class);
 
         $relations
+            ->belongsToMany('rule', Rule::class)
+            ->through('incident_rule');
+
+        $relations
             ->belongsToMany('rule_escalation', RuleEscalation::class)
             ->through('incident_rule_escalation_state')
             ->setJoinType('LEFT');

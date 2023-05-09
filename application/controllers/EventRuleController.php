@@ -9,6 +9,7 @@ use Icinga\Module\Noma\Common\Database;
 use Icinga\Module\Noma\Common\Links;
 use Icinga\Module\Noma\Forms\EventRuleForm;
 use Icinga\Module\Noma\Forms\SaveEventRuleForm;
+use Icinga\Module\Noma\Model\Incident;
 use Icinga\Module\Noma\Model\ObjectExtraTag;
 use Icinga\Module\Noma\Model\Rule;
 use Icinga\Module\Noma\Web\Control\SearchBar\ExtraTagSuggestions;
@@ -57,8 +58,20 @@ class EventRuleController extends CompatController
             );
         }
 
+        $disableRemoveButton = false;
+        if (ctype_digit($ruleId)) {
+            $incidents = Incident::on(Database::get())
+                ->with('rule')
+                ->filter(Filter::equal('rule.id', $ruleId));
+
+            if ($incidents->count() > 0) {
+                $disableRemoveButton = true;
+            }
+        }
+
         $saveForm = (new SaveEventRuleForm())
             ->setShowRemoveButton()
+            ->setRemoveButtonDisabled($disableRemoveButton)
             ->setSubmitButtonDisabled($cache === null)
             ->setSubmitLabel($this->translate('Save Changes'))
             ->on(SaveEventRuleForm::ON_SUCCESS, function ($form) use ($ruleId, $eventRuleConfig) {
