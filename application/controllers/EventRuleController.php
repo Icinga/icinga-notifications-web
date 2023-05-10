@@ -71,6 +71,7 @@ class EventRuleController extends CompatController
 
         $saveForm = (new SaveEventRuleForm())
             ->setShowRemoveButton()
+            ->setShowDismissChangesButton($cache !== null)
             ->setRemoveButtonDisabled($disableRemoveButton)
             ->setSubmitButtonDisabled($cache === null)
             ->setSubmitLabel($this->translate('Save Changes'))

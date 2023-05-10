@@ -39,6 +39,9 @@ class SaveEventRuleForm extends Form
     /** @var bool Whether to show a button to delete the rule */
     protected $showRemoveButton = false;
 
+    /** @var bool Whether to show a button to dismiss cached changes */
+    protected $showDismissChangesButton = false;
+
     /** @var bool Whether to disable the remove button */
     protected $disableRemoveButton = false;
 
@@ -126,6 +129,20 @@ class SaveEventRuleForm extends Form
     }
 
     /**
+     * Set whether to show a button to dismiss cached changes
+     *
+     * @param bool $state
+     *
+     * @return $this
+     */
+    public function setShowDismissChangesButton(bool $state = true): self
+    {
+        $this->showDismissChangesButton = $state;
+
+        return $this;
+    }
+
+    /**
      * Get whether the user pushed the remove button
      *
      * @return bool
@@ -187,7 +204,7 @@ class SaveEventRuleForm extends Form
             $additionalButtons[] = $removeBtn;
         }
 
-        if (! $this->disableSubmitButton) {
+        if ($this->showDismissChangesButton) {
             $clearCacheBtn = $this->createElement('submit', 'discard_changes', [
                 'label' => $this->translate('Discard Changes'),
                 'class' => 'btn-discard-changes',
