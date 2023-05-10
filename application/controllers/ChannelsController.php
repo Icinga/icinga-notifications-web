@@ -83,12 +83,13 @@ class ChannelsController extends CompatController
         $this->addControl($sortControl);
         $this->addControl($limitControl);
         $this->addControl($searchBar);
-        $this->addControl(
+        $this->addContent(
             (new ButtonLink(
                 t('Add Channel'),
                 Url::fromPath('noma/channels/add'),
                 'plus'
             ))->setBaseTarget('_next')
+            ->addAttributes(['class' => 'add-new-component'])
         );
 
         $this->addContent(new ChannelList($channels));
