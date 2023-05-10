@@ -55,6 +55,8 @@ class RuleEscalationRecipient extends Model
     {
         $relations->belongsTo('rule_escalation', RuleEscalation::class);
         $relations->belongsTo('contact', Contact::class);
+        $relations->belongsTo('schedule', Schedule::class);
+        $relations->belongsTo('contactgroup', Contactgroup::class);
     }
 
     /**

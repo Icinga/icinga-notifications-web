@@ -3,6 +3,7 @@
 namespace Icinga\Module\Noma\Model;
 
 use ipl\Orm\Model;
+use ipl\Orm\Relations;
 
 class Contactgroup extends Model
 {
@@ -22,5 +23,11 @@ class Contactgroup extends Model
             'name',
             'color'
         ];
+    }
+
+    public function createRelations(Relations $relations)
+    {
+        $relations->hasMany('rule_escalation_recipient', RuleEscalationRecipient::class)
+            ->setJoinType('LEFT');
     }
 }

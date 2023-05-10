@@ -6,10 +6,9 @@ namespace Icinga\Module\Noma\Forms;
 
 use Icinga\Module\Noma\Common\Database;
 use Icinga\Module\Noma\Model\Contact;
-use ipl\Html\FormElement\SelectElement;
+use Icinga\Module\Noma\Model\Contactgroup;
+use Icinga\Module\Noma\Model\Schedule;
 use ipl\Html\Html;
-use ipl\Orm\Model;
-use ipl\Stdlib\Filter;
 
 class EscalationRecipientForm extends BaseEscalationForm
 {
@@ -27,13 +26,13 @@ class EscalationRecipientForm extends BaseEscalationForm
             $options['Contacts']['contact_' . $contact->id] = $contact->full_name;
         }
 
-        /*foreach (Contactgroup::on(Database::get()) as $contactgroup) {
+        foreach (Contactgroup::on(Database::get()) as $contactgroup) {
             $options['Contact Groups']['contactgroup_' . $contactgroup->id] = $contactgroup->name;
         }
 
         foreach (Schedule::on(Database::get()) as $schedule) {
             $options['Schedules']['schedule_' . $schedule->id] = $schedule->name;
-        }*/
+        }
 
         return $options;
     }
@@ -46,12 +45,12 @@ class EscalationRecipientForm extends BaseEscalationForm
         }
 
         foreach (range(1, $end) as $count) {
-            $recipientId = $this->createElement(
+            $escalationRecipientId = $this->createElement(
                 'hidden',
                 'id' . $count
             );
 
-            $this->registerElement($recipientId);
+            $this->registerElement($escalationRecipientId);
 
             $col = $this->createElement(
                 'select',
@@ -78,44 +77,35 @@ class EscalationRecipientForm extends BaseEscalationForm
             $this->registerElement($col);
             $this->registerElement($op);
 
-            $contact = null;
+            $options = [
+                ''           =>  sprintf(' - %s - ', $this->translate('Please choose')),
+                'email'      => 'E-Mail',
+                'rocketchat' => 'Rocket.Chat'
+            ];
+
+            $val = $this->createElement(
+                'select',
+                'value'. $count,
+                [
+                    'class'             => ['autosubmit', 'right-operand'],
+                    'options'           => $options,
+                    'disabledOptions'   => ['']
+                ]
+            );
+
             if ($this->getValue('column' . $count) !== null) {
-                $contactId = substr($this->getValue('column' . $count), strlen('contact_'));
-                $contact = Contact::on(Database::get());
-                $contact->filter(Filter::equal('id', $contactId));
+                $recipient = explode('_', $this->getValue('column' . $count));
+                if ($recipient[0] === 'contact') {
+                    $options[''] = $this->translate('Default User Channel');
 
-                $contact = $contact->first();
+                    $val->setOptions($options);
 
-                $options = [
-                    ''            => $this->translate('Default User Channel'),
-                    'email'       => 'E-Mail',
-                    'rocket.chat' => 'Rocket.Chat'
-                ];
-            } else {
-                $options = [
-                    '' => $this->translate('Please make a decision'),
-                    'email'                => 'E-Mail',
-                    'rocket.chat'          => 'Rocket.Chat'
-                ];
-            }
+                    $val->setDisabledOptions([]);
 
-            if ($contact) {
-                /** @var SelectElement $val */
-                $val = $this->createElement(
-                    'select',
-                    'value'. $count,
-                    [
-                        'class'             => ['autosubmit', 'right-operand'],
-                        'options'           => $options,
-                        'disabledOptions'   => []
-                    ]
-                );
-
-                if ($this->getPopulatedValue('value'. $count, '') === '') {
-                    $val->addAttributes(['class' => 'default-channel']);
+                    if ($this->getPopulatedValue('value'. $count, '') === '') {
+                        $val->addAttributes(['class' => 'default-channel']);
+                    }
                 }
-
-
             } else {
                 $val = $this->createElement('text', 'value' . $count, [
                     'class'       => 'right-operand',
@@ -129,7 +119,7 @@ class EscalationRecipientForm extends BaseEscalationForm
             $this->options[$count] = Html::tag(
                 'li',
                 ['class' => 'option'],
-                [$recipientId, $col, $op, $val, $this->createRemoveButton($count)]
+                [$col, $op, $val, $this->createRemoveButton($count)]
             );
         }
 
