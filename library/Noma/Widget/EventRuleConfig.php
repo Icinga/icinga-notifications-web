@@ -59,6 +59,11 @@ class EventRuleConfig extends BaseHtmlElement
     public function __construct(Url $searchEditorUrl, $config = [])
     {
         $this->searchEditorUrl = $searchEditorUrl;
+
+        if (! array_key_exists('conditionPlusButtonPosition', $config)) {
+            //the default position of add condition button
+            $config['conditionPlusButtonPosition'] = 1;
+        }
         $this->setConfig($config);
 
         $this->createForms();
@@ -84,6 +89,9 @@ class EventRuleConfig extends BaseHtmlElement
             ->on(AddEscalationForm::ON_SENT, function () use ($escalations) {
                 $newPosition = (int) array_key_last($escalations) + 1;
                 $this->config['rule_escalation'][$newPosition] = ['id' => $this->generateFakeEscalationId()];
+                if ($this->config['conditionPlusButtonPosition'] === null) {
+                    $this->config['conditionPlusButtonPosition'] = $newPosition;
+                }
 
                 $this->removeEscalationForms[$newPosition] =  $this->createRemoveEscalationForm($newPosition);
 
@@ -277,10 +285,27 @@ class EventRuleConfig extends BaseHtmlElement
     private function createConditionForm(int $position, array $values = []): EscalationConditionForm
     {
         $cnt = empty(array_filter($values)) ? null : count($values);
+
+        if ($cnt === null && $this->config['conditionPlusButtonPosition'] !== $position) {
+            $cnt = 1;
+        }
+
         $form = (new EscalationConditionForm($cnt))
             ->addAttributes(['name' => 'escalation-condition-form-' . $position])
+            ->deleteRemoveButton($this->config['conditionPlusButtonPosition'] !== null)
             ->on(Form::ON_SENT, function ($form) use ($position) {
-                $this->config['rule_escalation'][$position]['condition'] = $form->getValues();
+                $values = $form->getValues();
+                if ($form->isAddButtonPressed()
+                    && $this->config['conditionPlusButtonPosition'] === $position
+                    && empty($this->config['rule_escalation'][$position]['condition'])
+                ) {
+                    $this->config['conditionPlusButtonPosition'] = null;
+                }
+                if (empty($values)) {
+                    $this->config['conditionPlusButtonPosition'] = $position;
+                }
+
+                $this->config['rule_escalation'][$position]['condition'] = $values;
 
                 $this->emit(self::ON_CHANGE, [$this]);
             });
@@ -335,6 +360,12 @@ class EventRuleConfig extends BaseHtmlElement
                 unset($this->config['rule_escalation'][$position]);
                 unset($this->escalationForms[$position]);
                 unset($this->removeEscalationForms[$position]);
+
+                if ($this->config['conditionPlusButtonPosition'] === $position) {
+                    $this->config['conditionPlusButtonPosition'] = null;
+                } elseif ($this->config['conditionPlusButtonPosition'] > $position) {
+                    $this->config['conditionPlusButtonPosition'] -= 1;
+                }
 
                 if (! empty($this->config['rule_escalation'])) {
                     $this->config['rule_escalation'] = array_combine(

@@ -123,6 +123,7 @@ class EventRuleController extends CompatController
             ->on(EventRuleConfig::ON_CHANGE, function ($eventRuleConfig) use ($ruleId, $saveForm) {
                 $this->sessionNamespace->set($ruleId, $eventRuleConfig->getConfig());
                 $saveForm->setSubmitButtonDisabled(false);
+                $this->redirectNow(Links::eventRule($ruleId));
             });
 
         foreach ($eventRuleConfig->getForms() as $form) {

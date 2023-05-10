@@ -103,6 +103,7 @@ class EventRulesController extends CompatController
     public function addAction(): void
     {
         $this->addTitleTab(t('Add Event Rule'));
+        $this->getTabs()->setRefreshUrl(Url::fromPath('noma/event-rules/add'));
 
         if ($this->params->has('use_cache') || $this->getServerRequest()->getMethod() !== 'GET') {
             $cache = $this->sessionNamespace->get(-1, []);
@@ -141,6 +142,8 @@ class EventRulesController extends CompatController
 
         $eventRuleConfig->on(EventRuleConfig::ON_CHANGE, function ($eventRuleConfig) {
             $this->sessionNamespace->set(-1, $eventRuleConfig->getConfig());
+
+            $this->redirectNow(Url::fromPath('noma/event-rules/add', ['use_cache' => true]));
         });
 
         foreach ($eventRuleConfig->getForms() as $f) {

@@ -5,13 +5,18 @@
 namespace Icinga\Module\Noma\Forms;
 
 use Icinga\Module\Noma\Web\Form\EventRuleDecorator;
+use ipl\Html\Contract\FormElement;
 use ipl\Html\Html;
 use ipl\Stdlib\Filter;
 use ipl\Validator\CallbackValidator;
 use ipl\Web\Filter\QueryString;
+use ipl\Web\Widget\Icon;
 
 class EscalationConditionForm extends BaseEscalationForm
 {
+    /** @var bool Whether to delete the remove button */
+    protected $deleteRemoveButton;
+
     public function __construct(?int $count)
     {
         $this->addAttributes(['class' => 'escalation-condition-form']);
@@ -151,18 +156,6 @@ class EscalationConditionForm extends BaseEscalationForm
         $this->add(Html::tag('ul', ['class' => 'options'], $this->options));
     }
 
-    protected function handleRemove(): void
-    {
-        parent::handleRemove();
-
-        if (empty($this->options)) {
-            $this->addAttributes(['class' => 'count-zero-escalation-condition-form']);
-        } else {
-            $this->getAttributes()
-                ->remove('class', 'count-zero-escalation-condition-form');
-        }
-    }
-
     public function getValues()
     {
         $filter = Filter::any();
@@ -213,5 +206,76 @@ class EscalationConditionForm extends BaseEscalationForm
         }
 
         return parent::populate($values);
+    }
+
+    protected function createRemoveButton(int $count): ?FormElement
+    {
+        if ($this->deleteRemoveButton && $this->count === 1 && ! $this->isAddPressed) {
+            return null;
+        }
+
+        $removeButton = $this->createElement(
+            'submitButton',
+            'remove_' . $count,
+            [
+                'class'             => ['remove-button', 'control-button', 'spinner'],
+                'label'             => new Icon('minus'),
+                'title'             => $this->translate('Remove'),
+                'formnovalidate'    => true
+            ]
+        );
+
+        $this->registerElement($removeButton);
+
+        return $removeButton;
+    }
+
+    protected function handleRemove(): void
+    {
+        $button = $this->getPressedSubmitElement();
+
+        if ($button && $button->getName() !== 'add') {
+            [$name, $toRemove] = explode('_', $button->getName(), 2);
+
+            $this->removedOptionNumber = (int) $toRemove;
+            $optionCount = count($this->options);
+
+            for ($i = $toRemove; $i < $optionCount; $i++) {
+                $nextCount = $i + 1;
+                $this->getElement('column' . $nextCount)->setName('column' . $i);
+                $this->getElement('operator' . $nextCount)->setName('operator' . $i);
+                $this->getElement('value' . $nextCount)->setName('value' . $i);
+
+                $this->getElement('remove_' . $nextCount)->setName('remove_' . $i);
+            }
+
+            unset($this->options[$toRemove]);
+
+            if ($this->deleteRemoveButton && count($this->options) === 1) {
+                $key = array_key_last($this->options);
+                $this->options[$key]->remove($this->getElement('remove_' . $key));
+            }
+        }
+
+        if (empty($this->options)) {
+            $this->addAttributes(['class' => 'count-zero-escalation-condition-form']);
+        } else {
+            $this->getAttributes()
+                ->remove('class', 'count-zero-escalation-condition-form');
+        }
+    }
+
+    /**
+     * Whether to delete the remove button
+     *
+     * @param bool $delete
+     *
+     * @return $this
+     */
+    public function deleteRemoveButton(bool $delete = true): self
+    {
+        $this->deleteRemoveButton = $delete;
+
+        return $this;
     }
 }
