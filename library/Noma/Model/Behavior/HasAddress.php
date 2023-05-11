@@ -30,7 +30,7 @@ class HasAddress implements RewriteColumnBehavior, QueryAwareBehavior
     public function rewriteColumn($column, ?string $relation = null)
     {
         if ($this->isSelectableColumn($column)) {
-            $type = $column === 'has_email' ? 'email' : 'rocket.chat';
+            $type = $column === 'has_email' ? 'email' : 'rocketchat';
 
             $subQueryRelation = $relation !== null ? $relation . '.contact.contact_address' : 'contact.contact_address';
 
@@ -72,7 +72,7 @@ class HasAddress implements RewriteColumnBehavior, QueryAwareBehavior
         $column = substr($condition->getColumn(), strlen($relation));
 
         if ($this->isSelectableColumn($column)) {
-            $type = $column === 'has_email' ? 'email' : 'rocket.chat';
+            $type = $column === 'has_email' ? 'email' : 'rocketchat';
 
             $subQuery = $this->query->createSubQuery(new ContactAddress(), $relation)
                 ->limit(1)
