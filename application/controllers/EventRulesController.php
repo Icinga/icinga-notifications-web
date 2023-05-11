@@ -148,6 +148,11 @@ class EventRulesController extends CompatController
 
         foreach ($eventRuleConfig->getForms() as $f) {
             $f->handleRequest($this->getServerRequest());
+
+            if (! $f->hasBeenSent()) {
+                // Force validation of populated values in case we display an unsaved rule
+                $f->validatePartial();
+            }
         }
 
         $eventRuleFormAndSave = Html::tag('div', ['class' => 'event-rule-and-save-forms']);
