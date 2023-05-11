@@ -21,6 +21,7 @@ use ipl\Web\Filter\QueryString;
 use ipl\Web\Url;
 use ipl\Web\Widget\ButtonLink;
 use ipl\Html\ValidHtml;
+use ipl\Web\Widget\Tabs;
 
 class ContactsController extends CompatController
 {
@@ -173,13 +174,18 @@ class ContactsController extends CompatController
 
     public function getTabs()
     {
-        return parent::getTabs()
-            ->add('schedules', [
-                'label' => $this->translate('Schedules'),
-                'url'   => Url::fromPath('noma/schedules')
-            ])->add('contacts', [
-                'label' => $this->translate('Contacts'),
-                'url'   => Url::fromRequest()
-            ]);
+
+        if ($this->getRequest()->getActionName() === 'index') {
+            return parent::getTabs()
+                ->add('schedules', [
+                    'label' => $this->translate('Schedules'),
+                    'url'   => Url::fromPath('noma/schedules')
+                ])->add('contacts', [
+                    'label' => $this->translate('Contacts'),
+                    'url'   => Url::fromRequest()
+                ]);
+        }
+
+        return parent::getTabs();
     }
 }
