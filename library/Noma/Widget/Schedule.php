@@ -66,11 +66,16 @@ class Schedule extends BaseHtmlElement
                     Filter::lessThanOrEqual('end_time', $calendar->getGrid()->getGridEnd()->getTimestamp())
                 ),
                 Filter::all(
+                    Filter::lessThanOrEqual('start_time', $calendar->getGrid()->getGridStart()->getTimestamp()),
+                    Filter::greaterThanOrEqual('end_time', $calendar->getGrid()->getGridEnd()->getTimestamp())
+                ),
+                Filter::all(
                     Filter::greaterThanOrEqual('until_time', $calendar->getGrid()->getGridStart()->getTimestamp()),
                     Filter::lessThanOrEqual('until_time', $calendar->getGrid()->getGridEnd()->getTimestamp())
                 ),
                 Filter::all(
                     Filter::unlike('until_time', '*'),
+                    Filter::like('rrule', '*'),
                     Filter::lessThanOrEqual('start_time', $calendar->getGrid()->getGridStart()->getTimestamp())
                 )
             );

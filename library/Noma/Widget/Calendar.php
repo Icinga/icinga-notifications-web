@@ -127,7 +127,8 @@ class Calendar extends BaseHtmlElement
                     $limit = $visibleHours;
                 }
 
-                foreach ($rrule->getNextRecurrences($grid->getGridStart(), $limit) as $recurrence) {
+                $recurrenceStart = (clone $grid->getGridStart())->sub($length);
+                foreach ($rrule->getNextRecurrences($recurrenceStart, $limit) as $recurrence) {
                     $recurrenceEnd = (clone $recurrence)->add($length);
                     $occurrence = (new Event($event->getId()))
                         ->setDescription($event->getDescription())
