@@ -7,7 +7,6 @@ namespace Icinga\Module\Noma\Forms;
 use Icinga\Module\Noma\Model\Channel;
 use Icinga\Web\Session;
 use ipl\Html\Contract\FormSubmitElement;
-use ipl\Html\FormElement\FieldsetElement;
 use ipl\Sql\Connection;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
@@ -60,13 +59,10 @@ class ChannelForm extends CompatForm
             ]
         );
 
-        $options = new FieldsetElement('config');
-        $this->addElement($options);
-
         $selectedType = $this->getValue('type');
 
         if ($selectedType === 'email') {
-            $options->addElement(
+            $this->addElement(
                 'text',
                 'host',
                 [
@@ -103,7 +99,7 @@ class ChannelForm extends CompatForm
                 ]
             );
 
-            $options->addElement(
+            $this->addElement(
                 'checkbox',
                 'tls',
                 [
@@ -115,8 +111,8 @@ class ChannelForm extends CompatForm
                 ]
             );
 
-            if ($options->getElement('tls')->getValue() === '1') {
-                $options->addElement(
+            if ($this->getElement('tls')->getValue() === '1') {
+                $this->addElement(
                     'checkbox',
                     'tls_certcheck',
                     [
@@ -129,7 +125,7 @@ class ChannelForm extends CompatForm
                 );
             }
         } elseif ($selectedType === 'rocketchat') {
-            $options->addElement(
+            $this->addElement(
                 'text',
                 'url',
                 [
@@ -211,7 +207,13 @@ class ChannelForm extends CompatForm
     public function populate($values)
     {
         if ($values instanceof Channel) {
-            $values->config = json_decode($values->config) ?? [];
+            $values = array_merge(
+                [
+                    'name' => $values->name,
+                    'type' => $values->type
+                ],
+                json_decode($values->config, JSON_OBJECT_AS_ARRAY) ?? []
+            );
         }
 
         parent::populate($values);
@@ -227,7 +229,30 @@ class ChannelForm extends CompatForm
             return;
         }
 
-        $channel = $this->getValues();
+        $channel = [
+            'name' => $this->getValue('name'),
+            'type' => $this->getValue('type')
+        ];
+
+        if ($this->getValue('type') === 'email') {
+            $channel['config'] = [
+                'host' => $this->getValue('host'),
+                'port' => $this->getValue('port'),
+                'from' => $this->getValue('from'),
+                'password' => $this->getValue('password')
+            ];
+            if ($this->getElement('tls')->isChecked()) {
+                $channel['config']['tls'] = true;
+                $channel['config']['tls_certcheck'] = $this->getValue('tls_certcheck');
+            }
+        } else {
+            $channel['config'] = [
+                'url' => $this->getValue('url'),
+                'user_id' => $this->getValue('user_id'),
+                'token' => $this->getValue('token')
+            ];
+        }
+
         $channel['config'] = json_encode($channel['config']);
         if ($this->channelId === null) {
             $this->db->insert('channel', $channel);
