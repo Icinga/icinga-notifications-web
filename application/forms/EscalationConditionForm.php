@@ -10,6 +10,8 @@ use ipl\Html\Html;
 use ipl\Stdlib\Filter;
 use ipl\Validator\CallbackValidator;
 use ipl\Web\Filter\QueryString;
+use ipl\Web\Filter\Renderer;
+use ipl\Web\Url;
 use ipl\Web\Widget\Icon;
 
 class EscalationConditionForm extends BaseEscalationForm
@@ -47,7 +49,7 @@ class EscalationConditionForm extends BaseEscalationForm
                 ]
             );
 
-            $operators = ['=', '>', '<'];
+            $operators = ['=', '>', '>=', '<', '<='];
             $op = $this->createElement(
                 'select',
                 'operator'. $count,
@@ -64,18 +66,17 @@ class EscalationConditionForm extends BaseEscalationForm
                         'select',
                         'value' . $count,
                         [
-                            'required' => true,
-                            'class' => ['autosubmit', 'right-operand'],
+                            'class'   => ['autosubmit', 'right-operand'],
                             'options' => [
-                                'ok' => $this->translate('Ok', 'noma.severity'),
-                                'debug' => $this->translate('Debug', 'noma.severity'),
-                                'info' => $this->translate('Information', 'noma.severity'),
-                                'notice' => $this->translate('Notice', 'noma.severity'),
+                                'ok'      => $this->translate('Ok', 'noma.severity'),
+                                'debug'   => $this->translate('Debug', 'noma.severity'),
+                                'info'    => $this->translate('Information', 'noma.severity'),
+                                'notice'  => $this->translate('Notice', 'noma.severity'),
                                 'warning' => $this->translate('Warning', 'noma.severity'),
-                                'err' => $this->translate('Error', 'noma.severity'),
-                                'crit' => $this->translate('Critical', 'noma.severity'),
-                                'alert' => $this->translate('Alert', 'noma.severity'),
-                                'emerg' => $this->translate('Emergency', 'noma.severity')
+                                'err'     => $this->translate('Error', 'noma.severity'),
+                                'crit'    => $this->translate('Critical', 'noma.severity'),
+                                'alert'   => $this->translate('Alert', 'noma.severity'),
+                                'emerg'   => $this->translate('Emergency', 'noma.severity')
                             ]
                         ]
                     );
@@ -168,7 +169,7 @@ class EscalationConditionForm extends BaseEscalationForm
 
                 $filterStr = $this->getValue('column' . $count, 'placeholder')
                     . $this->getValue('operator' . $count)
-                    . $this->getValue('value' . $count);
+                    . ($this->getValue('value' . $count) ?? 'ok');
 
                 $filter->add(QueryString::parse($filterStr));
             }
@@ -178,7 +179,9 @@ class EscalationConditionForm extends BaseEscalationForm
             $filter->add(QueryString::parse('placeholder='));
         }
 
-        return QueryString::render($filter);
+        return (new Renderer($filter))
+            ->encodeOperators(false)
+            ->render();
     }
 
     public function populate($values)
