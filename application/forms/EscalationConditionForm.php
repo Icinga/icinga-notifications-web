@@ -168,9 +168,11 @@ class EscalationConditionForm extends BaseEscalationForm
                     continue; // removed option
                 }
 
-                $filterStr = $this->getValue('column' . $count, 'placeholder')
+                $chosenType = $this->getValue('column' . $count, 'placeholder');
+
+                $filterStr = $chosenType
                     . $this->getValue('operator' . $count)
-                    . ($this->getValue('value' . $count) ?? 'ok');
+                    . ($this->getValue('value' . $count) ?? ($chosenType === 'incident_severity' ? 'ok' : ''));
 
                 $filter->add(QueryString::parse($filterStr));
             }
