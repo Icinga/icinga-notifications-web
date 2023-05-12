@@ -12,7 +12,6 @@ use ipl\Web\Widget\Icon;
 
 class RuleEscalationRecipientBadge extends BaseHtmlElement
 {
-
     /** @var RuleEscalationRecipient */
     protected $recipient;
 

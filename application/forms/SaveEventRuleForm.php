@@ -23,7 +23,7 @@ class SaveEventRuleForm extends Form
     use Translation;
 
     /** @var string Emitted in case the rule should be deleted */
-    const ON_REMOVE = 'on_remove';
+    public const ON_REMOVE = 'on_remove';
 
     protected $defaultAttributes = [
         'class' => ['icinga-controls', 'save-event-rule'],

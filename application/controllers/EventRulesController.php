@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Noma\Controllers;
 
+use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Noma\Common\Database;
 use Icinga\Module\Noma\Common\Links;
 use Icinga\Module\Noma\Forms\EventRuleForm;

@@ -52,7 +52,7 @@ class EscalationConditionForm extends BaseEscalationForm
             $operators = ['=', '>', '>=', '<', '<='];
             $op = $this->createElement(
                 'select',
-                'operator'. $count,
+                'operator' . $count,
                 [
                     'class' => ['class' => 'operator-input', 'autosubmit'],
                     'options' => array_combine($operators, $operators),
@@ -98,7 +98,7 @@ class EscalationConditionForm extends BaseEscalationForm
                 case 'incident_age':
                     $val = $this->createElement(
                         'text',
-                        'value'. $count,
+                        'value' . $count,
                         [
                             'required' => true,
                             'class' => ['autosubmit', 'right-operand'],

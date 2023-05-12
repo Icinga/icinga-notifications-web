@@ -283,7 +283,8 @@ class EventRuleConfig extends BaseHtmlElement
             ->deleteRemoveButton($this->config['conditionPlusButtonPosition'] !== null)
             ->on(Form::ON_SENT, function ($form) use ($position) {
                 $values = $form->getValues();
-                if ($form->isAddButtonPressed()
+                if (
+                    $form->isAddButtonPressed()
                     && $this->config['conditionPlusButtonPosition'] === $position
                     && empty($this->config['rule_escalation'][$position]['condition'])
                 ) {

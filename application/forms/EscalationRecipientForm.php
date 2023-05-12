@@ -69,7 +69,7 @@ class EscalationRecipientForm extends BaseEscalationForm
 
             $op = $this->createElement(
                 'text',
-                'operator'. $count,
+                'operator' . $count,
                 [
                     'class'     => 'operator-input',
                     'value'     => '=',
@@ -87,7 +87,7 @@ class EscalationRecipientForm extends BaseEscalationForm
 
             $val = $this->createElement(
                 'select',
-                'value'. $count,
+                'value' . $count,
                 [
                     'class'             => ['autosubmit', 'right-operand'],
                     'options'           => $options,
@@ -104,7 +104,7 @@ class EscalationRecipientForm extends BaseEscalationForm
 
                     $val->setDisabledOptions([]);
 
-                    if ($this->getPopulatedValue('value'. $count, '') === '') {
+                    if ($this->getPopulatedValue('value' . $count, '') === '') {
                         $val->addAttributes(['class' => 'default-channel']);
                     }
                 }
