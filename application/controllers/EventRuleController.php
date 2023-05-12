@@ -197,16 +197,16 @@ class EventRuleController extends CompatController
     public function searchEditorAction(): void
     {
         $ruleId = $this->params->shiftRequired('id');
-        $cache = $this->sessionNamespace->get($ruleId);
+
+        $eventRule = $this->sessionNamespace->get($ruleId) ?? $this->fromDb($ruleId);
 
         $editor = EventRuleConfig::createSearchEditor(ObjectExtraTag::on(Database::get()))
-            ->setQueryString($cache['object_filter'] ?? '');
+            ->setQueryString($eventRule['object_filter'] ?? '');
 
-        $editor->on(SearchEditor::ON_SUCCESS, function (SearchEditor $form) use ($ruleId) {
-            $cache = $this->sessionNamespace->get($ruleId);
-            $cache['object_filter'] = EventRuleConfig::createFilterString($form->getFilter());
+        $editor->on(SearchEditor::ON_SUCCESS, function (SearchEditor $form) use ($ruleId, $eventRule) {
+            $eventRule['object_filter'] = EventRuleConfig::createFilterString($form->getFilter());
 
-            $this->sessionNamespace->set($ruleId, $cache);
+            $this->sessionNamespace->set($ruleId, $eventRule);
             $this->getResponse()
                 ->setHeader('X-Icinga-Container', '_self')
                 ->redirectAndExit(
