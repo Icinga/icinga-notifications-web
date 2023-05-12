@@ -276,3 +276,127 @@
 .add-escalation-form button[type="submit"] {
   .event-rule-button();
 }
+
+.right-arrow,
+.horizontal-line {
+  display: inline-block;
+  background-color: @base-gray-lighter;
+  height: 0.5em;
+  text-align: end;
+}
+
+.right-arrow {
+  width: 10em;
+  min-width: 2em;
+  margin-right: 0.4em;
+  position: relative;
+}
+
+.horizontal-line {
+  width: 3em;
+  min-width: 1em;
+}
+
+.right-arrow:after {
+  content: '';
+  position: absolute;
+  border: 0.3em solid transparent;
+  border-left: 0.4em solid @base-gray-lighter;
+}
+
+.vertical-line {
+  width: 0.7em;
+  background-color: @base-gray-lighter;
+}
+
+.remove-escalation-form {
+  width: fit-content;
+}
+
+#layout.minimal-layout form.icinga-form:not(.inline).remove-escalation-form:not(.inline),
+#layout.twocols:not(.wide-layout) form.icinga-form.remove-escalation-form:not(.inline) {
+  width: fit-content;
+}
+
+.add-escalation-form {
+  display: flex;
+  min-height: 6em;
+  align-items: center;
+
+  &:before {
+    content: "";
+    display: block;
+    position: absolute;
+    width: .5em;
+    background: @gray-lighter;
+    top: 0;
+    bottom: 50%;
+    left: calc(~"1.25em + 1px");
+    z-index: -1;
+  }
+}
+
+#layout.minimal-layout form.icinga-form:not(.inline).count-zero-escalation-condition-form:not(.inline),
+#layout.twocols:not(.wide-layout) form.icinga-form.escalation-condition-form.count-zero-escalation-condition-form:not(.inline) {
+  width: fit-content;
+}
+
+.add-filter-form {
+  text-align: center;
+  width: auto;
+  position: relative;
+  bottom: calc(~"-.5em - 1px");
+}
+
+.add-filter-form:after {
+  content: 'Filter';
+  display: block;
+  color: @text-color-light;
+}
+
+.horizontal-line-long {
+  width: 14.5em;
+}
+
+.new-event-rule {
+  margin-bottom: 1em;
+}
+
+.event-rule-and-save-forms {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  padding-bottom: 0.75em;
+
+  .event-rule-form {
+    display: inline-flex;
+    width: fit-content;
+    max-width: unset;
+
+    .control-group {
+      display: inline-flex;
+      margin-right: 2em;
+
+      :last-child {
+        float: right;
+      }
+
+      .control-label-group {
+        width: auto;
+      }
+
+      input[type='text'] {
+        max-width: unset;
+        width: 25em;
+      }
+    }
+  }
+
+
+  .save-event-rule {
+    height: 2.25em;
+    display: inline-flex;
+    float: right;
+    margin: 1em 0 0 auto;
+  }
+}
