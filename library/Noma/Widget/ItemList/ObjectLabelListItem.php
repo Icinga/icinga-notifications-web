@@ -7,9 +7,9 @@ namespace Icinga\Module\Noma\Widget\ItemList;
 use Icinga\Module\Noma\Common\BaseListItem;
 use Icinga\Module\Noma\Model\SourceObject;
 use Icinga\Module\Noma\Widget\EventSourceBadge;
+use Icinga\Module\Noma\Widget\SourceIcon;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
-use ipl\Web\Widget\Icon;
 
 /**
  * Object label item of a object label list. Represents one database row.
@@ -24,7 +24,10 @@ class ObjectLabelListItem extends BaseListItem
 
     protected function assembleVisual(BaseHtmlElement $visual): void
     {
-        $visual->add($this->item->source->getIcon());
+        $visual->add(
+            (new SourceIcon(SourceIcon::SIZE_LARGE))
+                ->addHtml($this->item->source->getIcon())
+        );
     }
 
     protected function assembleTitle(BaseHtmlElement $title): void
