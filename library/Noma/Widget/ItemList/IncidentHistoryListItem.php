@@ -46,10 +46,10 @@ class IncidentHistoryListItem extends BaseListItem
 
     protected function assembleTitle(BaseHtmlElement $title): void
     {
-        if ($this->item->event_id !== null) {
+        if ($this->item->type === 'source_severity_changed') {
+            $event = $this->item->event;
             $this->getAttributes()
                 ->set('data-action-item', true);
-            $event = $this->item->event;
 
             if ($event->object->service) {
                 $content = Html::sprintf(
@@ -70,19 +70,6 @@ class IncidentHistoryListItem extends BaseListItem
             }
 
             $title->addHtml($content);
-        } elseif ($this->item->contact_id !== null) {
-            $this->getAttributes()
-                ->set('data-action-item', true);
-            $content = new Link(
-                $this->item->contact->full_name,
-                Links::contact($this->item->contact_id),
-                ['class' => 'subject']
-            );
-
-            $title->add([
-                $content,
-                Html::tag('span', ['class' => 'subject'], $this->item->message)
-            ]);
         } else {
             $title->addHtml(Html::tag('span', ['class' => ['subject', 'caption']], $this->item->message));
         }
