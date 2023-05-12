@@ -220,7 +220,9 @@ class EventRuleConfig extends BaseHtmlElement
                 [
                     'class'     => 'filter-input control-button',
                     'readonly'  => true,
-                    'value'     => $this->config['object_filter'] ?? null
+                    'value'     => isset($this->config['object_filter'])
+                        ? rawurldecode($this->config['object_filter'])
+                        : null
                 ]
             );
 
