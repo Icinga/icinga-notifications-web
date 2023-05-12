@@ -202,7 +202,7 @@
 }
 
 .cache-notice {
-  margin: 0 1em;
+  margin: 1em;
   padding: 1em;
   background-color: @gray-lighter;
   text-align: center;
@@ -392,11 +392,28 @@
     }
   }
 
-
   .save-event-rule {
     height: 2.25em;
     display: inline-flex;
     float: right;
     margin: 1em 0 0 auto;
+
+    input[type="submit"]:not(:first-child) {
+      margin-left: 1em;
+
+      &:disabled {
+        background: @gray-light;
+        color: @disabled-gray;
+        cursor: default;
+      }
+
+      &.btn-remove {
+        border: none;
+      }
+
+      &.btn-discard-changes {
+        .event-rule-button();
+      }
+    }
   }
 }
