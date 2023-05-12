@@ -60,11 +60,6 @@ class EventRuleConfig extends BaseHtmlElement
     public function __construct(Url $searchEditorUrl, $config = [])
     {
         $this->searchEditorUrl = $searchEditorUrl;
-
-        if (! array_key_exists('conditionPlusButtonPosition', $config)) {
-            //the default position of add condition button
-            $config['conditionPlusButtonPosition'] = 1;
-        }
         $this->setConfig($config);
 
         $this->createForms();
@@ -273,6 +268,19 @@ class EventRuleConfig extends BaseHtmlElement
     private function createConditionForm(int $position, array $values = []): EscalationConditionForm
     {
         $cnt = empty(array_filter($values)) ? null : count($values);
+
+        if (! array_key_exists('conditionPlusButtonPosition', $this->config)) {
+            //the default position of add condition button
+                $pos = null;
+                foreach ($this->config['rule_escalation'] as $p => $v) {
+                    if (empty($v['condition'])) {
+                        $pos = $p;
+                        break;
+                    }
+                }
+
+            $this->config['conditionPlusButtonPosition'] = $pos;
+        }
 
         if ($cnt === null && $this->config['conditionPlusButtonPosition'] !== $position) {
             $cnt = 1;
