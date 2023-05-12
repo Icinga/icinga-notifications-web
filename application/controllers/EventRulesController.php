@@ -191,7 +191,7 @@ class EventRulesController extends CompatController
     {
         $cache = $this->sessionNamespace->get(-1);
 
-        $editor = EventRuleConfig::createSearchEditor(ObjectExtraTag::on(Database::get()))
+        $editor = EventRuleConfig::createSearchEditor()
             ->setQueryString($cache['object_filter'] ?? '');
 
         $editor->on(SearchEditor::ON_SUCCESS, function (SearchEditor $form) {

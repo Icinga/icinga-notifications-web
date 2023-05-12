@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Noma\Widget;
 
+use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Noma\Common\Database;
 use Icinga\Module\Noma\Forms\AddEscalationForm;
 use Icinga\Module\Noma\Forms\AddFilterForm;
@@ -140,13 +141,11 @@ class EventRuleConfig extends BaseHtmlElement
     /**
      * Create and return the SearchEditor
      *
-     * @param Query $query The query being filtered
-     * @param Url $redirectUrl Url to redirect to upon success
-     * @param array $preserveParams Query params to preserve when redirecting
-     *
      * @return SearchEditor
+     *
+     * @throws ProgrammingError
      */
-    public static function createSearchEditor(Query $query): SearchEditor
+    public static function createSearchEditor(): SearchEditor
     {
         $editor = new SearchEditor();
 
@@ -156,19 +155,6 @@ class EventRuleConfig extends BaseHtmlElement
             "noma/event-rule/complete",
             ['_disableLayout' => true, 'showCompact' => true, 'id' => Url::fromRequest()->getParams()->get('id')]
         ));
-
-        $editor->on(SearchEditor::ON_VALIDATE_COLUMN, function (
-            Filter\Condition $condition
-        ) use (
-            $query
-        ) {
-            $searchPath = $condition->getColumn();
-
-            if ($query->filter(Filter::equal('tag', $searchPath))->count() === 0) {
-                $condition->setColumn($searchPath);
-                throw new SearchBar\SearchException(t('Is not a valid column'));
-            }
-        });
 
         return $editor;
     }

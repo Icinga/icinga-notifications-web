@@ -200,7 +200,7 @@ class EventRuleController extends CompatController
 
         $eventRule = $this->sessionNamespace->get($ruleId) ?? $this->fromDb($ruleId);
 
-        $editor = EventRuleConfig::createSearchEditor(ObjectExtraTag::on(Database::get()))
+        $editor = EventRuleConfig::createSearchEditor()
             ->setQueryString($eventRule['object_filter'] ?? '');
 
         $editor->on(SearchEditor::ON_SUCCESS, function (SearchEditor $form) use ($ruleId, $eventRule) {
