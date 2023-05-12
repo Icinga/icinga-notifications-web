@@ -58,16 +58,18 @@ class Source extends Model
     /**
      * Get the source icon
      *
-     * @return ?Icon
+     * @return Icon
      */
-    public function getIcon(): ?Icon
+    public function getIcon(): Icon
     {
         $icon = null;
         switch ($this->type) {
             //TODO(sd): Add icons for other known sources
-            case 'icinga':
+            case 'icinga2':
                 $icon = new IcingaIcon('icinga');
                 break;
+            default:
+                $icon = new Icon('satellite');
         }
 
         return $icon;
