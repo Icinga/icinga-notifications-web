@@ -192,7 +192,10 @@ class EventForm extends CompatForm
                     ->getOption(self::NO_REPEAT)
                         ->setLabel($this->translate('Never'));
 
-                if ($this->getElement('use-end-time')->isChecked()) {
+                $useEndTime = $this->getElement('use-end-time');
+                $useEndTime->setLabel($this->translate('Use Until Time'));
+
+                if ($useEndTime->isChecked()) {
                     $this->getElement('end')
                         ->setLabel($this->translate('Repeat Until'));
                 }

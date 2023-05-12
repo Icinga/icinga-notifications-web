@@ -3,12 +3,17 @@
 .calendar-controls {
   display: flex;
   justify-content: flex-start;
-  align-items: baseline;
   max-width: none;
 
   .view-mode-switcher {
     margin-left: auto;
     margin-right: auto;
+    margin-bottom: 0;
+
+    label {
+      min-width: 6em;
+      text-align: center;
+    }
   }
 }
 
@@ -33,11 +38,14 @@
     .row-title {
       text-align: right;
       padding-right: .5em;
-      font-size: .857em;
 
       .hour,
       .week-no {
         display: block;
+      }
+
+      .hour {
+        font-size: .857em;
         margin-top: -.75em;
       }
     }
@@ -64,10 +72,13 @@
   }
 
   .entry {
+    overflow: hidden;
+
      .content {
        display: flex;
-       flex-direction: column;
-       padding: .25em;
+       flex-wrap: wrap;
+       column-gap: .5em;
+       padding: .125em;
        height: 100%;
        max-height: 100%;
      }
@@ -79,13 +90,12 @@
        column-gap: .5em;
        overflow: hidden;
 
-       time,
-       .attendee {
-         display: block;
+       time {
+         margin-right: .5em;
        }
 
        .attendee {
-         word-break: break-all;
+         word-break: break-word;
        }
 
        .attendee .icon {
@@ -94,7 +104,6 @@
      }
 
      .description {
-       height: 0;
        flex: 1 1 auto;
        overflow: hidden;
 
@@ -122,7 +131,7 @@
   .overlay {
     display: grid;
     grid-template-rows: repeat(@weeks * @rowsPerDay, 1fr);
-    grid-template-columns: repeat(@days * @columnsPerDay, minmax(0.125em, 1fr));
+    grid-template-columns: repeat(@days * @columnsPerDay, minmax(0, 1fr));
     overflow: hidden;
   }
 
@@ -185,12 +194,12 @@
   }
 
   &.week {
-    grid-template-columns: 6em auto;
-    grid-template-rows: 2.5em auto;
+    grid-template-columns: 6em minmax(0, 1fr);
+    grid-template-rows: 2.5em minmax(0, 1fr);
   }
   &.month {
-    grid-template-columns: 4em auto;
-    grid-template-rows: 1.5em auto;
+    grid-template-columns: 4em minmax(0, 1fr);
+    grid-template-rows: 1.5em minmax(0, 1fr);
   }
 
   .overlay {
@@ -208,6 +217,11 @@
   input[type="month"],
   input[type="week"] {
     background-color: @low-sat-blue;
+  }
+
+  .view-mode-switcher label {
+    padding: .5em;
+    line-height: normal;
   }
 }
 
