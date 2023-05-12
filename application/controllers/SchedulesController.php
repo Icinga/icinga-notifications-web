@@ -90,8 +90,9 @@ class SchedulesController extends CompatController
     {
         return parent::getTabs()
             ->add('schedules', [
-                'label' => $this->translate('Schedules'),
-                'url'   => Url::fromRequest()
+                'label'         => $this->translate('Schedules'),
+                'url'           => Url::fromPath('noma/schedules'),
+                'baseTarget'    => '_main'
             ])->add('contacts', [
                 'label' => $this->translate('Contacts'),
                 'url'   => Url::fromPath('noma/contacts')
