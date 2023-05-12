@@ -65,7 +65,7 @@ class Source extends Model
         $icon = null;
         switch ($this->type) {
             //TODO(sd): Add icons for other known sources
-            case 'icinga':
+            case 'icinga2':
                 $icon = new IcingaIcon('icinga');
                 break;
             default:
