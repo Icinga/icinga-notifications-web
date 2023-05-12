@@ -49,7 +49,7 @@ class Incident extends Model
 
     public function getDefaultSort()
     {
-        return ['incident.started_at desc'];
+        return ['incident.severity desc, incident.started_at'];
     }
 
     public function createBehaviors(Behaviors $behaviors)

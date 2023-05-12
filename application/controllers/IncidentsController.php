@@ -29,7 +29,11 @@ class IncidentsController extends CompatController
         $limitControl = $this->createLimitControl();
         $sortControl = $this->createSortControl(
             $incidents,
-            ['incident.started_at' => t('Opened On')]
+            [
+                'incident.started_at'                         => t('Opened On'),
+                'incident.recovered_at'                       => t('Recovered At'),
+                'incident.severity desc, incident.started_at' => t('Severity')
+            ]
         );
 
         $paginationControl = $this->createPaginationControl($incidents);
