@@ -197,7 +197,19 @@ class EventForm extends CompatForm
 
                 if ($useEndTime->isChecked()) {
                     $this->getElement('end')
-                        ->setLabel($this->translate('Repeat Until'));
+                        ->setLabel($this->translate('Repeat Until'))
+                        ->addValidators([new CallbackValidator(function ($value, $validator) {
+                            $startTime = $this->getValue('start');
+                            if ($value < $startTime) {
+                                $validator->addMessage(
+                                    $this->translate('The event must occur at least once.')
+                                );
+
+                                return false;
+                            }
+
+                            return true;
+                        })]);
                 }
             }
         };

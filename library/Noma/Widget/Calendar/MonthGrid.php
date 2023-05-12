@@ -95,7 +95,7 @@ class MonthGrid extends BaseGrid
     {
         $sidebar = new HtmlElement('div', Attributes::create(['class' => 'sidebar']));
 
-        $time = (new DateTime())->setTime(0, 0);
+        $time = clone $this->getGridStart();
         $interval = new DateInterval('P1W');
         for ($i = 0; $i < 6; $i++) {
             $sidebar->addHtml(new HtmlElement(
