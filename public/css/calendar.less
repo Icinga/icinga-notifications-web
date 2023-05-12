@@ -194,12 +194,12 @@
   }
 
   &.week {
-    grid-template-columns: 6em auto;
-    grid-template-rows: 2.5em auto;
+    grid-template-columns: 6em minmax(0, 1fr);
+    grid-template-rows: 2.5em minmax(0, 1fr);
   }
   &.month {
-    grid-template-columns: 4em auto;
-    grid-template-rows: 1.5em auto;
+    grid-template-columns: 4em minmax(0, 1fr);
+    grid-template-rows: 1.5em minmax(0, 1fr);
   }
 
   .overlay {
