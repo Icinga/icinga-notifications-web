@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Noma\Forms;
 
+use Icinga\Module\Noma\Web\FilterRenderer;
 use Icinga\Module\Noma\Web\Form\EventRuleDecorator;
 use ipl\Html\Contract\FormElement;
 use ipl\Html\Html;
@@ -179,8 +180,7 @@ class EscalationConditionForm extends BaseEscalationForm
             $filter->add(QueryString::parse('placeholder='));
         }
 
-        return (new Renderer($filter))
-            ->encodeOperators(false)
+        return (new FilterRenderer($filter))
             ->render();
     }
 
