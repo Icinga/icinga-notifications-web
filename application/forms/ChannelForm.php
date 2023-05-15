@@ -187,7 +187,7 @@ class ChannelForm extends CompatForm
             'submit',
             [
                 'label' => $channelId === null ?
-                    $this->translate('Add Channel') :
+                    $this->translate('Create Channel') :
                     $this->translate('Save Changes')
             ]
         );
@@ -210,7 +210,7 @@ class ChannelForm extends CompatForm
                 'submit',
                 'delete',
                 [
-                    'label'          => $this->translate('Delete'),
+                    'label'          => $this->translate('Delete Channel'),
                     'class'          => 'btn-remove',
                     'formnovalidate' => true,
                     'disabled'       => $isInUse !== null,

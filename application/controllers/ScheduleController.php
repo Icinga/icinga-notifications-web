@@ -177,7 +177,7 @@ class ScheduleController extends CompatController
         $scheduleId = (int) $this->params->getRequired('schedule');
         $scheduleTimezone = $this->getScheduleTimezone($scheduleId);
         $displayTimezone = $this->getDisplayTimezoneFromSession($scheduleId, $scheduleTimezone);
-        $this->setTitle($this->translate('Add Rotation'));
+        $this->setTitle($this->translate('Create Rotation'));
 
         if ($displayTimezone !== $scheduleTimezone) {
             $this->addContent(new TimezoneWarning($scheduleTimezone));

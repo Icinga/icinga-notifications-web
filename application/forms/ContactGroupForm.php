@@ -133,7 +133,7 @@ class ContactGroupForm extends CompatForm
 
         if ($groupId !== null) {
             $deleteBtn = $this->createElement('submit', 'delete', [
-                'label' => $this->translate('Delete'),
+                'label' => $this->translate('Delete Contact Group'),
                 'class' => 'btn-remove',
                 'formnovalidate' => true
             ]);
@@ -141,7 +141,7 @@ class ContactGroupForm extends CompatForm
             $this->registerElement($deleteBtn);
 
             $duplicateBtn = $this->createElement('submit', 'duplicate', [
-                'label' => $this->translate('Duplicate')
+                'label' => $this->translate('Duplicate Contact Group')
             ]);
             $this->registerElement($duplicateBtn);
 

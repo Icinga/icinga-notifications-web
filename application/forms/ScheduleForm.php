@@ -155,14 +155,14 @@ class ScheduleForm extends CompatForm
 
         if ($scheduleId !== null) {
             $removeBtn = $this->createElement('submit', 'delete', [
-                'label' => $this->translate('Delete'),
+                'label' => $this->translate('Delete Schedule'),
                 'class' => 'btn-remove',
                 'formnovalidate' => true
             ]);
             $this->registerElement($removeBtn);
 
             $duplicateBtn = $this->createElement('submit', 'duplicate', [
-                'label' => $this->translate('Duplicate')
+                'label' => $this->translate('Duplicate Schedule'),
             ]);
             $this->registerElement($duplicateBtn);
 
