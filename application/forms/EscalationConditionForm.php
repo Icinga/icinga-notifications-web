@@ -50,7 +50,7 @@ class EscalationConditionForm extends BaseEscalationForm
                 ]
             );
 
-            $operators = ['=', '>', '>=', '<', '<='];
+            $operators = ['=', '>', '>=', '<', '<=', '!='];
             $op = $this->createElement(
                 'select',
                 'operator' . $count,
