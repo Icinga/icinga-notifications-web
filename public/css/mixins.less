@@ -14,3 +14,24 @@
   -webkit-line-clamp: initial;
   -webkit-box-orient: initial;
 }
+
+.event-rule-button() {
+  color: @icinga-blue;
+  background: @low-sat-blue;
+
+  border: none;
+  text-align: center;
+  line-height: 1.5;
+  display: block;
+
+  &:hover,
+  &:focus {
+    background: @low-sat-blue-dark;
+    color: @icinga-blue;
+  }
+
+  &:focus {
+    outline: 3px solid fade(@icinga-blue, 50%);
+    outline-offset: 1px;
+  }
+}

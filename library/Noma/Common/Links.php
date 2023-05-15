@@ -35,4 +35,14 @@ abstract class Links
     {
         return Url::fromPath('noma/contact', ['id' => $id]);
     }
+
+    public static function eventRules(): Url
+    {
+        return Url::fromPath('noma/event-rules');
+    }
+
+    public static function eventRule(int $id): Url
+    {
+        return Url::fromPath('noma/event-rule', ['id' => $id]);
+    }
 }

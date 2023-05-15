@@ -1,0 +1,50 @@
+.checkbox-icon {
+  position: relative;
+  display: inline-block;
+  height: 1.5em;
+  width: 2.625em;
+}
+
+.inner-slider {
+  position: absolute;
+  display: inline-block;
+  background: @gray-light;
+  border: 1px solid;
+  border-color: @gray-light;
+  box-sizing: content-box;
+  border-radius: 1em;
+  height: 4/3em;
+  width: 8/3em;
+  vertical-align: middle;
+
+  &:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+
+    border-radius: 1em;
+    border: 1px solid;
+    border-color: @gray-light;
+    box-sizing: border-box;
+    background-color: @gray-lighter;
+
+    display: block;
+    height: 4/3em;
+    margin-left: 0;
+    width: 4/3em;
+  }
+}
+
+.checkbox-icon.checked {
+  .inner-slider {
+    background-color: @icinga-blue;
+    border-color: @icinga-blue;
+
+    &:before {
+      border-color: @icinga-blue;
+      left: 100%;
+      margin-left: -4/3em;
+    }
+  }
+}

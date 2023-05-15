@@ -93,6 +93,9 @@ class SchedulesController extends CompatController
                 'label'         => $this->translate('Schedules'),
                 'url'           => Url::fromPath('noma/schedules'),
                 'baseTarget'    => '_main'
+            ])->add('event-rules', [
+                'label' => $this->translate('Event Rules'),
+                'url'   => Url::fromPath('noma/event-rules')
             ])->add('contacts', [
                 'label' => $this->translate('Contacts'),
                 'url'   => Url::fromPath('noma/contacts')

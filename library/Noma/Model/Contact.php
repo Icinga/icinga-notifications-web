@@ -65,7 +65,8 @@ class Contact extends Model
         $relations->hasMany('incident_history', IncidentHistory::class);
         $relations->hasMany('schedule_member', ScheduleMember::class)
             ->setJoinType('LEFT');
-        $relations->hasMany('contact_address', ContactAddress::class)
+        $relations->hasMany('contact_address', ContactAddress::class);
+        $relations->hasMany('rule_escalation_recipient', RuleEscalationRecipient::class)
             ->setJoinType('LEFT');
     }
 }

@@ -31,5 +31,8 @@ class Schedule extends Model
             ->setJoinType('LEFT');
         $relations->hasMany('member', ScheduleMember::class)
             ->setJoinType('LEFT');
+
+        $relations->hasMany('rule_escalation_recipient', RuleEscalationRecipient::class)
+            ->setJoinType('LEFT');
     }
 }
