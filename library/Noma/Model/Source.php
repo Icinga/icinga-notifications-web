@@ -69,7 +69,7 @@ class Source extends Model
                 $icon = new IcingaIcon('icinga');
                 break;
             default:
-                $icon = new Icon('satellite');
+                $icon = new Icon('share-nodes');
         }
 
         return $icon;

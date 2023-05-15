@@ -80,5 +80,9 @@ class IncidentHistory extends Model
 
         $relations->belongsTo('event', Event::class)->setJoinType('LEFT');
         $relations->belongsTo('contact', Contact::class)->setJoinType('LEFT');
+        $relations->belongsTo('contactgroup', Contactgroup::class)->setJoinType('LEFT');
+        $relations->belongsTo('schedule', Schedule::class)->setJoinType('LEFT');
+        $relations->belongsTo('rule', Rule::class)->setJoinType('LEFT');
+        $relations->belongsTo('rule_escalation', RuleEscalation::class)->setJoinType('LEFT');
     }
 }

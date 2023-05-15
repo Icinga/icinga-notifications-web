@@ -66,7 +66,7 @@ class IncidentQuickActions extends Form
             'unmanage',
             [
                 'class' => ['control-button', 'spinner'],
-                'label' => [new Icon(Icons::MANAGE), t('Unmanage')],
+                'label' => [new Icon(Icons::UNMANAGE), t('Unmanage')],
                 'title' => t('Remove yourself as manager of this incident')
             ]
         );
@@ -79,7 +79,7 @@ class IncidentQuickActions extends Form
             'subscribe',
             [
                 'class' => ['control-button', 'spinner'],
-                'label' => [new Icon(Icons::SUBSCRIBE), t('Subscribe')],
+                'label' => [new Icon(Icons::SUBSCRIBED), t('Subscribe')],
                 'title' => t('Subscribe to this incident')
             ]
         );
@@ -92,7 +92,7 @@ class IncidentQuickActions extends Form
             'unsubscribe',
             [
                 'class' => ['control-button', 'spinner'],
-                'label' => [new Icon(Icons::SUBSCRIBE), t('Unubscribe')],
+                'label' => [new Icon(Icons::UNSUBSCRIBED), t('Unubscribe')],
                 'title' => t('Unsubscribe from this incident')
             ]
         );
@@ -169,8 +169,7 @@ class IncidentQuickActions extends Form
                 ]);
             }
 
-            $msg = $roleName === 'manager' ? 'started managing' : 'subscribed';
-            $this->updateHistory($incidentContact, $msg, $roleName);
+            $this->updateHistory($incidentContact, $roleName);
         } catch (Exception $e) {
             Database::get()->rollBackTransaction();
             Notification::error(sprintf(t('Failed to add role as %s'), $roleName));
@@ -204,8 +203,7 @@ class IncidentQuickActions extends Form
                 'role = ?'          => $roleName
             ]);
 
-            $msg = $roleName === 'manager' ? 'stopped managing' : 'unsubscribed';
-            $this->updateHistory($incidentContact, $msg);
+            $this->updateHistory($incidentContact);
         } catch (Exception $e) {
             Database::get()->rollBackTransaction();
             Notification::error(
@@ -234,7 +232,7 @@ class IncidentQuickActions extends Form
      *
      * @return void
      */
-    protected function updateHistory(IncidentContact $incidentContact, string $msg, string $newRole = null): void
+    protected function updateHistory(IncidentContact $incidentContact, string $newRole = null): void
     {
         $oldRole = $incidentContact->role;
         $contactId = $incidentContact->contact_id ?? $this->currentUserId;
@@ -247,7 +245,6 @@ class IncidentQuickActions extends Form
                 'type'                  => 'recipient_role_changed',
                 'new_recipient_role'    => $newRole,
                 'old_recipient_role'    => $oldRole,
-                'message'               => $msg,
                 'time'                  => time() * 1000.0
             ]
         );

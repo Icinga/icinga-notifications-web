@@ -88,36 +88,43 @@ class Event extends Model
      */
     public function getSeverityText(): ?string
     {
-        switch ($this->severity) {
+        return static::mapSeverity($this->severity);
+    }
+
+    public static function mapSeverity(?string $severity): ?string
+    {
+        switch ($severity) {
             case 'ok':
-                $severity = t('Ok');
+                $label = t('Ok', 'noma.severity');
                 break;
             case 'crit':
-                $severity = t('Critical');
+                $label = t('Critical', 'noma.severity');
                 break;
             case 'warning':
-                $severity = t('Warning');
+                $label = t('Warning', 'noma.severity');
                 break;
             case 'err':
-                $severity = t('Error');
+                $label = t('Error', 'noma.severity');
                 break;
             case 'debug':
-                $severity = t('Debug');
+                $label = t('Debug', 'noma.severity');
                 break;
             case 'info':
-                $severity = t('Information');
+                $label = t('Information', 'noma.severity');
                 break;
             case 'alert':
-                $severity = t('Alert');
+                $label = t('Alert', 'noma.severity');
                 break;
             case 'emerg':
-                $severity = t('Emergency');
+                $label = t('Emergency', 'noma.severity');
                 break;
             case 'notice':
-                $severity = t('Notice');
+                $label = t('Notice', 'noma.severity');
                 break;
+            default:
+                $label = null;
         }
 
-        return $severity ?? null;
+        return $label;
     }
 }
