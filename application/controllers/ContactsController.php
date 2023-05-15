@@ -175,13 +175,15 @@ class ContactsController extends CompatController
 
     public function getTabs()
     {
-
         if ($this->getRequest()->getActionName() === 'index') {
             return parent::getTabs()
                 ->add('schedules', [
                     'label'         => $this->translate('Schedules'),
                     'url'           => Url::fromPath('noma/schedules'),
                     'baseTarget'    => '_main'
+                ])->add('event-rules', [
+                    'label' => $this->translate('Event Rules'),
+                    'url'   => Url::fromPath('noma/event-rules')
                 ])->add('contacts', [
                     'label' => $this->translate('Contacts'),
                     'url'   => Url::fromRequest()

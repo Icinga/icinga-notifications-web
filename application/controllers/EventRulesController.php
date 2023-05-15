@@ -46,8 +46,6 @@ class EventRulesController extends CompatController
 
     public function indexAction(): void
     {
-        $this->addTitleTab(t('Event Rules'));
-
         $eventRules = Rule::on(Database::get());
 
         $limitControl = $this->createLimitControl();
@@ -99,6 +97,9 @@ class EventRulesController extends CompatController
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {
             $this->sendMultipartUpdate();
         }
+
+        $this->setTitle($this->translate('Event Rules'));
+        $this->getTabs()->activate('event-rules');
     }
 
     public function addAction(): void
@@ -231,5 +232,25 @@ class EventRulesController extends CompatController
         }
 
         return $this->filter;
+    }
+
+    public function getTabs()
+    {
+        if ($this->getRequest()->getActionName() === 'index') {
+            return parent::getTabs()
+                ->add('schedules', [
+                    'label'         => $this->translate('Schedules'),
+                    'url'           => Url::fromPath('noma/schedules'),
+                    'baseTarget'    => '_main'
+                ])->add('event-rules', [
+                    'label' => $this->translate('Event Rules'),
+                    'url'   => Url::fromPath('noma/event-rules')
+                ])->add('contacts', [
+                    'label' => $this->translate('Contacts'),
+                    'url'   => Url::fromPath('noma/contacts')
+                ]);
+        }
+
+        return parent::getTabs();
     }
 }
