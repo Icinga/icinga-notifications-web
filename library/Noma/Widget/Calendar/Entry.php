@@ -5,7 +5,7 @@ namespace Icinga\Module\Noma\Widget\Calendar;
 use DateTime;
 use ipl\Web\Url;
 
-class Event
+class Entry
 {
     protected $id;
 
