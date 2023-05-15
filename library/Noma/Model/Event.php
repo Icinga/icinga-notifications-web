@@ -50,7 +50,7 @@ class Event extends Model
 
     public function getSearchColumns()
     {
-        return ['time'];
+        return ['object.host', 'object.service'];
     }
 
     public function getDefaultSort()
