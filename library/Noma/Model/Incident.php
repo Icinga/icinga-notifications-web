@@ -44,7 +44,7 @@ class Incident extends Model
 
     public function getSearchColumns()
     {
-        return ['severity'];
+        return ['object.host', 'object.service'];
     }
 
     public function getDefaultSort()
