@@ -417,3 +417,18 @@
     }
   }
 }
+
+.remove-escalation-form {
+  button[disabled],
+  button[disabled]:hover {
+    &:disabled {
+      background: @gray-light;
+      color: @disabled-gray;
+      cursor: default;
+    }
+  }
+
+  button[disabled]:hover {
+    pointer-events: none;
+  }
+}
