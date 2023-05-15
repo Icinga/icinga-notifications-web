@@ -185,6 +185,9 @@ class ContactsController extends CompatController
                 ])->add('contacts', [
                     'label' => $this->translate('Contacts'),
                     'url'   => Url::fromRequest()
+                ])->add('event-rules', [
+                    'label' => $this->translate('Event Rules'),
+                    'url'   => Url::fromPath('noma/event-rules')
                 ]);
         }
 
