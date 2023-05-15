@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Noma\Controllers;
 
-use Icinga\Module\Noma\Forms\EventForm;
+use Icinga\Module\Noma\Forms\EntryForm;
 use Icinga\Module\Noma\Forms\ScheduleForm;
 use Icinga\Module\Noma\Widget\RecipientSuggestions;
 use ipl\Html\Html;
@@ -59,21 +59,21 @@ class ScheduleController extends CompatController
         $this->addContent($form);
     }
 
-    public function addEventAction()
+    public function addEntryAction()
     {
         $scheduleId = (int) $this->params->getRequired('schedule');
         $start = $this->params->get('start');
 
-        $form = new EventForm();
+        $form = new EntryForm();
         $form->setAction($this->getRequest()->getUrl()->getAbsoluteUrl());
         $form->setSuggestionUrl(Url::fromPath('noma/schedule/suggest-recipient'));
         $form->populate(['when' => ['start' => $start]]);
-        $form->on(EventForm::ON_SUCCESS, function ($form) use ($scheduleId) {
-            $form->addEvent($scheduleId);
+        $form->on(EntryForm::ON_SUCCESS, function ($form) use ($scheduleId) {
+            $form->addEntry($scheduleId);
             $this->sendExtraUpdates(['#col1']);
             $this->redirectNow('__CLOSE__');
         });
-        $form->on(EventForm::ON_SENT, function () use ($form) {
+        $form->on(EntryForm::ON_SENT, function () use ($form) {
             if ($form->hasBeenCancelled()) {
                 $this->redirectNow('__CLOSE__');
             } elseif (! $form->hasBeenSubmitted()) {
@@ -94,34 +94,34 @@ class ScheduleController extends CompatController
                 'div',
                 ['id' => $this->getRequest()->getHeader('X-Icinga-Container')],
                 [
-                    Html::tag('h2', null, $this->translate('Add Event')),
+                    Html::tag('h2', null, $this->translate('Add Entry')),
                     $form
                 ]
             ));
         }
     }
 
-    public function editEventAction()
+    public function editEntryAction()
     {
-        $eventId = (int) $this->params->getRequired('id');
+        $entryId = (int) $this->params->getRequired('id');
         $scheduleId = (int) $this->params->getRequired('schedule');
 
-        $form = new EventForm();
+        $form = new EntryForm();
         $form->setShowRemoveButton();
-        $form->loadEvent($scheduleId, $eventId);
+        $form->loadEntry($scheduleId, $entryId);
         $form->setSubmitLabel($this->translate('Save Changes'));
         $form->setAction($this->getRequest()->getUrl()->getAbsoluteUrl());
         $form->setSuggestionUrl(Url::fromPath('noma/schedule/suggest-recipient'));
-        $form->on(EventForm::ON_SUCCESS, function () use ($form, $eventId, $scheduleId) {
-            $form->editEvent($scheduleId, $eventId);
+        $form->on(EntryForm::ON_SUCCESS, function () use ($form, $entryId, $scheduleId) {
+            $form->editEntry($scheduleId, $entryId);
             $this->sendExtraUpdates(['#col1']);
             $this->redirectNow('__CLOSE__');
         });
-        $form->on(EventForm::ON_SENT, function ($form) use ($eventId, $scheduleId) {
+        $form->on(EntryForm::ON_SENT, function ($form) use ($entryId, $scheduleId) {
             if ($form->hasBeenCancelled()) {
                 $this->redirectNow('__CLOSE__');
             } elseif ($form->hasBeenRemoved()) {
-                $form->removeEvent($scheduleId, $eventId);
+                $form->removeEntry($scheduleId, $entryId);
                 $this->sendExtraUpdates(['#col1']);
                 $this->redirectNow('__CLOSE__');
             } elseif (! $form->hasBeenSubmitted()) {
@@ -142,7 +142,7 @@ class ScheduleController extends CompatController
                 'div',
                 ['id' => $this->getRequest()->getHeader('X-Icinga-Container')],
                 [
-                    Html::tag('h2', null, $this->translate('Edit Event')),
+                    Html::tag('h2', null, $this->translate('Edit Entry')),
                     $form
                 ]
             ));

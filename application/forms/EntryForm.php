@@ -22,7 +22,7 @@ use ipl\Web\FormElement\ScheduleElement;
 use ipl\Web\FormElement\TermInput;
 use ipl\Web\Url;
 
-class EventForm extends CompatForm
+class EntryForm extends CompatForm
 {
     use CsrfCounterMeasure;
 
@@ -44,7 +44,7 @@ class EventForm extends CompatForm
 
     public function getSubmitLabel(): string
     {
-        return $this->submitLabel ?? $this->translate('Create Event');
+        return $this->submitLabel ?? $this->translate('Add Entry');
     }
 
     public function setShowRemoveButton(bool $state = true): self
@@ -86,13 +86,13 @@ class EventForm extends CompatForm
         return $csrf !== null && $csrf->isValid() && $btn !== null && $btn->getName() === 'remove';
     }
 
-    public function loadEvent(int $scheduleId, int $id): self
+    public function loadEntry(int $scheduleId, int $id): self
     {
         $entry = TimeperiodEntry::on(Database::get())
             ->filter(Filter::equal('id', $id))
             ->first();
         if ($entry === null) {
-            throw new HttpNotFoundException($this->translate('Event not found'));
+            throw new HttpNotFoundException($this->translate('Entry not found'));
         }
 
         $values = [
@@ -138,7 +138,7 @@ class EventForm extends CompatForm
     protected function assemble()
     {
         $scheduleElement = new class ('when') extends ScheduleElement {
-            /** @var EventForm */
+            /** @var EntryForm */
             private $parent;
 
             protected function init(): void
@@ -149,7 +149,7 @@ class EventForm extends CompatForm
                 unset($this->regulars[RRule::MINUTELY]);
             }
 
-            public function setParent(EventForm $parent): self
+            public function setParent(EntryForm $parent): self
             {
                 $this->parent = $parent;
 
@@ -168,6 +168,7 @@ class EventForm extends CompatForm
                 $this->parent->registerElement($end);
 
                 $this->getElement('start')
+                    ->setDescription(null)
                     ->addValidators([new CallbackValidator(function ($value, $validator) {
                         $endTime = $this->parent->getValue('end_at');
                         if ($value >= $endTime) {
@@ -188,6 +189,7 @@ class EventForm extends CompatForm
                     );
 
                 $this->getElement('frequency')
+                    ->setDescription(null)
                     ->setLabel($this->translate('Repeat'))
                     ->getOption(self::NO_REPEAT)
                         ->setLabel($this->translate('Never'));
@@ -197,12 +199,13 @@ class EventForm extends CompatForm
 
                 if ($useEndTime->isChecked()) {
                     $this->getElement('end')
+                        ->setDescription(null)
                         ->setLabel($this->translate('Repeat Until'))
                         ->addValidators([new CallbackValidator(function ($value, $validator) {
                             $startTime = $this->getValue('start');
                             if ($value < $startTime) {
                                 $validator->addMessage(
-                                    $this->translate('The event must occur at least once.')
+                                    $this->translate('The entry must occur at least once.')
                                 );
 
                                 return false;
@@ -303,7 +306,7 @@ class EventForm extends CompatForm
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
     }
 
-    public function addEvent(int $scheduleId): void
+    public function addEntry(int $scheduleId): void
     {
         $data = $this->formValuesToDb();
         $recipients = array_map(function ($recipient) {
@@ -337,7 +340,7 @@ class EventForm extends CompatForm
         $db->commitTransaction();
     }
 
-    public function editEvent(int $scheduleId, int $id): void
+    public function editEntry(int $scheduleId, int $id): void
     {
         $data = $this->formValuesToDb();
         $timeperiodId = (int) $this->getValue('timeperiod_id');
@@ -420,7 +423,7 @@ class EventForm extends CompatForm
         $db->commitTransaction();
     }
 
-    public function removeEvent(int $scheduleId, int $id): void
+    public function removeEntry(int $scheduleId, int $id): void
     {
         $timeperiodId = (int) $this->getValue('timeperiod_id');
 

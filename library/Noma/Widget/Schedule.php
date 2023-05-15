@@ -5,7 +5,7 @@ namespace Icinga\Module\Noma\Widget;
 use DateTimeZone;
 use Icinga\Module\Noma\Widget\Calendar\Attendee;
 use Icinga\Module\Noma\Widget\Calendar\Controls;
-use Icinga\Module\Noma\Widget\Calendar\Event;
+use Icinga\Module\Noma\Widget\Calendar\Entry;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\HtmlElement;
@@ -37,7 +37,7 @@ class Schedule extends BaseHtmlElement
 
     protected function assembleCalendar(Calendar $calendar): void
     {
-        $calendar->setAddEventUrl(Url::fromPath('noma/schedule/add-event', ['schedule' => $this->schedule->id]));
+        $calendar->setAddEntryUrl(Url::fromPath('noma/schedule/add-entry', ['schedule' => $this->schedule->id]));
 
         $members = $this->schedule->member->with(['timeperiod', 'contact', 'contactgroup']);
         foreach ($members as $member) {
@@ -81,13 +81,13 @@ class Schedule extends BaseHtmlElement
             );
 
             foreach ($member->timeperiod->entry->filter($entryFilter) as $entry) {
-                $calendar->addEvent(
-                    (new Event($entry->id))
+                $calendar->addEntry(
+                    (new Entry($entry->id))
                         ->setDescription($entry->description)
                         ->setRecurrencyRule($entry->rrule)
                         ->setStart((clone $entry->start_time)->setTimezone(new DateTimeZone($entry->timezone)))
                         ->setEnd((clone $entry->end_time)->setTimezone(new DateTimeZone($entry->timezone)))
-                        ->setUrl(Url::fromPath('noma/schedule/edit-event', [
+                        ->setUrl(Url::fromPath('noma/schedule/edit-entry', [
                             'id' => $entry->id,
                             'schedule' => $this->schedule->id
                         ]))
@@ -102,7 +102,7 @@ class Schedule extends BaseHtmlElement
         $calendar = (new Calendar())
             ->setControls($this->controls);
 
-        $this->setBaseTarget('event-form');
+        $this->setBaseTarget('entry-form');
         if ($this->controls->getBaseTarget() === null) {
             $this->controls->setBaseTarget('_self');
         }
@@ -114,9 +114,9 @@ class Schedule extends BaseHtmlElement
                 new Link(
                     [
                         new Icon('plus'),
-                        t('Add new event')
+                        t('Add new entry')
                     ],
-                    Url::fromPath('noma/schedule/add-event', ['schedule' => $this->schedule->id]),
+                    Url::fromPath('noma/schedule/add-entry', ['schedule' => $this->schedule->id]),
                     ['class' => 'button-link']
                 )
             );
@@ -127,8 +127,8 @@ class Schedule extends BaseHtmlElement
         $scheduleContainer->addHtml(new HtmlElement(
             'div',
             Attributes::create([
-                'id' => 'event-form',
-                'class' => 'event-form container'
+                'id' => 'entry-form',
+                'class' => 'entry-form container'
             ])
         ));
 

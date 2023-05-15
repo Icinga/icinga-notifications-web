@@ -95,7 +95,7 @@ abstract class BaseGrid extends BaseHtmlElement
 
     protected function assembleGrid(BaseHtmlElement $grid): void
     {
-        $url = $this->calendar->getAddEventUrl();
+        $url = $this->calendar->getAddEntryUrl();
         foreach ($this->createGridSteps() as $gridStep) {
             $step = new HtmlElement(
                 'div',
@@ -148,31 +148,31 @@ abstract class BaseGrid extends BaseHtmlElement
 
         $cellOccupiers = [];
         $occupiedCells = new SplObjectStorage();
-        foreach ($this->calendar->getEvents() as $event) {
-            $actualStart = $this->roundToNearestThirtyMinute($event->getStart());
+        foreach ($this->calendar->getEntries() as $entry) {
+            $actualStart = $this->roundToNearestThirtyMinute($entry->getStart());
             if ($actualStart < $gridStartsAt) {
-                $eventStartPos = 0;
+                $entryStartPos = 0;
             } else {
-                $eventStartPos = Util::diffHours($gridStartsAt, $actualStart) * 2;
+                $entryStartPos = Util::diffHours($gridStartsAt, $actualStart) * 2;
             }
 
-            $actualEnd = $this->roundToNearestThirtyMinute($event->getEnd());
+            $actualEnd = $this->roundToNearestThirtyMinute($entry->getEnd());
             if ($actualEnd > $gridEndsAt) {
-                $eventEndPos = $amountOfDays * 48;
+                $entryEndPos = $amountOfDays * 48;
             } else {
-                $eventEndPos = Util::diffHours($gridStartsAt, $actualEnd) * 2;
+                $entryEndPos = Util::diffHours($gridStartsAt, $actualEnd) * 2;
             }
 
             $rows = [];
-            for ($i = $eventStartPos; $i < $eventEndPos && $i < $amountOfDays * 48; $i++) {
+            for ($i = $entryStartPos; $i < $entryEndPos && $i < $amountOfDays * 48; $i++) {
                 $row = (int) floor($i / $gridBorderAt);
                 $column = $i % $gridBorderAt;
                 $rowStart = $row * $sectionsPerStep;
                 $rows[$rowStart][] = $column;
-                $cellOccupiers[$rowStart][$column][] = spl_object_id($event);
+                $cellOccupiers[$rowStart][$column][] = spl_object_id($entry);
             }
 
-            $occupiedCells->attach($event, $rows);
+            $occupiedCells->attach($entry, $rows);
         }
 
         $rowPlacements = [];
@@ -212,11 +212,11 @@ abstract class BaseGrid extends BaseHtmlElement
             }
         }
 
-        foreach ($occupiedCells as $event) {
+        foreach ($occupiedCells as $entry) {
             $continuation = false;
             $rows = $occupiedCells->getInfo();
             foreach ($rows as $row => $hours) {
-                list($rowStart, $rowSpan) = $rowPlacements[spl_object_id($event)][$row];
+                list($rowStart, $rowSpan) = $rowPlacements[spl_object_id($entry)][$row];
                 if ($rowStart > $row + $sectionsPerStep) {
                     // TODO: Register as +1
                     continue;
@@ -231,36 +231,36 @@ abstract class BaseGrid extends BaseHtmlElement
 
                 $style->addRule(".$entryClass", [
                     'grid-area' => sprintf('~"%d / %d / %d / %d"', ...$gridArea),
-                    'background-color' => $event->getAttendee()->getColor() . dechex((int) (256 * 0.1)),
-                    'border-color' => $event->getAttendee()->getColor() . dechex((int) (256 * 0.5))
+                    'background-color' => $entry->getAttendee()->getColor() . dechex((int) (256 * 0.1)),
+                    'border-color' => $entry->getAttendee()->getColor() . dechex((int) (256 * 0.5))
                 ]);
 
-                $entry = new HtmlElement(
+                $entryHtml = new HtmlElement(
                     'div',
                     Attributes::create([
                         'class' => ['entry', $entryClass],
-                        'data-event-id' => $event->getId(),
+                        'data-entry-id' => $entry->getId(),
                         'data-row-start' => $gridArea[0],
                         'data-col-start' => $gridArea[1],
                         'data-row-end' => $gridArea[2],
                         'data-col-end' => $gridArea[3]
                     ])
                 );
-                $this->assembleEntry($entry, $event, $continuation);
-                $overlay->addHtml($entry);
+                $this->assembleEntry($entryHtml, $entry, $continuation);
+                $overlay->addHtml($entryHtml);
 
                 $continuation = true;
             }
         }
     }
 
-    protected function assembleEntry(BaseHtmlElement $entry, Event $event, bool $isContinuation): void
+    protected function assembleEntry(BaseHtmlElement $html, Entry $entry, bool $isContinuation): void
     {
-        if (($url = $event->getUrl()) !== null) {
+        if (($url = $entry->getUrl()) !== null) {
             $entryContainer = new Link(null, $url);
-            $entry->addHtml($entryContainer);
+            $html->addHtml($entryContainer);
         } else {
-            $entryContainer = $entry;
+            $entryContainer = $html;
         }
 
         $title = new HtmlElement('div', Attributes::create(['class' => 'title']));
@@ -268,9 +268,9 @@ abstract class BaseGrid extends BaseHtmlElement
             $title->addHtml(new HtmlElement(
                 'time',
                 Attributes::create([
-                    'datetime' => $event->getStart()->format(DateTimeInterface::ATOM)
+                    'datetime' => $entry->getStart()->format(DateTimeInterface::ATOM)
                 ]),
-                Text::create($event->getStart()->format('H:i'))
+                Text::create($entry->getStart()->format('H:i'))
             ));
         }
 
@@ -278,8 +278,8 @@ abstract class BaseGrid extends BaseHtmlElement
             new HtmlElement(
                 'span',
                 Attributes::create(['class' => 'attendee']),
-                $event->getAttendee()->getIcon(),
-                Text::create($event->getAttendee()->getName())
+                $entry->getAttendee()->getIcon(),
+                Text::create($entry->getAttendee()->getName())
             )
         );
 
@@ -288,9 +288,9 @@ abstract class BaseGrid extends BaseHtmlElement
             Attributes::create(
                 [
                     'class' => 'content',
-                    'title' => $event->getStart()->format('H:i')
-                        . ' | ' . $event->getAttendee()->getName()
-                        . ': ' . $event->getDescription()
+                    'title' => $entry->getStart()->format('H:i')
+                        . ' | ' . $entry->getAttendee()->getName()
+                        . ': ' . $entry->getDescription()
                 ]
             ),
             $title,
@@ -299,8 +299,8 @@ abstract class BaseGrid extends BaseHtmlElement
                 Attributes::create(['class' => 'description']),
                 new HtmlElement(
                     'p',
-                    Attributes::create(['title' => $event->getDescription()]),
-                    Text::create($event->getDescription())
+                    Attributes::create(['title' => $entry->getDescription()]),
+                    Text::create($entry->getDescription())
                 )
             )
         ));

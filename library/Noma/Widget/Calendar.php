@@ -5,7 +5,7 @@ namespace Icinga\Module\Noma\Widget;
 use DateTime;
 use Icinga\Module\Noma\Widget\Calendar\BaseGrid;
 use Icinga\Module\Noma\Widget\Calendar\Controls;
-use Icinga\Module\Noma\Widget\Calendar\Event;
+use Icinga\Module\Noma\Widget\Calendar\Entry;
 use Icinga\Module\Noma\Widget\Calendar\MonthGrid;
 use Icinga\Module\Noma\Widget\Calendar\Util;
 use Icinga\Module\Noma\Widget\Calendar\WeekGrid;
@@ -39,11 +39,11 @@ class Calendar extends BaseHtmlElement
     /** @var BaseGrid The grid implementation */
     protected $grid;
 
-    /** @var Event[] */
-    protected $events = [];
+    /** @var Entry[] */
+    protected $entries = [];
 
     /** @var Url */
-    protected $addEventUrl;
+    protected $addEntryUrl;
 
     public function setControls(Controls $controls): self
     {
@@ -61,16 +61,16 @@ class Calendar extends BaseHtmlElement
         return $this->controls;
     }
 
-    public function setAddEventUrl(?Url $url): self
+    public function setAddEntryUrl(?Url $url): self
     {
-        $this->addEventUrl = $url;
+        $this->addEntryUrl = $url;
 
         return $this;
     }
 
-    public function getAddEventUrl(): ?Url
+    public function getAddEntryUrl(): ?Url
     {
-        return $this->addEventUrl;
+        return $this->addEntryUrl;
     }
 
     protected function getModeStart(): DateTime
@@ -101,24 +101,24 @@ class Calendar extends BaseHtmlElement
         return $this->grid;
     }
 
-    public function addEvent(Event $event): self
+    public function addEntry(Entry $entry): self
     {
-        $this->events[] = $event;
+        $this->entries[] = $entry;
 
         return $this;
     }
 
-    public function getEvents(): Traversable
+    public function getEntries(): Traversable
     {
-        foreach ($this->events as $event) {
-            $rrule = $event->getRecurrencyRule();
-            $start = $event->getStart();
-            $end = $event->getEnd();
+        foreach ($this->entries as $entry) {
+            $rrule = $entry->getRecurrencyRule();
+            $start = $entry->getStart();
+            $end = $entry->getEnd();
 
             if ($rrule) {
                 $grid = $this->getGrid();
                 $rrule = new RRule($rrule);
-                $rrule->startAt($event->getStart());
+                $rrule->startAt($entry->getStart());
                 $length = $start->diff($end);
 
                 $visibleHours = Util::diffHours($start, $grid->getGridEnd());
@@ -130,18 +130,18 @@ class Calendar extends BaseHtmlElement
                 $recurrenceStart = (clone $grid->getGridStart())->sub($length);
                 foreach ($rrule->getNextRecurrences($recurrenceStart, $limit) as $recurrence) {
                     $recurrenceEnd = (clone $recurrence)->add($length);
-                    $occurrence = (new Event($event->getId()))
-                        ->setDescription($event->getDescription())
+                    $occurrence = (new Entry($entry->getId()))
+                        ->setDescription($entry->getDescription())
                         ->setStart($recurrence)
                         ->setEnd($recurrenceEnd)
                         ->setIsOccurrence()
-                        ->setUrl($event->getUrl())
-                        ->setAttendee($event->getAttendee());
+                        ->setUrl($entry->getUrl())
+                        ->setAttendee($entry->getAttendee());
 
                     yield $occurrence;
                 }
             } else {
-                yield $event;
+                yield $entry;
             }
         }
     }
