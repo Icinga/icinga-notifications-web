@@ -1,5 +1,22 @@
 /* Layout */
 
+.icinga-form {
+  input[type="color"] {
+    padding: .25em;
+    background: @low-sat-blue;
+  }
+
+  input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+    border-radius: 0;
+  }
+
+  input[type="color"]::-webkit-color-swatch {
+    border-radius: 0;
+    border: none;
+  }
+}
+
 .event-form {
   fieldset[name="recipient"] > .control-group {
     margin-bottom: 0;
