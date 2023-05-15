@@ -7,7 +7,9 @@ namespace Icinga\Module\Noma\Widget\ItemList;
 use Icinga\Module\Noma\Common\Icons;
 use Icinga\Module\Noma\Common\BaseListItem;
 use Icinga\Module\Noma\Common\Links;
+use Icinga\Module\Noma\Model\Event;
 use Icinga\Module\Noma\Model\IncidentHistory;
+use Icinga\Module\Noma\Widget\SourceIcon;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use ipl\Web\Widget\Icon;
@@ -70,23 +72,24 @@ class IncidentHistoryListItem extends BaseListItem
             }
 
             $title->addHtml($content);
-        } else {
-            $title->addHtml(Html::tag('span', ['class' => ['subject', 'caption']], $this->item->message));
         }
     }
 
     protected function assembleCaption(BaseHtmlElement $caption)
     {
-        $caption->add($this->item->message);
+        $caption->add($this->buildMessage());
     }
 
     protected function assembleHeader(BaseHtmlElement $header): void
     {
-        $header->add($this->createTitle());
+        $title = $this->createTitle();
+        if (! $title->isEmpty()) {
+            $header->addHtml($title);
+        }
 
-        if ($this->item->event_id !== null) {
-            $header->add($this->createCaption());
-            $header->add($this->item->event->source->getIcon());
+        $header->addHtml($this->createCaption());
+        if ($this->item->type === 'source_severity_changed') {
+            $header->add((new SourceIcon(SourceIcon::SIZE_BIG))->addHtml($this->item->event->source->getIcon()));
         }
 
         $header->add(new TimeAgo($this->item->time->getTimestamp()));
@@ -103,8 +106,9 @@ class IncidentHistoryListItem extends BaseListItem
             case 'recipient_role_changed':
                 return $this->getRoleIcon();
             case 'closed':
+                return Icons::CLOSED;
             case 'rule_matched':
-                return Icons::OK;
+                return Icons::RULE_MATCHED;
             case 'escalation_triggered':
                 return Icons::TRIGGERED;
             default:
@@ -149,5 +153,124 @@ class IncidentHistoryListItem extends BaseListItem
     protected function assembleMain(BaseHtmlElement $main): void
     {
         $main->add($this->createHeader());
+    }
+
+    protected function buildMessage(): string
+    {
+        switch ($this->item->type) {
+            case 'opened':
+                $message = t('Opened this incident');
+                break;
+            case 'closed':
+                $message = t('All sources recovered, incident closed');
+                break;
+            case "notified":
+                if ($this->item->contactgroup_id) {
+                    $message = sprintf(
+                        t('Contact %s notified via %s as member of contact group %s'),
+                        $this->item->contact->full_name,
+                        $this->item->channel_type,
+                        $this->item->contactgroup->name
+                    );
+                } elseif ($this->item->schedule_id) {
+                    $message = sprintf(
+                        t('Contact %s notified via %s as member of schedule %s'),
+                        $this->item->contact->full_name,
+                        $this->item->channel_type,
+                        $this->item->schedule->name
+                    );
+                } else {
+                    $message = sprintf(
+                        t('Contact %s notified via %s'),
+                        $this->item->contact->full_name,
+                        $this->item->channel_type
+                    );
+                }
+                break;
+            case 'source_severity_changed':
+                $message = sprintf(
+                    t('Source %s reported a severity change from %s to %s'),
+                    $this->item->event->source->name,
+                    Event::mapSeverity($this->item->old_severity),
+                    Event::mapSeverity($this->item->new_severity)
+                );
+                break;
+            case 'incident_severity_changed':
+                $message = sprintf(
+                    t('Incident severity changed from %s to %s'),
+                    Event::mapSeverity($this->item->old_severity),
+                    Event::mapSeverity($this->item->new_severity)
+                );
+                break;
+            case 'recipient_role_changed':
+                $newRole = $this->item->new_recipient_role;
+                $message = '';
+                if ($newRole === 'manager' || (! $newRole && $this->item->old_recipient_role === 'manager')) {
+                    if ($this->item->contact_id) {
+                        $message = sprintf(
+                            t('Contact %s %s managing this incident'),
+                            $this->item->contact->full_name,
+                            ! $this->item->new_recipient_role ? 'stopped' : 'started'
+                        );
+                    } elseif ($this->item->contactgroup_id) {
+                        $message = sprintf(
+                            t('Contact group %s %s managing this incident'),
+                            $this->item->contactgroup->name,
+                            ! $this->item->new_recipient_role ? 'stopped' : 'started'
+                        );
+                    } else {
+                        $message = sprintf(
+                            t('Schedule %s %s managing this incident'),
+                            $this->item->schedule->name,
+                            ! $this->item->new_recipient_role ? 'stopped' : 'started'
+                        );
+                    }
+                } elseif (
+                    $newRole === 'subscriber'
+                    || (
+                        ! $newRole && $this->item->old_recipient_role === 'subscriber'
+                    )
+                ) {
+                    if ($this->item->contact_id) {
+                        $message = sprintf(
+                            t('Contact %s %s this incident'),
+                            $this->item->contact->full_name,
+                            ! $this->item->new_recipient_role ? 'unsubscribed from' : 'subscribed to'
+                        );
+                    } elseif ($this->item->contactgroup_id) {
+                        $message = sprintf(
+                            t('Contact group %s %s this incident'),
+                            $this->item->contactgroup->name,
+                            ! $this->item->new_recipient_role ? 'unsubscribed from' : 'subscribed to'
+                        );
+                    } else {
+                        $message = sprintf(
+                            t('Schedule %s %s this incident'),
+                            $this->item->schedule->name,
+                            ! $this->item->new_recipient_role ? 'unsubscribed from' : 'subscribed to'
+                        );
+                    }
+                }
+
+                break;
+            case 'rule_matched':
+                $message = sprintf(t('Rule %s matched on this incident'), $this->item->rule->name);
+                break;
+            case 'escalation_triggered':
+                $message = sprintf(
+                    t('Rule %s reached escalation %s'),
+                    $this->item->rule->name,
+                    $this->item->rule_escalation->name
+                );
+                break;
+            default:
+                $message = '';
+        }
+
+        if ($this->item->message) {
+            $message = $message === '' ? $this->item->message : $message . ': ' . $this->item->message;
+        }
+
+        return $message;
     }
 }

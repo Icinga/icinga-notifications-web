@@ -26,17 +26,17 @@ final class Icons
 
     public const OPENED = 'sun';
 
-    public const MANAGE = 'circle-check';
+    public const MANAGE = 'bell';
 
-    public const UNMANAGE = 'circle-xmark';
+    public const UNMANAGE = 'bell-slash';
 
-    public const UNSUBSCRIBED = 'circle-xmark';
+    public const UNSUBSCRIBED = 'comment-slash';
 
-    public const SUBSCRIBED = 'circle-check';
+    public const SUBSCRIBED = 'comment';
 
     public const TRIGGERED = 'square-up-right';
 
     public const NOTIFIED = 'paper-plane';
 
-    public const SUBSCRIBE = 'sync-alt';
+    public const RULE_MATCHED = 'filter';
 }

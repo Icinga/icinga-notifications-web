@@ -66,5 +66,7 @@ class RuleEscalation extends Model
 
         $relations->hasMany('rule_escalation_recipient', RuleEscalationRecipient::class)
             ->setJoinType('LEFT');
+        $relations->hasMany('incident_history', IncidentHistory::class)
+            ->setJoinType('LEFT');
     }
 }
