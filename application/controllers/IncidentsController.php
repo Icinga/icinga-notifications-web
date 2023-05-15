@@ -30,9 +30,9 @@ class IncidentsController extends CompatController
         $sortControl = $this->createSortControl(
             $incidents,
             [
-                'incident.started_at'                         => t('Opened On'),
-                'incident.recovered_at'                       => t('Recovered At'),
-                'incident.severity desc, incident.started_at' => t('Severity')
+                'incident.started_at'                               => t('Opened On'),
+                'incident.recovered_at'                             => t('Recovered At'),
+                'incident.severity desc, incident.started_at desc'  => t('Severity')
             ]
         );
 
