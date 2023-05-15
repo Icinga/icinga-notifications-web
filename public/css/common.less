@@ -6,6 +6,10 @@
     padding-left: 1em;
     padding-right: 1em;
   }
+
+  .item-list > .empty-state {
+    margin: 0 1em;
+  }
 }
 
 .controls {
@@ -15,6 +19,11 @@
     flex-shrink: 0;
     z-index: 1; // The content may clip, this ensures the separator is always visible
     height: 8em; //TODO(sd): add dynamic fix for noma
+  }
+
+  &.event-rule-detail {
+    display: block;
+    .box-shadow(0, 0, 0, 1px, @gray-lighter);
   }
 }
 
@@ -57,181 +66,4 @@
 
 .object-tags-table {
   color: @text-color-light;
-}
-
-.add-new-component {
-  margin: 0 0 1em 1em;
-}
-
-.right-arrow,
-.horizontal-line {
-  display: inline-block;
-  background-color: @base-gray-lighter;
-  height: 0.5em;
-  text-align: end;
-}
-
-.right-arrow {
-  width: 10em;
-  min-width: 2em;
-  margin-right: 0.4em;
-  position: relative;
-}
-
-.horizontal-line {
-  width: 3em;
-  min-width: 1em;
-}
-
-.right-arrow:after {
-  content: '';
-  position: absolute;
-  border: 0.3em solid transparent;
-  border-left: 0.4em solid @base-gray-lighter;
-}
-
-.vertical-line {
-  width: 0.7em;
-  background-color: @base-gray-lighter;
-}
-
-.remove-escalation-form {
-  width: fit-content;
-  cursor: default;
-
-  button[disabled] {
-    background: @gray-light;
-    color: @disabled-gray;
-    border: none;
-  }
-}
-
-#layout.minimal-layout form.icinga-form:not(.inline).remove-escalation-form:not(.inline),
-#layout.twocols:not(.wide-layout) form.icinga-form.remove-escalation-form:not(.inline) {
-  width: fit-content;
-}
-
-.add-escalation-form {
-  width: fit-content;
-  position: absolute;
-  align-self: flex-end;
-
-  &:before {
-    content: "";
-    display: block;
-    background: @gray-lighter;
-    margin-left: calc(~"1.5em + 1px");
-    top: -5em;
-    bottom: 0;
-    width: .5em;
-    position: absolute;
-    z-index: -1;
-  }
-}
-
-#layout.minimal-layout form.icinga-form:not(.inline).count-zero-escalation-condition-form:not(.inline),
-#layout.twocols:not(.wide-layout) form.icinga-form.escalation-condition-form.count-zero-escalation-condition-form:not(.inline) {
-  width: fit-content;
-}
-
-.add-filter-form {
-  display: inline-flex;
-  flex-wrap: wrap;
-  width: fit-content;
-  height: fit-content;
-  border: none;
-  margin: 0;
-  padding: 0;
-
-  button[type="submit"] {
-    font-size: 3em;
-    height: 2.25em;
-    color: @text-color;
-    border: 1px dotted @text-color;
-    margin: 0;
-  }
-
-  button[type="submit"]:hover {
-    background-color: transparent;
-    color: @icinga-blue;
-  }
-}
-
-.add-filter-form:after {
-  content: 'Filter';
-  margin-bottom: -2em;
-  margin-left: -6em;
-  align-self: self-end;
-}
-
-.horizontal-line-long {
-  width: 14.5em;
-}
-
-.new-event-rule {
-  margin-bottom: 1em;
-}
-
-.event-rule-and-save-forms {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  border-bottom: 1px solid @gray-lighter;
-  padding-bottom: 0.5em;
-
-  .event-rule-form {
-    display: inline-flex;
-    width: fit-content;
-    max-width: unset;
-
-    .control-group {
-      display: inline-flex;
-      margin-right: 2em;
-
-      :last-child {
-        float: right;
-      }
-
-      .control-label-group {
-        width: auto;
-      }
-
-      input[type='text'] {
-        max-width: unset;
-        width: 25em;
-      }
-    }
-  }
-
-
-  .save-event-rule {
-    height: 2.25em;
-    display: inline-flex;
-    float: right;
-    margin: 1em 0 0 auto;
-
-    input[type="submit"]:not(:first-child) {
-      margin-left: 1em;
-
-      &:disabled {
-        background: @gray-light;
-        color: @disabled-gray;
-        cursor: default;
-      }
-
-      &.btn-remove {
-        &:disabled {
-          background: none;
-          color: @gray;
-          opacity: 0.5;
-        }
-
-        border: none;
-      }
-
-      &.btn-discard-changes {
-        .event-rule-button();
-      }
-    }
-  }
 }
