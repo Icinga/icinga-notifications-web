@@ -83,7 +83,7 @@ class ChannelsController extends CompatController
         $this->addControl($searchBar);
 
         $addButton = (new ButtonLink(
-            t('Add Channel'),
+            t('New Channel'),
             Links::channelAdd(),
             'plus',
             ['class' => 'add-new-component']
@@ -111,7 +111,7 @@ class ChannelsController extends CompatController
     {
         (new ChannelForm(Database::get()))
             ->on(Form::ON_REQUEST, function ($_, ChannelForm $form) {
-                $this->addTitleTab(t('Add Channel'));
+                $this->addTitleTab(t('New Channel'));
                 $this->addContent($form);
             })
             ->on(Form::ON_SUBMIT, function (ChannelForm $form) {

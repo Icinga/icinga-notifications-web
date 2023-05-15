@@ -271,7 +271,7 @@ class SourceForm extends CompatForm
                 'save',
                 [
                     'label' => $sourceId === null
-                        ? $this->translate('Add Source')
+                        ? $this->translate('Create Source')
                         : $this->translate('Save Changes')
                 ]
             );
@@ -279,7 +279,7 @@ class SourceForm extends CompatForm
 
         if ($sourceId !== null) {
             $deleteButton = (new ButtonLink(
-                $this->translate('Delete'),
+                $this->translate('Delete Source'),
                 Url::fromPath('notifications/source/delete/', ['id' => $sourceId])
             ))->openInModal();
 

@@ -88,7 +88,7 @@ class ContactsController extends CompatController
         $this->addControl($searchBar);
 
         $addButton = (new ButtonLink(
-            $this->translate('Create Contact'),
+            $this->translate('New Contact'),
             Links::contactAdd(),
             'plus',
             ['class' => 'add-new-component']
@@ -130,7 +130,7 @@ class ContactsController extends CompatController
     {
         (new ContactForm(new NotificationConfigProvider()))
             ->on(Form::ON_REQUEST, function ($_, ContactForm $form) {
-                $this->addTitleTab($this->translate('Create Contact'));
+                $this->addTitleTab($this->translate('New Contact'));
                 $this->addContent($form);
             })
             ->on(Form::ON_SUBMIT, function (ContactForm $form) {

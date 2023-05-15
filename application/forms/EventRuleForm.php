@@ -174,14 +174,14 @@ class EventRuleForm extends CompatForm
 
         if ($ruleId !== null) {
             $deleteBtn = $this->createElement('submit', 'delete', [
-                'label' => $this->translate('Delete'),
+                'label' => $this->translate('Delete Event Rule'),
                 'class' => 'btn-remove',
                 'formnovalidate' => true
             ]);
             $this->registerElement($deleteBtn);
 
             $duplicateBtn = $this->createElement('submit', 'duplicate', [
-                'label' => $this->translate('Duplicate')
+                'label' => $this->translate('Duplicate Event Rule')
             ]);
             $this->registerElement($duplicateBtn);
 

@@ -210,7 +210,10 @@ class RuleEntryForm extends CompatForm
 
         if ($escalationId !== null) {
             $deleteBtn = $this->createElement('submit', 'delete', [
-                'label' => $this->translate('Delete'),
+                'label' => match ($this->ruleType) {
+                    'escalation' => $this->translate('Delete Escalation'),
+                    'notification' => $this->translate('Delete Recipients'),
+                },
                 'class' => 'btn-remove',
                 'formnovalidate' => true
             ]);

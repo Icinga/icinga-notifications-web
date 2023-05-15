@@ -85,7 +85,7 @@ class EventRulesController extends CompatController
         $this->addControl($searchBar);
 
         $addButton = new ButtonLink(
-            $this->translate('Create Event Rule'),
+            $this->translate('New Event Rule'),
             Url::fromPath('notifications/event-rules/add'),
             'plus',
             ['class' => 'add-new-component']
@@ -121,7 +121,7 @@ class EventRulesController extends CompatController
 
     public function addAction(): void
     {
-        $this->setTitle($this->translate('Create Event Rule'));
+        $this->setTitle($this->translate('New Event Rule'));
 
         $eventRuleForm = (new EventRuleForm())
             ->setCsrfCounterMeasureId(Session::getSession()->getId())

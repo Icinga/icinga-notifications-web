@@ -88,7 +88,7 @@ class ContactGroupsController extends CompatController
         $this->addControl($searchBar);
 
         $addButton = new ButtonLink(
-            $this->translate('Create Contact Group'),
+            $this->translate('New Contact Group'),
             Links::contactGroupsAdd()->with(['showCompact' => true, '_disableLayout' => 1]),
             'plus',
             ['class' => 'add-new-component']
