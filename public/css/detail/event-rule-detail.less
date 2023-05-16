@@ -404,11 +404,18 @@
       &:disabled {
         background: @gray-light;
         color: @disabled-gray;
-        cursor: default;
+        cursor: not-allowed;
+        border-color: transparent;
       }
 
       &.btn-remove {
         border: none;
+
+        &:disabled {
+          background: none;
+          cursor: not-allowed;
+          opacity: 0.5;
+        }
       }
 
       &.btn-discard-changes {
@@ -419,16 +426,11 @@
 }
 
 .remove-escalation-form {
-  button[disabled],
-  button[disabled]:hover {
+  button[disabled] {
     &:disabled {
       background: @gray-light;
       color: @disabled-gray;
-      cursor: default;
+      cursor: not-allowed;
     }
-  }
-
-  button[disabled]:hover {
-    pointer-events: none;
   }
 }
