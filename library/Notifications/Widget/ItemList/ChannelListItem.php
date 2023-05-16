@@ -41,7 +41,7 @@ class ChannelListItem extends BaseListItem
     {
         $title->addHtml(new Link(
             $this->item->name,
-            Url::fromPath('noma/channel', ['id' => $this->item->id]),
+            Url::fromPath('notifications/channel', ['id' => $this->item->id]),
             ['class' => 'subject']
         ));
     }

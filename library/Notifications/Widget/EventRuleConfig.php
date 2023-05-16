@@ -147,7 +147,7 @@ class EventRuleConfig extends BaseHtmlElement
         $editor->setAction(Url::fromRequest()->getAbsoluteUrl());
 
         $editor->setSuggestionUrl(Url::fromPath(
-            "noma/event-rule/complete",
+            "notifications/event-rule/complete",
             ['_disableLayout' => true, 'showCompact' => true, 'id' => Url::fromRequest()->getParams()->get('id')]
         ));
 

@@ -69,15 +69,15 @@ class EscalationConditionForm extends BaseEscalationForm
                         [
                             'class'   => ['autosubmit', 'right-operand'],
                             'options' => [
-                                'ok'      => $this->translate('Ok', 'noma.severity'),
-                                'debug'   => $this->translate('Debug', 'noma.severity'),
-                                'info'    => $this->translate('Information', 'noma.severity'),
-                                'notice'  => $this->translate('Notice', 'noma.severity'),
-                                'warning' => $this->translate('Warning', 'noma.severity'),
-                                'err'     => $this->translate('Error', 'noma.severity'),
-                                'crit'    => $this->translate('Critical', 'noma.severity'),
-                                'alert'   => $this->translate('Alert', 'noma.severity'),
-                                'emerg'   => $this->translate('Emergency', 'noma.severity')
+                                'ok'      => $this->translate('Ok', 'notification.severity'),
+                                'debug'   => $this->translate('Debug', 'notification.severity'),
+                                'info'    => $this->translate('Information', 'notification.severity'),
+                                'notice'  => $this->translate('Notice', 'notification.severity'),
+                                'warning' => $this->translate('Warning', 'notification.severity'),
+                                'err'     => $this->translate('Error', 'notification.severity'),
+                                'crit'    => $this->translate('Critical', 'notification.severity'),
+                                'alert'   => $this->translate('Alert', 'notification.severity'),
+                                'emerg'   => $this->translate('Emergency', 'notification.severity')
                             ]
                         ]
                     );

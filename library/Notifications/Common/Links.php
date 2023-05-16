@@ -13,36 +13,36 @@ abstract class Links
 {
     public static function event(int $id): Url
     {
-        return Url::fromPath('noma/event', ['id' => $id]);
+        return Url::fromPath('notifications/event', ['id' => $id]);
     }
 
     public static function events(): Url
     {
-        return Url::fromPath('noma/events');
+        return Url::fromPath('notifications/events');
     }
 
     public static function incidents(): Url
     {
-        return Url::fromPath('noma/incidents');
+        return Url::fromPath('notifications/incidents');
     }
 
     public static function incident(int $id): Url
     {
-        return Url::fromPath('noma/incident', ['id' => $id]);
+        return Url::fromPath('notifications/incident', ['id' => $id]);
     }
 
     public static function contact(int $id): Url
     {
-        return Url::fromPath('noma/contact', ['id' => $id]);
+        return Url::fromPath('notifications/contact', ['id' => $id]);
     }
 
     public static function eventRules(): Url
     {
-        return Url::fromPath('noma/event-rules');
+        return Url::fromPath('notifications/event-rules');
     }
 
     public static function eventRule(int $id): Url
     {
-        return Url::fromPath('noma/event-rule', ['id' => $id]);
+        return Url::fromPath('notifications/event-rule', ['id' => $id]);
     }
 }

@@ -9,7 +9,7 @@
          stopOnFailure="false"
     >
     <testsuites>
-        <testsuite name="NoMa Web PHP Unit Tests">
+        <testsuite name="Notifications Web PHP Unit Tests">
             <directory suffix="Test.php">test/php</directory>
         </testsuite>
     </testsuites>

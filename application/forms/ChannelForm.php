@@ -88,7 +88,7 @@ class ChannelForm extends CompatForm
                 [
                     'label'         => $this->translate('From'),
                     'autocomplete'  => 'off',
-                    'placeholder'   => 'noma@icinga'
+                    'placeholder'   => 'notifications@icinga'
                 ]
             )->addElement(
                 'password',

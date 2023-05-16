@@ -134,7 +134,7 @@ abstract class BaseGrid extends BaseHtmlElement
     protected function assembleGridOverlay(BaseHtmlElement $overlay): void
     {
         $style = new Style();
-        $style->setModule('noma'); // TODO: Don't hardcode this!
+        $style->setModule('notifications'); // TODO: Don't hardcode this!
         $style->setParentSelector('.calendar-grid .overlay');
 
         $overlay->addHtml($style);

@@ -40,7 +40,7 @@ class IncidentContactListItem extends BaseListItem
     {
         $title->addHtml(new Link(
             $this->item->full_name,
-            Url::fromPath('noma/contact', ['id' => $this->item->id]),
+            Url::fromPath('notifications/contact', ['id' => $this->item->id]),
             ['class' => 'subject']
         ));
 

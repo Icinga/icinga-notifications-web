@@ -17,7 +17,7 @@ trait Auth
     }
 
     /**
-     * Apply NoMa Web's restrictions depending on what is queried
+     * Apply module restrictions depending on what is queried
      *
      * @param Query $query
      *
@@ -33,8 +33,8 @@ trait Auth
         foreach ($this->getAuth()->getUser()->getRoles() as $role) {
             $roleFilter = Filter::all();
 
-            if ($restriction = $role->getRestrictions('noma/filter/objects')) {
-                $roleFilter->add($this->parseRestriction($restriction, 'noma/filter/objects'));
+            if ($restriction = $role->getRestrictions('notifications/filter/objects')) {
+                $roleFilter->add($this->parseRestriction($restriction, 'notifications/filter/objects'));
             }
 
             if (! $roleFilter->isEmpty()) {
@@ -55,7 +55,7 @@ trait Auth
      */
     protected function parseRestriction(string $queryString, string $restriction): Filter\Rule
     {
-        // 'noma/filter/objects' restriction
+        // 'notifications/filter/objects' restriction
         return QueryString::fromString($queryString)
             ->on(
                 QueryString::ON_CONDITION,

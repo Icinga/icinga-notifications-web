@@ -32,12 +32,12 @@ class EventRuleController extends CompatController
 
     public function init()
     {
-        $this->sessionNamespace = Session::getSession()->getNamespace('noma');
+        $this->sessionNamespace = Session::getSession()->getNamespace('notifications');
     }
 
     public function indexAction(): void
     {
-        $this->assertPermission('noma/config/event-rules');
+        $this->assertPermission('notifications/config/event-rules');
 
         $this->addTitleTab(t('Event Rule'));
 
@@ -50,12 +50,12 @@ class EventRuleController extends CompatController
         if ($cache) {
             $this->addContent(Html::tag('div', ['class' => 'cache-notice'], t('There are unsaved changes.')));
             $eventRuleConfig = new EventRuleConfig(
-                Url::fromPath('noma/event-rule/search-editor', ['id' => $ruleId]),
+                Url::fromPath('notifications/event-rule/search-editor', ['id' => $ruleId]),
                 $cache
             );
         } else {
             $eventRuleConfig = new EventRuleConfig(
-                Url::fromPath('noma/event-rule/search-editor', ['id' => $ruleId]),
+                Url::fromPath('notifications/event-rule/search-editor', ['id' => $ruleId]),
                 $this->fromDb($ruleId)
             );
         }
@@ -213,7 +213,7 @@ class EventRuleController extends CompatController
                 ->setHeader('X-Icinga-Container', '_self')
                 ->redirectAndExit(
                     Url::fromPath(
-                        'noma/event-rule',
+                        'notifications/event-rule',
                         ['id' => $ruleId]
                     )
                 );

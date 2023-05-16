@@ -19,7 +19,7 @@ class ContactController extends CompatController
 
     public function init()
     {
-        $this->assertPermission('noma/config/contacts');
+        $this->assertPermission('notifications/config/contacts');
 
         $this->db = Database::get();
     }

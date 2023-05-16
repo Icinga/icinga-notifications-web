@@ -37,7 +37,10 @@ class Schedule extends BaseHtmlElement
 
     protected function assembleCalendar(Calendar $calendar): void
     {
-        $calendar->setAddEntryUrl(Url::fromPath('noma/schedule/add-entry', ['schedule' => $this->schedule->id]));
+        $calendar->setAddEntryUrl(Url::fromPath(
+            'notifications/schedule/add-entry',
+            ['schedule' => $this->schedule->id]
+        ));
 
         $members = $this->schedule->member->with(['timeperiod', 'contact', 'contactgroup']);
         foreach ($members as $member) {
@@ -86,7 +89,7 @@ class Schedule extends BaseHtmlElement
                         ->setRecurrencyRule($entry->rrule)
                         ->setStart((clone $entry->start_time)->setTimezone(new DateTimeZone($entry->timezone)))
                         ->setEnd((clone $entry->end_time)->setTimezone(new DateTimeZone($entry->timezone)))
-                        ->setUrl(Url::fromPath('noma/schedule/edit-entry', [
+                        ->setUrl(Url::fromPath('notifications/schedule/edit-entry', [
                             'id' => $entry->id,
                             'schedule' => $this->schedule->id
                         ]))
@@ -115,7 +118,7 @@ class Schedule extends BaseHtmlElement
                         new Icon('plus'),
                         t('Add new entry')
                     ],
-                    Url::fromPath('noma/schedule/add-entry', ['schedule' => $this->schedule->id]),
+                    Url::fromPath('notifications/schedule/add-entry', ['schedule' => $this->schedule->id]),
                     ['class' => 'button-link']
                 )
             );

@@ -86,7 +86,7 @@ class ChannelsController extends CompatController
         $this->addContent(
             (new ButtonLink(
                 t('Add Channel'),
-                Url::fromPath('noma/channels/add'),
+                Url::fromPath('notifications/channels/add'),
                 'plus'
             ))->setBaseTarget('_next')
             ->addAttributes(['class' => 'add-new-component'])
@@ -110,7 +110,7 @@ class ChannelsController extends CompatController
                         $form->getValue('name')
                     )
                 );
-                $this->redirectNow(Url::fromPath('noma/channels'));
+                $this->redirectNow(Url::fromPath('notifications/channels'));
             })
             ->handleRequest($this->getServerRequest());
 

@@ -39,7 +39,7 @@ class SchedulesController extends CompatController
 
         if ($scheduleId) {
             $controls->addHtml(
-                new ButtonLink(null, Url::fromPath('noma/schedule', ['id' => $scheduleId]), 'cog', [
+                new ButtonLink(null, Url::fromPath('notifications/schedule', ['id' => $scheduleId]), 'cog', [
                     'data-no-icinga-ajax' => true,
                     'data-icinga-modal' => true
                 ])
@@ -57,7 +57,7 @@ class SchedulesController extends CompatController
         $controls->addHtml(
             new ButtonLink(
                 'New Schedule',
-                Url::fromPath('noma/schedule/add'),
+                Url::fromPath('notifications/schedule/add'),
                 'plus',
                 [
                     'class' => 'add-schedule-control',
@@ -91,14 +91,14 @@ class SchedulesController extends CompatController
         return parent::getTabs()
             ->add('schedules', [
                 'label'         => $this->translate('Schedules'),
-                'url'           => Url::fromPath('noma/schedules'),
+                'url'           => Url::fromPath('notifications/schedules'),
                 'baseTarget'    => '_main'
             ])->add('event-rules', [
                 'label' => $this->translate('Event Rules'),
-                'url'   => Url::fromPath('noma/event-rules')
+                'url'   => Url::fromPath('notifications/event-rules')
             ])->add('contacts', [
                 'label' => $this->translate('Contacts'),
-                'url'   => Url::fromPath('noma/contacts')
+                'url'   => Url::fromPath('notifications/contacts')
             ]);
     }
 }
