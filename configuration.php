@@ -1,6 +1,6 @@
 <?php
 
-/* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
+/* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
 
 /** @var \Icinga\Application\Modules\Module $this */
 
