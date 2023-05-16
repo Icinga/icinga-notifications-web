@@ -271,13 +271,13 @@ class EventRuleConfig extends BaseHtmlElement
 
         if (! array_key_exists('conditionPlusButtonPosition', $this->config)) {
             //the default position of add condition button
-                $pos = null;
-                foreach ($this->config['rule_escalation'] as $p => $v) {
-                    if (empty($v['condition'])) {
-                        $pos = $p;
-                        break;
-                    }
+            $pos = null;
+            foreach ($this->config['rule_escalation'] as $p => $v) {
+                if (empty($v['condition'])) {
+                    $pos = $p;
+                    break;
                 }
+            }
 
             $this->config['conditionPlusButtonPosition'] = $pos;
         }
