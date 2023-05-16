@@ -57,23 +57,22 @@ class Schedule extends BaseHtmlElement
             $entries->getSelectBase()->resetWhere();
 
             $entryFilter = Filter::any(
-                Filter::all(
+                Filter::all( // all entries that start in the shown range
                     Filter::greaterThanOrEqual('start_time', $calendar->getGrid()->getGridStart()->getTimestamp()),
                     Filter::lessThanOrEqual('start_time', $calendar->getGrid()->getGridEnd()->getTimestamp())
                 ),
-                Filter::all(
+                Filter::all( // all entries that end in the shown range
                     Filter::greaterThanOrEqual('end_time', $calendar->getGrid()->getGridStart()->getTimestamp()),
                     Filter::lessThanOrEqual('end_time', $calendar->getGrid()->getGridEnd()->getTimestamp())
                 ),
-                Filter::all(
+                Filter::all( // all entries that start before and end after the shown range
                     Filter::lessThanOrEqual('start_time', $calendar->getGrid()->getGridStart()->getTimestamp()),
                     Filter::greaterThanOrEqual('end_time', $calendar->getGrid()->getGridEnd()->getTimestamp())
                 ),
-                Filter::all(
-                    Filter::greaterThanOrEqual('until_time', $calendar->getGrid()->getGridStart()->getTimestamp()),
-                    Filter::lessThanOrEqual('until_time', $calendar->getGrid()->getGridEnd()->getTimestamp())
+                Filter::none( // all entries that are repeated and may still occur in the shown range
+                    Filter::lessThanOrEqual('until_time', $calendar->getGrid()->getGridStart()->getTimestamp())
                 ),
-                Filter::all(
+                Filter::all( // all entries that are repeated endlessly and already started in the past
                     Filter::unlike('until_time', '*'),
                     Filter::like('rrule', '*'),
                     Filter::lessThanOrEqual('start_time', $calendar->getGrid()->getGridStart()->getTimestamp())
