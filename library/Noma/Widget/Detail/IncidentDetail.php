@@ -109,7 +109,16 @@ class IncidentDetail extends BaseHtmlElement
             Html::tag('h2', t('Incident History')),
             new IncidentHistoryList(
                 $this->incident->incident_history
-                    ->with(['event', 'event.source', 'event.object', 'contact', 'rule', 'rule_escalation', 'contactgroup', 'schedule'])
+                    ->with([
+                        'event',
+                        'event.source',
+                        'event.object',
+                        'contact',
+                        'rule',
+                        'rule_escalation',
+                        'contactgroup',
+                        'schedule'
+                    ])
             )
         ];
     }
