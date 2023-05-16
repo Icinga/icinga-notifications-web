@@ -17,7 +17,7 @@ $section->add(
     [
         'icon'          => 'wrench',
         'description'   => $this->translate('Configuration'),
-        'url'           => 'notifications/schedules'
+        'url'           => 'notifications/contacts'
     ]
 );
 

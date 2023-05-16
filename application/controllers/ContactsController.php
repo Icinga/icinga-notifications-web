@@ -177,16 +177,18 @@ class ContactsController extends CompatController
     {
         if ($this->getRequest()->getActionName() === 'index') {
             return parent::getTabs()
+                ->add('contacts', [
+                    'label' => $this->translate('Contacts'),
+                    'url'   => Url::fromRequest()
+                ])
+                ->add('event-rules', [
+                    'label' => $this->translate('Event Rules'),
+                    'url'   => Url::fromPath('notifications/event-rules')
+                ])
                 ->add('schedules', [
                     'label'         => $this->translate('Schedules'),
                     'url'           => Url::fromPath('notifications/schedules'),
                     'baseTarget'    => '_main'
-                ])->add('event-rules', [
-                    'label' => $this->translate('Event Rules'),
-                    'url'   => Url::fromPath('notifications/event-rules')
-                ])->add('contacts', [
-                    'label' => $this->translate('Contacts'),
-                    'url'   => Url::fromRequest()
                 ]);
         }
 
