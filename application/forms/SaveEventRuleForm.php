@@ -347,11 +347,17 @@ class SaveEventRuleForm extends Form
                 switch (true) {
                     case isset($recipientConfig['contact_id']):
                         $data['contact_id'] = $recipientConfig['contact_id'];
+                        $data['contactgroup_id'] = null;
+                        $data['schedule_id'] = null;
                         break;
                     case isset($recipientConfig['contactgroup_id']):
+                        $data['contact_id'] = null;
                         $data['contactgroup_id'] = $recipientConfig['contactgroup_id'];
+                        $data['schedule_id'] = null;
                         break;
                     case isset($recipientConfig['schedule_id']):
+                        $data['contact_id'] = null;
+                        $data['contactgroup_id'] = null;
                         $data['schedule_id'] = $recipientConfig['schedule_id'];
                         break;
                 }
