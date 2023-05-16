@@ -1,6 +1,6 @@
 <?php
 
-namespace Icinga\Module\Noma\Web;
+namespace Icinga\Module\Notifications\Web;
 
 use ipl\Stdlib\Filter;
 use ipl\Web\Filter\Renderer;

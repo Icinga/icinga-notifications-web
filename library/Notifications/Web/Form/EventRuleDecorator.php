@@ -1,6 +1,6 @@
 <?php
 
-namespace Icinga\Module\Noma\Web\Form;
+namespace Icinga\Module\Notifications\Web\Form;
 
 use ipl\Html\Attributes;
 use ipl\Html\Contract\FormElement;

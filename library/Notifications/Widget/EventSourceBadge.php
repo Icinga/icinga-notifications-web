@@ -2,9 +2,9 @@
 
 /* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Widget;
+namespace Icinga\Module\Notifications\Widget;
 
-use Icinga\Module\Noma\Model\Source;
+use Icinga\Module\Notifications\Model\Source;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 

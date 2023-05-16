@@ -1,10 +1,10 @@
 <?php
 
-namespace Icinga\Module\Noma\Controllers;
+namespace Icinga\Module\Notifications\Controllers;
 
-use Icinga\Module\Noma\Forms\EntryForm;
-use Icinga\Module\Noma\Forms\ScheduleForm;
-use Icinga\Module\Noma\Widget\RecipientSuggestions;
+use Icinga\Module\Notifications\Forms\EntryForm;
+use Icinga\Module\Notifications\Forms\ScheduleForm;
+use Icinga\Module\Notifications\Widget\RecipientSuggestions;
 use ipl\Html\Html;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Url;

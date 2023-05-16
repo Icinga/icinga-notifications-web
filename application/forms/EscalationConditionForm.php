@@ -2,10 +2,10 @@
 
 /* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Forms;
+namespace Icinga\Module\Notifications\Forms;
 
-use Icinga\Module\Noma\Web\FilterRenderer;
-use Icinga\Module\Noma\Web\Form\EventRuleDecorator;
+use Icinga\Module\Notifications\Web\FilterRenderer;
+use Icinga\Module\Notifications\Web\Form\EventRuleDecorator;
 use ipl\Html\Contract\FormElement;
 use ipl\Html\Html;
 use ipl\Stdlib\Filter;

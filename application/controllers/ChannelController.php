@@ -2,11 +2,11 @@
 
 /* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Controllers;
+namespace Icinga\Module\Notifications\Controllers;
 
-use Icinga\Module\Noma\Common\Database;
-use Icinga\Module\Noma\Forms\ChannelForm;
-use Icinga\Module\Noma\Model\Channel;
+use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Forms\ChannelForm;
+use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Web\Notification;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;

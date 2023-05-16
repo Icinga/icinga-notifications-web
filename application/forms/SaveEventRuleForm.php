@@ -1,11 +1,11 @@
 <?php
 
-namespace Icinga\Module\Noma\Forms;
+namespace Icinga\Module\Notifications\Forms;
 
 use Exception;
-use Icinga\Module\Noma\Common\Database;
-use Icinga\Module\Noma\Model\RuleEscalation;
-use Icinga\Module\Noma\Model\RuleEscalationRecipient;
+use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Model\RuleEscalation;
+use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\Form;

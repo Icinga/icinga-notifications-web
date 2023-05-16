@@ -2,17 +2,17 @@
 
 /* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Widget;
+namespace Icinga\Module\Notifications\Widget;
 
 use Icinga\Exception\ProgrammingError;
-use Icinga\Module\Noma\Common\Database;
-use Icinga\Module\Noma\Forms\AddEscalationForm;
-use Icinga\Module\Noma\Forms\AddFilterForm;
-use Icinga\Module\Noma\Forms\EscalationConditionForm;
-use Icinga\Module\Noma\Forms\EscalationRecipientForm;
-use Icinga\Module\Noma\Model\Incident;
+use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Forms\AddEscalationForm;
+use Icinga\Module\Notifications\Forms\AddFilterForm;
+use Icinga\Module\Notifications\Forms\EscalationConditionForm;
+use Icinga\Module\Notifications\Forms\EscalationRecipientForm;
+use Icinga\Module\Notifications\Model\Incident;
 use ipl\Html\Attributes;
-use Icinga\Module\Noma\Forms\RemoveEscalationForm;
+use Icinga\Module\Notifications\Forms\RemoveEscalationForm;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Form;
 use ipl\Html\FormElement\TextElement;

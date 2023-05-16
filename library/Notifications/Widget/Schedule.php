@@ -1,11 +1,11 @@
 <?php
 
-namespace Icinga\Module\Noma\Widget;
+namespace Icinga\Module\Notifications\Widget;
 
 use DateTimeZone;
-use Icinga\Module\Noma\Widget\Calendar\Attendee;
-use Icinga\Module\Noma\Widget\Calendar\Controls;
-use Icinga\Module\Noma\Widget\Calendar\Entry;
+use Icinga\Module\Notifications\Widget\Calendar\Attendee;
+use Icinga\Module\Notifications\Widget\Calendar\Controls;
+use Icinga\Module\Notifications\Widget\Calendar\Entry;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\HtmlElement;
@@ -23,13 +23,13 @@ class Schedule extends BaseHtmlElement
 
     protected $defaultAttributes = ['class' => 'schedule'];
 
-    /** @var \Icinga\Module\Noma\Model\Schedule */
+    /** @var \Icinga\Module\Notifications\Model\Schedule */
     protected $schedule;
 
     /** @var Controls */
     protected $controls;
 
-    public function __construct(Controls $controls, ?\Icinga\Module\Noma\Model\Schedule $schedule)
+    public function __construct(Controls $controls, ?\Icinga\Module\Notifications\Model\Schedule $schedule)
     {
         $this->schedule = $schedule;
         $this->controls = $controls;

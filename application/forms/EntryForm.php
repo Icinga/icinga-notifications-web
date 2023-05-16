@@ -1,14 +1,14 @@
 <?php
 
-namespace Icinga\Module\Noma\Forms;
+namespace Icinga\Module\Notifications\Forms;
 
 use DateTime;
 use Icinga\Exception\Http\HttpNotFoundException;
-use Icinga\Module\Noma\Common\Database;
-use Icinga\Module\Noma\Model\Contact;
-use Icinga\Module\Noma\Model\Contactgroup;
-use Icinga\Module\Noma\Model\ScheduleMember;
-use Icinga\Module\Noma\Model\TimeperiodEntry;
+use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Model\Contact;
+use Icinga\Module\Notifications\Model\Contactgroup;
+use Icinga\Module\Notifications\Model\ScheduleMember;
+use Icinga\Module\Notifications\Model\TimeperiodEntry;
 use Icinga\Web\Session;
 use ipl\Html\HtmlDocument;
 use ipl\Scheduler\Contract\Frequency;

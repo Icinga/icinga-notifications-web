@@ -2,11 +2,11 @@
 
 /* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Widget\ItemList;
+namespace Icinga\Module\Notifications\Widget\ItemList;
 
-use Icinga\Module\Noma\Common\LoadMore;
-use Icinga\Module\Noma\Common\BaseItemList;
-use Icinga\Module\Noma\Common\NoSubjectLink;
+use Icinga\Module\Notifications\Common\LoadMore;
+use Icinga\Module\Notifications\Common\BaseItemList;
+use Icinga\Module\Notifications\Common\NoSubjectLink;
 use ipl\Orm\ResultSet;
 
 class EventList extends BaseItemList

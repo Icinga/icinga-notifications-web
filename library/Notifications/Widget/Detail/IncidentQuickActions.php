@@ -2,13 +2,13 @@
 
 /* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Widget\Detail;
+namespace Icinga\Module\Notifications\Widget\Detail;
 
 use Exception;
-use Icinga\Module\Noma\Common\Database;
-use Icinga\Module\Noma\Common\Icons;
-use Icinga\Module\Noma\Model\Incident;
-use Icinga\Module\Noma\Model\IncidentContact;
+use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Common\Icons;
+use Icinga\Module\Notifications\Model\Incident;
+use Icinga\Module\Notifications\Model\IncidentContact;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use InvalidArgumentException;

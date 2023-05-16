@@ -1,14 +1,14 @@
 <?php
 
-namespace Icinga\Module\Noma\Widget;
+namespace Icinga\Module\Notifications\Widget;
 
 use DateTime;
-use Icinga\Module\Noma\Widget\Calendar\BaseGrid;
-use Icinga\Module\Noma\Widget\Calendar\Controls;
-use Icinga\Module\Noma\Widget\Calendar\Entry;
-use Icinga\Module\Noma\Widget\Calendar\MonthGrid;
-use Icinga\Module\Noma\Widget\Calendar\Util;
-use Icinga\Module\Noma\Widget\Calendar\WeekGrid;
+use Icinga\Module\Notifications\Widget\Calendar\BaseGrid;
+use Icinga\Module\Notifications\Widget\Calendar\Controls;
+use Icinga\Module\Notifications\Widget\Calendar\Entry;
+use Icinga\Module\Notifications\Widget\Calendar\MonthGrid;
+use Icinga\Module\Notifications\Widget\Calendar\Util;
+use Icinga\Module\Notifications\Widget\Calendar\WeekGrid;
 use IntlDateFormatter;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;

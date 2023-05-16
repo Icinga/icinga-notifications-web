@@ -2,10 +2,10 @@
 
 /* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Widget\ItemList;
+namespace Icinga\Module\Notifications\Widget\ItemList;
 
-use Icinga\Module\Noma\Common\BaseListItem;
-use Icinga\Module\Noma\Model\Channel;
+use Icinga\Module\Notifications\Common\BaseListItem;
+use Icinga\Module\Notifications\Model\Channel;
 use ipl\Html\BaseHtmlElement;
 use ipl\Web\Url;
 use ipl\Web\Widget\Icon;

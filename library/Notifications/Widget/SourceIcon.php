@@ -1,6 +1,6 @@
 <?php
 
-namespace Icinga\Module\Noma\Widget;
+namespace Icinga\Module\Notifications\Widget;
 
 use ipl\Html\BaseHtmlElement;
 use ipl\Web\Widget\StateBall;

@@ -1,11 +1,11 @@
 <?php
 
-namespace Icinga\Module\Noma\Widget\Calendar;
+namespace Icinga\Module\Notifications\Widget\Calendar;
 
 use DateTime;
 use DateTimeInterface;
-use Icinga\Module\Noma\Common\Style;
-use Icinga\Module\Noma\Widget\Calendar;
+use Icinga\Module\Notifications\Common\Style;
+use Icinga\Module\Notifications\Widget\Calendar;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\HtmlElement;

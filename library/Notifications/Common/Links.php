@@ -2,7 +2,7 @@
 
 /* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Common;
+namespace Icinga\Module\Notifications\Common;
 
 use ipl\Web\Url;
 

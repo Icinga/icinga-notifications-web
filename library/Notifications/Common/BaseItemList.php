@@ -2,9 +2,9 @@
 
 /* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Common;
+namespace Icinga\Module\Notifications\Common;
 
-use Icinga\Module\Noma\Widget\EmptyState;
+use Icinga\Module\Notifications\Widget\EmptyState;
 use InvalidArgumentException;
 use ipl\Html\BaseHtmlElement;
 use ipl\Stdlib\BaseFilter;

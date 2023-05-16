@@ -2,11 +2,11 @@
 
 /* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Web\Control\SearchBar;
+namespace Icinga\Module\Notifications\Web\Control\SearchBar;
 
-use Icinga\Module\Noma\Common\Database;
-use Icinga\Module\Noma\Model\ObjectExtraTag;
-use Icinga\Module\Noma\Util\ObjectSuggestionsCursor;
+use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Model\ObjectExtraTag;
+use Icinga\Module\Notifications\Util\ObjectSuggestionsCursor;
 use ipl\Web\Control\SearchBar\Suggestions;
 use ipl\Stdlib\Filter;
 use Traversable;

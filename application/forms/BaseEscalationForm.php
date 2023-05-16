@@ -2,7 +2,7 @@
 
 /* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Forms;
+namespace Icinga\Module\Notifications\Forms;
 
 use Icinga\Web\Session;
 use ipl\Html\Contract\FormElement;

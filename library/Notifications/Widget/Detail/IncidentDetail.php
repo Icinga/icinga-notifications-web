@@ -2,16 +2,16 @@
 
 /* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Widget\Detail;
+namespace Icinga\Module\Notifications\Widget\Detail;
 
-use Icinga\Module\Noma\Common\Database;
-use Icinga\Module\Noma\Model\Incident;
-use Icinga\Module\Noma\Model\Source;
-use Icinga\Module\Noma\Model\SourceObject;
-use Icinga\Module\Noma\Widget\EventSourceBadge;
-use Icinga\Module\Noma\Widget\ItemList\IncidentContactList;
-use Icinga\Module\Noma\Widget\ItemList\IncidentHistoryList;
-use Icinga\Module\Noma\Widget\ItemList\ObjectLabelList;
+use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Model\Incident;
+use Icinga\Module\Notifications\Model\Source;
+use Icinga\Module\Notifications\Model\SourceObject;
+use Icinga\Module\Notifications\Widget\EventSourceBadge;
+use Icinga\Module\Notifications\Widget\ItemList\IncidentContactList;
+use Icinga\Module\Notifications\Widget\ItemList\IncidentHistoryList;
+use Icinga\Module\Notifications\Widget\ItemList\ObjectLabelList;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;

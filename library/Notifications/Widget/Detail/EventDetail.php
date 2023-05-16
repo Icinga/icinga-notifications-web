@@ -2,12 +2,12 @@
 
 /* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Widget\Detail;
+namespace Icinga\Module\Notifications\Widget\Detail;
 
 use Icinga\Date\DateFormatter;
-use Icinga\Module\Noma\Model\Event;
-use Icinga\Module\Noma\Widget\EventSourceBadge;
-use Icinga\Module\Noma\Widget\ItemList\IncidentList;
+use Icinga\Module\Notifications\Model\Event;
+use Icinga\Module\Notifications\Widget\EventSourceBadge;
+use Icinga\Module\Notifications\Widget\ItemList\IncidentList;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use ipl\Html\ValidHtml;

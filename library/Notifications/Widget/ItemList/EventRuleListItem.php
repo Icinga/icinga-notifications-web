@@ -2,13 +2,13 @@
 
 /* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Widget\ItemList;
+namespace Icinga\Module\Notifications\Widget\ItemList;
 
-use Icinga\Module\Noma\Common\BaseListItem;
-use Icinga\Module\Noma\Common\Links;
-use Icinga\Module\Noma\Model\Rule;
-use Icinga\Module\Noma\Widget\CheckboxIcon;
-use Icinga\Module\Noma\Widget\RuleEscalationRecipientBadge;
+use Icinga\Module\Notifications\Common\BaseListItem;
+use Icinga\Module\Notifications\Common\Links;
+use Icinga\Module\Notifications\Model\Rule;
+use Icinga\Module\Notifications\Widget\CheckboxIcon;
+use Icinga\Module\Notifications\Widget\RuleEscalationRecipientBadge;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use ipl\Web\Widget\Icon;

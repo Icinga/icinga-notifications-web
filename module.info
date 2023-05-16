@@ -1,4 +1,4 @@
-Module: noma
+Module: notifications
 Version: 0.0.0
-Description: NoMa Web
- A description that describes what the product does
+Description: Notifications Web
+ Manage incidents and who gets notified about them how and when

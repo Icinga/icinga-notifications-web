@@ -2,11 +2,11 @@
 
 /* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Common;
+namespace Icinga\Module\Notifications\Common;
 
 use Generator;
-use Icinga\Module\Noma\Widget\ItemList\PageSeparatorItem;
-use Icinga\Module\Noma\Widget\ShowMore;
+use Icinga\Module\Notifications\Widget\ItemList\PageSeparatorItem;
+use Icinga\Module\Notifications\Widget\ShowMore;
 use ipl\Orm\ResultSet;
 use ipl\Web\Url;
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Icinga\Module\Noma\Common;
+namespace Icinga\Module\Notifications\Common;
 
 use Icinga\Util\LessParser;
 use ipl\Html\BaseHtmlElement;

@@ -1,10 +1,10 @@
 <?php
 
-namespace Icinga\Module\Noma\Widget;
+namespace Icinga\Module\Notifications\Widget;
 
-use Icinga\Module\Noma\Common\Database;
-use Icinga\Module\Noma\Model\Contact;
-use Icinga\Module\Noma\Model\Contactgroup;
+use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Model\Contact;
+use Icinga\Module\Notifications\Model\Contactgroup;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\HtmlElement;

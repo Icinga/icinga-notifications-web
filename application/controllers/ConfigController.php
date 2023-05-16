@@ -2,10 +2,10 @@
 
 /* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Controllers;
+namespace Icinga\Module\Notifications\Controllers;
 
 use Icinga\Application\Config;
-use Icinga\Module\Noma\Forms\DatabaseConfigForm;
+use Icinga\Module\Notifications\Forms\DatabaseConfigForm;
 use Icinga\Web\Form;
 use Icinga\Web\Notification;
 use Icinga\Web\Widget\Tab;

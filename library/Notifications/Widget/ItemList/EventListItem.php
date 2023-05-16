@@ -2,12 +2,12 @@
 
 /* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Widget\ItemList;
+namespace Icinga\Module\Notifications\Widget\ItemList;
 
-use Icinga\Module\Noma\Common\BaseListItem;
-use Icinga\Module\Noma\Common\Links;
-use Icinga\Module\Noma\Model\Event;
-use Icinga\Module\Noma\Widget\SourceIcon;
+use Icinga\Module\Notifications\Common\BaseListItem;
+use Icinga\Module\Notifications\Common\Links;
+use Icinga\Module\Notifications\Model\Event;
+use Icinga\Module\Notifications\Widget\SourceIcon;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use ipl\Web\Widget\Icon;

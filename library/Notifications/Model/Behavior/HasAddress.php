@@ -2,9 +2,9 @@
 
 /* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Model\Behavior;
+namespace Icinga\Module\Notifications\Model\Behavior;
 
-use Icinga\Module\Noma\Model\ContactAddress;
+use Icinga\Module\Notifications\Model\ContactAddress;
 use ipl\Orm\AliasedExpression;
 use ipl\Orm\ColumnDefinition;
 use ipl\Orm\Query;

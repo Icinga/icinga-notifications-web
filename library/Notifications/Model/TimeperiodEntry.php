@@ -1,6 +1,6 @@
 <?php
 
-namespace Icinga\Module\Noma\Model;
+namespace Icinga\Module\Notifications\Model;
 
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;

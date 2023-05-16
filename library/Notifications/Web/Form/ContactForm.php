@@ -2,10 +2,10 @@
 
 /* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Web\Form;
+namespace Icinga\Module\Notifications\Web\Form;
 
-use Icinga\Module\Noma\Model\Contact;
-use Icinga\Module\Noma\Model\ContactAddress;
+use Icinga\Module\Notifications\Model\Contact;
+use Icinga\Module\Notifications\Model\ContactAddress;
 use Icinga\Web\Session;
 use ipl\Html\Contract\FormSubmitElement;
 use ipl\Html\FormElement\FieldsetElement;

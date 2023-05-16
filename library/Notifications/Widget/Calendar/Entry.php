@@ -1,6 +1,6 @@
 <?php
 
-namespace Icinga\Module\Noma\Widget\Calendar;
+namespace Icinga\Module\Notifications\Widget\Calendar;
 
 use DateTime;
 use ipl\Web\Url;

@@ -2,7 +2,7 @@
 
 /* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Util;
+namespace Icinga\Module\Notifications\Util;
 
 use ipl\Sql\Cursor;
 

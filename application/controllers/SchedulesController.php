@@ -1,10 +1,10 @@
 <?php
 
-namespace Icinga\Module\Noma\Controllers;
+namespace Icinga\Module\Notifications\Controllers;
 
-use Icinga\Module\Noma\Common\Database;
-use Icinga\Module\Noma\Model\Schedule;
-use Icinga\Module\Noma\Widget\Calendar\Controls;
+use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Model\Schedule;
+use Icinga\Module\Notifications\Widget\Calendar\Controls;
 use ipl\Html\Html;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
@@ -77,7 +77,7 @@ class SchedulesController extends CompatController
         $this->addControl($controls);
         $this->controls->addAttributes(['class' => 'schedule-controls']);
 
-        $this->addContent(new \Icinga\Module\Noma\Widget\Schedule(
+        $this->addContent(new \Icinga\Module\Notifications\Widget\Schedule(
             $calendarControls->handleRequest($this->getServerRequest()),
             $schedule
         ));

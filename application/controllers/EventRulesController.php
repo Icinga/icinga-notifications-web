@@ -2,18 +2,18 @@
 
 /* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Controllers;
+namespace Icinga\Module\Notifications\Controllers;
 
 use Icinga\Exception\ProgrammingError;
-use Icinga\Module\Noma\Common\Database;
-use Icinga\Module\Noma\Common\Links;
-use Icinga\Module\Noma\Forms\EventRuleForm;
-use Icinga\Module\Noma\Forms\SaveEventRuleForm;
-use Icinga\Module\Noma\Model\ObjectExtraTag;
-use Icinga\Module\Noma\Model\Rule;
-use Icinga\Module\Noma\Web\Control\SearchBar\ObjectSuggestions;
-use Icinga\Module\Noma\Widget\EventRuleConfig;
-use Icinga\Module\Noma\Widget\ItemList\EventRuleList;
+use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Common\Links;
+use Icinga\Module\Notifications\Forms\EventRuleForm;
+use Icinga\Module\Notifications\Forms\SaveEventRuleForm;
+use Icinga\Module\Notifications\Model\ObjectExtraTag;
+use Icinga\Module\Notifications\Model\Rule;
+use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
+use Icinga\Module\Notifications\Widget\EventRuleConfig;
+use Icinga\Module\Notifications\Widget\ItemList\EventRuleList;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\Form;

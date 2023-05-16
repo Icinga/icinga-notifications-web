@@ -2,14 +2,14 @@
 
 /* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Controllers;
+namespace Icinga\Module\Notifications\Controllers;
 
-use Icinga\Module\Noma\Common\BaseItemList;
-use Icinga\Module\Noma\Common\Database;
-use Icinga\Module\Noma\Forms\ChannelForm;
-use Icinga\Module\Noma\Model\Channel;
-use Icinga\Module\Noma\Web\Control\SearchBar\ObjectSuggestions;
-use Icinga\Module\Noma\Widget\ItemList\ChannelList;
+use Icinga\Module\Notifications\Common\BaseItemList;
+use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Forms\ChannelForm;
+use Icinga\Module\Notifications\Model\Channel;
+use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
+use Icinga\Module\Notifications\Widget\ItemList\ChannelList;
 use Icinga\Web\Notification;
 use Icinga\Web\Widget\Tab;
 use Icinga\Web\Widget\Tabs;
