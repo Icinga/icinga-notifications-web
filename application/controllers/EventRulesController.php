@@ -89,9 +89,10 @@ class EventRulesController extends CompatController
                 'notifications/event-rules/add',
                 'plus'
             ))->setBaseTarget('_next')
-            ->addAttributes(['class' => 'new-event-rule'])
+            ->addAttributes(['class' => 'add-new-component'])
         );
 
+        $this->content->getAttributes()->add(['class' => 'full-width']);
         $this->addContent(new EventRuleList($eventRules));
 
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {

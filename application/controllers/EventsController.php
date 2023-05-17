@@ -90,6 +90,7 @@ class EventsController extends CompatController
             $eventList->setPageNumber($page);
         }
 
+        $this->content->getAttributes()->add(['class' => 'full-width']);
         if ($compact && $page > 1) {
             $this->document->addFrom($eventList);
         } else {
