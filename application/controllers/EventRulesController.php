@@ -105,7 +105,7 @@ class EventRulesController extends CompatController
 
     public function addAction(): void
     {
-        $this->addTitleTab(t('Add Event Rule'));
+        $this->addTitleTab(t('New Event Rule'));
         $this->getTabs()->setRefreshUrl(Url::fromPath('notifications/event-rules/add'));
 
         $this->controls->addAttributes(['class' => 'event-rule-detail']);

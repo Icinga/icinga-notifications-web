@@ -156,7 +156,7 @@ class ContactForm extends CompatForm
             'submit',
             [
                 'label' => $this->contactId === null ?
-                    $this->translate('Add Contact') :
+                    $this->translate('Create Contact') :
                     $this->translate('Save Changes')
             ]
         );

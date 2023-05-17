@@ -118,7 +118,7 @@ class Schedule extends BaseHtmlElement
                 new Link(
                     [
                         new Icon('plus'),
-                        t('Add new entry')
+                        t('Add Entry')
                     ],
                     Url::fromPath('notifications/schedule/add-entry', ['schedule' => $this->schedule->id]),
                     ['class' => 'button-link']

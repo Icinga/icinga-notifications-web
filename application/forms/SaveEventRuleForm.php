@@ -113,7 +113,7 @@ class SaveEventRuleForm extends Form
      */
     public function getSubmitLabel(): string
     {
-        return $this->submitLabel ?? t('Add Event Rule');
+        return $this->submitLabel ?? t('Create Event Rule');
     }
 
     /**
