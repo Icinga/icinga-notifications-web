@@ -1,11 +1,13 @@
 <?php
 
-namespace Icinga\Module\Noma\Forms;
+/* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
+
+namespace Icinga\Module\Notifications\Forms;
 
 use Icinga\Exception\Http\HttpNotFoundException;
-use Icinga\Module\Noma\Common\Database;
-use Icinga\Module\Noma\Model\Schedule;
-use Icinga\Module\Noma\Model\Timeperiod;
+use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Model\Schedule;
+use Icinga\Module\Notifications\Model\Timeperiod;
 use Icinga\Web\Session;
 use ipl\Html\HtmlDocument;
 use ipl\Stdlib\Filter;

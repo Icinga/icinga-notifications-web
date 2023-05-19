@@ -1,10 +1,10 @@
 <?php
 
-/* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
+/* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Forms;
+namespace Icinga\Module\Notifications\Forms;
 
-use Icinga\Module\Noma\Model\Channel;
+use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Web\Session;
 use ipl\Html\Contract\FormSubmitElement;
 use ipl\Sql\Connection;
@@ -88,7 +88,7 @@ class ChannelForm extends CompatForm
                 [
                     'label'         => $this->translate('From'),
                     'autocomplete'  => 'off',
-                    'placeholder'   => 'noma@icinga'
+                    'placeholder'   => 'notifications@icinga'
                 ]
             )->addElement(
                 'password',

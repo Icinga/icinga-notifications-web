@@ -1,15 +1,15 @@
 <?php
 
-/* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
+/* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Controllers;
+namespace Icinga\Module\Notifications\Controllers;
 
-use Icinga\Module\Noma\Web\Control\SearchBar\ObjectSuggestions;
-use Icinga\Module\Noma\Common\BaseItemList;
-use Icinga\Module\Noma\Common\Database;
-use Icinga\Module\Noma\Model\Contact;
-use Icinga\Module\Noma\Web\Form\ContactForm;
-use Icinga\Module\Noma\Widget\ItemList\ContactList;
+use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
+use Icinga\Module\Notifications\Common\BaseItemList;
+use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Model\Contact;
+use Icinga\Module\Notifications\Web\Form\ContactForm;
+use Icinga\Module\Notifications\Widget\ItemList\ContactList;
 use Icinga\Web\Notification;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
@@ -35,7 +35,7 @@ class ContactsController extends CompatController
 
     public function init()
     {
-        $this->assertPermission('noma/config/contacts');
+        $this->assertPermission('notifications/config/contacts');
 
         $this->db = Database::get();
     }
@@ -89,7 +89,7 @@ class ContactsController extends CompatController
         $this->addContent(
             (new ButtonLink(
                 t('Add Contact'),
-                'noma/contacts/add',
+                'notifications/contacts/add',
                 'plus'
             ))->setBaseTarget('_next')
             ->addAttributes(['class' => 'add-new-component'])
@@ -115,7 +115,7 @@ class ContactsController extends CompatController
             ->on(ContactForm::ON_SUCCESS, function (ContactForm $form) {
                 $form->addOrUpdateContact();
                 Notification::success(t('New contact has successfully been added'));
-                $this->redirectNow(Url::fromPath('noma/contacts'));
+                $this->redirectNow(Url::fromPath('notifications/contacts'));
             })->handleRequest($this->getServerRequest());
 
         $this->addContent($form);
@@ -179,11 +179,11 @@ class ContactsController extends CompatController
             return parent::getTabs()
                 ->add('schedules', [
                     'label'         => $this->translate('Schedules'),
-                    'url'           => Url::fromPath('noma/schedules'),
+                    'url'           => Url::fromPath('notifications/schedules'),
                     'baseTarget'    => '_main'
                 ])->add('event-rules', [
                     'label' => $this->translate('Event Rules'),
-                    'url'   => Url::fromPath('noma/event-rules')
+                    'url'   => Url::fromPath('notifications/event-rules')
                 ])->add('contacts', [
                     'label' => $this->translate('Contacts'),
                     'url'   => Url::fromRequest()

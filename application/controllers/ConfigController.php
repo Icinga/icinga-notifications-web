@@ -1,11 +1,11 @@
 <?php
 
-/* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
+/* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Controllers;
+namespace Icinga\Module\Notifications\Controllers;
 
 use Icinga\Application\Config;
-use Icinga\Module\Noma\Forms\DatabaseConfigForm;
+use Icinga\Module\Notifications\Forms\DatabaseConfigForm;
 use Icinga\Web\Form;
 use Icinga\Web\Notification;
 use Icinga\Web\Widget\Tab;
@@ -24,12 +24,12 @@ class ConfigController extends CompatController
 
     public function databaseAction()
     {
-        $nomaConfig = Config::module('noma');
+        $moduleConfig = Config::module('notifications');
         $form = (new DatabaseConfigForm())
-            ->populate($nomaConfig->getSection('database'))
-            ->on(DatabaseConfigForm::ON_SUCCESS, function ($form) use ($nomaConfig) {
-                $nomaConfig->setSection('database', $form->getValues());
-                $nomaConfig->saveIni();
+            ->populate($moduleConfig->getSection('database'))
+            ->on(DatabaseConfigForm::ON_SUCCESS, function ($form) use ($moduleConfig) {
+                $moduleConfig->setSection('database', $form->getValues());
+                $moduleConfig->saveIni();
 
                 Notification::success(t('New configuration has successfully been stored'));
             })->handleRequest($this->getServerRequest());

@@ -1,19 +1,19 @@
 <?php
 
-/* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
+/* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Controllers;
+namespace Icinga\Module\Notifications\Controllers;
 
-use Icinga\Module\Noma\Common\Auth;
-use Icinga\Module\Noma\Common\Database;
-use Icinga\Module\Noma\Common\Links;
-use Icinga\Module\Noma\Forms\EventRuleForm;
-use Icinga\Module\Noma\Forms\SaveEventRuleForm;
-use Icinga\Module\Noma\Model\Incident;
-use Icinga\Module\Noma\Model\ObjectExtraTag;
-use Icinga\Module\Noma\Model\Rule;
-use Icinga\Module\Noma\Web\Control\SearchBar\ExtraTagSuggestions;
-use Icinga\Module\Noma\Widget\EventRuleConfig;
+use Icinga\Module\Notifications\Common\Auth;
+use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Common\Links;
+use Icinga\Module\Notifications\Forms\EventRuleForm;
+use Icinga\Module\Notifications\Forms\SaveEventRuleForm;
+use Icinga\Module\Notifications\Model\Incident;
+use Icinga\Module\Notifications\Model\ObjectExtraTag;
+use Icinga\Module\Notifications\Model\Rule;
+use Icinga\Module\Notifications\Web\Control\SearchBar\ExtraTagSuggestions;
+use Icinga\Module\Notifications\Widget\EventRuleConfig;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\Form;
@@ -32,12 +32,12 @@ class EventRuleController extends CompatController
 
     public function init()
     {
-        $this->sessionNamespace = Session::getSession()->getNamespace('noma');
+        $this->sessionNamespace = Session::getSession()->getNamespace('notifications');
     }
 
     public function indexAction(): void
     {
-        $this->assertPermission('noma/config/event-rules');
+        $this->assertPermission('notifications/config/event-rules');
 
         $this->addTitleTab(t('Event Rule'));
 
@@ -50,12 +50,12 @@ class EventRuleController extends CompatController
         if ($cache) {
             $this->addContent(Html::tag('div', ['class' => 'cache-notice'], t('There are unsaved changes.')));
             $eventRuleConfig = new EventRuleConfig(
-                Url::fromPath('noma/event-rule/search-editor', ['id' => $ruleId]),
+                Url::fromPath('notifications/event-rule/search-editor', ['id' => $ruleId]),
                 $cache
             );
         } else {
             $eventRuleConfig = new EventRuleConfig(
-                Url::fromPath('noma/event-rule/search-editor', ['id' => $ruleId]),
+                Url::fromPath('notifications/event-rule/search-editor', ['id' => $ruleId]),
                 $this->fromDb($ruleId)
             );
         }
@@ -213,7 +213,7 @@ class EventRuleController extends CompatController
                 ->setHeader('X-Icinga-Container', '_self')
                 ->redirectAndExit(
                     Url::fromPath(
-                        'noma/event-rule',
+                        'notifications/event-rule',
                         ['id' => $ruleId]
                     )
                 );

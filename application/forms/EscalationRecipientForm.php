@@ -1,13 +1,13 @@
 <?php
 
-/* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
+/* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Forms;
+namespace Icinga\Module\Notifications\Forms;
 
-use Icinga\Module\Noma\Common\Database;
-use Icinga\Module\Noma\Model\Contact;
-use Icinga\Module\Noma\Model\Contactgroup;
-use Icinga\Module\Noma\Model\Schedule;
+use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Model\Contact;
+use Icinga\Module\Notifications\Model\Contactgroup;
+use Icinga\Module\Notifications\Model\Schedule;
 use ipl\Html\Contract\FormElement;
 use ipl\Html\Html;
 use ipl\Web\Widget\Icon;

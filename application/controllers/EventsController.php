@@ -1,14 +1,14 @@
 <?php
 
-/* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
+/* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Controllers;
+namespace Icinga\Module\Notifications\Controllers;
 
-use Icinga\Module\Noma\Common\Auth;
-use Icinga\Module\Noma\Common\Database;
-use Icinga\Module\Noma\Web\Control\SearchBar\ObjectSuggestions;
-use Icinga\Module\Noma\Widget\ItemList\EventList;
-use Icinga\Module\Noma\Model\Event;
+use Icinga\Module\Notifications\Common\Auth;
+use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
+use Icinga\Module\Notifications\Widget\ItemList\EventList;
+use Icinga\Module\Notifications\Model\Event;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;

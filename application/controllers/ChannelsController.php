@@ -1,15 +1,15 @@
 <?php
 
-/* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
+/* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Controllers;
+namespace Icinga\Module\Notifications\Controllers;
 
-use Icinga\Module\Noma\Common\BaseItemList;
-use Icinga\Module\Noma\Common\Database;
-use Icinga\Module\Noma\Forms\ChannelForm;
-use Icinga\Module\Noma\Model\Channel;
-use Icinga\Module\Noma\Web\Control\SearchBar\ObjectSuggestions;
-use Icinga\Module\Noma\Widget\ItemList\ChannelList;
+use Icinga\Module\Notifications\Common\BaseItemList;
+use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Forms\ChannelForm;
+use Icinga\Module\Notifications\Model\Channel;
+use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
+use Icinga\Module\Notifications\Widget\ItemList\ChannelList;
 use Icinga\Web\Notification;
 use Icinga\Web\Widget\Tab;
 use Icinga\Web\Widget\Tabs;
@@ -86,7 +86,7 @@ class ChannelsController extends CompatController
         $this->addContent(
             (new ButtonLink(
                 t('Add Channel'),
-                Url::fromPath('noma/channels/add'),
+                Url::fromPath('notifications/channels/add'),
                 'plus'
             ))->setBaseTarget('_next')
             ->addAttributes(['class' => 'add-new-component'])
@@ -110,7 +110,7 @@ class ChannelsController extends CompatController
                         $form->getValue('name')
                     )
                 );
-                $this->redirectNow(Url::fromPath('noma/channels'));
+                $this->redirectNow(Url::fromPath('notifications/channels'));
             })
             ->handleRequest($this->getServerRequest());
 

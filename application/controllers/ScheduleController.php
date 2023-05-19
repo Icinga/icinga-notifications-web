@@ -1,10 +1,12 @@
 <?php
 
-namespace Icinga\Module\Noma\Controllers;
+/* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-use Icinga\Module\Noma\Forms\EntryForm;
-use Icinga\Module\Noma\Forms\ScheduleForm;
-use Icinga\Module\Noma\Widget\RecipientSuggestions;
+namespace Icinga\Module\Notifications\Controllers;
+
+use Icinga\Module\Notifications\Forms\EntryForm;
+use Icinga\Module\Notifications\Forms\ScheduleForm;
+use Icinga\Module\Notifications\Widget\RecipientSuggestions;
 use ipl\Html\Html;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Url;
@@ -23,14 +25,14 @@ class ScheduleController extends CompatController
         $form->setAction($this->getRequest()->getUrl()->getAbsoluteUrl());
         $form->on(ScheduleForm::ON_SUCCESS, function ($form) use ($scheduleId) {
             $form->editSchedule($scheduleId);
-            $this->redirectNow(Url::fromPath('noma/schedules', ['schedule' => $scheduleId]));
+            $this->redirectNow(Url::fromPath('notifications/schedules', ['schedule' => $scheduleId]));
         });
         $form->on(ScheduleForm::ON_SENT, function ($form) use ($scheduleId) {
             if ($form->hasBeenCancelled()) {
                 $this->redirectNow('__CLOSE__');
             } elseif ($form->hasBeenRemoved()) {
                 $form->removeSchedule($scheduleId);
-                $this->redirectNow(Url::fromPath('noma/schedules'));
+                $this->redirectNow(Url::fromPath('notifications/schedules'));
             }
         });
 
@@ -46,7 +48,7 @@ class ScheduleController extends CompatController
         $form->setAction($this->getRequest()->getUrl()->getAbsoluteUrl());
         $form->on(ScheduleForm::ON_SUCCESS, function ($form) {
             $scheduleId = $form->addSchedule();
-            $this->redirectNow(Url::fromPath('noma/schedules', ['schedule' => $scheduleId]));
+            $this->redirectNow(Url::fromPath('notifications/schedules', ['schedule' => $scheduleId]));
         });
         $form->on(ScheduleForm::ON_SENT, function ($form) {
             if ($form->hasBeenCancelled()) {
@@ -66,7 +68,7 @@ class ScheduleController extends CompatController
 
         $form = new EntryForm();
         $form->setAction($this->getRequest()->getUrl()->getAbsoluteUrl());
-        $form->setSuggestionUrl(Url::fromPath('noma/schedule/suggest-recipient'));
+        $form->setSuggestionUrl(Url::fromPath('notifications/schedule/suggest-recipient'));
         $form->populate(['when' => ['start' => $start]]);
         $form->on(EntryForm::ON_SUCCESS, function ($form) use ($scheduleId) {
             $form->addEntry($scheduleId);
@@ -111,7 +113,7 @@ class ScheduleController extends CompatController
         $form->loadEntry($scheduleId, $entryId);
         $form->setSubmitLabel($this->translate('Save Changes'));
         $form->setAction($this->getRequest()->getUrl()->getAbsoluteUrl());
-        $form->setSuggestionUrl(Url::fromPath('noma/schedule/suggest-recipient'));
+        $form->setSuggestionUrl(Url::fromPath('notifications/schedule/suggest-recipient'));
         $form->on(EntryForm::ON_SUCCESS, function () use ($form, $entryId, $scheduleId) {
             $form->editEntry($scheduleId, $entryId);
             $this->sendExtraUpdates(['#col1']);

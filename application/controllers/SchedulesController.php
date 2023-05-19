@@ -1,10 +1,12 @@
 <?php
 
-namespace Icinga\Module\Noma\Controllers;
+/* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-use Icinga\Module\Noma\Common\Database;
-use Icinga\Module\Noma\Model\Schedule;
-use Icinga\Module\Noma\Widget\Calendar\Controls;
+namespace Icinga\Module\Notifications\Controllers;
+
+use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Model\Schedule;
+use Icinga\Module\Notifications\Widget\Calendar\Controls;
 use ipl\Html\Html;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
@@ -39,7 +41,7 @@ class SchedulesController extends CompatController
 
         if ($scheduleId) {
             $controls->addHtml(
-                new ButtonLink(null, Url::fromPath('noma/schedule', ['id' => $scheduleId]), 'cog', [
+                new ButtonLink(null, Url::fromPath('notifications/schedule', ['id' => $scheduleId]), 'cog', [
                     'data-no-icinga-ajax' => true,
                     'data-icinga-modal' => true
                 ])
@@ -57,7 +59,7 @@ class SchedulesController extends CompatController
         $controls->addHtml(
             new ButtonLink(
                 'New Schedule',
-                Url::fromPath('noma/schedule/add'),
+                Url::fromPath('notifications/schedule/add'),
                 'plus',
                 [
                     'class' => 'add-schedule-control',
@@ -77,7 +79,7 @@ class SchedulesController extends CompatController
         $this->addControl($controls);
         $this->controls->addAttributes(['class' => 'schedule-controls']);
 
-        $this->addContent(new \Icinga\Module\Noma\Widget\Schedule(
+        $this->addContent(new \Icinga\Module\Notifications\Widget\Schedule(
             $calendarControls->handleRequest($this->getServerRequest()),
             $schedule
         ));
@@ -91,14 +93,14 @@ class SchedulesController extends CompatController
         return parent::getTabs()
             ->add('schedules', [
                 'label'         => $this->translate('Schedules'),
-                'url'           => Url::fromPath('noma/schedules'),
+                'url'           => Url::fromPath('notifications/schedules'),
                 'baseTarget'    => '_main'
             ])->add('event-rules', [
                 'label' => $this->translate('Event Rules'),
-                'url'   => Url::fromPath('noma/event-rules')
+                'url'   => Url::fromPath('notifications/event-rules')
             ])->add('contacts', [
                 'label' => $this->translate('Contacts'),
-                'url'   => Url::fromPath('noma/contacts')
+                'url'   => Url::fromPath('notifications/contacts')
             ]);
     }
 }

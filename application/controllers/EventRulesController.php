@@ -1,19 +1,19 @@
 <?php
 
-/* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
+/* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Controllers;
+namespace Icinga\Module\Notifications\Controllers;
 
 use Icinga\Exception\ProgrammingError;
-use Icinga\Module\Noma\Common\Database;
-use Icinga\Module\Noma\Common\Links;
-use Icinga\Module\Noma\Forms\EventRuleForm;
-use Icinga\Module\Noma\Forms\SaveEventRuleForm;
-use Icinga\Module\Noma\Model\ObjectExtraTag;
-use Icinga\Module\Noma\Model\Rule;
-use Icinga\Module\Noma\Web\Control\SearchBar\ObjectSuggestions;
-use Icinga\Module\Noma\Widget\EventRuleConfig;
-use Icinga\Module\Noma\Widget\ItemList\EventRuleList;
+use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Common\Links;
+use Icinga\Module\Notifications\Forms\EventRuleForm;
+use Icinga\Module\Notifications\Forms\SaveEventRuleForm;
+use Icinga\Module\Notifications\Model\ObjectExtraTag;
+use Icinga\Module\Notifications\Model\Rule;
+use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
+use Icinga\Module\Notifications\Widget\EventRuleConfig;
+use Icinga\Module\Notifications\Widget\ItemList\EventRuleList;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\Form;
@@ -40,8 +40,8 @@ class EventRulesController extends CompatController
 
     public function init()
     {
-        $this->assertPermission('noma/config/event-rules');
-        $this->sessionNamespace = Session::getSession()->getNamespace('noma');
+        $this->assertPermission('notifications/config/event-rules');
+        $this->sessionNamespace = Session::getSession()->getNamespace('notifications');
     }
 
     public function indexAction(): void
@@ -86,7 +86,7 @@ class EventRulesController extends CompatController
         $this->addContent(
             (new ButtonLink(
                 t('New Event Rule'),
-                'noma/event-rules/add',
+                'notifications/event-rules/add',
                 'plus'
             ))->setBaseTarget('_next')
             ->addAttributes(['class' => 'new-event-rule'])
@@ -105,7 +105,7 @@ class EventRulesController extends CompatController
     public function addAction(): void
     {
         $this->addTitleTab(t('Add Event Rule'));
-        $this->getTabs()->setRefreshUrl(Url::fromPath('noma/event-rules/add'));
+        $this->getTabs()->setRefreshUrl(Url::fromPath('notifications/event-rules/add'));
 
         $this->controls->addAttributes(['class' => 'event-rule-detail']);
 
@@ -117,7 +117,7 @@ class EventRulesController extends CompatController
             $cache = [];
         }
 
-        $eventRuleConfig = new EventRuleConfig(Url::fromPath('noma/event-rules/add-search-editor'), $cache);
+        $eventRuleConfig = new EventRuleConfig(Url::fromPath('notifications/event-rules/add-search-editor'), $cache);
 
         $eventRuleForm = (new EventRuleForm())
             ->populate($cache)
@@ -147,7 +147,7 @@ class EventRulesController extends CompatController
         $eventRuleConfig->on(EventRuleConfig::ON_CHANGE, function ($eventRuleConfig) {
             $this->sessionNamespace->set(-1, $eventRuleConfig->getConfig());
 
-            $this->redirectNow(Url::fromPath('noma/event-rules/add', ['use_cache' => true]));
+            $this->redirectNow(Url::fromPath('notifications/event-rules/add', ['use_cache' => true]));
         });
 
         foreach ($eventRuleConfig->getForms() as $f) {
@@ -208,7 +208,7 @@ class EventRulesController extends CompatController
                 ->setHeader('X-Icinga-Container', '_self')
                 ->redirectAndExit(
                     Url::fromPath(
-                        'noma/event-rules/add',
+                        'notifications/event-rules/add',
                         ['use_cache' => true]
                     )
                 );
@@ -240,14 +240,14 @@ class EventRulesController extends CompatController
             return parent::getTabs()
                 ->add('schedules', [
                     'label'         => $this->translate('Schedules'),
-                    'url'           => Url::fromPath('noma/schedules'),
+                    'url'           => Url::fromPath('notifications/schedules'),
                     'baseTarget'    => '_main'
                 ])->add('event-rules', [
                     'label' => $this->translate('Event Rules'),
-                    'url'   => Url::fromPath('noma/event-rules')
+                    'url'   => Url::fromPath('notifications/event-rules')
                 ])->add('contacts', [
                     'label' => $this->translate('Contacts'),
-                    'url'   => Url::fromPath('noma/contacts')
+                    'url'   => Url::fromPath('notifications/contacts')
                 ]);
         }
 

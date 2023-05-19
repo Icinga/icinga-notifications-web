@@ -1,11 +1,11 @@
 <?php
 
-/* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
+/* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
 
 /** @var \Icinga\Application\Modules\Module $this */
 
 $section = $this->menuSection(
-    'NoMa',
+    N_('Notifications'),
     [
         'icon' => 'bell-alt',
         'priority' => 52
@@ -17,7 +17,7 @@ $section->add(
     [
         'icon'          => 'wrench',
         'description'   => $this->translate('Configuration'),
-        'url'           => 'noma/schedules'
+        'url'           => 'notifications/schedules'
     ]
 );
 
@@ -26,17 +26,17 @@ $section->add(
     [
         'icon'          => 'history',
         'description'   => $this->translate('Events'),
-        'url'           => 'noma/events'
+        'url'           => 'notifications/events'
     ]
 );
 
 $this->providePermission(
-    'noma/config/event-rules',
+    'notifications/config/event-rules',
     $this->translate('Allow to configure event rules')
 );
 
 $this->provideRestriction(
-    'noma/filter/objects',
+    'notifications/filter/objects',
     $this->translate('Restrict access to the objects that match the filter')
 );
 
@@ -54,7 +54,7 @@ $section->add(
     [
         'icon'          => 'th-list',
         'description'   => $this->translate('Incidents'),
-        'url'           => 'noma/incidents'
+        'url'           => 'notifications/incidents'
     ]
 );
 

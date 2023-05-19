@@ -1,12 +1,12 @@
 <?php
 
-/* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
+/* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Controllers;
+namespace Icinga\Module\Notifications\Controllers;
 
-use Icinga\Module\Noma\Common\Database;
-use Icinga\Module\Noma\Model\Contact;
-use Icinga\Module\Noma\Web\Form\ContactForm;
+use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Model\Contact;
+use Icinga\Module\Notifications\Web\Form\ContactForm;
 use Icinga\Web\Notification;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
@@ -19,7 +19,7 @@ class ContactController extends CompatController
 
     public function init()
     {
-        $this->assertPermission('noma/config/contacts');
+        $this->assertPermission('notifications/config/contacts');
 
         $this->db = Database::get();
     }

@@ -1,8 +1,8 @@
 <?php
 
-/* Icinga NoMa Web | (c) 2023 Icinga GmbH | GPLv2 */
+/* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Noma\Forms;
+namespace Icinga\Module\Notifications\Forms;
 
 use Icinga\Data\ResourceFactory;
 use ipl\Web\Compat\CompatForm;
