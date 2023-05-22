@@ -167,7 +167,7 @@ class ChannelForm extends CompatForm
                 'submit',
                 'delete',
                 [
-                    'label'          => $this->translate('Delete'),
+                    'label'          => $this->translate('Delete Channel'),
                     'class'          => 'btn-remove',
                     'formnovalidate' => true
                 ]
