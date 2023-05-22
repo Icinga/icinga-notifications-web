@@ -76,7 +76,7 @@ jobs:
       - name: Setup Icinga Web
         run: |
           git clone --depth 1 https://github.com/Icinga/icingaweb2.git _icingaweb2
-          ln -s `pwd` _icingaweb2/modules/icingadb
+          ln -s `pwd` _icingaweb2/modules/notifications
 
       - name: Setup Libraries
         run: |
