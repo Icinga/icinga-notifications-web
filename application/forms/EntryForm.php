@@ -285,14 +285,6 @@ class EntryForm extends CompatForm
         ]);
 
         $additionalButtons = [];
-        $cancelBtn = $this->createElement('submit', 'cancel', [
-            'label' => $this->translate('Cancel'),
-            'class' => 'btn-cancel',
-            'formnovalidate' => true
-        ]);
-        $this->registerElement($cancelBtn);
-        $additionalButtons[] = $cancelBtn;
-
         if ($this->showRemoveButton) {
             $removeBtn = $this->createElement('submit', 'remove', [
                 'label' => $this->translate('Remove Entry'),
@@ -302,6 +294,14 @@ class EntryForm extends CompatForm
             $this->registerElement($removeBtn);
             $additionalButtons[] = $removeBtn;
         }
+
+        $cancelBtn = $this->createElement('submit', 'cancel', [
+            'label' => $this->translate('Cancel'),
+            'class' => 'btn-cancel btn-default',
+            'formnovalidate' => true
+        ]);
+        $this->registerElement($cancelBtn);
+        $additionalButtons[] = $cancelBtn;
 
         $this->getElement('submit')->prependWrapper((new HtmlDocument())->setHtmlContent(...$additionalButtons));
 
