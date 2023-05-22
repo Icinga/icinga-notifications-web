@@ -49,8 +49,8 @@ class Controls extends CompatForm
 
         $modeParam = 'mode';
         $options = [
-            Calendar::MODE_WEEK => t('Week'),
-            Calendar::MODE_MONTH => t('Month')
+            Calendar::MODE_WEEK => $this->translate('Week'),
+            Calendar::MODE_MONTH => $this->translate('Month')
         ];
 
         $modeSwitcher = HtmlElement::create('fieldset', ['class' => 'view-mode-switcher']);
