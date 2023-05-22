@@ -166,7 +166,7 @@ class ContactForm extends CompatForm
                 'submit',
                 'delete',
                 [
-                    'label'          => $this->translate('Delete'),
+                    'label'          => $this->translate('Delete Contact'),
                     'class'          => 'btn-remove',
                     'formnovalidate' => true
                 ]
