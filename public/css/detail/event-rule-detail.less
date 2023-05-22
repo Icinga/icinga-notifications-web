@@ -66,6 +66,10 @@
       &:first-child:before {
         content: "";
         display: block;
+        top: 50%;
+      }
+
+      &:first-child:last-child:before {
         top: calc(~"50% - 1em");
       }
 
@@ -402,10 +406,11 @@
       margin-left: 1em;
 
       &:disabled {
-        background: @gray-light;
+        background: @gray-lighter;
         color: @disabled-gray;
         cursor: not-allowed;
         border-color: transparent;
+        opacity: .5;
       }
 
       &.btn-remove {
@@ -428,9 +433,10 @@
 .remove-escalation-form {
   button[disabled] {
     &:disabled {
-      background: @gray-light;
+      background: @gray-lighter;
       color: @disabled-gray;
       cursor: not-allowed;
+      opacity: .5;
     }
   }
 }

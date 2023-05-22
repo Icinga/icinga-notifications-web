@@ -15,6 +15,14 @@
     border-radius: 0;
     border: none;
   }
+
+  .form-controls {
+    margin-top: 2em;
+
+    .btn-remove {
+      margin-right: auto;
+    }
+  }
 }
 
 .entry-form {
@@ -75,5 +83,23 @@
 
   label.group::before {
     content: "\f0c0";
+  }
+}
+
+.icinga-form {
+  .form-controls {
+    .btn-remove:not(:hover) {
+      border-color: transparent;
+    }
+
+    .btn-default {
+      background: @low-sat-blue;
+      color: @icinga-blue;
+      border-color: transparent;
+
+      &:hover {
+        background: @low-sat-blue-dark;
+      }
+    }
   }
 }
