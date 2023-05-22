@@ -72,13 +72,13 @@ class MonthGrid extends BaseGrid
     protected function createHeader(): BaseHtmlElement
     {
         $dayNames = [
-            t('Mon', 'monday'),
-            t('Tue', 'tuesday'),
-            t('Wed', 'wednesday'),
-            t('Thu', 'thursday'),
-            t('Fri', 'friday'),
-            t('Sat', 'saturday'),
-            t('Sun', 'sunday')
+            $this->translate('Mon', 'monday'),
+            $this->translate('Tue', 'tuesday'),
+            $this->translate('Wed', 'wednesday'),
+            $this->translate('Thu', 'thursday'),
+            $this->translate('Fri', 'friday'),
+            $this->translate('Sat', 'saturday'),
+            $this->translate('Sun', 'sunday')
         ];
 
         $header = new HtmlElement('div', Attributes::create(['class' => 'header']));
@@ -106,7 +106,11 @@ class MonthGrid extends BaseGrid
                 new HtmlElement(
                     'span',
                     Attributes::create(['class' => 'week-no']),
-                    Text::create(sprintf('%s %s', t('CW', 'calendar week'), $time->format('W')))
+                    Text::create(sprintf(
+                        '%s %s',
+                        $this->translate('CW', 'calendar week'),
+                        $time->format('W')
+                    ))
                 )
             ));
 

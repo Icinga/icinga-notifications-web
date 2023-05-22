@@ -12,12 +12,15 @@ use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
+use ipl\I18n\Translation;
 use ipl\Web\Widget\Link;
 use SplObjectStorage;
 use Traversable;
 
 abstract class BaseGrid extends BaseHtmlElement
 {
+    use Translation;
+
     protected $tag = 'div';
 
     protected $defaultAttributes = ['class' => 'calendar-grid'];
