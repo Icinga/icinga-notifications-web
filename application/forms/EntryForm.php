@@ -295,7 +295,7 @@ class EntryForm extends CompatForm
 
         if ($this->showRemoveButton) {
             $removeBtn = $this->createElement('submit', 'remove', [
-                'label' => $this->translate('Remove'),
+                'label' => $this->translate('Remove Entry'),
                 'class' => 'btn-remove',
                 'formnovalidate' => true
             ]);
