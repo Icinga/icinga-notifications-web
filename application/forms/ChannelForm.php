@@ -156,7 +156,7 @@ class ChannelForm extends CompatForm
             'submit',
             [
                 'label' => $this->channelId === null ?
-                    $this->translate('Add Channel') :
+                    $this->translate('Create Channel') :
                     $this->translate('Save Changes')
             ]
         );
