@@ -32,6 +32,9 @@ jobs:
 
       - name: Setup dependencies
         run: composer require -n --no-progress overtrue/phplint
+          && git clone --depth 1 https://github.com/Icinga/icingaweb2.git vendor/icingaweb2
+          && git clone --depth 1 -b snapshot/nightly https://github.com/Icinga/icinga-php-library.git vendor/icinga-php-library
+          && git clone --depth 1 -b snapshot/nightly https://github.com/Icinga/icinga-php-thirdparty.git vendor/icinga-php-thirdparty
 
       - name: PHP Lint
         if: success() || matrix.allow_failure
@@ -40,6 +43,10 @@ jobs:
       - name: PHP CodeSniffer
         if: success() || matrix.allow_failure
         run: phpcs -wps --colors
+
+      - name: PHPStan
+        if: ${{ ! cancelled() }}
+        uses: php-actions/phpstan@v3
 
   test:
     name: Unit tests with php ${{ matrix.php }} on ${{ matrix.os }}

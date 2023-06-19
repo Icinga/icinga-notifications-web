@@ -1,0 +1,18 @@
+parameters:
+    level: 2
+
+    checkFunctionNameCase: true
+    checkMissingIterableValueType: true
+    checkInternalClassCaseSensitivity: true
+    checkDynamicProperties: true
+
+    paths:
+        - application
+        - library
+
+    scanDirectories:
+        - vendor
+
+    universalObjectCratesClasses:
+        - ipl\Orm\Model
+        - Icinga\Web\View
