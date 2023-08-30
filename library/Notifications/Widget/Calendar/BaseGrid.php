@@ -6,13 +6,14 @@ namespace Icinga\Module\Notifications\Widget\Calendar;
 
 use DateTime;
 use DateTimeInterface;
-use Icinga\Module\Notifications\Common\Style;
 use Icinga\Module\Notifications\Widget\Calendar;
+use Icinga\Util\Csp;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\I18n\Translation;
+use ipl\Web\Style;
 use ipl\Web\Widget\Link;
 use SplObjectStorage;
 use Traversable;
@@ -138,9 +139,9 @@ abstract class BaseGrid extends BaseHtmlElement
 
     protected function assembleGridOverlay(BaseHtmlElement $overlay): void
     {
-        $style = new Style();
+        $style = (new Style())->setNonce(Csp::getStyleNonce());
         $style->setModule('notifications'); // TODO: Don't hardcode this!
-        $style->setParentSelector('.calendar-grid .overlay');
+        $style->setSelector('.calendar-grid .overlay');
 
         $overlay->addHtml($style);
 
@@ -234,7 +235,7 @@ abstract class BaseGrid extends BaseHtmlElement
                 $gridArea = $this->getGridArea($rowStart, $rowEnd, $colStart, $colEnd);
                 $entryClass = 'area-' . implode('-', $gridArea);
 
-                $style->addRule(".$entryClass", [
+                $style->add(".$entryClass", [
                     'grid-area' => sprintf('~"%d / %d / %d / %d"', ...$gridArea),
                     'background-color' => $entry->getAttendee()->getColor() . dechex((int) (256 * 0.1)),
                     'border-color' => $entry->getAttendee()->getColor() . dechex((int) (256 * 0.5))
