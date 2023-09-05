@@ -5,7 +5,6 @@
 namespace Icinga\Module\Notifications\Controllers;
 
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
-use Icinga\Module\Notifications\Common\BaseItemList;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Web\Form\ContactForm;
@@ -13,6 +12,7 @@ use Icinga\Module\Notifications\Widget\ItemList\ContactList;
 use Icinga\Web\Notification;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
+use ipl\Web\Common\BaseItemList;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
 use ipl\Web\Control\LimitControl;

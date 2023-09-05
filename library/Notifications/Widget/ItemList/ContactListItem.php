@@ -4,12 +4,12 @@
 
 namespace Icinga\Module\Notifications\Widget\ItemList;
 
-use Icinga\Module\Notifications\Common\BaseListItem;
 use Icinga\Module\Notifications\Model\Contact;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
+use ipl\Web\Common\BaseListItem;
 use ipl\Web\Url;
 use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;

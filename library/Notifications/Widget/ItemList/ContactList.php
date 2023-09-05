@@ -4,7 +4,7 @@
 
 namespace Icinga\Module\Notifications\Widget\ItemList;
 
-use Icinga\Module\Notifications\Common\BaseItemList;
+use ipl\Web\Common\BaseItemList;
 
 class ContactList extends BaseItemList
 {

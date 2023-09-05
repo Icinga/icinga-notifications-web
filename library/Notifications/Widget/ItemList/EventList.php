@@ -5,9 +5,9 @@
 namespace Icinga\Module\Notifications\Widget\ItemList;
 
 use Icinga\Module\Notifications\Common\LoadMore;
-use Icinga\Module\Notifications\Common\BaseItemList;
 use Icinga\Module\Notifications\Common\NoSubjectLink;
 use ipl\Orm\ResultSet;
+use ipl\Web\Common\BaseItemList;
 
 class EventList extends BaseItemList
 {

@@ -4,7 +4,6 @@
 
 namespace Icinga\Module\Notifications\Controllers;
 
-use Icinga\Module\Notifications\Common\BaseItemList;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Forms\ChannelForm;
 use Icinga\Module\Notifications\Model\Channel;
@@ -16,6 +15,7 @@ use Icinga\Web\Widget\Tabs;
 use ipl\Html\ValidHtml;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
+use ipl\Web\Common\BaseItemList;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
 use ipl\Web\Control\LimitControl;

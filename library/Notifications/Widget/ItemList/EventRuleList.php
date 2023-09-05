@@ -5,8 +5,8 @@
 namespace Icinga\Module\Notifications\Widget\ItemList;
 
 use Icinga\Module\Notifications\Common\LoadMore;
-use Icinga\Module\Notifications\Common\BaseItemList;
 use ipl\Orm\ResultSet;
+use ipl\Web\Common\BaseItemList;
 
 class EventRuleList extends BaseItemList
 {
