@@ -1,21 +1,12 @@
 .event-source-badge {
-  position: relative;
+  display: inline-flex;
+  background: @gray;
+  border-radius: 1em;
+  padding-right: .5em;
+  line-height: 2em;
+  color: @text-color-inverted;
 
   .source-icon {
-    position: absolute;
-  }
-
-  .name {
-    position: relative;
-    display: inline-block;
-    height: 2em;
-    border-bottom-right-radius: 1em;
-    border-top-right-radius: 1em;
-    z-index: -99;
-    padding: @ball-pad .5em @ball-pad 1.5em;
-    margin-left: 1em;
-
-    background-color: @gray;
-    color: @text-color-inverted;
+    padding: 0
   }
 }
