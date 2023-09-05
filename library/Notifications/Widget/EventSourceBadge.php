@@ -39,7 +39,9 @@ class EventSourceBadge extends BaseHtmlElement
             ->getAttributes()
             ->add('title', $title);
 
-        $this->add((new SourceIcon(SourceIcon::SIZE_LARGE))->addHtml($this->source->getIcon()));
-        $this->add(Html::tag('span', ['class' => 'name'], $this->source->name ?? $this->source->type));
+        $this->add([
+            (new SourceIcon(SourceIcon::SIZE_LARGE))->addHtml($this->source->getIcon()),
+            ($this->source->name ?? $this->source->type)
+        ]);
     }
 }
