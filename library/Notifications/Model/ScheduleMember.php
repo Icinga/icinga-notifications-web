@@ -4,6 +4,8 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use ipl\Orm\Behavior\Binary;
+use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
 use ipl\Orm\Relations;
 
@@ -26,8 +28,16 @@ class ScheduleMember extends Model
     {
         return [
             'contact_id',
-            'contactgroup_id'
+            'contactgroup_id',
+            'membership_hash'
         ];
+    }
+
+    public function createBehaviors(Behaviors $behaviors)
+    {
+        $behaviors->add(new Binary([
+            'membership_hash'
+        ]));
     }
 
     public function createRelations(Relations $relations)

@@ -13,6 +13,7 @@ use Icinga\Module\Notifications\Model\ScheduleMember;
 use Icinga\Module\Notifications\Model\TimeperiodEntry;
 use Icinga\Web\Session;
 use ipl\Html\HtmlDocument;
+use ipl\Orm\Behavior\Binary;
 use ipl\Scheduler\Contract\Frequency;
 use ipl\Scheduler\OneOff;
 use ipl\Scheduler\RRule;
@@ -123,6 +124,10 @@ class EntryForm extends CompatForm
 
         $recipients = [];
         foreach ($members as $member) {
+            if (! isset($values['membership_hash'])) {
+                $values['membership_hash'] = (new Binary([]))->toDb($member->membership_hash, null, null);
+            }
+
             if ($member->contact_id !== null) {
                 $recipients[] = 'contact:' . $member->contact_id;
             } else {
@@ -220,6 +225,7 @@ class EntryForm extends CompatForm
         };
 
         $this->addElement('hidden', 'timeperiod_id');
+        $this->addElement('hidden', 'membership_hash');
 
         $this->addElement('textarea', 'description', [
             'label' => $this->translate('Description'),
@@ -311,6 +317,7 @@ class EntryForm extends CompatForm
     public function addEntry(int $scheduleId): void
     {
         $data = $this->formValuesToDb();
+        $membershipHash = $this->getMembershipHashFromRecipients($scheduleId);
         $recipients = array_map(function ($recipient) {
             return explode(':', $recipient, 2);
         }, explode(',', $this->getValue('recipient')));
@@ -318,107 +325,225 @@ class EntryForm extends CompatForm
         $db = Database::get();
         $db->beginTransaction();
 
-        $db->insert('timeperiod', ['owned_by_schedule_id' => $scheduleId]);
-        $timeperiodId = $db->lastInsertId();
+        $members = ScheduleMember::on(Database::get())
+            ->with('timeperiod')
+            ->filter(
+                Filter::all(
+                    Filter::equal('timeperiod.owned_by_schedule_id', $scheduleId),
+                    Filter::equal('schedule_member.membership_hash', $membershipHash)
+                )
+            );
+
+        if ($members->count() > 0) {
+            $timeperiodId = $members->first()->timeperiod_id;
+        } else {
+            $db->insert('timeperiod', ['owned_by_schedule_id' => $scheduleId]);
+            $timeperiodId = $db->lastInsertId();
+        }
 
         $db->insert('timeperiod_entry', $data + ['timeperiod_id' => $timeperiodId]);
 
-        foreach ($recipients as list($type, $id)) {
-            if ($type === 'contact') {
-                $db->insert('schedule_member', [
-                    'schedule_id' => $scheduleId,
-                    'timeperiod_id' => $timeperiodId,
-                    'contact_id' => $id
-                ]);
-            } elseif ($type === 'group') {
-                $db->insert('schedule_member', [
-                    'schedule_id' => $scheduleId,
-                    'timeperiod_id' => $timeperiodId,
-                    'contactgroup_id' => $id
-                ]);
+        if ($members->count() === 0) {
+            $binaryMemberHash = (new Binary([]))->toDb($membershipHash, null, null);
+            foreach ($recipients as list($type, $id)) {
+                if ($type === 'contact') {
+                    $db->insert('schedule_member', [
+                        'schedule_id'     => $scheduleId,
+                        'timeperiod_id'   => $timeperiodId,
+                        'contact_id'      => $id,
+                        'membership_hash' => $binaryMemberHash
+                    ]);
+                } elseif ($type === 'group') {
+                    $db->insert('schedule_member', [
+                        'schedule_id'     => $scheduleId,
+                        'timeperiod_id'   => $timeperiodId,
+                        'contactgroup_id' => $id,
+                        'membership_hash' => $binaryMemberHash
+                    ]);
+                }
             }
         }
 
         $db->commitTransaction();
     }
 
+    /**
+     * Get membership hash for the recipients in timeperiod entry for the given schedule
+     *
+     * @param int $scheduleID
+     *
+     * @return string
+     */
+    public function getMembershipHashFromRecipients(int $scheduleID): string
+    {
+        $recipients = explode(',', $this->getValue('recipient'));
+        sort($recipients);
+        return sha1(sprintf('schedule:%d,%s', $scheduleID, implode(',', $recipients)), true);
+    }
+
     public function editEntry(int $scheduleId, int $id): void
     {
         $data = $this->formValuesToDb();
-        $timeperiodId = (int) $this->getValue('timeperiod_id');
-
         $db = Database::get();
+        $binaryBehavior = new Binary([]);
+
+        $prevTimeperiodId = $this->getValue('timeperiod_id');
+        $suppliedHash = $this->getValue('membership_hash');
+        $calculatedHash = $this->getMembershipHashFromRecipients($scheduleId);
+        $changedMembers = ScheduleMember::on(Database::get())
+            ->with('timeperiod')
+            ->filter(
+                Filter::all(
+                    Filter::equal('timeperiod.owned_by_schedule_id', $scheduleId),
+                    Filter::equal('schedule_member.membership_hash', $calculatedHash)
+                )
+            );
+
+        $prevTimeperiodEntriesCount = TimeperiodEntry::on($db)
+            ->with('timeperiod_entry.timeperiod')
+            ->filter(Filter::equal('timeperiod.owned_by_schedule_id', $scheduleId))
+            ->filter(Filter::equal('timeperiod_id', $prevTimeperiodId))
+            ->count();
+
         $db->beginTransaction();
 
-        $db->update('timeperiod_entry', $data, ['id = ?' => $id]);
+        if ($changedMembers->count() > 0) {
+            // Update the entries with timeperiod_id of the changed membership
+            $db->update(
+                'timeperiod_entry',
+                $data + ['timeperiod_id' => (int) $changedMembers->first()->timeperiod_id],
+                ['id = ?' => $id]
+            );
+            $prevTimeperiodEntriesCount -= 1;
+        } elseif ($prevTimeperiodEntriesCount === 1) {
+            // Update the membership hash and add or remove members for the combination of existing
+            // schedule_id and timeperiod_id
+            $recipients = explode(',', $this->getValue('recipient'));
 
-        $members = ScheduleMember::on($db)
-            ->filter(Filter::all(
-                Filter::equal('schedule_id', $scheduleId),
-                Filter::equal('timeperiod_id', $timeperiodId)
-            ));
+            $users = [];
+            $groups = [];
+            foreach ($recipients as $recipient) {
+                list($type, $id) = explode(':', $recipient, 2);
 
-        $recipients = explode(',', $this->getValue('recipient'));
+                if ($type === 'contact') {
+                    $users[$id] = $id;
+                } elseif ($type === 'group') {
+                    $groups[$id] = $id;
+                }
+            }
 
-        $users = [];
-        $groups = [];
-        foreach ($recipients as $recipient) {
-            list($type, $id) = explode(':', $recipient, 2);
+            $usersToRemove = [];
+            $groupsToRemove = [];
+            $prevMembers = ScheduleMember::on(Database::get())
+                ->with('timeperiod')
+                ->filter(
+                    Filter::all(
+                        Filter::equal('timeperiod.owned_by_schedule_id', $scheduleId),
+                        Filter::equal('schedule_member.membership_hash', $suppliedHash)
+                    )
+                );
 
-            if ($type === 'contact') {
-                $users[$id] = $id;
-            } elseif ($type === 'group') {
-                $groups[$id] = $id;
+            foreach ($prevMembers as $member) {
+                if ($member->contact_id !== null) {
+                    if (! isset($users[$member->contact_id])) {
+                        $usersToRemove[] = $member->contact_id;
+                    } else {
+                        unset($users[$member->contact_id]);
+                    }
+                } else {
+                    if (! isset($groups[$member->contactgroup_id])) {
+                        $groupsToRemove[] = $member->contactgroup_id;
+                    } else {
+                        unset($groups[$member->contactgroup_id]);
+                    }
+                }
+            }
+
+            if (! empty($usersToRemove)) {
+                $db->delete('schedule_member', [
+                    'membership_hash = ?' => $suppliedHash,
+                    'contact_id IN (?)' => $usersToRemove
+                ]);
+            }
+
+            if (! empty($groupsToRemove)) {
+                $db->delete('schedule_member', [
+                    'membership_hash = ?' => $suppliedHash,
+                    'contactgroup_id IN (?)' => $groupsToRemove
+                ]);
+            }
+
+            $binaryMemberHash = $binaryBehavior->toDb($calculatedHash, null, null);
+
+            $db->update(
+                'schedule_member',
+                ['membership_hash' => $binaryMemberHash],
+                ['membership_hash = ?' => $suppliedHash]
+            );
+
+            foreach ($users as $user) {
+                $db->insert('schedule_member', [
+                    'schedule_id' => $scheduleId,
+                    'timeperiod_id' => $prevTimeperiodId,
+                    'contact_id' => $user,
+                    'membership_hash' => $binaryMemberHash
+                ]);
+            }
+
+            foreach ($groups as $group) {
+                $db->insert('schedule_member', [
+                    'schedule_id' => $scheduleId,
+                    'timeperiod_id' => $prevTimeperiodId,
+                    'contactgroup_id' => $group,
+                    'membership_hash' => $binaryMemberHash
+                ]);
+            }
+        } else {
+            // Create new timeperiod and new members for the newly generated hash and update timeperiod entries
+            $db->insert('timeperiod', ['owned_by_schedule_id' => $scheduleId]);
+            $timeperiodId = $db->lastInsertId();
+
+            $db->update(
+                'timeperiod_entry',
+                $data + ['timeperiod_id' => $timeperiodId],
+                ['id = ?' => $id]
+            );
+
+            $prevTimeperiodEntriesCount -= 1;
+            if ($changedMembers->count() === 0) {
+                $recipients = explode(',', $this->getValue('recipient'));
+
+                $binaryMemberHash = $binaryBehavior->toDb($calculatedHash, null, null);
+                foreach ($recipients as $recipient) {
+                    list($type, $recipientId) = explode(':', $recipient, 2);
+                    if ($type === 'contact') {
+                        $db->insert('schedule_member', [
+                            'schedule_id'     => $scheduleId,
+                            'timeperiod_id'   => $timeperiodId,
+                            'contact_id'      => $recipientId,
+                            'membership_hash' => $binaryMemberHash
+                        ]);
+                    } elseif ($type === 'group') {
+                        $db->insert('schedule_member', [
+                            'schedule_id'     => $scheduleId,
+                            'timeperiod_id'   => $timeperiodId,
+                            'contactgroup_id' => $recipientId,
+                            'membership_hash' => $binaryMemberHash
+                        ]);
+                    }
+                }
             }
         }
 
-        $usersToRemove = [];
-        $groupsToRemove = [];
-        foreach ($members as $member) {
-            if ($member->contact_id !== null) {
-                if (! isset($users[$member->contact_id])) {
-                    $usersToRemove[] = $member->contact_id;
-                } else {
-                    unset($users[$member->contact_id]);
-                }
-            } else {
-                if (! isset($groups[$member->contactgroup_id])) {
-                    $groupsToRemove[] = $member->contactgroup_id;
-                } else {
-                    unset($groups[$member->contactgroup_id]);
-                }
-            }
-        }
+        if ($prevTimeperiodEntriesCount === 0) {
+            $db->delete(
+                'schedule_member',
+                ['membership_hash = ?' => $suppliedHash]
+            );
 
-        if (! empty($usersToRemove)) {
-            $db->delete('schedule_member', [
-                'schedule_id = ?' => $scheduleId,
-                'timeperiod_id = ?' => $timeperiodId,
-                'contact_id IN (?)' => $usersToRemove
-            ]);
-        }
-
-        if (! empty($groupsToRemove)) {
-            $db->delete('schedule_member', [
-                'schedule_id = ?' => $scheduleId,
-                'timeperiod_id = ?' => $timeperiodId,
-                'contactgroup_id IN (?)' => $groupsToRemove
-            ]);
-        }
-
-        foreach ($users as $user) {
-            $db->insert('schedule_member', [
-                'schedule_id' => $scheduleId,
-                'timeperiod_id' => $timeperiodId,
-                'contact_id' => $user
-            ]);
-        }
-
-        foreach ($groups as $group) {
-            $db->insert('schedule_member', [
-                'schedule_id' => $scheduleId,
-                'timeperiod_id' => $timeperiodId,
-                'contactgroup_id' => $group
+            $db->delete('timeperiod', [
+                'id = ?' => $prevTimeperiodId,
+                'owned_by_schedule_id = ?' => $scheduleId
             ]);
         }
 
