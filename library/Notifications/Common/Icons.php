@@ -38,5 +38,5 @@ final class Icons
 
     public const NOTIFIED = 'paper-plane';
 
-    public const RULE_MATCHED = 'filter';
+    public const RULE_MATCHED = 'filter-check-circle';
 }
