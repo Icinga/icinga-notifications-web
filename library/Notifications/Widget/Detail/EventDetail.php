@@ -71,7 +71,7 @@ class EventDetail extends BaseHtmlElement
     {
         //TODO(sd): This is just placeholder. Add hook implementation instead
         $relatedObj = Html::tag('ul', ['class' => ['item-list', 'action-list'], 'data-base-target' => '_next']);
-        $obj = new Link($this->event->object->host, $this->event->source_object->url, ['class' => 'subject']);
+        $obj = new Link($this->event->object->host, $this->event->object->url, ['class' => 'subject']);
 
         if ($this->event->object->service) {
             $obj = Html::sprintf(
