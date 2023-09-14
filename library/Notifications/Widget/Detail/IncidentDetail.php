@@ -7,11 +7,9 @@ namespace Icinga\Module\Notifications\Widget\Detail;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\Model\Source;
-use Icinga\Module\Notifications\Model\SourceObject;
 use Icinga\Module\Notifications\Widget\EventSourceBadge;
 use Icinga\Module\Notifications\Widget\ItemList\IncidentContactList;
 use Icinga\Module\Notifications\Widget\ItemList\IncidentHistoryList;
-use Icinga\Module\Notifications\Widget\ItemList\ObjectLabelList;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
@@ -59,46 +57,35 @@ class IncidentDetail extends BaseHtmlElement
         //TODO(sd): Add hook implementation
         $list = Html::tag('ul', ['class' => ['item-list', 'minimal', 'action-list'], 'data-base-target' => '_next']);
 
-        $objects = [];
-        //TODO(sd): check sortby order
-        foreach ($this->incident->object->source_object as $sourceObj) {
-            $objects[] = new Link($this->incident->object->host, $sourceObj->url, ['class' => 'subject']);
-        }
-
         if ($this->incident->object->service) {
-            $newObjects = [];
-            foreach ($objects as $object) {
-                $newObjects[] = Html::sprintf(
-                    t('%s on %s', '<service> on <host>'),
-                    $object->setContent($this->incident->object->service),
-                    Html::tag('span', ['class' => 'subject'], $this->incident->object->host)
-                );
-            }
-
-            $objects = $newObjects;
+            $objectLink = Html::sprintf(
+                t('%s on %s', '<service> on <host>'),
+                new Link($this->incident->object->service, $this->incident->object->url, ['class' => 'subject']),
+                Html::tag('span', ['class' => 'subject'], $this->incident->object->host)
+            );
+        } else {
+            $objectLink = new Link($this->incident->object->host, $this->incident->object->url, ['class' => 'subject']);
         }
 
-        foreach ($objects as $object) {
-            $list->add(Html::tag(
-                'li',
-                ['class' => 'list-item', 'data-action-item' => true],
-                [ //TODO(sd): fix stateball
-                    Html::tag(
-                        'div',
-                        ['class' => 'visual'],
-                        new StateBall('down', StateBall::SIZE_LARGE)
-                    ),
-                    Html::tag(
-                        'div',
-                        ['class' => 'main'],
-                        Html::tag('header')->add(Html::tag('div', ['class' => 'title'], $object))
-                    )
-                ]
-            ));
-        }
+        $list->add(Html::tag(
+            'li',
+            ['class' => 'list-item', 'data-action-item' => true],
+            [ //TODO(sd): fix stateball
+                Html::tag(
+                    'div',
+                    ['class' => 'visual'],
+                    new StateBall('down', StateBall::SIZE_LARGE)
+                ),
+                Html::tag(
+                    'div',
+                    ['class' => 'main'],
+                    Html::tag('header')->add(Html::tag('div', ['class' => 'title'], $objectLink))
+                )
+            ]
+        ));
 
         return [
-            Html::tag('h2', t('Objects')),
+            Html::tag('h2', t('Object')),
             $list
         ];
     }
@@ -129,7 +116,7 @@ class IncidentDetail extends BaseHtmlElement
         $list->addHtml(new HtmlElement('li', null, new EventSourceBadge($this->incident->object->source)));
 
         return [
-            Html::tag('h2', t('Event Sources')),
+            Html::tag('h2', t('Event Source')),
             $list
         ];
     }
@@ -148,20 +135,6 @@ class IncidentDetail extends BaseHtmlElement
         ];
     }
 
-    protected function createObjectLabel()
-    {
-        $objectId = $this->incident->object->id;
-
-        $sourceObjects = SourceObject::on(Database::get())->with('source');
-
-        $sourceObjects->filter(Filter::equal('object_id', $objectId));
-
-        return [
-            Html::tag('h2', t('Object Labels')),
-            new ObjectLabelList($sourceObjects)
-        ];
-    }
-
     protected function assemble()
     {
         $this->add([
@@ -170,7 +143,6 @@ class IncidentDetail extends BaseHtmlElement
             $this->createRelatedObject(),
             $this->createSource(),
             $this->createObjectTag(),
-            $this->createObjectLabel()
         ]);
     }
 }
