@@ -18,14 +18,13 @@ class ObjectExtraTag extends Model
 
     public function getKeyName()
     {
-        return ['object_id', 'source_id', 'tag'];
+        return ['object_id', 'tag'];
     }
 
     public function getColumns()
     {
         return [
             'object_id',
-            'source_id',
             'tag',
             'value'
         ];
@@ -38,7 +37,6 @@ class ObjectExtraTag extends Model
 
     public function createRelations(Relations $relations)
     {
-        $relations->belongsTo('source', Source::class);
         $relations->belongsTo('object', Objects::class);
     }
 }

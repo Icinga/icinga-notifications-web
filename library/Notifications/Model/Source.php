@@ -49,10 +49,7 @@ class Source extends Model
 
     public function createRelations(Relations $relations)
     {
-        $relations->hasMany('event', Event::class);
-        $relations->hasMany('source_object', SourceObject::class);
-        $relations->hasMany('object_extra_tag', ObjectExtraTag::class)
-            ->setJoinType('LEFT');
+        $relations->hasMany('object', Objects::class);
     }
 
     /**

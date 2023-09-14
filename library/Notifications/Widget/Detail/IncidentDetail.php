@@ -111,8 +111,8 @@ class IncidentDetail extends BaseHtmlElement
                 $this->incident->incident_history
                     ->with([
                         'event',
-                        'event.source',
                         'event.object',
+                        'event.object.source',
                         'contact',
                         'rule',
                         'rule_escalation',
@@ -126,12 +126,7 @@ class IncidentDetail extends BaseHtmlElement
     protected function createSource()
     {
         $list = new HtmlElement('ul', Attributes::create(['class' => 'source-list']));
-
-        $sources = Source::on(Database::get())
-            ->filter(Filter::equal('event.incident.id', $this->incident->id));
-        foreach ($sources as $source) {
-            $list->addHtml(new HtmlElement('li', null, new EventSourceBadge($source)));
-        }
+        $list->addHtml(new HtmlElement('li', null, new EventSourceBadge($this->incident->object->source)));
 
         return [
             Html::tag('h2', t('Event Sources')),

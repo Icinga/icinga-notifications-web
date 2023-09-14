@@ -89,7 +89,7 @@ class IncidentHistoryListItem extends BaseListItem
 
         $header->addHtml($this->createCaption());
         if ($this->item->type === 'source_severity_changed') {
-            $header->add((new SourceIcon(SourceIcon::SIZE_BIG))->addHtml($this->item->event->source->getIcon()));
+            $header->add((new SourceIcon(SourceIcon::SIZE_BIG))->addHtml($this->item->event->object->source->getIcon()));
         }
 
         $header->add(new TimeAgo($this->item->time->getTimestamp()));
@@ -190,7 +190,7 @@ class IncidentHistoryListItem extends BaseListItem
             case 'source_severity_changed':
                 $message = sprintf(
                     t('Source %s reported a severity change from %s to %s'),
-                    $this->item->event->source->name,
+                    $this->item->event->object->source->name,
                     Event::mapSeverity($this->item->old_severity),
                     Event::mapSeverity($this->item->new_severity)
                 );

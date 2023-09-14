@@ -26,7 +26,6 @@ class Event extends Model
     {
         return [
             'time',
-            'source_id',
             'object_id',
             'type',
             'severity',
@@ -39,7 +38,6 @@ class Event extends Model
     {
         return [
             'time'      => t('Received On'),
-            'source_id' => t('Source Id'),
             'object_id' => t('Object Id'),
             'type'      => t('Type'),
             'severity'  => t('Severity'),
@@ -66,7 +64,6 @@ class Event extends Model
 
     public function createRelations(Relations $relations)
     {
-        $relations->belongsTo('source', Source::class)->setJoinType('LEFT');
         $relations->belongsTo('object', Objects::class)->setJoinType('LEFT');
 
         $relations->hasOne('incident_history', IncidentHistory::class);
@@ -75,10 +72,6 @@ class Event extends Model
             ->belongsToOne('incident', Incident::class)
             ->through('incident_event')
             ->setJoinType('LEFT');
-
-        $relations
-            ->belongsTo('source_object', SourceObject::class)
-            ->setCandidateKey(['source_id', 'object_id']);
     }
 
     /**

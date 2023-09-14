@@ -120,7 +120,7 @@ class EventDetail extends BaseHtmlElement
     {
         return [
             Html::tag('h2', t('Source')),
-            new EventSourceBadge($this->event->source)
+            new EventSourceBadge($this->event->object->source)
         ];
     }
 

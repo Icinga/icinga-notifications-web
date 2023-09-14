@@ -24,8 +24,11 @@ class Objects extends Model
     public function getColumns()
     {
         return [
+            'source_id',
             'host',
-            'service'
+            'service',
+            'name',
+            'url'
         ];
     }
 
@@ -56,7 +59,7 @@ class Objects extends Model
     {
         $relations->hasMany('event', Event::class);
         $relations->hasMany('incident', Incident::class);
-        $relations->hasMany('source_object', SourceObject::class);
+        $relations->belongsTo('source', Source::class);
         $relations->hasMany('object_extra_tag', ObjectExtraTag::class)
             ->setJoinType('LEFT');
     }
