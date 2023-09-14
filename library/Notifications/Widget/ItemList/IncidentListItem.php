@@ -48,22 +48,26 @@ class IncidentListItem extends BaseListItem
     protected function assembleTitle(BaseHtmlElement $title): void
     {
         $title->addHtml(Html::tag('span', [], sprintf('#%d:', $this->item->id)));
+        $subject = $this->item->object->service ?? $this->item->object->host;
+        if (! $this->list->getNoSubjectLink()) {
+            $content = new Link(
+                $subject,
+                Links::incident($this->item->id),
+                ['class' => 'subject']
+            );
+        } else {
+            $content = Html::tag(
+                'span',
+                ['class' => 'subject'],
+                $subject
+            );
+        }
 
         if ($this->item->object->service) {
             $content = Html::sprintf(
                 t('%s on %s', '<service> on <host>'),
-                new Link(
-                    $this->item->object->service,
-                    Links::incident($this->item->id),
-                    ['class' => 'subject']
-                ),
+                $content,
                 Html::tag('span', ['class' => 'subject'], $this->item->object->host)
-            );
-        } else {
-            $content = new Link(
-                $this->item->object->host,
-                Links::incident($this->item->id),
-                ['class' => 'subject']
             );
         }
 
