@@ -36,7 +36,7 @@ class Timeperiod extends Model
         $relations->hasOne('parent', Schedule::class)
             ->setCandidateKey('owned_by_schedule_id')
             ->setJoinType('LEFT');
-        $relations->hasMany('entry', TimeperiodEntry::class)
+        $relations->hasMany('timeperiod_entry', TimeperiodEntry::class)
             ->setJoinType('LEFT');
     }
 }

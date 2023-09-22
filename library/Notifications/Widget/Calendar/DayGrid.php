@@ -6,6 +6,7 @@ namespace Icinga\Module\Notifications\Widget\Calendar;
 
 use DateInterval;
 use DateTime;
+use InvalidArgumentException;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\HtmlElement;
@@ -14,11 +15,18 @@ use Traversable;
 
 class DayGrid extends BaseGrid
 {
-    protected $mode = 'day';
-
     public function setGridStart(DateTime $start): BaseGrid
     {
+        if ($start->format('H:i:s') !== '00:00:00') {
+            throw new InvalidArgumentException('Start is not midnight');
+        }
+
         return parent::setGridStart($start);
+    }
+
+    protected function getMaximumRowSpan(): int
+    {
+        return 28;
     }
 
     protected function calculateGridEnd(): DateTime
@@ -50,6 +58,15 @@ class DayGrid extends BaseGrid
     protected function createHeader(): BaseHtmlElement
     {
         $header = new HtmlElement('div', Attributes::create(['class' => 'header']));
+        $dayNames = [
+            'Mon' => t('Mon', 'monday'),
+            'Tue' => t('Tue', 'tuesday'),
+            'Wed' => t('Wed', 'wednesday'),
+            'Thu' => t('Thu', 'thursday'),
+            'Fri' => t('Fri', 'friday'),
+            'Sat' => t('Sat', 'saturday'),
+            'Sun' => t('Sun', 'sunday')
+        ];
 
         $currentDay = clone $this->getGridStart();
         $interval = new DateInterval('P1D');
@@ -59,7 +76,7 @@ class DayGrid extends BaseGrid
             new HtmlElement(
                 'span',
                 Attributes::create(['class' => 'day-name']),
-                Text::create($this->getGridStart()->format('D'))
+                Text::create($dayNames[$currentDay->format('D')])
             ),
             new HtmlElement(
                 'span',

@@ -51,6 +51,9 @@ class Calendar extends BaseHtmlElement
     /** @var Url */
     protected $addEntryUrl;
 
+    /** @var Url */
+    protected $url;
+
     public function setControls(Controls $controls): self
     {
         $this->controls = $controls;
@@ -79,6 +82,22 @@ class Calendar extends BaseHtmlElement
         return $this->addEntryUrl;
     }
 
+    public function setUrl(?Url $url): self
+    {
+        $this->url = $url;
+
+        return $this;
+    }
+
+    public function prepareDayViewUrl(DateTime $date): Url
+    {
+        $url = clone $this->url;
+        return $url->overwriteParams([
+            'mode' => 'day',
+            'day'  => $date->format('Y-m-d')
+        ]);
+    }
+
     protected function getModeStart(): DateTime
     {
         switch ($this->getControls()->getViewMode()) {
@@ -91,7 +110,9 @@ class Calendar extends BaseHtmlElement
 
                 return (new DateTime())->setTimestamp(strtotime($week));
             default:
-                return DateTime::createFromFormat('Y-m-d', $this->getControls()->getValue('day'));
+                $day = $this->getControls()->getValue('day') ?: (new DateTime())->format('Y-m-d');
+
+                return DateTime::createFromFormat('Y-m-d H:i:s', $day . ' 00:00:00');
         }
     }
 

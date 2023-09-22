@@ -116,6 +116,18 @@ class WeekGrid extends BaseGrid
         return $sidebar;
     }
 
+    protected function assembleGridStep(BaseHtmlElement $content, DateTime $step): void
+    {
+        if ($step->format('H') === '23') {
+            $dayViewUrl = $this->calendar->prepareDayViewUrl($step);
+            $content->addHtml(
+                (new ExtraEntryCount(null, $dayViewUrl))
+                    ->setGrid($this)
+                    ->setGridStep($step)
+            );
+        }
+    }
+
     protected function assemble()
     {
         $this->getAttributes()->add('class', 'week');

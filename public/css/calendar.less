@@ -66,9 +66,23 @@
   .entry {
     > a {
       display: block;
-      height: 100%;
       overflow: hidden;
+
+      &:first-of-type {
+        height: 100%;
+      }
     }
+  }
+
+  .overlay {
+    position: relative;
+  }
+
+  .extra-count {
+    z-index: 99;
+    position: absolute;
+    bottom: 1px; // 1px is the border-width of an entry, this makes it so it doesn't overlap
+    right: 1px;
   }
 
   .entry {
@@ -138,10 +152,13 @@
   .step {
     grid-row-end: span @rowsPerDay;
     grid-column-end: span @columnsPerDay;
+    position: relative;
 
     > a {
       text-align: right;
-      padding-right: .25em;
+      &:first-of-type {
+        padding-right: .25em;
+      }
     }
   }
 }
@@ -171,6 +188,7 @@
   .step {
     grid-column-end: span @columnsPerDay;
     grid-row-end: span @rowsPerHour;
+    position: relative;
   }
 }
 
@@ -251,7 +269,6 @@
   input[type="month"],
   input[type="week"] {
     background-color: @low-sat-blue;
-    width: auto;
   }
 
   .view-mode-switcher label {
