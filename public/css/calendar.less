@@ -174,10 +174,39 @@
   }
 }
 
+.calendar-grid.day {
+  @days: 1;
+  @hours: 24;
+  @rowsPerHour: 2;
+  @columnsPerDay: 28;
+
+  .sidebar {
+    grid-template-rows: repeat(@hours, 1fr);
+  }
+
+  .grid,
+  .overlay {
+    display: grid;
+    grid-template-rows: repeat(@hours * @rowsPerHour, 1fr);
+    grid-template-columns: repeat(@days * @columnsPerDay, minmax(2em, 1fr));
+  }
+
+  .grid,
+  .overlay {
+    border-left: none;
+  }
+
+  .step {
+    grid-column-end: span @columnsPerDay;
+    grid-row-end: span @rowsPerHour;
+  }
+}
+
 .calendar-grid {
   display: grid;
 
   &.week,
+  &.day,
   &.month {
     .header {
       grid-area: ~"1 / 2 / 2 / 3";
@@ -201,6 +230,10 @@
     grid-template-columns: 4em minmax(0, 1fr);
     grid-template-rows: 1.5em minmax(0, 1fr);
   }
+  &.day {
+    grid-template-columns: 6em minmax(0, 1fr);
+    grid-template-rows: 2.5em minmax(0, 1fr);
+  }
 
   .overlay {
     pointer-events: none;
@@ -214,9 +247,11 @@
 /* Design */
 
 .calendar-controls {
+  input[type="date"],
   input[type="month"],
   input[type="week"] {
     background-color: @low-sat-blue;
+    width: auto;
   }
 
   .view-mode-switcher label {

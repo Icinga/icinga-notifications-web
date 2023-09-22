@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Widget;
 use DateTime;
 use Icinga\Module\Notifications\Widget\Calendar\BaseGrid;
 use Icinga\Module\Notifications\Widget\Calendar\Controls;
+use Icinga\Module\Notifications\Widget\Calendar\DayGrid;
 use Icinga\Module\Notifications\Widget\Calendar\Entry;
 use Icinga\Module\Notifications\Widget\Calendar\MonthGrid;
 use Icinga\Module\Notifications\Widget\Calendar\Util;
@@ -30,6 +31,9 @@ class Calendar extends BaseHtmlElement
 
     /** @var string Mode to show a specific calendar week */
     public const MODE_WEEK = 'week';
+
+    /** @var string Mode to show only the day */
+    public const MODE_DAY = 'day';
 
     protected $tag = 'div';
 
@@ -83,10 +87,11 @@ class Calendar extends BaseHtmlElement
 
                 return DateTime::createFromFormat('Y-m-d\TH:i:s', $month . '-01T00:00:00');
             case self::MODE_WEEK:
-            default:
                 $week = $this->getControls()->getValue('week') ?: (new DateTime())->format('Y-\WW');
 
                 return (new DateTime())->setTimestamp(strtotime($week));
+            default:
+                return DateTime::createFromFormat('Y-m-d', $this->getControls()->getValue('day'));
         }
     }
 
@@ -95,8 +100,10 @@ class Calendar extends BaseHtmlElement
         if ($this->grid === null) {
             if ($this->getControls()->getViewMode() === self::MODE_MONTH) {
                 $this->grid = new MonthGrid($this, $this->getModeStart());
-            } else { // $mode === self::MODE_WEEK
+            } elseif ($this->getControls()->getViewMode() === self::MODE_WEEK) {
                 $this->grid = new WeekGrid($this, $this->getModeStart());
+            } else {
+                $this->grid = new DayGrid($this, $this->getModeStart());
             }
         }
 
