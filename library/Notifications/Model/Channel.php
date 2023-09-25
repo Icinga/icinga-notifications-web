@@ -5,6 +5,8 @@
 namespace Icinga\Module\Notifications\Model;
 
 use ipl\Orm\Model;
+use ipl\Orm\Relations;
+use ipl\Sql\Connection;
 
 class Channel extends Model
 {
@@ -44,5 +46,42 @@ class Channel extends Model
     public function getDefaultSort()
     {
         return ['name'];
+    }
+
+    public function createRelations(Relations $relations)
+    {
+        $relations->hasMany('incident_history', IncidentHistory::class)->setJoinType('LEFT');
+        $relations->hasMany('rule_escalation_recipient', RuleEscalationRecipient::class)->setJoinType('LEFT');
+        $relations->hasMany('contact', Contact::class)
+            ->setJoinType('LEFT')
+            ->setForeignKey('default_channel_id');
+    }
+
+    /**
+     * Fetch and map all the configured channel types to a key => value array
+     *
+     * @param Connection $conn
+     *
+     * @return array<int, string> All the channel types mapped as id => type
+     */
+    public static function fetchChannelTypes(Connection $conn): array
+    {
+        $channels = [];
+        foreach (Channel::on($conn) as $channel) {
+            switch ($channel->type) {
+                case 'rocketchat':
+                    $name = 'Rocket.Chat';
+                    break;
+                case 'email':
+                    $name = t('E-Mail');
+                    break;
+                default:
+                    $name = $channel->type;
+            }
+
+            $channels[$channel->id] = $name;
+        }
+
+        return $channels;
     }
 }

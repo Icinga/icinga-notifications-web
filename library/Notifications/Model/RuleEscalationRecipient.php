@@ -26,24 +26,19 @@ class RuleEscalationRecipient extends Model
             'contact_id',
             'contactgroup_id',
             'schedule_id',
-            'channel_type'
+            'channel_id'
         ];
     }
 
     public function getColumnDefinitions()
     {
         return [
-            'rule_escalation_id'    => t('Rule Escalation ID'),
-            'contact_id'            => t('Contact ID'),
-            'contactgroup_id'       => t('Contactgroup ID'),
-            'schedule_id'           => t('Schedule ID'),
-            'channel_type'          => t('Channel Type')
+            'rule_escalation_id' => t('Rule Escalation ID'),
+            'contact_id'         => t('Contact ID'),
+            'contactgroup_id'    => t('Contactgroup ID'),
+            'schedule_id'        => t('Schedule ID'),
+            'channel_id'         => t('Channel ID')
         ];
-    }
-
-    public function getSearchColumns()
-    {
-        return ['channel_type'];
     }
 
     public function getDefaultSort()
@@ -57,6 +52,7 @@ class RuleEscalationRecipient extends Model
         $relations->belongsTo('contact', Contact::class);
         $relations->belongsTo('schedule', Schedule::class);
         $relations->belongsTo('contactgroup', Contactgroup::class);
+        $relations->belongsTo('channel', Channel::class);
     }
 
     /**

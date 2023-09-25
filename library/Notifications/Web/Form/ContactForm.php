@@ -4,6 +4,8 @@
 
 namespace Icinga\Module\Notifications\Web\Form;
 
+use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\ContactAddress;
 use Icinga\Web\Session;
@@ -77,6 +79,9 @@ class ContactForm extends CompatForm
 
         $this->addElement($contact);
 
+        $channelOptions = ['' => sprintf(' - %s - ', $this->translate('Please choose'))];
+        $channelOptions += Channel::fetchChannelTypes(Database::get());
+
         $contact->addElement(
             'text',
             'full_name',
@@ -113,16 +118,12 @@ class ContactForm extends CompatForm
             ]
         )->addElement(
             'select',
-            'default_channel',
+            'default_channel_id',
             [
                 'label'    => $this->translate('Default Channel'),
                 'required' => true,
                 'disable'  => [''],
-                'options'  => [
-                    ''           => sprintf(' - %s - ', $this->translate('Please choose')),
-                    'email'      => $this->translate('Email'),
-                    'rocketchat' => 'Rocket.Chat'
-                ]
+                'options'  => $channelOptions
             ]
         );
 
@@ -185,10 +186,10 @@ class ContactForm extends CompatForm
             $formValues = [];
             if (! isset($formValues['contact'])) {
                 $formValues['contact'] = [
-                    'full_name'       => $values->full_name,
-                    'username'        => $values->username,
-                    'color'           => $values->color,
-                    'default_channel' => $values->default_channel
+                    'full_name'          => $values->full_name,
+                    'username'           => $values->username,
+                    'color'              => $values->color,
+                    'default_channel_id' => $values->default_channel_id
                 ];
             }
 

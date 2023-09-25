@@ -5,6 +5,7 @@
 namespace Icinga\Module\Notifications\Forms;
 
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Contactgroup;
 use Icinga\Module\Notifications\Model\Schedule;
@@ -69,11 +70,8 @@ class EscalationRecipientForm extends BaseEscalationForm
 
             $this->registerElement($col);
 
-            $options = [
-                ''           =>  sprintf(' - %s - ', $this->translate('Please choose')),
-                'email'      => 'E-Mail',
-                'rocketchat' => 'Rocket.Chat'
-            ];
+            $options = ['' => sprintf(' - %s - ', $this->translate('Please choose'))];
+            $options += Channel::fetchChannelTypes(Database::get());
 
             $val = $this->createElement(
                 'select',
@@ -134,7 +132,7 @@ class EscalationRecipientForm extends BaseEscalationForm
             }
 
             $value = [];
-            $value['channel_type'] = $this->getValue('value' . $count);
+            $value['channel_id'] = $this->getValue('value' . $count);
             $value['id'] = $this->getValue('id' . $count);
 
             $columnName = $this->getValue('column' . $count);
@@ -165,9 +163,9 @@ class EscalationRecipientForm extends BaseEscalationForm
 
                     $count = $key + 1;
                     $selectedOption = str_replace('id', $elementValue, $elementName, $replaced);
-                    if ($replaced) {
+                    if ($replaced && $elementName !== 'channel_id') {
                         $values['column' . $count] = $selectedOption;
-                    } elseif ($elementName === 'channel_type') {
+                    } elseif ($elementName === 'channel_id') {
                         $values['value' . $count] = $elementValue;
                     }
                 }

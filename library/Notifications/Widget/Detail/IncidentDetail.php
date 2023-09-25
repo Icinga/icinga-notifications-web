@@ -104,7 +104,8 @@ class IncidentDetail extends BaseHtmlElement
                         'rule',
                         'rule_escalation',
                         'contactgroup',
-                        'schedule'
+                        'schedule',
+                        'channel'
                     ])
             )
         ];

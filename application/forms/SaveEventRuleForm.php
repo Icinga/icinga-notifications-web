@@ -258,7 +258,7 @@ class SaveEventRuleForm extends Form
             foreach ($escalationConfig['recipient'] ?? [] as $recipientConfig) {
                 $data = [
                     'rule_escalation_id' => $escalationId,
-                    'channel_type' => $recipientConfig['channel_type']
+                    'channel_id' => $recipientConfig['channel_id']
                 ];
 
                 switch (true) {
@@ -343,7 +343,7 @@ class SaveEventRuleForm extends Form
             foreach ($escalationConfig['recipient'] ?? [] as $recipientConfig) {
                 $data = [
                     'rule_escalation_id' => $escalationId,
-                    'channel_type' => $recipientConfig['channel_type']
+                    'channel_id' => $recipientConfig['channel_id']
                 ];
 
                 switch (true) {
