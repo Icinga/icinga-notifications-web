@@ -28,6 +28,8 @@ use ipl\Orm\Relations;
  * @property ?string $new_recipient_role
  * @property ?string $old_recipient_role
  * @property ?string $message
+ * @property string $notification_state
+ * @property DateTime $sent_at
  *
  * @property Query | Incident $incident
  * @property Query | Event $event
@@ -67,7 +69,9 @@ class IncidentHistory extends Model
             'old_severity',
             'new_recipient_role',
             'old_recipient_role',
-            'message'
+            'message',
+            'notification_state',
+            'sent_at'
         ];
     }
 
@@ -93,7 +97,7 @@ class IncidentHistory extends Model
 
     public function createBehaviors(Behaviors $behaviors)
     {
-        $behaviors->add(new MillisecondTimestamp(['time']));
+        $behaviors->add(new MillisecondTimestamp(['time', 'sent_at']));
     }
 
     public function getDefaultSort()
@@ -112,5 +116,26 @@ class IncidentHistory extends Model
         $relations->belongsTo('rule', Rule::class)->setJoinType('LEFT');
         $relations->belongsTo('rule_escalation', RuleEscalation::class)->setJoinType('LEFT');
         $relations->belongsTo('channel', Channel::class)->setJoinType('LEFT');
+    }
+
+    /**
+     * Transform the given notification state into a translatable message.
+     *
+     * @param string $state
+     *
+     * @return string
+     */
+    public static function translateNotificationState(string $state): string
+    {
+        switch ($state) {
+            case 'sent':
+                return t('sent', 'notifications.transmission.state');
+            case 'failed':
+                return t('failed', 'notifications.transmission.state');
+            case 'pending':
+                return t('pending', 'notifications.transmission.state');
+            default:
+                return t('unknown', 'notifications.transmission.state');
+        }
     }
 }

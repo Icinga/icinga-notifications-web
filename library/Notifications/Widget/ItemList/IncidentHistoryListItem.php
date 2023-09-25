@@ -132,24 +132,51 @@ class IncidentHistoryListItem extends BaseListItem
                 break;
             case "notified":
                 if ($this->item->contactgroup_id) {
-                    $message = sprintf(
-                        t('Contact %s notified via %s as member of contact group %s'),
-                        $this->item->contact->full_name,
-                        $this->item->channel->type,
-                        $this->item->contactgroup->name
-                    );
+                    if ($this->item->notification_state === 'sent') {
+                        $message = sprintf(
+                            t('Contact %s notified via %s as member of contact group %s'),
+                            $this->item->contact->full_name,
+                            $this->item->channel->type,
+                            $this->item->contactgroup->name
+                        );
+                    } else {
+                        $message = sprintf(
+                            t('Contact %s notified via %s as member of contact group %s (%s)'),
+                            $this->item->contact->full_name,
+                            $this->item->channel->type,
+                            $this->item->contactgroup->name,
+                            IncidentHistory::translateNotificationState($this->item->notification_state)
+                        );
+                    }
                 } elseif ($this->item->schedule_id) {
-                    $message = sprintf(
-                        t('Contact %s notified via %s as member of schedule %s'),
-                        $this->item->contact->full_name,
-                        $this->item->channel->type,
-                        $this->item->schedule->name
-                    );
-                } else {
+                    if ($this->item->notfication_state === 'sent') {
+                        $message = sprintf(
+                            t('Contact %s notified via %s as member of schedule %s'),
+                            $this->item->contact->full_name,
+                            $this->item->channel->type,
+                            $this->item->schedule->name
+                        );
+                    } else {
+                        $message = sprintf(
+                            t('Contact %s notified via %s as member of schedule %s (%s)'),
+                            $this->item->contact->full_name,
+                            $this->item->schedule->name,
+                            $this->item->channel->type,
+                            IncidentHistory::translateNotificationState($this->item->notification_state)
+                        );
+                    }
+                } elseif ($this->item->notification_state === 'sent') {
                     $message = sprintf(
                         t('Contact %s notified via %s'),
                         $this->item->contact->full_name,
                         $this->item->channel->type
+                    );
+                } else {
+                    $message = sprintf(
+                        t('Contact %s notified via %s (%s)'),
+                        $this->item->contact->full_name,
+                        $this->item->channel->type,
+                        IncidentHistory::translateNotificationState($this->item->notification_state)
                     );
                 }
 
