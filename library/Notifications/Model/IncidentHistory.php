@@ -39,7 +39,9 @@ class IncidentHistory extends Model
             'old_severity',
             'new_recipient_role',
             'old_recipient_role',
-            'message'
+            'message',
+            'notification_state',
+            'sent_at'
         ];
     }
 
@@ -66,7 +68,7 @@ class IncidentHistory extends Model
 
     public function createBehaviors(Behaviors $behaviors)
     {
-        $behaviors->add(new MillisecondTimestamp(['time']));
+        $behaviors->add(new MillisecondTimestamp(['time', 'sent_at']));
     }
 
     public function getDefaultSort()
