@@ -172,21 +172,21 @@ class IncidentHistoryListItem extends BaseListItem
                     $message = sprintf(
                         t('Contact %s notified via %s as member of contact group %s'),
                         $this->item->contact->full_name,
-                        $this->item->channel_type,
+                        $this->item->channel->type,
                         $this->item->contactgroup->name
                     );
                 } elseif ($this->item->schedule_id) {
                     $message = sprintf(
                         t('Contact %s notified via %s as member of schedule %s'),
                         $this->item->contact->full_name,
-                        $this->item->channel_type,
+                        $this->item->channel->type,
                         $this->item->schedule->name
                     );
                 } else {
                     $message = sprintf(
                         t('Contact %s notified via %s'),
                         $this->item->contact->full_name,
-                        $this->item->channel_type
+                        $this->item->channel->type
                     );
                 }
                 break;

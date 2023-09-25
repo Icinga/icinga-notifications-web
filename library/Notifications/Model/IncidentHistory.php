@@ -33,8 +33,8 @@ class IncidentHistory extends Model
             'contact_id',
             'schedule_id',
             'contactgroup_id',
+            'channel_id',
             'caused_by_incident_history_id',
-            'channel_type',
             'new_severity',
             'old_severity',
             'new_recipient_role',
@@ -57,7 +57,7 @@ class IncidentHistory extends Model
             'schedule_id'                   => t('Schedule Id'),
             'contactgroup_id'               => t('Contact Group Id'),
             'caused_by_incident_history_id' => t('Caused By Incident History Id'),
-            'channel_type'                  => t('Channel Type'),
+            'channel_id'                    => t('Channel ID'),
             'new_recipient_role'            => t('New Recipient Role'),
             'old_recipient_role'            => t('Old Recipient Role'),
             'message'                       => t('Message')
@@ -84,5 +84,6 @@ class IncidentHistory extends Model
         $relations->belongsTo('schedule', Schedule::class)->setJoinType('LEFT');
         $relations->belongsTo('rule', Rule::class)->setJoinType('LEFT');
         $relations->belongsTo('rule_escalation', RuleEscalation::class)->setJoinType('LEFT');
+        $relations->belongsTo('channel', Channel::class)->setJoinType('LEFT');
     }
 }

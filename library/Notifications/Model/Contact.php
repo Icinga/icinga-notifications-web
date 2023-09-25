@@ -27,7 +27,7 @@ class Contact extends Model
             'full_name',
             'username',
             'color',
-            'default_channel'
+            'default_channel_id'
         ];
     }
 
@@ -57,6 +57,9 @@ class Contact extends Model
 
     public function createRelations(Relations $relations)
     {
+        $relations->belongsTo('channel', Channel::class)
+            ->setCandidateKey('default_channel_id');
+
         $relations->belongsToMany('incident', Incident::class)
             ->through('incident_contact')
             ->setJoinType('LEFT');
