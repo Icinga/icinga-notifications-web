@@ -89,7 +89,9 @@ class IncidentHistoryListItem extends BaseListItem
 
         $header->addHtml($this->createCaption());
         if ($this->item->type === 'opened' || $this->item->type === 'incident_severity_changed') {
-            $header->add((new SourceIcon(SourceIcon::SIZE_BIG))->addHtml($this->item->event->object->source->getIcon()));
+            $header->add(
+                (new SourceIcon(SourceIcon::SIZE_BIG))->addHtml($this->item->event->object->source->getIcon())
+            );
         }
 
         $header->add(new TimeAgo($this->item->time->getTimestamp()));
