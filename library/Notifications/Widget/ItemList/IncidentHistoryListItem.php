@@ -29,7 +29,7 @@ class IncidentHistoryListItem extends BaseListItem
 
     protected function assembleVisual(BaseHtmlElement $visual): void
     {
-        if ($this->item->type === 'incident_severity_changed' || $this->item->type === 'source_severity_changed') {
+        if ($this->item->type === 'incident_severity_changed' || $this->item->type === 'opened') {
             $content = new Icon($this->getIncidentEventIcon(), ['class' => 'severity-' . $this->item->new_severity]);
         } else {
             $content = new Icon($this->getIncidentEventIcon(), ['class' => 'type-' . $this->item->type]);
@@ -48,7 +48,7 @@ class IncidentHistoryListItem extends BaseListItem
 
     protected function assembleTitle(BaseHtmlElement $title): void
     {
-        if ($this->item->type === 'source_severity_changed') {
+        if ($this->item->type === 'opened' || $this->item->type == 'incident_severity_changed') {
             $event = $this->item->event;
             $this->getAttributes()
                 ->set('data-action-item', true);
@@ -88,8 +88,10 @@ class IncidentHistoryListItem extends BaseListItem
         }
 
         $header->addHtml($this->createCaption());
-        if ($this->item->type === 'source_severity_changed') {
-            $header->add((new SourceIcon(SourceIcon::SIZE_BIG))->addHtml($this->item->event->source->getIcon()));
+        if ($this->item->type === 'opened' || $this->item->type === 'incident_severity_changed') {
+            $header->add(
+                (new SourceIcon(SourceIcon::SIZE_BIG))->addHtml($this->item->event->object->source->getIcon())
+            );
         }
 
         $header->add(new TimeAgo($this->item->time->getTimestamp()));
@@ -99,9 +101,7 @@ class IncidentHistoryListItem extends BaseListItem
     {
         switch ($this->item->type) {
             case 'opened':
-                return Icons::OPENED;
             case 'incident_severity_changed':
-            case 'source_severity_changed':
                 return $this->getSeverityIcon();
             case 'recipient_role_changed':
                 return $this->getRoleIcon();
@@ -159,7 +159,10 @@ class IncidentHistoryListItem extends BaseListItem
     {
         switch ($this->item->type) {
             case 'opened':
-                $message = t('Opened this incident');
+                $message = sprintf(
+                    t('Incident opened at severity %s'),
+                    Event::mapSeverity($this->item->new_severity)
+                );
                 break;
             case 'closed':
                 $message = t('All sources recovered, incident closed');
@@ -186,14 +189,6 @@ class IncidentHistoryListItem extends BaseListItem
                         $this->item->channel_type
                     );
                 }
-                break;
-            case 'source_severity_changed':
-                $message = sprintf(
-                    t('Source %s reported a severity change from %s to %s'),
-                    $this->item->event->source->name,
-                    Event::mapSeverity($this->item->old_severity),
-                    Event::mapSeverity($this->item->new_severity)
-                );
                 break;
             case 'incident_severity_changed':
                 $message = sprintf(

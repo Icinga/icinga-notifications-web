@@ -123,7 +123,7 @@ class EventListItem extends BaseListItem
             ['class' => 'meta'],
             [
                 (new SourceIcon(SourceIcon::SIZE_BIG))
-                    ->addHtml($this->item->source->getIcon()),
+                    ->addHtml($this->item->object->source->getIcon()),
                 new TimeAgo($this->item->time->getTimestamp())
             ]
         ));

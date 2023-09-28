@@ -32,7 +32,7 @@ class EventsController extends CompatController
         $compact = $this->view->compact;
 
         $events = Event::on(Database::get())
-            ->with(['source', 'object', 'incident']);
+            ->with(['object', 'object.source', 'incident']);
 
         $limitControl = $this->createLimitControl();
         $sortControl = $this->createSortControl(
