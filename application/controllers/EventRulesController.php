@@ -32,9 +32,6 @@ class EventRulesController extends CompatController
 {
     use SearchControls;
 
-    /** @var Filter\Rule Filter from query string parameters */
-    private $filter;
-
     /** @var Session\SessionNamespace */
     private $sessionNamespace;
 
@@ -218,20 +215,6 @@ class EventRulesController extends CompatController
 
         $this->getDocument()->addHtml($editor);
         $this->setTitle($this->translate('Adjust Filter'));
-    }
-
-    /**
-     * Get the filter created from query string parameters
-     *
-     * @return Filter\Rule
-     */
-    protected function getFilter(): Filter\Rule
-    {
-        if ($this->filter === null) {
-            $this->filter = QueryString::parse((string) $this->params);
-        }
-
-        return $this->filter;
     }
 
     public function getTabs()

@@ -31,9 +31,6 @@ class ChannelsController extends CompatController
     /** @var Connection */
     private $db;
 
-    /** @var Filter\Rule Filter from query string parameters */
-    private $filter;
-
     public function init()
     {
         $this->assertPermission('config/modules');
@@ -153,20 +150,6 @@ class ChannelsController extends CompatController
 
         $this->getDocument()->add($editor);
         $this->setTitle($this->translate('Adjust Filter'));
-    }
-
-    /**
-     * Get the filter created from query string parameters
-     *
-     * @return Filter\Rule
-     */
-    protected function getFilter(): Filter\Rule
-    {
-        if ($this->filter === null) {
-            $this->filter = QueryString::parse((string) $this->params);
-        }
-
-        return $this->filter;
     }
 
     /**
