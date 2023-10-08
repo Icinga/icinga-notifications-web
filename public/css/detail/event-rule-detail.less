@@ -66,6 +66,10 @@
       &:first-child:before {
         content: "";
         display: block;
+        top: 50%;
+      }
+
+      &:first-child:last-child:before {
         top: calc(~"50% - 1em");
       }
 
@@ -202,7 +206,7 @@
 }
 
 .cache-notice {
-  margin: 1em;
+  margin: 1em 0;
   padding: 1em;
   background-color: @gray-lighter;
   text-align: center;
@@ -358,10 +362,6 @@
   width: 14.5em;
 }
 
-.new-event-rule {
-  margin-bottom: 1em;
-}
-
 .event-rule-and-save-forms {
   display: flex;
   flex-wrap: wrap;
@@ -402,10 +402,11 @@
       margin-left: 1em;
 
       &:disabled {
-        background: @gray-light;
+        background: @gray-lighter;
         color: @disabled-gray;
         cursor: not-allowed;
         border-color: transparent;
+        opacity: .5;
       }
 
       &.btn-remove {
@@ -428,9 +429,10 @@
 .remove-escalation-form {
   button[disabled] {
     &:disabled {
-      background: @gray-light;
+      background: @gray-lighter;
       color: @disabled-gray;
       cursor: not-allowed;
+      opacity: .5;
     }
   }
 }

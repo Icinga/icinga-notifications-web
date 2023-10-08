@@ -89,9 +89,10 @@ class EventRulesController extends CompatController
                 'notifications/event-rules/add',
                 'plus'
             ))->setBaseTarget('_next')
-            ->addAttributes(['class' => 'new-event-rule'])
+            ->addAttributes(['class' => 'add-new-component'])
         );
 
+        $this->content->getAttributes()->add(['class' => 'full-width']);
         $this->addContent(new EventRuleList($eventRules));
 
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {
@@ -104,7 +105,7 @@ class EventRulesController extends CompatController
 
     public function addAction(): void
     {
-        $this->addTitleTab(t('Add Event Rule'));
+        $this->addTitleTab(t('New Event Rule'));
         $this->getTabs()->setRefreshUrl(Url::fromPath('notifications/event-rules/add'));
 
         $this->controls->addAttributes(['class' => 'event-rule-detail']);

@@ -88,7 +88,7 @@ class ContactsController extends CompatController
         $this->addControl($searchBar);
         $this->addContent(
             (new ButtonLink(
-                t('Add Contact'),
+                t('New Contact'),
                 'notifications/contacts/add',
                 'plus'
             ))->setBaseTarget('_next')
@@ -109,7 +109,7 @@ class ContactsController extends CompatController
 
     public function addAction()
     {
-        $this->addTitleTab(t('Add Contact'));
+        $this->addTitleTab(t('New Contact'));
 
         $form = (new ContactForm($this->db))
             ->on(ContactForm::ON_SUCCESS, function (ContactForm $form) {

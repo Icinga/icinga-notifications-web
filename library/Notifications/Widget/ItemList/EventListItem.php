@@ -133,6 +133,5 @@ class EventListItem extends BaseListItem
     {
         $main->add($this->createHeader());
         $main->add($this->createCaption());
-        $main->add($this->createFooter());
     }
 }

@@ -85,7 +85,7 @@ class ChannelsController extends CompatController
         $this->addControl($searchBar);
         $this->addContent(
             (new ButtonLink(
-                t('Add Channel'),
+                t('New Channel'),
                 Url::fromPath('notifications/channels/add'),
                 'plus'
             ))->setBaseTarget('_next')
@@ -101,7 +101,7 @@ class ChannelsController extends CompatController
 
     public function addAction()
     {
-        $this->addTitleTab(t('Add Channel'));
+        $this->addTitleTab(t('New Channel'));
         $form = (new ChannelForm($this->db))
             ->on(ChannelForm::ON_SUCCESS, function (ChannelForm $form) {
                 Notification::success(

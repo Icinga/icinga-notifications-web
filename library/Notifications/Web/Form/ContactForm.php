@@ -156,7 +156,7 @@ class ContactForm extends CompatForm
             'submit',
             [
                 'label' => $this->contactId === null ?
-                    $this->translate('Add Contact') :
+                    $this->translate('Create Contact') :
                     $this->translate('Save Changes')
             ]
         );
@@ -166,7 +166,7 @@ class ContactForm extends CompatForm
                 'submit',
                 'delete',
                 [
-                    'label'          => $this->translate('Delete'),
+                    'label'          => $this->translate('Delete Contact'),
                     'class'          => 'btn-remove',
                     'formnovalidate' => true
                 ]

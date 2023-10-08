@@ -62,6 +62,7 @@ class IncidentsController extends CompatController
         $this->addControl($limitControl);
         $this->addControl($searchBar);
 
+        $this->content->getAttributes()->add(['class' => 'full-width']);
         $this->addContent(new IncidentList($incidents));
 
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {
