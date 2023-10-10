@@ -152,7 +152,7 @@ class Calendar extends BaseHtmlElement
                 $length = $start->diff($end);
 
                 $visibleHours = Util::diffHours($start, $grid->getGridEnd());
-                $limit = (int) floor($visibleHours / (Util::diffHours($start, $end) ?: 0.5));
+                $limit = (int) ceil($visibleHours / (Util::diffHours($start, $end) ?: 0.5));
                 if ($limit > $visibleHours) {
                     $limit = $visibleHours;
                 }
