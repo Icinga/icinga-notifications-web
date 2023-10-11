@@ -79,22 +79,11 @@ class EventListItem extends BaseListItem
             $title->addHtml(Html::tag('span', [], sprintf('#%d:', $this->item->incident->id)));
         }
 
+        $name = $this->item->object->getName();
         if (! $this->list->getNoSubjectLink()) {
-            $content = new Link(
-                $this->item->object->host,
-                Links::event($this->item->id),
-                ['class' => 'subject']
-            );
+            $content = new Link($name, Links::event($this->item->id), ['class' => 'subject']);
         } else {
-            $content = Html::tag('span', ['class' => 'subject'], $this->item->object->host);
-        }
-
-        if ($this->item->object->service) {
-            $content = Html::sprintf(
-                t('%s on %s', '<service> on <host>'),
-                $content->setContent($this->item->object->service),
-                Html::tag('span', ['class' => 'subject'], $this->item->object->host)
-            );
+            $content = Html::tag('span', ['class' => 'subject'], $name);
         }
 
         $msg = null;

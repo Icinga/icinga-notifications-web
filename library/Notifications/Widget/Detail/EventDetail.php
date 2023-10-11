@@ -6,6 +6,7 @@ namespace Icinga\Module\Notifications\Widget\Detail;
 
 use Icinga\Date\DateFormatter;
 use Icinga\Module\Notifications\Model\Event;
+use Icinga\Module\Notifications\Model\Objects;
 use Icinga\Module\Notifications\Widget\EventSourceBadge;
 use Icinga\Module\Notifications\Widget\ItemList\IncidentList;
 use ipl\Html\BaseHtmlElement;
@@ -71,16 +72,9 @@ class EventDetail extends BaseHtmlElement
     {
         //TODO(sd): This is just placeholder. Add hook implementation instead
         $relatedObj = Html::tag('ul', ['class' => ['item-list', 'action-list'], 'data-base-target' => '_next']);
-        $obj = new Link($this->event->object->host, $this->event->object->url, ['class' => 'subject']);
-
-        if ($this->event->object->service) {
-            $obj = Html::sprintf(
-                t('%s on %s', '<service> on <host>'),
-                $obj->setContent($this->event->object->service),
-                Html::tag('span', ['class' => 'subject'], $this->event->object->host)
-            );
-        }
-
+        /** @var Objects $obj */
+        $obj = $this->event->object;
+        $objLink = new Link($obj->getName(), $obj->url, ['class' => 'subject']);
         $relatedObj->add(
             Html::tag(
                 'li',
@@ -90,7 +84,7 @@ class EventDetail extends BaseHtmlElement
                     Html::tag(
                         'div',
                         ['class' => 'main'],
-                        Html::tag('header')->add(Html::tag('div', ['class' => 'title'], $obj))
+                        Html::tag('header')->add(Html::tag('div', ['class' => 'title'], $objLink))
                     )
                 ]
             )

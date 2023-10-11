@@ -4,6 +4,8 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use ipl\Html\HtmlString;
+use ipl\Html\ValidHtml;
 use ipl\Orm\Behavior\Binary;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
@@ -25,29 +27,19 @@ class Objects extends Model
     {
         return [
             'source_id',
-            'host',
-            'service',
             'name',
             'url'
         ];
     }
 
-    public function getColumnDefinitions()
-    {
-        return [
-            'host'    => t('Host Name'),
-            'service' => t('Service Name')
-        ];
-    }
-
     public function getSearchColumns()
     {
-        return ['host', 'service'];
+        return ['object_id_tag.tag', 'object_id_tag.value'];
     }
 
     public function getDefaultSort()
     {
-        return 'object.host';
+        return 'object.name';
     }
 
     public function createBehaviors(Behaviors $behaviors)
@@ -59,9 +51,21 @@ class Objects extends Model
     {
         $relations->hasMany('event', Event::class);
         $relations->hasMany('incident', Incident::class);
+        $relations->hasMany('object_id_tag', ObjectIdTag::class);
         $relations->hasMany('object_extra_tag', ObjectExtraTag::class)
             ->setJoinType('LEFT');
 
         $relations->belongsTo('source', Source::class)->setJoinType('LEFT');
+    }
+
+    public function getName(): ValidHtml
+    {
+        //TODO: Once hooks are available, they should render the tags accordingly
+        $objectTags = [];
+        foreach ($this->object_id_tag as $id_tag) {
+            $objectTags[] = sprintf('%s=%s', $id_tag->tag, $id_tag->value);
+        }
+
+        return new HtmlString(implode(', ', $objectTags));
     }
 }
