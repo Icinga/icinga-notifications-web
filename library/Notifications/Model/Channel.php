@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Model;
 use ipl\Orm\Model;
 use ipl\Orm\Relations;
 use ipl\Sql\Connection;
+use ipl\Web\Widget\Icon;
 
 class Channel extends Model
 {
@@ -55,6 +56,29 @@ class Channel extends Model
         $relations->hasMany('contact', Contact::class)
             ->setJoinType('LEFT')
             ->setForeignKey('default_channel_id');
+        $relations->belongsTo('available_channel_type', AvailableChannelType::class)
+            ->setCandidateKey('type');
+    }
+
+    /**
+     * Get the channel icon
+     *
+     * @return Icon
+     */
+    public function getIcon(): Icon
+    {
+        switch ($this->type) {
+            case 'rocketchat':
+                $icon = new Icon('comment-dots');
+                break;
+            case 'email':
+                $icon = new Icon('at');
+                break;
+            default:
+                $icon = new Icon('envelope');
+        }
+
+        return $icon;
     }
 
     /**
