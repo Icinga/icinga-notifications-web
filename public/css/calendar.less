@@ -1,5 +1,4 @@
 /* Layout */
-
 .calendar-controls {
   display: flex;
   justify-content: flex-start;
@@ -100,6 +99,7 @@
      .title {
        display: flex;
        flex-wrap: wrap;
+       align-content: flex-start;
        flex: 0 1 auto;
        column-gap: .5em;
        overflow: hidden;
@@ -147,6 +147,11 @@
     grid-template-rows: repeat(@weeks * @rowsPerDay, 1fr);
     grid-template-columns: repeat(@days * @columnsPerDay, minmax(0, 1fr));
     overflow: hidden;
+
+    .ends-at {
+      flex: 1 1 0;
+      text-align: right;
+    }
   }
 
   .step {
@@ -183,6 +188,10 @@
   .grid,
   .overlay {
     border-left: none;
+
+    .title {
+      width: 100%;
+    }
   }
 
   .step {
@@ -217,6 +226,22 @@
   .step {
     grid-column-end: span @columnsPerDay;
     grid-row-end: span @rowsPerHour;
+  }
+}
+
+.calendar-grid.week,
+.calendar-grid.day {
+  .entry {
+    .content {
+      flex-direction: column;
+      align-content: flex-start;
+      justify-content: flex-end;
+
+      .ends-at {
+        text-align: right;
+        width: 100%;
+      }
+    }
   }
 }
 
@@ -258,6 +283,17 @@
 
     .entry {
       pointer-events: all;
+
+      .starts-at,
+      .ends-at {
+        font-weight: normal;
+        color: @text-color-light;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 11/12em;
+        line-height: 12/11 * 1.5;
+      }
     }
   }
 }
@@ -283,6 +319,53 @@
     font-weight: normal;
   }
 
+  .calendar-grid.month {
+    .entry {
+      &.two-way-gradient {
+        border-radius: 0;
+        border-right: none;
+        border-left: none;
+        background: linear-gradient(to right, transparent, var(--entry-bg) 0.5em, var(--entry-bg) calc(100% - 0.5em), transparent);
+      }
+
+      &.opening-gradient {
+        border-radius: 0 0.25em 0.25em 0;
+        border-left: none;
+        background: linear-gradient(to left, var(--entry-bg) calc(100% - 1em), transparent);
+      }
+
+      &.ending-gradient {
+        border-radius: 0.25em 0 0 0.25em;
+        border-right: none;
+        background: linear-gradient(to right, var(--entry-bg) calc(100% - 1em), transparent);
+      }
+    }
+  }
+
+  .calendar-grid.week,
+  .calendar-grid.day{
+    .entry {
+      &.two-way-gradient {
+        border-radius: 0;
+        border-top: none;
+        border-bottom: none;
+        background: linear-gradient(to bottom, transparent, var(--entry-bg) 0.5em, var(--entry-bg) calc(100% - 0.5em), transparent);
+      }
+
+      &.opening-gradient {
+        border-radius: 0 0 0.25em 0.25em;
+        border-top: none;
+        background: linear-gradient(to top, var(--entry-bg) calc(100% - 1em), transparent);
+      }
+
+      &.ending-gradient {
+        border-radius: 0.25em 0.25em 0 0;
+        border-bottom: none;
+        background: linear-gradient(to bottom, var(--entry-bg) calc(100% - 1em), transparent);
+      }
+    }
+  }
+
   .grid {
     background-color: @gray-lighter;
     border-color: @gray-lighter;
@@ -303,6 +386,7 @@
   .entry {
     border-width: 1px;
     border-style: solid;
+    background-color: var(--entry-bg);
     .rounded-corners();
 
     a:hover {
@@ -324,6 +408,10 @@
         opacity: .8;
       }
     }
+
+    .description {
+      mix-blend-mode: screen;
+    }
   }
 
   .column-title {
@@ -344,7 +432,10 @@
 }
 
 @light-mode: {
-  .calendar .entry .title {
-    mix-blend-mode: multiply;
+  .calendar .entry {
+    .title,
+    .description {
+      mix-blend-mode: multiply;
+    }
   }
 };
