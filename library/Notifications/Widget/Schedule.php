@@ -5,6 +5,9 @@
 namespace Icinga\Module\Notifications\Widget;
 
 use DateTimeZone;
+use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Model\ScheduleMember;
+use Icinga\Module\Notifications\Model\TimeperiodEntry;
 use Icinga\Module\Notifications\Widget\Calendar\Attendee;
 use Icinga\Module\Notifications\Widget\Calendar\Controls;
 use Icinga\Module\Notifications\Widget\Calendar\Entry;
@@ -44,47 +47,55 @@ class Schedule extends BaseHtmlElement
             ['schedule' => $this->schedule->id]
         ));
 
-        $members = $this->schedule->member->with(['timeperiod', 'contact', 'contactgroup']);
-        foreach ($members as $member) {
-            if ($member->contact_id !== null) {
-                $attendee = new Attendee($member->contact->full_name);
-                $attendee->setColor($member->contact->color);
-            } else { // $member->contactgroup_id !== null
-                $attendee = new Attendee($member->contactgroup->name);
-                $attendee->setColor($member->contactgroup->color);
-                $attendee->setIcon('users');
-            }
+        $calendar->setUrl(Url::fromPath(
+            'notifications/schedules',
+            ['schedule' => $this->schedule->id]
+        ));
 
-            $entries = $member->timeperiod->entry;
+        $db = Database::get();
+        $entries = TimeperiodEntry::on($db)
+            ->filter(Filter::equal('timeperiod.schedule.id', $this->schedule->id))
+            ->orderBy(['start_time', 'timeperiod_id']);
 
-            // TODO: This shouldn't be necessary. ipl/orm should be able to handle this by itself
-            $entries->setFilter(Filter::all(Filter::equal('timeperiod_id', $member->timeperiod->id)));
-            $entries->getSelectBase()->resetWhere();
+        $entryFilter = Filter::any(
+            Filter::all( // all entries that start in the shown range
+                Filter::greaterThanOrEqual('start_time', $calendar->getGrid()->getGridStart()->getTimestamp()),
+                Filter::lessThanOrEqual('start_time', $calendar->getGrid()->getGridEnd()->getTimestamp())
+            ),
+            Filter::all( // all entries that end in the shown range
+                Filter::greaterThanOrEqual('end_time', $calendar->getGrid()->getGridStart()->getTimestamp()),
+                Filter::lessThanOrEqual('end_time', $calendar->getGrid()->getGridEnd()->getTimestamp())
+            ),
+            Filter::all( // all entries that start before and end after the shown range
+                Filter::lessThanOrEqual('start_time', $calendar->getGrid()->getGridStart()->getTimestamp()),
+                Filter::greaterThanOrEqual('end_time', $calendar->getGrid()->getGridEnd()->getTimestamp())
+            ),
+            Filter::none( // all entries that are repeated and may still occur in the shown range
+                Filter::lessThanOrEqual('until_time', $calendar->getGrid()->getGridStart()->getTimestamp())
+            ),
+            Filter::all( // all entries that are repeated endlessly and already started in the past
+                Filter::unlike('until_time', '*'),
+                Filter::like('rrule', '*'),
+                Filter::lessThanOrEqual('start_time', $calendar->getGrid()->getGridStart()->getTimestamp())
+            )
+        );
 
-            $entryFilter = Filter::any(
-                Filter::all( // all entries that start in the shown range
-                    Filter::greaterThanOrEqual('start_time', $calendar->getGrid()->getGridStart()->getTimestamp()),
-                    Filter::lessThanOrEqual('start_time', $calendar->getGrid()->getGridEnd()->getTimestamp())
-                ),
-                Filter::all( // all entries that end in the shown range
-                    Filter::greaterThanOrEqual('end_time', $calendar->getGrid()->getGridStart()->getTimestamp()),
-                    Filter::lessThanOrEqual('end_time', $calendar->getGrid()->getGridEnd()->getTimestamp())
-                ),
-                Filter::all( // all entries that start before and end after the shown range
-                    Filter::lessThanOrEqual('start_time', $calendar->getGrid()->getGridStart()->getTimestamp()),
-                    Filter::greaterThanOrEqual('end_time', $calendar->getGrid()->getGridEnd()->getTimestamp())
-                ),
-                Filter::none( // all entries that are repeated and may still occur in the shown range
-                    Filter::lessThanOrEqual('until_time', $calendar->getGrid()->getGridStart()->getTimestamp())
-                ),
-                Filter::all( // all entries that are repeated endlessly and already started in the past
-                    Filter::unlike('until_time', '*'),
-                    Filter::like('rrule', '*'),
-                    Filter::lessThanOrEqual('start_time', $calendar->getGrid()->getGridStart()->getTimestamp())
-                )
-            );
+        foreach ($entries->filter($entryFilter) as $entry) {
+            $members = ScheduleMember::on($db)
+                ->with(['timeperiod', 'contact', 'contactgroup'])
+                ->filter(Filter::equal('timeperiod_id', $entry->timeperiod_id))
+                ->orderBy(['contact_id', 'contactgroup_id']);
 
-            foreach ($member->timeperiod->entry->filter($entryFilter) as $entry) {
+            foreach ($members as $member) {
+                if ($member->contact_id !== null) {
+                    $attendee = new Attendee($member->contact->full_name);
+                    $attendee->setColor($member->contact->color);
+                } else { // $member->contactgroup_id !== null
+                    $attendee = new Attendee($member->contactgroup->name);
+                    $attendee->setColor($member->contactgroup->color);
+                    $attendee->setIcon('users');
+                }
+
                 $calendar->addEntry(
                     (new Entry($entry->id))
                         ->setDescription($entry->description)

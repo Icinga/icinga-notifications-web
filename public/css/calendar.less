@@ -66,9 +66,23 @@
   .entry {
     > a {
       display: block;
-      height: 100%;
       overflow: hidden;
+
+      &:first-of-type {
+        height: 100%;
+      }
     }
+  }
+
+  .overlay {
+    position: relative;
+  }
+
+  .extra-count {
+    z-index: 99;
+    position: absolute;
+    bottom: 1px; // 1px is the border-width of an entry, this makes it so it doesn't overlap
+    right: 1px;
   }
 
   .entry {
@@ -138,10 +152,13 @@
   .step {
     grid-row-end: span @rowsPerDay;
     grid-column-end: span @columnsPerDay;
+    position: relative;
 
     > a {
       text-align: right;
-      padding-right: .25em;
+      &:first-of-type {
+        padding-right: .25em;
+      }
     }
   }
 }
@@ -171,6 +188,35 @@
   .step {
     grid-column-end: span @columnsPerDay;
     grid-row-end: span @rowsPerHour;
+    position: relative;
+  }
+}
+
+.calendar-grid.day {
+  @days: 1;
+  @hours: 24;
+  @rowsPerHour: 2;
+  @columnsPerDay: 28;
+
+  .sidebar {
+    grid-template-rows: repeat(@hours, 1fr);
+  }
+
+  .grid,
+  .overlay {
+    display: grid;
+    grid-template-rows: repeat(@hours * @rowsPerHour, 1fr);
+    grid-template-columns: repeat(@days * @columnsPerDay, minmax(2em, 1fr));
+  }
+
+  .grid,
+  .overlay {
+    border-left: none;
+  }
+
+  .step {
+    grid-column-end: span @columnsPerDay;
+    grid-row-end: span @rowsPerHour;
   }
 }
 
@@ -178,6 +224,7 @@
   display: grid;
 
   &.week,
+  &.day,
   &.month {
     .header {
       grid-area: ~"1 / 2 / 2 / 3";
@@ -201,6 +248,10 @@
     grid-template-columns: 4em minmax(0, 1fr);
     grid-template-rows: 1.5em minmax(0, 1fr);
   }
+  &.day {
+    grid-template-columns: 6em minmax(0, 1fr);
+    grid-template-rows: 2.5em minmax(0, 1fr);
+  }
 
   .overlay {
     pointer-events: none;
@@ -214,6 +265,7 @@
 /* Design */
 
 .calendar-controls {
+  input[type="date"],
   input[type="month"],
   input[type="week"] {
     background-color: @low-sat-blue;

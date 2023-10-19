@@ -36,6 +36,13 @@ class MonthGrid extends BaseGrid
     protected function assembleGridStep(BaseHtmlElement $content, DateTime $step): void
     {
         $content->addHtml(Text::create($step->format('j')));
+
+        $dayViewUrl = $this->calendar->prepareDayViewUrl($step);
+        $content->addHtml(
+            (new ExtraEntryCount(null, $dayViewUrl))
+            ->setGrid($this)
+            ->setGridStep($step)
+        );
     }
 
     protected function getRowStartModifier(): int

@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Widget;
 use DateTime;
 use Icinga\Module\Notifications\Widget\Calendar\BaseGrid;
 use Icinga\Module\Notifications\Widget\Calendar\Controls;
+use Icinga\Module\Notifications\Widget\Calendar\DayGrid;
 use Icinga\Module\Notifications\Widget\Calendar\Entry;
 use Icinga\Module\Notifications\Widget\Calendar\MonthGrid;
 use Icinga\Module\Notifications\Widget\Calendar\Util;
@@ -31,6 +32,9 @@ class Calendar extends BaseHtmlElement
     /** @var string Mode to show a specific calendar week */
     public const MODE_WEEK = 'week';
 
+    /** @var string Mode to show only the day */
+    public const MODE_DAY = 'day';
+
     protected $tag = 'div';
 
     protected $defaultAttributes = ['class' => 'calendar'];
@@ -46,6 +50,9 @@ class Calendar extends BaseHtmlElement
 
     /** @var Url */
     protected $addEntryUrl;
+
+    /** @var Url */
+    protected $url;
 
     public function setControls(Controls $controls): self
     {
@@ -75,6 +82,22 @@ class Calendar extends BaseHtmlElement
         return $this->addEntryUrl;
     }
 
+    public function setUrl(?Url $url): self
+    {
+        $this->url = $url;
+
+        return $this;
+    }
+
+    public function prepareDayViewUrl(DateTime $date): Url
+    {
+        $url = clone $this->url;
+        return $url->overwriteParams([
+            'mode' => 'day',
+            'day'  => $date->format('Y-m-d')
+        ]);
+    }
+
     protected function getModeStart(): DateTime
     {
         switch ($this->getControls()->getViewMode()) {
@@ -83,10 +106,13 @@ class Calendar extends BaseHtmlElement
 
                 return DateTime::createFromFormat('Y-m-d\TH:i:s', $month . '-01T00:00:00');
             case self::MODE_WEEK:
-            default:
                 $week = $this->getControls()->getValue('week') ?: (new DateTime())->format('Y-\WW');
 
                 return (new DateTime())->setTimestamp(strtotime($week));
+            default:
+                $day = $this->getControls()->getValue('day') ?: (new DateTime())->format('Y-m-d');
+
+                return DateTime::createFromFormat('Y-m-d H:i:s', $day . ' 00:00:00');
         }
     }
 
@@ -95,8 +121,10 @@ class Calendar extends BaseHtmlElement
         if ($this->grid === null) {
             if ($this->getControls()->getViewMode() === self::MODE_MONTH) {
                 $this->grid = new MonthGrid($this, $this->getModeStart());
-            } else { // $mode === self::MODE_WEEK
+            } elseif ($this->getControls()->getViewMode() === self::MODE_WEEK) {
                 $this->grid = new WeekGrid($this, $this->getModeStart());
+            } else {
+                $this->grid = new DayGrid($this, $this->getModeStart());
             }
         }
 
@@ -124,7 +152,7 @@ class Calendar extends BaseHtmlElement
                 $length = $start->diff($end);
 
                 $visibleHours = Util::diffHours($start, $grid->getGridEnd());
-                $limit = (int) floor($visibleHours / (Util::diffHours($start, $end) ?: 0.5));
+                $limit = (int) ceil($visibleHours / (Util::diffHours($start, $end) ?: 0.5));
                 if ($limit > $visibleHours) {
                     $limit = $visibleHours;
                 }

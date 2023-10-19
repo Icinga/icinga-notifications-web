@@ -13,20 +13,25 @@ use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use Traversable;
 
-class WeekGrid extends BaseGrid
+class DayGrid extends BaseGrid
 {
     public function setGridStart(DateTime $start): BaseGrid
     {
-        if ($start->format('w:H:i:s') !== '1:00:00:00') {
-            throw new InvalidArgumentException('Start is not a monday or not midnight');
+        if ($start->format('H:i:s') !== '00:00:00') {
+            throw new InvalidArgumentException('Start is not midnight');
         }
 
         return parent::setGridStart($start);
     }
 
+    protected function getMaximumRowSpan(): int
+    {
+        return 28;
+    }
+
     protected function calculateGridEnd(): DateTime
     {
-        return (clone $this->getGridStart())->add(new DateInterval('P7D'));
+        return (clone $this->getGridStart())->add(new DateInterval('P1D'));
     }
 
     protected function getNoOfVisuallyConnectedHours(): int
@@ -43,12 +48,7 @@ class WeekGrid extends BaseGrid
     {
         $interval = new DateInterval('P1D');
         $hourStartsAt = clone $this->getGridStart();
-        for ($i = 0; $i < 7 * 24; $i++) {
-            if ($i > 0 && $i % 7 === 0) {
-                $hourStartsAt = clone $this->getGridStart();
-                $hourStartsAt->add(new DateInterval(sprintf('PT%dH', $i / 7)));
-            }
-
+        for ($i = 0; $i < 24; $i++) {
             yield $hourStartsAt;
 
             $hourStartsAt->add($interval);
@@ -57,38 +57,33 @@ class WeekGrid extends BaseGrid
 
     protected function createHeader(): BaseHtmlElement
     {
-        $dayNames = [
-            t('Mon', 'monday'),
-            t('Tue', 'tuesday'),
-            t('Wed', 'wednesday'),
-            t('Thu', 'thursday'),
-            t('Fri', 'friday'),
-            t('Sat', 'saturday'),
-            t('Sun', 'sunday')
-        ];
-
         $header = new HtmlElement('div', Attributes::create(['class' => 'header']));
+        $dayNames = [
+            'Mon' => t('Mon', 'monday'),
+            'Tue' => t('Tue', 'tuesday'),
+            'Wed' => t('Wed', 'wednesday'),
+            'Thu' => t('Thu', 'thursday'),
+            'Fri' => t('Fri', 'friday'),
+            'Sat' => t('Sat', 'saturday'),
+            'Sun' => t('Sun', 'sunday')
+        ];
 
         $currentDay = clone $this->getGridStart();
         $interval = new DateInterval('P1D');
-        foreach ($dayNames as $dayName) {
-            $header->addHtml(new HtmlElement(
-                'div',
-                Attributes::create(['class' => 'column-title']),
-                new HtmlElement(
-                    'span',
-                    Attributes::create(['class' => 'day-name']),
-                    Text::create($dayName)
-                ),
-                new HtmlElement(
-                    'span',
-                    Attributes::create(['class' => 'day-number']),
-                    Text::create($currentDay->format('d'))
-                )
-            ));
-
-            $currentDay->add($interval);
-        }
+        $header->addHtml(new HtmlElement(
+            'div',
+            Attributes::create(['class' => 'column-title']),
+            new HtmlElement(
+                'span',
+                Attributes::create(['class' => 'day-name']),
+                Text::create($dayNames[$currentDay->format('D')])
+            ),
+            new HtmlElement(
+                'span',
+                Attributes::create(['class' => 'day-number']),
+                Text::create($currentDay->format('d'))
+            )
+        ));
 
         return $header;
     }
@@ -116,21 +111,9 @@ class WeekGrid extends BaseGrid
         return $sidebar;
     }
 
-    protected function assembleGridStep(BaseHtmlElement $content, DateTime $step): void
-    {
-        if ($step->format('H') === '23') {
-            $dayViewUrl = $this->calendar->prepareDayViewUrl($step);
-            $content->addHtml(
-                (new ExtraEntryCount(null, $dayViewUrl))
-                    ->setGrid($this)
-                    ->setGridStep($step)
-            );
-        }
-    }
-
     protected function assemble()
     {
-        $this->getAttributes()->add('class', 'week');
+        $this->getAttributes()->add('class', 'day');
 
         $this->addHtml(
             $this->createHeader(),

@@ -37,7 +37,6 @@ class Controls extends CompatForm
                 ]);
                 break;
             case Calendar::MODE_WEEK:
-            default:
                 $this->addElement('input', 'week', [
                     'class'     => 'autosubmit',
                     'type'      => 'week',
@@ -45,10 +44,19 @@ class Controls extends CompatForm
                     'label'     => $this->translate('Calendar Week')
                 ]);
                 break;
+            default:
+                $this->addElement('input', 'day', [
+                    'class'     => 'autosubmit',
+                    'type'      => 'date',
+                    'value'     => (new DateTime())->format('Y-m-d'),
+                    'label'     => $this->translate('Date')
+                ]);
+                break;
         }
 
         $modeParam = 'mode';
         $options = [
+            Calendar::MODE_DAY => $this->translate('Day'),
             Calendar::MODE_WEEK => $this->translate('Week'),
             Calendar::MODE_MONTH => $this->translate('Month')
         ];

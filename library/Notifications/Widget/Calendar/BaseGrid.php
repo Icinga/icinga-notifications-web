@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Widget\Calendar;
 
+use DateInterval;
 use DateTime;
 use DateTimeInterface;
 use Icinga\Module\Notifications\Widget\Calendar;
@@ -34,6 +35,9 @@ abstract class BaseGrid extends BaseHtmlElement
 
     /** @var DateTime */
     protected $end;
+
+    /** @var array Extra counts stored as [date1 => count1, date2 => count2]*/
+    protected $extraEntriesCount = [];
 
     /**
      * Create a new calendar
@@ -137,6 +141,18 @@ abstract class BaseGrid extends BaseHtmlElement
         return $overlay;
     }
 
+    /**
+     * Fetch the count of additional entries for the given date
+     *
+     * @param DateTime $date
+     *
+     * @return int
+     */
+    public function getExtraEntryCount(DateTime $date): int
+    {
+        return $this->extraEntriesCount[$date->format('Y-m-d')] ?? 0;
+    }
+
     protected function assembleGridOverlay(BaseHtmlElement $overlay): void
     {
         $style = (new Style())->setNonce(Csp::getStyleNonce());
@@ -218,21 +234,42 @@ abstract class BaseGrid extends BaseHtmlElement
             }
         }
 
+        $this->extraEntriesCount = [];
         foreach ($occupiedCells as $entry) {
             $continuation = false;
             $rows = $occupiedCells->getInfo();
             foreach ($rows as $row => $hours) {
                 list($rowStart, $rowSpan) = $rowPlacements[spl_object_id($entry)][$row];
+                $colStart = min($hours);
+                $colEnd = max($hours);
+
+                // Calculate number of entries that are not displayed in the grid for each date
                 if ($rowStart > $row + $sectionsPerStep) {
-                    // TODO: Register as +1
+                    $startOffset = (int) (($row / $sectionsPerStep) * ($gridBorderAt / 48) + $colStart / 48);
+                    $endOffset = (int) (($row / $sectionsPerStep) * ($gridBorderAt / 48) + $colEnd / 48);
+                    $startDate = (clone $this->getGridStart())->add(new DateInterval("P$startOffset" . 'D'));
+                    $duration = $endOffset - $startOffset;
+                    for ($i = 0; $i <= $duration; $i++) {
+                        $countIdx = $startDate->format('Y-m-d');
+                        if (! isset($this->extraEntriesCount[$countIdx])) {
+                            $this->extraEntriesCount[$countIdx] = 1;
+                        } else {
+                            $this->extraEntriesCount[$countIdx] += 1;
+                        }
+
+                        $startDate->add(new DateInterval('P1D'));
+                    }
+
                     continue;
                 }
 
-                $rowEnd = $rowStart + $rowSpan;
-                $colStart = min($hours) + 1;
-                $colEnd = max($hours) + 2;
+                $gridArea = $this->getGridArea(
+                    $rowStart,
+                    $rowStart + $rowSpan,
+                    $colStart + 1,
+                    $colEnd + 2
+                );
 
-                $gridArea = $this->getGridArea($rowStart, $rowEnd, $colStart, $colEnd);
                 $entryClass = 'area-' . implode('-', $gridArea);
 
                 $style->add(".$entryClass", [
