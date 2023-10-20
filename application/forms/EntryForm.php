@@ -269,6 +269,7 @@ class EntryForm extends CompatForm
 
         $termInput = (new TermInput('recipient'))
             ->setRequired()
+            ->setVerticalTermDirection()
             ->setLabel(t('Recipients'))
             ->setSuggestionUrl($this->suggestionUrl->with(['showCompact' => true, '_disableLayout' => 1]))
             ->on(TermInput::ON_ENRICH, $termValidator)
