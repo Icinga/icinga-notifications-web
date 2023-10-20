@@ -38,11 +38,13 @@ class MonthGrid extends BaseGrid
         $content->addHtml(Text::create($step->format('j')));
 
         $dayViewUrl = $this->calendar->prepareDayViewUrl($step);
-        $content->addHtml(
-            (new ExtraEntryCount(null, $dayViewUrl))
-            ->setGrid($this)
-            ->setGridStep($step)
-        );
+        if ($dayViewUrl !== null) {
+            $content->addHtml(
+                (new ExtraEntryCount(null, $dayViewUrl))
+                    ->setGrid($this)
+                    ->setGridStep($step)
+            );
+        }
     }
 
     protected function getRowStartModifier(): int

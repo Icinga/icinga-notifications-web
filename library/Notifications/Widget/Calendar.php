@@ -51,7 +51,7 @@ class Calendar extends BaseHtmlElement
     /** @var Url */
     protected $addEntryUrl;
 
-    /** @var Url */
+    /** @var ?Url */
     protected $url;
 
     public function setControls(Controls $controls): self
@@ -89,13 +89,14 @@ class Calendar extends BaseHtmlElement
         return $this;
     }
 
-    public function prepareDayViewUrl(DateTime $date): Url
+    public function prepareDayViewUrl(DateTime $date): ?Url
     {
-        $url = clone $this->url;
-        return $url->overwriteParams([
-            'mode' => 'day',
-            'day'  => $date->format('Y-m-d')
-        ]);
+        return $this->url
+            ? (clone $this->url)->overwriteParams([
+                'mode' => 'day',
+                'day'  => $date->format('Y-m-d')
+            ])
+            : null;
     }
 
     protected function getModeStart(): DateTime
