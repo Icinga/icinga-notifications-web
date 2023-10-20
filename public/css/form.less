@@ -27,21 +27,16 @@
   }
 
   .term-input-area {
-    .terms {
-      // Prevents a weird rendering issue. Without this, siblings without the .contact or .group class are also
-      // affected by any other sibling that have any of these classes. The effect is that those without are also
-      // positioned, as if they are flex items of those with the classes.
-      display: inline-flex;
-    }
-
     label.contact,
     label.group {
       display: inline-flex;
       align-items: center;
+      position: relative;
 
       &::before {
         z-index: 1;
         width: 2em;
+        position: absolute;
         padding-left: .5em;
         text-align: center;
       }
