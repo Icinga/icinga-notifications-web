@@ -8,6 +8,7 @@ use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Web\Form\ContactForm;
 use Icinga\Web\Notification;
+use ipl\Html\FormElement\FieldsetElement;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
@@ -39,19 +40,21 @@ class ContactController extends CompatController
             ->populate($contact)
             ->on(ContactForm::ON_SUCCESS, function (ContactForm $form) {
                 $form->addOrUpdateContact();
-
+                /** @var FieldsetElement $contactElement */
+                $contactElement = $form->getElement('contact');
                 Notification::success(sprintf(
                     t('Contact "%s" has successfully been saved'),
-                    $form->getElement('contact')->getValue('full_name')
+                    $contactElement->getValue('full_name')
                 ));
 
                 $this->redirectNow('__CLOSE__');
             })->on(ContactForm::ON_REMOVE, function (ContactForm $form) {
                 $form->removeContact();
-
+                /** @var FieldsetElement $contactElement */
+                $contactElement = $form->getElement('contact');
                 Notification::success(sprintf(
                     t('Deleted contact "%s" successfully'),
-                    $form->getElement('contact')->getValue('full_name')
+                    $contactElement->getValue()
                 ));
 
                 $this->redirectNow('__CLOSE__');
