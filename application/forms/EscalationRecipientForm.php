@@ -154,8 +154,10 @@ class EscalationRecipientForm extends BaseEscalationForm
 
     public function populate($values)
     {
+        /** @var int $key */
         foreach ($values as $key => $condition) {
             if (is_array($condition)) {
+                $count = 0;
                 foreach ($condition as $elementName => $elementValue) {
                     if ($elementValue === null) {
                         continue;
@@ -207,8 +209,8 @@ class EscalationRecipientForm extends BaseEscalationForm
 
         if ($button && $button->getName() !== 'add') {
             [$name, $toRemove] = explode('_', $button->getName(), 2);
-
-            $this->removedOptionNumber = (int) $toRemove;
+            $toRemove = (int) $toRemove;
+            $this->removedOptionNumber = $toRemove;
             $optionCount = count($this->options);
 
             for ($i = $toRemove; $i < $optionCount; $i++) {
