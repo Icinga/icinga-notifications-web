@@ -149,6 +149,7 @@ class EntryForm extends CompatForm
 
                 unset($this->advanced[self::CRON_EXPR]);
                 unset($this->regulars[RRule::MINUTELY]);
+                unset($this->regulars[RRule::HOURLY]);
             }
 
             public function setParent(EntryForm $parent): self
