@@ -170,7 +170,6 @@ class ObjectSuggestions extends Suggestions
         self::collectRelations($resolver, $model, $models, []);
 
         foreach ($models as $path => $targetModel) {
-            /** @var Model $targetModel */
             foreach ($resolver->getColumnDefinitions($targetModel) as $columnName => $definition) {
                 yield $path . '.' . $columnName => $definition->getLabel();
             }
@@ -195,7 +194,7 @@ class ObjectSuggestions extends Suggestions
             $isHasOne = $relation instanceof HasOne;
             if (empty($path)) {
                 $relationPath = [$name];
-                if ($isHasOne && empty($path)) {
+                if ($isHasOne) {
                     array_unshift($relationPath, $subject->getTableName());
                 }
 
