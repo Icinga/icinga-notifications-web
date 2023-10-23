@@ -180,6 +180,20 @@ class EntryForm extends CompatForm
                             );
 
                             return false;
+                        } elseif ($this->getValue('frequency') !== self::NO_REPEAT) {
+                            /** @var Frequency $frequency */
+                            $frequency = $this->getValue();
+                            $next = $frequency->getNextDue($value);
+
+                            if ($endTime > $next) {
+                                $validator->addMessage(
+                                    $this->translate(
+                                        'The entry should end before the next occurrence.'
+                                    )
+                                );
+
+                                return false;
+                            }
                         }
 
                         return true;
