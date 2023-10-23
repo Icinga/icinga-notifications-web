@@ -57,7 +57,7 @@ class RemoveEscalationForm extends Form
     /**
      * Method to set disabled state of remove button
      *
-     * @param bool $disable
+     * @param bool $state
      *
      * @return $this
      */
