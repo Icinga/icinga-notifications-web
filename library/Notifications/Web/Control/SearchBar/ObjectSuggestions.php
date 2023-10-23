@@ -4,10 +4,15 @@
 
 namespace Icinga\Module\Notifications\Web\Control\SearchBar;
 
+use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Model\ObjectExtraTag;
+use Icinga\Module\Notifications\Model\ObjectIdTag;
 use Icinga\Module\Notifications\Util\ObjectSuggestionsCursor;
+use ipl\Html\HtmlElement;
 use ipl\Orm\Exception\InvalidColumnException;
 use ipl\Orm\Model;
+use ipl\Orm\Query;
 use ipl\Orm\Relation;
 use ipl\Orm\Relation\HasOne;
 use ipl\Orm\Resolver;
@@ -20,6 +25,8 @@ use Traversable;
 
 class ObjectSuggestions extends Suggestions
 {
+    use Auth;
+
     /** @var Model */
     protected $model;
 
@@ -59,6 +66,10 @@ class ObjectSuggestions extends Suggestions
 
     protected function shouldShowRelationFor(string $column): bool
     {
+        if (strpos($column, '.tag.') !== false || strpos($column, '.extra_tag.') !== false) {
+            return false;
+        }
+
         $tableName = $this->getModel()->getTableName();
         $columnPath = explode('.', $column);
 
@@ -104,6 +115,29 @@ class ObjectSuggestions extends Suggestions
         }
 
         $columnPath = $query->getResolver()->qualifyPath($column, $model->getTableName());
+        list($targetPath, $columnName) = preg_split('/(?<=tag|extra_tag)\.|\.(?=[^.]+$)/', $columnPath, 2);
+
+        $isTag = false;
+        if (substr($targetPath, -4) === '.tag') {
+            $isTag = true;
+            $targetPath = substr($targetPath, 0, -3) . 'object_id_tag';
+        } elseif (substr($targetPath, -10) === '.extra_tag') {
+            $isTag = true;
+            $targetPath = substr($targetPath, 0, -9) . 'object_extra_tag';
+        }
+
+        if (strpos($targetPath, '.') !== false) {
+            try {
+                $query->with($targetPath); // TODO: Remove this, once ipl/orm does it as early
+            } catch (InvalidRelationException $e) {
+                throw new SearchException(sprintf(t('"%s" is not a valid relation'), $e->getRelation()));
+            }
+        }
+
+        if ($isTag) {
+            $columnPath = $targetPath . '.value';
+            $query->filter(Filter::like($targetPath . '.tag', $columnName));
+        }
 
         $inputFilter = Filter::like($columnPath, $searchTerm);
         $query->columns($columnPath);
@@ -125,6 +159,7 @@ class ObjectSuggestions extends Suggestions
         }
 
         $query->filter($searchFilter);
+        $this->applyRestrictions($query);
 
         try {
             return (new ObjectSuggestionsCursor($query->getDb(), $query->assembleSelect()->distinct()))
@@ -143,6 +178,51 @@ class ObjectSuggestions extends Suggestions
         foreach (self::collectFilterColumns($model, $query->getResolver()) as $columnName => $columnMeta) {
             yield $columnName => $columnMeta;
         }
+
+        // Custom variables only after the columns are exhausted and there's actually a chance the user sees them
+        foreach ([new ObjectIdTag(), new ObjectExtraTag()] as $model) {
+            $titleAdded = false;
+            foreach ($this->queryTags($model, $searchTerm) as $tag) {
+                $isIdTag = $tag instanceof ObjectIdTag;
+
+                if (! $titleAdded) {
+                    $titleAdded = true;
+                    $this->addHtml(HtmlElement::create(
+                        'li',
+                        ['class' => static::SUGGESTION_TITLE_CLASS],
+                        $isIdTag ? t('Object Tags') : t('Object Extra Tags')
+                    ));
+                }
+
+                $relation = $isIdTag ? 'object.tag' : 'object.extra_tag';
+                $tagName = $tag->tag;
+
+                yield $relation . '.' . $tagName => $tagName;
+            }
+        }
+    }
+
+    /**
+     * Prepare query with all available tags/extra_tags from provided model matching the given term
+     *
+     * @param Model $model The model to fetch tag/extra_tag from
+     * @param string $searchTerm The given search term
+     *
+     * @return Query
+     */
+    protected function queryTags(Model $model, string $searchTerm): Query
+    {
+        $tags = $model::on(Database::get())
+            ->columns('tag')
+            ->filter(Filter::like('tag', $searchTerm));
+        $this->applyRestrictions($tags);
+
+        $resolver = $tags->getResolver();
+        $tagColumn = $resolver->qualifyColumn('tag', $resolver->getAlias($tags->getModel()));
+
+        $tags->getSelectBase()->groupBy($tagColumn)->limit(static::DEFAULT_LIMIT);
+
+        return $tags;
     }
 
     protected function matchSuggestion($path, $label, $searchTerm)

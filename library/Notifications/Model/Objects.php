@@ -51,8 +51,12 @@ class Objects extends Model
     {
         $relations->hasMany('event', Event::class);
         $relations->hasMany('incident', Incident::class);
+
         $relations->hasMany('object_id_tag', ObjectIdTag::class);
+        $relations->hasMany('tag', Tag::class);
         $relations->hasMany('object_extra_tag', ObjectExtraTag::class)
+            ->setJoinType('LEFT');
+        $relations->hasMany('extra_tag', ExtraTag::class)
             ->setJoinType('LEFT');
 
         $relations->belongsTo('source', Source::class)->setJoinType('LEFT');
