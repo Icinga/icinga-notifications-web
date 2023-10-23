@@ -11,6 +11,8 @@ use Icinga\Module\Notifications\Forms\AddFilterForm;
 use Icinga\Module\Notifications\Forms\EscalationConditionForm;
 use Icinga\Module\Notifications\Forms\EscalationRecipientForm;
 use Icinga\Module\Notifications\Model\Incident;
+use Icinga\Module\Notifications\Widget\EventRuleConfig\Escalations;
+use Icinga\Module\Notifications\Widget\EventRuleConfig\FlowLine;
 use ipl\Html\Attributes;
 use Icinga\Module\Notifications\Forms\RemoveEscalationForm;
 use ipl\Html\BaseHtmlElement;

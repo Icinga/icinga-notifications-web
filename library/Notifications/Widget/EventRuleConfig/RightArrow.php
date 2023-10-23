@@ -2,10 +2,9 @@
 
 /* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Notifications\Widget;
+namespace Icinga\Module\Notifications\Widget\EventRuleConfig;
 
 use ipl\Html\BaseHtmlElement;
-use ipl\Web\Widget\StateBall;
 
 class RightArrow extends BaseHtmlElement
 {

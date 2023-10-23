@@ -2,7 +2,7 @@
 
 /* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Notifications\Widget;
+namespace Icinga\Module\Notifications\Widget\EventRuleConfig;
 
 use Icinga\Module\Notifications\Forms\RemoveEscalationForm;
 use ipl\Html\BaseHtmlElement;
