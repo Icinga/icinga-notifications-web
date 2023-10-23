@@ -1,10 +1,12 @@
+includes:
+    - phpstan-baseline.neon
+
 parameters:
-    level: 2
+    level: max
 
     checkFunctionNameCase: true
-    checkMissingIterableValueType: true
     checkInternalClassCaseSensitivity: true
-    checkDynamicProperties: true
+    treatPhpDocTypesAsCertain: false
 
     paths:
         - application
@@ -12,6 +14,13 @@ parameters:
 
     scanDirectories:
         - vendor
+
+    ignoreErrors:
+        -
+            messages:
+                - '#Unsafe usage of new static\(\)#'
+                - '#. but return statement is missing#'
+            reportUnmatched: false
 
     universalObjectCratesClasses:
         - ipl\Orm\Model
