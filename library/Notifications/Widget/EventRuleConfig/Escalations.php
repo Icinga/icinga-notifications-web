@@ -4,7 +4,7 @@
 
 namespace Icinga\Module\Notifications\Widget\EventRuleConfig;
 
-use Icinga\Module\Notifications\Forms\RemoveEscalationForm;
+use Icinga\Module\Notifications\Forms\EventRuleConfig\RemoveEscalationForm;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 
