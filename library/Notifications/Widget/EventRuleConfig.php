@@ -228,7 +228,12 @@ class EventRuleConfig extends BaseHtmlElement
             if (isset($this->removeEscalationForms[$position])) {
                 $escalations->addEscalation($position, $escalation, $this->removeEscalationForms[$position]);
             } else {
-                $escalations->addEscalation($position, $escalation);
+                $escalations->addEscalation(
+                    $position,
+                    $escalation,
+                    $this->createRemoveEscalationForm($position)
+                        ->setRemoveButtonDisabled(t('Removal not possible. There must be at least one escalation.'))
+                );
             }
         }
 

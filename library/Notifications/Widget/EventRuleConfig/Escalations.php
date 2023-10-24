@@ -23,7 +23,7 @@ class Escalations extends BaseHtmlElement
         $this->add($this->escalations);
     }
 
-    public function addEscalation(int $position, array $escalation, ?RemoveEscalationForm $removeEscalationForm = null)
+    public function addEscalation(int $position, array $escalation, RemoveEscalationForm $removeEscalationForm)
     {
         $flowLine = (new FlowLine())->getRightArrow();
 
@@ -36,29 +36,16 @@ class Escalations extends BaseHtmlElement
             $flowLine->addAttributes(['class' => 'right-arrow-long']);
         }
 
-        if ($removeEscalationForm) {
-            $this->escalations[$position] = Html::tag(
-                'div',
-                ['class' => 'escalation'],
-                [
-                    $removeEscalationForm,
-                    $flowLine,
-                    $escalation[0],
-                    $flowLine,
-                    $escalation[1],
-                ]
-            );
-        } else {
-            $this->escalations[$position] = Html::tag(
-                'div',
-                ['class' => 'escalation'],
-                [
-                    $flowLine->addAttributes(['class' => 'right-arrow-one-escalation']),
-                    $escalation[0],
-                    $flowLine,
-                    $escalation[1]
-                ]
-            );
-        }
+        $this->escalations[$position] = Html::tag(
+            'div',
+            ['class' => 'escalation'],
+            [
+                $removeEscalationForm,
+                $flowLine,
+                $escalation[0],
+                $flowLine,
+                $escalation[1],
+            ]
+        );
     }
 }
