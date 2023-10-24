@@ -42,6 +42,7 @@ class EventRuleController extends CompatController
     public function indexAction(): void
     {
         $this->addTitleTab($this->translate('Event Rule'));
+        $this->controls->addAttributes(['class' => 'event-rule-detail']);
         $this->content->addAttributes(['class' => 'event-rule-detail']);
         $this->getTabs()->disableLegacyExtensions();
 

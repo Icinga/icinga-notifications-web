@@ -1,61 +1,269 @@
-.event-rule-detail {
-  .empty-state-bar {
-    margin-bottom: 1em;
-  }
-}
+.event-rule-config {
+  @connectorHeight: .5em;
+  @connectorColor: @gray-lighter;
 
-.new-event-rule {
-  margin-bottom: 1em;
-}
+  // Style
 
-.event-rule-form {
-  display: inline-flex;
-  width: fit-content;
-  max-width: unset;
-  align-items: flex-start;
-
-  > h2 {
-    margin: 0 0 0.5em 0;
+  .connector-line {
+    background-color: @connectorColor;
   }
 
-  .control-group {
-    display: inline-flex;
-    margin-right: 2em;
+  .filter-controls,
+  .dynamic-list:not(.empty, .escalations) {
+    padding: .5em;
+    border: 1px solid @connectorColor;
+    .rounded-corners();
+  }
 
-    .control-label-group {
-      width: auto;
-    }
+  .add-button,
+  .remove-button {
+    .event-rule-button();
 
-    input[type='text'] {
-      max-width: unset;
-      width: 25em;
+    &.animated.active {
+      .fa::before {
+        .animate(spin 2s infinite linear);
+
+        // fa spinner
+        content: '\f110';
+      }
     }
   }
+
+  .remove-button-disabled {
+    .event-rule-button(true);
+  }
+
+  .escalation-condition,
+  .escalation-recipient {
+    > :first-child,
+    > :first-child[type="hidden"] + * {
+      .rounded-corners(.25em);
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+
+    > :last-child {
+      .rounded-corners(.25em);
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+    }
+
+    > :not(:first-child, :first-child[type="hidden"] + *, :last-child) {
+      .rounded-corners(0);
+
+      * {
+        // nested inputs as well
+        .rounded-corners(0);
+      }
+    }
+  }
+
+  // Layout
+
+  display: flex;
+
+  .connector-line {
+    height: @connectorHeight;
+    margin-top: 2.75em;
+  }
+
+  > .connector-line {
+    flex: 1 1 auto;
+    min-width: 1em;
+  }
+
+  #object-filter-controls {
+    width: 20em;
+    height: fit-content;
+
+    .filter-controls {
+      margin-top: 1.25em;
+      display: flex;
+      gap: .5em;
+
+      input[type="text"] {
+        flex: 1 1 auto;
+        width: 0;
+      }
+    }
+  }
+
+  .dynamic-list.empty .add-button,
+  > #object-filter-controls > .add-button-wrapper .add-button {
+    align-self: flex-start;
+    padding: 1.25em 2em;
+    margin-top: 1.25em;
+  }
+
+  .dynamic-list.empty > .add-button-wrapper,
+  > #object-filter-controls > .add-button-wrapper {
+    display: flex;
+
+    &::before,
+    &::after {
+      content: "";
+      flex: 1 1 auto;
+      height: @connectorHeight;
+      margin-top: 2.75em;
+      background-color: @connectorColor;
+    }
+
+    .add-button {
+      flex: 0;
+    }
+  }
+
+  > #object-filter-controls > .add-button-wrapper {
+    min-width: 12em;
+  }
+
+  > .escalations {
+    flex: 15 1 auto;
+  }
+
+  .escalations {
+    display: grid;
+    grid-template-columns: min-content minmax(1em, 4em) 1fr minmax(1em, 4em) 1fr;
+
+    .escalation {
+      display: contents;
+    }
+
+    .escalation > div:first-child {
+      .vertical-line();
+
+      .remove-button {
+        margin-top: 2em;
+      }
+    }
+
+    // The first escalation isn't connected to anything on top of it
+    .escalation:first-child > div:first-child::before {
+      top: 2.75em;
+    }
+
+    > .add-button-wrapper {
+      .vertical-line();
+
+      .add-button {
+        margin-top: 2em;
+      }
+    }
+
+    .escalation .dynamic-list {
+      position: relative;
+      margin-bottom: 1em;
+
+      .dynamic-item {
+        display: grid;
+        align-items: baseline;
+        margin-bottom: .5em;
+        gap: 1px;
+
+        &.escalation-condition {
+          grid-template-columns: minmax(8em, 1fr) 0fr 4em minmax(8em, 1fr) min-content;
+
+          .age-inputs {
+            display: flex;
+            gap: 1px;
+
+            > * {
+              flex: 1 1 auto;
+              width: 0;
+            }
+          }
+        }
+
+        &.escalation-recipient {
+          grid-template-columns: minmax(8em, 1fr) minmax(8em, 1fr) min-content;
+        }
+
+        input[type="text"],
+        .remove-button,
+        .remove-button-disabled {
+          height: 100%;
+        }
+      }
+
+      .add-button {
+        width: 100%;
+
+        > .icon {
+          margin: 0 auto;
+        }
+      }
+    }
+  }
+
+  select:not([multiple]) + .spinner::before {
+    // ipl-web's Icon applies a min-width by default. Since the spinner element is part of a flex container,
+    // it will be larger than necessary, covering the select's dropdown arrow. This ensures it doesn't.
+    width: 1em;
+  }
+
+  .vertical-line() {
+    position: relative;
+
+    &::before {
+      position: absolute;
+      z-index: -1;
+      @halfedConnectorHeight: @connectorHeight / 2;
+      inset: 0 ~"calc(50% - @{halfedConnectorHeight})" 0 ~"calc(50% - @{halfedConnectorHeight})";
+
+      content: "";
+      width: @connectorHeight;
+
+      background-color: @connectorColor;
+    }
+  }
 }
 
-.save-config {
-  display: inline-flex;
-  float: right;
-  width: fit-content;
-  flex-direction: row-reverse;
+#layout.twocols:not(.wide-layout) {
+  .event-rule-config {
+    #object-filter-controls {
+      width: fit-content;
 
-  button[type="submit"] {
-    margin-right: 1em;
+      input[type="text"] {
+        display: none;
+      }
+    }
 
-    &.btn-remove:not([disabled]) {
+    .dynamic-list.empty .add-button,
+    > #object-filter-controls > .add-button-wrapper .add-button {
+      padding: .5em 1em;
+      margin-top: 2em;
+    }
+
+    > #object-filter-controls > .add-button-wrapper {
+      min-width: fit-content;
+    }
+  }
+}
+
+// Other stuff
+
+.event-rule-and-save-forms {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: .5em;
+
+  .event-rule-form {
+    display: flex;
+    gap: .5em;
+
+    h2 {
+      margin: 0;
+    }
+  }
+
+  #save-config {
+    display: flex;
+    gap: .5em;
+    max-height: 2em;
+
+    .btn-remove {
       .button(@body-bg-color, @color-critical, @color-critical-accentuated);
-      border: none;
-    }
-
-    &.btn-discard-changes {
-      .event-rule-button();
-    }
-
-    &:disabled {
-      background: @gray-light;
-      color: @disabled-gray;
-      cursor: not-allowed;
-      border: transparent;
     }
   }
 }
