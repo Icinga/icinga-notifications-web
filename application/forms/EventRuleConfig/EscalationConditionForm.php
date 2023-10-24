@@ -258,6 +258,10 @@ class EscalationConditionForm extends BaseEscalationForm
             }
         }
 
+        if (! $this->deleteRemoveButton || $this->count > 1) {
+            $this->addAttributes(['class' => 'removal-allowed']);
+        }
+
         if (empty($this->options)) {
             $this->addAttributes(['class' => 'count-zero-escalation-condition-form']);
         } else {

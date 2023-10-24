@@ -23,6 +23,7 @@
   text-align: center;
   line-height: 1.5;
   display: block;
+  padding: .25em 1em;
 
   &:hover,
   &:focus {
@@ -33,5 +34,9 @@
   &:focus {
     outline: 3px solid fade(@icinga-blue, 50%);
     outline-offset: 1px;
+  }
+
+  .icon::before {
+    margin-right: 0;
   }
 }

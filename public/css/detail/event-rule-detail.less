@@ -1,205 +1,235 @@
 .event-rule-detail {
+  @connectorHeight: .5em;
+  @connectorColor: @gray-lighter;
+
+  // Layout
+
   display: flex;
-  align-items: baseline;
 
-  > .right-arrow:first-child {
-    margin-top: 3.125em;
+  > .right-arrow,
+  > .horizontal-line {
+    flex: 1 1 auto;
+    height: @connectorHeight;
+    margin-top: 2.75em;
+    min-width: 1em;
   }
 
-  &.invalid {
-    .escalations .escalation form.escalation-form {
-      select,
-      input {
-        &:invalid {
-          background-color: red;
-        }
-      }
+  > .search-controls {
+    flex: 3 1 auto;
+    min-width: 16em;
+    height: fit-content;
+    margin-top: 1.25em;
+
+    .filter-input {
+      width: 100%;
+      margin-right: .5em;
     }
   }
 
-  .search-controls {
-    display: inline-flex;
-    width: 20em;
-    min-width: unset;
-    padding: 0.5em;
-    border: 1px solid @gray-lighter;
-    border-radius: 0.5em;
-
-    input.filter-input {
-      width: 20em;
-      background-color: @search-term-bg;
-      color: @search-term-color;
-    }
+  > .escalations-with-add-form {
+    flex: 15 1 auto;
   }
 
   .escalations {
-    display: inline-flex;
-    flex-direction: column;
-    width: 70em;
+    display: grid;
+    grid-template-columns: min-content minmax(1em, 4em) 1fr minmax(1em, 4em) 1fr;
 
-    .vertical-line {
-      position: absolute;
-      z-index: -1;
-      top: 15%;
-      bottom: 0;
-      margin-left: 1.25em;
+    .escalation {
+      display: contents;
     }
 
-    > .escalation {
-      display: flex;
-      align-items: center;
-      padding-bottom: 2em;
+    .remove-escalation-form {
+      .vertical-line();
+
+      .remove-button {
+        margin-top: 2em;
+      }
+    }
+
+    // The first escalation isn't connected to anything on top of it
+    .escalation:first-child .remove-escalation-form::before {
+      top: 2em;
+    }
+
+    .right-arrow {
+      height: @connectorHeight;
+      margin-top: 2.75em;
+    }
+
+    .escalation-form {
       position: relative;
+      margin-bottom: 1em;
 
-      &:before {
-        content: "";
-        display: block;
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        width: .5em;
-        margin-left: 1.25em;
-        background: @gray-lighter;
-        z-index: -1;
-      }
-
-      &:first-child:before {
-        content: "";
-        display: block;
-        top: calc(~"50% - 1em");
-      }
-
-      .right-arrow:first-child {
-        width: 2em;
-      }
-
-      .right-arrow-long {
-        width: 38em;
-      }
-
-      .right-arrow.right-arrow-long:first-child {
-        width: 47em;
-      }
-
-      .right-arrow-one-escalation:first-child {
-        width: 15em;
-      }
-
-      .escalation-condition-form,
-      .escalation-recipient-form {
-        width: 100%;
-
-        padding: 0.5em;
-        border: 1px solid @gray-lighter;
-        border-radius: 0.5em;
-
-        .options {
-          list-style-type: none;
-          padding: 0;
-          margin: 0;
-
-          > li {
-            display: flex;
-            margin-bottom: .4em;
-
-            &.option {
-              .errors {
-                display: inline-flex;
-                width: fit-content;
-                margin: 0;
-              }
-
-              .errors + .remove-button {
-                margin: 0;
-              }
-            }
-          }
-
-          .default-channel {
-            color: @disabled-gray;
-          }
-
-          select, input {
-            min-width: 10em;
-            text-align: center;
-            height: 2.25em;
-            line-height: normal;
-            background: @search-term-bg;
-            color: @search-term-color;
-          }
-
-          select {
-            background-image: url('@{iplWebAssets}/img/select-icon.svg');
-            background-position: center right;
-            background-repeat: no-repeat;
-          }
-
-          .left-operand {
-            border-radius: 0.4em 0 0 0.4em;
-            margin-right: 1px;
-          }
-
-          .right-operand {
-            border-radius: 0 0.4em 0.4em 0;
-            width: 0;
-            flex: 1 1 auto;
-            margin-left: 1px;
-          }
-
-          .operator-input {
-            min-width: unset;
-            padding-right: 0.5em;
-            width: 3em;
-            border-radius: unset;
-            margin: 0 1px;
-            background: @search-term-bg;
-            color: @search-term-color;
-
-            option { text-align: center; }
-          }
-        }
-
-        .remove-button {
-          height: 2.25em;
-          margin-left: 0.5em;
-        }
-      }
-
-      .escalation-condition-form.count-zero-escalation-condition-form {
-        width: fit-content;
-        border: none;
+      .options {
+        list-style-type: none;
         margin: 0;
         padding: 0;
 
-        button[type="submit"] {
-          font-size: 2em;
-          width: 3em;
-          margin: 0;
-          background: @low-sat-blue;
-          border: none;
+        .option {
+          display: flex;
+          margin-bottom: .5em;
 
-          &:hover {
-            background: @low-sat-blue-dark;
+          .left-operand,
+          .right-operand {
+            flex: 1 1 4em;
+            min-width: 8em;
+            width: 0;
+          }
+
+          .operator-input {
+            width: 4em;
+          }
+        }
+
+        & + .add-button {
+          width: 100%;
+
+          > .icon {
+            margin: 0 auto;
           }
         }
       }
 
-      .escalation-condition-form.count-zero-escalation-condition-form:after {
-        content: 'Condition';
-        align-self: center;
-        margin-bottom: -1.5em;
-        color: @text-color-light;
+      &.removal-allowed .add-button {
+        width: ~"calc(100% - 3.1em)"; // remove-button width + margin-left = 3.1em
       }
+
+      :not(.options) + .add-button {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+      }
+    }
+
+    .escalation:first-child .escalation-form .option:first-child .remove-button {
+      height: auto; // Don't ask me (jom) why this is necessary. The selector is that specific for this very reason
+    }
+
+    & + .add-escalation-form {
+      display: inline-block;
+
+      .vertical-line();
+
+      .add-button {
+        margin-top: 2em;
+      }
+    }
+  }
+
+  // Style
+
+  .right-arrow,
+  .horizontal-line {
+    background-color: @connectorColor;
+  }
+
+  .search-controls,
+  .option-wrapper {
+    padding: .5em;
+    border: 1px solid @connectorColor;
+    .rounded-corners();
+  }
+
+  .add-button,
+  .remove-button {
+    .event-rule-button();
+  }
+
+  .add-filter-form .add-button,
+  .escalation-form :not(.options) + .add-button {
+    // (2em * 2) + 1.5 (icon height) = total height in em of a recipient escalation form with a single recipient
+    padding: ~"calc(2em + 1px) 4.125em"; // 1px is the border width of an escalation form
+
+    .icon::before {
+      font-size: 2em;
+    }
+  }
+
+  .remove-escalation-form .remove-button[disabled] {
+    background: @connectorColor;
+    color: @disabled-gray;
+    cursor: not-allowed;
+  }
+
+  .escalation-form .options .option {
+    > :first-child {
+      .rounded-corners(.25em);
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+
+    > :last-child {
+      .rounded-corners(.25em);
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+    }
+
+    > :not(:last-child) {
+      margin-right: 1px;
+    }
+
+    > :not(:first-child):not(:last-child) {
+      .rounded-corners(0);
+    }
+  }
+
+  &.invalid {
+    select,
+    input {
+      &:invalid {
+        background-color: @state-critical;
+      }
+    }
+  }
+
+  .vertical-line() {
+    position: relative;
+
+    &::before {
+      position: absolute;
+      z-index: -1;
+      top: 0;
+      bottom: 0;
+
+      @halfedConnectorHeight: @connectorHeight / 2;
+      left: ~"calc(50% - @{halfedConnectorHeight})";
+      right: ~"calc(50% - @{halfedConnectorHeight})";
+
+      content: "";
+      width: @connectorHeight;
+
+      background-color: @connectorColor;
     }
   }
 }
 
-.escalations-with-add-form {
-  .add-escalation-form {
-    position: relative;
-    margin-left: -0.1em;
+#layout.twocols:not(.wide-layout) {
+  .event-rule-detail {
+    .search-controls {
+      min-width: fit-content;
+
+      .filter-input {
+        display: none;
+      }
+    }
+
+    .add-filter-form .add-button,
+    .escalation-form :not(.options) + .add-button {
+      padding: .25em 1em;
+
+      .icon::before {
+        font-size: inherit;
+      }
+    }
+
+    .add-filter-form .add-button {
+      margin-top: 2em;
+    }
   }
 }
+
+// Other stuff
 
 .cache-notice {
   margin: 1em;
@@ -207,159 +237,6 @@
   background-color: @gray-lighter;
   text-align: center;
   .rounded-corners();
-}
-
-// Collecting button styles
-.event-rule-button() {
-  color: @icinga-blue;
-  background: @low-sat-blue;
-
-  border: none;
-  text-align: center;
-  line-height: 1.5;
-  display: block;
-
-  &:hover,
-  &:focus {
-    color: @icinga-blue;
-  }
-
-  &:hover {
-    background: @low-sat-blue-dark;
-  }
-
-  &:focus {
-    outline: 3px solid fade(@icinga-blue, 50%);
-    outline-offset: 1px;
-  }
-}
-
-.escalation-form {
-  display: flex;
-  flex-direction: column;
-
-  .options +.add-button,
-  .remove-button {
-    .event-rule-button();
-  }
-
-  .options + .add-button {
-    margin-right: 3.5em;
-  }
-
-  .options li {
-    input, select {
-      &:last-child:not(.remove-button) {
-        margin-right: 3.5em;
-      }
-    }
-  }
-}
-
-.add-filter-form,
-.escalation-form.count-zero-escalation-condition-form {
-  button[type="submit"] {
-    font-size: 2em;
-    height: 2.25em;
-    margin: 0;
-
-    > .icon {
-      flex-wrap: wrap;
-      align-content: flex-start;
-    }
-
-    .event-rule-button();
-  }
-}
-
-.remove-escalation-form button[type="submit"],
-.add-escalation-form button[type="submit"] {
-  .event-rule-button();
-}
-
-.right-arrow,
-.horizontal-line {
-  display: inline-block;
-  background-color: @base-gray-lighter;
-  height: 0.5em;
-  text-align: end;
-}
-
-.right-arrow {
-  width: 10em;
-  min-width: 2em;
-  margin-right: 0.4em;
-  position: relative;
-}
-
-.horizontal-line {
-  width: 3em;
-  min-width: 1em;
-}
-
-.right-arrow:after {
-  content: '';
-  position: absolute;
-  border: 0.3em solid transparent;
-  border-left: 0.4em solid @base-gray-lighter;
-}
-
-.vertical-line {
-  width: 0.7em;
-  background-color: @base-gray-lighter;
-}
-
-.remove-escalation-form {
-  width: fit-content;
-}
-
-#layout.minimal-layout form.icinga-form:not(.inline).remove-escalation-form:not(.inline),
-#layout.twocols:not(.wide-layout) form.icinga-form.remove-escalation-form:not(.inline) {
-  width: fit-content;
-}
-
-.add-escalation-form {
-  display: flex;
-  min-height: 6em;
-  align-items: center;
-
-  &:before {
-    content: "";
-    display: block;
-    position: absolute;
-    width: .5em;
-    background: @gray-lighter;
-    top: 0;
-    bottom: 50%;
-    left: calc(~"1.25em + 1px");
-    z-index: -1;
-  }
-}
-
-#layout.minimal-layout form.icinga-form:not(.inline).count-zero-escalation-condition-form:not(.inline),
-#layout.twocols:not(.wide-layout) form.icinga-form.escalation-condition-form.count-zero-escalation-condition-form:not(.inline) {
-  width: fit-content;
-}
-
-.add-filter-form {
-  text-align: center;
-  width: auto;
-  position: relative;
-  bottom: calc(~"-.5em - 1px");
-}
-
-.add-filter-form:after {
-  content: 'Filter';
-  display: block;
-  color: @text-color-light;
-}
-
-.horizontal-line-long {
-  width: 14.5em;
-}
-
-.new-event-rule {
-  margin-bottom: 1em;
 }
 
 .event-rule-and-save-forms {
@@ -421,16 +298,6 @@
       &.btn-discard-changes {
         .event-rule-button();
       }
-    }
-  }
-}
-
-.remove-escalation-form {
-  button[disabled] {
-    &:disabled {
-      background: @gray-light;
-      color: @disabled-gray;
-      cursor: not-allowed;
     }
   }
 }
