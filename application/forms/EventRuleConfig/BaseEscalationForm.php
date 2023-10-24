@@ -4,9 +4,12 @@
 
 namespace Icinga\Module\Notifications\Forms\EventRuleConfig;
 
+use Icinga\Module\Notifications\Widget\EventRuleConfig\FlowLine;
 use Icinga\Web\Session;
+use ipl\Html\Attributes;
 use ipl\Html\Contract\FormElement;
 use ipl\Html\Form;
+use ipl\Html\HtmlElement;
 use ipl\Html\ValidHtml;
 use ipl\I18n\Translation;
 use ipl\Web\Common\CsrfCounterMeasure;
@@ -79,7 +82,15 @@ abstract class BaseEscalationForm extends Form
             $this->assembleElements();
         }
 
-        $this->add($addButton);
+        if ($this->options) {
+            $wrapper = new HtmlElement('div', Attributes::create(['class' => 'option-wrapper']));
+            $wrapper->addHtml(new HtmlElement('ul', Attributes::create(['class' => 'options']), ...$this->options));
+            $wrapper->addHtml($addButton);
+            $this->addHtml($wrapper);
+        } else {
+            $this->addHtml((new FlowLine())->getRightArrow());
+            $this->addHtml($addButton);
+        }
     }
 
     public function isAddButtonPressed(): ?bool

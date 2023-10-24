@@ -11,8 +11,6 @@ use ipl\Html\Html;
 use ipl\Stdlib\Filter;
 use ipl\Validator\CallbackValidator;
 use ipl\Web\Filter\QueryString;
-use ipl\Web\Filter\Renderer;
-use ipl\Web\Url;
 use ipl\Web\Widget\Icon;
 
 class EscalationConditionForm extends BaseEscalationForm
@@ -154,8 +152,6 @@ class EscalationConditionForm extends BaseEscalationForm
         }
 
         $this->handleRemove();
-
-        $this->add(Html::tag('ul', ['class' => 'options'], $this->options));
     }
 
     public function getValues()

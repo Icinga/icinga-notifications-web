@@ -114,8 +114,6 @@ class EscalationRecipientForm extends BaseEscalationForm
         }
 
         $this->handleRemove();
-
-        $this->add(Html::tag('ul', ['class' => 'options'], $this->options));
     }
 
     public function getValues()
