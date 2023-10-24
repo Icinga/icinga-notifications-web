@@ -351,10 +351,8 @@ class EventRuleConfig extends BaseHtmlElement
             }
         }
 
-
         $form = (new RemoveEscalationForm())
             ->addAttributes(['name' => 'remove-escalation-form-' . $escalationId])
-            ->setRemoveButtonDisabled($disableRemoveButton)
             ->on(Form::ON_SENT, function ($form) use ($position) {
                 unset($this->config['rule_escalation'][$position]);
                 unset($this->escalationForms[$position]);
@@ -403,6 +401,11 @@ class EventRuleConfig extends BaseHtmlElement
 
                 $this->emit(self::ON_CHANGE, [$this]);
             });
+        if ($disableRemoveButton) {
+            $form->setRemoveButtonDisabled(
+                t('Removal not possible. There are active incidents for this escalation.')
+            );
+        }
 
         return $form;
     }
