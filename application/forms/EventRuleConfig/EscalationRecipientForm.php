@@ -187,7 +187,7 @@ class EscalationRecipientForm extends BaseEscalationForm
             'submitButton',
             'remove_' . $count,
             [
-                'class'             => ['remove-button', 'control-button', 'spinner'],
+                'class'             => ['remove-button', 'spinner'],
                 'label'             => new Icon('minus'),
                 'title'             => $this->translate('Remove'),
                 'formnovalidate'    => true

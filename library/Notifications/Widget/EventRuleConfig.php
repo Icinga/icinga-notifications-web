@@ -201,7 +201,7 @@ class EventRuleConfig extends BaseHtmlElement
             $searchBar = new TextElement(
                 'searchbar',
                 [
-                    'class'     => 'filter-input control-button',
+                    'class'     => 'filter-input',
                     'readonly'  => true,
                     'value'     => isset($this->config['object_filter'])
                         ? rawurldecode($this->config['object_filter'])

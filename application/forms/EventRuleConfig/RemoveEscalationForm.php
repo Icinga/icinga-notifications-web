@@ -33,7 +33,7 @@ class RemoveEscalationForm extends Form
             'submitButton',
             'remove',
             [
-                'class' => ['remove-button', 'control-button', 'spinner'],
+                'class' => ['remove-button', 'spinner'],
                 'label' => new Icon('minus')
             ]
         );

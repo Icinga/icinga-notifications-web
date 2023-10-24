@@ -33,7 +33,7 @@ class AddEscalationForm extends Form
             'submitButton',
             'add',
             [
-                'class' => ['add-button', 'control-button', 'spinner'],
+                'class' => ['add-button', 'spinner'],
                 'label' => new Icon('plus'),
                 'title' => $this->translate('Add a new escalation')
             ]
