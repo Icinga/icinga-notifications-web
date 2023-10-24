@@ -19,7 +19,7 @@ abstract class BaseEscalationForm extends Form
     use FormUid;
     use Translation;
 
-    protected $defaultAttributes = ['class' => ['escalation-form', 'icinga-form', 'icinga-controls']];
+    protected $defaultAttributes = ['class' => ['escalation-form', 'icinga-controls']];
 
     /** @var int The count of existing conditions/recipients */
     protected $count;

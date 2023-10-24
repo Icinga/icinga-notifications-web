@@ -18,7 +18,7 @@ class AddFilterForm extends Form
     use Translation;
 
     protected $defaultAttributes = [
-        'class' => ['add-filter-form', 'icinga-form', 'icinga-controls'],
+        'class' => ['add-filter-form', 'icinga-controls'],
         'name'  => 'add-filter-form'
     ];
 

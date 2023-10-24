@@ -18,7 +18,7 @@ class AddEscalationForm extends Form
     use Translation;
 
     protected $defaultAttributes = [
-        'class' => ['add-escalation-form', 'icinga-form', 'icinga-controls'],
+        'class' => ['add-escalation-form', 'icinga-controls'],
         'name'  => 'add-escalation-form'
     ];
 

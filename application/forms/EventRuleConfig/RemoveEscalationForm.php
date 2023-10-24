@@ -18,7 +18,7 @@ class RemoveEscalationForm extends Form
     use Translation;
 
     protected $defaultAttributes = [
-        'class' => ['remove-escalation-form', 'icinga-form', 'icinga-controls'],
+        'class' => ['remove-escalation-form', 'icinga-controls'],
     ];
 
     /** @var bool  */
