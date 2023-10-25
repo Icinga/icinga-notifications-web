@@ -47,10 +47,6 @@ class ContactListItem extends BaseListItem
             $contactIcons->addHtml(new Icon('envelope'));
         }
 
-        if ($this->item->has_rc) {
-            $contactIcons->addHtml(new Icon('comment-dots'));
-        }
-
         $footer->addHtml($contactIcons);
     }
 
