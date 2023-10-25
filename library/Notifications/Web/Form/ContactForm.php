@@ -5,6 +5,7 @@
 namespace Icinga\Module\Notifications\Web\Form;
 
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Model\AvailableChannelType;
 use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\ContactAddress;
@@ -120,37 +121,14 @@ class ContactForm extends CompatForm
             'select',
             'default_channel_id',
             [
-                'label'    => $this->translate('Default Channel'),
-                'required' => true,
-                'disable'  => [''],
-                'options'  => $channelOptions
+                'label'             => $this->translate('Default Channel'),
+                'required'          => true,
+                'disabledOptions'   => [''],
+                'options'           => $channelOptions
             ]
         );
 
-        // Fieldset for addresses
-        $address = (new FieldsetElement(
-            'contact_address',
-            [
-                'label'    => $this->translate('Addresses'),
-            ]
-        ));
-
-        $this->addElement($address);
-
-        $address->addElement(
-            'text',
-            'email',
-            [
-                'label'      => $this->translate('Email Address'),
-                'validators' => [new EmailAddressValidator()]
-            ]
-        )->addElement(
-            'text',
-            'rocketchat',
-            [
-                'label' => $this->translate('Rocket.Chat Username'),
-            ]
-        );
+        $this->addAddressElements();
 
         $this->addElement(
             'submit',
@@ -227,11 +205,7 @@ class ContactForm extends CompatForm
 
         $this->db->beginTransaction();
 
-        $addressFromDb = [
-            'email'       => null,
-            'rocketchat' => null
-        ];
-
+        $addressFromDb = [];
         if ($this->contactId === null) {
             $this->db->insert('contact', $contact);
 
@@ -244,17 +218,12 @@ class ContactForm extends CompatForm
             $addressObjects->filter(Filter::equal('contact_id', $this->contactId));
 
             foreach ($addressObjects as $addressRow) {
-                if ($addressRow->type === 'email') {
-                    $addressFromDb['email'] = [$addressRow->id, $addressRow->address];
-                }
-
-                if ($addressRow->type === 'rocketchat') {
-                    $addressFromDb['rocketchat'] = [$addressRow->id, $addressRow->address];
-                }
+                    $addressFromDb[$addressRow->type] = [$addressRow->id, $addressRow->address];
             }
         }
 
-        foreach ($addressFromDb as $type => $value) {
+        $addr = ! empty($addressFromDb) ? $addressFromDb : $addressFromForm;
+        foreach ($addr as $type => $value) {
             $this->insertOrUpdateAddress($type, $addressFromForm, $addressFromDb);
         }
 
@@ -281,7 +250,7 @@ class ContactForm extends CompatForm
     private function insertOrUpdateAddress(string $type, array $addressFromForm, array $addressFromDb): void
     {
         if ($addressFromForm[$type] !== null) {
-            if ($addressFromDb[$type] === null) {
+            if (! isset($addressFromDb[$type])) {
                 $address = [
                     'contact_id' => $this->contactId,
                     'type'       => $type,
@@ -299,8 +268,38 @@ class ContactForm extends CompatForm
                     ]
                 );
             }
-        } elseif ($addressFromDb[$type] !== null) {
+        } elseif (isset($addressFromDb[$type])) {
             $this->db->delete('contact_address', ['id = ?' => $addressFromDb[$type][0]]);
+        }
+    }
+
+    /**
+     * Add address elements for all existing channel plugins
+     *
+     * @return void
+     */
+    private function addAddressElements(): void
+    {
+        $plugins = $this->db->fetchPairs(
+            AvailableChannelType::on($this->db)
+                ->columns(['type', 'name'])
+                ->assembleSelect()
+        );
+
+        if (empty($plugins)) {
+            return;
+        }
+
+        $address = new FieldsetElement('contact_address', ['label' => $this->translate('Addresses')]);
+        $this->addElement($address);
+
+        foreach ($plugins as $type => $label) {
+            $element = $this->createElement('text', $type, ['label' => $label]);
+            if ($type === 'email') {
+                $element->addAttributes(['validators' => [new EmailAddressValidator()]]);
+            }
+
+            $address->addElement($element);
         }
     }
 }
