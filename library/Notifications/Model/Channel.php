@@ -82,28 +82,17 @@ class Channel extends Model
     }
 
     /**
-     * Fetch and map all the configured channel types to a key => value array
+     * Fetch and map all the configured channel names to a key => value array
      *
      * @param Connection $conn
      *
-     * @return array<int, string> All the channel types mapped as id => type
+     * @return array<int, string> All the channel names mapped as id => name
      */
-    public static function fetchChannelTypes(Connection $conn): array
+    public static function fetchChannelNames(Connection $conn): array
     {
         $channels = [];
         foreach (Channel::on($conn) as $channel) {
-            switch ($channel->type) {
-                case 'rocketchat':
-                    $name = 'Rocket.Chat';
-                    break;
-                case 'email':
-                    $name = t('E-Mail');
-                    break;
-                default:
-                    $name = $channel->type;
-            }
-
-            $channels[$channel->id] = $name;
+            $channels[$channel->id] = $channel->name;
         }
 
         return $channels;

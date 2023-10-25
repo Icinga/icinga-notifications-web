@@ -80,7 +80,7 @@ class ContactForm extends CompatForm
         $this->addElement($contact);
 
         $channelOptions = ['' => sprintf(' - %s - ', $this->translate('Please choose'))];
-        $channelOptions += Channel::fetchChannelTypes(Database::get());
+        $channelOptions += Channel::fetchChannelNames(Database::get());
 
         $contact->addElement(
             'text',
