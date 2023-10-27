@@ -2,11 +2,14 @@
 
 /* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Notifications\Forms;
+namespace Icinga\Module\Notifications\Forms\EventRuleConfig;
 
+use Icinga\Module\Notifications\Widget\EventRuleConfig\FlowLine;
 use Icinga\Web\Session;
+use ipl\Html\Attributes;
 use ipl\Html\Contract\FormElement;
 use ipl\Html\Form;
+use ipl\Html\HtmlElement;
 use ipl\Html\ValidHtml;
 use ipl\I18n\Translation;
 use ipl\Web\Common\CsrfCounterMeasure;
@@ -19,7 +22,7 @@ abstract class BaseEscalationForm extends Form
     use FormUid;
     use Translation;
 
-    protected $defaultAttributes = ['class' => ['escalation-form', 'icinga-form', 'icinga-controls']];
+    protected $defaultAttributes = ['class' => ['escalation-form', 'icinga-controls']];
 
     /** @var int The count of existing conditions/recipients */
     protected $count;
@@ -51,7 +54,7 @@ abstract class BaseEscalationForm extends Form
             'submitButton',
             'add',
             [
-                'class'             => ['add-button', 'control-button', 'spinner'],
+                'class'             => ['add-button', 'spinner'],
                 'label'             => new Icon('plus'),
                 'title'             => $this->translate('Add more'),
                 'formnovalidate'    => true
@@ -79,7 +82,15 @@ abstract class BaseEscalationForm extends Form
             $this->assembleElements();
         }
 
-        $this->add($addButton);
+        if ($this->options) {
+            $wrapper = new HtmlElement('div', Attributes::create(['class' => 'option-wrapper']));
+            $wrapper->addHtml(new HtmlElement('ul', Attributes::create(['class' => 'options']), ...$this->options));
+            $wrapper->addHtml($addButton);
+            $this->addHtml($wrapper);
+        } else {
+            $this->addHtml((new FlowLine())->getRightArrow());
+            $this->addHtml($addButton);
+        }
     }
 
     public function isAddButtonPressed(): ?bool

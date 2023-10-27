@@ -2,7 +2,7 @@
 
 /* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Notifications\Forms;
+namespace Icinga\Module\Notifications\Forms\EventRuleConfig;
 
 use Icinga\Web\Session;
 use ipl\Html\Form;
@@ -18,11 +18,11 @@ class RemoveEscalationForm extends Form
     use Translation;
 
     protected $defaultAttributes = [
-        'class' => ['remove-escalation-form', 'icinga-form', 'icinga-controls'],
+        'class' => ['remove-escalation-form', 'icinga-controls'],
     ];
 
-    /** @var bool  */
-    private $disableRemoveButtton;
+    /** @var string  */
+    private $disableReason;
 
     protected function assemble()
     {
@@ -33,7 +33,7 @@ class RemoveEscalationForm extends Form
             'submitButton',
             'remove',
             [
-                'class' => ['remove-button', 'control-button', 'spinner'],
+                'class' => ['remove-button', 'spinner'],
                 'label' => new Icon('minus')
             ]
         );
@@ -41,29 +41,23 @@ class RemoveEscalationForm extends Form
         $this->getElement('remove')
             ->getAttributes()
             ->registerAttributeCallback('disabled', function () {
-                return $this->disableRemoveButtton;
+                return $this->disableReason !== null;
             })
             ->registerAttributeCallback('title', function () {
-                if ($this->disableRemoveButtton) {
-                    return $this->translate(
-                        'There exist active incidents for this escalation and hence cannot be removed'
-                    );
-                }
-
-                return $this->translate('Remove escalation');
+                return $this->disableReason ?? $this->translate('Remove escalation');
             });
     }
 
     /**
-     * Method to set disabled state of remove button
+     * Disable the button and show the given reason in the title
      *
-     * @param bool $disable
+     * @param string $reason
      *
      * @return $this
      */
-    public function setRemoveButtonDisabled(bool $state = false)
+    public function setRemoveButtonDisabled(string $reason)
     {
-        $this->disableRemoveButtton = $state;
+        $this->disableReason = $reason;
 
         return $this;
     }

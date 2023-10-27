@@ -2,13 +2,10 @@
 
 /* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Notifications\Widget;
+namespace Icinga\Module\Notifications\Widget\EventRuleConfig;
 
-use Icinga\Module\Notifications\Model\Contact;
-use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
-use ipl\Web\Widget\Icon;
 
 class CheckboxIcon extends BaseHtmlElement
 {

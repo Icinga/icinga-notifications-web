@@ -2,7 +2,7 @@
 
 /* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Notifications\Forms;
+namespace Icinga\Module\Notifications\Forms\EventRuleConfig;
 
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Channel;
@@ -114,8 +114,6 @@ class EscalationRecipientForm extends BaseEscalationForm
         }
 
         $this->handleRemove();
-
-        $this->add(Html::tag('ul', ['class' => 'options'], $this->options));
     }
 
     public function getValues()
@@ -189,7 +187,7 @@ class EscalationRecipientForm extends BaseEscalationForm
             'submitButton',
             'remove_' . $count,
             [
-                'class'             => ['remove-button', 'control-button', 'spinner'],
+                'class'             => ['remove-button', 'spinner'],
                 'label'             => new Icon('minus'),
                 'title'             => $this->translate('Remove'),
                 'formnovalidate'    => true

@@ -2,7 +2,7 @@
 
 /* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Notifications\Forms;
+namespace Icinga\Module\Notifications\Forms\EventRuleConfig;
 
 use Icinga\Web\Session;
 use ipl\Html\Form;
@@ -18,7 +18,7 @@ class AddFilterForm extends Form
     use Translation;
 
     protected $defaultAttributes = [
-        'class' => ['add-filter-form', 'icinga-form', 'icinga-controls'],
+        'class' => ['add-filter-form', 'icinga-controls'],
         'name'  => 'add-filter-form'
     ];
 
@@ -33,7 +33,7 @@ class AddFilterForm extends Form
             'submitButton',
             'add',
             [
-                'class' => ['add-button', 'control-button', 'spinner'],
+                'class' => ['add-button', 'spinner'],
                 'label' => new Icon('plus'),
                 'title' => $this->translate('Add filter')
             ]

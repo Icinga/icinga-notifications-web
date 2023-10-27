@@ -2,7 +2,7 @@
 
 /* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Notifications\Forms;
+namespace Icinga\Module\Notifications\Forms\EventRuleConfig;
 
 use Icinga\Module\Notifications\Web\FilterRenderer;
 use Icinga\Module\Notifications\Web\Form\EventRuleDecorator;
@@ -11,8 +11,6 @@ use ipl\Html\Html;
 use ipl\Stdlib\Filter;
 use ipl\Validator\CallbackValidator;
 use ipl\Web\Filter\QueryString;
-use ipl\Web\Filter\Renderer;
-use ipl\Web\Url;
 use ipl\Web\Widget\Icon;
 
 class EscalationConditionForm extends BaseEscalationForm
@@ -154,8 +152,6 @@ class EscalationConditionForm extends BaseEscalationForm
         }
 
         $this->handleRemove();
-
-        $this->add(Html::tag('ul', ['class' => 'options'], $this->options));
     }
 
     public function getValues()
@@ -223,7 +219,7 @@ class EscalationConditionForm extends BaseEscalationForm
             'submitButton',
             'remove_' . $count,
             [
-                'class'             => ['remove-button', 'control-button', 'spinner'],
+                'class'             => ['remove-button', 'spinner'],
                 'label'             => new Icon('minus'),
                 'title'             => $this->translate('Remove'),
                 'formnovalidate'    => true
@@ -260,6 +256,10 @@ class EscalationConditionForm extends BaseEscalationForm
                 $key = array_key_last($this->options);
                 $this->options[$key]->remove($this->getElement('remove_' . $key));
             }
+        }
+
+        if (! $this->deleteRemoveButton || $this->count > 1) {
+            $this->addAttributes(['class' => 'removal-allowed']);
         }
 
         if (empty($this->options)) {

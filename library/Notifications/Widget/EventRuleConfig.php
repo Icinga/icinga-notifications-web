@@ -6,13 +6,15 @@ namespace Icinga\Module\Notifications\Widget;
 
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Notifications\Common\Database;
-use Icinga\Module\Notifications\Forms\AddEscalationForm;
-use Icinga\Module\Notifications\Forms\AddFilterForm;
-use Icinga\Module\Notifications\Forms\EscalationConditionForm;
-use Icinga\Module\Notifications\Forms\EscalationRecipientForm;
+use Icinga\Module\Notifications\Forms\EventRuleConfig\AddEscalationForm;
+use Icinga\Module\Notifications\Forms\EventRuleConfig\AddFilterForm;
+use Icinga\Module\Notifications\Forms\EventRuleConfig\EscalationConditionForm;
+use Icinga\Module\Notifications\Forms\EventRuleConfig\EscalationRecipientForm;
 use Icinga\Module\Notifications\Model\Incident;
+use Icinga\Module\Notifications\Widget\EventRuleConfig\Escalations;
+use Icinga\Module\Notifications\Widget\EventRuleConfig\FlowLine;
 use ipl\Html\Attributes;
-use Icinga\Module\Notifications\Forms\RemoveEscalationForm;
+use Icinga\Module\Notifications\Forms\EventRuleConfig\RemoveEscalationForm;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Form;
 use ipl\Html\FormElement\TextElement;
@@ -199,7 +201,7 @@ class EventRuleConfig extends BaseHtmlElement
             $searchBar = new TextElement(
                 'searchbar',
                 [
-                    'class'     => 'filter-input control-button',
+                    'class'     => 'filter-input',
                     'readonly'  => true,
                     'value'     => isset($this->config['object_filter'])
                         ? rawurldecode($this->config['object_filter'])
@@ -226,7 +228,12 @@ class EventRuleConfig extends BaseHtmlElement
             if (isset($this->removeEscalationForms[$position])) {
                 $escalations->addEscalation($position, $escalation, $this->removeEscalationForms[$position]);
             } else {
-                $escalations->addEscalation($position, $escalation);
+                $escalations->addEscalation(
+                    $position,
+                    $escalation,
+                    $this->createRemoveEscalationForm($position)
+                        ->setRemoveButtonDisabled(t('Removal not possible. There must be at least one escalation.'))
+                );
             }
         }
 
@@ -349,10 +356,8 @@ class EventRuleConfig extends BaseHtmlElement
             }
         }
 
-
         $form = (new RemoveEscalationForm())
             ->addAttributes(['name' => 'remove-escalation-form-' . $escalationId])
-            ->setRemoveButtonDisabled($disableRemoveButton)
             ->on(Form::ON_SENT, function ($form) use ($position) {
                 unset($this->config['rule_escalation'][$position]);
                 unset($this->escalationForms[$position]);
@@ -401,6 +406,11 @@ class EventRuleConfig extends BaseHtmlElement
 
                 $this->emit(self::ON_CHANGE, [$this]);
             });
+        if ($disableRemoveButton) {
+            $form->setRemoveButtonDisabled(
+                t('Removal not possible. There are active incidents for this escalation.')
+            );
+        }
 
         return $form;
     }
