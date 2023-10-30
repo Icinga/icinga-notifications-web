@@ -27,6 +27,8 @@ use ipl\Web\Control\SortControl;
 use ipl\Web\Filter\QueryString;
 use ipl\Web\Url;
 use ipl\Web\Widget\ButtonLink;
+use ipl\Web\Widget\Icon;
+use ipl\Web\Widget\Link;
 
 class EventRulesController extends CompatController
 {
@@ -86,9 +88,9 @@ class EventRulesController extends CompatController
         $this->addContent(
             (new ButtonLink(
                 t('New Event Rule'),
-                'notifications/event-rules/add',
+                Url::fromPath('notifications/event-rule/edit', ['id' => -1, 'clearCache' => true]),
                 'plus'
-            ))->setBaseTarget('_next')
+            ))->openInModal()
             ->addAttributes(['class' => 'new-event-rule'])
         );
 
@@ -119,16 +121,16 @@ class EventRulesController extends CompatController
 
         $eventRuleConfig = new EventRuleConfig(Url::fromPath('notifications/event-rules/add-search-editor'), $cache);
 
-        $eventRuleForm = (new EventRuleForm())
-            ->populate($cache)
-            ->on(Form::ON_SENT, function ($form) use ($eventRuleConfig) {
-                $config = $eventRuleConfig->getConfig();
-                $config['name'] = $form->getValue('name');
-                $config['is_active'] = $form->getValue('is_active');
-
-                $eventRuleConfig->setConfig($config);
-                $this->sessionNamespace->set(-1, $eventRuleConfig->getConfig());
-            })->handleRequest($this->getServerRequest());
+        $eventRuleForm = Html::tag('div', ['class' => 'event-rule-form'], [
+            Html::tag('h2', $eventRuleConfig->getConfig()['name'] ?? ''),
+            (new Link(
+                new Icon('edit'),
+                Url::fromPath('notifications/event-rule/edit', [
+                    'id' => -1
+                ]),
+                ['class' => 'control-button']
+            ))->openInModal()
+        ]);
 
         $saveForm = (new SaveEventRuleForm())
             ->on(SaveEventRuleForm::ON_SUCCESS, function ($saveForm) use ($eventRuleConfig) {

@@ -22,6 +22,8 @@ use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Control\SearchEditor;
 use ipl\Web\Url;
+use ipl\Web\Widget\Icon;
+use ipl\Web\Widget\Link;
 
 class EventRuleController extends CompatController
 {
@@ -103,18 +105,16 @@ class EventRuleController extends CompatController
                 $this->redirectNow('__CLOSE__');
             })->handleRequest($this->getServerRequest());
 
-        $eventRuleForm = (new EventRuleForm())
-            ->populate($cache ?? $this->fromDb($ruleId))
-            ->on(Form::ON_SENT, function ($form) use ($ruleId, $eventRuleConfig, $saveForm) {
-                $config = $eventRuleConfig->getConfig();
-                $config['name'] = $form->getValue('name');
-                $config['is_active'] = $form->getValue('is_active');
-
-                $eventRuleConfig->setConfig($config);
-
-                $this->sessionNamespace->set($ruleId, $eventRuleConfig->getConfig());
-                $saveForm->setSubmitButtonDisabled(false);
-            })->handleRequest($this->getServerRequest());
+        $eventRuleForm = Html::tag('div', ['class' => 'event-rule-form'], [
+            Html::tag('h2', $eventRuleConfig->getConfig()['name'] ?? ''),
+            (new Link(
+                new Icon('edit'),
+                Url::fromPath('notifications/event-rule/edit', [
+                    'id' => $ruleId
+                ]),
+                ['class' => 'control-button']
+            ))->openInModal()
+        ]);
 
         $eventRuleFormAndSave = Html::tag('div', ['class' => 'event-rule-and-save-forms']);
         $eventRuleFormAndSave->add([
@@ -223,5 +223,58 @@ class EventRuleController extends CompatController
 
         $this->getDocument()->add($editor);
         $this->setTitle($this->translate('Adjust Filter'));
+    }
+
+    public function editAction()
+    {
+        $ruleId = (int) $this->params->getRequired('id');
+        $cache = $this->sessionNamespace->get($ruleId);
+
+        if ($this->params->has('clearCache')) {
+            $this->sessionNamespace->delete($ruleId);
+            $cache = [];
+        }
+
+        if (isset($cache) || $ruleId === -1) {
+            $config = $cache ?? [];
+        } else {
+            $config = $this->fromDb($ruleId);
+        }
+
+        $eventRuleForm = (new EventRuleForm())
+            ->populate($config)
+            ->setAction(Url::fromRequest()->getAbsoluteUrl())
+            ->on(Form::ON_SUCCESS, function ($form) use ($ruleId, $cache, $config) {
+                $config['name'] = $form->getValue('name');
+                $config['is_active'] = $form->getValue('is_active');
+
+                if ($cache || $ruleId === -1) {
+                    $this->sessionNamespace->set($ruleId, $config);
+                } else {
+                    (new SaveEventRuleForm())->editRule($ruleId, $config);
+                }
+
+                if ($ruleId === -1) {
+                    $redirectUrl = Url::fromPath('notifications/event-rules/add', [
+                        'use_cache' => true
+                    ]);
+                } else {
+                    $redirectUrl = Url::fromPath('notifications/event-rule', [
+                        'id' => $ruleId
+                    ]);
+                    $this->sendExtraUpdates(['#col1']);
+                }
+
+                $this->getResponse()->setHeader('X-Icinga-Container', 'col2');
+                $this->redirectNow($redirectUrl);
+            })->handleRequest($this->getServerRequest());
+
+        if ($ruleId === -1) {
+            $this->setTitle($this->translate('New Event Rule'));
+        } else {
+            $this->setTitle($this->translate('Edit Event Rule'));
+        }
+
+        $this->addContent($eventRuleForm);
     }
 }
