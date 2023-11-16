@@ -225,9 +225,11 @@ class EventRuleController extends CompatController
         $this->setTitle($this->translate('Adjust Filter'));
     }
 
-    public function editAction()
+    public function editAction(): void
     {
-        $ruleId = (int) $this->params->getRequired('id');
+        /** @var string $ruleId */
+        $ruleId = $this->params->getRequired('id');
+        /** @var ?array<string, mixed> $cache */
         $cache = $this->sessionNamespace->get($ruleId);
 
         if ($this->params->has('clearCache')) {
@@ -235,10 +237,10 @@ class EventRuleController extends CompatController
             $cache = [];
         }
 
-        if (isset($cache) || $ruleId === -1) {
+        if (isset($cache) || $ruleId === '-1') {
             $config = $cache ?? [];
         } else {
-            $config = $this->fromDb($ruleId);
+            $config = $this->fromDb((int) $ruleId);
         }
 
         $eventRuleForm = (new EventRuleForm())
@@ -248,13 +250,13 @@ class EventRuleController extends CompatController
                 $config['name'] = $form->getValue('name');
                 $config['is_active'] = $form->getValue('is_active');
 
-                if ($cache || $ruleId === -1) {
+                if ($cache || $ruleId === '-1') {
                     $this->sessionNamespace->set($ruleId, $config);
                 } else {
-                    (new SaveEventRuleForm())->editRule($ruleId, $config);
+                    (new SaveEventRuleForm())->editRule((int) $ruleId, $config);
                 }
 
-                if ($ruleId === -1) {
+                if ($ruleId === '-1') {
                     $redirectUrl = Url::fromPath('notifications/event-rules/add', [
                         'use_cache' => true
                     ]);
@@ -269,7 +271,7 @@ class EventRuleController extends CompatController
                 $this->redirectNow($redirectUrl);
             })->handleRequest($this->getServerRequest());
 
-        if ($ruleId === -1) {
+        if ($ruleId === '-1') {
             $this->setTitle($this->translate('New Event Rule'));
         } else {
             $this->setTitle($this->translate('Edit Event Rule'));
