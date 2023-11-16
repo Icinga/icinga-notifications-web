@@ -1681,11 +1681,6 @@ parameters:
 			path: library/Notifications/Widget/EventRuleConfig.php
 
 		-
-			message: "#^Property Icinga\\\\Module\\\\Notifications\\\\Widget\\\\EventRuleConfig\\:\\:\\$escalationForms type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: library/Notifications/Widget/EventRuleConfig.php
-
-		-
 			message: "#^Property Icinga\\\\Module\\\\Notifications\\\\Widget\\\\EventRuleConfig\\:\\:\\$numEscalations is unused\\.$#"
 			count: 1
 			path: library/Notifications/Widget/EventRuleConfig.php
