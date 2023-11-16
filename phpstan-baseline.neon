@@ -192,7 +192,7 @@ parameters:
 
 		-
 			message: "#^Parameter \\#1 \\$key of method Icinga\\\\Web\\\\Session\\\\SessionNamespace\\:\\:set\\(\\) expects string, mixed given\\.$#"
-			count: 3
+			count: 2
 			path: application/controllers/EventRuleController.php
 
 		-
@@ -207,12 +207,7 @@ parameters:
 
 		-
 			message: "#^Parameter \\#1 \\$ruleId of method Icinga\\\\Module\\\\Notifications\\\\Controllers\\\\EventRuleController\\:\\:fromDb\\(\\) expects int, mixed given\\.$#"
-			count: 3
-			path: application/controllers/EventRuleController.php
-
-		-
-			message: "#^Parameter \\#1 \\$values of method ipl\\\\Html\\\\Form\\:\\:populate\\(\\) expects iterable\\<string, mixed\\>, mixed given\\.$#"
-			count: 1
+			count: 2
 			path: application/controllers/EventRuleController.php
 
 		-
@@ -237,16 +232,11 @@ parameters:
 
 		-
 			message: "#^Parameter \\#1 \\$key of method Icinga\\\\Web\\\\Session\\\\SessionNamespace\\:\\:set\\(\\) expects string, int given\\.$#"
-			count: 3
+			count: 2
 			path: application/controllers/EventRulesController.php
 
 		-
 			message: "#^Parameter \\#1 \\$query of method ipl\\\\Web\\\\Control\\\\SearchEditor\\:\\:setQueryString\\(\\) expects string, mixed given\\.$#"
-			count: 1
-			path: application/controllers/EventRulesController.php
-
-		-
-			message: "#^Parameter \\#1 \\$values of method ipl\\\\Html\\\\Form\\:\\:populate\\(\\) expects iterable\\<string, mixed\\>, mixed given\\.$#"
 			count: 1
 			path: application/controllers/EventRulesController.php
 
