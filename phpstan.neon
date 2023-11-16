@@ -13,7 +13,9 @@ parameters:
         - library
 
     scanDirectories:
-        - vendor
+        - /icingaweb2
+        - /usr/share/icinga-php/ipl
+        - /usr/share/icinga-php/vendor
 
     ignoreErrors:
         -
