@@ -406,16 +406,6 @@ parameters:
 			path: application/forms/ChannelForm.php
 
 		-
-			message: "#^Parameter \\#2 \\$associative of function json_decode expects bool\\|null, int given\\.$#"
-			count: 1
-			path: application/forms/ChannelForm.php
-
-		-
-			message: "#^Parameter \\#2 \\.\\.\\.\\$arrays of function array_merge expects array, mixed given\\.$#"
-			count: 1
-			path: application/forms/ChannelForm.php
-
-		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Forms\\\\DatabaseConfigForm\\:\\:assemble\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: application/forms/DatabaseConfigForm.php
@@ -566,11 +556,6 @@ parameters:
 			path: application/forms/EntryForm.php
 
 		-
-			message: "#^Parameter \\#2 \\$string of function explode expects string, mixed given\\.$#"
-			count: 2
-			path: application/forms/EntryForm.php
-
-		-
 			message: "#^Parameter \\#2 \\$value of static method ipl\\\\Stdlib\\\\Filter\\:\\:equal\\(\\) expects array\\|bool\\|float\\|int\\|string, mixed given\\.$#"
 			count: 1
 			path: application/forms/EntryForm.php
@@ -668,11 +653,6 @@ parameters:
 		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Forms\\\\EscalationRecipientForm\\:\\:getValues\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
-			path: application/forms/EscalationRecipientForm.php
-
-		-
-			message: "#^Parameter \\#2 \\$string of function explode expects string, mixed given\\.$#"
-			count: 2
 			path: application/forms/EscalationRecipientForm.php
 
 		-
@@ -1277,11 +1257,6 @@ parameters:
 
 		-
 			message: "#^Parameter \\#1 \\$content of static method ipl\\\\Html\\\\Text\\:\\:create\\(\\) expects string, string\\|false given\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Calendar.php
-
-		-
-			message: "#^Parameter \\#1 \\$datetime of function strtotime expects string, mixed given\\.$#"
 			count: 1
 			path: library/Notifications/Widget/Calendar.php
 
