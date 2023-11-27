@@ -10,19 +10,26 @@ use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
 use ipl\Orm\Relations;
 
+/**
+ * @property int $id
+ * @property string $severity
+ */
 class Incident extends Model
 {
-    public function getTableName()
+    public function getTableName(): string
     {
         return 'incident';
     }
 
-    public function getKeyName()
+    public function getKeyName(): string
     {
         return 'id';
     }
 
-    public function getColumns()
+    /**
+     * @return array<string>
+     */
+    public function getColumns(): array
     {
         return [
             'object_id',
@@ -32,7 +39,10 @@ class Incident extends Model
         ];
     }
 
-    public function getColumnDefinitions()
+    /**
+     * @return array<string>
+     */
+    public function getColumnDefinitions(): array
     {
         return [
             'object_id'     => t('Object Id'),
@@ -42,17 +52,23 @@ class Incident extends Model
         ];
     }
 
-    public function getSearchColumns()
+    /**
+     * @return array<string>
+     */
+    public function getSearchColumns(): array
     {
         return ['object.name'];
     }
 
-    public function getDefaultSort()
+    /**
+     * @return array<string>
+     */
+    public function getDefaultSort(): array
     {
         return ['incident.severity desc, incident.started_at'];
     }
 
-    public function createBehaviors(Behaviors $behaviors)
+    public function createBehaviors(Behaviors $behaviors): void
     {
         $behaviors->add(new Binary(['object_id']));
         $behaviors->add(new MillisecondTimestamp([
@@ -61,7 +77,7 @@ class Incident extends Model
         ]));
     }
 
-    public function createRelations(Relations $relations)
+    public function createRelations(Relations $relations): void
     {
         $relations->belongsTo('object', Objects::class);
 

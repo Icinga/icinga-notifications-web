@@ -97,5 +97,4 @@ final class Event
         // compile event to the appropriate representation for event streams
         return $this->compileMessage();
     }
-
 }

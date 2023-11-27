@@ -70,9 +70,9 @@ final class Server
 
     public static function get(LoopInterface $mainLoop): Server
     {
-        if (isset(self::$instance) === false) {
+        if (self::$instance === null) {
             self::$instance = new Server($mainLoop);
-        } elseif (isset(self::$instance->mainLoop) && (self::$instance->mainLoop !== $mainLoop)) {
+        } elseif ((self::$instance->mainLoop !== null) && (self::$instance->mainLoop !== $mainLoop)) {
             // main loop changed, reloading daemon server
             self::$instance->mainLoop = $mainLoop;
             self::$instance->reload();
@@ -93,7 +93,7 @@ final class Server
         $this->socket->on('connection', function (ConnectionInterface $connection) {
             $this->onSocketConnection($connection);
         });
-        $this->socket->on('error', function ($error) {
+        $this->socket->on('error', function (Exception $error) {
             $this->onSocketError($error);
         });
         // attach http server to socket
@@ -141,28 +141,32 @@ final class Server
 
     private function onSocketConnection(ConnectionInterface $connection): void
     {
-        $address = Connection::parseHostAndPort($connection->getRemoteAddress());
+        if ($connection->getRemoteAddress() !== null) {
+            $address = Connection::parseHostAndPort($connection->getRemoteAddress());
 
-        // subscribe to events on this connection
-        $connection->on('data', function ($data) use ($connection) {
-            $this->onConnectionData($connection, $data);
-        });
-        $connection->on('end', function () use ($connection) {
-            $this->onConnectionEnd($connection);
-        });
-        $connection->on('error', function ($error) use ($connection) {
-            $this->onConnectionError($connection, $error);
-        });
-        $connection->on('close', function () use ($connection) {
-            $this->onConnectionClose($connection);
-        });
+            // subscribe to events on this connection
+            $connection->on('data', function ($data) use ($connection) {
+                $this->onConnectionData($connection, $data);
+            });
+            $connection->on('end', function () use ($connection) {
+                $this->onConnectionEnd($connection);
+            });
+            $connection->on('error', function ($error) use ($connection) {
+                $this->onConnectionError($connection, $error);
+            });
+            $connection->on('close', function () use ($connection) {
+                $this->onConnectionClose($connection);
+            });
 
-        // keep track of this connection
-        self::$logger::debug(self::PREFIX . "<" . $address->addr . "> adding connection to connection pool");
-        $this->connections[$address->addr] = new Connection($connection);
+            // keep track of this connection
+            self::$logger::debug(self::PREFIX . "<" . $address->addr . "> adding connection to connection pool");
+            $this->connections[$address->addr] = new Connection($connection);
+        } else {
+            self::$logger::warning(self::PREFIX . "failed adding connection as the remote address was empty");
+        }
     }
 
-    private function onSocketError($error): void
+    private function onSocketError(Exception $error): void
     {
         // TODO: ADD error handling
     }
@@ -182,10 +186,16 @@ final class Server
     private function onConnectionClose(ConnectionInterface $connection): void
     {
         // delete the reference to this connection if we have been actively tracking it
-        $address = Connection::parseHostAndPort($connection->getRemoteAddress());
-        if (isset($this->connections[$address->addr])) {
-            self::$logger::debug(self::PREFIX . "<" . $address->addr . "> removing connection from connection pool");
-            unset($this->connections[$address->addr]);
+        if ($connection->getRemoteAddress() !== null) {
+            $address = Connection::parseHostAndPort($connection->getRemoteAddress());
+            if (isset($this->connections[$address->addr])) {
+                self::$logger::debug(
+                    self::PREFIX . "<" . $address->addr . "> removing connection from connection pool"
+                );
+                unset($this->connections[$address->addr]);
+            }
+        } else {
+            self::$logger::warning(self::PREFIX . "failed removing connection as the remote address was empty");
         }
     }
 
@@ -206,7 +216,7 @@ final class Server
 
             self::$logger::warning(
                 self::PREFIX
-                . ($address->addr !== '' ?? ("<" . $address->addr . "> "))
+                . ($address->addr !== '' ? ("<" . $address->addr . "> ") : '')
                 . "failed matching HTTP request to a tracked connection"
             );
             return new Response(
@@ -282,6 +292,12 @@ final class Server
         );
     }
 
+    /**
+     * @param Connection $connection
+     * @param array<array<string>> $cookies
+     * @param array<array<string>> $headers
+     * @return stdClass
+     */
     private function authenticate(Connection $connection, array $cookies, array $headers): stdClass
     {
         $data = new stdClass();
@@ -291,8 +307,9 @@ final class Server
             // the device id
             if (array_key_exists('User-Agent', $headers) && sizeof($headers['User-Agent']) === 1) {
                 // grab session
+                /** @var Session $session */
                 $session = Session::on($this->dbLink)
-                    ->filter(Filter::equal('id', htmlspecialchars(trim($cookies['Icingaweb2']))))
+                    ->filter(Filter::equal('id', htmlspecialchars(trim($cookies['Icingaweb2'][0]))))
                     ->first();
 
                 // calculate device id
@@ -326,21 +343,27 @@ final class Server
         return $data;
     }
 
-    private function matchContact(string $username): ?int
+    private function matchContact(?string $username): ?int
     {
         /**
          * TODO: the matching needs to be properly rewritten once we decide about how we want to handle the contacts
          *  in the notifications module
          */
-        $contact = Contact::on(Database::get())
-            ->filter(Filter::equal('username', $username))
-            ->first();
-        if ($contact !== null) {
-            return intval($contact->id);
+        if ($username !== null) {
+            /** @var Contact $contact */
+            $contact = Contact::on(Database::get())
+                ->filter(Filter::equal('username', $username))
+                ->first();
+            if ($contact !== null) {
+                return $contact->id;
+            }
         }
         return null;
     }
 
+    /**
+     * @return array<Connection>
+     */
     public function getMatchedConnections(): array
     {
         $connections = [];

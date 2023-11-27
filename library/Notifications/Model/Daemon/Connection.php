@@ -47,14 +47,19 @@ final class Connection
     {
         $this->connection = $connection;
 
-        $address = $this->parseHostAndPort($connection->getRemoteAddress());
-        $this->host = $address->host;
-        $this->port = (int) $address->port;
+        if ($connection->getRemoteAddress() !== null) {
+            $address = $this->parseHostAndPort($connection->getRemoteAddress());
+            $this->host = $address->host;
+            $this->port = (int) $address->port;
+        } else {
+            $this->host = '';
+            $this->port = -1;
+        }
 
         $this->stream = new ThroughStream();
-        $this->session = null;
+        $this->session = '';
         $this->user = new User();
-        $this->deviceId = null;
+        $this->deviceId = '';
     }
 
     public static function parseHostAndPort(string $address): stdClass
@@ -79,7 +84,7 @@ final class Connection
     public static function calculateDeviceId(string $userAgent, string $user): ?string
     {
         if (in_array('joaat', hash_algos())) {
-            if (trim(strlen($userAgent)) > 0 && trim(strlen($user)) > 0) {
+            if (strlen(trim($userAgent)) > 0 && strlen(trim($user)) > 0) {
                 return strtoupper(hash('joaat', $user . trim($userAgent)));
             }
         }

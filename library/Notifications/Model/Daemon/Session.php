@@ -2,10 +2,17 @@
 
 namespace Icinga\Module\Notifications\Model\Daemon;
 
+use DateTime;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
 
+/**
+ * @property string $id
+ * @property string $username
+ * @property string $device_id
+ * @property DateTime $authenticated_at
+ */
 class Session extends Model
 {
     public function getTableName(): string
@@ -13,6 +20,9 @@ class Session extends Model
         return 'session';
     }
 
+    /**
+     * @return array<string>
+     */
     public function getKeyName(): array
     {
         return [
@@ -32,6 +42,9 @@ class Session extends Model
         ];
     }
 
+    /**
+     * @return array<string>
+     */
     public function getColumnDefinitions(): array
     {
         return [
@@ -42,6 +55,9 @@ class Session extends Model
         ];
     }
 
+    /**
+     * @return array<string>
+     */
     public function getSearchColumns(): array
     {
         return [
@@ -51,7 +67,7 @@ class Session extends Model
         ];
     }
 
-    public function createBehaviors(Behaviors $behaviors)
+    public function createBehaviors(Behaviors $behaviors): void
     {
         $behaviors->add(
             new MillisecondTimestamp([

@@ -2,7 +2,6 @@
 
 namespace Icinga\Module\Notifications\Daemon;
 
-use DateTime;
 use DateTimeInterface;
 use DateTimeZone;
 use Icinga\Application\Logger;
@@ -10,7 +9,6 @@ use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Daemon\Event;
 use Icinga\Module\Notifications\Model\Daemon\EventIdentifier;
 use Icinga\Module\Notifications\Model\Daemon\Session;
-use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\Model\IncidentHistory;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
@@ -50,7 +48,7 @@ final class Daemon
     private $database;
 
     /**
-     * @var boolean $cancellationToken
+     * @var bool $cancellationToken
      */
     private $cancellationToken;
 
@@ -74,7 +72,7 @@ final class Daemon
 
     public static function get(): Daemon
     {
-        if (isset(self::$instance) === false) {
+        if (self::$instance === null) {
             self::$instance = new Daemon();
         }
 
@@ -185,14 +183,15 @@ final class Daemon
     {
         $numOfNotifications = 0;
 
-        if (isset($this->lastIncidentId) === false) {
+        if ($this->lastIncidentId === null) {
             // get the newest incident identifier
+            /** @var IncidentHistory $latestIncidentNotification */
             $latestIncidentNotification = IncidentHistory::on(Database::get())
                 ->filter(Filter::equal('type', 'notified'))
                 ->orderBy('id', 'DESC')
                 ->first();
             if ($latestIncidentNotification) {
-                $this->lastIncidentId = intval($latestIncidentNotification->id);
+                $this->lastIncidentId = $latestIncidentNotification->id;
                 self::$logger::debug(
                     self::PREFIX
                     . "fetched latest incident notification identifier: <id: "
@@ -213,7 +212,7 @@ final class Daemon
         /** @var IncidentHistory $notification */
         foreach ($notifications as $notification) {
             if (isset($connections[$notification->contact_id])) {
-                /** @var Incident $incident */
+                /** @var IncidentHistory $incident */
                 $incident = IncidentHistory::on(Database::get())
                     ->filter(Filter::equal('id', $notification->caused_by_incident_history_id))
                     ->with([
@@ -222,7 +221,6 @@ final class Daemon
                     ->first();
                 if ($incident !== null) {
                     // reformat notification time
-                    /** @var DateTime $time */
                     $time = $incident->time;
                     $time->setTimezone(new DateTimeZone('UTC'));
                     $time = $time->format(DateTimeInterface::RFC3339_EXTENDED);

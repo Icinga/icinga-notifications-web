@@ -14,12 +14,12 @@ use PDOException;
 class SessionStorage extends AuthenticationHook
 {
     /**
-     * @var \Icinga\Web\Session $session
+     * @var \Icinga\Web\Session\Session $session
      */
     private $session;
 
     /**
-     * @var Database $db
+     * @var \ipl\Sql\Connection $database
      */
     private $database;
 
@@ -30,7 +30,7 @@ class SessionStorage extends AuthenticationHook
         $this->database = Database::get();
     }
 
-    public function onLogin(User $user)
+    public function onLogin(User $user): void
     {
         Logger::info('running onLogin hook');
 
@@ -68,6 +68,7 @@ class SessionStorage extends AuthenticationHook
                 ->filter(Filter::equal('username', $user->getUsername()))
                 ->filter(Filter::equal('device_id', $deviceId))
                 ->execute();
+            /** @var Session $session */
             foreach ($userSessions as $session) {
                 $this->database->delete(
                     'session',
@@ -101,7 +102,7 @@ class SessionStorage extends AuthenticationHook
         }
     }
 
-    public function onLogout(User $user)
+    public function onLogout(User $user): void
     {
         if ($this->session->exists()) {
             // user disconnected, removing the session from the database (invalidating it)
