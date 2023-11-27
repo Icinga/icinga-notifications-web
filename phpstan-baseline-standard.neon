@@ -176,11 +176,6 @@ parameters:
 			path: application/controllers/EventRuleController.php
 
 		-
-			message: "#^Parameter \\#1 \\$iterator of function iterator_to_array expects iterable, ipl\\\\Orm\\\\Model\\|null given\\.$#"
-			count: 1
-			path: application/controllers/EventRuleController.php
-
-		-
 			message: "#^Parameter \\#1 \\$key of method Icinga\\\\Web\\\\Session\\\\SessionNamespace\\:\\:delete\\(\\) expects string, mixed given\\.$#"
 			count: 3
 			path: application/controllers/EventRuleController.php
