@@ -48,10 +48,10 @@ class EventRuleConfig extends BaseHtmlElement
     /** @var Url The url to open the SearchEditor at */
     protected $searchEditorUrl;
 
-    /** @var array */
+    /** @var array<int, array<int, EscalationConditionForm|EscalationRecipientForm>> */
     private $escalationForms = [];
 
-    /** @var RemoveEscalationForm[] */
+    /** @var array<int, RemoveEscalationForm> */
     private $removeEscalationForms;
 
     /** @var int */
@@ -110,6 +110,7 @@ class EventRuleConfig extends BaseHtmlElement
         ];
 
         foreach ($escalations as $position => $escalation) {
+            /** @var int $position */
             $values = explode('|', $escalation['condition'] ?? '');
             $escalationCondition = $this->createConditionForm($position, $values);
 
@@ -375,23 +376,27 @@ class EventRuleConfig extends BaseHtmlElement
                 }
 
                 if (! empty($this->removeEscalationForms)) {
-                    $this->removeEscalationForms = array_combine(
+                    /** @var array<int, RemoveEscalationForm> $removeEscalationForms */
+                    $removeEscalationForms = array_combine(
                         range(
                             1,
                             count($this->removeEscalationForms)
                         ),
                         array_values($this->removeEscalationForms)
                     );
+                    $this->removeEscalationForms = $removeEscalationForms;
                 }
 
                 if (! empty($this->escalationForms)) {
-                    $this->escalationForms = array_combine(
+                    /** @var array<int, array<int, EscalationConditionForm|EscalationRecipientForm>> $escalationForms */
+                    $escalationForms = array_combine(
                         range(
                             1,
                             count($this->escalationForms)
                         ),
                         array_values($this->escalationForms)
                     );
+                    $this->escalationForms = $escalationForms;
                 }
 
                 $numEscalation = count($this->escalationForms);

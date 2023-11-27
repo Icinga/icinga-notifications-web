@@ -9,15 +9,20 @@ use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\Widget\ItemList\IncidentList;
+use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
 use ipl\Web\Control\LimitControl;
 use ipl\Web\Control\SortControl;
+use ipl\Web\Filter\QueryString;
 
 class IncidentsController extends CompatController
 {
     use Auth;
     use SearchControls;
+
+    /** @var Filter\Rule Filter from query string parameters */
+    private $filter;
 
     public function indexAction(): void
     {
@@ -91,5 +96,19 @@ class IncidentsController extends CompatController
     protected function getPageSize($default)
     {
         return parent::getPageSize($default ?? 50);
+    }
+
+    /**
+     * Get the filter created from query string parameters
+     *
+     * @return Filter\Rule
+     */
+    public function getFilter(): Filter\Rule
+    {
+        if ($this->filter === null) {
+            $this->filter = QueryString::parse((string) $this->params);
+        }
+
+        return $this->filter;
     }
 }

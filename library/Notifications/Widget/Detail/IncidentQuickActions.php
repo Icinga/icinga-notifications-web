@@ -227,7 +227,6 @@ class IncidentQuickActions extends Form
      * Update the incident history
      *
      * @param IncidentContact $incidentContact
-     * @param string $msg
      * @param string|null $newRole
      *
      * @return void
