@@ -76,3 +76,5 @@ $this->provideConfigTab(
         'url'   => 'channels'
     ]
 );
+
+$this->provideJsFile('notification.js');
