@@ -11,7 +11,8 @@ use Icinga\User;
 use ipl\Stdlib\Filter;
 use PDOException;
 
-class SessionStorage extends AuthenticationHook {
+class SessionStorage extends AuthenticationHook
+{
     /**
      * @var \Icinga\Web\Session $session
      */
@@ -22,16 +23,18 @@ class SessionStorage extends AuthenticationHook {
      */
     private $database;
 
-    public function __construct() {
+    public function __construct()
+    {
         Logger::info('SessionStorage initialized');
         $this->session = \Icinga\Web\Session::getSession();
         $this->database = Database::get();
     }
 
-    public function onLogin(User $user) {
+    public function onLogin(User $user)
+    {
         Logger::info('running onLogin hook');
 
-        if($this->session->exists()) {
+        if ($this->session->exists()) {
             // user successfully authenticated
             // calculate device identifier
             $userAgent = $_SERVER['HTTP_USER_AGENT'] ?: null;
@@ -42,8 +45,9 @@ class SessionStorage extends AuthenticationHook {
                 ->filter(Filter::equal('id', $this->session->getId()))
                 ->first();
 
-            if($zombieSession !== null) {
-                // session with same id exists; cleaning up the old session from the database as this one just got authenticated
+            if ($zombieSession !== null) {
+                // session with same id exists
+                // cleaning up the old session from the database as this one just got authenticated
                 $this->database->beginTransaction();
                 try {
                     $this->database->delete(
@@ -53,7 +57,7 @@ class SessionStorage extends AuthenticationHook {
                         ]
                     );
                     $this->database->commitTransaction();
-                } catch(PDOException $e) {
+                } catch (PDOException $e) {
                     Logger::error("Failed deleting session from table 'session': \n\t" . $e->getMessage());
                     $this->database->rollBackTransaction();
                 }
@@ -64,7 +68,7 @@ class SessionStorage extends AuthenticationHook {
                 ->filter(Filter::equal('username', $user->getUsername()))
                 ->filter(Filter::equal('device_id', $deviceId))
                 ->execute();
-            foreach($userSessions as $session) {
+            foreach ($userSessions as $session) {
                 $this->database->delete(
                     'session',
                     [
@@ -87,18 +91,21 @@ class SessionStorage extends AuthenticationHook {
                     ]
                 );
                 $this->database->commitTransaction();
-            } catch(PDOException $e) {
+            } catch (PDOException $e) {
                 Logger::error("Failed adding session to table 'session': \n\t" . $e->getMessage());
                 $this->database->rollBackTransaction();
             }
-            Logger::debug("onLogin triggered for user " . $user->getUsername() . " and session " . $this->session->getId());
+            Logger::debug(
+                "onLogin triggered for user " . $user->getUsername() . " and session " . $this->session->getId()
+            );
         }
     }
 
-    public function onLogout(User $user) {
-        if($this->session->exists()) {
+    public function onLogout(User $user)
+    {
+        if ($this->session->exists()) {
             // user disconnected, removing the session from the database (invalidating it)
-            if($this->database->ping() === false) {
+            if ($this->database->ping() === false) {
                 $this->database->connect();
             }
 
@@ -117,12 +124,13 @@ class SessionStorage extends AuthenticationHook {
                     ]
                 );
                 $this->database->commitTransaction();
-            } catch(PDOException $e) {
+            } catch (PDOException $e) {
                 Logger::error("Failed deleting session from table 'session': \n\t" . $e->getMessage());
                 $this->database->rollBackTransaction();
             }
-            Logger::debug("onLogout triggered for user " . $user->getUsername() . " and session " . $this->session->getId());
+            Logger::debug(
+                "onLogout triggered for user " . $user->getUsername() . " and session " . $this->session->getId()
+            );
         }
     }
-
 }

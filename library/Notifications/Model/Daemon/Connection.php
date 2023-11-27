@@ -6,7 +6,8 @@ use React\Socket\ConnectionInterface;
 use React\Stream\ThroughStream;
 use stdClass;
 
-final class Connection {
+final class Connection
+{
     /**
      * @var ConnectionInterface $connection
      */
@@ -42,12 +43,13 @@ final class Connection {
      */
     private $deviceId;
 
-    public function __construct(ConnectionInterface $connection) {
+    public function __construct(ConnectionInterface $connection)
+    {
         $this->connection = $connection;
 
         $address = $this->parseHostAndPort($connection->getRemoteAddress());
         $this->host = $address->host;
-        $this->port = (int)$address->port;
+        $this->port = (int) $address->port;
 
         $this->stream = new ThroughStream();
         $this->session = null;
@@ -55,11 +57,16 @@ final class Connection {
         $this->deviceId = null;
     }
 
-    public static function parseHostAndPort(string $address): stdClass {
+    public static function parseHostAndPort(string $address): stdClass
+    {
         $raw = $address;
         $combined = new stdClass();
-        $combined->host = substr($raw, strpos($raw, '[') + 1, strpos($raw, ']') - (strpos($raw, '[') + 1));
-        if(strpos($combined->host, '.')) {
+        $combined->host = substr(
+            $raw,
+            strpos($raw, '[') + 1,
+            strpos($raw, ']') - (strpos($raw, '[') + 1)
+        );
+        if (strpos($combined->host, '.')) {
             // it's an IPv4, stripping empty IPv6 tags
             $combined->host = substr($combined->host, strrpos($combined->host, ':') + 1);
         }
@@ -69,9 +76,10 @@ final class Connection {
         return $combined;
     }
 
-    public static function calculateDeviceId(string $userAgent, string $user): ?string {
-        if(in_array('joaat', hash_algos())) {
-            if(trim(strlen($userAgent)) > 0 && trim(strlen($user)) > 0) {
+    public static function calculateDeviceId(string $userAgent, string $user): ?string
+    {
+        if (in_array('joaat', hash_algos())) {
+            if (trim(strlen($userAgent)) > 0 && trim(strlen($user)) > 0) {
                 return strtoupper(hash('joaat', $user . trim($userAgent)));
             }
         }
@@ -79,47 +87,58 @@ final class Connection {
         return null;
     }
 
-    public function getHost(): string {
+    public function getHost(): string
+    {
         return $this->host;
     }
 
-    public function getPort(): int {
+    public function getPort(): int
+    {
         return $this->port;
     }
 
-    public function getAddress(): string {
+    public function getAddress(): string
+    {
         return $this->host . ':' . $this->port;
     }
 
-    public function getSession(): ?string {
+    public function getSession(): ?string
+    {
         return $this->session;
     }
 
-    public function setSession(string $session): void {
+    public function setSession(string $session): void
+    {
         $this->session = $session;
     }
 
-    public function getStream(): ThroughStream {
+    public function getStream(): ThroughStream
+    {
         return $this->stream;
     }
 
-    public function getConnection(): ConnectionInterface {
+    public function getConnection(): ConnectionInterface
+    {
         return $this->connection;
     }
 
-    public function getUser(): User {
+    public function getUser(): User
+    {
         return $this->user;
     }
 
-    public function getDeviceId(): ?string {
+    public function getDeviceId(): ?string
+    {
         return $this->deviceId;
     }
 
-    public function setDeviceId(string $deviceId): void {
+    public function setDeviceId(string $deviceId): void
+    {
         $this->deviceId = $deviceId;
     }
 
-    public function sendEvent(Event $event): void {
+    public function sendEvent(Event $event): void
+    {
         $this->stream->write(
             $event
         );

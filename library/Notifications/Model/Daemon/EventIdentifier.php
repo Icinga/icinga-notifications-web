@@ -7,39 +7,45 @@ use Exception;
 /**
  * TODO: Replace with proper Enum once the lowest supported PHP version raises to 8.1
  */
-abstract class EventIdentifier {
+abstract class EventIdentifier
+{
     /**
      * @throws Exception
      */
-    final private function __construct() {
+    final private function __construct()
+    {
         throw new Exception("This enum class can't be instantiated.");
     }
 
     /**
      * @throws Exception
      */
-    final public function __call($name, $arguments): void {
+    final public function __call($name, $arguments): void
+    {
         throw new Exception("This enum class can't be called.");
     }
 
     /**
      * @throws Exception
      */
-    final public static function __callStatic($name, $arguments): void {
+    final public static function __callStatic($name, $arguments): void
+    {
         throw new Exception("This enum class can't be statically called.");
     }
 
     /**
      * @throws Exception
      */
-    final public function __serialize(): array {
+    final public function __serialize(): array
+    {
         throw new Exception("This enum class can't be serialized.");
     }
 
     /**
      * @throws Exception
      */
-    final public function __unserialize(array $data): void {
+    final public function __unserialize(array $data): void
+    {
         throw new Exception("This enum class can't be deserialized.");
     }
 

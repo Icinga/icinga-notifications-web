@@ -5,8 +5,10 @@ namespace Icinga\Module\Notifications\Controllers;
 use Icinga\Application\Icinga;
 use ipl\Web\Compat\CompatController;
 
-final class DaemonController extends CompatController {
-    public function init(): void {
+final class DaemonController extends CompatController
+{
+    public function init(): void
+    {
         /**
          * override init function and disable Zend rendering as this controller provides no graphical output
          */
@@ -14,14 +16,15 @@ final class DaemonController extends CompatController {
         $this->_helper->layout()->disableLayout();
     }
 
-    public function scriptAction(): void {
+    public function scriptAction(): void
+    {
         $root = Icinga::app()
                 ->getModuleManager()
                 ->getModule('notifications')
                 ->getBaseDir() . '/public/js';
 
         $filePath = realpath($root . DIRECTORY_SEPARATOR . 'icinga-notifications-worker.js');
-        if($filePath === false) {
+        if ($filePath === false) {
             $this->httpNotFound("'icinga-notifications-worker.js' does not exist");
         }
 
@@ -30,7 +33,7 @@ final class DaemonController extends CompatController {
             '%x-%x-%x',
             $fileStat['ino'],
             $fileStat['size'],
-            (float)str_pad($fileStat['mtime'], 16, '0')
+            (float) str_pad($fileStat['mtime'], 16, '0')
         );
 
         $this->getResponse()->setHeader(
@@ -39,7 +42,7 @@ final class DaemonController extends CompatController {
             true
         );
 
-        if($this->getRequest()->getServer('HTTP_IF_NONE_MATCH') === $eTag) {
+        if ($this->getRequest()->getServer('HTTP_IF_NONE_MATCH') === $eTag) {
             $this->getResponse()->setHttpResponseCode(304);
         } else {
             $this->getResponse()

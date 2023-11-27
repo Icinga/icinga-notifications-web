@@ -16,10 +16,12 @@ use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
 use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
+
 use function Clue\React\Block\await;
 use function React\Promise\Timer\sleep;
 
-final class Daemon {
+final class Daemon
+{
     private const PREFIX = '[daemon] - ';
 
     /**
@@ -62,22 +64,25 @@ final class Daemon {
      */
     private $lastIncidentId;
 
-    private function __construct() {
+    private function __construct()
+    {
         self::$logger = Logger::getInstance();
         self::$logger::info(self::PREFIX . "spawned");
 
         $this->load();
     }
 
-    public static function get(): Daemon {
-        if(isset(self::$instance) === false) {
+    public static function get(): Daemon
+    {
+        if (isset(self::$instance) === false) {
             self::$instance = new Daemon();
         }
 
         return self::$instance;
     }
 
-    private function load(): void {
+    private function load(): void
+    {
         self::$logger::debug(self::PREFIX . "loading");
 
         $this->loop = Loop::get();
@@ -92,7 +97,8 @@ final class Daemon {
         self::$logger::debug(self::PREFIX . "loaded");
     }
 
-    public function unload(): void {
+    public function unload(): void
+    {
         self::$logger::debug(self::PREFIX . "unloading");
 
         $this->cancellationToken = true;
@@ -108,7 +114,8 @@ final class Daemon {
         self::$logger::debug(self::PREFIX . "unloaded");
     }
 
-    public function reload(): void {
+    public function reload(): void
+    {
         self::$logger::debug(self::PREFIX . "reloading");
 
         $this->unload();
@@ -117,7 +124,8 @@ final class Daemon {
         self::$logger::debug(self::PREFIX . "reloaded");
     }
 
-    private function shutdown(bool $isManualShutdown = false): void {
+    private function shutdown(bool $isManualShutdown = false): void
+    {
         self::$logger::info(self::PREFIX . "shutting down" . ($isManualShutdown ? " (manually triggered)" : ""));
 
         $initAt = $this->initializedAt;
@@ -127,11 +135,12 @@ final class Daemon {
         exit(0);
     }
 
-    private function signalHandling(LoopInterface $loop): void {
-        $reloadFunc = function() {
+    private function signalHandling(LoopInterface $loop): void
+    {
+        $reloadFunc = function () {
             $this->reload();
         };
-        $exitFunc = function() {
+        $exitFunc = function () {
             $this->shutdown(true);
         };
 
@@ -148,14 +157,15 @@ final class Daemon {
         $loop->addSignal(SIGTERM, $exitFunc);
     }
 
-    private function housekeeping(): void {
+    private function housekeeping(): void
+    {
         self::$logger::debug(self::PREFIX . "running housekeeping job");
         $staleSessions = Session::on(Database::get())
             ->filter(Filter::lessThan('authenticated_at', time() - 86400));
         $deletions = 0;
 
         /** @var Session $session */
-        foreach($staleSessions as $session) {
+        foreach ($staleSessions as $session) {
             $this->database->delete(
                 'session',
                 [
@@ -165,24 +175,30 @@ final class Daemon {
             ++$deletions;
         }
 
-        if($deletions > 0) {
+        if ($deletions > 0) {
             self::$logger::info(self::PREFIX . "housekeeping cleaned " . $deletions . " stale sessions");
         }
         self::$logger::debug(self::PREFIX . "finished housekeeping job");
     }
 
-    private function processNotifications(): void {
+    private function processNotifications(): void
+    {
         $numOfNotifications = 0;
 
-        if(isset($this->lastIncidentId) === false) {
+        if (isset($this->lastIncidentId) === false) {
             // get the newest incident identifier
             $latestIncidentNotification = IncidentHistory::on(Database::get())
                 ->filter(Filter::equal('type', 'notified'))
                 ->orderBy('id', 'DESC')
                 ->first();
-            if($latestIncidentNotification) {
+            if ($latestIncidentNotification) {
                 $this->lastIncidentId = intval($latestIncidentNotification->id);
-                self::$logger::debug(self::PREFIX . "fetched latest incident notification identifier: <id: " . $this->lastIncidentId . ">");
+                self::$logger::debug(
+                    self::PREFIX
+                    . "fetched latest incident notification identifier: <id: "
+                    . $this->lastIncidentId
+                    . ">"
+                );
             }
         }
 
@@ -195,8 +211,8 @@ final class Daemon {
         $connections = $this->server->getMatchedConnections();
 
         /** @var IncidentHistory $notification */
-        foreach($notifications as $notification) {
-            if(isset($connections[$notification->contact_id])) {
+        foreach ($notifications as $notification) {
+            if (isset($connections[$notification->contact_id])) {
                 /** @var Incident $incident */
                 $incident = IncidentHistory::on(Database::get())
                     ->filter(Filter::equal('id', $notification->caused_by_incident_history_id))
@@ -204,24 +220,27 @@ final class Daemon {
                         'incident'
                     ])
                     ->first();
-                if($incident !== null) {
+                if ($incident !== null) {
                     // reformat notification time
                     /** @var DateTime $time */
                     $time = $incident->time;
                     $time->setTimezone(new DateTimeZone('UTC'));
                     $time = $time->format(DateTimeInterface::RFC3339_EXTENDED);
 
-                    $connections[$notification->contact_id]->sendEvent(new Event(
-                        EventIdentifier::ICINGA2_NOTIFICATION,
-                        (object)[
-                            'incident_id' => $incident->incident_id,
-                            'event_id' => $incident->event_id,
-                            'time' => $time,
-                            'severity' => $incident->incident->severity
-                        ],
-                        // minus one as it's usually expected as an auto-incrementing id, we just want to pass it the actual id in this case
-                        intval($notification->id - 1)
-                    ));
+                    $connections[$notification->contact_id]->sendEvent(
+                        new Event(
+                            EventIdentifier::ICINGA2_NOTIFICATION,
+                            (object) [
+                                'incident_id' => $incident->incident_id,
+                                'event_id' => $incident->event_id,
+                                'time' => $time,
+                                'severity' => $incident->incident->severity
+                            ],
+                            // minus one as it's usually expected as an auto-incrementing id, we just want to pass it
+                            // the actual id in this case
+                            intval($notification->id - 1)
+                        )
+                    );
                     ++$numOfNotifications;
                 }
             }
@@ -229,21 +248,22 @@ final class Daemon {
             $this->lastIncidentId = $notification->id;
         }
 
-        if($numOfNotifications > 0) {
+        if ($numOfNotifications > 0) {
             self::$logger::debug(self::PREFIX . "sent " . $numOfNotifications . " notifications");
         }
     }
 
-    private function run(): void {
-        $this->loop->futureTick(function() {
-            while($this->cancellationToken === false) {
-                $beginMs = (int)(microtime(true) * 1000);
+    private function run(): void
+    {
+        $this->loop->futureTick(function () {
+            while ($this->cancellationToken === false) {
+                $beginMs = (int) (microtime(true) * 1000);
 
                 self::$logger::debug(self::PREFIX . "ticking at " . time());
                 $this->processNotifications();
 
-                $endMs = (int)(microtime(true) * 1000);
-                if(($endMs - $beginMs) < 3000) {
+                $endMs = (int) (microtime(true) * 1000);
+                if (($endMs - $beginMs) < 3000) {
                     // run took less than 3 seconds; sleep for the remaining duration to prevent heavy db loads
                     await(sleep((3000 - ($endMs - $beginMs)) / 1000));
                 }
@@ -253,11 +273,11 @@ final class Daemon {
         });
 
         // run housekeeping job every hour
-        $this->loop->addPeriodicTimer(3600.0, function() {
+        $this->loop->addPeriodicTimer(3600.0, function () {
             $this->housekeeping();
         });
         // run housekeeping once on daemon start
-        $this->loop->futureTick(function() {
+        $this->loop->futureTick(function () {
             $this->housekeeping();
         });
     }

@@ -2,7 +2,8 @@
 
 namespace Icinga\Module\Notifications\Model\Daemon;
 
-final class User {
+final class User
+{
     /**
      * @var string $username
      */
@@ -13,24 +14,29 @@ final class User {
      */
     private $contactId;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->username = null;
         $this->contactId = null;
     }
 
-    public function getUsername(): ?string {
+    public function getUsername(): ?string
+    {
         return $this->username;
     }
 
-    public function setUsername(string $username): void {
+    public function setUsername(string $username): void
+    {
         $this->username = $username;
     }
 
-    public function getContactId(): ?int {
+    public function getContactId(): ?int
+    {
         return $this->contactId;
     }
 
-    public function setContactId(int $contactId): void {
+    public function setContactId(int $contactId): void
+    {
         $this->contactId = $contactId;
     }
 }

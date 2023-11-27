@@ -6,12 +6,15 @@ use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
 
-class Session extends Model {
-    public function getTableName(): string {
+class Session extends Model
+{
+    public function getTableName(): string
+    {
         return 'session';
     }
 
-    public function getKeyName(): array {
+    public function getKeyName(): array
+    {
         return [
             'id',
             'username',
@@ -19,7 +22,8 @@ class Session extends Model {
         ];
     }
 
-    public function getColumns(): array {
+    public function getColumns(): array
+    {
         return [
             'id',
             'username',
@@ -28,7 +32,8 @@ class Session extends Model {
         ];
     }
 
-    public function getColumnDefinitions(): array {
+    public function getColumnDefinitions(): array
+    {
         return [
             'id' => t('Session Identifier'),
             'username' => t('Username'),
@@ -37,7 +42,8 @@ class Session extends Model {
         ];
     }
 
-    public function getSearchColumns(): array {
+    public function getSearchColumns(): array
+    {
         return [
             'id',
             'username',
@@ -45,11 +51,12 @@ class Session extends Model {
         ];
     }
 
-    public function createBehaviors(Behaviors $behaviors) {
-        $behaviors->add(new MillisecondTimestamp([
-            'authenticated_at'
-        ]));
+    public function createBehaviors(Behaviors $behaviors)
+    {
+        $behaviors->add(
+            new MillisecondTimestamp([
+                'authenticated_at'
+            ])
+        );
     }
-
-
 }
