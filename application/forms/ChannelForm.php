@@ -263,8 +263,8 @@ class ChannelForm extends CompatForm
 
         if (
             isset($elementConfig->options)
-            && ($elementConfig->type === 'option' || $elementConfig->type === 'options'))
-        {
+            && ($elementConfig->type === 'option' || $elementConfig->type === 'options')
+        ) {
             $options['options'] = (array) $elementConfig->options;
             if ($elementConfig->type === 'options') {
                 $options['multiple'] = true;
