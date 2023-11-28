@@ -8,7 +8,7 @@ use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
 
 /**
- * @property string $id
+ * @property string $php_session_id
  * @property string $username
  * @property string $device_id
  * @property DateTime $authenticated_at
@@ -26,7 +26,7 @@ class Session extends Model
     public function getKeyName(): array
     {
         return [
-            'id',
+            'php_session_id',
             'username',
             'device_id'
         ];
@@ -35,7 +35,7 @@ class Session extends Model
     public function getColumns(): array
     {
         return [
-            'id',
+            'php_session_id',
             'username',
             'device_id',
             'authenticated_at'
@@ -48,7 +48,7 @@ class Session extends Model
     public function getColumnDefinitions(): array
     {
         return [
-            'id' => t('Session Identifier'),
+            'php_session_id' => t('PHP\'s Session Identifier'),
             'username' => t('Username'),
             'device_id' => t('Device Identifier'),
             'authenticated_at' => t('Authenticated At')
@@ -61,7 +61,7 @@ class Session extends Model
     public function getSearchColumns(): array
     {
         return [
-            'id',
+            'php_session_id',
             'username',
             'device_id'
         ];

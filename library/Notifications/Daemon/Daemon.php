@@ -167,7 +167,7 @@ final class Daemon
             $this->database->delete(
                 'session',
                 [
-                    'id = ?' => $session->id
+                    'php_session_id = ?' => $session->php_session_id
                 ]
             );
             ++$deletions;

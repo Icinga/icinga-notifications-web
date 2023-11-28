@@ -42,7 +42,7 @@ class SessionStorage extends AuthenticationHook
 
             // check if session with this identifier already exists (zombie session)
             $zombieSession = Session::on(Database::get())
-                ->filter(Filter::equal('id', $this->session->getId()))
+                ->filter(Filter::equal('php_session_id', $this->session->getId()))
                 ->first();
 
             if ($zombieSession !== null) {
@@ -53,7 +53,7 @@ class SessionStorage extends AuthenticationHook
                     $this->database->delete(
                         'session',
                         [
-                            'id = ?' => $this->session->getId()
+                            'php_session_id = ?' => $this->session->getId()
                         ]
                     );
                     $this->database->commitTransaction();
@@ -73,7 +73,7 @@ class SessionStorage extends AuthenticationHook
                 $this->database->delete(
                     'session',
                     [
-                        'id = ?' => $session->id,
+                        'php_session_id = ?' => $session->php_session_id,
                         'username = ?' => trim($user->getUsername()),
                         'device_id = ?' => $deviceId
                     ]
@@ -86,7 +86,7 @@ class SessionStorage extends AuthenticationHook
                 $this->database->insert(
                     'session',
                     [
-                        'id' => $this->session->getId(),
+                        'php_session_id' => $this->session->getId(),
                         'username' => trim($user->getUsername()),
                         'device_id' => $deviceId
                     ]
@@ -119,7 +119,7 @@ class SessionStorage extends AuthenticationHook
                 $this->database->delete(
                     'session',
                     [
-                        'id = ?' => $this->session->getId(),
+                        'php_session_id = ?' => $this->session->getId(),
                         'username = ?' => trim($user->getUsername()),
                         'device_id = ?' => $deviceId
                     ]

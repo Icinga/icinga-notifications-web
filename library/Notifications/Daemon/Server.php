@@ -309,7 +309,7 @@ final class Server
                 // grab session
                 /** @var Session $session */
                 $session = Session::on($this->dbLink)
-                    ->filter(Filter::equal('id', htmlspecialchars(trim($cookies['Icingaweb2'][0]))))
+                    ->filter(Filter::equal('php_session_id', htmlspecialchars(trim($cookies['Icingaweb2'][0]))))
                     ->first();
 
                 // calculate device id
@@ -323,12 +323,12 @@ final class Server
                         ->filter(Filter::equal('device_id', $session->device_id))
                         ->orderBy('authenticated_at', 'DESC')
                         ->first();
-                    if (isset($latestSession) && ($latestSession->id === $session->id)) {
+                    if (isset($latestSession) && ($latestSession->php_session_id === $session->php_session_id)) {
                         // current session is the latest session for this user and device => this is a valid request
-                        $data->session_id = $session->id;
+                        $data->php_session_id = $session->php_session_id;
                         $data->user = $session->username;
                         $data->device_id = $session->device_id;
-                        $connection->setSession($data->session_id);
+                        $connection->setSession($data->php_session_id);
                         $connection->getUser()->setUsername($data->user);
                         $connection->setDeviceId($data->device_id);
                         $data->isValid = true;
