@@ -60,8 +60,9 @@ class IncidentDetail extends BaseHtmlElement
 
         /** @var Objects $obj */
         $obj = $this->incident->object;
-        $objectLink = new Link($obj->getName(), $obj->url, ['class' => 'subject']);
 
+        /** @var string $objUrl */
+        $objUrl = $obj->url;
         $list->add(Html::tag(
             'li',
             ['class' => 'list-item', 'data-action-item' => true],
@@ -74,7 +75,12 @@ class IncidentDetail extends BaseHtmlElement
                 Html::tag(
                     'div',
                     ['class' => 'main'],
-                    Html::tag('header')->add(Html::tag('div', ['class' => 'title'], $objectLink))
+                    Html::tag('header')
+                        ->add(Html::tag(
+                            'div',
+                            ['class' => 'title'],
+                            new Link($obj->getName(), $objUrl, ['class' => 'subject'])
+                        ))
                 )
             ]
         ));

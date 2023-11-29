@@ -101,21 +101,6 @@ parameters:
 			path: application/controllers/ContactsController.php
 
 		-
-			message: "#^Cannot call method getRoles\\(\\) on Icinga\\\\User\\|null\\.$#"
-			count: 1
-			path: application/controllers/EventController.php
-
-		-
-			message: "#^Cannot call method isUnrestricted\\(\\) on Icinga\\\\User\\|null\\.$#"
-			count: 1
-			path: application/controllers/EventController.php
-
-		-
-			message: "#^Parameter \\#1 \\$queryString of method Icinga\\\\Module\\\\Notifications\\\\Controllers\\\\EventController\\:\\:parseRestriction\\(\\) expects string, array\\<string\\> given\\.$#"
-			count: 1
-			path: application/controllers/EventController.php
-
-		-
 			message: "#^Parameter \\#2 \\$value of static method ipl\\\\Stdlib\\\\Filter\\:\\:equal\\(\\) expects array\\|bool\\|float\\|int\\|string, mixed given\\.$#"
 			count: 1
 			path: application/controllers/EventController.php
@@ -151,18 +136,8 @@ parameters:
 			path: application/controllers/EventRuleController.php
 
 		-
-			message: "#^Cannot call method getRoles\\(\\) on Icinga\\\\User\\|null\\.$#"
-			count: 1
-			path: application/controllers/EventRuleController.php
-
-		-
 			message: "#^Cannot call method getTableName\\(\\) on mixed\\.$#"
 			count: 2
-			path: application/controllers/EventRuleController.php
-
-		-
-			message: "#^Cannot call method isUnrestricted\\(\\) on Icinga\\\\User\\|null\\.$#"
-			count: 1
 			path: application/controllers/EventRuleController.php
 
 		-
@@ -192,11 +167,6 @@ parameters:
 
 		-
 			message: "#^Parameter \\#1 \\$query of method ipl\\\\Web\\\\Control\\\\SearchEditor\\:\\:setQueryString\\(\\) expects string, mixed given\\.$#"
-			count: 1
-			path: application/controllers/EventRuleController.php
-
-		-
-			message: "#^Parameter \\#1 \\$queryString of method Icinga\\\\Module\\\\Notifications\\\\Controllers\\\\EventRuleController\\:\\:parseRestriction\\(\\) expects string, array\\<string\\> given\\.$#"
 			count: 1
 			path: application/controllers/EventRuleController.php
 
@@ -236,21 +206,6 @@ parameters:
 			path: application/controllers/EventRulesController.php
 
 		-
-			message: "#^Cannot call method getRoles\\(\\) on Icinga\\\\User\\|null\\.$#"
-			count: 1
-			path: application/controllers/EventsController.php
-
-		-
-			message: "#^Cannot call method isUnrestricted\\(\\) on Icinga\\\\User\\|null\\.$#"
-			count: 1
-			path: application/controllers/EventsController.php
-
-		-
-			message: "#^Parameter \\#1 \\$queryString of method Icinga\\\\Module\\\\Notifications\\\\Controllers\\\\EventsController\\:\\:parseRestriction\\(\\) expects string, array\\<string\\> given\\.$#"
-			count: 1
-			path: application/controllers/EventsController.php
-
-		-
 			message: "#^Parameter \\#2 \\$default of method Icinga\\\\Web\\\\UrlParams\\:\\:shift\\(\\) expects string\\|null, int\\<1, max\\> given\\.$#"
 			count: 1
 			path: application/controllers/EventsController.php
@@ -266,27 +221,12 @@ parameters:
 			path: application/controllers/EventsController.php
 
 		-
-			message: "#^Cannot call method getRoles\\(\\) on Icinga\\\\User\\|null\\.$#"
-			count: 1
-			path: application/controllers/IncidentController.php
-
-		-
 			message: "#^Cannot call method getUsername\\(\\) on Icinga\\\\User\\|null\\.$#"
 			count: 1
 			path: application/controllers/IncidentController.php
 
 		-
-			message: "#^Cannot call method isUnrestricted\\(\\) on Icinga\\\\User\\|null\\.$#"
-			count: 1
-			path: application/controllers/IncidentController.php
-
-		-
 			message: "#^Parameter \\#1 \\$id of static method Icinga\\\\Module\\\\Notifications\\\\Common\\\\Links\\:\\:incident\\(\\) expects int, mixed given\\.$#"
-			count: 1
-			path: application/controllers/IncidentController.php
-
-		-
-			message: "#^Parameter \\#1 \\$queryString of method Icinga\\\\Module\\\\Notifications\\\\Controllers\\\\IncidentController\\:\\:parseRestriction\\(\\) expects string, array\\<string\\> given\\.$#"
 			count: 1
 			path: application/controllers/IncidentController.php
 
@@ -299,21 +239,6 @@ parameters:
 			message: "#^Parameter \\#2 \\$value of static method ipl\\\\Stdlib\\\\Filter\\:\\:equal\\(\\) expects array\\|bool\\|float\\|int\\|string, mixed given\\.$#"
 			count: 1
 			path: application/controllers/IncidentController.php
-
-		-
-			message: "#^Cannot call method getRoles\\(\\) on Icinga\\\\User\\|null\\.$#"
-			count: 1
-			path: application/controllers/IncidentsController.php
-
-		-
-			message: "#^Cannot call method isUnrestricted\\(\\) on Icinga\\\\User\\|null\\.$#"
-			count: 1
-			path: application/controllers/IncidentsController.php
-
-		-
-			message: "#^Parameter \\#1 \\$queryString of method Icinga\\\\Module\\\\Notifications\\\\Controllers\\\\IncidentsController\\:\\:parseRestriction\\(\\) expects string, array\\<string\\> given\\.$#"
-			count: 1
-			path: application/controllers/IncidentsController.php
 
 		-
 			message: "#^Cannot cast mixed to int\\.$#"
@@ -966,21 +891,6 @@ parameters:
 			path: library/Notifications/Model/Objects.php
 
 		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Objects\\:\\:getColumnDefinitions\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: library/Notifications/Model/Objects.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Objects\\:\\:getDefaultSort\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: library/Notifications/Model/Objects.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Objects\\:\\:getSearchColumns\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: library/Notifications/Model/Objects.php
-
-		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Rule\\:\\:createRelations\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: library/Notifications/Model/Rule.php
@@ -1446,27 +1356,12 @@ parameters:
 			path: library/Notifications/Widget/CheckboxIcon.php
 
 		-
-			message: "#^Cannot access property \\$host on mixed\\.$#"
-			count: 2
-			path: library/Notifications/Widget/Detail/EventDetail.php
-
-		-
 			message: "#^Cannot access property \\$id on mixed\\.$#"
 			count: 1
 			path: library/Notifications/Widget/Detail/EventDetail.php
 
 		-
-			message: "#^Cannot access property \\$service on mixed\\.$#"
-			count: 2
-			path: library/Notifications/Widget/Detail/EventDetail.php
-
-		-
 			message: "#^Cannot access property \\$source on mixed\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Detail/EventDetail.php
-
-		-
-			message: "#^Cannot access property \\$url on mixed\\.$#"
 			count: 1
 			path: library/Notifications/Widget/Detail/EventDetail.php
 
@@ -1481,28 +1376,13 @@ parameters:
 			path: library/Notifications/Widget/Detail/EventDetail.php
 
 		-
-			message: "#^Cannot access property \\$host on mixed\\.$#"
-			count: 2
-			path: library/Notifications/Widget/Detail/IncidentDetail.php
-
-		-
 			message: "#^Cannot access property \\$object_extra_tag on mixed\\.$#"
 			count: 1
 			path: library/Notifications/Widget/Detail/IncidentDetail.php
 
 		-
-			message: "#^Cannot access property \\$service on mixed\\.$#"
-			count: 2
-			path: library/Notifications/Widget/Detail/IncidentDetail.php
-
-		-
 			message: "#^Cannot access property \\$source on mixed\\.$#"
 			count: 1
-			path: library/Notifications/Widget/Detail/IncidentDetail.php
-
-		-
-			message: "#^Cannot access property \\$url on mixed\\.$#"
-			count: 2
 			path: library/Notifications/Widget/Detail/IncidentDetail.php
 
 		-
@@ -1711,17 +1591,7 @@ parameters:
 			path: library/Notifications/Widget/ItemList/EventList.php
 
 		-
-			message: "#^Cannot access property \\$host on mixed\\.$#"
-			count: 3
-			path: library/Notifications/Widget/ItemList/EventListItem.php
-
-		-
 			message: "#^Cannot access property \\$id on mixed\\.$#"
-			count: 2
-			path: library/Notifications/Widget/ItemList/EventListItem.php
-
-		-
-			message: "#^Cannot access property \\$service on mixed\\.$#"
 			count: 2
 			path: library/Notifications/Widget/ItemList/EventListItem.php
 
@@ -1777,7 +1647,7 @@ parameters:
 
 		-
 			message: "#^Cannot access property \\$object on mixed\\.$#"
-			count: 5
+			count: 2
 			path: library/Notifications/Widget/ItemList/IncidentHistoryListItem.php
 
 		-
@@ -1807,23 +1677,13 @@ parameters:
 
 		-
 			message: "#^Parameter \\#1 \\$id of static method Icinga\\\\Module\\\\Notifications\\\\Common\\\\Links\\:\\:event\\(\\) expects int, mixed given\\.$#"
-			count: 2
+			count: 1
 			path: library/Notifications/Widget/ItemList/IncidentHistoryListItem.php
 
 		-
 			message: "#^Parameter \\#1 \\$severity of static method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Event\\:\\:mapSeverity\\(\\) expects string\\|null, mixed given\\.$#"
 			count: 3
 			path: library/Notifications/Widget/ItemList/IncidentHistoryListItem.php
-
-		-
-			message: "#^Cannot access property \\$host on mixed\\.$#"
-			count: 2
-			path: library/Notifications/Widget/ItemList/IncidentListItem.php
-
-		-
-			message: "#^Cannot access property \\$service on mixed\\.$#"
-			count: 2
-			path: library/Notifications/Widget/ItemList/IncidentListItem.php
 
 		-
 			message: "#^Cannot call method getTimestamp\\(\\) on mixed\\.$#"

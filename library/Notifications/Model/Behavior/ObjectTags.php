@@ -28,6 +28,8 @@ class ObjectTags implements RewriteColumnBehavior, QueryAwareBehavior
     public function rewriteCondition(Filter\Condition $condition, $relation = null): ?Rule
     {
         $filterAll = null;
+        /** @var string $relation */
+        /** @var ?string $column */
         $column = $condition->metaData()->get('columnName');
         if ($column !== null) {
             if (substr($relation, -10) === 'extra_tag.') {
@@ -48,6 +50,8 @@ class ObjectTags implements RewriteColumnBehavior, QueryAwareBehavior
 
     public function rewriteColumn($column, $relation = null): AliasedExpression
     {
+        /** @var string $relation */
+        /** @var string $column */
         $model = $this->query->getModel();
         $subQuery = $this->query->createSubQuery(new $model(), $relation)
             ->limit(1)

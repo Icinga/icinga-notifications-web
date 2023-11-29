@@ -16,7 +16,7 @@ class ObjectIdTag extends Model
         return 'object_id_tag';
     }
 
-    public function getKeyName(): array
+    public function getKeyName()
     {
         return ['object_id', 'tag'];
     }

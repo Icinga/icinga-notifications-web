@@ -72,9 +72,12 @@ class EventDetail extends BaseHtmlElement
     {
         //TODO(sd): This is just placeholder. Add hook implementation instead
         $relatedObj = Html::tag('ul', ['class' => ['item-list', 'action-list'], 'data-base-target' => '_next']);
+
         /** @var Objects $obj */
         $obj = $this->event->object;
-        $objLink = new Link($obj->getName(), $obj->url, ['class' => 'subject']);
+
+        /** @var string $objUrl */
+        $objUrl = $obj->url;
         $relatedObj->add(
             Html::tag(
                 'li',
@@ -84,7 +87,12 @@ class EventDetail extends BaseHtmlElement
                     Html::tag(
                         'div',
                         ['class' => 'main'],
-                        Html::tag('header')->add(Html::tag('div', ['class' => 'title'], $objLink))
+                        Html::tag('header')
+                            ->add(Html::tag(
+                                'div',
+                                ['class' => 'title'],
+                                new Link($obj->getName(), $objUrl, ['class' => 'subject'])
+                            ))
                     )
                 ]
             )

@@ -11,6 +11,7 @@ use Icinga\Module\Notifications\Model\ObjectIdTag;
 use Icinga\Module\Notifications\Util\ObjectSuggestionsCursor;
 use ipl\Html\HtmlElement;
 use ipl\Orm\Exception\InvalidColumnException;
+use ipl\Orm\Exception\InvalidRelationException;
 use ipl\Orm\Model;
 use ipl\Orm\Query;
 use ipl\Orm\Relation;
@@ -115,7 +116,9 @@ class ObjectSuggestions extends Suggestions
         }
 
         $columnPath = $query->getResolver()->qualifyPath($column, $model->getTableName());
-        list($targetPath, $columnName) = preg_split('/(?<=tag|extra_tag)\.|\.(?=[^.]+$)/', $columnPath, 2);
+        /** @var string[] $splitted */
+        $splitted = preg_split('/(?<=tag|extra_tag)\.|\.(?=[^.]+$)/', $columnPath, 2);
+        [$targetPath, $columnName] = $splitted;
 
         $isTag = false;
         if (substr($targetPath, -4) === '.tag') {
@@ -182,6 +185,7 @@ class ObjectSuggestions extends Suggestions
         // Custom variables only after the columns are exhausted and there's actually a chance the user sees them
         foreach ([new ObjectIdTag(), new ObjectExtraTag()] as $model) {
             $titleAdded = false;
+            /** @var Model $tag */
             foreach ($this->queryTags($model, $searchTerm) as $tag) {
                 $isIdTag = $tag instanceof ObjectIdTag;
 

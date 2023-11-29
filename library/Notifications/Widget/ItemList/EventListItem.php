@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Widget\ItemList;
 use Icinga\Module\Notifications\Common\BaseListItem;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Event;
+use Icinga\Module\Notifications\Model\Objects;
 use Icinga\Module\Notifications\Widget\SourceIcon;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
@@ -79,7 +80,9 @@ class EventListItem extends BaseListItem
             $title->addHtml(Html::tag('span', [], sprintf('#%d:', $this->item->incident->id)));
         }
 
-        $name = $this->item->object->getName();
+        /** @var Objects $obj */
+        $obj = $this->item->object;
+        $name = $obj->getName();
         if (! $this->list->getNoSubjectLink()) {
             $content = new Link($name, Links::event($this->item->id), ['class' => 'subject']);
         } else {
