@@ -315,7 +315,7 @@ final class Server
 
     /**
      * @param Connection $connection
-     * @param array<array<string>> $cookies
+     * @param array<string> $cookies
      * @param array<array<string>> $headers
      * @return stdClass
      */
@@ -330,7 +330,7 @@ final class Server
                 // grab session
                 /** @var Session $session */
                 $session = Session::on($this->dbLink)
-                    ->filter(Filter::equal('php_session_id', htmlspecialchars(trim($cookies['Icingaweb2'][0]))))
+                    ->filter(Filter::equal('php_session_id', htmlspecialchars(trim($cookies['Icingaweb2']))))
                     ->first();
 
                 // calculate device id
