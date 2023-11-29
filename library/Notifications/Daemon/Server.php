@@ -4,6 +4,7 @@ namespace Icinga\Module\Notifications\Daemon;
 
 use Exception;
 use Fig\Http\Message\StatusCodeInterface;
+use Icinga\Application\Config;
 use Icinga\Application\Logger;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Contact;
@@ -48,14 +49,19 @@ final class Server
     private $http;
 
     /**
-     * @var array<Connection>
+     * @var array<Connection> $connections
      */
     private $connections;
 
     /**
-     * @var \ipl\Sql\Connection
+     * @var \ipl\Sql\Connection $dbLink
      */
     private $dbLink;
+
+    /**
+     * @var Config $config
+     */
+    private $config;
 
     private function __construct(LoopInterface $mainLoop)
     {
@@ -64,6 +70,7 @@ final class Server
 
         $this->mainLoop = $mainLoop;
         $this->dbLink = Database::get();
+        $this->config = Config::module('notifications');
 
         $this->load();
     }
@@ -85,7 +92,13 @@ final class Server
         self::$logger::debug(self::PREFIX . "loading");
 
         $this->connections = [];
-        $this->socket = new SocketServer('[::]:9001', [], $this->mainLoop);
+        $this->socket = new SocketServer(
+            $this->config->get('daemon', 'host', '[::]')
+            . ':'
+            . $this->config->get('daemon', 'port', '9001'),
+            [],
+            $this->mainLoop
+        );
         $this->http = new HttpServer(function (ServerRequestInterface $request) {
             return $this->handleRequest($request);
         });
@@ -98,6 +111,14 @@ final class Server
         });
         // attach http server to socket
         $this->http->listen($this->socket);
+
+        self::$logger::info(
+            self::PREFIX
+            . "listening on "
+            . parse_url($this->socket->getAddress() ?? '', PHP_URL_HOST)
+            . ':'
+            . parse_url($this->socket->getAddress() ?? '', PHP_URL_PORT)
+        );
 
         self::$logger::debug(self::PREFIX . "loaded");
     }
