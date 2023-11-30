@@ -6,6 +6,7 @@ namespace Icinga\Module\Notifications\Widget\Detail;
 
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Incident;
+use Icinga\Module\Notifications\Model\Objects;
 use Icinga\Module\Notifications\Model\Source;
 use Icinga\Module\Notifications\Widget\EventSourceBadge;
 use Icinga\Module\Notifications\Widget\ItemList\IncidentContactList;
@@ -57,16 +58,11 @@ class IncidentDetail extends BaseHtmlElement
         //TODO(sd): Add hook implementation
         $list = Html::tag('ul', ['class' => ['item-list', 'minimal', 'action-list'], 'data-base-target' => '_next']);
 
-        if ($this->incident->object->service) {
-            $objectLink = Html::sprintf(
-                t('%s on %s', '<service> on <host>'),
-                new Link($this->incident->object->service, $this->incident->object->url, ['class' => 'subject']),
-                Html::tag('span', ['class' => 'subject'], $this->incident->object->host)
-            );
-        } else {
-            $objectLink = new Link($this->incident->object->host, $this->incident->object->url, ['class' => 'subject']);
-        }
+        /** @var Objects $obj */
+        $obj = $this->incident->object;
 
+        /** @var string $objUrl */
+        $objUrl = $obj->url;
         $list->add(Html::tag(
             'li',
             ['class' => 'list-item', 'data-action-item' => true],
@@ -79,7 +75,12 @@ class IncidentDetail extends BaseHtmlElement
                 Html::tag(
                     'div',
                     ['class' => 'main'],
-                    Html::tag('header')->add(Html::tag('div', ['class' => 'title'], $objectLink))
+                    Html::tag('header')
+                        ->add(Html::tag(
+                            'div',
+                            ['class' => 'title'],
+                            new Link($obj->getName(), $objUrl, ['class' => 'subject'])
+                        ))
                 )
             ]
         ));

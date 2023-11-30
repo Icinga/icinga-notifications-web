@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Widget\ItemList;
 use Icinga\Module\Notifications\Common\BaseListItem;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Event;
+use Icinga\Module\Notifications\Model\Objects;
 use Icinga\Module\Notifications\Widget\SourceIcon;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
@@ -79,22 +80,13 @@ class EventListItem extends BaseListItem
             $title->addHtml(Html::tag('span', [], sprintf('#%d:', $this->item->incident->id)));
         }
 
+        /** @var Objects $obj */
+        $obj = $this->item->object;
+        $name = $obj->getName();
         if (! $this->list->getNoSubjectLink()) {
-            $content = new Link(
-                $this->item->object->host,
-                Links::event($this->item->id),
-                ['class' => 'subject']
-            );
+            $content = new Link($name, Links::event($this->item->id), ['class' => 'subject']);
         } else {
-            $content = Html::tag('span', ['class' => 'subject'], $this->item->object->host);
-        }
-
-        if ($this->item->object->service) {
-            $content = Html::sprintf(
-                t('%s on %s', '<service> on <host>'),
-                $content->setContent($this->item->object->service),
-                Html::tag('span', ['class' => 'subject'], $this->item->object->host)
-            );
+            $content = Html::tag('span', ['class' => 'subject'], $name);
         }
 
         $msg = null;

@@ -5,6 +5,7 @@
 namespace Icinga\Module\Notifications\Common;
 
 use Icinga\Authentication\Auth as IcingaAuth;
+use Icinga\User;
 use ipl\Orm\Query;
 use ipl\Stdlib\Filter;
 use ipl\Web\Filter\QueryString;
@@ -25,15 +26,18 @@ trait Auth
      */
     public function applyRestrictions(Query $query): void
     {
-        if ($this->getAuth()->getUser()->isUnrestricted()) {
+        /** @var User $user */
+        $user = $this->getAuth()->getUser();
+        if ($user->isUnrestricted()) {
             return;
         }
 
         $queryFilter = Filter::any();
-        foreach ($this->getAuth()->getUser()->getRoles() as $role) {
+        foreach ($user->getRoles() as $role) {
             $roleFilter = Filter::all();
-
-            if ($restriction = $role->getRestrictions('notifications/filter/objects')) {
+            /** @var string $restriction */
+            $restriction = $role->getRestrictions('notifications/filter/objects');
+            if ($restriction) {
                 $roleFilter->add($this->parseRestriction($restriction, 'notifications/filter/objects'));
             }
 

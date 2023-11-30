@@ -9,9 +9,9 @@ use Icinga\Module\Notifications\Common\BaseListItem;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Event;
 use Icinga\Module\Notifications\Model\IncidentHistory;
+use Icinga\Module\Notifications\Model\Objects;
 use Icinga\Module\Notifications\Widget\SourceIcon;
 use ipl\Html\BaseHtmlElement;
-use ipl\Html\Html;
 use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
 use ipl\Web\Widget\TimeAgo;
@@ -49,27 +49,12 @@ class IncidentHistoryListItem extends BaseListItem
     protected function assembleTitle(BaseHtmlElement $title): void
     {
         if ($this->item->type === 'opened' || $this->item->type == 'incident_severity_changed') {
-            $event = $this->item->event;
             $this->getAttributes()
                 ->set('data-action-item', true);
 
-            if ($event->object->service) {
-                $content = Html::sprintf(
-                    t('%s on %s', '<service> on <host>'),
-                    new Link(
-                        $event->object->service,
-                        Links::event($this->item->event_id),
-                        ['class' => 'subject']
-                    ),
-                    Html::tag('span', ['class' => 'subject'], $event->object->host)
-                );
-            } else {
-                $content = new Link(
-                    $event->object->host,
-                    Links::event($this->item->event_id),
-                    ['class' => 'subject']
-                );
-            }
+            /** @var Objects $obj */
+            $obj = $this->item->event->object;
+            $content = new Link($obj->getName(), Links::event($this->item->event_id), ['class' => 'subject']);
 
             $title->addHtml($content);
         }
