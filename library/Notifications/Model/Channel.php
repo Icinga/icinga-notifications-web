@@ -86,13 +86,16 @@ class Channel extends Model
      *
      * @param Connection $conn
      *
-     * @return array<int, string> All the channel names mapped as id => name
+     * @return string[] All the channel names mapped as id => name
      */
     public static function fetchChannelNames(Connection $conn): array
     {
         $channels = [];
+        /** @var Channel $channel */
         foreach (Channel::on($conn) as $channel) {
-            $channels[$channel->id] = $channel->name;
+            /** @var string $name */
+            $name = $channel->name;
+            $channels[$channel->id] = $name;
         }
 
         return $channels;

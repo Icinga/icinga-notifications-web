@@ -8,7 +8,9 @@ use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\AvailableChannelType;
 use Icinga\Web\Session;
 use ipl\Html\Contract\FormSubmitElement;
+use ipl\Html\FormElement\BaseFormElement;
 use ipl\Html\FormElement\FieldsetElement;
+use ipl\I18n\GettextTranslator;
 use ipl\I18n\StaticTranslator;
 use ipl\Sql\Connection;
 use ipl\Validator\EmailAddressValidator;
@@ -33,7 +35,10 @@ class ChannelForm extends CompatForm
     {
         $this->db = $db;
         $this->channelId = $channelId;
-        $this->locale = StaticTranslator::$instance->getLocale();
+
+        /** @var GettextTranslator $translateInstance */
+        $translateInstance = StaticTranslator::$instance;
+        $this->locale = $translateInstance->getLocale();
     }
 
     protected function assemble()
@@ -52,9 +57,14 @@ class ChannelForm extends CompatForm
 
         $query = AvailableChannelType::on($this->db)->columns(['type', 'name', 'config_attrs']);
 
+        /** @var string[] $typesConfig */
         $typesConfig = [];
+
+        /** @var string[] $typeNamePair */
         $typeNamePair = [];
+
         $defaultType = null;
+        /** @var Channel $channel */
         foreach ($query as $channel) {
             if ($defaultType === null) {
                 $defaultType = $channel->type;
@@ -77,6 +87,7 @@ class ChannelForm extends CompatForm
             ]
         );
 
+        /** @var string $selectedType */
         $selectedType = $this->getValue('type');
         $this->createConfigElements($selectedType, $typesConfig[$selectedType]);
 
@@ -173,7 +184,9 @@ class ChannelForm extends CompatForm
      */
     protected function createConfigElements(string $type, string $config): void
     {
+        /** @var array<int, stdClass> $elementsConfig */
         $elementsConfig = json_decode($config, false);
+
         if (empty($elementsConfig)) {
             return;
         }
@@ -182,6 +195,7 @@ class ChannelForm extends CompatForm
         $this->addElement($configFieldset);
 
         foreach ($elementsConfig as $elementConfig) {
+            /** @var BaseFormElement $elem */
             $elem = $this->createElement(
                 $this->getElementType($elementConfig),
                 $elementConfig->name,
@@ -237,7 +251,7 @@ class ChannelForm extends CompatForm
      *
      * @param stdClass $elementConfig
      *
-     * @return array
+     * @return string[]
      */
     protected function getElementOptions(stdClass $elementConfig): array
     {

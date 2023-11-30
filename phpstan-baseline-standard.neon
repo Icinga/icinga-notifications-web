@@ -296,11 +296,6 @@ parameters:
 			path: application/forms/BaseEscalationForm.php
 
 		-
-			message: "#^Call to an undefined method ipl\\\\Html\\\\Contract\\\\FormElement\\:\\:isChecked\\(\\)\\.$#"
-			count: 1
-			path: application/forms/ChannelForm.php
-
-		-
 			message: "#^Cannot call method getName\\(\\) on ipl\\\\Html\\\\Contract\\\\FormSubmitElement\\|null\\.$#"
 			count: 2
 			path: application/forms/ChannelForm.php
@@ -716,22 +711,7 @@ parameters:
 			path: library/Notifications/Model/Behavior/HasAddress.php
 
 		-
-			message: "#^Cannot access property \\$id on mixed\\.$#"
-			count: 1
-			path: library/Notifications/Model/Channel.php
-
-		-
-			message: "#^Cannot access property \\$type on mixed\\.$#"
-			count: 2
-			path: library/Notifications/Model/Channel.php
-
-		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Channel\\:\\:createRelations\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Model/Channel.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Channel\\:\\:fetchChannelTypes\\(\\) should return array\\<int, string\\> but returns array\\<int\\|string, mixed\\>\\.$#"
 			count: 1
 			path: library/Notifications/Model/Channel.php
 
@@ -1067,17 +1047,17 @@ parameters:
 
 		-
 			message: "#^Cannot access property \\$address on mixed\\.$#"
-			count: 4
+			count: 3
 			path: library/Notifications/Web/Form/ContactForm.php
 
 		-
 			message: "#^Cannot access property \\$id on mixed\\.$#"
-			count: 2
+			count: 1
 			path: library/Notifications/Web/Form/ContactForm.php
 
 		-
 			message: "#^Cannot access property \\$type on mixed\\.$#"
-			count: 4
+			count: 3
 			path: library/Notifications/Web/Form/ContactForm.php
 
 		-
