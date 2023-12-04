@@ -44,7 +44,7 @@ class ContactListItem extends BaseListItem
     {
         $contactIcons = new HtmlElement('div', Attributes::create(['class' => 'contact-icons']));
         if ($this->item->has_email) {
-            $contactIcons->addHtml(new Icon('envelope'));
+            $contactIcons->addHtml(new Icon('at'));
         }
 
         $footer->addHtml($contactIcons);
