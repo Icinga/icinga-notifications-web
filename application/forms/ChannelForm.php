@@ -267,21 +267,20 @@ class ChannelForm extends CompatForm
             $options['required'] = $elementConfig->required;
         }
 
-        if (isset($elementConfig->placeholder)) {
-            $options['placeholder'] = $elementConfig->placeholder;
-        }
-
-        if (isset($elementConfig->default)) {
-            $options['value'] = $elementConfig->default;
-        }
-
-        if (
-            isset($elementConfig->options)
-            && ($elementConfig->type === 'option' || $elementConfig->type === 'options')
-        ) {
+        $isSelectElement = isset($elementConfig->options)
+            && ($elementConfig->type === 'option' || $elementConfig->type === 'options');
+        if ($isSelectElement) {
             $options['options'] = (array) $elementConfig->options;
             if ($elementConfig->type === 'options') {
                 $options['multiple'] = true;
+            }
+        }
+
+        if (isset($elementConfig->default)) {
+            if ($isSelectElement || $elementConfig->type === 'bool') {
+                $options['value'] = $elementConfig->default;
+            } else {
+                $options['placeholder'] = $elementConfig->default;
             }
         }
 
