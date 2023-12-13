@@ -28,17 +28,10 @@ class ChannelForm extends CompatForm
     /** @var ?int Channel ID */
     private $channelId;
 
-    /** @var string The current locale */
-    private $locale;
-
     public function __construct(Connection $db, ?int $channelId = null)
     {
         $this->db = $db;
         $this->channelId = $channelId;
-
-        /** @var GettextTranslator $translateInstance */
-        $translateInstance = StaticTranslator::$instance;
-        $this->locale = $translateInstance->getLocale();
     }
 
     protected function assemble()
@@ -308,8 +301,10 @@ class ChannelForm extends CompatForm
      */
     protected function fromCurrentLocale(stdClass $localeMap): ?string
     {
-        $default = "en_US";
-        $locale = $this->locale;
+        /** @var GettextTranslator $translator */
+        $translator = StaticTranslator::$instance;
+        $default = $translator->getDefaultLocale();
+        $locale = $translator->getLocale();
 
         return $localeMap->$locale ?? $localeMap->$default ?? null;
     }
