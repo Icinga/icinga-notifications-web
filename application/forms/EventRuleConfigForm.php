@@ -1,0 +1,621 @@
+<?php
+
+/* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
+
+namespace Icinga\Module\Notifications\Forms;
+
+use DateTime;
+use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Forms\EventRuleConfigElements\EscalationCondition;
+use Icinga\Module\Notifications\Forms\EventRuleConfigElements\EscalationRecipient;
+use Icinga\Module\Notifications\Model\RuleEscalation;
+use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
+use Icinga\Module\Notifications\Widget\FlowLine;
+use Icinga\Module\Notifications\Widget\ItemList\Escalation;
+use Icinga\Module\Notifications\Widget\ItemList\Escalations;
+use Icinga\Web\Session;
+use ipl\Html\Attributes;
+use ipl\Html\Form;
+use ipl\Html\FormElement\SubmitButtonElement;
+use ipl\Html\HtmlElement;
+use ipl\I18n\Translation;
+use ipl\Stdlib\Filter;
+use ipl\Web\Common\CsrfCounterMeasure;
+use Icinga\Module\Notifications\Forms\EventRuleConfigElements\EventRuleConfigFilter;
+use ipl\Web\Url;
+use ipl\Web\Widget\Icon;
+
+class EventRuleConfigForm extends Form
+{
+    use CsrfCounterMeasure;
+    use Translation;
+
+    public const ON_CHANGE = 'change';
+
+    protected $defaultAttributes = [
+        'class' => ['event-rule-config', 'icinga-form', 'icinga-controls'],
+        'name'  => 'event-rule-config-form',
+        'id'    => 'event-rule-config-form'
+    ];
+
+    /** @var array<string, mixed> */
+    protected $config;
+
+    /** @var Url Search editor URL for the config filter fieldset */
+    protected $searchEditorUrl;
+
+    /** @var bool Whether the config has an escalation with no condition */
+    protected $hasZeroConditionEscalation = false;
+
+    /**
+     * Create a new EventRuleConfigForm
+     *
+     * @param array<string, mixed> $config
+     * @param Url                  $searchEditorUrl
+     */
+    public function __construct(array $config, Url $searchEditorUrl)
+    {
+        $this->config = $config;
+        $this->searchEditorUrl = $searchEditorUrl;
+
+        $this->on(self::ON_SENT, function () {
+            $csrf = $this->getElement('CSRFToken');
+
+            if ($csrf !== null && $csrf->isValid()) {
+                $config = array_merge($this->config, $this->getValues());
+                if ($config !== $this->config) {
+                    $this->emit(self::ON_CHANGE, [$this]);
+                }
+            }
+        });
+    }
+
+    public function isValidEvent($event)
+    {
+        if ($event === self::ON_CHANGE) {
+            return true;
+        }
+
+        return parent::isValidEvent($event);
+    }
+
+    public function hasBeenSubmitted()
+    {
+        $pressedButton = $this->getPressedSubmitElement();
+
+        if ($pressedButton && $pressedButton->getName() === 'save') {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Check whether the config has an escalation with no condition
+     *
+     * @return bool
+     */
+    public function hasZeroConditionEscalation(): bool
+    {
+        return $this->hasZeroConditionEscalation;
+    }
+
+    protected function assemble(): void
+    {
+        $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
+
+        // Replicate save button outside the form
+        $this->addElement(
+            'submitButton',
+            'save',
+            [
+                'hidden' => true,
+                'class'  => 'primary-submit-btn-duplicate'
+            ]
+        );
+
+        // Replicate delete button outside the form
+        $this->addElement(
+            'submitButton',
+            'delete',
+            [
+                'hidden' => true,
+                'class'  => 'primary-submit-btn-duplicate'
+            ]
+        );
+
+        // Replicate discard_changes button outside the form
+        $this->addElement(
+            'submitButton',
+            'discard_changes',
+            [
+                'hidden' => true,
+                'class'  => 'primary-submit-btn-duplicate'
+            ]
+        );
+
+        $defaultEscalationPrefix = 1;
+
+        $this->addElement('hidden', 'zero-condition-escalation');
+
+        if (! isset($this->config['rule_escalation'])) {
+            $this->getElement('zero-condition-escalation')->setValue($defaultEscalationPrefix);
+        }
+
+        $configFilter = new EventRuleConfigFilter($this->searchEditorUrl, $this->config['object_filter']);
+        $this->registerElement($configFilter);
+
+        $addEscalationButton = $this->createElement(
+            'submitButton',
+            'add-escalation',
+            [
+                'class'          => ['add-button', 'control-button', 'spinner'],
+                'label'          => new Icon('plus'),
+                'title'          => $this->translate('Add Escalation'),
+                'formnovalidate' => true
+            ]
+        );
+
+        $this->registerElement($addEscalationButton);
+        $prefixesElement = $this->createElement('hidden', 'prefixes', ['value' => $defaultEscalationPrefix]);
+        $this->addElement($prefixesElement);
+        $this->handleAdd();
+
+        $prefixes = explode(',', $prefixesElement->getValue());
+        $escalationCount = count($prefixes);
+        $zeroConditionEscalation = $this->getValue('zero-condition-escalation');
+        $removePosition = null;
+        $removeEscalationButtons = [];
+
+        if ($escalationCount > 1) {
+            foreach ($prefixes as $prefix) {
+                $removeEscalationButtons[$prefix] = $this->createRemoveButton($prefix);
+            }
+
+            $removePosition = $this->getValue('remove-escalation');
+            if ($removePosition && $escalationCount === 2) {
+                $removeEscalationButtons = [];
+            }
+        }
+
+        $escalations = [];
+        $this->hasZeroConditionEscalation = $zeroConditionEscalation !== null;
+
+        foreach ($prefixes as $key => $prefix) {
+            if ($removePosition === $prefix) {
+                if ($zeroConditionEscalation === $prefix) {
+                    $zeroConditionEscalation = null;
+                    $this->hasZeroConditionEscalation = false;
+                }
+
+                unset($prefixes[$key]);
+                $this->getElement('prefixes')->setValue(implode(',', $prefixes));
+
+                continue;
+            }
+
+            $escalationCondition = (new EscalationCondition($prefix, $this))
+                ->setCondition($this->config['rule_escalation'][$prefix]['condition'] ?? '');
+            $escalationRecipient = (new EscalationRecipient($prefix))
+                ->setRecipients($this->config['rule_escalation'][$prefix]['recipients'] ?? []);
+            $this->registerElement($escalationCondition);
+            $this->registerElement($escalationRecipient);
+
+            $escalation = new Escalation(
+                $escalationCondition,
+                $escalationRecipient,
+                $removeEscalationButtons[$prefix] ?? null
+            );
+
+            if ($zeroConditionEscalation === $prefix && $escalation->addConditionHasBeenPressed()) {
+                $this->hasZeroConditionEscalation = false;
+                $zeroConditionEscalation = null;
+            } elseif ($escalation->lastConditionHasBeenRemoved()) {
+                $this->hasZeroConditionEscalation = true;
+                $zeroConditionEscalation = $prefix;
+            }
+
+            $escalations[] = $escalation;
+        }
+
+        $this->getElement('zero-condition-escalation')->setValue($zeroConditionEscalation);
+
+        $this->addHtml(
+            (new HtmlElement('div', Attributes::create(['class' => 'filter-wrapper'])))
+                ->addHtml(
+                    (new FlowLine())->getRightArrow(),
+                    $configFilter,
+                    (new FlowLine())->getHorizontalLine()
+                )
+        );
+
+        $this->addHtml(new HtmlElement(
+            'div',
+            Attributes::create(['class' => 'escalations-wrapper']),
+            new Escalations($escalations),
+            $addEscalationButton
+        ));
+    }
+
+    /**
+     * Handle addition of escalations
+     *
+     * @return void
+     */
+    protected function handleAdd(): void
+    {
+        $pressedButton = $this->getPressedSubmitElement();
+
+        if ($pressedButton && $pressedButton->getName() === 'add-escalation') {
+            $this->clearPopulatedValue('prefixes');
+            $prefixesString = $this->getValue('prefixes', '');
+            $prefixesMap = explode(',', $prefixesString);
+            $escalationFakePos = random_int(-1000, -1);
+            $prefixesMap[] = $escalationFakePos;
+            $this->getElement('prefixes')
+                ->setValue(implode(',', $prefixesMap));
+
+            if ($this->getValue('zero-condition-escalation') === null) {
+                $this->getElement('zero-condition-escalation')
+                    ->setValue($escalationFakePos);
+            }
+        }
+    }
+
+    public function populate($values): self
+    {
+        if (! isset($values['rule_escalation'])) {
+            return parent::populate($values);
+        }
+
+        $values['prefixes'] = $this->getPrefixes(count($values['rule_escalation']));
+        $zeroConditionEscalation = array_filter($values['rule_escalation'], function ($escalation) {
+            return $escalation['condition'] === '';
+        });
+
+        if (! empty($zeroConditionEscalation)) {
+            $values['zero-condition-escalation'] = array_key_first($zeroConditionEscalation);
+        }
+
+        foreach ($values['rule_escalation'] as $prefix => $escalation) {
+            $values['escalation-condition_' . $prefix]['id'] = $escalation['id'];
+        }
+
+        return parent::populate($values);
+    }
+
+    /**
+     * Get the values for the current EventRuleConfigForm
+     *
+     * @return array<string, mixed> values as name-value pairs
+     */
+    public function getValues(): array
+    {
+        $values = [];
+        $escalations = [];
+        $prefixesString = $this->getValue('prefixes', '');
+
+        /** @var string[] $prefixesMap */
+        $prefixesMap = explode(',', $prefixesString);
+        foreach ($prefixesMap as $prefix) {
+            /** @var EscalationCondition $escalationCondition */
+            $escalationCondition = $this->getElement('escalation-condition_' . $prefix);
+            /** @var EscalationRecipient $escalationRecipient */
+            $escalationRecipient = $this->getElement('escalation-recipient_' . $prefix);
+            $escalations[$prefix]['condition'] = $escalationCondition->getCondition();
+            $escalations[$prefix]['id'] = $escalationCondition->getValue('id');
+            $escalations[$prefix]['recipients'] = $escalationRecipient->getRecipients();
+        }
+
+        /** @var EventRuleConfigFilter $configFilter */
+        $configFilter = $this->getElement('config-filter');
+        $values['object_filter'] = $configFilter->getObjectFilter();
+        $values['rule_escalation'] = $escalations;
+
+        return $values;
+    }
+
+    /**
+     *  Create remove button for the given escalation position
+     *
+     * @param string $prefix
+     *
+     * @return SubmitButtonElement
+     */
+    protected function createRemoveButton(string $prefix): SubmitButtonElement
+    {
+        /** @var SubmitButtonElement $button */
+        $button = $this->createElement(
+            'submitButton',
+            'remove-escalation',
+            [
+                'class'          => ['remove-escalation', 'remove-button', 'control-button', 'spinner'],
+                'label'          => new Icon('minus'),
+                'formnovalidate' => true,
+                'value'          => $prefix,
+                'title'          => $this->translate('Remove escalation')
+            ]
+        );
+
+        $this->registerElement($button);
+
+        return $button;
+    }
+
+    /**
+     * Insert to or update event rule in the database and return the id of the event rule
+     *
+     * @param int $id The id of the event rule
+     * @param array<string, mixed> $config The new configuration
+     *
+     * @return int
+     */
+    public function addOrUpdateRule(int $id, array $config): int
+    {
+        $db = Database::get();
+
+        $db->beginTransaction();
+
+        if ($id < 0) {
+            $db->insert('rule', [
+                'name'          => $config['name'],
+                'timeperiod_id' => $config['timeperiod_id'] ?? null,
+                'object_filter' => $config['object_filter'] ?: null,
+                'changed_at'    => (int) (new DateTime())->format("Uv")
+            ]);
+
+            $id = $db->lastInsertId();
+        } else {
+            $db->update('rule', [
+                'name'          => $config['name'],
+                'timeperiod_id' => $config['timeperiod_id'] ?? null,
+                'object_filter' => $config['object_filter'] ?: null,
+                'changed_at'    => (int) (new DateTime())->format("Uv")
+            ], ['id = ?' => $id]);
+        }
+
+        $escalationsFromDb = RuleEscalation::on($db)
+            ->filter(Filter::equal('rule_id', $id));
+
+        $escalationsInCache = $config['rule_escalation'];
+
+        $escalationsToUpdate = [];
+        $escalationsToRemove = [];
+
+        /** @var RuleEscalation $escalationFromDB */
+        foreach ($escalationsFromDb as $escalationFromDB) {
+            $escalationId = $escalationFromDB->id;
+            $escalationInCache = array_filter($escalationsInCache, function (array $element) use ($escalationId) {
+                /** @var string $idInCache */
+                $idInCache = $element['id'] ?? null;
+
+                return (int) $idInCache === $escalationId;
+            });
+
+            if ($escalationInCache) {
+                $position = array_key_first($escalationInCache);
+                // Escalations in DB to update
+                $escalationsToUpdate[$position] = $escalationInCache[$position];
+
+                unset($escalationsInCache[$position]);
+            } else {
+                // Escalation in DB to remove
+                $escalationsToRemove[] = $escalationId;
+            }
+        }
+
+        // Escalations to add
+        $escalationsToAdd = $escalationsInCache;
+
+        if (! empty($escalationsToRemove)) {
+            $db->update('rule_escalation_recipient', [
+                'changed_at' => (int) (new DateTime())->format("Uv"),
+                'deleted'    => 'y'
+            ], ['rule_escalation_id IN (?)' => $escalationsToRemove, 'deleted = ?' => 'n']);
+            $db->update('rule_escalation', [
+                'changed_at' => (int) (new DateTime())->format("Uv"),
+                'deleted'    => 'y'
+            ], ['id IN (?)' => $escalationsToRemove]);
+        }
+
+        if (! empty($escalationsToAdd)) {
+            $this->insertOrUpdateEscalations($id, $escalationsToAdd, true);
+        }
+
+        if (! empty($escalationsToUpdate)) {
+            $this->insertOrUpdateEscalations($id, $escalationsToUpdate);
+        }
+
+        $db->commitTransaction();
+
+        return (int) $id;
+    }
+
+    /**
+     * Insert to or update escalations in Db
+     *
+     * @param int $ruleId
+     * @param array<int, array<string, mixed>> $escalations
+     * @param bool $insert
+     *
+     * @return void
+     */
+    private function insertOrUpdateEscalations(int $ruleId, array $escalations, bool $insert = false): void
+    {
+        $db = Database::get();
+        foreach ($escalations as $position => $escalationConfig) {
+            $recipientsFromConfig = $escalationConfig['recipients'] ?? [];
+            if ($insert) {
+                $db->insert('rule_escalation', [
+                    'rule_id' => $ruleId,
+                    'position' => $position,
+                    $db->quoteIdentifier('condition') => $escalationConfig['condition'] ?? null,
+                    'name' => $escalationConfig['name'] ?? null,
+                    'fallback_for' => $escalationConfig['fallback_for'] ?? null,
+                    'changed_at' => (int) (new DateTime())->format("Uv")
+                ]);
+
+                $escalationId = $db->lastInsertId();
+            } else {
+                /** @var string $escalationId */
+                $escalationId = $escalationConfig['id'];
+                $db->update('rule_escalation', [
+                    'position' => $position,
+                    $db->quoteIdentifier('condition') => $escalationConfig['condition'] ?? null,
+                    'name' => $escalationConfig['name'] ?? null,
+                    'fallback_for' => $escalationConfig['fallback_for'] ?? null,
+                    'changed_at' => (int) (new DateTime())->format("Uv")
+                ], ['id = ?' => $escalationId, 'rule_id = ?' => $ruleId]);
+
+                $recipientsToRemove = [];
+                $recipients = RuleEscalationRecipient::on($db)
+                    ->columns('id')
+                    ->filter(Filter::equal('rule_escalation_id', $escalationId));
+
+                /** @var RuleEscalationRecipient $recipient */
+                foreach ($recipients as $recipient) {
+                    $recipientId = $recipient->id;
+                    $recipientInCache = array_filter(
+                        $recipientsFromConfig,
+                        function (array $element) use ($recipientId) {
+                            /** @var string $idFromCache */
+                            $idFromCache = $element['id'];
+                            return (int) $idFromCache === $recipientId;
+                        }
+                    );
+
+                    if (empty($recipientInCache)) {
+                        // Recipients to remove from Db not in cache
+                        $recipientsToRemove[] = $recipientId;
+                    }
+                }
+
+                if (! empty($recipientsToRemove)) {
+                    $db->update('rule_escalation_recipient', [
+                        'changed_at' => (int) (new DateTime())->format("Uv"),
+                        'deleted'    => 'y'
+                    ], ['id IN (?)' => $recipientsToRemove, 'deleted = ?' => 'n']);
+                }
+            }
+
+            foreach ($recipientsFromConfig as $recipientConfig) {
+                $data = [
+                    'rule_escalation_id' => $escalationId,
+                    'channel_id'         => $recipientConfig['channel_id'],
+                    'changed_at'         => (int) (new DateTime())->format("Uv")
+                ];
+
+                switch (true) {
+                    case isset($recipientConfig['contact_id']):
+                        $data['contact_id'] = $recipientConfig['contact_id'];
+                        $data['contactgroup_id'] = null;
+                        $data['schedule_id'] = null;
+
+                        break;
+                    case isset($recipientConfig['contactgroup_id']):
+                        $data['contact_id'] = null;
+                        $data['contactgroup_id'] = $recipientConfig['contactgroup_id'];
+                        $data['schedule_id'] = null;
+
+                        break;
+                    case isset($recipientConfig['schedule_id']):
+                        $data['contact_id'] = null;
+                        $data['contactgroup_id'] = null;
+                        $data['schedule_id'] = $recipientConfig['schedule_id'];
+
+                        break;
+                }
+
+                if (! isset($recipientConfig['id'])) {
+                    $db->insert('rule_escalation_recipient', $data);
+                } else {
+                    $db->update('rule_escalation_recipient', $data, ['id = ?' => $recipientConfig['id']]);
+                }
+            }
+        }
+    }
+
+    /**
+     * Get whether the delete button was pressed
+     *
+     * @return bool
+     */
+    public function hasBeenRemoved(): bool
+    {
+        $btn = $this->getPressedSubmitElement();
+        $csrf = $this->getElement('CSRFToken');
+
+        return $csrf !== null && $csrf->isValid() && $btn !== null && $btn->getName() === 'delete';
+    }
+
+    /**
+     * Get whether the discard button was pressed
+     *
+     * @return bool
+     */
+    public function hasBeenDiscarded(): bool
+    {
+        $btn = $this->getPressedSubmitElement();
+        $csrf = $this->getElement('CSRFToken');
+
+        return $csrf !== null && $csrf->isValid() && $btn !== null && $btn->getName() === 'discard_changes';
+    }
+
+    /**
+     * Remove the given event rule
+     *
+     * @param int $id
+     *
+     * @return void
+     */
+    public function removeRule(int $id): void
+    {
+        $db = Database::get();
+        $db->beginTransaction();
+        $escalations = RuleEscalation::on($db)
+            ->columns('id')
+            ->filter(Filter::equal('rule_id', $id));
+
+        $escalationsToRemove = [];
+        /** @var RuleEscalation $escalation */
+        foreach ($escalations as $escalation) {
+            $escalationsToRemove[] = $escalation->id;
+        }
+
+        if (! empty($escalationsToRemove)) {
+            $db->update('rule_escalation_recipient', [
+                'changed_at' => (int) (new DateTime())->format("Uv"),
+                'deleted'    => 'y'
+            ], ['rule_escalation_id IN (?)' => $escalationsToRemove, 'deleted = ?' => 'n']);
+        }
+
+        $db->update('rule_escalation', [
+            'changed_at' => (int) (new DateTime())->format("Uv"),
+            'position'   => null,
+            'deleted'    => 'y'
+        ], ['rule_id = ?' => $id]);
+        $db->update('rule', [
+            'changed_at' => (int) (new DateTime())->format("Uv"),
+            'deleted'    => 'y'
+        ], ['id = ?' => $id]);
+
+        $db->commitTransaction();
+    }
+
+    /**
+     * Get the prefix map
+     *
+     * @param int $escalationCount
+     *
+     * @return string
+     */
+    protected function getPrefixes(int $escalationCount): string
+    {
+        $prefixesMap = [];
+        for ($i = 1; $i <= $escalationCount; $i++) {
+            $prefixesMap[] = $i;
+        }
+
+        return implode(',', $prefixesMap);
+    }
+}

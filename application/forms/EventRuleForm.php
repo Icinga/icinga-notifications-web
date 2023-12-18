@@ -14,7 +14,7 @@ class EventRuleForm extends CompatForm
     use CsrfCounterMeasure;
     use Translation;
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
 

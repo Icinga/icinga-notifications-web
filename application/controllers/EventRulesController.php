@@ -6,20 +6,22 @@ namespace Icinga\Module\Notifications\Controllers;
 
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
-use Icinga\Module\Notifications\Forms\SaveEventRuleForm;
+use Icinga\Module\Notifications\Forms\EventRuleConfigForm;
 use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\View\EventRuleRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
-use Icinga\Module\Notifications\Widget\EventRuleConfig;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
+use ipl\Html\Attributes;
+use ipl\Html\Form;
+use ipl\Html\FormElement\SubmitButtonElement;
 use ipl\Html\Html;
+use ipl\Html\HtmlElement;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
 use ipl\Web\Control\LimitControl;
-use ipl\Web\Control\SearchEditor;
 use ipl\Web\Control\SortControl;
 use ipl\Web\Filter\QueryString;
 use ipl\Web\Layout\DetailedItemLayout;
@@ -47,6 +49,7 @@ class EventRulesController extends CompatController
     public function indexAction(): void
     {
         $eventRules = Rule::on(Database::get());
+        $this->sessionNamespace->delete('-1');
 
         $limitControl = $this->createLimitControl();
         $paginationControl = $this->createPaginationControl($eventRules);
@@ -87,7 +90,7 @@ class EventRulesController extends CompatController
         $this->addContent(
             (new ButtonLink(
                 t('New Event Rule'),
-                Url::fromPath('notifications/event-rule/edit', ['id' => -1, 'clearCache' => true]),
+                Url::fromPath('notifications/event-rule/edit', ['id' => -1]),
                 'plus'
             ))->openInModal()
             ->addAttributes(['class' => 'add-new-component'])
@@ -109,22 +112,49 @@ class EventRulesController extends CompatController
     public function addAction(): void
     {
         $this->addTitleTab(t('Add Event Rule'));
-        $this->getTabs()->setRefreshUrl(Url::fromPath('notifications/event-rules/add'));
+        $this->getTabs()->setRefreshUrl(Url::fromPath('notifications/event-rules/add', ['id' => '-1']));
 
         $this->controls->addAttributes(['class' => 'event-rule-detail']);
+        $ruleId = $this->params->get('id');
+        $config = $this->sessionNamespace->get($ruleId);
+        $config['object_filter'] = $config['object_filter'] ?? null;
 
-        if ($this->params->has('use_cache') || $this->getServerRequest()->getMethod() !== 'GET') {
-            $cache = $this->sessionNamespace->get(-1, []);
-        } else {
-            $this->sessionNamespace->delete(-1);
+        $eventRuleConfigSubmitButton = (new SubmitButtonElement(
+            'save',
+            [
+                'label'          => t('Add Event Rule'),
+                'form'           => 'event-rule-config-form'
+            ]
+        ))->setWrapper(new HtmlElement('div', Attributes::create(['class' => ['icinga-controls', 'save-config']])));
 
-            $cache = [];
-        }
+        $eventRuleConfig = new EventRuleConfigForm(
+            $config,
+            Url::fromPath(
+                'notifications/event-rules/search-editor',
+                ['id' => $ruleId]
+            )
+        );
 
-        $eventRuleConfig = new EventRuleConfig(Url::fromPath('notifications/event-rules/add-search-editor'), $cache);
+        $eventRuleConfig
+            ->populate($config)
+            ->on(Form::ON_SUCCESS, function (EventRuleConfigForm $form) use ($config) {
+                $ruleId = (int) $config['id'];
+                $ruleName = $config['name'];
+                $insertId = $form->addOrUpdateRule($ruleId, $config);
+                $this->sessionNamespace->delete($ruleId);
+                Notification::success(sprintf(t('Successfully add event rule %s'), $ruleName));
+                $this->redirectNow(Links::eventRule($insertId));
+            })
+            ->on(EventRuleConfigForm::ON_CHANGE, function (EventRuleConfigForm $form) use ($config) {
+                $formValues = $form->getValues();
+                $config = array_merge($config, $formValues);
+                $config['rule_escalation'] = $formValues['rule_escalation'];
+                $this->sessionNamespace->set('-1', $config);
+            })
+            ->handleRequest($this->getServerRequest());
 
         $eventRuleForm = Html::tag('div', ['class' => 'event-rule-form'], [
-            Html::tag('h2', $eventRuleConfig->getConfig()['name'] ?? ''),
+            Html::tag('h2', $config['name'] ?? ''),
             (new Link(
                 new Icon('edit'),
                 Url::fromPath('notifications/event-rule/edit', [
@@ -134,42 +164,8 @@ class EventRulesController extends CompatController
             ))->openInModal()
         ]);
 
-        $saveForm = (new SaveEventRuleForm())
-            ->on(SaveEventRuleForm::ON_SUCCESS, function ($saveForm) use ($eventRuleConfig) {
-                if (! $eventRuleConfig->isValid()) {
-                    $eventRuleConfig->addAttributes(['class' => 'invalid']);
-                    return;
-                }
-
-                $id = $saveForm->addRule($this->sessionNamespace->get(-1));
-
-                Notification::success($this->translate('Successfully added rule.'));
-                $this->sendExtraUpdates(['#col1']);
-                $this->redirectNow(Links::eventRule($id));
-            })->handleRequest($this->getServerRequest());
-
-        $eventRuleConfig->on(EventRuleConfig::ON_CHANGE, function ($eventRuleConfig) {
-            $this->sessionNamespace->set(-1, $eventRuleConfig->getConfig());
-
-            $this->redirectNow(Url::fromPath('notifications/event-rules/add', ['use_cache' => true]));
-        });
-
-        foreach ($eventRuleConfig->getForms() as $f) {
-            $f->handleRequest($this->getServerRequest());
-
-            if (! $f->hasBeenSent()) {
-                // Force validation of populated values in case we display an unsaved rule
-                $f->validatePartial();
-            }
-        }
-
-        $eventRuleFormAndSave = Html::tag('div', ['class' => 'event-rule-and-save-forms']);
-        $eventRuleFormAndSave->add([
-            $eventRuleForm,
-            $saveForm
-        ]);
-
-        $this->addControl($eventRuleFormAndSave);
+        $this->addControl($eventRuleForm);
+        $this->addControl($eventRuleConfigSubmitButton);
         $this->addContent($eventRuleConfig);
     }
 
@@ -192,35 +188,6 @@ class EventRulesController extends CompatController
         );
 
         $this->getDocument()->add($editor);
-        $this->setTitle($this->translate('Adjust Filter'));
-    }
-
-    public function addSearchEditorAction(): void
-    {
-        $cache = $this->sessionNamespace->get(-1);
-
-        $editor = EventRuleConfig::createSearchEditor()
-            ->setQueryString($cache['object_filter'] ?? '');
-
-        $editor->on(SearchEditor::ON_SUCCESS, function (SearchEditor $form) {
-            $cache = $this->sessionNamespace->get(-1);
-            $cache['object_filter'] = EventRuleConfig::createFilterString($form->getFilter());
-
-            $this->sessionNamespace->set(-1, $cache);
-
-            $this->getResponse()
-                ->setHeader('X-Icinga-Container', '_self')
-                ->redirectAndExit(
-                    Url::fromPath(
-                        'notifications/event-rules/add',
-                        ['use_cache' => true]
-                    )
-                );
-        });
-
-        $editor->handleRequest($this->getServerRequest());
-
-        $this->getDocument()->addHtml($editor);
         $this->setTitle($this->translate('Adjust Filter'));
     }
 

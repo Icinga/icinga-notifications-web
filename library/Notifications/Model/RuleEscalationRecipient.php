@@ -28,7 +28,6 @@ use ipl\Orm\Relations;
  * @property Query|Contactgroup $contactgroup
  * @property Query|Channel $channel
  */
-
 class RuleEscalationRecipient extends Model
 {
     public function getTableName(): string
