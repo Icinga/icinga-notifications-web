@@ -30,11 +30,7 @@ class ChannelListItem extends BaseListItem
 
     protected function assembleVisual(BaseHtmlElement $visual): void
     {
-        if ($this->item->type === 'email') {
-            $visual->addHtml(new Icon('envelope'));
-        } elseif ($this->item->type === 'rocketchat') {
-            $visual->addHtml(new Icon('comment-dots'));
-        }
+        $visual->addHtml($this->item->getIcon());
     }
 
     protected function assembleTitle(BaseHtmlElement $title): void

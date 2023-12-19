@@ -5,11 +5,18 @@
 namespace Icinga\Module\Notifications\Forms;
 
 use Icinga\Module\Notifications\Model\Channel;
+use Icinga\Module\Notifications\Model\AvailableChannelType;
 use Icinga\Web\Session;
 use ipl\Html\Contract\FormSubmitElement;
+use ipl\Html\FormElement\BaseFormElement;
+use ipl\Html\FormElement\FieldsetElement;
+use ipl\I18n\GettextTranslator;
+use ipl\I18n\StaticTranslator;
 use ipl\Sql\Connection;
+use ipl\Validator\EmailAddressValidator;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
+use stdClass;
 
 class ChannelForm extends CompatForm
 {
@@ -41,115 +48,41 @@ class ChannelForm extends CompatForm
             ]
         );
 
-        $type = [
-            ''            => sprintf(' - %s - ', $this->translate('Please choose')),
-            'email'       => $this->translate('Email'),
-            'rocketchat'  => 'Rocket.Chat'
-        ];
+        $query = AvailableChannelType::on($this->db)->columns(['type', 'name', 'config_attrs']);
+
+        /** @var string[] $typesConfig */
+        $typesConfig = [];
+
+        /** @var string[] $typeNamePair */
+        $typeNamePair = [];
+
+        $defaultType = null;
+        /** @var Channel $channel */
+        foreach ($query as $channel) {
+            if ($defaultType === null) {
+                $defaultType = $channel->type;
+            }
+
+            $typesConfig[$channel->type] = $channel->config_attrs;
+            $typeNamePair[$channel->type] = $channel->name;
+        }
 
         $this->addElement(
             'select',
             'type',
             [
-                'label'    => $this->translate('Type'),
-                'class'    => 'autosubmit',
-                'required' => true,
-                'disable'  => [''],
-                'options'  => $type
+                'label'             => $this->translate('Type'),
+                'class'             => 'autosubmit',
+                'required'          => true,
+                'disabledOptions'   => [''],
+                'value'             => $defaultType,
+                'options'           => $typeNamePair
             ]
         );
 
+        /** @var string $selectedType */
         $selectedType = $this->getValue('type');
-
-        if ($selectedType === 'email') {
-            $this->addElement(
-                'text',
-                'host',
-                [
-                    'label'         => $this->translate('SMTP Host'),
-                    'autocomplete'  => 'off',
-                    'placeholder'   => 'localhost'
-                ]
-            )->addElement(
-                'select',
-                'port',
-                [
-                    'label'   => $this->translate('SMTP Port'),
-                    'options' => [
-                        25   => 25,
-                        465  => 465,
-                        587  => 587,
-                        2525 => 2525
-                    ]
-                ]
-            )->addElement(
-                'text',
-                'from',
-                [
-                    'label'         => $this->translate('From'),
-                    'autocomplete'  => 'off',
-                    'placeholder'   => 'notifications@icinga'
-                ]
-            )->addElement(
-                'password',
-                'password',
-                [
-                    'label'         => $this->translate('Password'),
-                    'autocomplete'  => 'off',
-                ]
-            );
-
-            $this->addElement(
-                'checkbox',
-                'tls',
-                [
-                    'label'          => 'TLS / SSL',
-                    'class'          => 'autosubmit',
-                    'checkedValue'   => '1',
-                    'uncheckedValue' => '0',
-                    'value'          => '1'
-                ]
-            );
-
-            if ($this->getElement('tls')->getValue() === '1') {
-                $this->addElement(
-                    'checkbox',
-                    'tls_certcheck',
-                    [
-                        'label'          => $this->translate('Certificate Check'),
-                        'class'          => 'autosubmit',
-                        'checkedValue'   => '1',
-                        'uncheckedValue' => '0',
-                        'value'          => '0'
-                    ]
-                );
-            }
-        } elseif ($selectedType === 'rocketchat') {
-            $this->addElement(
-                'text',
-                'url',
-                [
-                    'label'    => $this->translate('Rocket.Chat URL'),
-                    'required' => true
-                ]
-            )->addElement(
-                'text',
-                'user_id',
-                [
-                    'autocomplete'  => 'off',
-                    'label'         => $this->translate('User ID'),
-                    'required'      => true
-                ]
-            )->addElement(
-                'password',
-                'token',
-                [
-                    'autocomplete'  => 'off',
-                    'label'         => $this->translate('Personal Access Token'),
-                    'required'      => true
-                ]
-            );
-        }
+        $this->createConfigElements($selectedType, $typesConfig[$selectedType]);
 
         $this->addElement(
             'submit',
@@ -207,13 +140,11 @@ class ChannelForm extends CompatForm
     public function populate($values)
     {
         if ($values instanceof Channel) {
-            $values = array_merge(
-                [
-                    'name' => $values->name,
-                    'type' => $values->type
-                ],
-                json_decode($values->config, JSON_OBJECT_AS_ARRAY) ?? []
-            );
+            $values = [
+                'name'      => $values->name,
+                'type'      => $values->type,
+                'config'    => json_decode($values->config, true) ?? []
+            ];
         }
 
         parent::populate($values);
@@ -229,35 +160,152 @@ class ChannelForm extends CompatForm
             return;
         }
 
-        $channel = [
-            'name' => $this->getValue('name'),
-            'type' => $this->getValue('type')
-        ];
-
-        if ($this->getValue('type') === 'email') {
-            $channel['config'] = [
-                'host' => $this->getValue('host'),
-                'port' => $this->getValue('port'),
-                'from' => $this->getValue('from'),
-                'password' => $this->getValue('password')
-            ];
-            if ($this->getElement('tls')->isChecked()) {
-                $channel['config']['tls'] = true;
-                $channel['config']['tls_certcheck'] = $this->getValue('tls_certcheck');
-            }
-        } else {
-            $channel['config'] = [
-                'url' => $this->getValue('url'),
-                'user_id' => $this->getValue('user_id'),
-                'token' => $this->getValue('token')
-            ];
-        }
-
+        $channel = $this->getValues();
         $channel['config'] = json_encode($channel['config']);
         if ($this->channelId === null) {
             $this->db->insert('channel', $channel);
         } else {
             $this->db->update('channel', $channel, ['id = ?' => $this->channelId]);
         }
+    }
+
+    /**
+     * Create config elements for the given channel type
+     *
+     * @param string $type The channel type
+     * @param string $config The channel type config
+     */
+    protected function createConfigElements(string $type, string $config): void
+    {
+        /** @var array<int, stdClass> $elementsConfig */
+        $elementsConfig = json_decode($config, false);
+
+        if (empty($elementsConfig)) {
+            return;
+        }
+
+        $configFieldset = new FieldsetElement('config');
+        $this->addElement($configFieldset);
+
+        foreach ($elementsConfig as $elementConfig) {
+            /** @var BaseFormElement $elem */
+            $elem = $this->createElement(
+                $this->getElementType($elementConfig),
+                $elementConfig->name,
+                $this->getElementOptions($elementConfig)
+            );
+
+            if ($type === "email" && $elem->getName() === "sender_mail") {
+                $elem->getValidators()->add(new EmailAddressValidator());
+            }
+
+            $configFieldset->addElement($elem);
+        }
+    }
+
+    /**
+     * Get the element type from given element config
+     *
+     * @param stdClass $elementConfig The config object of an element
+     *
+     * @return string
+     */
+    protected function getElementType(stdClass $elementConfig): string
+    {
+        switch ($elementConfig->type) {
+            case 'string':
+                $elementType = 'text';
+                break;
+            case 'number':
+                $elementType = 'number';
+                break;
+            case 'text':
+                $elementType = 'textarea';
+                break;
+            case 'bool':
+                $elementType = 'checkbox';
+                break;
+            case 'option':
+            case 'options':
+                $elementType = 'select';
+                break;
+            case 'secret':
+                $elementType = 'password';
+                break;
+            default:
+                $elementType = 'text';
+        }
+
+        return $elementType;
+    }
+
+    /**
+     * Get the element options from the given element config
+     *
+     * @param stdClass $elementConfig
+     *
+     * @return string[]
+     */
+    protected function getElementOptions(stdClass $elementConfig): array
+    {
+        $options = [
+            'label' => $this->fromCurrentLocale($elementConfig->label)
+        ];
+
+        if (isset($elementConfig->help)) {
+            $options['description'] = $this->fromCurrentLocale($elementConfig->help);
+        }
+
+        if (isset($elementConfig->required)) {
+            $options['required'] = $elementConfig->required;
+        }
+
+        $isSelectElement = isset($elementConfig->options)
+            && ($elementConfig->type === 'option' || $elementConfig->type === 'options');
+        if ($isSelectElement) {
+            $options['options'] = (array) $elementConfig->options;
+            if ($elementConfig->type === 'options') {
+                $options['multiple'] = true;
+            }
+        }
+
+        if (isset($elementConfig->default)) {
+            if ($isSelectElement || $elementConfig->type === 'bool') {
+                $options['value'] = $elementConfig->default;
+            } else {
+                $options['placeholder'] = $elementConfig->default;
+            }
+        }
+
+        if ($elementConfig->type === "number") {
+            if (isset($elementConfig->min)) {
+                $options['min'] = $elementConfig->min;
+            }
+
+            if (isset($elementConfig->max)) {
+                $options['max'] = $elementConfig->max;
+            }
+        }
+
+        return $options;
+    }
+
+    /**
+     * Get the current locale based string from given locale map
+     *
+     * Fallback to locale `en_US` if the current locale isn't provided
+     *
+     * @param stdClass $localeMap
+     *
+     * @return ?string Only returns null if the fallback locale is also not specified
+     */
+    protected function fromCurrentLocale(stdClass $localeMap): ?string
+    {
+        /** @var GettextTranslator $translator */
+        $translator = StaticTranslator::$instance;
+        $default = $translator->getDefaultLocale();
+        $locale = $translator->getLocale();
+
+        return $localeMap->$locale ?? $localeMap->$default ?? null;
     }
 }

@@ -71,7 +71,7 @@ class EscalationRecipientForm extends BaseEscalationForm
             $this->registerElement($col);
 
             $options = ['' => sprintf(' - %s - ', $this->translate('Please choose'))];
-            $options += Channel::fetchChannelTypes(Database::get());
+            $options += Channel::fetchChannelNames(Database::get());
 
             $val = $this->createElement(
                 'select',

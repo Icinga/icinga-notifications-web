@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Model;
 use ipl\Orm\Model;
 use ipl\Orm\Relations;
 use ipl\Sql\Connection;
+use ipl\Web\Widget\Icon;
 
 class Channel extends Model
 {
@@ -55,30 +56,45 @@ class Channel extends Model
         $relations->hasMany('contact', Contact::class)
             ->setJoinType('LEFT')
             ->setForeignKey('default_channel_id');
+        $relations->belongsTo('available_channel_type', AvailableChannelType::class)
+            ->setCandidateKey('type');
     }
 
     /**
-     * Fetch and map all the configured channel types to a key => value array
+     * Get the channel icon
+     *
+     * @return Icon
+     */
+    public function getIcon(): Icon
+    {
+        switch ($this->type) {
+            case 'rocketchat':
+                $icon = new Icon('comment-dots');
+                break;
+            case 'email':
+                $icon = new Icon('at');
+                break;
+            default:
+                $icon = new Icon('envelope');
+        }
+
+        return $icon;
+    }
+
+    /**
+     * Fetch and map all the configured channel names to a key => value array
      *
      * @param Connection $conn
      *
-     * @return array<int, string> All the channel types mapped as id => type
+     * @return string[] All the channel names mapped as id => name
      */
-    public static function fetchChannelTypes(Connection $conn): array
+    public static function fetchChannelNames(Connection $conn): array
     {
         $channels = [];
+        /** @var Channel $channel */
         foreach (Channel::on($conn) as $channel) {
-            switch ($channel->type) {
-                case 'rocketchat':
-                    $name = 'Rocket.Chat';
-                    break;
-                case 'email':
-                    $name = t('E-Mail');
-                    break;
-                default:
-                    $name = $channel->type;
-            }
-
+            /** @var string $name */
+            $name = $channel->name;
             $channels[$channel->id] = $name;
         }
 
