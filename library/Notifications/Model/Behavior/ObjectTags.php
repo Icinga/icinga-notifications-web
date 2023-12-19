@@ -68,12 +68,7 @@ class ObjectTags implements RewriteColumnBehavior, QueryAwareBehavior
 
     public function rewriteColumnDefinition(ColumnDefinition $def, string $relation): void
     {
-        $parts = explode('.', substr($relation, 0, -4));
-        $objectType = array_pop($parts);
-
-        $name = $def->getName();
-        // Programmatically translated since the full definition is available in class ObjectSuggestions
-        $def->setLabel(sprintf(t(ucfirst($objectType) . ' %s', '..<tag-name>'), $name));
+        $def->setLabel(ucfirst($def->getName()));
     }
 
     public function isSelectableColumn(string $name): bool
