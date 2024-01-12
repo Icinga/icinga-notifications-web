@@ -4,14 +4,17 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use Icinga\Module\Notifications\Model\Behavior\IdTagAggregator;
 use ipl\Html\HtmlString;
 use ipl\Html\ValidHtml;
 use ipl\Orm\Behavior\Binary;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
-use ipl\Orm\Query;
 use ipl\Orm\Relations;
 
+/**
+ * @property array<string, string> $id_tags
+ */
 class Objects extends Model
 {
     public function getTableName()
@@ -52,6 +55,7 @@ class Objects extends Model
     public function createBehaviors(Behaviors $behaviors)
     {
         $behaviors->add(new Binary(['id']));
+        $behaviors->add(new IdTagAggregator());
     }
 
     public function createRelations(Relations $relations)
@@ -73,15 +77,8 @@ class Objects extends Model
     {
         //TODO: Once hooks are available, they should render the tags accordingly
         $objectTags = [];
-        /** @var Query $objectIdTagQuery */
-        $objectIdTagQuery = $this->object_id_tag;
-        /** @var ObjectIdTag $id_tag */
-        foreach ($objectIdTagQuery as $id_tag) {
-            /** @var string $tag */
-            $tag = $id_tag->tag;
-            /** @var string $value */
-            $value = $id_tag->value;
 
+        foreach ($this->id_tags as $tag => $value) {
             $objectTags[] = sprintf('%s=%s', $tag, $value);
         }
 
