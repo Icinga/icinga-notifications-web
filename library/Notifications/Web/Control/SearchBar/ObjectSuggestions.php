@@ -199,9 +199,10 @@ class ObjectSuggestions extends Suggestions
                 }
 
                 $relation = $isIdTag ? 'object.tag' : 'object.extra_tag';
+                /** @var string $tagName */
                 $tagName = $tag->tag;
 
-                yield $relation . '.' . $tagName => $tagName;
+                yield $relation . '.' . $tagName => ucfirst($tagName);
             }
         }
     }
