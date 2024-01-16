@@ -49,6 +49,24 @@ $this->provideConfigTab(
     ]
 );
 
+$this->provideConfigTab(
+    'channels',
+    [
+        'title' => $this->translate('Channels'),
+        'label' => $this->translate('Channels'),
+        'url'   => 'channels'
+    ]
+);
+
+$this->provideConfigTab(
+    'sources',
+    [
+        'title' => $this->translate('Sources'),
+        'label' => $this->translate('Sources'),
+        'url'   => 'sources'
+    ]
+);
+
 $section->add(
     N_('Incidents'),
     [
@@ -67,12 +85,3 @@ $cssFiles = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(
 foreach ($cssFiles as $path) {
     $this->provideCssFile(ltrim(substr($path, strlen($cssDirectory)), DIRECTORY_SEPARATOR));
 }
-
-$this->provideConfigTab(
-    'channels',
-    [
-        'title' => $this->translate('Channels'),
-        'label' => $this->translate('Channels'),
-        'url'   => 'channels'
-    ]
-);
