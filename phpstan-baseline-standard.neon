@@ -1026,11 +1026,6 @@ parameters:
 			path: library/Notifications/Web/Control/SearchBar/ObjectSuggestions.php
 
 		-
-			message: "#^Parameter \\#1 \\$path of method ipl\\\\Orm\\\\Resolver\\:\\:qualifyPath\\(\\) expects string, mixed given\\.$#"
-			count: 1
-			path: library/Notifications/Web/Control/SearchBar/ObjectSuggestions.php
-
-		-
 			message: "#^Property Icinga\\\\Module\\\\Notifications\\\\Web\\\\Control\\\\SearchBar\\\\ObjectSuggestions\\:\\:\\$model \\(ipl\\\\Orm\\\\Model\\) does not accept object\\.$#"
 			count: 1
 			path: library/Notifications/Web/Control/SearchBar/ObjectSuggestions.php

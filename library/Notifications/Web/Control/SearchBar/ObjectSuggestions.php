@@ -104,7 +104,8 @@ class ObjectSuggestions extends Suggestions
 
         if (strpos($column, ' ') !== false) {
             // $column may be a label
-            list($path, $_) = Seq::find(
+            /** @var string $path */
+            [$path, $_] = Seq::find(
                 self::collectFilterColumns($query->getModel(), $query->getResolver()),
                 $column,
                 false
