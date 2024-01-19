@@ -9,6 +9,13 @@ use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
 use ipl\Orm\Relations;
 
+/**
+ * ObjectExtraTag database model
+ *
+ * @property int $object_id
+ * @property string $tag
+ * @property string $value
+ */
 class ObjectExtraTag extends Model
 {
     public function getTableName()

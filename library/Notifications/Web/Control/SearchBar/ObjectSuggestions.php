@@ -185,7 +185,7 @@ class ObjectSuggestions extends Suggestions
         // Custom variables only after the columns are exhausted and there's actually a chance the user sees them
         foreach ([new ObjectIdTag(), new ObjectExtraTag()] as $model) {
             $titleAdded = false;
-            /** @var Model $tag */
+            /** @var ObjectIdTag|ObjectExtraTag $tag */
             foreach ($this->queryTags($model, $searchTerm) as $tag) {
                 $isIdTag = $tag instanceof ObjectIdTag;
 
@@ -199,10 +199,8 @@ class ObjectSuggestions extends Suggestions
                 }
 
                 $relation = $isIdTag ? 'object.tag' : 'object.extra_tag';
-                /** @var string $tagName */
-                $tagName = $tag->tag;
 
-                yield $relation . '.' . $tagName => ucfirst($tagName);
+                yield $relation . '.' . $tag->tag => ucfirst($tag->tag);
             }
         }
     }
