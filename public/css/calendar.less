@@ -5,6 +5,11 @@
   justify-content: flex-start;
   max-width: none;
 
+  > :not(:nth-last-child(-n+2)),
+  > .icinga-controls > :not(:last-child) {
+    margin-right: .5em;
+  }
+
   .view-mode-switcher {
     margin-left: auto;
     margin-right: auto;
@@ -265,12 +270,6 @@
 /* Design */
 
 .calendar-controls {
-  input[type="date"],
-  input[type="month"],
-  input[type="week"] {
-    background-color: @low-sat-blue;
-  }
-
   .view-mode-switcher label {
     padding: .5em;
     line-height: normal;

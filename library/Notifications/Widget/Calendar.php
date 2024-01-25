@@ -103,15 +103,15 @@ class Calendar extends BaseHtmlElement
     {
         switch ($this->getControls()->getViewMode()) {
             case self::MODE_MONTH:
-                $month = $this->getControls()->getValue('month') ?: (new DateTime())->format('Y-m');
+                $month = $this->getControls()->getValue('month') ?: (new DateTime())->format(Controls::MONTH_FORMAT);
 
                 return DateTime::createFromFormat('Y-m-d\TH:i:s', $month . '-01T00:00:00');
             case self::MODE_WEEK:
-                $week = $this->getControls()->getValue('week') ?: (new DateTime())->format('Y-\WW');
+                $week = $this->getControls()->getValue('week') ?: (new DateTime())->format(Controls::WEEK_FORMAT);
 
                 return (new DateTime())->setTimestamp(strtotime($week));
             default:
-                $day = $this->getControls()->getValue('day') ?: (new DateTime())->format('Y-m-d');
+                $day = $this->getControls()->getValue('day') ?: (new DateTime())->format(Controls::DAY_FORMAT);
 
                 return DateTime::createFromFormat('Y-m-d H:i:s', $day . ' 00:00:00');
         }
