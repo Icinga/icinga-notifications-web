@@ -13,6 +13,7 @@ use ipl\Orm\Relations;
 /**
  * @property int $id
  * @property string $severity
+ * @property string $object_id
  */
 class Incident extends Model
 {
@@ -45,10 +46,10 @@ class Incident extends Model
     public function getColumnDefinitions(): array
     {
         return [
-            'object_id'     => t('Object Id'),
-            'started_at'    => t('Started At'),
-            'recovered_at'  => t('Recovered At'),
-            'severity'      => t('Severity')
+            'object_id' => t('Object Id'),
+            'started_at' => t('Started At'),
+            'recovered_at' => t('Recovered At'),
+            'severity' => t('Severity')
         ];
     }
 

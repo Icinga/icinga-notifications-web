@@ -39,9 +39,9 @@ final class Connection
     private $stream;
 
     /**
-     * @var string $deviceId
+     * @var string $browserId
      */
-    private $deviceId;
+    private $browserId;
 
     public function __construct(ConnectionInterface $connection)
     {
@@ -59,7 +59,7 @@ final class Connection
         $this->stream = new ThroughStream();
         $this->session = '';
         $this->user = new User();
-        $this->deviceId = '';
+        $this->browserId = '';
     }
 
     public static function parseHostAndPort(string $address): stdClass
@@ -81,7 +81,7 @@ final class Connection
         return $combined;
     }
 
-    public static function calculateDeviceId(string $userAgent, string $user): ?string
+    public static function calculateBrowserId(string $userAgent, string $user): ?string
     {
         if (in_array('joaat', hash_algos())) {
             if (strlen(trim($userAgent)) > 0 && strlen(trim($user)) > 0) {
@@ -132,14 +132,14 @@ final class Connection
         return $this->user;
     }
 
-    public function getDeviceId(): ?string
+    public function getBrowserId(): ?string
     {
-        return $this->deviceId;
+        return $this->browserId;
     }
 
-    public function setDeviceId(string $deviceId): void
+    public function setBrowserId(string $browserId): void
     {
-        $this->deviceId = $deviceId;
+        $this->browserId = $browserId;
     }
 
     public function sendEvent(Event $event): void

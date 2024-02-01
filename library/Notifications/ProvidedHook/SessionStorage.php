@@ -5,16 +5,17 @@ namespace Icinga\Module\Notifications\ProvidedHook;
 use Icinga\Application\Hook\AuthenticationHook;
 use Icinga\Application\Logger;
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Model\Daemon\BrowserSession;
 use Icinga\Module\Notifications\Model\Daemon\Connection;
-use Icinga\Module\Notifications\Model\Daemon\Session;
 use Icinga\User;
+use Icinga\Web\Session;
 use ipl\Stdlib\Filter;
 use PDOException;
 
 class SessionStorage extends AuthenticationHook
 {
     /**
-     * @var \Icinga\Web\Session\Session $session
+     * @var Session\Session $session
      */
     private $session;
 
@@ -26,7 +27,7 @@ class SessionStorage extends AuthenticationHook
     public function __construct()
     {
         Logger::info('SessionStorage initialized');
-        $this->session = \Icinga\Web\Session::getSession();
+        $this->session = Session::getSession();
         $this->database = Database::get();
     }
 
@@ -36,12 +37,12 @@ class SessionStorage extends AuthenticationHook
 
         if ($this->session->exists()) {
             // user successfully authenticated
-            // calculate device identifier
+            // calculate browser identifier
             $userAgent = $_SERVER['HTTP_USER_AGENT'] ?: null;
-            $deviceId = Connection::calculateDeviceId($userAgent, $user->getUsername()) ?: 'default';
+            $browserId = Connection::calculateBrowserId($userAgent, $user->getUsername()) ?: 'default';
 
             // check if session with this identifier already exists (zombie session)
-            $zombieSession = Session::on(Database::get())
+            $zombieSession = BrowserSession::on(Database::get())
                 ->filter(Filter::equal('php_session_id', $this->session->getId()))
                 ->first();
 
@@ -51,31 +52,33 @@ class SessionStorage extends AuthenticationHook
                 $this->database->beginTransaction();
                 try {
                     $this->database->delete(
-                        'session',
+                        'browser_session',
                         [
                             'php_session_id = ?' => $this->session->getId()
                         ]
                     );
                     $this->database->commitTransaction();
                 } catch (PDOException $e) {
-                    Logger::error("Failed deleting session from table 'session': \n\t" . $e->getMessage());
+                    Logger::error(
+                        "Failed deleting browser session from table 'browser_session': \n\t" . $e->getMessage()
+                    );
                     $this->database->rollBackTransaction();
                 }
             }
 
-            // cleanup existing sessions from this user (only for the current device)
-            $userSessions = Session::on(Database::get())
+            // cleanup existing sessions from this user (only for the current browser)
+            $userSessions = BrowserSession::on(Database::get())
                 ->filter(Filter::equal('username', $user->getUsername()))
-                ->filter(Filter::equal('device_id', $deviceId))
+                ->filter(Filter::equal('browser_id', $browserId))
                 ->execute();
-            /** @var Session $session */
+            /** @var BrowserSession $session */
             foreach ($userSessions as $session) {
                 $this->database->delete(
-                    'session',
+                    'browser_session',
                     [
                         'php_session_id = ?' => $session->php_session_id,
                         'username = ?' => trim($user->getUsername()),
-                        'device_id = ?' => $deviceId
+                        'browser_id = ?' => $browserId
                     ]
                 );
             }
@@ -84,20 +87,22 @@ class SessionStorage extends AuthenticationHook
             $this->database->beginTransaction();
             try {
                 $this->database->insert(
-                    'session',
+                    'browser_session',
                     [
                         'php_session_id' => $this->session->getId(),
                         'username' => trim($user->getUsername()),
-                        'device_id' => $deviceId
+                        'browser_id' => $browserId
                     ]
                 );
                 $this->database->commitTransaction();
             } catch (PDOException $e) {
-                Logger::error("Failed adding session to table 'session': \n\t" . $e->getMessage());
+                Logger::error(
+                    "Failed adding browser session to table 'browser_session': \n\t" . $e->getMessage()
+                );
                 $this->database->rollBackTransaction();
             }
             Logger::debug(
-                "onLogin triggered for user " . $user->getUsername() . " and session " . $this->session->getId()
+                "onLogin triggered for user " . $user->getUsername() . " and browser session " . $this->session->getId()
             );
         }
     }
@@ -110,27 +115,30 @@ class SessionStorage extends AuthenticationHook
                 $this->database->connect();
             }
 
-            // calculate device identifier
+            // calculate browser identifier
             $userAgent = $_SERVER['HTTP_USER_AGENT'] ?: null;
-            $deviceId = Connection::calculateDeviceId($userAgent, $user->getUsername()) ?: 'default';
+            $browserId = Connection::calculateBrowserId($userAgent, $user->getUsername()) ?: 'default';
 
             $this->database->beginTransaction();
             try {
                 $this->database->delete(
-                    'session',
+                    'browser_session',
                     [
                         'php_session_id = ?' => $this->session->getId(),
                         'username = ?' => trim($user->getUsername()),
-                        'device_id = ?' => $deviceId
+                        'browser_id = ?' => $browserId
                     ]
                 );
                 $this->database->commitTransaction();
             } catch (PDOException $e) {
-                Logger::error("Failed deleting session from table 'session': \n\t" . $e->getMessage());
+                Logger::error(
+                    "Failed deleting browser session from table 'browser_session': \n\t" . $e->getMessage()
+                );
                 $this->database->rollBackTransaction();
             }
             Logger::debug(
-                "onLogout triggered for user " . $user->getUsername() . " and session " . $this->session->getId()
+                "onLogout triggered for user " . $user->getUsername() . " and browser session " .
+                $this->session->getId()
             );
         }
     }

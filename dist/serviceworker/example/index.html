@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>IcingaNotificationsWorker :: Test</title>
+</head>
+<body>
+<main>
+    <p>Test123</p>
+</main>
+<script>
+    try {
+        navigator.serviceWorker.register(
+            '/icinga-notifications-worker.js',
+            {
+                scope: '/',
+                type: 'classic'
+            }
+        ).then((registration) => {
+            if (registration.installing) {
+                console.log("Service worker is installing.");
+            } else if (registration.waiting) {
+                console.log("Service worker has been installed and is waiting to be run.");
+            } else if (registration.active) {
+                console.log("Service worker has been activated.");
+                setTimeout(() => {
+                    let es = new EventSource('/icingaweb2/notifications/daemon');
+                });
+            }
+
+            if (navigator.serviceWorker.controller === null) {
+                /**
+                 * hard refresh detected. This causes the browser to not forward fetch requests to
+                 * service workers. Reloading the site fixes this.
+                 */
+                setTimeout(() => {
+                    console.log("Hard refresh detected. Reloading page to fix the service workers.");
+                    location.reload();
+                }, 1000);
+                return;
+            }
+        });
+    } catch (error) {
+        console.error(`Service worker failed to register: ${error}`);
+    }
+</script>
+</body>
+</html>

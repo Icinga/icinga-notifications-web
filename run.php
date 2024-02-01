@@ -5,11 +5,15 @@
 /** @var $this \Icinga\Application\Modules\Module */
 
 $this->provideHook('authentication', 'SessionStorage', true);
-$this->addRoute('static-worker-file', new Zend_Controller_Router_Route_Static(
-    'icinga-notifications-worker.js',
+$this->addRoute('static-file', new Zend_Controller_Router_Route_Regex(
+    'icinga-notifications-(.[^.]*)(\..*)',
     [
         'controller' => 'daemon',
         'action' => 'script',
         'module' => 'notifications'
+    ],
+    [
+        1 => 'file',
+        2 => 'extension'
     ]
 ));

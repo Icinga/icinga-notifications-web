@@ -10,14 +10,14 @@ use ipl\Orm\Model;
 /**
  * @property string $php_session_id
  * @property string $username
- * @property string $device_id
+ * @property string $browser_id
  * @property DateTime $authenticated_at
  */
-class Session extends Model
+class BrowserSession extends Model
 {
     public function getTableName(): string
     {
-        return 'session';
+        return 'browser_session';
     }
 
     /**
@@ -28,7 +28,7 @@ class Session extends Model
         return [
             'php_session_id',
             'username',
-            'device_id'
+            'browser_id'
         ];
     }
 
@@ -37,7 +37,7 @@ class Session extends Model
         return [
             'php_session_id',
             'username',
-            'device_id',
+            'browser_id',
             'authenticated_at'
         ];
     }
@@ -50,7 +50,7 @@ class Session extends Model
         return [
             'php_session_id' => t('PHP\'s Session Identifier'),
             'username' => t('Username'),
-            'device_id' => t('Device Identifier'),
+            'browser_id' => t('Browser Identifier'),
             'authenticated_at' => t('Authenticated At')
         ];
     }
@@ -63,7 +63,7 @@ class Session extends Model
         return [
             'php_session_id',
             'username',
-            'device_id'
+            'browser_id'
         ];
     }
 

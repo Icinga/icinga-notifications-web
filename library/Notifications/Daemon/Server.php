@@ -8,8 +8,8 @@ use Icinga\Application\Config;
 use Icinga\Application\Logger;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Contact;
+use Icinga\Module\Notifications\Model\Daemon\BrowserSession;
 use Icinga\Module\Notifications\Model\Daemon\Connection;
-use Icinga\Module\Notifications\Model\Daemon\Session;
 use ipl\Stdlib\Filter;
 use Psr\Http\Message\ServerRequestInterface;
 use React\EventLoop\LoopInterface;
@@ -119,6 +119,12 @@ final class Server
             . ':'
             . parse_url($this->socket->getAddress() ?? '', PHP_URL_PORT)
         );
+
+        // add keepalive routine to prevent connection aborts by proxies
+        // https://html.spec.whatwg.org/multipage/server-sent-events.html#authoring-notes
+        $this->mainLoop->addPeriodicTimer(15.0, function () {
+            $this->keepalive();
+        });
 
         self::$logger::debug(self::PREFIX . "loaded");
     }
@@ -325,33 +331,37 @@ final class Server
 
         if (array_key_exists('Icingaweb2', $cookies)) {
             // session id is supplied, check for the existence of a user-agent header as it's needed to calculate
-            // the device id
+            // the browser id
             if (array_key_exists('User-Agent', $headers) && sizeof($headers['User-Agent']) === 1) {
                 // grab session
-                /** @var Session $session */
-                $session = Session::on($this->dbLink)
+                /** @var BrowserSession $browserSession */
+                $browserSession = BrowserSession::on($this->dbLink)
                     ->filter(Filter::equal('php_session_id', htmlspecialchars(trim($cookies['Icingaweb2']))))
                     ->first();
 
-                // calculate device id
-                $deviceId = Connection::calculateDeviceId($headers['User-Agent'][0], $session->username) ?: 'default';
+                // calculate browser id
+                $browserId = Connection::calculateBrowserId(
+                    $headers['User-Agent'][0],
+                    $browserSession->username
+                ) ?: 'default';
 
-                // check if device id of connection corresponds to device id of authenticated session
-                if ($deviceId === $session->device_id) {
-                    // making sure that it's the latest session
-                    $latestSession = Session::on($this->dbLink)
-                        ->filter(Filter::equal('username', $session->username))
-                        ->filter(Filter::equal('device_id', $session->device_id))
+                // check if browser id of connection corresponds to browser id of authenticated session
+                if ($browserId === $browserSession->browser_id) {
+                    // making sure that it's the latest browser session
+                    /** @var BrowserSession $latestSession */
+                    $latestSession = BrowserSession::on($this->dbLink)
+                        ->filter(Filter::equal('username', $browserSession->username))
+                        ->filter(Filter::equal('browser_id', $browserSession->browser_id))
                         ->orderBy('authenticated_at', 'DESC')
                         ->first();
-                    if (isset($latestSession) && ($latestSession->php_session_id === $session->php_session_id)) {
-                        // current session is the latest session for this user and device => this is a valid request
-                        $data->php_session_id = $session->php_session_id;
-                        $data->user = $session->username;
-                        $data->device_id = $session->device_id;
+                    if (isset($latestSession) && ($latestSession->php_session_id === $browserSession->php_session_id)) {
+                        // current browser session is the latest session for this user and browser => a valid request
+                        $data->php_session_id = $browserSession->php_session_id;
+                        $data->user = $browserSession->username;
+                        $data->browser_id = $browserSession->browser_id;
                         $connection->setSession($data->php_session_id);
                         $connection->getUser()->setUsername($data->user);
-                        $connection->setDeviceId($data->device_id);
+                        $connection->setBrowserId($data->browser_id);
                         $data->isValid = true;
                         return $data;
                     }
@@ -362,6 +372,13 @@ final class Server
         // the request is invalid, return this result
         $data->isValid = false;
         return $data;
+    }
+
+    private function keepalive(): void
+    {
+        foreach ($this->connections as $connection) {
+            $connection->getStream()->write(':' . PHP_EOL . PHP_EOL);
+        }
     }
 
     private function matchContact(?string $username): ?int

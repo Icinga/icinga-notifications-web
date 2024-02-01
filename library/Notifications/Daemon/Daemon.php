@@ -6,10 +6,11 @@ use DateTimeInterface;
 use DateTimeZone;
 use Icinga\Application\Logger;
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Model\Daemon\BrowserSession;
 use Icinga\Module\Notifications\Model\Daemon\Event;
 use Icinga\Module\Notifications\Model\Daemon\EventIdentifier;
-use Icinga\Module\Notifications\Model\Daemon\Session;
 use Icinga\Module\Notifications\Model\IncidentHistory;
+use Icinga\Module\Notifications\Model\ObjectIdTag;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
 use React\EventLoop\Loop;
@@ -158,14 +159,14 @@ final class Daemon
     private function housekeeping(): void
     {
         self::$logger::debug(self::PREFIX . "running housekeeping job");
-        $staleSessions = Session::on(Database::get())
+        $staleBrowserSessions = BrowserSession::on(Database::get())
             ->filter(Filter::lessThan('authenticated_at', time() - 86400));
         $deletions = 0;
 
-        /** @var Session $session */
-        foreach ($staleSessions as $session) {
+        /** @var BrowserSession $session */
+        foreach ($staleBrowserSessions as $session) {
             $this->database->delete(
-                'session',
+                'browser_session',
                 [
                     'php_session_id = ?' => $session->php_session_id
                 ]
@@ -174,7 +175,7 @@ final class Daemon
         }
 
         if ($deletions > 0) {
-            self::$logger::info(self::PREFIX . "housekeeping cleaned " . $deletions . " stale sessions");
+            self::$logger::info(self::PREFIX . "housekeeping cleaned " . $deletions . " stale browser sessions");
         }
         self::$logger::debug(self::PREFIX . "finished housekeeping job");
     }
@@ -220,6 +221,26 @@ final class Daemon
                     ])
                     ->first();
                 if ($incident !== null) {
+                    // query host and service name of this incident's related object
+                    /** @var ObjectIdTag $tags */
+                    $tags = ObjectIdTag::on(Database::get())
+                        ->filter(Filter::equal('object_id', $incident->incident->object_id));
+                    $host = $service = '';
+
+                    /** @var ObjectIdTag $tag */
+                    foreach ($tags as $tag) {
+                        switch ($tag->tag) {
+                            case 'host':
+                                $host = $tag->value;
+                                break;
+                            case 'service':
+                                $service = $tag->value;
+                                break;
+                        }
+                    }
+
+                    self::$logger::warning(self::PREFIX . "Host: " . $host . " | Service: " . $service);
+
                     // reformat notification time
                     $time = $incident->time;
                     $time->setTimezone(new DateTimeZone('UTC'));
@@ -231,6 +252,8 @@ final class Daemon
                             (object) [
                                 'incident_id' => $incident->incident_id,
                                 'event_id' => $incident->event_id,
+                                'host' => $host,
+                                'service' => $service,
                                 'time' => $time,
                                 'severity' => $incident->incident->severity
                             ],
