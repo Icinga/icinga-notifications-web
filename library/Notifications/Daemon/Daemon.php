@@ -246,21 +246,23 @@ final class Daemon
                     $time->setTimezone(new DateTimeZone('UTC'));
                     $time = $time->format(DateTimeInterface::RFC3339_EXTENDED);
 
+                    $event = new Event(
+                        EventIdentifier::ICINGA2_NOTIFICATION,
+                        (object) [
+                            'incident_id' => $incident->incident_id,
+                            'event_id' => $incident->event_id,
+                            'host' => $host,
+                            'service' => $service,
+                            'time' => $time,
+                            'severity' => $incident->incident->severity
+                        ],
+                        // minus one as it's usually expected as an auto-incrementing id, we just want to pass it
+                        // the actual id in this case
+                        intval($notification->id - 1)
+                    );
+                    // self::$logger::warning(self::PREFIX . @var_export($event, true));
                     $connections[$notification->contact_id]->sendEvent(
-                        new Event(
-                            EventIdentifier::ICINGA2_NOTIFICATION,
-                            (object) [
-                                'incident_id' => $incident->incident_id,
-                                'event_id' => $incident->event_id,
-                                'host' => $host,
-                                'service' => $service,
-                                'time' => $time,
-                                'severity' => $incident->incident->severity
-                            ],
-                            // minus one as it's usually expected as an auto-incrementing id, we just want to pass it
-                            // the actual id in this case
-                            intval($notification->id - 1)
-                        )
+                        $event
                     );
                     ++$numOfNotifications;
                 }

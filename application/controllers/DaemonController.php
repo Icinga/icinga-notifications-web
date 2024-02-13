@@ -8,6 +8,8 @@ use ipl\Web\Compat\ViewRenderer;
 
 final class DaemonController extends CompatController
 {
+    protected $requiresAuthentication = false;
+
     public function init(): void
     {
         /**
@@ -40,7 +42,7 @@ final class DaemonController extends CompatController
                 ->getBaseDir() . '/public/js';
 
         $filePath = realpath(
-            $root . DIRECTORY_SEPARATOR . 'icinga-notifications-' . $this->_getParam(
+            $root . DIRECTORY_SEPARATOR . 'notifications-' . $this->_getParam(
                 'file',
                 'undefined'
             ) . $this->_getParam('extension', 'undefined')
@@ -50,7 +52,7 @@ final class DaemonController extends CompatController
                 $this->httpNotFound("No file name submitted");
             }
             $this->httpNotFound(
-                "'icinga-notifications-"
+                "'notifications-"
                 . $this->_getParam('file')
                 . $this->_getParam('extension')
                 . " does not exist"
@@ -86,7 +88,7 @@ final class DaemonController extends CompatController
                 }
             } else {
                 $this->httpNotFound(
-                    "'icinga-notifications-"
+                    "'notifications-"
                     . $this->_getParam('file')
                     . $this->_getParam('extension')
                     . " could not be read"

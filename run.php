@@ -6,7 +6,7 @@
 
 $this->provideHook('authentication', 'SessionStorage', true);
 $this->addRoute('static-file', new Zend_Controller_Router_Route_Regex(
-    'icinga-notifications-(.[^.]*)(\..*)',
+    'notifications-(.[^.]*)(\..*)',
     [
         'controller' => 'daemon',
         'action' => 'script',

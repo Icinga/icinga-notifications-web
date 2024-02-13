@@ -311,6 +311,7 @@ final class Server
         return new Response(
             StatusCodeInterface::STATUS_OK,
             [
+                "Connection" => "keep-alive",
                 "Content-Type" => "text/event-stream; charset=utf-8",
                 "Cache-Control" => "no-cache",
                 "X-Accel-Buffering" => "no"

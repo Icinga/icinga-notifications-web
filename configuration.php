@@ -77,4 +77,4 @@ $this->provideConfigTab(
     ]
 );
 
-$this->provideJsFile('notification.js');
+$this->provideJsFile('notifications.js');
