@@ -1,5 +1,5 @@
 const _PREFIX = '[notifications-worker] - ';
-const _SERVER_CONNECTIONS = [];
+const _SERVER_CONNECTIONS = {};
 
 if (!(self instanceof ServiceWorkerGlobalScope)) {
     throw new Error("Tried loading 'notification-worker.js' in a context other than a Service Worker.");
@@ -26,8 +26,21 @@ selfSW.addEventListener('fetch', (event) => {
 
     // only check dedicated event stream requests towards the daemon
     if (request.headers.get('accept').startsWith('text/event-stream') && url.pathname.trim() === '/icingaweb2/notifications/daemon') {
-        self.console.log(_PREFIX + `tab '${event.clientId}' requested event-stream.`);
-        event.respondWith(this.injectMiddleware(request, event.clientId));
+        if (Object.keys(_SERVER_CONNECTIONS).length < 2) {
+            self.console.log(_PREFIX + `tab '${event.clientId}' requested event-stream.`);
+            event.respondWith(this.injectMiddleware(request, event.clientId));
+        }
+        else {
+            self.console.log(_PREFIX + `event-stream request from tab '${event.clientId}' got blocked as there's already 2 active connections.`);
+            // block request as the event-stream unneeded for now (2 tabs are already connected)
+            event.respondWith(new Response(
+                null,
+                {
+                    status: 204,
+                    statusText: 'No Content'
+                }
+            ));
+        }
     }
 });
 
@@ -49,29 +62,45 @@ function processMessage(event) {
 }
 
 async function injectMiddleware(request, clientId) {
-    let response = await fetch(request, {
-        keepalive: true
-    });
-    if (response.ok && response.body instanceof ReadableStream) {
-        self.console.log(_PREFIX + `injecting into data stream of tab '${clientId}'.`);
-
-        const controllers = {
+    // define reference holders
+    const controllers = {
             writable: undefined,
             readable: undefined,
             signal: new AbortController()
         };
-        let readStream = new ReadableStream({
+    const streams = {
+        writable: undefined,
+        readable: undefined
+    };
+
+    // fetch event-stream and inject middleware
+    let response = await fetch(request, {
+        keepalive: true,
+        signal: controllers.signal.signal
+    });
+    if (response.ok && response.body instanceof ReadableStream) {
+        self.console.log(_PREFIX + `injecting into data stream of tab '${clientId}'.`);
+        streams.readable = new ReadableStream({
             start(controller) {
                 controllers.readable = controller;
+
+                // stream opened up, adding it to the active connections
+                _SERVER_CONNECTIONS[clientId] = clientId;
             },
             cancel(reason) {
                 self.console.log(_PREFIX + `tab '${clientId}' closed event-stream (client-side).`);
+                // remove from active connections if it exists
+                if (clientId in _SERVER_CONNECTIONS) {
+                    delete _SERVER_CONNECTIONS[clientId];
+                }
+
                 // tab crashed or closed down connection to event-stream, stopping pipe through stream by
-                // triggering the abort signal
+                // triggering the abort signal (and stopping the writing stream as well)
                 controllers.signal.abort();
+                streams.writable.abort();
             }
-        }, new CountQueuingStrategy({ highWaterMark: 10 }));
-        let writeStream = new WritableStream({
+        }, new CountQueuingStrategy({highWaterMark: 10}));
+        streams.writable = new WritableStream({
             start(controller) {
                 controllers.writable = controller;
             },
@@ -81,20 +110,23 @@ async function injectMiddleware(request, clientId) {
             close() {
                 // close was triggered by the server closing down the event-stream
                 self.console.log(_PREFIX + `tab '${clientId}' closed event-stream (server-side).`);
+                // closing the reader as well
                 controllers.readable.close();
             },
             abort(reason) {
                 // close was triggered by an abort signal (most likely by the reader / client-side)
                 self.console.log(_PREFIX + `tab '${clientId}' closed event-stream (server-side).`);
-                controllers.readable.close();
+                // cancelling the readable stream in case it was the fetch request that signaled the abort
+                streams.readable.cancel();
             }
-        }, new CountQueuingStrategy({ highWaterMark: 10 }));
+        }, new CountQueuingStrategy({highWaterMark: 10}));
+
         // returning injected (piped) stream
         return new Response(
             response.body.pipeThrough({
-                writable: writeStream,
-                readable: readStream
-            }, { signal: controllers.signal.signal }),
+                writable: streams.writable,
+                readable: streams.readable
+            }, {signal: controllers.signal.signal}),
             {
                 headers: response.headers,
                 statusText: response.statusText,

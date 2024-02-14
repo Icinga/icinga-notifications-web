@@ -120,9 +120,10 @@ final class Server
             . parse_url($this->socket->getAddress() ?? '', PHP_URL_PORT)
         );
 
-        // add keepalive routine to prevent connection aborts by proxies
+        // add keepalive routine to prevent connection aborts by proxies (Nginx, Apache) or browser restrictions (like
+        // the Fetch API on Mozilla Firefox)
         // https://html.spec.whatwg.org/multipage/server-sent-events.html#authoring-notes
-        $this->mainLoop->addPeriodicTimer(15.0, function () {
+        $this->mainLoop->addPeriodicTimer(30.0, function () {
             $this->keepalive();
         });
 
@@ -308,6 +309,13 @@ final class Server
             self::PREFIX . "<" . $connection->getAddress(
             ) . "> request is authenticated and matches a proper notification user"
         );
+
+        // schedule initial keep-alive
+        $this->mainLoop->addTimer(1.0, function () use ($connection) {
+            $connection->getStream()->write(':' . PHP_EOL . PHP_EOL);
+        });
+
+        // return stream
         return new Response(
             StatusCodeInterface::STATUS_OK,
             [
