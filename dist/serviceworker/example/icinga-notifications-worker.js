@@ -1,1 +1,0 @@
-../build/icinga-notifications-worker.js

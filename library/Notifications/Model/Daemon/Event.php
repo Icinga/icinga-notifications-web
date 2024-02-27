@@ -34,9 +34,13 @@ final class Event
      */
     private $lastEventId;
 
-    final public function __construct(string $identifier, stdClass $data, int $lastEventId = 0)
+    /** @var int $contact */
+    private $contact;
+
+    final public function __construct(string $identifier, int $contact, stdClass $data, int $lastEventId = 0)
     {
         $this->identifier = $identifier;
+        $this->contact = $contact;
         $this->data = $data;
         $this->reconnectInterval = 3000;
         $this->lastEventId = $lastEventId;
@@ -48,6 +52,11 @@ final class Event
     final public function getIdentifier(): string
     {
         return $this->identifier;
+    }
+
+    final public function getContact(): int
+    {
+        return $this->contact;
     }
 
     final public function getData(): stdClass

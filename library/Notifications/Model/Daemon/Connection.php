@@ -39,9 +39,9 @@ final class Connection
     private $stream;
 
     /**
-     * @var string $browserId
+     * @var string $userAgent
      */
-    private $browserId;
+    private $userAgent;
 
     public function __construct(ConnectionInterface $connection)
     {
@@ -59,7 +59,7 @@ final class Connection
         $this->stream = new ThroughStream();
         $this->session = '';
         $this->user = new User();
-        $this->browserId = '';
+        $this->userAgent = '';
     }
 
     public static function parseHostAndPort(string $address): stdClass
@@ -79,17 +79,6 @@ final class Connection
         $combined->addr = $combined->host . ':' . $combined->port;
 
         return $combined;
-    }
-
-    public static function calculateBrowserId(string $userAgent, string $user): ?string
-    {
-        if (in_array('joaat', hash_algos())) {
-            if (strlen(trim($userAgent)) > 0 && strlen(trim($user)) > 0) {
-                return strtoupper(hash('joaat', $user . trim($userAgent)));
-            }
-        }
-
-        return null;
     }
 
     public function getHost(): string
@@ -132,19 +121,19 @@ final class Connection
         return $this->user;
     }
 
-    public function getBrowserId(): ?string
+    public function getUserAgent(): ?string
     {
-        return $this->browserId;
+        return $this->userAgent;
     }
 
-    public function setBrowserId(string $browserId): void
+    public function setUserAgent(string $userAgent): void
     {
-        $this->browserId = $browserId;
+        $this->userAgent = $userAgent;
     }
 
-    public function sendEvent(Event $event): void
+    public function sendEvent(Event $event): bool
     {
-        $this->stream->write(
+        return $this->stream->write(
             $event
         );
     }

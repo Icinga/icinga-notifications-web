@@ -348,31 +348,36 @@ final class Server
                     ->filter(Filter::equal('php_session_id', htmlspecialchars(trim($cookies['Icingaweb2']))))
                     ->first();
 
-                // calculate browser id
-                $browserId = Connection::calculateBrowserId(
-                    $headers['User-Agent'][0],
-                    $browserSession->username
-                ) ?: 'default';
+                if ($browserSession !== null) {
+                    $userAgent = null;
+                    if ($headers['User-Agent'][0]) {
+                        // limit user-agent to 4k chars
+                        $userAgent = substr(trim($headers['User-Agent'][0]), 0, 4096);
+                    }
+                    else {
+                        $userAgent = 'default';
+                    }
 
-                // check if browser id of connection corresponds to browser id of authenticated session
-                if ($browserId === $browserSession->browser_id) {
-                    // making sure that it's the latest browser session
-                    /** @var BrowserSession $latestSession */
-                    $latestSession = BrowserSession::on($this->dbLink)
-                        ->filter(Filter::equal('username', $browserSession->username))
-                        ->filter(Filter::equal('browser_id', $browserSession->browser_id))
-                        ->orderBy('authenticated_at', 'DESC')
-                        ->first();
-                    if (isset($latestSession) && ($latestSession->php_session_id === $browserSession->php_session_id)) {
-                        // current browser session is the latest session for this user and browser => a valid request
-                        $data->php_session_id = $browserSession->php_session_id;
-                        $data->user = $browserSession->username;
-                        $data->browser_id = $browserSession->browser_id;
-                        $connection->setSession($data->php_session_id);
-                        $connection->getUser()->setUsername($data->user);
-                        $connection->setBrowserId($data->browser_id);
-                        $data->isValid = true;
-                        return $data;
+                    // check if user agent of connection corresponds to user agent of authenticated session
+                    if ($userAgent === $browserSession->user_agent) {
+                        // making sure that it's the latest browser session
+                        /** @var BrowserSession $latestSession */
+                        $latestSession = BrowserSession::on($this->dbLink)
+                            ->filter(Filter::equal('username', $browserSession->username))
+                            ->filter(Filter::equal('user_agent', $browserSession->user_agent))
+                            ->orderBy('authenticated_at', 'DESC')
+                            ->first();
+                        if (isset($latestSession) && ($latestSession->php_session_id === $browserSession->php_session_id)) {
+                            // current browser session is the latest session for this user and browser => a valid request
+                            $data->php_session_id = $browserSession->php_session_id;
+                            $data->user = $browserSession->username;
+                            $data->user_agent = $browserSession->user_agent;
+                            $connection->setSession($data->php_session_id);
+                            $connection->getUser()->setUsername($data->user);
+                            $connection->setUserAgent($data->user_agent);
+                            $data->isValid = true;
+                            return $data;
+                        }
                     }
                 }
             }
@@ -409,7 +414,7 @@ final class Server
     }
 
     /**
-     * @return array<Connection>
+     * @return array<int, array<Connection>>
      */
     public function getMatchedConnections(): array
     {
@@ -417,7 +422,10 @@ final class Server
         foreach ($this->connections as $connection) {
             $contactId = $connection->getUser()->getContactId();
             if (isset($contactId)) {
-                $connections[$contactId] = $connection;
+                if (isset($connections[$contactId]) === false) {
+                    $connections[$contactId] = [];
+                }
+                $connections[$contactId][] = $connection;
             }
         }
 

@@ -1,8 +1,10 @@
 <?php
 
+use Icinga\Application\Modules\Module;
+
 /* Icinga Web 2 | (c) 2018 Icinga Development Team | GPLv2+ */
 
-/** @var $this \Icinga\Application\Modules\Module */
+/** @var Module $this */
 
 $this->provideHook('authentication', 'SessionStorage', true);
 $this->addRoute('static-file', new Zend_Controller_Router_Route_Regex(

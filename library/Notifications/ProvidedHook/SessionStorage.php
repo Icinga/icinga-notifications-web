@@ -6,9 +6,9 @@ use Icinga\Application\Hook\AuthenticationHook;
 use Icinga\Application\Logger;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Daemon\BrowserSession;
-use Icinga\Module\Notifications\Model\Daemon\Connection;
 use Icinga\User;
 use Icinga\Web\Session;
+use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
 use PDOException;
 
@@ -20,7 +20,7 @@ class SessionStorage extends AuthenticationHook
     private $session;
 
     /**
-     * @var \ipl\Sql\Connection $database
+     * @var Connection $database
      */
     private $database;
 
@@ -37,9 +37,13 @@ class SessionStorage extends AuthenticationHook
 
         if ($this->session->exists()) {
             // user successfully authenticated
-            // calculate browser identifier
-            $userAgent = $_SERVER['HTTP_USER_AGENT'] ?: null;
-            $browserId = Connection::calculateBrowserId($userAgent, $user->getUsername()) ?: 'default';
+            if ($_SERVER['HTTP_USER_AGENT']) {
+                // limit user-agent to 4k chars
+                $userAgent = substr(trim($_SERVER['HTTP_USER_AGENT']), 0, 4096);
+            }
+            else {
+                $userAgent = 'default';
+            }
 
             // check if session with this identifier already exists (zombie session)
             $zombieSession = BrowserSession::on(Database::get())
@@ -69,7 +73,7 @@ class SessionStorage extends AuthenticationHook
             // cleanup existing sessions from this user (only for the current browser)
             $userSessions = BrowserSession::on(Database::get())
                 ->filter(Filter::equal('username', $user->getUsername()))
-                ->filter(Filter::equal('browser_id', $browserId))
+                ->filter(Filter::equal('user_agent', $userAgent))
                 ->execute();
             /** @var BrowserSession $session */
             foreach ($userSessions as $session) {
@@ -78,7 +82,7 @@ class SessionStorage extends AuthenticationHook
                     [
                         'php_session_id = ?' => $session->php_session_id,
                         'username = ?' => trim($user->getUsername()),
-                        'browser_id = ?' => $browserId
+                        'user_agent = ?' => $userAgent
                     ]
                 );
             }
@@ -91,7 +95,7 @@ class SessionStorage extends AuthenticationHook
                     [
                         'php_session_id' => $this->session->getId(),
                         'username' => trim($user->getUsername()),
-                        'browser_id' => $browserId
+                        'user_agent' => $userAgent
                     ]
                 );
                 $this->database->commitTransaction();
@@ -115,9 +119,13 @@ class SessionStorage extends AuthenticationHook
                 $this->database->connect();
             }
 
-            // calculate browser identifier
-            $userAgent = $_SERVER['HTTP_USER_AGENT'] ?: null;
-            $browserId = Connection::calculateBrowserId($userAgent, $user->getUsername()) ?: 'default';
+            if ($_SERVER['HTTP_USER_AGENT']) {
+                // limit user-agent to 4k chars
+                $userAgent = substr(trim($_SERVER['HTTP_USER_AGENT']), 0, 4096);
+            }
+            else {
+                $userAgent = 'default';
+            }
 
             $this->database->beginTransaction();
             try {
@@ -126,7 +134,7 @@ class SessionStorage extends AuthenticationHook
                     [
                         'php_session_id = ?' => $this->session->getId(),
                         'username = ?' => trim($user->getUsername()),
-                        'browser_id = ?' => $browserId
+                        'user_agent = ?' => $userAgent
                     ]
                 );
                 $this->database->commitTransaction();

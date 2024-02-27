@@ -5,12 +5,12 @@ namespace Icinga\Module\Notifications\Model\Daemon;
 final class User
 {
     /**
-     * @var string $username
+     * @var ?string $username
      */
     private $username;
 
     /**
-     * @var int $contactId
+     * @var ?int $contactId
      */
     private $contactId;
 

@@ -5,6 +5,7 @@ namespace Icinga\Module\Notifications\Controllers;
 use Icinga\Application\Icinga;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\ViewRenderer;
+use Zend_Layout;
 
 final class DaemonController extends CompatController
 {
@@ -17,8 +18,8 @@ final class DaemonController extends CompatController
          */
         /** @var ViewRenderer $viewRenderer */
         $viewRenderer = $this->getHelper('viewRenderer');
-        $viewRenderer->setNoRender(true);
-        /** @var \Zend_Layout $layout */
+        $viewRenderer->setNoRender();
+        /** @var Zend_Layout $layout */
         $layout = $this->getHelper('layout');
         $layout->disableLayout();
     }

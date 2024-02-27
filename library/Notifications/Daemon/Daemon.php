@@ -1,9 +1,10 @@
-<?php
+<?php /** @noinspection PhpComposerExtensionStubsInspection */
 
 namespace Icinga\Module\Notifications\Daemon;
 
 use DateTimeInterface;
 use DateTimeZone;
+use Evenement\EventEmitter;
 use Icinga\Application\Logger;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Daemon\BrowserSession;
@@ -19,7 +20,7 @@ use React\EventLoop\LoopInterface;
 use function Clue\React\Block\await;
 use function React\Promise\Timer\sleep;
 
-final class Daemon
+final class Daemon extends EventEmitter
 {
     private const PREFIX = '[daemon] - ';
 
@@ -42,6 +43,11 @@ final class Daemon
      * @var Server $server
      */
     private $server;
+
+    /**
+     * @var Sender $sender
+     */
+    private $sender;
 
     /**
      * @var Connection $database
@@ -87,6 +93,7 @@ final class Daemon
         $this->loop = Loop::get();
         $this->signalHandling($this->loop);
         $this->server = Server::get($this->loop);
+        $this->sender = Sender::get($this, $this->server);
         $this->database = Database::get();
         $this->database->connect();
         $this->cancellationToken = false;
@@ -103,11 +110,13 @@ final class Daemon
         $this->cancellationToken = true;
         $this->database->disconnect();
         $this->server->unload();
+        $this->sender->unload();
         $this->loop->stop();
 
         unset($this->initializedAt);
         unset($this->database);
         unset($this->server);
+        unset($this->sender);
         unset($this->loop);
 
         self::$logger::debug(self::PREFIX . "unloaded");
@@ -207,7 +216,7 @@ final class Daemon
             ->filter(Filter::greaterThan('id', $this->lastIncidentId))
             ->filter(Filter::equal('type', 'notified'))
             ->orderBy('id', 'ASC');
-        /** @var array<\Icinga\Module\Notifications\Model\Daemon\Connection> $connections */
+        /** @var array<int, array<\Icinga\Module\Notifications\Model\Daemon\Connection>> $connections */
         $connections = $this->server->getMatchedConnections();
 
         /** @var IncidentHistory $notification */
@@ -248,6 +257,7 @@ final class Daemon
 
                     $event = new Event(
                         EventIdentifier::ICINGA2_NOTIFICATION,
+                        $notification->contact_id,
                         (object) [
                             'incident_id' => $incident->incident_id,
                             'event_id' => $incident->event_id,
@@ -260,10 +270,10 @@ final class Daemon
                         // the actual id in this case
                         intval($notification->id - 1)
                     );
+
+                    $this->emit(EventIdentifier::ICINGA2_NOTIFICATION, array($event));
+
                     // self::$logger::warning(self::PREFIX . @var_export($event, true));
-                    $connections[$notification->contact_id]->sendEvent(
-                        $event
-                    );
                     ++$numOfNotifications;
                 }
             }

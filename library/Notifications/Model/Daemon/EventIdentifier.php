@@ -20,7 +20,7 @@ abstract class EventIdentifier
     /**
      * @throws Exception
      */
-    final public function __call($name, $arguments): void
+    final public function __call(string $name, object $arguments): void
     {
         throw new Exception("This enum class can't be called.");
     }
@@ -28,7 +28,7 @@ abstract class EventIdentifier
     /**
      * @throws Exception
      */
-    final public static function __callStatic($name, $arguments): void
+    final public static function __callStatic(string $name, object $arguments): void
     {
         throw new Exception("This enum class can't be statically called.");
     }
@@ -43,6 +43,7 @@ abstract class EventIdentifier
 
     /**
      * @throws Exception
+     * @param array<object> $data
      */
     final public function __unserialize(array $data): void
     {
@@ -50,25 +51,7 @@ abstract class EventIdentifier
     }
 
     /**
-     * authentication
-     */
-    public const AUTH_VALID = 'auth.valid';
-    public const AUTH_INVALID = 'auth.invalid';
-    public const AUTH_MISSING = 'auth.missing';
-
-    /**
-     * connect handling
-     */
-    public const CONN_RECONNECT = 'conn.reconnect';
-    public const CONN_CLOSE = 'conn.close';
-
-    /**
-     * miscellaneous
-     */
-    public const MISC_DUMMY = 'misc.dummy';
-
-    /**
-     * motifications
+     * notifications
      */
     public const ICINGA2_NOTIFICATION = 'icinga2.notification';
 }

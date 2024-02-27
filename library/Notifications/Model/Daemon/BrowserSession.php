@@ -10,7 +10,7 @@ use ipl\Orm\Model;
 /**
  * @property string $php_session_id
  * @property string $username
- * @property string $browser_id
+ * @property string $user_agent
  * @property DateTime $authenticated_at
  */
 class BrowserSession extends Model
@@ -28,7 +28,7 @@ class BrowserSession extends Model
         return [
             'php_session_id',
             'username',
-            'browser_id'
+            'user_agent'
         ];
     }
 
@@ -37,7 +37,7 @@ class BrowserSession extends Model
         return [
             'php_session_id',
             'username',
-            'browser_id',
+            'user_agent',
             'authenticated_at'
         ];
     }
@@ -50,7 +50,7 @@ class BrowserSession extends Model
         return [
             'php_session_id' => t('PHP\'s Session Identifier'),
             'username' => t('Username'),
-            'browser_id' => t('Browser Identifier'),
+            'user_agent' => t('User-Agent'),
             'authenticated_at' => t('Authenticated At')
         ];
     }
@@ -63,7 +63,7 @@ class BrowserSession extends Model
         return [
             'php_session_id',
             'username',
-            'browser_id'
+            'user_agent'
         ];
     }
 
