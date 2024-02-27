@@ -5,4 +5,3 @@
 !.git*
 !.github
 !.phpcs.xml
-/dist/serviceworker/node_modules/

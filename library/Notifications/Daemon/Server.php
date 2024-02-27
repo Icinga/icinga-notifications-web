@@ -349,8 +349,7 @@ final class Server
                     ->first();
 
                 if ($browserSession !== null) {
-                    $userAgent = null;
-                    if ($headers['User-Agent'][0]) {
+                    if (isset($headers['User-Agent'][0])) {
                         // limit user-agent to 4k chars
                         $userAgent = substr(trim($headers['User-Agent'][0]), 0, 4096);
                     }

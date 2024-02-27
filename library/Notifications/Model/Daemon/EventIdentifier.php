@@ -19,16 +19,20 @@ abstract class EventIdentifier
 
     /**
      * @throws Exception
+     * @param string $name
+     * @param array<object> $arguments
      */
-    final public function __call(string $name, object $arguments): void
+    final public function __call(string $name, array $arguments): void
     {
         throw new Exception("This enum class can't be called.");
     }
 
     /**
      * @throws Exception
+     * @param string $name
+     * @param array<object> $arguments
      */
-    final public static function __callStatic(string $name, object $arguments): void
+    final public static function __callStatic(string $name, array $arguments): void
     {
         throw new Exception("This enum class can't be statically called.");
     }
