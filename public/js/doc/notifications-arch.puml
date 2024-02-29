@@ -1,6 +1,5 @@
 @startuml
 
-!include https://raw.githubusercontent.com/ncosta-ic/catppuccin-macchiato-plantuml-theme/main/theme.puml
 skinparam componentStyle rectangle
 
 package "Browser" as B {
