@@ -48,7 +48,9 @@
                 isValidated = false;
             }
             if (!isValidated) {
-                throw new Error("The 'Notification' module is missing some required API's.");
+                // we only log the error and exit early as throwing would completely hang up the web application
+                this._logger.error("The 'Notification' module is missing some required API's.");
+                return;
             }
 
             this._logger.debug(this._prefix + "spawned.");
