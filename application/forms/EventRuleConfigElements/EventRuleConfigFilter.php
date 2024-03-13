@@ -16,7 +16,7 @@ class EventRuleConfigFilter extends FieldsetElement
     /** @var Url Url of the search editor */
     protected $searchEditorUrl;
 
-    /** @var ?string Event rule's object filter*/
+    /** @var ?string Event rule's object filter */
     protected $objectFilter;
 
     protected $defaultAttributes = ['class' => 'config-filter'];
@@ -34,10 +34,10 @@ class EventRuleConfigFilter extends FieldsetElement
             'submitButton',
             'add-filter',
             [
-                'class' => ['add-button', 'control-button', 'spinner'],
-                'label' => new Icon('plus'),
+                'class'          => ['add-button', 'control-button', 'spinner'],
+                'label'          => new Icon('plus'),
                 'formnovalidate' => true,
-                'title' => $this->translate('Add filter')
+                'title'          => $this->translate('Add filter')
             ]
         );
 
@@ -47,29 +47,31 @@ class EventRuleConfigFilter extends FieldsetElement
         if ($this->objectFilter !== '' || $addFilterButton->hasBeenPressed()) {
             $showSearchBar = '1';
             $this->getElement('show-searchbar')->setValue($showSearchBar);
+            $this->removeAttribute('class', 'empty-filter');
         }
 
         if ($showSearchBar === '0') {
             /** @var SubmitButtonElement $filterElement */
             $filterElement = $addFilterButton;
+            $this->addAttributes(['class' => 'empty-filter']);
         } else {
             $editorOpener = new Link(
                 new Icon('cog'),
                 $this->getSearchEditorUrl(),
                 Attributes::create([
-                    'class'                 => 'search-editor-opener control-button',
-                    'title'                 => t('Adjust Filter'),
-                    'data-icinga-modal'     => true,
-                    'data-no-icinga-ajax'   => true,
+                    'class'               => 'search-editor-opener control-button',
+                    'title'               => t('Adjust Filter'),
+                    'data-icinga-modal'   => true,
+                    'data-no-icinga-ajax' => true,
                 ])
             );
 
             $searchBar = new TextElement(
                 'searchbar',
                 [
-                    'class'     => 'filter-input control-button',
-                    'readonly'  => true,
-                    'value'     => $this->objectFilter
+                    'class'    => 'filter-input control-button',
+                    'readonly' => true,
+                    'value'    => $this->objectFilter
                 ]
             );
 

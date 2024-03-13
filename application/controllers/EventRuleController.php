@@ -83,10 +83,12 @@ class EventRuleController extends CompatController
             })
             ->on(EventRuleConfigForm::ON_DISCARD, function () use ($ruleId, $configValues) {
                 $this->sessionNamespace->delete($ruleId);
-                Notification::success(sprintf(
-                    t('Successfully discarded changes to event rule %s'),
-                    $configValues['name']
-                ));
+                Notification::success(
+                    sprintf(
+                        t('Successfully discarded changes to event rule %s'),
+                        $configValues['name']
+                    )
+                );
                 $this->redirectNow(Links::eventRule((int) $ruleId));
             })
             ->on(EventRuleConfigForm::ON_CHANGE, function (EventRuleConfigForm $form) use ($ruleId, $configValues) {
@@ -195,7 +197,7 @@ class EventRuleController extends CompatController
                 $requiredValues = [];
 
                 foreach ($recipient as $k => $v) {
-                    if (in_array($k, ['contact_id', 'contactgroup_id', 'schedule_id']) && $v !==  null) {
+                    if (in_array($k, ['contact_id', 'contactgroup_id', 'schedule_id']) && $v !== null) {
                         $requiredValues[$k] = (string) $v;
                     } elseif (in_array($k, ['id', 'channel_id'])) {
                         $requiredValues[$k] = $v ? (string) $v : null;
@@ -247,10 +249,12 @@ class EventRuleController extends CompatController
         $objectFilter = $eventRule['object_filter'] ?? '';
         $editor->setQueryString($objectFilter);
         $editor->setAction(Url::fromRequest()->getAbsoluteUrl());
-        $editor->setSuggestionUrl(Url::fromPath(
-            "notifications/event-rule/complete",
-            ['_disableLayout' => true, 'showCompact' => true, 'id' => Url::fromRequest()->getParams()->get('id')]
-        ));
+        $editor->setSuggestionUrl(
+            Url::fromPath(
+                "notifications/event-rule/complete",
+                ['_disableLayout' => true, 'showCompact' => true, 'id' => Url::fromRequest()->getParams()->get('id')]
+            )
+        );
 
         $editor->on(SearchEditor::ON_SUCCESS, function (SearchEditor $form) use ($ruleId, $eventRule) {
             $filter = self::createFilterString($form->getFilter());

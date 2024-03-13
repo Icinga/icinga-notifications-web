@@ -49,7 +49,7 @@
   button[type="submit"] {
     margin-right: 1em;
 
-    &.btn-remove {
+    &.btn-remove:not([disabled]) {
       .button(@body-bg-color, @color-critical, @color-critical-accentuated);
       border: none;
     }

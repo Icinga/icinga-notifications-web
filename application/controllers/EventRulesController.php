@@ -8,7 +8,6 @@ use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Forms\EventRuleConfigForm;
 use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
-use Icinga\Module\Notifications\Widget\EventRuleConfig;
 use Icinga\Module\Notifications\Widget\ItemList\EventRuleList;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
@@ -122,8 +121,8 @@ class EventRulesController extends CompatController
         $eventRuleConfigSubmitButton = (new SubmitButtonElement(
             'save',
             [
-                'label' => t('Add Event Rule'),
-                'form'  => 'event-rule-config-form',
+                'label'          => t('Add Event Rule'),
+                'form'           => 'event-rule-config-form',
                 'formnovalidate' => true
             ]
         ))->setWrapper(new HtmlElement('div', Attributes::create(['class' => ['icinga-controls', 'save-config']])));
@@ -197,10 +196,12 @@ class EventRulesController extends CompatController
         $objectFilter = $eventRule['object_filter'] ?? '';
         $editor->setQueryString($objectFilter);
         $editor->setAction(Url::fromRequest()->getAbsoluteUrl());
-        $editor->setSuggestionUrl(Url::fromPath(
-            "notifications/event-rule/complete",
-            ['_disableLayout' => true, 'showCompact' => true, 'id' => Url::fromRequest()->getParams()->get('id')]
-        ));
+        $editor->setSuggestionUrl(
+            Url::fromPath(
+                "notifications/event-rule/complete",
+                ['_disableLayout' => true, 'showCompact' => true, 'id' => Url::fromRequest()->getParams()->get('id')]
+            )
+        );
 
         $editor->on(SearchEditor::ON_SUCCESS, function (SearchEditor $form) use ($ruleId, $eventRule) {
             $filter = self::createFilterString($form->getFilter());

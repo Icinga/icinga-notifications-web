@@ -38,15 +38,12 @@
   }
 
   .filter-wrapper {
-    margin: 0;
-    padding: 0;
-    height: fit-content;
     display: inline-flex;
     align-self: flex-start;
   }
 
   .filter-wrapper:has(.config-filter .search-controls) {
-    margin-top: .55em;
+    align-items: baseline;
   }
 
   .add-escalation {
@@ -109,12 +106,6 @@
       min-width: 10em;
     }
 
-    .horizontal-line,
-    .right-arrow {
-      margin-top: 2em;
-      align-self: flex-start;
-    }
-
     .zero-escalation-condition + .right-arrow,
     .right-arrow:has(+ .zero-escalation-condition) {
       min-width: calc(~"40% - 0.85em");
@@ -142,6 +133,15 @@
       background-color: @search-term-bg;
       color: @search-term-color;
     }
+  }
+}
+
+.filter-wrapper,
+.escalations {
+  .horizontal-line,
+  .right-arrow {
+    margin-top: 2em;
+    align-self: flex-start;
   }
 }
 
@@ -262,7 +262,7 @@ datalist {
   }
 }
 
-.config-filter,
+.config-filter.empty-filter,
 .escalation-condition.zero-escalation-condition {
   border: 0;
   padding: 0;
@@ -279,6 +279,13 @@ datalist {
 
     .event-rule-button();
   }
+}
+
+.config-filter.empty-filter:after {
+  content: 'Filter';
+  display: block;
+  text-align: center;
+  color: @text-color-light;
 }
 
 .zero-escalation-condition:after {

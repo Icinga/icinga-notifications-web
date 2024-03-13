@@ -49,14 +49,14 @@ class EventRuleConfigForm extends Form
     /** @var array<string, mixed> */
     protected $config;
 
-    /** @var Url */
+    /** @var Url Search editor URL for the config filter fieldset */
     protected $searchEditorUrl;
 
     /**
      * Create a new EventRuleConfigForm
      *
      * @param array<string, mixed> $config
-     * @param Url $searchEditorUrl
+     * @param Url                  $searchEditorUrl
      */
     public function __construct(array $config, Url $searchEditorUrl)
     {
@@ -88,11 +88,6 @@ class EventRuleConfigForm extends Form
         }
 
         return false;
-    }
-
-    protected function generateFakeEscalationId(): string
-    {
-        return bin2hex(random_bytes(4));
     }
 
     protected function assemble(): void
@@ -155,9 +150,9 @@ class EventRuleConfigForm extends Form
             'submitButton',
             'add-escalation',
             [
-                'class' => ['add-button', 'control-button', 'spinner'],
-                'label' => new Icon('plus'),
-                'title' => $this->translate('Add Escalation'),
+                'class'          => ['add-button', 'control-button', 'spinner'],
+                'label'          => new Icon('plus'),
+                'title'          => $this->translate('Add Escalation'),
                 'formnovalidate' => true
             ]
         );
@@ -199,19 +194,12 @@ class EventRuleConfigForm extends Form
         /** @var ?string $zeroConditionEscalation */
         $zeroConditionEscalation = $this->getValue('zero-condition-escalation');
 
-        if ($zeroConditionEscalation === null) {
-            $noZeroEscalationConditions = true;
-        } else {
-            $noZeroEscalationConditions = false;
-        }
-
         $escalations = [];
 
-        $i = 1;
         foreach ($prefixesMap as $key => $prefixMap) {
             if ($removePosition === $prefixMap) {
-                if ($this->getValue('zero-condition-escalation') === $prefixMap) {
-                    $this->getElement('zero-condition-escalation')->setValue(null);
+                if ($zeroConditionEscalation === $prefixMap) {
+                    $zeroConditionEscalation = null;
                 }
 
                 unset($prefixesMap[$key]);
@@ -237,37 +225,34 @@ class EventRuleConfigForm extends Form
             );
 
             if (
-                $this->getValue('zero-condition-escalation') === $prefixMap
+                $zeroConditionEscalation === $prefixMap
                 && $escalation->addConditionHasBeenPressed()
             ) {
-                $noZeroEscalationConditions = true;
-                $this->clearPopulatedValue('zero-condition-escalation');
+                $zeroConditionEscalation = null;
             } elseif (
                 $zeroConditionEscalation === null
                 && $escalation->lastConditionHasBeenRemoved()
             ) {
-                $noZeroEscalationConditions = false;
-                $this->clearPopulatedValue('zero-condition-escalation');
-                $this->getElement('zero-condition-escalation')->setValue($prefixMap);
+                $zeroConditionEscalation = $prefixMap;
             }
 
             $escalations[$prefixMap] = $escalation;
-            $i++;
         }
 
-        if ($noZeroEscalationConditions === false) {
-            $noZeroEscalationConditions = $this->getValue('zero-condition-escalation') === null;
-        }
+        $this->getElement('zero-condition-escalation')->setValue($zeroConditionEscalation);
+        $noZeroEscalationConditions = $zeroConditionEscalation === null;
 
-        $this->add(Html::tag(
-            'ul',
-            ['class' => 'filter-wrapper'],
-            [
-                Html::tag('li', (new FlowLine())->getRightArrow()),
-                Html::tag('li', $configFilter),
-                Html::tag('li', (new FlowLine())->getHorizontalLine())
-            ]
-        ));
+        $this->add(
+            Html::tag(
+                'ul',
+                ['class' => 'filter-wrapper'],
+                [
+                    Html::tag('li', (new FlowLine())->getRightArrow()),
+                    Html::tag('li', $configFilter),
+                    Html::tag('li', (new FlowLine())->getHorizontalLine())
+                ]
+            )
+        );
 
         if ($noZeroEscalationConditions === true) {
             foreach ($escalations as $escalation) {
@@ -277,14 +262,10 @@ class EventRuleConfigForm extends Form
 
             $this->getElement('zero-condition-escalation')
                 ->setValue(null);
-        } else {
-            /** @var string $zeroConditionPosition */
-            $zeroConditionPosition = $this->getValue('zero-condition-escalation');
-            if ($zeroConditionPosition) {
-                $escalations[$zeroConditionPosition]
-                    ->getCondition()
-                    ->setAllowZeroConditions(true);
-            }
+        } elseif ($zeroConditionEscalation) {
+            $escalations[$zeroConditionEscalation]
+                ->getCondition()
+                ->setAllowZeroConditions(true);
         }
 
         $this->add(new Escalations($escalations, $addEscalationButton));
@@ -362,7 +343,7 @@ class EventRuleConfigForm extends Form
                 $conditionFormValues['val_' . $count] = $filter->getValue();
             }
 
-            $formValues['escalation-condition_' . bin2hex($position)] =  $conditionFormValues;
+            $formValues['escalation-condition_' . bin2hex($position)] = $conditionFormValues;
             $recipientFormValues = [];
             if (isset($escalation['recipients'])) {
                 $recipientFormValues['recipient-count'] = count($escalation['recipients']);
@@ -390,7 +371,7 @@ class EventRuleConfigForm extends Form
                 }
             }
 
-            $formValues['escalation-recipient_' . bin2hex($position)] =  $recipientFormValues;
+            $formValues['escalation-recipient_' . bin2hex($position)] = $recipientFormValues;
         }
 
         return parent::populate($formValues);
@@ -462,15 +443,15 @@ class EventRuleConfigForm extends Form
             'submitButton',
             'remove-escalation',
             [
-                'class' => [
+                'class'          => [
                     'remove-escalation',
                     'remove-button',
                     'control-button',
                     'spinner'
                 ],
-                'label' => new Icon('minus'),
+                'label'          => new Icon('minus'),
                 'formnovalidate' => true,
-                'value' => $prefix
+                'value'          => $prefix
             ]
         );
 
@@ -497,7 +478,7 @@ class EventRuleConfigForm extends Form
     /**
      * Insert to or update event rule in the database
      *
-     * @param string $id The id of the event rule
+     * @param string               $id     The id of the event rule
      * @param array<string, mixed> $config The new configuration
      */
     public function addOrUpdateRule(string $id, array $config): void
@@ -508,19 +489,19 @@ class EventRuleConfigForm extends Form
 
         if ($id < 0) {
             $db->insert('rule', [
-                'name' => $config['name'],
+                'name'          => $config['name'],
                 'timeperiod_id' => $config['timeperiod_id'] ?? null,
                 'object_filter' => $config['object_filter'] ?? null,
-                'is_active' => $config['is_active'] ?? 'n'
+                'is_active'     => $config['is_active'] ?? 'n'
             ]);
 
             $id = $db->lastInsertId();
         } else {
             $db->update('rule', [
-                'name' => $config['name'],
+                'name'          => $config['name'],
                 'timeperiod_id' => $config['timeperiod_id'] ?? null,
                 'object_filter' => $config['object_filter'] ?? null,
-                'is_active' => $config['is_active'] ?? 'n'
+                'is_active'     => $config['is_active'] ?? 'n'
             ], ['id = ?' => $id]);
         }
 
@@ -576,8 +557,8 @@ class EventRuleConfigForm extends Form
      * Insert to or update escalations in Db
      *
      * @param array<int, array<string, mixed>> $escalations
-     * @param Connection $db
-     * @param bool $insert
+     * @param Connection                       $db
+     * @param bool                             $insert
      */
     private function insertOrUpdateEscalations(
         int $ruleId,
@@ -590,10 +571,10 @@ class EventRuleConfigForm extends Form
             $recipientsFromConfig = $escalationConfig['recipients'] ?? [];
             if ($insert) {
                 $db->insert('rule_escalation', [
-                    'rule_id' => $ruleId,
-                    'position' => $position,
-                    'condition' => $escalationConfig['condition'] ?? null,
-                    'name' => $escalationConfig['name'] ?? null,
+                    'rule_id'      => $ruleId,
+                    'position'     => $position,
+                    'condition'    => $escalationConfig['condition'] ?? null,
+                    'name'         => $escalationConfig['name'] ?? null,
                     'fallback_for' => $escalationConfig['fallback_for'] ?? null
                 ]);
 
@@ -602,15 +583,14 @@ class EventRuleConfigForm extends Form
             } else {
                 /** @var string $escalationId */
                 $escalationId = $escalationConfig['id'];
-
                 $db->update('rule_escalation', [
-                    'position' => $position,
-                    'condition' => $escalationConfig['condition'] ?? null,
-                    'name' => $escalationConfig['name'] ?? null,
+                    'position'     => $position,
+                    'condition'    => $escalationConfig['condition'] ?? null,
+                    'name'         => $escalationConfig['name'] ?? null,
                     'fallback_for' => $escalationConfig['fallback_for'] ?? null
                 ], ['id = ?' => $escalationId, 'rule_id = ?' => $ruleId]);
-                $recipientsToRemove = [];
 
+                $recipientsToRemove = [];
                 $recipients = RuleEscalationRecipient::on($db)
                     ->columns('id')
                     ->filter(Filter::equal('rule_escalation_id', $escalationId));
@@ -642,7 +622,7 @@ class EventRuleConfigForm extends Form
             foreach ($recipientsFromConfig as $recipientConfig) {
                 $data = [
                     'rule_escalation_id' => $escalationId,
-                    'channel_id' => $recipientConfig['channel_id']
+                    'channel_id'         => $recipientConfig['channel_id']
                 ];
 
                 switch (true) {
@@ -689,9 +669,7 @@ class EventRuleConfigForm extends Form
     public function removeRule(int $id): void
     {
         $db = Database::get();
-
         $db->beginTransaction();
-
         $escalations = RuleEscalation::on($db)
             ->columns('id')
             ->filter(Filter::equal('rule_id', $id));

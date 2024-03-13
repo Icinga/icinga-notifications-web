@@ -20,7 +20,7 @@ class EscalationRecipient extends FieldsetElement
 {
     protected $defaultAttributes = ['class' => 'escalation-recipient'];
 
-    /** @var EscalationRecipientListItem[]  */
+    /** @var EscalationRecipientListItem[] */
     protected $recipients = [];
 
     protected function assemble(): void
@@ -36,9 +36,9 @@ class EscalationRecipient extends FieldsetElement
             'submitButton',
             'add-recipient',
             [
-                'class' => ['add-button', 'control-button', 'spinner'],
-                'label' => new Icon('plus'),
-                'title' => $this->translate('Add Recipient'),
+                'class'          => ['add-button', 'control-button', 'spinner'],
+                'label'          => new Icon('plus'),
+                'title'          => $this->translate('Add Recipient'),
                 'formnovalidate' => true
             ]
         );
@@ -63,13 +63,13 @@ class EscalationRecipient extends FieldsetElement
                 'select',
                 'column_' . $i,
                 [
-                    'class'             => ['autosubmit', 'left-operand'],
-                    'options'           => [
+                    'class'           => ['autosubmit', 'left-operand'],
+                    'options'         => [
                             '' => sprintf(' - %s - ', $this->translate('Please choose'))
                         ] + $this->fetchOptions(),
-                    'disabledOptions'   => [''],
-                    'required'          => true,
-                    'value'             => $this->getPopulatedValue('column_' . $i)
+                    'disabledOptions' => [''],
+                    'required'        => true,
+                    'value'           => $this->getPopulatedValue('column_' . $i)
                 ]
             );
 
@@ -83,10 +83,10 @@ class EscalationRecipient extends FieldsetElement
                 'select',
                 'val_' . $i,
                 [
-                    'class'             => ['autosubmit', 'right-operand'],
-                    'options'           => $options,
-                    'disabledOptions'   => [''],
-                    'value'             => $this->getPopulatedValue('val_' . $i)
+                    'class'           => ['autosubmit', 'right-operand'],
+                    'options'         => $options,
+                    'disabledOptions' => [''],
+                    'value'           => $this->getPopulatedValue('val_' . $i)
                 ]
             );
 
@@ -200,11 +200,11 @@ class EscalationRecipient extends FieldsetElement
             'submitButton',
             'remove',
             [
-                'class'             => ['remove-button', 'control-button', 'spinner'],
-                'label'             => new Icon('minus'),
-                'title'             => $this->translate('Remove'),
-                'formnovalidate'    => true,
-                'value'             => (string) $pos
+                'class'          => ['remove-button', 'control-button', 'spinner'],
+                'label'          => new Icon('minus'),
+                'title'          => $this->translate('Remove'),
+                'formnovalidate' => true,
+                'value'          => (string) $pos
             ]
         );
 

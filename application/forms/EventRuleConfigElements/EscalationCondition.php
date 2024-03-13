@@ -60,10 +60,10 @@ class EscalationCondition extends FieldsetElement
             'submitButton',
             'add-condition',
             [
-                'class'             => ['add-button', 'control-button', 'spinner'],
-                'label'             => new Icon('plus'),
-                'title'             => $this->translate('Add Condition'),
-                'formnovalidate'    => true
+                'class'          => ['add-button', 'control-button', 'spinner'],
+                'label'          => new Icon('plus'),
+                'title'          => $this->translate('Add Condition'),
+                'formnovalidate' => true
             ]
         );
 
@@ -71,13 +71,14 @@ class EscalationCondition extends FieldsetElement
 
         /** @var string|int $conditionCount */
         $conditionCount = $this->getValue('condition-count');
+        $conditionCount = (int) $conditionCount;
         $this->addElement(
             'hidden',
             'id'
         );
 
         if ($addCondition->hasBeenPressed()) {
-            $conditionCount += 1;
+            $conditionCount = $conditionCount + 1;
             $this->getElement('condition-count')->setValue($conditionCount);
         }
 
@@ -92,14 +93,14 @@ class EscalationCondition extends FieldsetElement
                 'select',
                 $colName,
                 [
-                    'class'             => ['autosubmit', 'left-operand'],
-                    'options'           => [
-                        '' => sprintf(' - %s - ', $this->translate('Please choose')),
+                    'class'           => ['autosubmit', 'left-operand'],
+                    'options'         => [
+                        ''                  => sprintf(' - %s - ', $this->translate('Please choose')),
                         'incident_severity' => $this->translate('Incident Severity'),
-                        'incident_age' => $this->translate('Incident Age')
+                        'incident_age'      => $this->translate('Incident Age')
                     ],
-                    'disabledOptions'   => [''],
-                    'required'          => true
+                    'disabledOptions' => [''],
+                    'required'        => true
                 ]
             );
 
@@ -109,8 +110,8 @@ class EscalationCondition extends FieldsetElement
                 'select',
                 $opName,
                 [
-                    'class' => ['class' => 'operator-input', 'autosubmit'],
-                    'options' => array_combine($operators, $operators),
+                    'class'    => ['class' => 'operator-input', 'autosubmit'],
+                    'options'  => array_combine($operators, $operators),
                     'required' => true
                 ]
             );
@@ -146,7 +147,7 @@ class EscalationCondition extends FieldsetElement
                     }
 
                     $this->addElement('hidden', $typeName, [
-                        'value'  => 'incident_severity'
+                        'value' => 'incident_severity'
                     ]);
 
                     break;
@@ -156,15 +157,17 @@ class EscalationCondition extends FieldsetElement
                         'text',
                         $valName,
                         [
-                            'required' => true,
-                            'class' => ['autosubmit', 'right-operand'],
+                            'required'   => true,
+                            'class'      => ['autosubmit', 'right-operand'],
                             'validators' => [
                                 new CallbackValidator(function ($value, $validator) {
                                     if (! preg_match('~^\d+(?:\.?\d*)?[hms]{1}$~', $value)) {
-                                        $validator->addMessage($this->translate(
-                                            'Only numbers with optional fractions (separated by a dot)'
-                                            . ' and one of these suffixes are allowed: h, m, s'
-                                        ));
+                                        $validator->addMessage(
+                                            $this->translate(
+                                                'Only numbers with optional fractions (separated by a dot)'
+                                                . ' and one of these suffixes are allowed: h, m, s'
+                                            )
+                                        );
 
                                         return false;
                                     }
@@ -194,7 +197,7 @@ class EscalationCondition extends FieldsetElement
                     $val = $this->createElement('text', $valName, [
                         'class'       => 'right-operand',
                         'placeholder' => $this->translate('Please make a decision'),
-                        'disabled' => true
+                        'disabled'    => true
                     ]);
             }
 
@@ -269,11 +272,11 @@ class EscalationCondition extends FieldsetElement
             'submitButton',
             'remove',
             [
-                'class'             => ['remove-button', 'control-button', 'spinner'],
-                'label'             => new Icon('minus'),
-                'title'             => $this->translate('Remove'),
-                'formnovalidate'    => true,
-                'value'             => (string) $count
+                'class'          => ['remove-button', 'control-button', 'spinner'],
+                'label'          => new Icon('minus'),
+                'title'          => $this->translate('Remove'),
+                'formnovalidate' => true,
+                'value'          => (string) $count
             ]
         );
 

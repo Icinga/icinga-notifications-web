@@ -14,17 +14,17 @@ class Escalations extends BaseHtmlElement
 
     protected $tag = 'ul';
 
-    /** @var Escalation[] */
+    /** @var Escalation[] Array of Escalation list items */
     private $escalations;
 
-    /** @var FormElement  */
+    /** @var FormElement Escalation add button */
     private $addButton;
 
     /**
      * Create Escalations for an event rule
      *
      * @param Escalation[] $escalations
-     * @param FormElement $addButton
+     * @param FormElement  $addButton
      */
     public function __construct(array $escalations, FormElement $addButton)
     {
