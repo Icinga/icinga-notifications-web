@@ -201,7 +201,7 @@
 
                     if (_this._hasNotificationPermission() && _this._hasNotificationsEnabled()) {
                         setTimeout(() => {
-                            this._openEventStream();
+                            _this._openEventStream();
                         }, 2000);
                     }
                 }
