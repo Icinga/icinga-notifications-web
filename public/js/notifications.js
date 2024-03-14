@@ -8,6 +8,7 @@
         _prefix = '[Notification] - ';
         _eventSource = null;
         _toggleState = undefined;
+        _initialized = false;
 
         constructor(icinga) {
             super(icinga);
@@ -127,11 +128,6 @@
                 }
             });
 
-            if (this._hasNotificationPermission() && this._hasNotificationsEnabled())
-                setTimeout(() => {
-                    this._openEventStream();
-                }, 5000);
-
             this._logger.debug(this._prefix + "loaded.");
         }
 
@@ -145,6 +141,7 @@
                 }
             }
             this._eventSource = null;
+            this._initialized = false;
 
             this._logger.debug(this._prefix + "unloaded.");
         }
@@ -198,6 +195,16 @@
             if (event.type === 'rendered') {
                 const _this = event.data.self;
                 let url = new URL(event.delegateTarget.URL);
+
+                if (_this._initialized === false) {
+                    _this._initialized = true;
+
+                    if (this._hasNotificationPermission() && this._hasNotificationsEnabled()) {
+                        setTimeout(() => {
+                            this._openEventStream();
+                        }, 2000);
+                    }
+                }
 
                 if (url.pathname === _this._icinga.config.baseUrl + '/account') {
                     // check permissions and storage flag
