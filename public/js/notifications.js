@@ -199,7 +199,7 @@
                 if (_this._initialized === false) {
                     _this._initialized = true;
 
-                    if (this._hasNotificationPermission() && this._hasNotificationsEnabled()) {
+                    if (_this._hasNotificationPermission() && _this._hasNotificationsEnabled()) {
                         setTimeout(() => {
                             this._openEventStream();
                         }, 2000);
