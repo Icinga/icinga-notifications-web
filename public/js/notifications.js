@@ -196,6 +196,15 @@
                 const _this = event.data.self;
                 let url = new URL(event.delegateTarget.URL);
 
+                /**
+                 * TODO(nc): We abuse the fact that the renderHandler method only triggers when the container
+                 *  in col1 (#main > #col1.container) gets rendered. This can only happen on the main interface for
+                 *  now (might break things if columns are introduced elsewhere in the future).
+                 *  This in turn requires a user to be logged in and their session validated.
+                 *  In the future, we should introduce a proper login event and tie the initial event-stream connection
+                 *  to this specific event (SSO should ALSO trigger the login event as the user lands in the
+                 *  interface with an authenticated session).
+                 */
                 if (_this._initialized === false) {
                     _this._initialized = true;
 
