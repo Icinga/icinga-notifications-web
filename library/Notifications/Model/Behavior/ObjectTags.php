@@ -1,5 +1,9 @@
 <?php
 
+/*
+ * Icinga Notifications Web | (c) 2024 Icinga GmbH | GPLv2
+ */
+
 namespace Icinga\Module\Notifications\Model\Behavior;
 
 use Icinga\Module\Notifications\Common\Auth;
