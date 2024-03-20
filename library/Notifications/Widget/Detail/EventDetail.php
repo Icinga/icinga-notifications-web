@@ -5,13 +5,16 @@
 namespace Icinga\Module\Notifications\Widget\Detail;
 
 use Icinga\Date\DateFormatter;
+use Icinga\Module\Notifications\Hook\EventsObjectsInfoHook;
 use Icinga\Module\Notifications\Model\Event;
 use Icinga\Module\Notifications\Model\Objects;
+use Icinga\Module\Notifications\Model\Source;
 use Icinga\Module\Notifications\Widget\EventSourceBadge;
 use Icinga\Module\Notifications\Widget\ItemList\IncidentList;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use ipl\Html\ValidHtml;
+use ipl\Web\Url;
 use ipl\Web\Widget\HorizontalKeyValue;
 use ipl\Web\Widget\Link;
 use ipl\Web\Widget\StateBall;
@@ -70,37 +73,24 @@ class EventDetail extends BaseHtmlElement
     /** @return ValidHtml[] */
     protected function createRelatedObject(): array
     {
-        //TODO(sd): This is just placeholder. Add hook implementation instead
-        $relatedObj = Html::tag('ul', ['class' => ['item-list', 'action-list'], 'data-base-target' => '_next']);
-
         /** @var Objects $obj */
         $obj = $this->event->object;
 
-        /** @var string $objUrl */
-        $objUrl = $obj->url;
-        $relatedObj->add(
-            Html::tag(
-                'li',
-                ['class' => 'list-item', 'data-action-item' => true],
-                [ //TODO(sd): fix stateball
-                    Html::tag('div', ['class' => 'visual'], new StateBall('down', StateBall::SIZE_LARGE)),
-                    Html::tag(
-                        'div',
-                        ['class' => 'main'],
-                        Html::tag('header')
-                            ->add(Html::tag(
-                                'div',
-                                ['class' => 'title'],
-                                new Link($obj->getName(), $objUrl, ['class' => 'subject'])
-                            ))
-                    )
-                ]
-            )
-        );
+        /** @var Source $source */
+        $source = $obj->source;
+
+        $objWidget = EventsObjectsInfoHook::getObjectListItemWidget($source->name, $obj->id_tags);
+        $objUrl = Url::fromPath($obj->url);
 
         return [
             Html::tag('h2', t('Related Object')),
-            $relatedObj
+            $objWidget ?? (new Link(
+                $obj->getName(),
+                $objUrl->isExternal() ? $objUrl->getAbsoluteUrl() : $objUrl->getRelativeUrl(),
+                [
+                    'class'            => 'subject'
+                ]
+            ))->setBaseTarget('_next')
         ];
     }
 

@@ -5,6 +5,7 @@
 namespace Icinga\Module\Notifications\Model;
 
 use Icinga\Module\Notifications\Common\Database;
+use DateTime;
 use ipl\Orm\Behavior\Binary;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;

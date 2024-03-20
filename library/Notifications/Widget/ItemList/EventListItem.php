@@ -10,6 +10,7 @@ use Icinga\Module\Notifications\Model\Event;
 use Icinga\Module\Notifications\Model\Objects;
 use Icinga\Module\Notifications\Widget\SourceIcon;
 use ipl\Html\BaseHtmlElement;
+use ipl\Html\DeferredText;
 use ipl\Html\Html;
 use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
@@ -82,14 +83,15 @@ class EventListItem extends BaseListItem
 
         /** @var Objects $obj */
         $obj = $this->item->object;
-        $name = $obj->getName();
+        $name = (new DeferredText(function () use ($obj) {
+            return $this->list->getRenderedObjectDisplayName($obj->id) ?? $obj->getName();
+        }))->setEscaped();
         if (! $this->list->getNoSubjectLink()) {
             $content = new Link($name, Links::event($this->item->id), ['class' => 'subject']);
         } else {
             $content = Html::tag('span', ['class' => 'subject'], $name);
         }
 
-        $msg = null;
         if ($this->item->severity === null) {
             $msg = t('acknowledged');
         } elseif ($this->item->severity === 'ok') {
