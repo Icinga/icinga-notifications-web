@@ -4,8 +4,8 @@
 
 namespace Icinga\Module\Notifications\Widget\Detail;
 
+use Icinga\Module\Notifications\Hook\ObjectsRendererHook;
 use Icinga\Module\Notifications\Model\Incident;
-use Icinga\Module\Notifications\Model\Objects;
 use Icinga\Module\Notifications\Widget\EventSourceBadge;
 use Icinga\Module\Notifications\Widget\ItemList\IncidentContactList;
 use Icinga\Module\Notifications\Widget\ItemList\IncidentHistoryList;
@@ -14,8 +14,6 @@ use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use ipl\Html\HtmlElement;
 use ipl\Html\Table;
-use ipl\Web\Widget\Link;
-use ipl\Web\Widget\StateBall;
 
 class IncidentDetail extends BaseHtmlElement
 {
@@ -52,39 +50,9 @@ class IncidentDetail extends BaseHtmlElement
 
     protected function createRelatedObject()
     {
-        //TODO(sd): Add hook implementation
-        $list = Html::tag('ul', ['class' => ['item-list', 'minimal', 'action-list'], 'data-base-target' => '_next']);
-
-        /** @var Objects $obj */
-        $obj = $this->incident->object;
-
-        /** @var string $objUrl */
-        $objUrl = $obj->url;
-        $list->add(Html::tag(
-            'li',
-            ['class' => 'list-item', 'data-action-item' => true],
-            [ //TODO(sd): fix stateball
-                Html::tag(
-                    'div',
-                    ['class' => 'visual'],
-                    new StateBall('down', StateBall::SIZE_LARGE)
-                ),
-                Html::tag(
-                    'div',
-                    ['class' => 'main'],
-                    Html::tag('header')
-                        ->add(Html::tag(
-                            'div',
-                            ['class' => 'title'],
-                            new Link($obj->getName(), $objUrl, ['class' => 'subject'])
-                        ))
-                )
-            ]
-        ));
-
         return [
             Html::tag('h2', t('Object')),
-            $list
+            ObjectsRendererHook::renderObjectLink($this->incident->object)
         ];
     }
 
