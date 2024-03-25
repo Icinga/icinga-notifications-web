@@ -210,11 +210,11 @@ class IncidentController extends CompatController
         return parent::getTabs()
             ->add('incident', [
                 'label' => $this->translate('Incident'),
-                'url' => Links::incident($this->id)
+                'url'   => Links::incident($this->id)
             ])
             ->add('history', [
                 'label' => $this->translate('History'),
-                'url' => Links::incidentHistory($this->id)
+                'url'   => Links::incidentHistory($this->id)
             ]);
     }
 
@@ -226,7 +226,7 @@ class IncidentController extends CompatController
     protected function getFilter(): Filter\Rule
     {
         if ($this->filter === null) {
-            $this->filter = QueryString::parse((string)$this->params);
+            $this->filter = QueryString::parse((string) $this->params);
         }
 
         return $this->filter;
