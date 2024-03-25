@@ -6,7 +6,9 @@ namespace Icinga\Module\Notifications\Widget\Detail;
 
 use Icinga\Date\DateFormatter;
 use Icinga\Module\Notifications\Model\Event;
+use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\Model\Objects;
+use Icinga\Module\Notifications\Model\Source;
 use Icinga\Module\Notifications\Widget\EventSourceBadge;
 use Icinga\Module\Notifications\Widget\ItemList\IncidentList;
 use ipl\Html\BaseHtmlElement;
@@ -58,9 +60,9 @@ class EventDetail extends BaseHtmlElement
             Html::tag(
                 'div',
                 [
-                    'id'                    => 'message-' . $this->event->id,
-                    'class'                 => 'collapsible',
-                    'data-visible-height'   => 100
+                    'id'                  => 'message-' . $this->event->id,
+                    'class'               => 'collapsible',
+                    'data-visible-height' => 100
                 ],
                 $this->event->message
             )
@@ -88,11 +90,13 @@ class EventDetail extends BaseHtmlElement
                         'div',
                         ['class' => 'main'],
                         Html::tag('header')
-                            ->add(Html::tag(
-                                'div',
-                                ['class' => 'title'],
-                                new Link($obj->getName(), $objUrl, ['class' => 'subject'])
-                            ))
+                            ->add(
+                                Html::tag(
+                                    'div',
+                                    ['class' => 'title'],
+                                    new Link($obj->getName(), $objUrl, ['class' => 'subject'])
+                                )
+                            )
                     )
                 ]
             )
@@ -107,7 +111,9 @@ class EventDetail extends BaseHtmlElement
     /** @return ValidHtml[]|null */
     protected function createIncident(): ?array
     {
-        if ($this->event->incident->id === null) {
+        /** @var ?Incident $incident */
+        $incident = $this->event->incident;
+        if ((! $incident) || (! $incident->id)) {
             return null;
         }
 
@@ -120,13 +126,26 @@ class EventDetail extends BaseHtmlElement
     /** @return ValidHtml[] */
     protected function createSource(): array
     {
-        return [
-            Html::tag('h2', t('Source')),
-            new EventSourceBadge($this->event->object->source)
-        ];
+        $elements = [];
+        if ($this->event->type === 'internal') {
+            // return no source elements for internal events
+            return $elements;
+        }
+
+        $elements[] = Html::tag('h2', t('Source'));
+
+        /** @var ?Objects $object */
+        $object = $this->event->object;
+        if ($object) {
+            /** @var Source $source */
+            $source = $object->source;
+            $elements[] = new EventSourceBadge($source);
+        }
+
+        return $elements;
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->add([
             $this->createInfo(),

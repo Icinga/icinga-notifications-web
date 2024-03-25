@@ -8,9 +8,12 @@ use Icinga\Module\Notifications\Common\BaseListItem;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Event;
 use Icinga\Module\Notifications\Model\Objects;
+use Icinga\Module\Notifications\Model\Source;
+use Icinga\Module\Notifications\Widget\CustomIcon;
 use Icinga\Module\Notifications\Widget\SourceIcon;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
+use ipl\I18n\Translation;
 use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
 use ipl\Web\Widget\TimeAgo;
@@ -20,6 +23,8 @@ use ipl\Web\Widget\TimeAgo;
  */
 class EventListItem extends BaseListItem
 {
+    use Translation;
+
     /** @var Event The associated list item */
     protected $item;
 
@@ -39,34 +44,43 @@ class EventListItem extends BaseListItem
         $content = null;
         $severity = $this->item->severity;
         $class = 'severity-' . $severity;
-        switch ($severity) {
-            case 'ok':
-                $content = (new Icon('heart', ['class' => $class]))->setStyle('fa-regular');
-                break;
-            case 'crit':
-                $content = new Icon('circle-exclamation', ['class' => $class]);
-                break;
-            case 'warning':
-                $content = new Icon('exclamation-triangle', ['class' => $class]);
-                break;
-            case 'err':
-                $content = (new Icon('circle-xmark', ['class' => $class]))->setStyle('fa-regular');
-                break;
-            case 'debug':
-                $content = new Icon('bug-slash');
-                break;
-            case 'info':
-                $content = new Icon('info');
-                break;
-            case 'alert':
-                $content = new Icon('bell');
-                break;
-            case 'emerg':
-                $content = new Icon('tower-broadcast');
-                break;
-            case 'notice':
-                $content = new Icon('envelope');
-                break;
+
+        if ($this->item->type === 'internal') {
+            /*
+             * TODO(nc): Add proper handling of internal events once
+             *  https://github.com/Icinga/icinga-notifications/issues/162 gets sorted out
+             */
+            $content = new CustomIcon('square-up-right', 'fa-solid');
+        } else {
+            switch ($severity) {
+                case 'ok':
+                    $content = (new Icon('heart', ['class' => $class]))->setStyle('fa-regular');
+                    break;
+                case 'crit':
+                    $content = new Icon('circle-exclamation', ['class' => $class]);
+                    break;
+                case 'warning':
+                    $content = new Icon('exclamation-triangle', ['class' => $class]);
+                    break;
+                case 'err':
+                    $content = (new Icon('circle-xmark', ['class' => $class]))->setStyle('fa-regular');
+                    break;
+                case 'debug':
+                    $content = new Icon('bug-slash');
+                    break;
+                case 'info':
+                    $content = new Icon('info');
+                    break;
+                case 'alert':
+                    $content = new Icon('bell');
+                    break;
+                case 'emerg':
+                    $content = new Icon('tower-broadcast');
+                    break;
+                case 'notice':
+                    $content = new Icon('envelope');
+                    break;
+            }
         }
 
         if ($content) {
@@ -91,11 +105,22 @@ class EventListItem extends BaseListItem
 
         $msg = null;
         if ($this->item->severity === null) {
-            $msg = t('acknowledged');
+            $description = strtolower(trim($this->item->message . '')) ?: '';
+            /*
+            * TODO(nc): strpos can be replaced with str_starts_with() once the minimal supported PHP version reaches
+            *  8.0
+            */
+            if (strpos($description, 'incident reached age') === 0) {
+                $msg = $this->translate('exceeded time constraint');
+            } elseif (strpos($description, 'incident reevaluation') === 0) {
+                $msg = $this->translate('was reevaluated at daemon startup');
+            } else {
+                $msg = $this->translate('was acknowledged');
+            }
         } elseif ($this->item->severity === 'ok') {
-            $msg = t('recovered');
+            $msg = $this->translate('recovered');
         } else {
-            $msg = t('ran into a problem');
+            $msg = $this->translate('ran into a problem');
         }
 
         $title->addHtml($content);
@@ -109,16 +134,25 @@ class EventListItem extends BaseListItem
 
     protected function assembleHeader(BaseHtmlElement $header): void
     {
+        $content = [];
+        if ($this->item->type !== 'internal') {
+            /** @var Objects $object */
+            $object = $this->item->object;
+            /** @var Source $source */
+            $source = $object->source;
+            $content[] = (new SourceIcon(SourceIcon::SIZE_BIG))->addHtml($source->getIcon());
+        }
+
+        $content[] = new TimeAgo($this->item->time->getTimestamp());
+
         $header->add($this->createTitle());
-        $header->add(Html::tag(
-            'span',
-            ['class' => 'meta'],
-            [
-                (new SourceIcon(SourceIcon::SIZE_BIG))
-                    ->addHtml($this->item->object->source->getIcon()),
-                new TimeAgo($this->item->time->getTimestamp())
-            ]
-        ));
+        $header->add(
+            Html::tag(
+                'span',
+                ['class' => 'meta'],
+                $content
+            )
+        );
     }
 
     protected function assembleMain(BaseHtmlElement $main): void
