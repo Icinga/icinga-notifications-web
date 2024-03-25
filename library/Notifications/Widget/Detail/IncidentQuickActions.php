@@ -128,14 +128,12 @@ class IncidentQuickActions extends Form
             case 'manage':
                 $this->addEntry($incidentContact, 'manager');
                 break;
-            case 'unmanage':
-                $this->removeEntry($incidentContact, 'manager');
-                break;
             case 'subscribe':
+            case 'unmanage':
                 $this->addEntry($incidentContact, 'subscriber');
                 break;
             case 'unsubscribe':
-                $this->removeEntry($incidentContact, 'subscriber');
+                $this->unsubscribe($incidentContact);
                 break;
         }
     }
@@ -172,24 +170,23 @@ class IncidentQuickActions extends Form
             $this->updateHistory($incidentContact, $roleName);
         } catch (Exception $e) {
             Database::get()->rollBackTransaction();
-            Notification::error(sprintf(t('Failed to add role as %s'), $roleName));
+            Notification::error(sprintf(t('Failed to change role to %s'), $roleName));
 
             return;
         }
 
         Database::get()->commitTransaction();
-        Notification::success(sprintf(t('Successfully added as %s'), $roleName));
+        Notification::success(sprintf(t('Changed role to %s'), $roleName));
     }
 
     /**
-     * Remove the incident's contact role of given contact
+     * Unsubscribe the contact from incident
      *
-     * @param IncidentContact $incidentContact The incident contact to remove
-     * @param string $roleName The role to remove
+     * @param IncidentContact $incidentContact The contact to unsubscribe from the incident
      *
      * @return void
      */
-    protected function removeEntry(IncidentContact $incidentContact, string $roleName): void
+    protected function unsubscribe(IncidentContact $incidentContact): void
     {
         if ($incidentContact->contact_id === null) {
             throw new InvalidArgumentException('$incidentContact must be a valid contact');
@@ -200,27 +197,19 @@ class IncidentQuickActions extends Form
             Database::get()->delete('incident_contact', [
                 'incident_id = ?'   => $this->incident->id,
                 'contact_id = ?'    => $incidentContact->contact_id,
-                'role = ?'          => $roleName
+                'role = ?'          => 'subscriber'
             ]);
 
             $this->updateHistory($incidentContact);
         } catch (Exception $e) {
             Database::get()->rollBackTransaction();
-            Notification::error(
-                $roleName === 'manager'
-                    ? t('Failed to remove role manager')
-                    : t('Failed to unsubscribe')
-            );
+            Notification::error(t('Failed to unsubscribe'));
 
             return;
         }
 
         Database::get()->commitTransaction();
-        Notification::success(
-            $roleName === 'manager'
-                ? t('Successfully removed role manager')
-                : t('Successfully unsubscribed')
-        );
+        Notification::success(t('Unsubscribed from this incident'));
     }
 
     /**
