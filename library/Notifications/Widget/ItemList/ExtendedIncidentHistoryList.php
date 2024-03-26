@@ -24,7 +24,7 @@ class ExtendedIncidentHistoryList extends BaseItemList
     private $eventTracker;
 
     /** @var string Order in which the list gets constructed */
-    private $order = 'desc';
+    protected $order = 'desc';
 
     /**
      * @param Query | ResultSet | iterable<object> $data
@@ -51,7 +51,7 @@ class ExtendedIncidentHistoryList extends BaseItemList
             if ($this->eventTracker === null) {
                 $this->eventTracker = $event;
 
-                if ($this->order === 'asc') {
+                if ($this->order === 'asc' && $event->id !== null) {
                     /** @var ExtendedIncidentHistoryListItem $pseudoItem */
                     $pseudoItem = new $itemClass($this->createPseudoData($event), $this);
                     $this->addHtml($pseudoItem);
@@ -66,9 +66,11 @@ class ExtendedIncidentHistoryList extends BaseItemList
                     $sourceEvent = $event;
                 }
 
-                /** @var ExtendedIncidentHistoryListItem $pseudoItem */
-                $pseudoItem = new $itemClass($this->createPseudoData($sourceEvent), $this);
-                $this->addHtml($pseudoItem);
+                if ($sourceEvent->id !== null) {
+                    /** @var ExtendedIncidentHistoryListItem $pseudoItem */
+                    $pseudoItem = new $itemClass($this->createPseudoData($sourceEvent), $this);
+                    $this->addHtml($pseudoItem);
+                }
 
                 // update tracker to use the newest source event
                 $this->eventTracker = $event;
@@ -77,7 +79,7 @@ class ExtendedIncidentHistoryList extends BaseItemList
 
         if ($this->order === 'desc') {
             $this->on(HtmlDocument::ON_ASSEMBLED, function () {
-                if ($this->order === 'desc' && $this->eventTracker !== null) {
+                if ($this->order === 'desc' && $this->eventTracker !== null && $this->eventTracker->id !== null) {
                     $itemClass = $this->getItemClass();
                     /*
                      * TODO(nc): Find a better way to handle the show more element position when building in
@@ -139,7 +141,7 @@ class ExtendedIncidentHistoryList extends BaseItemList
         return ExtendedIncidentHistoryListItem::class;
     }
 
-    private function createPseudoData(Event $event): IncidentHistory
+    protected function createPseudoData(Event $event): IncidentHistory
     {
         $obj = new class extends IncidentHistory {
             /** @var bool */

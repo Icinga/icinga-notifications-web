@@ -59,7 +59,7 @@ class ExtendedIncidentHistoryListItem extends BaseListItem
                     $icon = (new Icon(Icons::CLOSED))->setStyle('fa-regular');
                     break;
                 case 'recipient_role_changed':
-                    $icon = (new Icon($this->getRoleIcon()))->setContent('fa-regular');
+                    $icon = $this->getRoleIcon();
                     break;
                 case 'notified':
                     $icon = (new Icon(Icons::NOTIFIED))->setStyle('fa-regular');
@@ -69,7 +69,9 @@ class ExtendedIncidentHistoryListItem extends BaseListItem
             }
         }
 
-        $visual->addHtml($icon);
+        if ($icon) {
+            $visual->addHtml($icon);
+        }
     }
 
     protected function getSeverityIcon(?string $severity = null): string
@@ -87,23 +89,23 @@ class ExtendedIncidentHistoryListItem extends BaseListItem
         }
     }
 
-    protected function getRoleIcon(): string
+    protected function getRoleIcon(): ?Icon
     {
         switch ($this->item->new_recipient_role) {
             case 'manager':
-                return Icons::MANAGE;
+                return (new Icon(Icons::MANAGE))->setStyle('fa-regular');
             case 'subscriber':
-                return Icons::SUBSCRIBED;
+                return (new Icon(Icons::SUBSCRIBED))->setStyle('fa-regular');
             default:
                 if ($this->item->old_recipient_role !== null) {
                     if ($this->item->old_recipient_role === 'manager') {
-                        return Icons::UNMANAGE;
+                        return (new Icon(Icons::UNMANAGE))->setStyle('fa-regular');
                     } else {
-                        return Icons::UNSUBSCRIBED;
+                        return (new Icon(Icons::UNSUBSCRIBED))->setStyle('fa-solid');
                     }
                 }
 
-                return '';
+                return null;
         }
     }
 

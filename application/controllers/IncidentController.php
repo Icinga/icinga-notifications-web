@@ -164,7 +164,7 @@ class IncidentController extends CompatController
         $url->setQueryString(QueryString::render($filter) . '&' . $url->getParams()->toString());
 
         // create and render history list
-        $list = (new ExtendedIncidentHistoryListInfinite($history->execute()))
+        $list = (new ExtendedIncidentHistoryListInfinite($history))
             ->setPageSize($limitControl->getLimit())
             ->setLoadMoreUrl($url->setParam('time', $time));
 
