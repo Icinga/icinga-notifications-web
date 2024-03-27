@@ -216,11 +216,6 @@ parameters:
 			path: application/controllers/IncidentController.php
 
 		-
-			message: "#^Parameter \\#1 \\$id of static method Icinga\\\\Module\\\\Notifications\\\\Common\\\\Links\\:\\:incident\\(\\) expects int, mixed given\\.$#"
-			count: 1
-			path: application/controllers/IncidentController.php
-
-		-
 			message: "#^Parameter \\#2 \\$currentUserId of class Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Detail\\\\IncidentQuickActions constructor expects int, mixed given\\.$#"
 			count: 1
 			path: application/controllers/IncidentController.php
@@ -1286,11 +1281,6 @@ parameters:
 			path: library/Notifications/Widget/CheckboxIcon.php
 
 		-
-			message: "#^Cannot access property \\$id on mixed\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Detail/EventDetail.php
-
-		-
 			message: "#^Cannot access property \\$source on mixed\\.$#"
 			count: 1
 			path: library/Notifications/Widget/Detail/EventDetail.php
@@ -1367,11 +1357,6 @@ parameters:
 
 		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Detail\\\\IncidentQuickActions\\:\\:onSuccess\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Detail/IncidentQuickActions.php
-
-		-
-			message: "#^Parameter \\#2 \\$value of static method ipl\\\\Stdlib\\\\Filter\\:\\:equal\\(\\) expects array\\|bool\\|float\\|int\\|string, mixed given\\.$#"
 			count: 1
 			path: library/Notifications/Widget/Detail/IncidentQuickActions.php
 
@@ -1511,11 +1496,6 @@ parameters:
 			path: library/Notifications/Widget/ItemList/EventList.php
 
 		-
-			message: "#^Cannot access property \\$id on mixed\\.$#"
-			count: 2
-			path: library/Notifications/Widget/ItemList/EventListItem.php
-
-		-
 			message: "#^Cannot access property \\$source on mixed\\.$#"
 			count: 1
 			path: library/Notifications/Widget/ItemList/EventListItem.php
@@ -1598,16 +1578,6 @@ parameters:
 		-
 			message: "#^Cannot call method getTimestamp\\(\\) on mixed\\.$#"
 			count: 2
-			path: library/Notifications/Widget/ItemList/IncidentListItem.php
-
-		-
-			message: "#^Parameter \\#1 \\$id of static method Icinga\\\\Module\\\\Notifications\\\\Common\\\\Links\\:\\:incident\\(\\) expects int, mixed given\\.$#"
-			count: 1
-			path: library/Notifications/Widget/ItemList/IncidentListItem.php
-
-		-
-			message: "#^Parameter \\#2 \\.\\.\\.\\$values of function sprintf expects bool\\|float\\|int\\|string\\|null, mixed given\\.$#"
-			count: 1
 			path: library/Notifications/Widget/ItemList/IncidentListItem.php
 
 		-

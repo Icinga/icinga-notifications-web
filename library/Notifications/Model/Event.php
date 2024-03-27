@@ -8,8 +8,14 @@ use ipl\Orm\Behavior\Binary;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
+use ipl\Orm\Query;
 use ipl\Orm\Relations;
 
+/**
+ * Event model
+ *
+ * @property Query|Incident $incident
+ */
 class Event extends Model
 {
     public function getTableName()
