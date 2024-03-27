@@ -11,7 +11,7 @@ class IncidentList extends BaseItemList
 {
     use NoSubjectLink;
 
-    protected $defaultAttributes = ['class' => 'incident-list'];
+    protected $defaultAttributes = ['class' => ['action-list', 'incident-list']];
 
     protected function getItemClass(): string
     {

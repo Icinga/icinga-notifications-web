@@ -14,7 +14,7 @@ class EventList extends BaseItemList
     use LoadMore;
     use NoSubjectLink;
 
-    protected $defaultAttributes = ['class' => 'event-list'];
+    protected $defaultAttributes = ['class' => ['action-list', 'event-list']];
 
     /** @var ResultSet */
     protected $data;

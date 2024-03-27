@@ -5,14 +5,13 @@
 namespace Icinga\Module\Notifications\Widget\ItemList;
 
 use Icinga\Module\Notifications\Common\LoadMore;
-use ipl\Orm\ResultSet;
 use ipl\Web\Common\BaseItemList;
 
 class EventRuleList extends BaseItemList
 {
     use LoadMore;
 
-    protected $defaultAttributes = ['class' => 'event-rule-list'];
+    protected $defaultAttributes = ['class' => ['action-list', 'event-rule-list']];
 
     protected function getItemClass(): string
     {

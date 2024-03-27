@@ -11,7 +11,7 @@ use ipl\Web\Common\BaseItemList;
  */
 class ChannelList extends BaseItemList
 {
-    protected $defaultAttributes = ['class' => 'channel-list'];
+    protected $defaultAttributes = ['class' => ['action-list', 'channel-list']];
 
     protected function getItemClass(): string
     {

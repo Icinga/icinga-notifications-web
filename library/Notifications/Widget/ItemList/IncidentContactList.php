@@ -8,7 +8,7 @@ use ipl\Web\Common\BaseItemList;
 
 class IncidentContactList extends BaseItemList
 {
-    protected $defaultAttributes = ['class' => ['minimal', 'incident-contact-list']];
+    protected $defaultAttributes = ['class' => ['action-list', 'minimal', 'incident-contact-list']];
 
     protected function getItemClass(): string
     {

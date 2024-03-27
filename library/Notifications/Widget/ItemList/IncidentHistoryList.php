@@ -8,7 +8,7 @@ use ipl\Web\Common\BaseItemList;
 
 class IncidentHistoryList extends BaseItemList
 {
-    protected $defaultAttributes = ['class' => 'minimal'];
+    protected $defaultAttributes = ['class' => ['action-list', 'minimal']];
 
     protected function getItemClass(): string
     {
