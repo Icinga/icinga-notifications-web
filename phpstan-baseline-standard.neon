@@ -1446,21 +1446,6 @@ parameters:
 			path: library/Notifications/Widget/EventSourceBadge.php
 
 		-
-			message: "#^Parameter \\#2 \\$value of method ipl\\\\Html\\\\Attributes\\:\\:add\\(\\) expects array\\|bool\\|string\\|null, mixed given\\.$#"
-			count: 1
-			path: library/Notifications/Widget/EventSourceBadge.php
-
-		-
-			message: "#^Parameter \\#2 \\.\\.\\.\\$values of function sprintf expects bool\\|float\\|int\\|string\\|null, mixed given\\.$#"
-			count: 1
-			path: library/Notifications/Widget/EventSourceBadge.php
-
-		-
-			message: "#^Parameter \\#3 \\.\\.\\.\\$values of function sprintf expects bool\\|float\\|int\\|string\\|null, mixed given\\.$#"
-			count: 1
-			path: library/Notifications/Widget/EventSourceBadge.php
-
-		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\FlowLine\\:\\:getHorizontalLine\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: library/Notifications/Widget/FlowLine.php
