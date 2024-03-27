@@ -6,7 +6,22 @@ namespace Icinga\Module\Notifications\Model;
 
 use ipl\Orm\Model;
 use ipl\Orm\Relations;
+use ipl\Orm\Query;
 
+/**
+ * @property int $id
+ * @property int $rule_id
+ * @property int $position
+ * @property ?string $condition
+ * @property ?string $name
+ * @property ?int $fallback_for
+ *
+ * @property Contact | Query $contact
+ * @property Incident | Query $incident
+ * @property IncidentHistory | Query $incident_history
+ * @property Rule | Query $rule
+ * @property RuleEscalationRecipient | Query $rule_escalation_recipient
+ */
 class RuleEscalation extends Model
 {
     public function getTableName()

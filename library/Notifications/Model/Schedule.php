@@ -5,8 +5,18 @@
 namespace Icinga\Module\Notifications\Model;
 
 use ipl\Orm\Model;
+use ipl\Orm\Query;
 use ipl\Orm\Relations;
 
+/**
+ * @property int $id
+ * @property string $name
+ *
+ * @property IncidentHistory | Query $incident_history
+ * @property ScheduleMember | Query $member
+ * @property RuleEscalationRecipient | Query $rule_escalation_recipient
+ * @property Timeperiod | Query $timeperiod
+ */
 class Schedule extends Model
 {
     public function getTableName()

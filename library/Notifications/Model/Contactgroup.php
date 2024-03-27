@@ -6,7 +6,16 @@ namespace Icinga\Module\Notifications\Model;
 
 use ipl\Orm\Model;
 use ipl\Orm\Relations;
+use ipl\Orm\Query;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $color
+ *
+ * @property IncidentHistory | Query $incident_history
+ * @property RuleEscalationRecipient | Query $rule_escalation_recipient
+ */
 class Contactgroup extends Model
 {
     public function getTableName()
