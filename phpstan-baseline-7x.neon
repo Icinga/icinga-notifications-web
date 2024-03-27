@@ -6,11 +6,6 @@ parameters:
 			path: application/forms/EntryForm.php
 
 		-
-			message: "#^Parameter \\#2 \\$str of function explode expects string, mixed given\\.$#"
-			count: 2
-			path: application/forms/EscalationRecipientForm.php
-
-		-
 			message: "#^Parameter \\#1 \\$time of function strtotime expects string, mixed given\\.$#"
 			count: 1
 			path: library/Notifications/Widget/Calendar.php
