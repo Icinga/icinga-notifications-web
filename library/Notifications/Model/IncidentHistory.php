@@ -4,24 +4,44 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use DateTime;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
 use ipl\Orm\Relations;
 
+/**
+ *
+ * @property int $id
+ * @property int $incident_id
+ * @property int $event_id
+ * @property int $rule_id
+ * @property int $rule_escalation_id
+ * @property DateTime $time
+ * @property int $contact_id
+ * @property int $schedule_id
+ * @property int $contactgroup_id
+ * @property int $channel_id
+ * @property int $caused_by_incident_history_id
+ * @property string $message
+ * @property Incident $incident
+ */
 class IncidentHistory extends Model
 {
-    public function getTableName()
+    public function getTableName(): string
     {
         return 'incident_history';
     }
 
-    public function getKeyName()
+    public function getKeyName(): string
     {
         return 'id';
     }
 
-    public function getColumns()
+    /**
+     * @return array<string>
+     */
+    public function getColumns(): array
     {
         return [
             'incident_id',
@@ -43,7 +63,10 @@ class IncidentHistory extends Model
         ];
     }
 
-    public function getColumnDefinitions()
+    /**
+     * @return array<string>
+     */
+    public function getColumnDefinitions(): array
     {
         return [
             'incident_id'                   => t('Incident Id'),
@@ -64,17 +87,20 @@ class IncidentHistory extends Model
         ];
     }
 
-    public function createBehaviors(Behaviors $behaviors)
+    public function createBehaviors(Behaviors $behaviors): void
     {
         $behaviors->add(new MillisecondTimestamp(['time']));
     }
 
-    public function getDefaultSort()
+    /**
+     * @return array<string>
+     */
+    public function getDefaultSort(): array
     {
         return ['incident_history.time desc'];
     }
 
-    public function createRelations(Relations $relations)
+    public function createRelations(Relations $relations): void
     {
         $relations->belongsTo('incident', Incident::class);
 

@@ -9,6 +9,9 @@ use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
 use ipl\Orm\Relations;
 
+/**
+ * @property int $id
+ */
 class Contact extends Model
 {
     public function getTableName(): string
@@ -21,6 +24,9 @@ class Contact extends Model
         return 'id';
     }
 
+    /**
+     * @return array<string>
+     */
     public function getColumns(): array
     {
         return [
@@ -31,7 +37,10 @@ class Contact extends Model
         ];
     }
 
-    public function getColumnDefinitions()
+    /**
+     * @return array<string>
+     */
+    public function getColumnDefinitions(): array
     {
         return [
             'full_name' => t('Full Name'),
@@ -40,22 +49,28 @@ class Contact extends Model
         ];
     }
 
-    public function getSearchColumns()
+    /**
+     * @return array<string>
+     */
+    public function getSearchColumns(): array
     {
         return ['full_name'];
     }
 
-    public function createBehaviors(Behaviors $behaviors)
+    public function createBehaviors(Behaviors $behaviors): void
     {
         $behaviors->add(new HasAddress());
     }
 
-    public function getDefaultSort()
+    /**
+     * @return array<string>
+     */
+    public function getDefaultSort(): array
     {
         return ['full_name'];
     }
 
-    public function createRelations(Relations $relations)
+    public function createRelations(Relations $relations): void
     {
         $relations->belongsTo('channel', Channel::class)
             ->setCandidateKey('default_channel_id');

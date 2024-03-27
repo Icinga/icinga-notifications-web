@@ -1,8 +1,10 @@
 <?php
 
+use Icinga\Application\Modules\Module;
+
 /* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-/** @var \Icinga\Application\Modules\Module $this */
+/** @var Module $this */
 
 $section = $this->menuSection(
     N_('Notifications'),
@@ -76,3 +78,5 @@ $this->provideConfigTab(
         'url'   => 'channels'
     ]
 );
+
+$this->provideJsFile('notifications.js');

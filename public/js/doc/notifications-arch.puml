@@ -1,0 +1,29 @@
+@startuml
+
+skinparam componentStyle rectangle
+
+package "Browser" as B {
+  [Tab ..] <--> [ServiceWorker]
+  [Tab y] <--> [ServiceWorker]
+  [Tab x] <--> [ServiceWorker]
+}
+
+package "Server" as S {
+  [Daemon]
+}
+
+[ServiceWorker] <.. [Daemon] : event-stream
+
+note left of S
+  The daemon communicates with the forwarded event-stream requests in an unidirectional way.
+end note
+
+note as NB
+  Browser consists of <b>n</b> amount of tabs.
+  The service worker communicates with the tabs in a bidirectional way.
+  It also forwards event-stream request towards the daemon
+  (but limits it to two concurrent event-stream connections).
+end note
+
+NB .. B
+@enduml
