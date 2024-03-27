@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Common;
 use Icinga\Application\Config as AppConfig;
 use Icinga\Data\ResourceFactory;
 use Icinga\Exception\ConfigurationError;
+use ipl\Orm\Query;
 use ipl\Sql\Adapter\Pgsql;
 use ipl\Sql\Config as SqlConfig;
 use ipl\Sql\Connection;
@@ -104,5 +105,43 @@ final class Database
         }
 
         return $db;
+    }
+
+    /**
+     * Generate a group by expression and register it on the given select
+     *
+     * @param Query $query
+     * @param Select $select
+     *
+     * @return void
+     */
+    public static function registerGroupBy(Query $query, Select $select): void
+    {
+        $resolver = $query->getResolver();
+
+        $groupBy = [];
+        foreach ((array) $query->getModel()->getKeyName() as $key) {
+            $groupBy[] = $resolver->qualifyColumn($key, $resolver->getAlias($query->getModel()));
+        }
+
+        foreach ($query->getWith() as $relation) {
+            foreach ((array) $relation->getTarget()->getKeyName() as $key) {
+                $groupBy[] = $resolver->qualifyColumn($key, $resolver->getAlias($relation->getTarget()));
+            }
+        }
+
+        // For PostgreSQL, ALL non-aggregate SELECT columns must appear in the GROUP BY clause:
+        if ($query->getDb()->getAdapter() instanceof Pgsql) {
+            /**
+             * Ignore Expressions, i.e. aggregate functions {@see getColumns()},
+             * which do not need to be added to the GROUP BY.
+             */
+            $candidates = array_filter($select->getColumns(), 'is_string');
+            // Remove already considered columns for the GROUP BY
+            $candidates = array_diff($candidates, $groupBy);
+            $groupBy = array_merge($groupBy, $candidates);
+        }
+
+        $select->groupBy($groupBy);
     }
 }

@@ -26,6 +26,7 @@ class EventController extends CompatController
 
         $query = Event::on(Database::get())
             ->with(['object', 'object.source', 'incident', 'incident.object'])
+            ->withColumns(['object.id_tags', 'incident.object.id_tags'])
             ->filter(Filter::equal('event.id', $id));
 
         // ipl-orm doesn't detect dependent joins yet
