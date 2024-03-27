@@ -10,6 +10,11 @@ use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
 use ipl\Orm\Relations;
 
+/**
+ * Incident Model
+ *
+ * @property int $id
+ */
 class Incident extends Model
 {
     public function getTableName()

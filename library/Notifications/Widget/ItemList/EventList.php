@@ -5,16 +5,16 @@
 namespace Icinga\Module\Notifications\Widget\ItemList;
 
 use Icinga\Module\Notifications\Common\LoadMore;
-use Icinga\Module\Notifications\Common\BaseItemList;
 use Icinga\Module\Notifications\Common\NoSubjectLink;
 use ipl\Orm\ResultSet;
+use ipl\Web\Common\BaseItemList;
 
 class EventList extends BaseItemList
 {
     use LoadMore;
     use NoSubjectLink;
 
-    protected $defaultAttributes = ['class' => 'event-list'];
+    protected $defaultAttributes = ['class' => ['action-list', 'event-list']];
 
     /** @var ResultSet */
     protected $data;

@@ -4,14 +4,14 @@
 
 namespace Icinga\Module\Notifications\Widget\ItemList;
 
-use Icinga\Module\Notifications\Common\BaseItemList;
+use ipl\Web\Common\BaseItemList;
 
 /**
  * A channel list
  */
 class ChannelList extends BaseItemList
 {
-    protected $defaultAttributes = ['class' => 'channel-list'];
+    protected $defaultAttributes = ['class' => ['action-list', 'channel-list']];
 
     protected function getItemClass(): string
     {

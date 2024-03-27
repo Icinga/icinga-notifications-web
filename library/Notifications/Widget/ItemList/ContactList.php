@@ -4,11 +4,11 @@
 
 namespace Icinga\Module\Notifications\Widget\ItemList;
 
-use Icinga\Module\Notifications\Common\BaseItemList;
+use ipl\Web\Common\BaseItemList;
 
 class ContactList extends BaseItemList
 {
-    protected $defaultAttributes = ['class' => 'contact-list'];
+    protected $defaultAttributes = ['class' => ['action-list', 'contact-list']];
 
     protected function getItemClass(): string
     {

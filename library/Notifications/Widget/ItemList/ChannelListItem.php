@@ -4,9 +4,9 @@
 
 namespace Icinga\Module\Notifications\Widget\ItemList;
 
-use Icinga\Module\Notifications\Common\BaseListItem;
 use Icinga\Module\Notifications\Model\Channel;
 use ipl\Html\BaseHtmlElement;
+use ipl\Web\Common\BaseListItem;
 use ipl\Web\Url;
 use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;

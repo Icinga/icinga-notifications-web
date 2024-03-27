@@ -6,9 +6,11 @@ namespace Icinga\Module\Notifications\Widget\Detail;
 
 use Icinga\Date\DateFormatter;
 use Icinga\Module\Notifications\Model\Event;
+use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\Model\Objects;
 use Icinga\Module\Notifications\Widget\EventSourceBadge;
 use Icinga\Module\Notifications\Widget\ItemList\IncidentList;
+use InvalidArgumentException;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use ipl\Html\ValidHtml;
@@ -21,6 +23,9 @@ class EventDetail extends BaseHtmlElement
     /** @var Event */
     protected $event;
 
+    /** @var Incident */
+    protected $incident;
+
     protected $defaultAttributes = [
         'class'                         => 'event-detail',
         'data-pdfexport-page-breaks-at' => 'h2'
@@ -30,7 +35,12 @@ class EventDetail extends BaseHtmlElement
 
     public function __construct(Event $event)
     {
+        if (! $event->incident instanceof Incident) {
+            throw new InvalidArgumentException('Incidents must be loaded with the event');
+        }
+
         $this->event = $event;
+        $this->incident = $event->incident;
     }
 
     /** @return ValidHtml[] */
@@ -107,13 +117,13 @@ class EventDetail extends BaseHtmlElement
     /** @return ValidHtml[]|null */
     protected function createIncident(): ?array
     {
-        if ($this->event->incident->id === null) {
+        if ($this->incident->id === null) {
             return null;
         }
 
         return [
             Html::tag('h2', t('Incident')),
-            new IncidentList([$this->event->incident])
+            new IncidentList([$this->incident])
         ];
     }
 

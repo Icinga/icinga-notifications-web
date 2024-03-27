@@ -216,11 +216,6 @@ parameters:
 			path: application/controllers/IncidentController.php
 
 		-
-			message: "#^Parameter \\#1 \\$id of static method Icinga\\\\Module\\\\Notifications\\\\Common\\\\Links\\:\\:incident\\(\\) expects int, mixed given\\.$#"
-			count: 1
-			path: application/controllers/IncidentController.php
-
-		-
 			message: "#^Parameter \\#2 \\$currentUserId of class Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Detail\\\\IncidentQuickActions constructor expects int, mixed given\\.$#"
 			count: 1
 			path: application/controllers/IncidentController.php
@@ -634,41 +629,6 @@ parameters:
 			message: "#^Property Icinga\\\\Module\\\\Notifications\\\\Forms\\\\ScheduleForm\\:\\:\\$submitLabel \\(string\\) on left side of \\?\\? is not nullable\\.$#"
 			count: 1
 			path: application/forms/ScheduleForm.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Common\\\\BaseItemList\\:\\:__construct\\(\\) has parameter \\$data with no value type specified in iterable type iterable\\.$#"
-			count: 1
-			path: library/Notifications/Common/BaseItemList.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Common\\\\BaseItemList\\:\\:assemble\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Common/BaseItemList.php
-
-		-
-			message: "#^Property Icinga\\\\Module\\\\Notifications\\\\Common\\\\BaseItemList\\:\\:\\$baseAttributes has no type specified\\.$#"
-			count: 1
-			path: library/Notifications/Common/BaseItemList.php
-
-		-
-			message: "#^Property Icinga\\\\Module\\\\Notifications\\\\Common\\\\BaseItemList\\:\\:\\$data type has no value type specified in iterable type iterable\\.$#"
-			count: 1
-			path: library/Notifications/Common/BaseItemList.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Common\\\\BaseListItem\\:\\:assemble\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Common/BaseListItem.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Common\\\\BaseListItem\\:\\:assembleCaption\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Common/BaseListItem.php
-
-		-
-			message: "#^Property Icinga\\\\Module\\\\Notifications\\\\Common\\\\BaseListItem\\:\\:\\$baseAttributes has no type specified\\.$#"
-			count: 1
-			path: library/Notifications/Common/BaseListItem.php
 
 		-
 			message: "#^Argument of an invalid type array\\|null supplied for foreach, only iterables are supported\\.$#"
@@ -1321,11 +1281,6 @@ parameters:
 			path: library/Notifications/Widget/CheckboxIcon.php
 
 		-
-			message: "#^Cannot access property \\$id on mixed\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Detail/EventDetail.php
-
-		-
 			message: "#^Cannot access property \\$source on mixed\\.$#"
 			count: 1
 			path: library/Notifications/Widget/Detail/EventDetail.php
@@ -1406,24 +1361,9 @@ parameters:
 			path: library/Notifications/Widget/Detail/IncidentQuickActions.php
 
 		-
-			message: "#^Parameter \\#2 \\$value of static method ipl\\\\Stdlib\\\\Filter\\:\\:equal\\(\\) expects array\\|bool\\|float\\|int\\|string, mixed given\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Detail/IncidentQuickActions.php
-
-		-
 			message: "#^Property Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Detail\\\\IncidentQuickActions\\:\\:\\$incidentContact \\(Icinga\\\\Module\\\\Notifications\\\\Model\\\\IncidentContact\\) does not accept ipl\\\\Orm\\\\Model\\.$#"
 			count: 1
 			path: library/Notifications/Widget/Detail/IncidentQuickActions.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\EmptyState\\:\\:__construct\\(\\) has parameter \\$content with no type specified\\.$#"
-			count: 1
-			path: library/Notifications/Widget/EmptyState.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\EmptyState\\:\\:assemble\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Widget/EmptyState.php
 
 		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Escalations\\:\\:addEscalation\\(\\) has no return type specified\\.$#"
@@ -1556,22 +1496,12 @@ parameters:
 			path: library/Notifications/Widget/ItemList/EventList.php
 
 		-
-			message: "#^Cannot access property \\$id on mixed\\.$#"
-			count: 2
-			path: library/Notifications/Widget/ItemList/EventListItem.php
-
-		-
 			message: "#^Cannot access property \\$source on mixed\\.$#"
 			count: 1
 			path: library/Notifications/Widget/ItemList/EventListItem.php
 
 		-
 			message: "#^Cannot call method getTimestamp\\(\\) on mixed\\.$#"
-			count: 1
-			path: library/Notifications/Widget/ItemList/EventListItem.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\ItemList\\\\EventListItem\\:\\:assembleCaption\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: library/Notifications/Widget/ItemList/EventListItem.php
 
@@ -1626,11 +1556,6 @@ parameters:
 			path: library/Notifications/Widget/ItemList/IncidentHistoryListItem.php
 
 		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\ItemList\\\\IncidentHistoryListItem\\:\\:assembleCaption\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Widget/ItemList/IncidentHistoryListItem.php
-
-		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\ItemList\\\\IncidentHistoryListItem\\:\\:buildMessage\\(\\) should return string but returns mixed\\.$#"
 			count: 1
 			path: library/Notifications/Widget/ItemList/IncidentHistoryListItem.php
@@ -1653,16 +1578,6 @@ parameters:
 		-
 			message: "#^Cannot call method getTimestamp\\(\\) on mixed\\.$#"
 			count: 2
-			path: library/Notifications/Widget/ItemList/IncidentListItem.php
-
-		-
-			message: "#^Parameter \\#1 \\$id of static method Icinga\\\\Module\\\\Notifications\\\\Common\\\\Links\\:\\:incident\\(\\) expects int, mixed given\\.$#"
-			count: 1
-			path: library/Notifications/Widget/ItemList/IncidentListItem.php
-
-		-
-			message: "#^Parameter \\#2 \\.\\.\\.\\$values of function sprintf expects bool\\|float\\|int\\|string\\|null, mixed given\\.$#"
-			count: 1
 			path: library/Notifications/Widget/ItemList/IncidentListItem.php
 
 		-
