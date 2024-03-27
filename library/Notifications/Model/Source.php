@@ -8,7 +8,15 @@ use ipl\Orm\Model;
 use ipl\Orm\Relations;
 use ipl\Web\Widget\IcingaIcon;
 use ipl\Web\Widget\Icon;
+use ipl\Orm\Query;
 
+/**
+ * @property int $id
+ * @property string $type
+ * @property string $name
+ *
+ * @property Model<Objects> | Query<Objects> $object
+ */
 class Source extends Model
 {
     public function getTableName()
