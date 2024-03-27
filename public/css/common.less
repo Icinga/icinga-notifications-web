@@ -42,6 +42,24 @@
   }
 }
 
+.custom-icon {
+  .ball();
+  .ball-size-l();
+  .ball-solid(@gray-light);
+
+  color: @text-color;
+  padding: 0;
+
+  i.icon {
+    margin-top: -0.15em;
+    vertical-align: text-top;
+  }
+
+  i.icon:before {
+    font-size: 0.6em;
+  }
+}
+
 .contact-ball {
   .ball();
   .ball-size-l();
@@ -73,4 +91,14 @@
 
 .full-width .add-new-component {
   margin: 0 0 1em 1em;
+}
+
+div.show-more {
+  float: right;
+
+  :after {
+    content: "";
+    clear: both;
+    display: table;
+  }
 }

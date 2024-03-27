@@ -4,25 +4,42 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use DateTime;
 use ipl\Orm\Behavior\Binary;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
+use ipl\Orm\Query;
 use ipl\Orm\Relations;
 
+/**
+ * Event
+ *
+ * @property int $id
+ * @property DateTime $time
+ * @property string $object_id
+ * @property string $type
+ * @property ?string $severity
+ * @property ?string $message
+ * @property ?string $username
+ *
+ * @property Model<Objects> | Query<Objects> $object
+ * @property Model<IncidentHistory> | Query<IncidentHistory> $incident_history
+ * @property Model<Incident> | Query<Incident> $incident
+ */
 class Event extends Model
 {
-    public function getTableName()
+    public function getTableName(): string
     {
         return 'event';
     }
 
-    public function getKeyName()
+    public function getKeyName(): string
     {
         return 'id';
     }
 
-    public function getColumns()
+    public function getColumns(): array
     {
         return [
             'time',
@@ -34,7 +51,10 @@ class Event extends Model
         ];
     }
 
-    public function getColumnDefinitions()
+    /**
+     * @return array<string, string>
+     */
+    public function getColumnDefinitions(): array
     {
         return [
             'time'      => t('Received On'),
@@ -46,23 +66,26 @@ class Event extends Model
         ];
     }
 
-    public function getSearchColumns()
+    /**
+     * @return array<string>
+     */
+    public function getSearchColumns(): array
     {
         return ['object.name'];
     }
 
-    public function getDefaultSort()
+    public function getDefaultSort(): string
     {
         return 'event.time';
     }
 
-    public function createBehaviors(Behaviors $behaviors)
+    public function createBehaviors(Behaviors $behaviors): void
     {
         $behaviors->add(new MillisecondTimestamp(['time']));
         $behaviors->add(new Binary(['object_id']));
     }
 
-    public function createRelations(Relations $relations)
+    public function createRelations(Relations $relations): void
     {
         $relations->belongsTo('object', Objects::class)->setJoinType('LEFT');
 

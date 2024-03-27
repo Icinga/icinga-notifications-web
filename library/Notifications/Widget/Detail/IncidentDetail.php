@@ -4,19 +4,20 @@
 
 namespace Icinga\Module\Notifications\Widget\Detail;
 
-use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Incident;
+use Icinga\Module\Notifications\Model\IncidentHistory;
 use Icinga\Module\Notifications\Model\Objects;
-use Icinga\Module\Notifications\Model\Source;
 use Icinga\Module\Notifications\Widget\EventSourceBadge;
+use Icinga\Module\Notifications\Widget\ItemList\ExtendedIncidentHistoryList;
 use Icinga\Module\Notifications\Widget\ItemList\IncidentContactList;
-use Icinga\Module\Notifications\Widget\ItemList\IncidentHistoryList;
+use Icinga\Module\Notifications\Widget\ShowMore;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use ipl\Html\HtmlElement;
 use ipl\Html\Table;
-use ipl\Stdlib\Filter;
+use ipl\Orm\Query;
 use ipl\Web\Widget\Link;
 use ipl\Web\Widget\StateBall;
 
@@ -26,7 +27,7 @@ class IncidentDetail extends BaseHtmlElement
     protected $incident;
 
     protected $defaultAttributes = [
-        'class'                         => 'incident-detail',
+        'class' => 'incident-detail',
         'data-pdfexport-page-breaks-at' => 'h2'
     ];
 
@@ -63,27 +64,31 @@ class IncidentDetail extends BaseHtmlElement
 
         /** @var string $objUrl */
         $objUrl = $obj->url;
-        $list->add(Html::tag(
-            'li',
-            ['class' => 'list-item', 'data-action-item' => true],
-            [ //TODO(sd): fix stateball
-                Html::tag(
-                    'div',
-                    ['class' => 'visual'],
-                    new StateBall('down', StateBall::SIZE_LARGE)
-                ),
-                Html::tag(
-                    'div',
-                    ['class' => 'main'],
-                    Html::tag('header')
-                        ->add(Html::tag(
-                            'div',
-                            ['class' => 'title'],
-                            new Link($obj->getName(), $objUrl, ['class' => 'subject'])
-                        ))
-                )
-            ]
-        ));
+        $list->add(
+            Html::tag(
+                'li',
+                ['class' => 'list-item', 'data-action-item' => true],
+                [ //TODO(sd): fix stateball
+                    Html::tag(
+                        'div',
+                        ['class' => 'visual'],
+                        new StateBall('down', StateBall::SIZE_LARGE)
+                    ),
+                    Html::tag(
+                        'div',
+                        ['class' => 'main'],
+                        Html::tag('header')
+                            ->add(
+                                Html::tag(
+                                    'div',
+                                    ['class' => 'title'],
+                                    new Link($obj->getName(), $objUrl, ['class' => 'subject'])
+                                )
+                            )
+                    )
+                ]
+            )
+        );
 
         return [
             Html::tag('h2', t('Object')),
@@ -93,23 +98,36 @@ class IncidentDetail extends BaseHtmlElement
 
     protected function createHistory()
     {
-        return [
-            Html::tag('h2', t('Incident History')),
-            new IncidentHistoryList(
-                $this->incident->incident_history
-                    ->with([
-                        'event',
-                        'event.object',
-                        'event.object.source',
-                        'contact',
-                        'rule',
-                        'rule_escalation',
-                        'contactgroup',
-                        'schedule',
-                        'channel'
-                    ])
-            )
+        $elements = [
+            Html::tag('h2', t('Incident History'))
         ];
+
+        /** @var Query<IncidentHistory> $incident_history */
+        $incident_history = $this->incident->incident_history;
+        $incident_history
+            ->limit(5)
+            ->with(
+                [
+                    'event',
+                    'event.object',
+                    'event.object.source',
+                    'contact',
+                    'rule',
+                    'rule_escalation',
+                    'contactgroup',
+                    'schedule',
+                    'channel'
+                ]
+            );
+        $elements[] = new ExtendedIncidentHistoryList($incident_history);
+
+        $entries = $incident_history->execute();
+
+        if ($incident_history->getLimit() && $incident_history->count() > $incident_history->getLimit()) {
+            $elements[] = new ShowMore($entries, Links::incidentHistory($this->incident->id));
+        }
+
+        return $elements;
     }
 
     protected function createSource()
