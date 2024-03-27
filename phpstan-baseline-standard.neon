@@ -111,11 +111,6 @@ parameters:
 			path: application/controllers/EventRuleController.php
 
 		-
-			message: "#^Call to an undefined method Zend_Controller_Response_Abstract\\:\\:redirectAndExit\\(\\)\\.$#"
-			count: 1
-			path: application/controllers/EventRuleController.php
-
-		-
 			message: "#^Cannot access offset 'object_filter' on mixed\\.$#"
 			count: 2
 			path: application/controllers/EventRuleController.php
@@ -174,11 +169,6 @@ parameters:
 			message: "#^Parameter \\#1 \\$ruleId of method Icinga\\\\Module\\\\Notifications\\\\Controllers\\\\EventRuleController\\:\\:fromDb\\(\\) expects int, mixed given\\.$#"
 			count: 2
 			path: application/controllers/EventRuleController.php
-
-		-
-			message: "#^Call to an undefined method Zend_Controller_Response_Abstract\\:\\:redirectAndExit\\(\\)\\.$#"
-			count: 1
-			path: application/controllers/EventRulesController.php
 
 		-
 			message: "#^Cannot access offset 'object_filter' on mixed\\.$#"
