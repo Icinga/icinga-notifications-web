@@ -72,7 +72,7 @@ class EscalationRecipient extends FieldsetElement
                 'select',
                 'val_' . $i,
                 [
-                    'class'           => ['autosubmit', 'right-operand'],
+                    'class'           => 'right-operand',
                     'options'         => $options,
                     'disabledOptions' => [''],
                     'value'           => $this->getPopulatedValue('val_' . $i)
@@ -94,13 +94,6 @@ class EscalationRecipient extends FieldsetElement
                 } else {
                     $val->addAttributes(['required' => true]);
                 }
-            } else {
-                $val = $this->createElement('text', 'val_' . $i, [
-                    'class'       => 'right-operand',
-                    'placeholder' => $this->translate('Please make a decision'),
-                    'disabled'    => true,
-                    'value'       => $this->getPopulatedValue('val_' . $i)
-                ]);
             }
 
             $this->registerElement($val);

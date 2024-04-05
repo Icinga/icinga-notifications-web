@@ -37,12 +37,12 @@
     align-self: flex-end;
   }
 
-  .filter-wrapper {
+  .filter-pipeline {
     display: inline-flex;
     align-self: flex-start;
   }
 
-  .filter-wrapper:has(.config-filter .search-controls) {
+  .filter-pipeline:has(.config-filter .search-controls) {
     align-items: baseline;
   }
 
@@ -135,7 +135,7 @@
   }
 }
 
-.filter-wrapper,
+.filter-pipeline,
 .escalations {
   .horizontal-line,
   .right-arrow {
@@ -181,10 +181,6 @@
           margin: 0;
         }
       }
-    }
-
-    .default-channel {
-      color: @disabled-gray;
     }
 
     select, input {

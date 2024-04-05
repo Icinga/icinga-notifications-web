@@ -115,4 +115,9 @@ abstract class Links
     {
         return Url::fromPath("notifications/event-rule/complete", ['id' => $id]);
     }
+
+    public static function addRule(): Url
+    {
+        return  Url::fromPath('notifications/event-rule/add');
+    }
 }
