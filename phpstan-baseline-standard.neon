@@ -111,11 +111,6 @@ parameters:
 			path: application/controllers/EventRuleController.php
 
 		-
-			message: "#^Cannot access offset 'object_filter' on mixed\\.$#"
-			count: 2
-			path: application/controllers/EventRuleController.php
-
-		-
 			message: "#^Cannot access property \\$position on mixed\\.$#"
 			count: 2
 			path: application/controllers/EventRuleController.php
