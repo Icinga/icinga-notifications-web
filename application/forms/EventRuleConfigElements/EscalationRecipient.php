@@ -29,7 +29,6 @@ class EscalationRecipient extends FieldsetElement
     {
         $this->addElement('hidden', 'recipient-count', ['value' => '1']);
 
-        /** @var SubmitButtonElement $addRecipientButton */
         $addRecipientButton = $this->createElement(
             'submitButton',
             'add-recipient',
@@ -69,7 +68,6 @@ class EscalationRecipient extends FieldsetElement
 
             $options = $defaultOption + Channel::fetchChannelNames(Database::get());
 
-            /** @var SelectElement $val */
             $val = $this->createElement(
                 'select',
                 'val_' . $i,
@@ -81,7 +79,6 @@ class EscalationRecipient extends FieldsetElement
                 ]
             );
 
-            /** @var string $recipientVal */
             $recipientVal = $this->getValue('column_' . $i);
             if ($recipientVal !== null) {
                 $recipient = explode('_', $recipientVal);
@@ -200,7 +197,6 @@ class EscalationRecipient extends FieldsetElement
             $count += 1;
         }
 
-        /** @var array<int, array<string, mixed>> $values */
         $values = [];
         for ($i = 1; $i <= $count; $i++) {
             if ($i === (int) $removePosition) {

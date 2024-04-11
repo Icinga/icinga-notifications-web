@@ -339,7 +339,6 @@ class EventRuleConfigForm extends Form
     {
         $values = [];
         $escalations = [];
-        /** @var string $prefixesString */
         $prefixesString = $this->getValue('prefixes-map', '');
 
         /** @var string[] $prefixesMap */
@@ -442,7 +441,6 @@ class EventRuleConfigForm extends Form
         $escalationsFromDb = RuleEscalation::on($db)
             ->filter(Filter::equal('rule_id', $id));
 
-        /** @var array<int, array<string, mixed>> $escalationsInCache */
         $escalationsInCache = $config['rule_escalation'];
 
         $escalationsToUpdate = [];
@@ -504,7 +502,6 @@ class EventRuleConfigForm extends Form
     {
         $db = Database::get();
         foreach ($escalations as $position => $escalationConfig) {
-            /** @var array<int, array<string, mixed>> $recipientsFromConfig */
             $recipientsFromConfig = $escalationConfig['recipients'] ?? [];
             if ($insert) {
                 $db->insert('rule_escalation', [
@@ -515,7 +512,6 @@ class EventRuleConfigForm extends Form
                     'fallback_for' => $escalationConfig['fallback_for'] ?? null
                 ]);
 
-                /** @var string $escalationId */
                 $escalationId = $db->lastInsertId();
             } else {
                 /** @var string $escalationId */
@@ -555,7 +551,6 @@ class EventRuleConfigForm extends Form
                 }
             }
 
-            /** @var array<string, mixed> $recipientConfig */
             foreach ($recipientsFromConfig as $recipientConfig) {
                 $data = [
                     'rule_escalation_id' => $escalationId,

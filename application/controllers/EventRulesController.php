@@ -163,10 +163,7 @@ class EventRulesController extends CompatController
 
     public function searchEditorAction(): void
     {
-        /** @var string $ruleId */
         $ruleId = $this->params->shiftRequired('id');
-
-        /** @var array<string, mixed>|null $eventRule */
         $eventRule = $this->sessionNamespace->get($ruleId);
 
         if ($eventRule === null) {
@@ -175,7 +172,6 @@ class EventRulesController extends CompatController
 
         $editor = new SearchEditor();
 
-        /** @var string $objectFilter */
         $objectFilter = $eventRule['object_filter'] ?? '';
         $editor->setQueryString($objectFilter)
             ->setAction(Url::fromRequest()->getAbsoluteUrl())

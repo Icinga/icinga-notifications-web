@@ -47,9 +47,7 @@ class EventRuleController extends CompatController
         $this->addTitleTab(t('Event Rule'));
         $this->controls->addAttributes(['class' => 'event-rule-detail']);
 
-        /** @var string $ruleId */
         $ruleId = $this->params->getRequired('id');
-        /** @var array<string, mixed>|null $configValues */
         $configValues = $this->sessionNamespace->get($ruleId);
         $this->controls->addAttributes(['class' => 'event-rule-detail']);
 
@@ -96,7 +94,6 @@ class EventRuleController extends CompatController
             })
             ->handleRequest($this->getServerRequest());
 
-        /** @var array<string, mixed> $cache */
         $cache = $this->sessionNamespace->get($ruleId);
         $discardChangesButton = null;
         if ($cache !== null) {
@@ -189,7 +186,6 @@ class EventRuleController extends CompatController
         foreach ($rule->rule_escalation as $re) {
             foreach ($re as $k => $v) {
                 if (in_array($k, ['id', 'condition'])) {
-                    /** @var int|string|null $v */
                     $config[$re->getTableName()][$re->position][$k] = (string) $v;
                 }
             }
@@ -244,7 +240,6 @@ class EventRuleController extends CompatController
 
         $editor = new SearchEditor();
 
-        /** @var string $objectFilter */
         $objectFilter = $eventRule['object_filter'] ?? '';
         $editor->setQueryString($objectFilter)
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
@@ -298,7 +293,6 @@ class EventRuleController extends CompatController
     {
         /** @var string $ruleId */
         $ruleId = $this->params->getRequired('id');
-        /** @var array<string, mixed>|null $config */
         $config = $this->sessionNamespace->get($ruleId);
         if ($config === null) {
             if ($ruleId === '-1') {

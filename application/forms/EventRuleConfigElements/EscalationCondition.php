@@ -41,7 +41,6 @@ class EscalationCondition extends FieldsetElement
         // Escalation Id to which the condition belongs
         $this->addElement('hidden', 'id');
 
-        /** @var SubmitButtonElement $addCondition */
         $addCondition = $this->createElement(
             'submitButton',
             'add-condition',
