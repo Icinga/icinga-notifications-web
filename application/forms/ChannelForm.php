@@ -16,8 +16,20 @@ use ipl\Sql\Connection;
 use ipl\Validator\EmailAddressValidator;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
-use stdClass;
 
+/**
+ * @phpstan-type ChannelOptionConfig array{
+ *  name: string,
+ *  type: string,
+ *  label: array<string, string>,
+ *  help?: array<string, string>,
+ *  required?: bool,
+ *  options?: array<string, string>,
+ *  default?: string|bool|int|float,
+ *  min?: float|int,
+ *  max?: float|int
+ *  }
+ */
 class ChannelForm extends CompatForm
 {
     use CsrfCounterMeasure;
@@ -27,6 +39,9 @@ class ChannelForm extends CompatForm
 
     /** @var ?int Channel ID */
     private $channelId;
+
+    /** @var array<string, mixed> */
+    private $defaultChannelOptions = [];
 
     public function __construct(Connection $db, ?int $channelId = null)
     {
@@ -161,7 +176,21 @@ class ChannelForm extends CompatForm
         }
 
         $channel = $this->getValues();
-        $channel['config'] = json_encode($channel['config']);
+        $config = array_filter(
+            $channel['config'],
+            function ($configItem, $key) {
+                return (
+                    $configItem !== null
+                    && (
+                        ! isset($this->defaultChannelOptions[$key])
+                        || $this->defaultChannelOptions[$key] !== $configItem
+                    )
+                );
+            },
+            ARRAY_FILTER_USE_BOTH
+        );
+
+        $channel['config'] = json_encode($config);
         if ($this->channelId === null) {
             $this->db->insert('channel', $channel);
         } else {
@@ -177,8 +206,8 @@ class ChannelForm extends CompatForm
      */
     protected function createConfigElements(string $type, string $config): void
     {
-        /** @var array<int, stdClass> $elementsConfig */
-        $elementsConfig = json_decode($config, false);
+        /** @var array<int, ChannelOptionConfig>  $elementsConfig */
+        $elementsConfig = json_decode($config, true);
 
         if (empty($elementsConfig)) {
             return;
@@ -190,8 +219,8 @@ class ChannelForm extends CompatForm
         foreach ($elementsConfig as $elementConfig) {
             /** @var BaseFormElement $elem */
             $elem = $this->createElement(
-                $this->getElementType($elementConfig),
-                $elementConfig->name,
+                $this->getElementType($elementConfig['type']),
+                $elementConfig['name'],
                 $this->getElementOptions($elementConfig)
             );
 
@@ -204,15 +233,15 @@ class ChannelForm extends CompatForm
     }
 
     /**
-     * Get the element type from given element config
+     * Get the element type for the given option type
      *
-     * @param stdClass $elementConfig The config object of an element
+     * @param string $configType The option type
      *
      * @return string
      */
-    protected function getElementType(stdClass $elementConfig): string
+    protected function getElementType(string $configType): string
     {
-        switch ($elementConfig->type) {
+        switch ($configType) {
             case 'string':
                 $elementType = 'text';
                 break;
@@ -242,48 +271,45 @@ class ChannelForm extends CompatForm
     /**
      * Get the element options from the given element config
      *
-     * @param stdClass $elementConfig
+     * @param ChannelOptionConfig $elementConfig
      *
-     * @return string[]
+     * @return array<string, mixed>
      */
-    protected function getElementOptions(stdClass $elementConfig): array
+    protected function getElementOptions(array $elementConfig): array
     {
         $options = [
-            'label' => $this->fromCurrentLocale($elementConfig->label)
+            'label' => $this->fromCurrentLocale($elementConfig['label'])
         ];
 
-        if (isset($elementConfig->help)) {
-            $options['description'] = $this->fromCurrentLocale($elementConfig->help);
+        if (isset($elementConfig['help'])) {
+            $options['description'] = $this->fromCurrentLocale($elementConfig['help']);
         }
 
-        if (isset($elementConfig->required)) {
-            $options['required'] = $elementConfig->required;
+        if (isset($elementConfig['required'])) {
+            $options['required'] = $elementConfig['required'];
         }
 
-        $isSelectElement = isset($elementConfig->options)
-            && ($elementConfig->type === 'option' || $elementConfig->type === 'options');
+        $isSelectElement = isset($elementConfig['options'])
+            && ($elementConfig['type'] === 'option' || $elementConfig['type'] === 'options');
         if ($isSelectElement) {
-            $options['options'] = (array) $elementConfig->options;
-            if ($elementConfig->type === 'options') {
+            $options['options'] = $elementConfig['options'];
+            if ($elementConfig['type'] === 'options') {
                 $options['multiple'] = true;
             }
         }
 
-        if (isset($elementConfig->default)) {
-            if ($isSelectElement || $elementConfig->type === 'bool') {
-                $options['value'] = $elementConfig->default;
-            } else {
-                $options['placeholder'] = $elementConfig->default;
-            }
+        if (isset($elementConfig['default'])) {
+            $this->defaultChannelOptions[$elementConfig['name']] = $elementConfig['default'];
+            $options['value'] = $elementConfig['default'];
         }
 
-        if ($elementConfig->type === "number") {
-            if (isset($elementConfig->min)) {
-                $options['min'] = $elementConfig->min;
+        if ($elementConfig['type'] === "number") {
+            if (isset($elementConfig['min'])) {
+                $options['min'] = $elementConfig['min'];
             }
 
-            if (isset($elementConfig->max)) {
-                $options['max'] = $elementConfig->max;
+            if (isset($elementConfig['max'])) {
+                $options['max'] = $elementConfig['max'];
             }
         }
 
@@ -295,17 +321,17 @@ class ChannelForm extends CompatForm
      *
      * Fallback to locale `en_US` if the current locale isn't provided
      *
-     * @param stdClass $localeMap
+     * @param array<string, string> $localeMap
      *
      * @return ?string Only returns null if the fallback locale is also not specified
      */
-    protected function fromCurrentLocale(stdClass $localeMap): ?string
+    protected function fromCurrentLocale(array $localeMap): ?string
     {
         /** @var GettextTranslator $translator */
         $translator = StaticTranslator::$instance;
         $default = $translator->getDefaultLocale();
         $locale = $translator->getLocale();
 
-        return $localeMap->$locale ?? $localeMap->$default ?? null;
+        return $localeMap[$locale] ?? $localeMap[$default] ?? null;
     }
 }
