@@ -34,7 +34,6 @@ class IncidentHistory extends Model
             'schedule_id',
             'contactgroup_id',
             'channel_id',
-            'caused_by_incident_history_id',
             'new_severity',
             'old_severity',
             'new_recipient_role',
@@ -46,21 +45,20 @@ class IncidentHistory extends Model
     public function getColumnDefinitions()
     {
         return [
-            'incident_id'                   => t('Incident Id'),
-            'event_id'                      => t('Event Id'),
-            'rule_escalation_id'            => t('Rule Escalation Id'),
-            'time'                          => t('Time'),
-            'type'                          => t('Type'),
-            'new_severity'                  => t('New Severity'),
-            'old_severity'                  => t('Old Severity'),
-            'contact_id'                    => t('Contact Id'),
-            'schedule_id'                   => t('Schedule Id'),
-            'contactgroup_id'               => t('Contact Group Id'),
-            'caused_by_incident_history_id' => t('Caused By Incident History Id'),
-            'channel_id'                    => t('Channel ID'),
-            'new_recipient_role'            => t('New Recipient Role'),
-            'old_recipient_role'            => t('Old Recipient Role'),
-            'message'                       => t('Message')
+            'incident_id'        => t('Incident Id'),
+            'event_id'           => t('Event Id'),
+            'rule_escalation_id' => t('Rule Escalation Id'),
+            'time'               => t('Time'),
+            'type'               => t('Type'),
+            'new_severity'       => t('New Severity'),
+            'old_severity'       => t('Old Severity'),
+            'contact_id'         => t('Contact Id'),
+            'schedule_id'        => t('Schedule Id'),
+            'contactgroup_id'    => t('Contact Group Id'),
+            'channel_id'         => t('Channel ID'),
+            'new_recipient_role' => t('New Recipient Role'),
+            'old_recipient_role' => t('Old Recipient Role'),
+            'message'            => t('Message')
         ];
     }
 
