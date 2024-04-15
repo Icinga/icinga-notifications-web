@@ -9,8 +9,23 @@ use ipl\Orm\Relations;
 use ipl\Web\Widget\IcingaIcon;
 use ipl\Web\Widget\Icon;
 
+/**
+ * @property int $id The primary key
+ * @property string $type Type identifier
+ * @property string $name The user-defined name
+ * @property ?string $listener_password_hash
+ * @property ?string $icinga2_base_url
+ * @property ?string $icinga2_auth_user
+ * @property ?string $icinga2_auth_pass
+ * @property ?string $icinga2_ca_pem
+ * @property ?string $icinga2_common_name
+ * @property string $icinga2_insecure_tls
+ */
 class Source extends Model
 {
+    /** @var string The type name used by Icinga sources */
+    public const ICINGA_TYPE_NAME = 'icinga2';
+
     public function getTableName()
     {
         return 'source';
@@ -25,7 +40,14 @@ class Source extends Model
     {
         return [
             'type',
-            'name'
+            'name',
+            'listener_password_hash',
+            'icinga2_base_url',
+            'icinga2_auth_user',
+            'icinga2_auth_pass',
+            'icinga2_ca_pem',
+            'icinga2_common_name',
+            'icinga2_insecure_tls'
         ];
     }
 
@@ -59,10 +81,9 @@ class Source extends Model
      */
     public function getIcon(): Icon
     {
-        $icon = null;
         switch ($this->type) {
             //TODO(sd): Add icons for other known sources
-            case 'icinga2':
+            case self::ICINGA_TYPE_NAME:
                 $icon = new IcingaIcon('icinga');
                 break;
             default:
