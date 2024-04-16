@@ -384,13 +384,6 @@ abstract class BaseGrid extends BaseHtmlElement
         }
 
         if ($startText) {
-            $title->addHtml(
-                HtmlElement::create(
-                    'div',
-                    ['class' => 'starts-at'],
-                    $startText
-                )
-            );
             $titleAttr = $startText . ' ' . $titleAttr;
         }
 
@@ -406,7 +399,7 @@ abstract class BaseGrid extends BaseHtmlElement
                 Attributes::create([
                     'datetime' => $entry->getStart()->format(DateTimeInterface::ATOM)
                 ]),
-                Text::create($entry->getStart()->format('H:i'))
+                Text::create($entry->getStart()->format($startText ? 'd/m/y H:i' : 'H:i'))
             ));
         }
 
