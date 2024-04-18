@@ -60,7 +60,7 @@
                 anchor.innerText = label + dots;
             }, null, 250);
 
-            let url = anchor.href;
+            let url = anchor.getAttribute('href');
             let req = this.icinga.loader.loadUrl(
                 // Add showCompact, we don't want controls in paged results
                 this.icinga.utils.addUrlFlag(url, 'showCompact'),
