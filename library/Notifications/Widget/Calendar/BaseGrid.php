@@ -176,7 +176,11 @@ abstract class BaseGrid extends BaseHtmlElement
 
         $overlay->addHtml($style);
 
+        $maxRowSpan = $this->getMaximumRowSpan();
         $sectionsPerStep = $this->getSectionsPerStep();
+        $rowStartModifier = $this->getRowStartModifier();
+        // +1 because rows are 0-based here, but CSS grid rows are 1-based, hence the default modifier is 1
+        $fillAvailableSpace = $maxRowSpan === ($sectionsPerStep - $rowStartModifier + 1);
 
         $gridStartsAt = $this->getGridStart();
         $gridEndsAt = $this->getGridEnd();
@@ -222,8 +226,8 @@ abstract class BaseGrid extends BaseHtmlElement
                         continue;
                     }
 
-                    $rowStart = $row + $this->getRowStartModifier();
-                    $rowSpan = $this->getMaximumRowSpan();
+                    $rowStart = $row + $rowStartModifier;
+                    $rowSpan = $maxRowSpan;
 
                     $competingOccupiers = array_filter($occupiers, function ($id) use ($rowPlacements, $row) {
                         return isset($rowPlacements[$id][$row]);
@@ -235,11 +239,15 @@ abstract class BaseGrid extends BaseHtmlElement
                     foreach ($competingOccupiers as $otherId) {
                         list($otherRowStart, $otherRowSpan) = $rowPlacements[$otherId][$row];
                         if ($otherRowStart === $rowStart) {
-                            $otherRowSpan = (int) ceil($otherRowSpan / 2);
-                            $rowStart += $otherRowSpan;
-                            $rowSpan -= $otherRowSpan;
-                            $rowPlacements[$otherId][$row] = [$otherRowStart, $otherRowSpan];
-                        } else {
+                            if ($fillAvailableSpace) {
+                                $otherRowSpan = (int) ceil($otherRowSpan / 2);
+                                $rowStart += $otherRowSpan;
+                                $rowSpan -= $otherRowSpan;
+                                $rowPlacements[$otherId][$row] = [$otherRowStart, $otherRowSpan];
+                            } else {
+                                $rowStart += $maxRowSpan;
+                            }
+                        } elseif ($fillAvailableSpace) {
                             $rowSpan = $otherRowStart - $rowStart;
                             break; // It occupies space now that was already reserved, so it should be safe to use
                         }
