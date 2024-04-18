@@ -88,47 +88,57 @@
   .entry {
     overflow: hidden;
 
-     .content {
-       display: flex;
-       flex-wrap: wrap;
-       column-gap: .5em;
-       padding: .125em;
-       height: 100%;
-       max-height: 100%;
-     }
+    .content {
+      display: flex;
+      flex-wrap: wrap;
+      column-gap: .5em;
+      padding: .125em;
+      height: 100%;
+      max-height: 100%;
+    }
 
-     .title {
-       display: flex;
-       flex-wrap: wrap;
-       flex: 0 1 auto;
-       column-gap: .5em;
-       overflow: hidden;
+    .title {
+      display: flex;
+      flex-wrap: wrap;
+      flex: 0 1 auto;
+      column-gap: .5em;
+      overflow: hidden;
 
-       time {
-         margin-right: .5em;
-       }
+      time {
+        margin-right: .5em;
+      }
 
-       .attendee {
-         word-break: break-word;
-       }
+      .attendee {
+        word-break: break-word;
+      }
 
-       .attendee .icon {
-         vertical-align: baseline;
-       }
-     }
+      .attendee .icon {
+        vertical-align: baseline;
+      }
+    }
 
-     .description {
-       flex: 1 1 auto;
-       overflow: hidden;
+    .description {
+      flex: 1 1 auto;
+      overflow: hidden;
 
-       p {
-         margin: 0;
-         overflow: hidden;
-         text-overflow: ellipsis;
-         .line-clamp(3);
-       }
-     }
-   }
+      p {
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        .line-clamp(3);
+      }
+    }
+
+    .ends-at {
+      align-self: flex-end;
+      text-align: right;
+      width: 100%;
+
+      .text-ellipsis();
+      font-size: 11/12em;
+      line-height: 12/11 * 1.5;
+    }
+  }
 }
 
 .calendar-grid.month {
@@ -283,6 +293,53 @@
     font-weight: normal;
   }
 
+  .calendar-grid.month {
+    .entry {
+      &.two-way-gradient {
+        border-radius: 0;
+        border-right: none;
+        border-left: none;
+        background: linear-gradient(to right, transparent, var(--entry-bg) 0.5em, var(--entry-bg) ~"calc(100% - 0.5em)", transparent);
+      }
+
+      &.opening-gradient {
+        border-radius: 0 0.25em 0.25em 0;
+        border-left: none;
+        background: linear-gradient(to left, var(--entry-bg) ~"calc(100% - 1em)", transparent);
+      }
+
+      &.ending-gradient {
+        border-radius: 0.25em 0 0 0.25em;
+        border-right: none;
+        background: linear-gradient(to right, var(--entry-bg) ~"calc(100% - 1em)", transparent);
+      }
+    }
+  }
+
+  .calendar-grid.week,
+  .calendar-grid.day {
+    .entry {
+      &.two-way-gradient {
+        border-radius: 0;
+        border-top: none;
+        border-bottom: none;
+        background: linear-gradient(to bottom, transparent, var(--entry-bg) 0.5em, var(--entry-bg) ~"calc(100% - 0.5em)", transparent);
+      }
+
+      &.opening-gradient {
+        border-radius: 0 0 0.25em 0.25em;
+        border-top: none;
+        background: linear-gradient(to top, var(--entry-bg) ~"calc(100% - 1em)", transparent);
+      }
+
+      &.ending-gradient {
+        border-radius: 0.25em 0.25em 0 0;
+        border-bottom: none;
+        background: linear-gradient(to bottom, var(--entry-bg) ~"calc(100% - 1em)", transparent);
+      }
+    }
+  }
+
   .grid {
     background-color: @gray-lighter;
     border-color: @gray-lighter;
@@ -303,6 +360,7 @@
   .entry {
     border-width: 1px;
     border-style: solid;
+    background-color: var(--entry-bg);
     .rounded-corners();
 
     a:hover {
@@ -312,7 +370,6 @@
     .title {
       font-weight: bold;
       color: @text-color;
-      mix-blend-mode: screen;
       opacity: .75;
 
       time {
@@ -323,6 +380,10 @@
         font-size: .75em;
         opacity: .8;
       }
+    }
+
+    .ends-at {
+      color: @text-color-light;
     }
   }
 
@@ -344,7 +405,10 @@
 }
 
 @light-mode: {
-  .calendar .entry .title {
-    mix-blend-mode: multiply;
+  .calendar .entry {
+    .title,
+    .description {
+      mix-blend-mode: multiply;
+    }
   }
 };

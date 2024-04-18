@@ -19,9 +19,24 @@ use ipl\Web\Widget\Link;
 use SplObjectStorage;
 use Traversable;
 
+/**
+ * @phpstan-type ContinuationType self::ACROSS_GRID | self::FROM_PREV_GRID | self::TO_NEXT_GRID | self::ACROSS_EDGES
+ */
 abstract class BaseGrid extends BaseHtmlElement
 {
     use Translation;
+
+    /** @var string Continuation type of the entry row continuing from the previous grid */
+    public const FROM_PREV_GRID = 'from-prev-grid';
+
+    /** @var string Continuation type of the entry row continuing to the next grid */
+    public const TO_NEXT_GRID = 'to-next-grid';
+
+    /** @var string Continuation type of the entry row continuing from the previous grid to the next grid */
+    public const ACROSS_GRID = 'across-grid';
+
+    /** @var string Continuation type of the entry row continuing across edges of the grid */
+    public const ACROSS_EDGES = 'across-edges';
 
     protected $tag = 'div';
 
@@ -169,6 +184,7 @@ abstract class BaseGrid extends BaseHtmlElement
         $gridBorderAt = $this->getNoOfVisuallyConnectedHours() * 2;
 
         $cellOccupiers = [];
+        /** @var SplObjectStorage<Entry, int[][]> $occupiedCells */
         $occupiedCells = new SplObjectStorage();
         foreach ($this->calendar->getEntries() as $entry) {
             $actualStart = $this->roundToNearestThirtyMinute($entry->getStart());
@@ -236,8 +252,12 @@ abstract class BaseGrid extends BaseHtmlElement
 
         $this->extraEntriesCount = [];
         foreach ($occupiedCells as $entry) {
-            $continuation = false;
+            $continuationType = null;
             $rows = $occupiedCells->getInfo();
+            $fromPrevGrid = $gridStartsAt > $entry->getStart();
+            $remainingRows = count($rows);
+            $toNextGrid = false;
+
             foreach ($rows as $row => $hours) {
                 list($rowStart, $rowSpan) = $rowPlacements[spl_object_id($entry)][$row];
                 $colStart = min($hours);
@@ -271,17 +291,33 @@ abstract class BaseGrid extends BaseHtmlElement
                 );
 
                 $entryClass = 'area-' . implode('-', $gridArea);
+                $lastRow = $remainingRows === 1;
+
+                if ($lastRow) {
+                    $toNextGrid = $gridEndsAt < $entry->getEnd();
+                }
+
+                $backward = $continuationType || $fromPrevGrid;
+                $forward = ! $lastRow || $toNextGrid;
+                $gradientClass = null;
+                if ($forward && $backward) {
+                    $gradientClass = 'two-way-gradient';
+                } elseif ($backward) {
+                    $gradientClass = 'opening-gradient';
+                } elseif ($forward) {
+                    $gradientClass = 'ending-gradient';
+                }
 
                 $style->add(".$entryClass", [
+                    '--entry-bg' => $entry->getAttendee()->getColor() . dechex((int) (256 * 0.1)),
                     'grid-area' => sprintf('~"%d / %d / %d / %d"', ...$gridArea),
-                    'background-color' => $entry->getAttendee()->getColor() . dechex((int) (256 * 0.1)),
                     'border-color' => $entry->getAttendee()->getColor() . dechex((int) (256 * 0.5))
                 ]);
 
                 $entryHtml = new HtmlElement(
                     'div',
                     Attributes::create([
-                        'class' => ['entry', $entryClass],
+                        'class' => ['entry', $gradientClass, $entryClass],
                         'data-entry-id' => $entry->getId(),
                         'data-row-start' => $gridArea[0],
                         'data-col-start' => $gridArea[1],
@@ -289,15 +325,34 @@ abstract class BaseGrid extends BaseHtmlElement
                         'data-col-end' => $gridArea[3]
                     ])
                 );
-                $this->assembleEntry($entryHtml, $entry, $continuation);
+
+                if ($fromPrevGrid) {
+                    $continuationType = $toNextGrid ? self::ACROSS_GRID : self::FROM_PREV_GRID;
+                } elseif ($toNextGrid) {
+                    $continuationType = self::TO_NEXT_GRID;
+                } elseif ($forward) {
+                    $continuationType = self::ACROSS_EDGES;
+                }
+
+                $this->assembleEntry($entryHtml, $entry, $continuationType);
                 $overlay->addHtml($entryHtml);
 
-                $continuation = true;
+                $fromPrevGrid = false;
+                $remainingRows -= 1;
             }
         }
     }
 
-    protected function assembleEntry(BaseHtmlElement $html, Entry $entry, bool $isContinuation): void
+    /**
+     * Assemble the entry in the grid
+     *
+     * @param BaseHtmlElement $html Container where to add the entry's HTML
+     * @param Entry $entry The entry to assemble
+     * @param ?ContinuationType $continuationType Continuation type of the entry's HTML
+     *
+     * @return void
+     */
+    protected function assembleEntry(BaseHtmlElement $html, Entry $entry, ?string $continuationType): void
     {
         if (($url = $entry->getUrl()) !== null) {
             $entryContainer = new Link(null, $url);
@@ -307,13 +362,44 @@ abstract class BaseGrid extends BaseHtmlElement
         }
 
         $title = new HtmlElement('div', Attributes::create(['class' => 'title']));
-        if (! $isContinuation) {
+        $content = new HtmlElement(
+            'div',
+            Attributes::create(['class' => 'content'])
+        );
+
+        $titleAttr = $entry->getStart()->format('H:i')
+            . ' | ' . $entry->getAttendee()->getName()
+            . ': ' . $entry->getDescription();
+
+        $startText = null;
+        $endText = null;
+
+        if ($continuationType === self::ACROSS_GRID) {
+            $startText = sprintf($this->translate('starts %s'), $entry->getStart()->format('d/m/y'));
+            $endText = sprintf($this->translate('ends %s'), $entry->getEnd()->format('d/m/y H:i'));
+        } elseif ($continuationType === self::FROM_PREV_GRID) {
+            $startText = sprintf($this->translate('starts %s'), $entry->getStart()->format('d/m/y'));
+        } elseif ($continuationType === self::TO_NEXT_GRID) {
+            $endText = sprintf($this->translate('ends %s'), $entry->getEnd()->format('d/m/y H:i'));
+        }
+
+        if ($startText) {
+            $titleAttr = $startText . ' ' . $titleAttr;
+        }
+
+        if ($endText) {
+            $titleAttr = $titleAttr . ' | ' . $endText;
+        }
+
+        $content->addAttributes(['title' => $titleAttr]);
+
+        if ($continuationType !== null) {
             $title->addHtml(new HtmlElement(
                 'time',
                 Attributes::create([
                     'datetime' => $entry->getStart()->format(DateTimeInterface::ATOM)
                 ]),
-                Text::create($entry->getStart()->format('H:i'))
+                Text::create($entry->getStart()->format($startText ? 'd/m/y H:i' : 'H:i'))
             ));
         }
 
@@ -326,16 +412,7 @@ abstract class BaseGrid extends BaseHtmlElement
             )
         );
 
-        $entryContainer->addHtml(new HtmlElement(
-            'div',
-            Attributes::create(
-                [
-                    'class' => 'content',
-                    'title' => $entry->getStart()->format('H:i')
-                        . ' | ' . $entry->getAttendee()->getName()
-                        . ': ' . $entry->getDescription()
-                ]
-            ),
+        $content->addHtml(
             $title,
             new HtmlElement(
                 'div',
@@ -346,7 +423,19 @@ abstract class BaseGrid extends BaseHtmlElement
                     Text::create($entry->getDescription())
                 )
             )
-        ));
+        );
+
+        if ($endText) {
+            $content->addHtml(
+                HtmlElement::create(
+                    'div',
+                    ['class' => 'ends-at'],
+                    $endText
+                )
+            );
+        }
+
+        $entryContainer->addHtml($content);
     }
 
     protected function roundToNearestThirtyMinute(DateTime $time): DateTime
