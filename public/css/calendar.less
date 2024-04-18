@@ -5,9 +5,17 @@
   justify-content: flex-start;
   max-width: none;
 
+  > :not(:nth-last-child(-n+2)),
+  > .icinga-controls > :not(:last-child) {
+    margin-right: .5em;
+  }
+
+  > :nth-child(3n+4):not(:last-child):not(:nth-last-child(2)) {
+    margin-right: 1em;
+  }
+
   .view-mode-switcher {
     margin-left: auto;
-    margin-right: auto;
     margin-bottom: 0;
 
     label {
@@ -275,12 +283,6 @@
 /* Design */
 
 .calendar-controls {
-  input[type="date"],
-  input[type="month"],
-  input[type="week"] {
-    background-color: @low-sat-blue;
-  }
-
   .view-mode-switcher label {
     padding: .5em;
     line-height: normal;
