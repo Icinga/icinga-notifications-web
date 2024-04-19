@@ -25,15 +25,29 @@
   }
 }
 
+/**
+ * Basic rules for a calendar grid
+ *
+ * Required variables:
+ * - --primaryColumns: Number of primary columns
+ * - --primaryRows: Number of primary rows
+ * - --columnsPerStep: Number of columns per step
+ * - --rowsPerStep: Number of rows per step
+ */
 .calendar-grid {
-  @days: 7;
+  --sidebarWidth: 4em;
+  --headerHeight: 1.5em;
+  --minimumPrimaryColumnWidth: 2em;
+  --minimumStepColumnWidth: ~"calc(var(--minimumPrimaryColumnWidth) / var(--columnsPerStep))";
+  --primaryRowHeight: 1fr;
+  --stepRowHeight: 1fr;
 
   .header {
     display: grid;
     grid-gap: 1px;
     border-left: 1px solid transparent;
     border-right: 1px solid transparent;
-    grid-template-columns: repeat(@days, minmax(2em, 1fr));
+    grid-template-columns: repeat(var(--primaryColumns), minmax(var(--minimumPrimaryColumnWidth), 1fr));
 
     .column-title {
       text-align: center;
@@ -42,6 +56,8 @@
 
   .sidebar {
     display: grid;
+    grid-gap: 1px;
+    grid-template-rows: repeat(var(--primaryRows), var(--primaryRowHeight));
 
     .row-title {
       text-align: right;
@@ -66,8 +82,18 @@
 
   .grid,
   .overlay {
+    display: grid;
+    overflow: hidden;
     grid-gap: 1px;
+    grid-template-rows: repeat(~"calc(var(--primaryRows) * var(--rowsPerStep))", var(--stepRowHeight));
+    grid-template-columns: repeat(~"calc(var(--primaryColumns) * var(--columnsPerStep))", minmax(var(--minimumStepColumnWidth), 1fr));
     border: 1px solid transparent;
+  }
+
+  .step {
+    position: relative;
+    grid-row-end: span var(--rowsPerStep);
+    grid-column-end: span var(--columnsPerStep);
   }
 
   .step,
@@ -150,125 +176,63 @@
 }
 
 .calendar-grid.month {
-  @days: 7;
-  @weeks: 6;
-  @rowsPerDay: 5;
-  @columnsPerDay: 48;
+  --primaryColumns: 7; // days
+  --primaryRows: 6; // weeks
+  --columnsPerStep: 48; // 24 hours
+  --rowsPerStep: 5;
 
-  .sidebar {
-    grid-template-rows: repeat(@weeks, 1fr);
-  }
-
-  .grid,
-  .overlay {
-    display: grid;
-    grid-template-rows: repeat(@weeks * @rowsPerDay, 1fr);
-    grid-template-columns: repeat(@days * @columnsPerDay, minmax(0, 1fr));
-    overflow: hidden;
-  }
-
-  .step {
-    grid-row-end: span @rowsPerDay;
-    grid-column-end: span @columnsPerDay;
-    position: relative;
-
-    > a {
-      text-align: right;
-      &:first-of-type {
-        padding-right: .25em;
-      }
+  .step > a {
+    text-align: right;
+    &:first-of-type {
+      padding-right: .25em;
     }
   }
 }
 
 .calendar-grid.week {
-  @days: 7;
-  @hours: 24;
-  @rowsPerHour: 2;
-  @columnsPerDay: 4;
-
-  .sidebar {
-    grid-template-rows: repeat(@hours, 1fr);
-  }
-
-  .grid,
-  .overlay {
-    display: grid;
-    grid-template-rows: repeat(@hours * @rowsPerHour, 1fr);
-    grid-template-columns: repeat(@days * @columnsPerDay, minmax(2em, 1fr));
-  }
+  --primaryColumns: 7; // days
+  --primaryRows: 24; // hours
+  --columnsPerStep: 4;
+  --rowsPerStep: 2;
+  --sidebarWidth: 6em;
+  --headerHeight: 2.5em;
 
   .grid,
   .overlay {
     border-left: none;
-  }
-
-  .step {
-    grid-column-end: span @columnsPerDay;
-    grid-row-end: span @rowsPerHour;
-    position: relative;
   }
 }
 
 .calendar-grid.day {
-  @days: 1;
-  @hours: 24;
-  @rowsPerHour: 2;
-  @columnsPerDay: 28;
-
-  .sidebar {
-    grid-template-rows: repeat(@hours, 1fr);
-  }
-
-  .grid,
-  .overlay {
-    display: grid;
-    grid-template-rows: repeat(@hours * @rowsPerHour, 1fr);
-    grid-template-columns: repeat(@days * @columnsPerDay, minmax(2em, 1fr));
-  }
+  --primaryColumns: 1; // days
+  --primaryRows: 24; // hours
+  --columnsPerStep: 28;
+  --rowsPerStep: 2;
+  --sidebarWidth: 6em;
+  --headerHeight: 2.5em;
 
   .grid,
   .overlay {
     border-left: none;
-  }
-
-  .step {
-    grid-column-end: span @columnsPerDay;
-    grid-row-end: span @rowsPerHour;
   }
 }
 
 .calendar-grid {
   display: grid;
+  grid-template-columns: var(--sidebarWidth) minmax(0, 1fr);
+  grid-template-rows: var(--headerHeight) minmax(0, 1fr);
 
-  &.week,
-  &.day,
-  &.month {
-    .header {
-      grid-area: ~"1 / 2 / 2 / 3";
-    }
-
-    .sidebar {
-      grid-area: ~"2 / 1 / 3 / 2";
-    }
-
-    .grid,
-    .overlay {
-      grid-area: ~"2 / 2 / 3 / 3";
-    }
+  .header {
+    grid-area: ~"1 / 2 / 2 / 3";
   }
 
-  &.week {
-    grid-template-columns: 6em minmax(0, 1fr);
-    grid-template-rows: 2.5em minmax(0, 1fr);
+  .sidebar {
+    grid-area: ~"2 / 1 / 3 / 2";
   }
-  &.month {
-    grid-template-columns: 4em minmax(0, 1fr);
-    grid-template-rows: 1.5em minmax(0, 1fr);
-  }
-  &.day {
-    grid-template-columns: 6em minmax(0, 1fr);
-    grid-template-rows: 2.5em minmax(0, 1fr);
+
+  .grid,
+  .overlay {
+    grid-area: ~"2 / 2 / 3 / 3";
   }
 
   .overlay {
