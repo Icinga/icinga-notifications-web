@@ -8,8 +8,12 @@ use Icinga\Module\Notifications\Common\Icons;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\Model\Objects;
+use Icinga\Module\Notifications\Model\Source;
+use Icinga\Module\Notifications\Widget\SourceIcon;
+use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
+use ipl\Html\HtmlElement;
 use ipl\Web\Common\BaseListItem;
 use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
@@ -73,19 +77,22 @@ class IncidentListItem extends BaseListItem
     protected function assembleHeader(BaseHtmlElement $header): void
     {
         $header->add($this->createTitle());
+        $meta = new HtmlElement('span', Attributes::create(['class' => 'meta']));
+
+        /** @var Source $source */
+        $source = $this->item->object->source;
+        $meta->addHtml((new SourceIcon(SourceIcon::SIZE_BIG))->addHtml($source->getIcon()));
 
         if ($this->item->recovered_at !== null) {
-            $header->add(Html::tag(
-                'span',
-                ['class' => 'meta'],
-                [
-                    'closed ',
-                    new TimeAgo($this->item->recovered_at->getTimestamp())
-                ]
-            ));
+            $meta->add([
+                'closed ',
+                new TimeAgo($this->item->recovered_at->getTimestamp())
+            ]);
         } else {
-            $header->add(new TimeSince($this->item->started_at->getTimestamp()));
+            $meta->addHtml(new TimeSince($this->item->started_at->getTimestamp()));
         }
+
+        $header->addHtml($meta);
     }
 
     protected function getSeverityIcon(): string

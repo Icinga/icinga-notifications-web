@@ -95,7 +95,6 @@ class IncidentDetail extends BaseHtmlElement
             new IncidentHistoryList(
                 $this->incident->incident_history
                     ->with([
-                        'incident.object.source',
                         'contact',
                         'rule',
                         'rule_escalation',

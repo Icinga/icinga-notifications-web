@@ -8,7 +8,6 @@ use Icinga\Module\Notifications\Common\Icons;
 use Icinga\Module\Notifications\Model\Event;
 use Icinga\Module\Notifications\Model\IncidentHistory;
 use Icinga\Module\Notifications\Widget\IconBall;
-use Icinga\Module\Notifications\Widget\SourceIcon;
 use ipl\Html\BaseHtmlElement;
 use ipl\Web\Common\BaseListItem;
 use ipl\Web\Widget\Icon;
@@ -50,11 +49,6 @@ class IncidentHistoryListItem extends BaseListItem
         }
 
         $header->addHtml($this->createCaption());
-        if ($this->item->type === 'opened' || $this->item->type === 'incident_severity_changed') {
-            $header->add(
-                (new SourceIcon(SourceIcon::SIZE_BIG))->addHtml($this->item->incident->object->source->getIcon())
-            );
-        }
 
         $header->add(new TimeAgo($this->item->time->getTimestamp()));
     }

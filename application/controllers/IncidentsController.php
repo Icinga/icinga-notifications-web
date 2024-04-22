@@ -29,7 +29,7 @@ class IncidentsController extends CompatController
         $this->addTitleTab(t('Incidents'));
 
         $incidents = Incident::on(Database::get())
-            ->with('object')
+            ->with(['object', 'object.source'])
             ->withColumns('object.id_tags');
 
         $limitControl = $this->createLimitControl();

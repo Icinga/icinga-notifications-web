@@ -25,7 +25,7 @@ class EventController extends CompatController
         $id = $this->params->getRequired('id');
 
         $query = Event::on(Database::get())
-            ->with(['object', 'object.source', 'incident', 'incident.object'])
+            ->with(['object', 'object.source', 'incident', 'incident.object', 'incident.object.source'])
             ->withColumns(['object.id_tags', 'incident.object.id_tags'])
             ->filter(Filter::equal('event.id', $id));
 
