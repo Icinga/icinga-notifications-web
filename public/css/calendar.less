@@ -327,6 +327,7 @@
     border-width: 1px;
     border-style: solid;
     background-color: var(--entry-bg);
+    mix-blend-mode: screen;
     .rounded-corners();
 
     a:hover {
@@ -372,9 +373,6 @@
 
 @light-mode: {
   .calendar .entry {
-    .title,
-    .description {
-      mix-blend-mode: multiply;
-    }
+    mix-blend-mode: revert;
   }
 };

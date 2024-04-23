@@ -54,6 +54,9 @@ abstract class BaseGrid extends BaseHtmlElement
     /** @var array Extra counts stored as [date1 => count1, date2 => count2]*/
     protected $extraEntriesCount = [];
 
+    /** @var array<string, array{0: int, 1: int}> */
+    protected $entryColors = [];
+
     /**
      * Create a new calendar
      *
@@ -317,9 +320,9 @@ abstract class BaseGrid extends BaseHtmlElement
                 }
 
                 $style->add(".$entryClass", [
-                    '--entry-bg' => $entry->getAttendee()->getColor() . dechex((int) (256 * 0.1)),
+                    '--entry-bg' => $this->getEntryColor($entry, 10),
                     'grid-area' => sprintf('~"%d / %d / %d / %d"', ...$gridArea),
-                    'border-color' => $entry->getAttendee()->getColor() . dechex((int) (256 * 0.5))
+                    'border-color' => $this->getEntryColor($entry, 50)
                 ]);
 
                 $entryHtml = new HtmlElement(
@@ -461,5 +464,42 @@ abstract class BaseGrid extends BaseHtmlElement
         }
 
         return $time;
+    }
+
+    /**
+     * Get the given attendee's color with the given transparency suitable for CSS
+     *
+     * @param Entry $entry
+     * @param int<0, 100> $transparency
+     *
+     * @return string
+     */
+    protected function getEntryColor(Entry $entry, int $transparency): string
+    {
+        $attendeeName = $entry->getAttendee()->getName();
+        if (! isset($this->entryColors[$attendeeName])) {
+            // Get a representation of the attendee's name suitable for conversion to a decimal
+            // TODO: There are how million colors in sRGB? Then why not use this as max value and ensure a good spread?
+            //       Hashes always have a high number, so the reason why we use the remainder of the modulo operation
+            //       below makes somehow sense, though it limits the variation to 360 colors which is not good enough.
+            //       The saturation makes it more diverse, but only by a factor of 3. So essentially there are 360 * 3
+            //       colors. By far lower than the 16.7 million colors in sRGB. But of course, we need distinct colors
+            //       so if 500 thousand colors of these 16.7 millions are so similar that we can't distinguish them,
+            //       there's no need for such a high variance. Hence we'd still need to partition the colors in a way
+            //       that they are distinct enough.
+            $hash = hexdec(hash('sha256', $attendeeName));
+            // Limit the hue to a maximum of 360 as it's HSL's maximum of 360 degrees
+            $h = (int) fmod($hash, 359.0); // TODO: Check if 359 is really of advantage here, instead of 360
+            // The hue is already at least 1 degree off to every other, using a limited set of saturation values
+            // further ensures that colors are distinct enough even if similar
+            $s = [35, 50, 65][$h % 3];
+
+            $this->entryColors[$attendeeName] = [$h, $s];
+        } else {
+            [$h, $s] = $this->entryColors[$attendeeName];
+        }
+
+        // We use a fixed luminosity to ensure good and equal contrast in both dark and light mode
+        return sprintf('~"hsl(%d %d%% 50%% / %d%%)"', $h, $s, $transparency);
     }
 }

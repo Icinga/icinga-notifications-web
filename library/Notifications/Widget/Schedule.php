@@ -89,10 +89,8 @@ class Schedule extends BaseHtmlElement
             foreach ($members as $member) {
                 if ($member->contact_id !== null) {
                     $attendee = new Attendee($member->contact->full_name);
-                    $attendee->setColor($member->contact->color);
                 } else { // $member->contactgroup_id !== null
                     $attendee = new Attendee($member->contactgroup->name);
-                    $attendee->setColor($member->contactgroup->color);
                     $attendee->setIcon('users');
                 }
 
