@@ -50,12 +50,15 @@ class EventRuleController extends CompatController
         $ruleId = $this->params->getRequired('id');
 
         $eventRuleConfigValues = $this->fromDb((int) $ruleId);
+        $filter = &$eventRuleConfigValues['object_filter']; // Assignment by reference to is used as search editor is a
+                                                            // different form and the config must have the updated
+                                                            // object_filter as soon as the search editor is closed
 
         if ($this->getRequest()->isPost()) {
             if ($this->getRequest()->has('searchbar')) {
-                $eventRuleConfigValues['object_filter'] = $this->getRequest()->get('searchbar');
+                $filter = $this->getRequest()->get('searchbar');
             } else {
-                $eventRuleConfigValues['object_filter'] = null;
+                $filter = null;
             }
         }
 
@@ -63,15 +66,22 @@ class EventRuleController extends CompatController
             $eventRuleConfigValues,
             Url::fromPath(
                 'notifications/event-rule/search-editor',
-                ['id' => $ruleId, 'object_filter' => $eventRuleConfigValues['object_filter']]
+                ['id' => $ruleId, 'object_filter' => $filter]
             )
         ))
             ->populate($eventRuleConfigValues)
             ->on(Form::ON_SUCCESS, function (EventRuleConfigForm $form) use ($ruleId, $eventRuleConfigValues) {
-                $config = $form->getValues();
-                $config['object_filter'] = $eventRuleConfigValues['object_filter'];
-                $form->addOrUpdateRule($ruleId, $config);
-                Notification::success((sprintf(t('Successfully saved event rule %s'), $eventRuleConfigValues['name'])));
+                $diff = $form->getChanges();
+                if (empty($diff)) {
+                    return;
+                }
+
+                $form->addOrUpdateRule($ruleId, $diff);
+                Notification::success(sprintf(
+                    t('Successfully saved event rule %s'),
+                    $eventRuleConfigValues['name']
+                ));
+
                 $this->redirectNow(Links::eventRule((int) $ruleId));
             })
             ->on(
@@ -197,6 +207,7 @@ class EventRuleController extends CompatController
         }
 
         $config = iterator_to_array($rule);
+        $config['object_filter'] = $config['object_filter'] ?? null;
 
         foreach ($rule->rule_escalation as $re) {
             foreach ($re as $k => $v) {

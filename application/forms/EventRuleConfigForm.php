@@ -422,10 +422,16 @@ class EventRuleConfigForm extends Form
             ]);
 
             $id = $db->lastInsertId();
-        } else {
+        } elseif (isset($config['object_filter'])) {
             $db->update('rule', [
                 'object_filter' => $config['object_filter'] ?? null,
             ], ['id = ?' => $id]);
+        }
+
+        if (! isset($config['rule_escalation'])) {
+            $db->commitTransaction();
+
+            return $id;
         }
 
         $escalationsFromDb = RuleEscalation::on($db)
@@ -597,6 +603,27 @@ class EventRuleConfigForm extends Form
         $db->delete('rule', ['id = ?' => $id]);
 
         $db->commitTransaction();
+    }
+
+    /**
+     * Get the newly made changes
+     *
+     * @return array
+     */
+    public function getChanges(): array
+    {
+        $values = $this->getValues();
+        $dbValuesToCompare = array_intersect_key($this->config, $values);
+
+        $checker = static function ($a, $b) use (&$checker) {
+            if (! is_array($a) || ! is_array($b)) {
+                return $a <=> $b;
+            }
+
+            return empty(array_udiff_assoc($a, $b, $checker)) ? 0 : 1;
+        };
+
+        return array_udiff_assoc($values, $dbValuesToCompare, $checker);
     }
 
     /**
