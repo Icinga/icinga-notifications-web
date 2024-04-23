@@ -285,16 +285,25 @@ class EventRuleConfigForm extends Form
 
                 /** @var Condition $filter */
                 $filter = QueryString::parse($condition);
-                $conditionFormValues['column_' . $count] = $filter->getColumn() === 'placeholder'
+                $conditionCol = $filter->getColumn();
+                $conditionFormValues['column_' . $count] = $conditionCol === 'placeholder'
                     ? null
-                    : $filter->getColumn();
+                    : $conditionCol;
 
                 if ($conditionFormValues['column_' . $count]) {
                     $conditionFormValues['type_' . $count] = $conditionFormValues['column_' . $count];
                 }
 
                 $conditionFormValues['operator_' . $count] = QueryString::getRuleSymbol($filter);
-                $conditionFormValues['val_' . $count] = $filter->getValue();
+                $conditionValue = $filter->getValue();
+
+                if ($conditionCol === 'incident_age') {
+                    $age = str_split($conditionValue, strlen($conditionValue) - 1);
+                    $conditionFormValues['val_' . $count] = $age[0];
+                    $conditionFormValues['unit_' . $count] = $age[1];
+                } else {
+                    $conditionFormValues['val_' . $count] = $conditionValue;
+                }
             }
 
             $formValues['escalation-condition_' . bin2hex($position)] = $conditionFormValues;

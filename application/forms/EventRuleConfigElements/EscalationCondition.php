@@ -10,7 +10,6 @@ use Icinga\Module\Notifications\Widget\ItemList\EscalationConditionListItem;
 use ipl\Html\FormElement\FieldsetElement;
 use ipl\Html\FormElement\SubmitButtonElement;
 use ipl\Stdlib\Filter;
-use ipl\Validator\CallbackValidator;
 use ipl\Web\Filter\QueryString;
 use ipl\Web\Widget\Icon;
 
@@ -111,8 +110,14 @@ class EscalationCondition extends FieldsetElement
             );
 
             $valName = 'val_' . $i;
+            $unitName = 'unit_' . $i;
+            $valUnit = null;
             switch ($this->getPopulatedValue('column_' . $i)) {
                 case 'incident_severity':
+                    if ($this->getPopulatedValue($unitName)) {
+                        $this->clearPopulatedValue($valName);
+                    }
+
                     $val = $this->createElement(
                         'select',
                         $valName,
@@ -134,35 +139,34 @@ class EscalationCondition extends FieldsetElement
 
                     break;
                 case 'incident_age':
+                    if ($this->getPopulatedValue($unitName) === null) {
+                        $this->clearPopulatedValue($valName);
+                    }
+
                     $val = $this->createElement(
-                        'text',
+                        'number',
                         $valName,
                         [
                             'required'   => true,
-                            'class'      => ['autosubmit', 'right-operand'],
-                            'validators' => [
-                                new CallbackValidator(function ($value, $validator) {
-                                    if (! preg_match('~^\d+(?:\.?\d*)?[hms]{1}$~', $value)) {
-                                        $validator->addMessage(
-                                            $this->translate(
-                                                'Only numbers with optional fractions (separated by a dot)'
-                                                . ' and one of these suffixes are allowed: h, m, s'
-                                            )
-                                        );
+                            'class'      => 'right-operand',
+                            'step'       => 0.5,
+                            'value'      => 1
+                        ]
+                    );
 
-                                        return false;
-                                    }
-
-                                    $validator->clearMessages();
-
-                                    return true;
-                                })
-                            ]
+                    $valUnit = $this->createElement(
+                        'select',
+                        $unitName,
+                        [
+                            'options' => ['m' => 'm', 'h' => 'h'],
+                            'class'   => ['autosubmit', 'unit'],
+                            'value'   => 'm'
                         ]
                     );
 
                     break;
                 default:
+                    $this->clearPopulatedValue($valName);
                     $val = $this->createElement('text', $valName, [
                         'class'       => 'right-operand',
                         'placeholder' => $this->translate('Please make a decision'),
@@ -174,6 +178,14 @@ class EscalationCondition extends FieldsetElement
             $this->registerElement($op);
             $this->registerElement($val);
 
+            if ($valUnit) {
+                $this->registerElement($valUnit);
+                $unit = $valUnit->getValue();
+                $value = $val->getValue();
+                $val->getAttributes()->set('min', $unit === 'm' ? 1 : 0.5);
+                $val->getAttributes()->set('value', $unit === 'm' && (float) $value === 0.5 ? 1 : $value);
+            }
+
             $removeButton = null;
 
             if (($conditionCount > 1) || ($conditionCount === 1 && ! $configHasZeroConditionEscalation)) {
@@ -184,7 +196,7 @@ class EscalationCondition extends FieldsetElement
             }
 
             (new EventRuleDecorator())->decorate($val);
-            $this->conditions[$i] = new EscalationConditionListItem($i, $col, $op, $val, $removeButton);
+            $this->conditions[$i] = new EscalationConditionListItem($i, $col, $op, $val, $valUnit, $removeButton);
         }
 
         if ($removePosition) {
@@ -258,7 +270,8 @@ class EscalationCondition extends FieldsetElement
 
             $filterStr = $chosenType
                 . $this->getValue('operator_' . $count)
-                . ($this->getValue('val_' . $count) ?? ($chosenType === 'incident_severity' ? 'ok' : ''));
+                . ($this->getValue('val_' . $count) ?? ($chosenType === 'incident_severity' ? 'ok' : '1'))
+                . $this->getValue('unit_' . $count, '');
 
             $filter->add(QueryString::parse($filterStr));
         }
