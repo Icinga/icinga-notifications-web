@@ -7,7 +7,6 @@ namespace Icinga\Module\Notifications\Widget\Calendar;
 use DateInterval;
 use DateTime;
 use DateTimeInterface;
-use Icinga\Module\Notifications\Widget\Calendar;
 use Icinga\Util\Csp;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
@@ -42,8 +41,8 @@ abstract class BaseGrid extends BaseHtmlElement
 
     protected $defaultAttributes = ['class' => 'calendar-grid'];
 
-    /** @var Calendar */
-    protected $calendar;
+    /** @var EntryProvider */
+    protected $provider;
 
     /** @var DateTime */
     protected $start;
@@ -58,13 +57,14 @@ abstract class BaseGrid extends BaseHtmlElement
     protected $entryColors = [];
 
     /**
-     * Create a new calendar
+     * Create a new time grid
      *
+     * @param EntryProvider $provider The provider for the grid's entries
      * @param DateTime $start When the shown timespan should start
      */
-    public function __construct(Calendar $calendar, DateTime $start)
+    public function __construct(EntryProvider $provider, DateTime $start)
     {
-        $this->calendar = $calendar;
+        $this->provider = $provider;
         $this->setGridStart($start);
     }
 
@@ -128,16 +128,14 @@ abstract class BaseGrid extends BaseHtmlElement
 
     protected function assembleGrid(BaseHtmlElement $grid): void
     {
-        $url = $this->calendar->getAddEntryUrl();
         foreach ($this->createGridSteps() as $step) {
+            $url = $this->provider->getStepUrl($step);
             if ($url !== null) {
-                $content = new Link(null, $url->with('start', $step->getStart()->format('Y-m-d\TH:i:s')));
-                $content->addFrom($step);
-                $step->setHtmlContent($content);
+                $step->setHtmlContent((new Link(null, $url))->addFrom($step));
             }
 
             if ($step->getEnd()->format('H') === '00') {
-                $extraEntryUrl = $this->calendar->prepareDayViewUrl($step->getStart());
+                $extraEntryUrl = $this->provider->getExtraEntryUrl($step);
                 if ($extraEntryUrl !== null) {
                     $step->addHtml(
                         (new ExtraEntryCount(null, $extraEntryUrl))
@@ -194,7 +192,7 @@ abstract class BaseGrid extends BaseHtmlElement
         $cellOccupiers = [];
         /** @var SplObjectStorage<Entry, int[][]> $occupiedCells */
         $occupiedCells = new SplObjectStorage();
-        foreach ($this->calendar->getEntries() as $entry) {
+        foreach ($this->provider->getEntries() as $entry) {
             $actualStart = $this->roundToNearestThirtyMinute($entry->getStart());
             if ($actualStart < $gridStartsAt) {
                 $entryStartPos = 0;

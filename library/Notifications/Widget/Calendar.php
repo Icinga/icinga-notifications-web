@@ -9,6 +9,7 @@ use Icinga\Module\Notifications\Widget\Calendar\BaseGrid;
 use Icinga\Module\Notifications\Widget\Calendar\Controls;
 use Icinga\Module\Notifications\Widget\Calendar\DayGrid;
 use Icinga\Module\Notifications\Widget\Calendar\Entry;
+use Icinga\Module\Notifications\Widget\Calendar\EntryProvider;
 use Icinga\Module\Notifications\Widget\Calendar\GridStep;
 use Icinga\Module\Notifications\Widget\Calendar\MonthGrid;
 use Icinga\Module\Notifications\Widget\Calendar\Util;
@@ -25,7 +26,7 @@ use ipl\Web\Url;
 use LogicException;
 use Traversable;
 
-class Calendar extends BaseHtmlElement
+class Calendar extends BaseHtmlElement implements EntryProvider
 {
     /** @var string Mode to show an entire month */
     public const MODE_MONTH = 'month';
@@ -78,9 +79,13 @@ class Calendar extends BaseHtmlElement
         return $this;
     }
 
-    public function getAddEntryUrl(): ?Url
+    public function getStepUrl(GridStep $step): ?Url
     {
-        return $this->addEntryUrl;
+        if ($this->addEntryUrl === null) {
+            return null;
+        }
+
+        return $this->addEntryUrl->with('start', $step->getStart()->format('Y-m-d\TH:i:s'));
     }
 
     public function setUrl(?Url $url): self
@@ -90,12 +95,12 @@ class Calendar extends BaseHtmlElement
         return $this;
     }
 
-    public function prepareDayViewUrl(DateTime $date): ?Url
+    public function getExtraEntryUrl(GridStep $step): ?Url
     {
         return $this->url
             ? (clone $this->url)->overwriteParams([
                 'mode' => 'day',
-                'day'  => $date->format('Y-m-d')
+                'day'  => $step->getStart()->format('Y-m-d')
             ])
             : null;
     }
