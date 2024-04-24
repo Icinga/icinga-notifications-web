@@ -299,6 +299,78 @@ class EventRuleController extends CompatController
         return $filterStr !== '' ? rawurldecode($filterStr) : null;
     }
 
+    public function addAction(): void
+    {
+        $this->addTitleTab(t('Add Event Rule'));
+        $this->getTabs()->setRefreshUrl(Url::fromRequest());
+
+        // Add an empty container and set it as the X-Icinga-Container when sending extra updates
+        // from the modal for filter or event rule
+        $this->addContent(Html::tag('div', ['class' => 'container', 'id' => 'dummy-event-rule-container']));
+
+        $this->controls->addAttributes(['class' => 'event-rule-detail']);
+        $ruleId = $this->params->get('id');
+
+        if ($this->getRequest()->isPost()) {
+            if ($this->getRequest()->has('searchbar')) {
+                $eventRule['object_filter'] = $this->getRequest()->get('searchbar');
+            } else {
+                $eventRule['object_filter'] = null;
+            }
+        }
+
+        $eventRuleConfigSubmitButton = (new SubmitButtonElement(
+            'save',
+            [
+                'label'          => t('Add Event Rule'),
+                'form'           => 'event-rule-config-form'
+            ]
+        ))->setWrapper(new HtmlElement('div', Attributes::create(['class' => ['icinga-controls', 'save-config']])));
+
+        $eventRuleConfig = new EventRuleConfigForm(
+            $eventRule,
+            Url::fromPath(
+                'notifications/event-rule/search-editor',
+                ['id' => $ruleId, 'object_filter' => $eventRule['object_filter']]
+            )
+        );
+
+        $eventRuleConfig
+            ->on(Form::ON_SUCCESS, function (EventRuleConfigForm $form) use ($eventRule) {
+                /** @var string $ruleId */
+                $ruleId = $eventRule['id'];
+                /** @var string $ruleName */
+                $ruleName = $eventRule['name'];
+                $eventRuleConfig = array_merge($eventRule, $form->getValues());
+                $form->addOrUpdateRule($ruleId, $eventRuleConfig);
+                Notification::success(sprintf(t('Successfully add event rule %s'), $ruleName));
+                $this->redirectNow('__CLOSE__');
+            })
+            ->handleRequest($this->getServerRequest());
+
+        $eventRuleForm = Html::tag('div', ['class' => 'event-rule-form'], [
+            Html::tag('h2', $eventRule['name'] ?? ''),
+            Html::tag(
+                'div',
+                [
+                    'class' => 'not-allowed',
+                    'title' => $this->translate('Cannot edit event rule until it is saved to database')
+                ],
+                (new Link(
+                    new Icon('edit'),
+                    Url::fromPath('notifications/event-rule/edit', [
+                        'id' => -1
+                    ]),
+                    ['class' => ['control-button', 'disabled']]
+                ))->openInModal()
+            )
+        ]);
+
+        $this->addControl($eventRuleForm);
+        $this->addControl($eventRuleConfigSubmitButton);
+        $this->addContent($eventRuleConfig);
+    }
+
     public function editAction(): void
     {
         /** @var string $ruleId */
