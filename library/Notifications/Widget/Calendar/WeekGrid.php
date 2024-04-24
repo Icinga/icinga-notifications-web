@@ -41,17 +41,22 @@ class WeekGrid extends BaseGrid
 
     protected function createGridSteps(): Traversable
     {
-        $interval = new DateInterval('P1D');
+        $oneDay = new DateInterval('P1D');
+        $oneHour = new DateInterval('PT1H');
         $hourStartsAt = clone $this->getGridStart();
+        $nextHour = (clone $hourStartsAt)->add($oneHour);
         for ($i = 0; $i < 7 * 24; $i++) {
-            if ($i > 0 && $i % 7 === 0) {
+            $x = $i % 7;
+            if ($i > 0 && $x === 0) {
                 $hourStartsAt = clone $this->getGridStart();
                 $hourStartsAt->add(new DateInterval(sprintf('PT%dH', $i / 7)));
+                $nextHour = (clone $hourStartsAt)->add($oneHour);
             }
 
-            yield $hourStartsAt;
+            yield new GridStep($hourStartsAt, $nextHour, $x, (int) floor($i / 7));
 
-            $hourStartsAt->add($interval);
+            $hourStartsAt = (clone $hourStartsAt)->add($oneDay);
+            $nextHour = (clone $nextHour)->add($oneDay);
         }
     }
 
@@ -114,20 +119,6 @@ class WeekGrid extends BaseGrid
         }
 
         return $sidebar;
-    }
-
-    protected function assembleGridStep(BaseHtmlElement $content, DateTime $step): void
-    {
-        if ($step->format('H') === '23') {
-            $dayViewUrl = $this->calendar->prepareDayViewUrl($step);
-            if ($dayViewUrl !== null) {
-                $content->addHtml(
-                    (new ExtraEntryCount(null, $dayViewUrl))
-                        ->setGrid($this)
-                        ->setGridStep($step)
-                );
-            }
-        }
     }
 
     protected function assemble()

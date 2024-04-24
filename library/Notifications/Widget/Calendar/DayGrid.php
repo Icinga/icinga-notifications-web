@@ -49,9 +49,11 @@ class DayGrid extends BaseGrid
         $interval = new DateInterval('PT1H');
         $hourStartsAt = clone $this->getGridStart();
         for ($i = 0; $i < 24; $i++) {
-            yield $hourStartsAt;
+            $nextHour = (clone $hourStartsAt)->add($interval);
 
-            $hourStartsAt->add($interval);
+            yield new GridStep($hourStartsAt, $nextHour, 0, $i);
+
+            $hourStartsAt = $nextHour;
         }
     }
 
@@ -69,7 +71,6 @@ class DayGrid extends BaseGrid
         ];
 
         $currentDay = clone $this->getGridStart();
-        $interval = new DateInterval('P1D');
         $header->addHtml(new HtmlElement(
             'div',
             Attributes::create(['class' => 'column-title']),

@@ -89,6 +89,11 @@ abstract class BaseGrid extends BaseHtmlElement
         return $this->end;
     }
 
+    /**
+     * Create steps to show on the grid
+     *
+     * @return Traversable<int, GridStep>
+     */
     abstract protected function createGridSteps(): Traversable;
 
     abstract protected function calculateGridEnd(): DateTime;
@@ -124,30 +129,26 @@ abstract class BaseGrid extends BaseHtmlElement
     protected function assembleGrid(BaseHtmlElement $grid): void
     {
         $url = $this->calendar->getAddEntryUrl();
-        foreach ($this->createGridSteps() as $gridStep) {
-            $step = new HtmlElement(
-                'div',
-                Attributes::create([
-                    'class' => 'step',
-                    'data-start' => $gridStep->format(DateTimeInterface::ATOM)
-                ])
-            );
-
+        foreach ($this->createGridSteps() as $step) {
             if ($url !== null) {
-                $content = new Link(null, $url->with('start', $gridStep->format('Y-m-d\TH:i:s')));
-                $step->addHtml($content);
-            } else {
-                $content = $step;
+                $content = new Link(null, $url->with('start', $step->getStart()->format('Y-m-d\TH:i:s')));
+                $content->addFrom($step);
+                $step->setHtmlContent($content);
             }
 
-            $this->assembleGridStep($content, $gridStep);
+            if ($step->getEnd()->format('H') === '00') {
+                $extraEntryUrl = $this->calendar->prepareDayViewUrl($step->getStart());
+                if ($extraEntryUrl !== null) {
+                    $step->addHtml(
+                        (new ExtraEntryCount(null, $extraEntryUrl))
+                            ->setGrid($this)
+                            ->setGridStep($step->getStart())
+                    );
+                }
+            }
 
             $grid->addHtml($step);
         }
-    }
-
-    protected function assembleGridStep(BaseHtmlElement $content, DateTime $step): void
-    {
     }
 
     protected function createGridOverlay(): BaseHtmlElement
