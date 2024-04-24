@@ -29,7 +29,8 @@ class IncidentsController extends CompatController
         $this->addTitleTab(t('Incidents'));
 
         $incidents = Incident::on(Database::get())
-            ->with('object');
+            ->with('object')
+            ->withColumns('object.id_tags');
 
         $limitControl = $this->createLimitControl();
         $sortControl = $this->createSortControl(

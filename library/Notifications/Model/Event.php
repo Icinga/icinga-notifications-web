@@ -4,12 +4,15 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use Icinga\Module\Notifications\Common\Database;
 use ipl\Orm\Behavior\Binary;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
+use ipl\Sql\Connection;
+use ipl\Sql\Select;
 
 /**
  * Event model
@@ -60,6 +63,19 @@ class Event extends Model
     public function getDefaultSort()
     {
         return 'event.time';
+    }
+
+    public static function on(Connection $db)
+    {
+        $query = parent::on($db);
+
+        $query->on(Query::ON_SELECT_ASSEMBLED, function (Select $select) use ($query) {
+            if (isset($query->getUtilize()['event.object.object_id_tag'])) {
+                Database::registerGroupBy($query, $select);
+            }
+        });
+
+        return $query;
     }
 
     public function createBehaviors(Behaviors $behaviors)
