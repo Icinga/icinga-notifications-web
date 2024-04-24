@@ -22,6 +22,7 @@ use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\I18n\StaticTranslator;
 use ipl\Scheduler\RRule;
+use ipl\Web\Style;
 use ipl\Web\Url;
 use LogicException;
 use Traversable;
@@ -43,6 +44,9 @@ class Calendar extends BaseHtmlElement implements EntryProvider
 
     /** @var Controls */
     protected $controls;
+
+    /** @var Style */
+    protected $style;
 
     /** @var BaseGrid The grid implementation */
     protected $grid;
@@ -70,6 +74,22 @@ class Calendar extends BaseHtmlElement implements EntryProvider
         }
 
         return $this->controls;
+    }
+
+    public function setStyle(Style $style): self
+    {
+        $this->style = $style;
+
+        return $this;
+    }
+
+    public function getStyle(): Style
+    {
+        if ($this->style === null) {
+            $this->style = new Style();
+        }
+
+        return $this->style;
     }
 
     public function setAddEntryUrl(?Url $url): self
@@ -127,11 +147,11 @@ class Calendar extends BaseHtmlElement implements EntryProvider
     {
         if ($this->grid === null) {
             if ($this->getControls()->getViewMode() === self::MODE_MONTH) {
-                $this->grid = new MonthGrid($this, $this->getModeStart());
+                $this->grid = new MonthGrid($this, $this->getStyle(), $this->getModeStart());
             } elseif ($this->getControls()->getViewMode() === self::MODE_WEEK) {
-                $this->grid = new WeekGrid($this, $this->getModeStart());
+                $this->grid = new WeekGrid($this, $this->getStyle(), $this->getModeStart());
             } else {
-                $this->grid = new DayGrid($this, $this->getModeStart());
+                $this->grid = new DayGrid($this, $this->getStyle(), $this->getModeStart());
             }
         }
 
@@ -207,7 +227,8 @@ class Calendar extends BaseHtmlElement implements EntryProvider
                 new HtmlElement('strong', null, Text::create($month)),
                 $modeStart->format('Y')
             )),
-            $this->getGrid()
+            $this->getGrid(),
+            $this->getStyle()
         );
     }
 }

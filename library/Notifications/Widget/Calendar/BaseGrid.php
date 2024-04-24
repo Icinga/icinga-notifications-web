@@ -7,7 +7,6 @@ namespace Icinga\Module\Notifications\Widget\Calendar;
 use DateInterval;
 use DateTime;
 use DateTimeInterface;
-use Icinga\Util\Csp;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\HtmlElement;
@@ -44,6 +43,9 @@ abstract class BaseGrid extends BaseHtmlElement
     /** @var EntryProvider */
     protected $provider;
 
+    /** @var Style */
+    protected $style;
+
     /** @var DateTime */
     protected $start;
 
@@ -60,11 +62,13 @@ abstract class BaseGrid extends BaseHtmlElement
      * Create a new time grid
      *
      * @param EntryProvider $provider The provider for the grid's entries
+     * @param Style $style Required to place entries onto the grid's overlay
      * @param DateTime $start When the shown timespan should start
      */
-    public function __construct(EntryProvider $provider, DateTime $start)
+    public function __construct(EntryProvider $provider, Style $style, DateTime $start)
     {
         $this->provider = $provider;
+        $this->style = $style;
         $this->setGridStart($start);
     }
 
@@ -172,12 +176,6 @@ abstract class BaseGrid extends BaseHtmlElement
 
     protected function assembleGridOverlay(BaseHtmlElement $overlay): void
     {
-        $style = (new Style())->setNonce(Csp::getStyleNonce());
-        $style->setModule('notifications'); // TODO: Don't hardcode this!
-        $style->setSelector('.calendar-grid .overlay');
-
-        $overlay->addHtml($style);
-
         $maxRowSpan = $this->getMaximumRowSpan();
         $sectionsPerStep = $this->getSectionsPerStep();
         $rowStartModifier = $this->getRowStartModifier();
@@ -318,12 +316,6 @@ abstract class BaseGrid extends BaseHtmlElement
                     $gradientClass = 'ending-gradient';
                 }
 
-                $style->add(".$entryClass", [
-                    '--entry-bg' => $this->getEntryColor($entry, 10),
-                    'grid-area' => sprintf('~"%d / %d / %d / %d"', ...$gridArea),
-                    'border-color' => $this->getEntryColor($entry, 50)
-                ]);
-
                 $entryHtml = new HtmlElement(
                     'div',
                     Attributes::create([
@@ -335,6 +327,12 @@ abstract class BaseGrid extends BaseHtmlElement
                         'data-col-end' => $gridArea[3]
                     ])
                 );
+
+                $this->style->addFor($entryHtml, [
+                    '--entry-bg' => $this->getEntryColor($entry, 10),
+                    'grid-area' => sprintf('~"%d / %d / %d / %d"', ...$gridArea),
+                    'border-color' => $this->getEntryColor($entry, 50)
+                ]);
 
                 if ($fromPrevGrid) {
                     $continuationType = $toNextGrid ? self::ACROSS_GRID : self::FROM_PREV_GRID;

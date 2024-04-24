@@ -11,11 +11,13 @@ use Icinga\Module\Notifications\Model\TimeperiodEntry;
 use Icinga\Module\Notifications\Widget\Calendar\Attendee;
 use Icinga\Module\Notifications\Widget\Calendar\Controls;
 use Icinga\Module\Notifications\Widget\Calendar\Entry;
+use Icinga\Util\Csp;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\HtmlElement;
 use ipl\Stdlib\Filter;
 use ipl\Web\Common\BaseTarget;
+use ipl\Web\Style;
 use ipl\Web\Url;
 use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
@@ -113,7 +115,12 @@ class Schedule extends BaseHtmlElement
     public function assemble()
     {
         $calendar = (new Calendar())
-            ->setControls($this->controls);
+            ->setControls($this->controls)
+            ->setStyle(
+                (new Style())
+                    ->setNonce(Csp::getStyleNonce())
+                    ->setModule('notifications')
+            );
 
         $this->setBaseTarget('entry-form');
         if ($this->controls->getBaseTarget() === null) {
