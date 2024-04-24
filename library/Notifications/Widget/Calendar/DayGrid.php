@@ -46,7 +46,7 @@ class DayGrid extends BaseGrid
 
     protected function createGridSteps(): Traversable
     {
-        $interval = new DateInterval('P1D');
+        $interval = new DateInterval('PT1H');
         $hourStartsAt = clone $this->getGridStart();
         for ($i = 0; $i < 24; $i++) {
             yield $hourStartsAt;
