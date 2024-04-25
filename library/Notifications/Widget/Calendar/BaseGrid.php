@@ -14,6 +14,7 @@ use ipl\Html\Text;
 use ipl\I18n\Translation;
 use ipl\Web\Style;
 use ipl\Web\Widget\Link;
+use LogicException;
 use SplObjectStorage;
 use Traversable;
 
@@ -35,6 +36,9 @@ abstract class BaseGrid extends BaseHtmlElement
 
     /** @var string Continuation type of the entry row continuing across edges of the grid */
     public const ACROSS_EDGES = 'across-edges';
+
+    /** @var int Return this in {@see getSectionsPerStep} to signal an infinite number of sections */
+    protected const INFINITE = 0;
 
     protected $tag = 'div';
 
@@ -179,13 +183,26 @@ abstract class BaseGrid extends BaseHtmlElement
         $maxRowSpan = $this->getMaximumRowSpan();
         $sectionsPerStep = $this->getSectionsPerStep();
         $rowStartModifier = $this->getRowStartModifier();
-        // +1 because rows are 0-based here, but CSS grid rows are 1-based, hence the default modifier is 1
-        $fillAvailableSpace = $maxRowSpan === ($sectionsPerStep - $rowStartModifier + 1);
+
+        $infiniteSections = $sectionsPerStep === self::INFINITE;
+        if ($infiniteSections) {
+            $fillAvailableSpace = false;
+        } else {
+            // +1 because rows are 0-based here, but CSS grid rows are 1-based, hence the default modifier is 1
+            $fillAvailableSpace = $maxRowSpan === ($sectionsPerStep - $rowStartModifier + 1);
+        }
 
         $gridStartsAt = $this->getGridStart();
         $gridEndsAt = $this->getGridEnd();
         $amountOfDays = $gridStartsAt->diff($gridEndsAt)->days;
         $gridBorderAt = $this->getNoOfVisuallyConnectedHours() * 2;
+
+        if ($infiniteSections && $amountOfDays !== $gridBorderAt / 48) {
+            throw new LogicException(
+                'The number of days in the grid must match the number of visually'
+                . ' connected hours, when an infinite number of sections is used.'
+            );
+        }
 
         $cellOccupiers = [];
         /** @var SplObjectStorage<Entry, int[][]> $occupiedCells */
@@ -272,7 +289,7 @@ abstract class BaseGrid extends BaseHtmlElement
                 $colEnd = max($hours);
 
                 // Calculate number of entries that are not displayed in the grid for each date
-                if ($rowStart > $row + $sectionsPerStep) {
+                if (! $infiniteSections && $rowStart > $row + $sectionsPerStep) {
                     $startOffset = (int) (($row / $sectionsPerStep) * ($gridBorderAt / 48) + $colStart / 48);
                     $endOffset = (int) (($row / $sectionsPerStep) * ($gridBorderAt / 48) + $colEnd / 48);
                     $startDate = (clone $this->getGridStart())->add(new DateInterval("P$startOffset" . 'D'));
@@ -348,6 +365,19 @@ abstract class BaseGrid extends BaseHtmlElement
                 $fromPrevGrid = false;
                 $remainingRows -= 1;
             }
+        }
+
+        if ($infiniteSections) {
+            $lastRow = array_reduce($rowPlacements, function ($carry, $placements) {
+                return array_reduce($placements, function ($carry, $placement) {
+                    return max($placement[0] + $placement[1], $carry);
+                }, $carry);
+            }, 1);
+
+            $this->style->addFor($this, [
+                '--primaryRows' => $lastRow === 1 ? 1 : ($lastRow - $rowStartModifier) / $maxRowSpan,
+                '--rowsPerStep' => $maxRowSpan
+            ]);
         }
     }
 
