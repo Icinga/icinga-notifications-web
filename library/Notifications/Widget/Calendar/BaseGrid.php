@@ -108,7 +108,10 @@ abstract class BaseGrid extends BaseHtmlElement
 
     abstract protected function getNoOfVisuallyConnectedHours(): int;
 
-    abstract protected function getGridArea(int $rowStart, int $rowEnd, int $colStart, int $colEnd): array;
+    protected function getGridArea(int $rowStart, int $rowEnd, int $colStart, int $colEnd): array
+    {
+        return [$rowStart, $colStart, $rowEnd, $colEnd];
+    }
 
     protected function getSectionsPerStep(): int
     {

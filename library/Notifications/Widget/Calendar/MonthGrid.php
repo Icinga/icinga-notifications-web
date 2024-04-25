@@ -48,11 +48,6 @@ class MonthGrid extends BaseGrid
         return 7 * 24;
     }
 
-    protected function getGridArea(int $rowStart, int $rowEnd, int $colStart, int $colEnd): array
-    {
-        return [$rowStart, $colStart, $rowEnd, $colEnd];
-    }
-
     protected function createGridSteps(): Traversable
     {
         $interval = new DateInterval('P1D');
