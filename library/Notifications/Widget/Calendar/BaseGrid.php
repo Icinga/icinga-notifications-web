@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Widget\Calendar;
 use DateInterval;
 use DateTime;
 use DateTimeInterface;
+use Generator;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\HtmlElement;
@@ -19,23 +20,32 @@ use SplObjectStorage;
 use Traversable;
 
 /**
- * @phpstan-type ContinuationType self::ACROSS_GRID | self::FROM_PREV_GRID | self::TO_NEXT_GRID | self::ACROSS_EDGES
+ * @phpstan-type GridArea array{0: int, 1: int, 2: int, 3: int}
+ * @phpstan-type GridContinuationType self::FROM_PREV_GRID | self::TO_NEXT_GRID | self::ACROSS_GRID
+ * @phpstan-type EdgeContinuationType self::ACROSS_LEFT_EDGE | self::ACROSS_RIGHT_EDGE | self::ACROSS_BOTH_EDGES
+ * @phpstan-type ContinuationType GridContinuationType | EdgeContinuationType
  */
 abstract class BaseGrid extends BaseHtmlElement
 {
     use Translation;
 
-    /** @var string Continuation type of the entry row continuing from the previous grid */
-    public const FROM_PREV_GRID = 'from-prev-grid';
+    /** @var string Continuation of an entry that started on the previous grid */
+    protected const FROM_PREV_GRID = 'from-prev-grid';
 
-    /** @var string Continuation type of the entry row continuing to the next grid */
-    public const TO_NEXT_GRID = 'to-next-grid';
+    /** @var string Continuation of an entry that continues on the next grid */
+    protected const TO_NEXT_GRID = 'to-next-grid';
 
-    /** @var string Continuation type of the entry row continuing from the previous grid to the next grid */
-    public const ACROSS_GRID = 'across-grid';
+    /** @var string Continuation of an entry that started on the previous grid and continues on the next */
+    protected const ACROSS_GRID = 'across-grid';
 
-    /** @var string Continuation type of the entry row continuing across edges of the grid */
-    public const ACROSS_EDGES = 'across-edges';
+    /** @var string Continuation of an entry that started on a previous grid row */
+    protected const ACROSS_LEFT_EDGE = 'across-left-edge';
+
+    /** @var string Continuation of an entry that continues on the next grid row */
+    protected const ACROSS_RIGHT_EDGE = 'across-right-edge';
+
+    /** @var string Continuation of an entry that started on a previous grid row and continues on the next */
+    protected const ACROSS_BOTH_EDGES = 'across-both-edges';
 
     /** @var int Return this in {@see getSectionsPerStep} to signal an infinite number of sections */
     protected const INFINITE = 0;
@@ -108,6 +118,16 @@ abstract class BaseGrid extends BaseHtmlElement
 
     abstract protected function getNoOfVisuallyConnectedHours(): int;
 
+    /**
+     * Translate the given grid area positions suitable for the current grid
+     *
+     * @param int $rowStart
+     * @param int $rowEnd
+     * @param int $colStart
+     * @param int $colEnd
+     *
+     * @return GridArea
+     */
     protected function getGridArea(int $rowStart, int $rowEnd, int $colStart, int $colEnd): array
     {
         return [$rowStart, $colStart, $rowEnd, $colEnd];
@@ -181,7 +201,17 @@ abstract class BaseGrid extends BaseHtmlElement
         return $this->extraEntriesCount[$date->format('Y-m-d')] ?? 0;
     }
 
-    protected function assembleGridOverlay(BaseHtmlElement $overlay): void
+    /**
+     * Yield the entries to show on the grid and place them using a flowing layout
+     *
+     * Entry positions are automatically calculated and can span multiple rows.
+     * Collisions are prevented and the grid can have a limited number of sections.
+     *
+     * @param Traversable<int, Entry> $entries
+     *
+     * @return Generator<array{0: GridArea, 1: ?ContinuationType}, Entry>
+     */
+    final protected function yieldFlowingEntries(Traversable $entries): Generator
     {
         $maxRowSpan = $this->getMaximumRowSpan();
         $sectionsPerStep = $this->getSectionsPerStep();
@@ -210,7 +240,7 @@ abstract class BaseGrid extends BaseHtmlElement
         $cellOccupiers = [];
         /** @var SplObjectStorage<Entry, int[][]> $occupiedCells */
         $occupiedCells = new SplObjectStorage();
-        foreach ($this->provider->getEntries() as $entry) {
+        foreach ($entries as $entry) {
             $actualStart = $this->roundToNearestThirtyMinute($entry->getStart());
             if ($actualStart < $gridStartsAt) {
                 $entryStartPos = 0;
@@ -318,52 +348,28 @@ abstract class BaseGrid extends BaseHtmlElement
                     $colEnd + 2
                 );
 
-                $entryClass = 'area-' . implode('-', $gridArea);
-                $lastRow = $remainingRows === 1;
-
-                if ($lastRow) {
+                $isLastRow = $remainingRows === 1;
+                if ($isLastRow) {
                     $toNextGrid = $gridEndsAt < $entry->getEnd();
                 }
 
                 $backward = $continuationType || $fromPrevGrid;
-                $forward = ! $lastRow || $toNextGrid;
-                $gradientClass = null;
-                if ($forward && $backward) {
-                    $gradientClass = 'two-way-gradient';
+                $forward = ! $isLastRow || $toNextGrid;
+                if ($backward && $forward) {
+                    $continuationType = self::ACROSS_BOTH_EDGES;
                 } elseif ($backward) {
-                    $gradientClass = 'opening-gradient';
+                    $continuationType = self::ACROSS_LEFT_EDGE;
                 } elseif ($forward) {
-                    $gradientClass = 'ending-gradient';
-                }
-
-                $entryHtml = new HtmlElement(
-                    'div',
-                    Attributes::create([
-                        'class' => ['entry', $gradientClass, $entryClass],
-                        'data-entry-id' => $entry->getId(),
-                        'data-row-start' => $gridArea[0],
-                        'data-col-start' => $gridArea[1],
-                        'data-row-end' => $gridArea[2],
-                        'data-col-end' => $gridArea[3]
-                    ])
-                );
-
-                $this->style->addFor($entryHtml, [
-                    '--entry-bg' => $this->getEntryColor($entry, 10),
-                    'grid-area' => sprintf('~"%d / %d / %d / %d"', ...$gridArea),
-                    'border-color' => $this->getEntryColor($entry, 50)
-                ]);
-
-                if ($fromPrevGrid) {
-                    $continuationType = $toNextGrid ? self::ACROSS_GRID : self::FROM_PREV_GRID;
+                    $continuationType = self::ACROSS_RIGHT_EDGE;
+                } elseif ($fromPrevGrid && $toNextGrid) {
+                    $continuationType = self::ACROSS_GRID;
+                } elseif ($fromPrevGrid) {
+                    $continuationType = self::FROM_PREV_GRID;
                 } elseif ($toNextGrid) {
                     $continuationType = self::TO_NEXT_GRID;
-                } elseif ($forward) {
-                    $continuationType = self::ACROSS_EDGES;
                 }
 
-                $this->assembleEntry($entryHtml, $entry, $continuationType);
-                $overlay->addHtml($entryHtml);
+                yield [$gridArea, $continuationType] => $entry;
 
                 $fromPrevGrid = false;
                 $remainingRows -= 1;
@@ -381,6 +387,44 @@ abstract class BaseGrid extends BaseHtmlElement
                 '--primaryRows' => $lastRow === 1 ? 1 : ($lastRow - $rowStartModifier) / $maxRowSpan,
                 '--rowsPerStep' => $maxRowSpan
             ]);
+        }
+    }
+
+    protected function assembleGridOverlay(BaseHtmlElement $overlay): void
+    {
+        foreach ($this->yieldFlowingEntries($this->provider->getEntries()) as $data => $entry) {
+            [$gridArea, $continuationType] = $data;
+
+            $gradientClass = null;
+            if ($continuationType === self::ACROSS_GRID || $continuationType === self::ACROSS_BOTH_EDGES) {
+                $gradientClass = 'two-way-gradient';
+            } elseif ($continuationType === self::FROM_PREV_GRID || $continuationType === self::ACROSS_LEFT_EDGE) {
+                $gradientClass = 'opening-gradient';
+            } elseif ($continuationType === self::TO_NEXT_GRID || $continuationType === self::ACROSS_RIGHT_EDGE) {
+                $gradientClass = 'ending-gradient';
+            }
+
+            $entryHtml = new HtmlElement(
+                'div',
+                Attributes::create([
+                    'class' => ['entry', $gradientClass, 'area-' . implode('-', $gridArea)],
+                    'data-entry-id' => $entry->getId(),
+                    'data-row-start' => $gridArea[0],
+                    'data-col-start' => $gridArea[1],
+                    'data-row-end' => $gridArea[2],
+                    'data-col-end' => $gridArea[3]
+                ])
+            );
+
+            $this->style->addFor($entryHtml, [
+                '--entry-bg' => $this->getEntryColor($entry, 10),
+                'grid-area' => sprintf('~"%d / %d / %d / %d"', ...$gridArea),
+                'border-color' => $this->getEntryColor($entry, 50)
+            ]);
+
+            $this->assembleEntry($entryHtml, $entry, $continuationType);
+
+            $overlay->addHtml($entryHtml);
         }
     }
 
