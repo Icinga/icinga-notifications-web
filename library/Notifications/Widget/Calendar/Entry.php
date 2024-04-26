@@ -17,6 +17,9 @@ class Entry
 
     protected $end;
 
+    /** @var ?int The 0-based position of the row where to place this entry on the grid */
+    protected $position;
+
     protected $rrule;
 
     /** @var Url */
@@ -71,6 +74,30 @@ class Entry
     public function getEnd(): ?DateTime
     {
         return $this->end;
+    }
+
+    /**
+     * Set the position of the row where to place this entry on the grid
+     *
+     * @param ?int $position The 0-based position of the row
+     *
+     * @return $this
+     */
+    public function setPosition(?int $position): self
+    {
+        $this->position = $position;
+
+        return $this;
+    }
+
+    /**
+     * Get the position of the row where to place this entry on the grid
+     *
+     * @return ?int The 0-based position of the row
+     */
+    public function getPosition(): ?int
+    {
+        return $this->position;
     }
 
     public function setRecurrencyRule(?string $rrule): self

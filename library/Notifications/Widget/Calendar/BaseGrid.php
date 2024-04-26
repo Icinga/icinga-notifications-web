@@ -19,6 +19,8 @@ use LogicException;
 use SplObjectStorage;
 use Traversable;
 
+use function ipl\Stdlib\iterable_value_first;
+
 /**
  * @phpstan-type GridArea array{0: int, 1: int, 2: int, 3: int}
  * @phpstan-type GridContinuationType self::FROM_PREV_GRID | self::TO_NEXT_GRID | self::ACROSS_GRID
@@ -390,9 +392,119 @@ abstract class BaseGrid extends BaseHtmlElement
         }
     }
 
+    /**
+     * Yield the entries to show on the grid and place them using a fixed layout
+     *
+     * Entry positions are expected to be registered on each individual entry and cannot span multiple rows.
+     * Collisions won't be prevented and the grid is expected to allow for an infinite number of sections.
+     *
+     * @param Traversable<int, Entry> $entries
+     *
+     * @return Generator<array{0: GridArea, 1: ?ContinuationType}, Entry>
+     */
+    final protected function yieldFixedEntries(Traversable $entries): Generator
+    {
+        if ($this->getMaximumRowSpan() !== 1) {
+            throw new LogicException('Fixed layouts require a maximum row span of 1');
+        }
+
+        if ($this->getSectionsPerStep() !== self::INFINITE) {
+            throw new LogicException('Fixed layouts currently only work with an infinite number of sections');
+        }
+
+        $rowStartModifier = $this->getRowStartModifier();
+        $gridStartsAt = $this->getGridStart();
+        $gridEndsAt = $this->getGridEnd();
+        $amountOfDays = $gridStartsAt->diff($gridEndsAt)->days;
+        $gridBorderAt = $this->getNoOfVisuallyConnectedHours() * 2;
+
+        if ($amountOfDays !== $gridBorderAt / 48) {
+            throw new LogicException(
+                'The number of days in the grid must match the number'
+                . ' of visually connected hours, when a fixed layout is used.'
+            );
+        }
+
+        $lastRow = 1;
+        foreach ($entries as $entry) {
+            $position = $entry->getPosition();
+            if ($position === null) {
+                throw new LogicException('All entries must have a position set when using a fixed layout');
+            }
+
+            $rowStart = $position + $rowStartModifier;
+            if ($rowStart > $lastRow) {
+                $lastRow = $rowStart;
+            }
+
+            $actualStart = $this->roundToNearestThirtyMinute($entry->getStart());
+            if ($actualStart < $gridStartsAt) {
+                $colStart = 0;
+            } else {
+                $colStart = Util::diffHours($gridStartsAt, $actualStart) * 2;
+            }
+
+            $actualEnd = $this->roundToNearestThirtyMinute($entry->getEnd());
+            if ($actualEnd > $gridEndsAt) {
+                $colEnd = $gridBorderAt;
+            } else {
+                $colEnd = Util::diffHours($gridStartsAt, $actualEnd) * 2;
+            }
+
+            if ($colStart > $gridBorderAt) {
+                throw new LogicException(sprintf(
+                    'Invalid entry (%d) position: %s to %s. Grid dimension: %s to %s',
+                    $entry->getId(),
+                    $actualStart->format('Y-m-d H:i:s'),
+                    $actualEnd->format('Y-m-d H:i:s'),
+                    $gridStartsAt->format('Y-m-d'),
+                    $gridEndsAt->format('Y-m-d')
+                ));
+            }
+
+            $gridArea = $this->getGridArea(
+                $rowStart,
+                $rowStart + 1,
+                $colStart + 1,
+                $colEnd + 1
+            );
+
+            $fromPrevGrid = $gridStartsAt > $entry->getStart();
+            $toNextGrid = $gridEndsAt < $entry->getEnd();
+            if ($fromPrevGrid && $toNextGrid) {
+                $continuationType = self::ACROSS_GRID;
+            } elseif ($fromPrevGrid) {
+                $continuationType = self::FROM_PREV_GRID;
+            } elseif ($toNextGrid) {
+                $continuationType = self::TO_NEXT_GRID;
+            } else {
+                $continuationType = null;
+            }
+
+            yield [$gridArea, $continuationType] => $entry;
+        }
+
+        $this->style->addFor($this, [
+            '--primaryRows' => $lastRow === 1 ? 1 : $lastRow - $rowStartModifier + 1,
+            '--rowsPerStep' => 1
+        ]);
+    }
+
     protected function assembleGridOverlay(BaseHtmlElement $overlay): void
     {
-        foreach ($this->yieldFlowingEntries($this->provider->getEntries()) as $data => $entry) {
+        $entries = $this->provider->getEntries();
+        $firstEntry = iterable_value_first($entries);
+        if ($firstEntry === null) {
+            return;
+        }
+
+        if ($firstEntry->getPosition() === null) {
+            $generator = $this->yieldFlowingEntries($entries);
+        } else {
+            $generator = $this->yieldFixedEntries($entries);
+        }
+
+        foreach ($generator as $data => $entry) {
             [$gridArea, $continuationType] = $data;
 
             $gradientClass = null;
