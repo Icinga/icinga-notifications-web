@@ -96,8 +96,8 @@ class IncidentDetail extends BaseHtmlElement
         $history = $this->incident->incident_history
             ->with([
                 'event',
-                'event.object',
-                'event.object.source',
+                'incident.object',
+                'incident.object.source',
                 'contact',
                 'rule',
                 'rule_escalation',
@@ -107,7 +107,7 @@ class IncidentDetail extends BaseHtmlElement
             ]);
 
         $history
-            ->withColumns('event.object.id_tags')
+            ->withColumns('incident.object.id_tags')
             ->on(Query::ON_SELECT_ASSEMBLED, function (Select $select) use ($history) {
                 Database::registerGroupBy($history, $select);
             });
