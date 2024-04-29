@@ -56,7 +56,7 @@ class IncidentHistoryListItem extends BaseListItem
                 ->set('data-action-item', true);
 
             /** @var Objects $obj */
-            $obj = $this->item->event->object;
+            $obj = $this->item->incident->object;
             $content = new Link($obj->getName(), Links::event($this->item->event_id), ['class' => 'subject']);
 
             $title->addHtml($content);
@@ -78,7 +78,7 @@ class IncidentHistoryListItem extends BaseListItem
         $header->addHtml($this->createCaption());
         if ($this->item->type === 'opened' || $this->item->type === 'incident_severity_changed') {
             $header->add(
-                (new SourceIcon(SourceIcon::SIZE_BIG))->addHtml($this->item->event->object->source->getIcon())
+                (new SourceIcon(SourceIcon::SIZE_BIG))->addHtml($this->item->incident->object->source->getIcon())
             );
         }
 
