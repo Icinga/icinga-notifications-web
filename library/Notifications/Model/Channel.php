@@ -4,14 +4,29 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use DateTime;
 use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
+use ipl\Orm\Query;
 use ipl\Orm\Relations;
 use ipl\Sql\Connection;
 use ipl\Web\Widget\Icon;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $type
+ * @property string $config
+ * @property DateTime $changed_at
+ * @property bool $deleted
+ *
+ * @property Query|IncidentHistory $incident_history
+ * @property Query|RuleEscalationRecipient $rule_escalation_recipient
+ * @property Query|Contact $contact
+ * @property Query|AvailableChannelType $available_channel_type
+ */
 class Channel extends Model
 {
     public function getTableName(): string
@@ -35,7 +50,7 @@ class Channel extends Model
         ];
     }
 
-    public function getColumnDefinitions()
+    public function getColumnDefinitions(): array
     {
         return [
             'name'          => t('Name'),
@@ -44,13 +59,13 @@ class Channel extends Model
         ];
     }
 
-    public function getSearchColumns()
+    public function getSearchColumns(): array
     {
         return ['name'];
     }
 
 
-    public function getDefaultSort()
+    public function getDefaultSort(): array
     {
         return ['name'];
     }
@@ -61,7 +76,7 @@ class Channel extends Model
         $behaviors->add(new BoolCast(['deleted']));
     }
 
-    public function createRelations(Relations $relations)
+    public function createRelations(Relations $relations): void
     {
         $relations->hasMany('incident_history', IncidentHistory::class)->setJoinType('LEFT');
         $relations->hasMany('rule_escalation_recipient', RuleEscalationRecipient::class)->setJoinType('LEFT');

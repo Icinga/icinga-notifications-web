@@ -7,28 +7,31 @@ namespace Icinga\Module\Notifications\Model;
 use ipl\Orm\Behavior\Binary;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
+use ipl\Orm\Query;
 use ipl\Orm\Relations;
 
 /**
  * ObjectExtraTag database model
  *
- * @property int $object_id
+ * @property string $object_id
  * @property string $tag
  * @property string $value
+ *
+ * @property Query|Objects $object
  */
 class ObjectExtraTag extends Model
 {
-    public function getTableName()
+    public function getTableName(): string
     {
         return 'object_extra_tag';
     }
 
-    public function getKeyName()
+    public function getKeyName(): array
     {
         return ['object_id', 'tag'];
     }
 
-    public function getColumns()
+    public function getColumns(): array
     {
         return [
             'object_id',
@@ -37,12 +40,12 @@ class ObjectExtraTag extends Model
         ];
     }
 
-    public function createBehaviors(Behaviors $behaviors)
+    public function createBehaviors(Behaviors $behaviors): void
     {
         $behaviors->add(new Binary(['object_id']));
     }
 
-    public function createRelations(Relations $relations)
+    public function createRelations(Relations $relations): void
     {
         $relations->belongsTo('object', Objects::class);
     }
