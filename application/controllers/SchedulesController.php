@@ -5,102 +5,126 @@
 namespace Icinga\Module\Notifications\Controllers;
 
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Schedule;
-use Icinga\Module\Notifications\Widget\Calendar\Controls;
-use ipl\Html\Html;
+use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
+use Icinga\Module\Notifications\Widget\ItemList\ScheduleList;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
-use ipl\Web\Compat\CompatForm;
-use ipl\Web\Url;
+use ipl\Web\Compat\SearchControls;
+use ipl\Web\Control\LimitControl;
+use ipl\Web\Control\SortControl;
+use ipl\Web\Filter\QueryString;
 use ipl\Web\Widget\ButtonLink;
+use ipl\Web\Widget\Tabs;
 
 class SchedulesController extends CompatController
 {
-    public function indexAction()
+    use SearchControls;
+
+    /** @var Filter\Rule Filter from query string parameters */
+    private $filter;
+
+    public function indexAction(): void
     {
-        $db = Database::get();
-        $schedules = $db->fetchPairs(Schedule::on($db)->columns(['id', 'name'])->assembleSelect());
+        $schedules = Schedule::on(Database::get());
 
-        $schedule = null;
-        $scheduleId = $this->params->get('schedule', key($schedules));
-
-        $controls = Html::tag('div', ['class' => 'schedule-control']);
-        if ($scheduleId) {
-            $form = new CompatForm();
-            $form->setMethod('GET');
-            $form->addAttributes(['class' => ['inline', 'select-schedule-control']]);
-            $form->addElement('select', 'schedule', [
-                'options' => $schedules,
-                'class' => 'autosubmit',
-                'label' => t('Select Schedule')
-            ]);
-
-            $form->handleRequest($this->getServerRequest());
-            $controls->addHtml($form);
-        }
-
-        if ($scheduleId) {
-            $controls->addHtml(
-                new ButtonLink(null, Url::fromPath('notifications/schedule', ['id' => $scheduleId]), 'cog', [
-                    'data-no-icinga-ajax' => true,
-                    'data-icinga-modal' => true
-                ])
-            );
-
-            /** @var Schedule $schedule */
-            $schedule = Schedule::on(Database::get())
-                ->filter(Filter::equal('id', $scheduleId))
-                ->first();
-            if ($schedule === null) {
-                $this->httpNotFound('Schedule not found');
-            }
-        }
-
-        $controls->addHtml(
-            new ButtonLink(
-                'New Schedule',
-                Url::fromPath('notifications/schedule/add'),
-                'plus',
-                [
-                    'class' => 'add-schedule-control',
-                    'data-no-icinga-ajax' => true,
-                    'data-icinga-modal' => true
-                ]
-            )
+        $limitControl = $this->createLimitControl();
+        $sortControl = $this->createSortControl(
+            $schedules,
+            ['schedule.name' => t('Name')]
         );
 
-        $calendarControls = (new Controls())
-            ->setAction(Url::fromRequest()->getAbsoluteUrl());
-        if ($this->getRequest()->getHeader('X-Icinga-Container') === 'modal-content') {
-            $this->getResponse()->setHeader('X-Icinga-Modal-Layout', 'wide');
-            $calendarControls->setBaseTarget('modal-content');
+        $paginationControl = $this->createPaginationControl($schedules);
+        $searchBar = $this->createSearchBar($schedules, [
+            $limitControl->getLimitParam(),
+            $sortControl->getSortParam(),
+        ]);
+
+        if ($searchBar->hasBeenSent() && ! $searchBar->isValid()) {
+            if ($searchBar->hasBeenSubmitted()) {
+                $filter = $this->getFilter();
+            } else {
+                $this->addControl($searchBar);
+                $this->sendMultipartUpdate();
+                return;
+            }
+        } else {
+            $filter = $searchBar->getFilter();
         }
 
-        $this->addControl($controls);
-        $this->controls->addAttributes(['class' => 'schedule-controls']);
+        $schedules->filter($filter);
 
-        $this->addContent(new \Icinga\Module\Notifications\Widget\Schedule(
-            $calendarControls->handleRequest($this->getServerRequest()),
-            $schedule
-        ));
+        $this->addControl($paginationControl);
+        $this->addControl($sortControl);
+        $this->addControl($limitControl);
+        $this->addControl($searchBar);
+        $this->addControl(
+            (new ButtonLink(
+                t('New Schedule'),
+                Links::scheduleAdd(),
+                'plus',
+                [
+                    'class' => 'add-schedule-control'
+                ]
+            ))->openInModal()
+        );
 
-        $this->setTitle($this->translate('Schedules'));
+        $this->addContent(new ScheduleList($schedules));
+
+        if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {
+            $this->sendMultipartUpdate();
+        }
+
         $this->getTabs()->activate('schedules');
     }
 
-    public function getTabs()
+    public function completeAction(): void
+    {
+        $suggestions = new ObjectSuggestions();
+        $suggestions->setModel(Schedule::class);
+        $suggestions->forRequest($this->getServerRequest());
+        $this->getDocument()->add($suggestions);
+    }
+
+    public function searchEditorAction(): void
+    {
+        $editor = $this->createSearchEditor(Schedule::on(Database::get()), [
+            LimitControl::DEFAULT_LIMIT_PARAM,
+            SortControl::DEFAULT_SORT_PARAM,
+        ]);
+
+        $this->getDocument()->add($editor);
+        $this->setTitle(t('Adjust Filter'));
+    }
+
+    public function getTabs(): Tabs
     {
         return parent::getTabs()
             ->add('schedules', [
                 'label'         => $this->translate('Schedules'),
-                'url'           => Url::fromPath('notifications/schedules'),
+                'url'           => Links::schedules(),
                 'baseTarget'    => '_main'
             ])->add('event-rules', [
                 'label' => $this->translate('Event Rules'),
-                'url'   => Url::fromPath('notifications/event-rules')
+                'url'   => Links::eventRules()
             ])->add('contacts', [
                 'label' => $this->translate('Contacts'),
-                'url'   => Url::fromPath('notifications/contacts')
+                'url'   => Links::contacts()
             ]);
+    }
+
+    /**
+     * Get the filter created from query string parameters
+     *
+     * @return Filter\Rule
+     */
+    private function getFilter(): Filter\Rule
+    {
+        if ($this->filter === null) {
+            $this->filter = QueryString::parse((string) $this->params);
+        }
+
+        return $this->filter;
     }
 }
