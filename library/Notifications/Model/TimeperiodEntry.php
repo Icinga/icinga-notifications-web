@@ -5,6 +5,7 @@
 namespace Icinga\Module\Notifications\Model;
 
 use DateTime;
+use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
@@ -48,7 +49,9 @@ class TimeperiodEntry extends Model
             'end_time',
             'until_time',
             'timezone',
-            'rrule'
+            'rrule',
+            'changed_at',
+            'deleted'
         ];
     }
 
@@ -62,8 +65,10 @@ class TimeperiodEntry extends Model
         $behaviors->add(new MillisecondTimestamp([
             'start_time',
             'end_time',
-            'until_time'
+            'until_time',
+            'changed_at'
         ]));
+        $behaviors->add(new BoolCast(['deleted']));
     }
 
     public function createRelations(Relations $relations)

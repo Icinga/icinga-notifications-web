@@ -4,6 +4,9 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use ipl\Orm\Behavior\BoolCast;
+use ipl\Orm\Behavior\MillisecondTimestamp;
+use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
 use ipl\Orm\Relations;
 use ipl\Web\Widget\IcingaIcon;
@@ -20,6 +23,8 @@ use ipl\Web\Widget\Icon;
  * @property ?string $icinga2_ca_pem
  * @property ?string $icinga2_common_name
  * @property string $icinga2_insecure_tls
+ * @property int $changed_at
+ * @property bool $deleted
  */
 class Source extends Model
 {
@@ -47,15 +52,18 @@ class Source extends Model
             'icinga2_auth_pass',
             'icinga2_ca_pem',
             'icinga2_common_name',
-            'icinga2_insecure_tls'
+            'icinga2_insecure_tls',
+            'changed_at',
+            'deleted'
         ];
     }
 
     public function getColumnDefinitions()
     {
         return [
-            'type' => t('Type'),
-            'name' => t('Name')
+            'type'          => t('Type'),
+            'name'          => t('Name'),
+            'changed_at'    => t('Changed At')
         ];
     }
 
@@ -67,6 +75,12 @@ class Source extends Model
     public function getDefaultSort()
     {
         return 'source.name';
+    }
+
+    public function createBehaviors(Behaviors $behaviors): void
+    {
+        $behaviors->add(new MillisecondTimestamp(['changed_at']));
+        $behaviors->add(new BoolCast(['deleted']));
     }
 
     public function createRelations(Relations $relations)

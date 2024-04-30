@@ -4,7 +4,9 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use ipl\Orm\Behavior\BoolCast;
 use Icinga\Module\Notifications\Model\Behavior\HasAddress;
+use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
 use ipl\Orm\Relations;
@@ -29,15 +31,18 @@ class Contact extends Model
         return [
             'full_name',
             'username',
-            'default_channel_id'
+            'default_channel_id',
+            'changed_at',
+            'deleted'
         ];
     }
 
     public function getColumnDefinitions()
     {
         return [
-            'full_name' => t('Full Name'),
-            'username'  => t('Username')
+            'full_name'     => t('Full Name'),
+            'username'      => t('Username'),
+            'changed_at'    => t('Changed At')
         ];
     }
 
@@ -46,9 +51,11 @@ class Contact extends Model
         return ['full_name'];
     }
 
-    public function createBehaviors(Behaviors $behaviors)
+    public function createBehaviors(Behaviors $behaviors): void
     {
         $behaviors->add(new HasAddress());
+        $behaviors->add(new MillisecondTimestamp(['changed_at']));
+        $behaviors->add(new BoolCast(['deleted']));
     }
 
     public function getDefaultSort()

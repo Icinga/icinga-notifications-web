@@ -4,6 +4,9 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use ipl\Orm\Behavior\BoolCast;
+use ipl\Orm\Behavior\MillisecondTimestamp;
+use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
 use ipl\Orm\Relations;
 use ipl\Sql\Connection;
@@ -26,15 +29,18 @@ class Channel extends Model
         return [
             'name',
             'type',
-            'config'
+            'config',
+            'changed_at',
+            'deleted'
         ];
     }
 
     public function getColumnDefinitions()
     {
         return [
-            'name'   => t('Name'),
-            'type'   => t('Type'),
+            'name'          => t('Name'),
+            'type'          => t('Type'),
+            'changed_at'    => t('Changed At')
         ];
     }
 
@@ -47,6 +53,12 @@ class Channel extends Model
     public function getDefaultSort()
     {
         return ['name'];
+    }
+
+    public function createBehaviors(Behaviors $behaviors): void
+    {
+        $behaviors->add(new MillisecondTimestamp(['changed_at']));
+        $behaviors->add(new BoolCast(['deleted']));
     }
 
     public function createRelations(Relations $relations)
