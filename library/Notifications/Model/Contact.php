@@ -4,15 +4,31 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use DateTime;
 use ipl\Orm\Behavior\BoolCast;
 use Icinga\Module\Notifications\Model\Behavior\HasAddress;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
+use ipl\Orm\Query;
 use ipl\Orm\Relations;
 
 /**
  * @property int $id
+ * @property string $full_name
+ * @property ?string $username
+ * @property int $default_channel_id
+ * @property string $color
+ * @property DateTime $changed_at
+ * @property bool $deleted
+ *
+ * @property Query|Channel $channel
+ * @property Query|Incident $incident
+ * @property Query|IncidentContact $incident_contact
+ * @property Query|IncidentHistory $incident_history
+ * @property Query|RotationMember $rotation_member
+ * @property Query|ContactAddress $contact_address
+ * @property Query|RuleEscalationRecipient $rule_escalation_recipient
  */
 class Contact extends Model
 {
@@ -37,7 +53,7 @@ class Contact extends Model
         ];
     }
 
-    public function getColumnDefinitions()
+    public function getColumnDefinitions(): array
     {
         return [
             'full_name'     => t('Full Name'),
@@ -46,7 +62,7 @@ class Contact extends Model
         ];
     }
 
-    public function getSearchColumns()
+    public function getSearchColumns(): array
     {
         return ['full_name'];
     }
@@ -58,12 +74,12 @@ class Contact extends Model
         $behaviors->add(new BoolCast(['deleted']));
     }
 
-    public function getDefaultSort()
+    public function getDefaultSort(): array
     {
         return ['full_name'];
     }
 
-    public function createRelations(Relations $relations)
+    public function createRelations(Relations $relations): void
     {
         $relations->belongsTo('channel', Channel::class)
             ->setCandidateKey('default_channel_id');

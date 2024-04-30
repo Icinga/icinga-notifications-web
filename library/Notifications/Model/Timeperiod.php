@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use DateTime;
 use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
@@ -16,23 +17,25 @@ use ipl\Orm\Relations;
  *
  * @property int $id
  * @property ?int $owned_by_rotation_id
+ * @property DateTime $changed_at
+ * @property bool $deleted
  *
  * @property Query|Rotation $rotation
  * @property Query|TimeperiodEntry $timeperiod_entry
  */
 class Timeperiod extends Model
 {
-    public function getTableName()
+    public function getTableName(): string
     {
         return 'timeperiod';
     }
 
-    public function getKeyName()
+    public function getKeyName(): string
     {
         return 'id';
     }
 
-    public function getColumns()
+    public function getColumns(): array
     {
         return [
             'owned_by_schedule_id',
@@ -47,7 +50,7 @@ class Timeperiod extends Model
         $behaviors->add(new BoolCast(['deleted']));
     }
 
-    public function createRelations(Relations $relations)
+    public function createRelations(Relations $relations): void
     {
         $relations->belongsTo('rotation', Rotation::class)
             ->setCandidateKey('owned_by_rotation_id')

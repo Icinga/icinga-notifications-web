@@ -30,17 +30,17 @@ use ipl\Orm\Relations;
  */
 class RotationMember extends Model
 {
-    public function getTableName()
+    public function getTableName(): string
     {
         return 'rotation_member';
     }
 
-    public function getKeyName()
+    public function getKeyName(): string
     {
         return 'id';
     }
 
-    public function getColumns()
+    public function getColumns(): array
     {
         return [
             'rotation_id',
@@ -58,7 +58,7 @@ class RotationMember extends Model
         $behaviors->add(new BoolCast(['deleted']));
     }
 
-    public function createRelations(Relations $relations)
+    public function createRelations(Relations $relations): void
     {
         $relations->belongsTo('rotation', Rotation::class);
         $relations->belongsTo('contact', Contact::class)

@@ -5,8 +5,18 @@
 namespace Icinga\Module\Notifications\Model;
 
 use ipl\Orm\Model;
+use ipl\Orm\Query;
 use ipl\Orm\Relations;
 
+/**
+ * @property string $type
+ * @property string $name
+ * @property string $version
+ * @property string $author_name
+ * @property string $config_attrs
+ *
+ * @property Query|Channel $channel
+ */
 class AvailableChannelType extends Model
 {
     public function getTableName(): string
@@ -14,7 +24,7 @@ class AvailableChannelType extends Model
         return 'available_channel_type';
     }
 
-    public function getKeyName()
+    public function getKeyName(): string
     {
         return 'type';
     }

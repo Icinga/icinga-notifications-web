@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use DateTime;
 use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
@@ -14,6 +15,8 @@ use ipl\Orm\Relations;
 /**
  * @property int $id
  * @property string $name
+ * @property DateTime $changed_at
+ * @property bool $deleted
  *
  * @property Rotation|Query $rotation
  * @property RuleEscalationRecipient|Query $rule_escalation_recipient

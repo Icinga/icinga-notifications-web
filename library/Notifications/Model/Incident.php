@@ -34,17 +34,17 @@ use ipl\Sql\Select;
  */
 class Incident extends Model
 {
-    public function getTableName()
+    public function getTableName(): string
     {
         return 'incident';
     }
 
-    public function getKeyName()
+    public function getKeyName(): string
     {
         return 'id';
     }
 
-    public function getColumns()
+    public function getColumns(): array
     {
         return [
             'object_id',
@@ -54,7 +54,7 @@ class Incident extends Model
         ];
     }
 
-    public function getColumnDefinitions()
+    public function getColumnDefinitions(): array
     {
         return [
             'object_id'    => t('Object Id'),
@@ -64,17 +64,17 @@ class Incident extends Model
         ];
     }
 
-    public function getSearchColumns()
+    public function getSearchColumns(): array
     {
         return ['object.name'];
     }
 
-    public function getDefaultSort()
+    public function getDefaultSort(): array
     {
         return ['incident.severity desc, incident.started_at'];
     }
 
-    public static function on(Connection $db)
+    public static function on(Connection $db): Query
     {
         $query = parent::on($db);
 
@@ -87,7 +87,7 @@ class Incident extends Model
         return $query;
     }
 
-    public function createBehaviors(Behaviors $behaviors)
+    public function createBehaviors(Behaviors $behaviors): void
     {
         $behaviors->add(new Binary(['object_id']));
         $behaviors->add(new MillisecondTimestamp([
@@ -96,7 +96,7 @@ class Incident extends Model
         ]));
     }
 
-    public function createRelations(Relations $relations)
+    public function createRelations(Relations $relations): void
     {
         $relations->belongsTo('object', Objects::class);
 

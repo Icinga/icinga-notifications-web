@@ -12,7 +12,7 @@ use ipl\Orm\Relations;
 /**
  * ObjectIdTag database model
  *
- * @property int $object_id
+ * @property string $object_id
  * @property string $tag
  * @property string $value
  */
@@ -23,7 +23,7 @@ class ObjectIdTag extends Model
         return 'object_id_tag';
     }
 
-    public function getKeyName()
+    public function getKeyName(): array
     {
         return ['object_id', 'tag'];
     }

@@ -4,10 +4,12 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use DateTime;
 use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
+use ipl\Orm\Query;
 use ipl\Orm\Relations;
 use ipl\Web\Widget\IcingaIcon;
 use ipl\Web\Widget\Icon;
@@ -23,25 +25,27 @@ use ipl\Web\Widget\Icon;
  * @property ?string $icinga2_ca_pem
  * @property ?string $icinga2_common_name
  * @property string $icinga2_insecure_tls
- * @property int $changed_at
+ * @property DateTime $changed_at
  * @property bool $deleted
+ *
+ * @property Query|Objects $object
  */
 class Source extends Model
 {
     /** @var string The type name used by Icinga sources */
     public const ICINGA_TYPE_NAME = 'icinga2';
 
-    public function getTableName()
+    public function getTableName(): string
     {
         return 'source';
     }
 
-    public function getKeyName()
+    public function getKeyName(): string
     {
         return 'id';
     }
 
-    public function getColumns()
+    public function getColumns(): array
     {
         return [
             'type',
@@ -58,7 +62,7 @@ class Source extends Model
         ];
     }
 
-    public function getColumnDefinitions()
+    public function getColumnDefinitions(): array
     {
         return [
             'type'          => t('Type'),
@@ -67,12 +71,12 @@ class Source extends Model
         ];
     }
 
-    public function getSearchColumns()
+    public function getSearchColumns(): array
     {
         return ['type'];
     }
 
-    public function getDefaultSort()
+    public function getDefaultSort(): string
     {
         return 'source.name';
     }
@@ -83,7 +87,7 @@ class Source extends Model
         $behaviors->add(new BoolCast(['deleted']));
     }
 
-    public function createRelations(Relations $relations)
+    public function createRelations(Relations $relations): void
     {
         $relations->hasMany('object', Objects::class);
     }

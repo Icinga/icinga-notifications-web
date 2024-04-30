@@ -34,17 +34,17 @@ use ipl\Orm\Relations;
  */
 class Objects extends Model
 {
-    public function getTableName()
+    public function getTableName(): string
     {
         return 'object';
     }
 
-    public function getKeyName()
+    public function getKeyName(): string
     {
         return 'id';
     }
 
-    public function getColumns()
+    public function getColumns(): array
     {
         return [
             'source_id',
@@ -57,7 +57,7 @@ class Objects extends Model
     /**
      * @return string[]
      */
-    public function getSearchColumns()
+    public function getSearchColumns(): array
     {
         return ['object_id_tag.tag', 'object_id_tag.value'];
     }
@@ -65,18 +65,18 @@ class Objects extends Model
     /**
      * @return string
      */
-    public function getDefaultSort()
+    public function getDefaultSort(): string
     {
         return 'object.name';
     }
 
-    public function createBehaviors(Behaviors $behaviors)
+    public function createBehaviors(Behaviors $behaviors): void
     {
         $behaviors->add(new Binary(['id']));
         $behaviors->add(new IdTagAggregator());
     }
 
-    public function createRelations(Relations $relations)
+    public function createRelations(Relations $relations): void
     {
         $relations->hasMany('event', Event::class);
         $relations->hasMany('incident', Incident::class);

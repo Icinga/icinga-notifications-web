@@ -4,25 +4,42 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use DateTime;
 use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
 use ipl\Orm\Relations;
 
+/**
+ * @property int $id
+ * @property int $rule_id
+ * @property int $position
+ * @property ?string $condition
+ * @property ?string $name
+ * @property ?string $fallback_for
+ * @property DateTime $changed_at
+ * @property bool $deleted
+ *
+ * @property Rule $rule
+ * @property Incident $incident
+ * @property Contact $contact
+ * @property RuleEscalationRecipient $rule_escalation_recipient
+ * @property IncidentHistory $incident_history
+ */
 class RuleEscalation extends Model
 {
-    public function getTableName()
+    public function getTableName(): string
     {
         return 'rule_escalation';
     }
 
-    public function getKeyName()
+    public function getKeyName(): string
     {
         return 'id';
     }
 
-    public function getColumns()
+    public function getColumns(): array
     {
         return [
             'rule_id',
@@ -35,7 +52,7 @@ class RuleEscalation extends Model
         ];
     }
 
-    public function getColumnDefinitions()
+    public function getColumnDefinitions(): array
     {
         return [
             'rule_id'       => t('Rule ID'),
@@ -47,15 +64,16 @@ class RuleEscalation extends Model
         ];
     }
 
-    public function getSearchColumns()
+    public function getSearchColumns(): array
     {
         return ['name'];
     }
 
-    public function getDefaultSort()
+    public function getDefaultSort(): array
     {
         return ['position'];
     }
+
 
     public function createBehaviors(Behaviors $behaviors): void
     {
@@ -63,7 +81,7 @@ class RuleEscalation extends Model
         $behaviors->add(new BoolCast(['deleted']));
     }
 
-    public function createRelations(Relations $relations)
+    public function createRelations(Relations $relations): void
     {
         $relations->belongsTo('rule', Rule::class);
 

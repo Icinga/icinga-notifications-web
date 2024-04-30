@@ -9,6 +9,7 @@ use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
+use ipl\Orm\Query;
 use ipl\Orm\Relations;
 use Recurr\Frequency;
 use Recurr\Rule;
@@ -25,22 +26,22 @@ use Recurr\Rule;
  * @property string $timezone
  * @property ?string $rrule
  *
- * @property Timeperiod $timeperiod
- * @property RotationMember $member
+ * @property Query|Timeperiod $timeperiod
+ * @property Query|RotationMember $member
  */
 class TimeperiodEntry extends Model
 {
-    public function getTableName()
+    public function getTableName(): string
     {
         return 'timeperiod_entry';
     }
 
-    public function getKeyName()
+    public function getKeyName(): string
     {
         return 'id';
     }
 
-    public function getColumns()
+    public function getColumns(): array
     {
         return [
             'timeperiod_id',
@@ -55,12 +56,12 @@ class TimeperiodEntry extends Model
         ];
     }
 
-    public function getDefaultSort()
+    public function getDefaultSort(): array
     {
         return ['start_time asc', 'end_time asc'];
     }
 
-    public function createBehaviors(Behaviors $behaviors)
+    public function createBehaviors(Behaviors $behaviors): void
     {
         $behaviors->add(new MillisecondTimestamp([
             'start_time',
@@ -71,7 +72,7 @@ class TimeperiodEntry extends Model
         $behaviors->add(new BoolCast(['deleted']));
     }
 
-    public function createRelations(Relations $relations)
+    public function createRelations(Relations $relations): void
     {
         $relations->belongsTo('timeperiod', Timeperiod::class);
         $relations->belongsTo('member', RotationMember::class);

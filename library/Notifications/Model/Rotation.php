@@ -34,17 +34,17 @@ use ipl\Orm\Relations;
  */
 class Rotation extends Model
 {
-    public function getTableName()
+    public function getTableName(): string
     {
         return 'rotation';
     }
 
-    public function getKeyName()
+    public function getKeyName(): string
     {
         return 'id';
     }
 
-    public function getColumns()
+    public function getColumns(): array
     {
         return [
             'schedule_id',
@@ -59,7 +59,7 @@ class Rotation extends Model
         ];
     }
 
-    public function getColumnDefinitions()
+    public function getColumnDefinitions(): array
     {
         return [
             'schedule_id'       => t('Schedule'),
@@ -72,7 +72,7 @@ class Rotation extends Model
         ];
     }
 
-    public function createRelations(Relations $relations)
+    public function createRelations(Relations $relations): void
     {
         $relations->belongsTo('schedule', Schedule::class);
 
@@ -82,7 +82,7 @@ class Rotation extends Model
             ->setForeignKey('owned_by_rotation_id');
     }
 
-    public function createBehaviors(Behaviors $behaviors)
+    public function createBehaviors(Behaviors $behaviors): void
     {
         $behaviors->add(new MillisecondTimestamp([
             'actual_handoff',

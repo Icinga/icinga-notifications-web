@@ -4,12 +4,24 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use DateTime;
 use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
+use ipl\Orm\Query;
 use ipl\Orm\Relations;
 
+/**
+ * @property int $id
+ * @property int $contact_id
+ * @property string $type
+ * @property string $address
+ * @property DateTime $changed_at
+ * @property bool $deleted
+ *
+ * @property Query|Contact $contact
+ */
 class ContactAddress extends Model
 {
     public function getTableName(): string
@@ -39,7 +51,7 @@ class ContactAddress extends Model
         $behaviors->add(new BoolCast(['deleted']));
     }
 
-    public function createRelations(Relations $relations)
+    public function createRelations(Relations $relations): void
     {
         $relations->belongsTo('contact', Contact::class);
     }
