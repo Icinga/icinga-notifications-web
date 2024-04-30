@@ -5,28 +5,53 @@
 namespace Icinga\Module\Notifications\Model;
 
 use ipl\Orm\Model;
+use ipl\Orm\Query;
 use ipl\Orm\Relations;
 
+/**
+ * @property int $id
+ * @property string $name
+ *
+ * @property Timeperiod|Query $timeperiod
+ * @property ScheduleMember|Query $member
+ * @property RuleEscalationRecipient|Query $rule_escalation_recipient
+ * @property IncidentHistory|Query $incident_history
+ */
 class Schedule extends Model
 {
-    public function getTableName()
+    public function getTableName(): string
     {
         return 'schedule';
     }
 
-    public function getKeyName()
+    public function getKeyName(): string
     {
         return 'id';
     }
 
-    public function getColumns()
+    public function getColumns(): array
     {
         return [
             'name'
         ];
     }
 
-    public function createRelations(Relations $relations)
+    public function getColumnDefinitions(): array
+    {
+        return ['name' => t('Name')];
+    }
+
+    public function getSearchColumns(): array
+    {
+        return ['name'];
+    }
+
+    public function getDefaultSort(): string
+    {
+        return 'name';
+    }
+
+    public function createRelations(Relations $relations): void
     {
         $relations->belongsToMany('timeperiod', Timeperiod::class)
             ->through(ScheduleMember::class)
