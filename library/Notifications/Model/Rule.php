@@ -4,6 +4,9 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use ipl\Orm\Behavior\BoolCast;
+use ipl\Orm\Behavior\MillisecondTimestamp;
+use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
 use ipl\Orm\Relations;
 
@@ -25,7 +28,9 @@ class Rule extends Model
             'name',
             'timeperiod_id',
             'object_filter',
-            'is_active'
+            'is_active',
+            'changed_at',
+            'deleted'
         ];
     }
 
@@ -35,7 +40,8 @@ class Rule extends Model
             'name'          => t('Name'),
             'timeperiod_id' => t('Timeperiod ID'),
             'object_filter' => t('Object Filter'),
-            'is_active'     => t('Is Active')
+            'is_active'     => t('Is Active'),
+            'changed_at'    => t('Changed At')
         ];
     }
 
@@ -47,6 +53,12 @@ class Rule extends Model
     public function getDefaultSort()
     {
         return ['name'];
+    }
+
+    public function createBehaviors(Behaviors $behaviors): void
+    {
+        $behaviors->add(new MillisecondTimestamp(['changed_at']));
+        $behaviors->add(new BoolCast(['deleted']));
     }
 
     public function createRelations(Relations $relations)

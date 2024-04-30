@@ -4,6 +4,9 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use ipl\Orm\Behavior\BoolCast;
+use ipl\Orm\Behavior\MillisecondTimestamp;
+use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
 use ipl\Orm\Relations;
 
@@ -26,7 +29,9 @@ class RuleEscalation extends Model
             'position',
             'condition',
             'name',
-            'fallback_for'
+            'fallback_for',
+            'changed_at',
+            'deleted'
         ];
     }
 
@@ -37,7 +42,8 @@ class RuleEscalation extends Model
             'position'      => t('Position'),
             'condition'     => t('Condition'),
             'name'          => t('Name'),
-            'fallback_for'  => t('Fallback For')
+            'fallback_for'  => t('Fallback For'),
+            'changed_at'    => t('Changed At')
         ];
     }
 
@@ -49,6 +55,12 @@ class RuleEscalation extends Model
     public function getDefaultSort()
     {
         return ['position'];
+    }
+
+    public function createBehaviors(Behaviors $behaviors): void
+    {
+        $behaviors->add(new MillisecondTimestamp(['changed_at']));
+        $behaviors->add(new BoolCast(['deleted']));
     }
 
     public function createRelations(Relations $relations)
