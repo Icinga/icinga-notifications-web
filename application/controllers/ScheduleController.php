@@ -70,9 +70,7 @@ class ScheduleController extends CompatController
             $this->redirectNow(Links::schedule($scheduleId));
         });
         $form->on(ScheduleForm::ON_SENT, function ($form) use ($scheduleId) {
-            if ($form->hasBeenCancelled()) {
-                $this->redirectNow('__CLOSE__');
-            } elseif ($form->hasBeenRemoved()) {
+            if ($form->hasBeenRemoved()) {
                 $form->removeSchedule($scheduleId);
 
                 $this->redirectNow('__CLOSE__');
@@ -95,11 +93,6 @@ class ScheduleController extends CompatController
                 $this->sendExtraUpdates(['#col1']);
                 $this->getResponse()->setHeader('X-Icinga-Container', 'col2');
                 $this->redirectNow(Links::schedule($scheduleId));
-            })
-            ->on(Form::ON_SENT, function ($form) {
-                if ($form->hasBeenCancelled()) {
-                    $this->redirectNow('__CLOSE__');
-                }
             })
             ->handleRequest($this->getServerRequest());
 
