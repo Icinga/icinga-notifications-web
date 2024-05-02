@@ -288,7 +288,11 @@ class SourceForm extends CompatForm
     {
         $pressedButton = $this->getPressedSubmitElement();
         if ($pressedButton && $pressedButton->getName() === 'delete') {
-            $this->db->delete('source', ['id = ?' => $this->sourceId]);
+            $this->db->update(
+                'source',
+                ['changed_at' => time() * 1000, 'deleted' => 'y'],
+                ['id = ?' => $this->sourceId]
+            );
 
             return;
         }
@@ -306,6 +310,7 @@ class SourceForm extends CompatForm
         if ($this->sourceId === null) {
             $this->db->insert('source', $source);
         } else {
+            $source['changed_at'] = time() * 1000;
             $this->db->update('source', $source, ['id = ?' => $this->sourceId]);
         }
     }

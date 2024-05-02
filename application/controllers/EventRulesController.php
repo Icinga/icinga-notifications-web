@@ -44,7 +44,8 @@ class EventRulesController extends CompatController
 
     public function indexAction(): void
     {
-        $eventRules = Rule::on(Database::get());
+        $eventRules = Rule::on(Database::get())
+            ->filter(Filter::equal('deleted', 'n'));
 
         $limitControl = $this->createLimitControl();
         $paginationControl = $this->createPaginationControl($eventRules);

@@ -5,6 +5,7 @@
 namespace Icinga\Module\Notifications\Forms;
 
 use Icinga\Exception\Http\HttpNotFoundException;
+use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Contactgroup;
@@ -12,6 +13,7 @@ use Icinga\Web\Session;
 use ipl\Html\FormElement\SubmitElement;
 use ipl\Html\HtmlDocument;
 use ipl\Sql\Connection;
+use ipl\Sql\Select;
 use ipl\Stdlib\Filter;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
@@ -200,25 +202,23 @@ class ContactGroupForm extends CompatForm
     /**
      * Edit the contact group
      *
-     * @return bool False if no changes found, true otherwise
+     * @return void
      */
-    public function editGroup(): bool
+    public function editGroup(): void
     {
-        $isUpdated = false;
         $values = $this->getValues();
 
         $this->db->beginTransaction();
 
         $storedValues = $this->fetchDbValues();
 
+        $changedAt = time() * 1000;
         if ($values['group_name'] !== $storedValues['group_name']) {
             $this->db->update(
                 'contactgroup',
-                ['name' => $values['group_name']],
+                ['name' => $values['group_name'], 'changed_at' => $changedAt],
                 ['id = ?' => $this->contactgroupId]
             );
-
-            $isUpdated = true;
         }
 
         $storedContacts = [];
@@ -235,34 +235,52 @@ class ContactGroupForm extends CompatForm
         $toAdd = array_diff($newContacts, $storedContacts);
 
         if (! empty($toDelete)) {
-            $this->db->delete(
-                'contactgroup_member',
+            $this->db->update('contactgroup_member',
+                ['changed_at' => $changedAt, 'deleted' => 'y'],
                 [
-                    'contactgroup_id = ?' => $this->contactgroupId,
-                    'contact_id IN (?)'   => $toDelete
+                    'contactgroup_id = ?'   => $this->contactgroupId,
+                    'contact_id IN (?)'     => $toDelete
                 ]
             );
-
-            $isUpdated = true;
         }
 
         if (! empty($toAdd)) {
+            $contactsMarkedAsDeleted = $this->db->fetchCol(
+                (new Select())
+                    ->from('contactgroup_member')
+                    ->columns(['contact_id'])
+                    ->where([
+                        'contactgroup_id = ?'   => $this->contactgroupId,
+                        'contact_id IN (?)'     => $toAdd
+                    ])
+            );
+
+            $removeDeletedFlagFromIds = [];
             foreach ($toAdd as $contactId) {
-                $this->db->insert(
-                    'contactgroup_member',
+                if (in_array($contactId, $contactsMarkedAsDeleted)) {
+                    $removeDeletedFlagFromIds[] = $contactId;
+                } else {
+                    $this->db->insert(
+                        'contactgroup_member',
+                        [
+                            'contactgroup_id'   => $this->contactgroupId,
+                            'contact_id'        => $contactId
+                        ]
+                    );
+                }
+            }
+            if (! empty($removeDeletedFlagFromIds)) {
+                $this->db->update('contactgroup_member',
+                    ['changed_at' => $changedAt, 'deleted' => 'n'],
                     [
-                        'contactgroup_id' => $this->contactgroupId,
-                        'contact_id'      => $contactId
+                        'contactgroup_id = ?'   => $this->contactgroupId,
+                        'contact_id IN (?)'     => $removeDeletedFlagFromIds
                     ]
                 );
             }
-
-            $isUpdated = true;
         }
 
         $this->db->commitTransaction();
-
-        return $isUpdated;
     }
 
     /**
@@ -272,8 +290,9 @@ class ContactGroupForm extends CompatForm
     {
         $this->db->beginTransaction();
 
-        $this->db->delete('contactgroup_member', ['contactgroup_id = ?' => $this->contactgroupId]);
-        $this->db->delete('contactgroup', ['id = ?' => $this->contactgroupId]);
+        $markAsDeleted = ['changed_at' => time() * 1000, 'deleted' => 'y'];
+        $this->db->update('contactgroup_member', $markAsDeleted, ['contactgroup_id = ?' => $this->contactgroupId]);
+        $this->db->update('contactgroup', $markAsDeleted, ['id = ?' => $this->contactgroupId]);
 
         $this->db->commitTransaction();
     }
@@ -289,15 +308,25 @@ class ContactGroupForm extends CompatForm
     {
         $query = Contactgroup::on($this->db)
             ->columns(['id', 'name'])
-            ->filter(Filter::equal('id', $this->contactgroupId));
+            ->filter(Filter::all(
+                Filter::equal('id', $this->contactgroupId),
+                Filter::equal('deleted', 'n')
+            ));
 
         $group = $query->first();
         if ($group === null) {
             throw new HttpNotFoundException($this->translate('Contact group not found'));
         }
 
+        $contacts = Contact::on(Database::get())
+            ->filter(Filter::all(
+                Filter::equal('contactgroup_member.contactgroup_id', $group->id),
+                Filter::equal('contactgroup_member.deleted', 'n'),
+                Filter::equal('deleted', 'n')
+            ));
+
         $groupMembers = [];
-        foreach ($group->contact->columns('id') as $contact) {
+        foreach ($contacts as $contact) {
             $groupMembers[] = $contact->id;
         }
 

@@ -27,7 +27,8 @@ class SchedulesController extends CompatController
 
     public function indexAction(): void
     {
-        $schedules = Schedule::on(Database::get());
+        $schedules = Schedule::on(Database::get())
+            ->filter(Filter::equal('deleted', 'n'));
 
         $limitControl = $this->createLimitControl();
         $sortControl = $this->createSortControl(

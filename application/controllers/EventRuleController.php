@@ -152,7 +152,10 @@ class EventRuleController extends CompatController
     {
         $query = Rule::on(Database::get())
             ->withoutColumns('timeperiod_id')
-            ->filter(Filter::equal('id', $ruleId));
+            ->filter(Filter::all(
+                Filter::equal('id', $ruleId),
+                Filter::equal('deleted', 'n')
+            ));
 
         $rule = $query->first();
         if ($rule === null) {

@@ -29,7 +29,10 @@ class ContactController extends CompatController
     {
         $contactId = $this->params->getRequired('id');
         $query = Contact::on($this->db)
-            ->filter(Filter::equal('id', $contactId));
+            ->filter(Filter::all(
+                Filter::equal('id', $contactId),
+                Filter::equal('deleted', 'n')
+            ));
 
         /** @var Contact $contact */
         $contact = $query->first();

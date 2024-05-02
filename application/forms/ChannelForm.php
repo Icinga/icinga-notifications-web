@@ -170,7 +170,11 @@ class ChannelForm extends CompatForm
     protected function onSuccess()
     {
         if ($this->getPressedSubmitElement()->getName() === 'delete') {
-            $this->db->delete('channel', ['id = ?' => $this->channelId]);
+            $this->db->update(
+                'channel',
+                ['changed_at' => time() * 1000, 'deleted' => 'y'],
+                ['id = ?' => $this->channelId]
+            );
 
             return;
         }
@@ -192,6 +196,7 @@ class ChannelForm extends CompatForm
         if ($this->channelId === null) {
             $this->db->insert('channel', $channel);
         } else {
+            $channel['changed_at'] = time() * 1000;
             $this->db->update('channel', $channel, ['id = ?' => $this->channelId]);
         }
     }
