@@ -77,6 +77,11 @@ class Rotation
         $entries = $this->model->timeperiod->timeperiod_entry
             ->with(['member.contact', 'member.contactgroup'])
             ->filter(Filter::all(
+                Filter::equal('deleted', 'n'),
+                Filter::any(
+                  Filter::equal('member.contact.deleted', 'n'),
+                  Filter::equal('member.contactgroup.deleted', 'n')
+                ),
                 Filter::any(
                     Filter::like('rrule', '*'), // It's either a repeating entry
                     Filter::greaterThan('end_time', $after) // Or one whose end time is still visible

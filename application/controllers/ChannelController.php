@@ -28,7 +28,10 @@ class ChannelController extends CompatController
     {
         $channelId = $this->params->getRequired('id');
         $query = Channel::on($this->db)
-            ->filter(Filter::equal('id', $channelId));
+            ->filter(Filter::all(
+                Filter::equal('id', $channelId),
+                Filter::equal('deleted', 'n')
+            ));
 
         /** @var Channel $channel */
         $channel = $query->first();

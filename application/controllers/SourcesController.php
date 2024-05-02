@@ -12,6 +12,7 @@ use Icinga\Module\Notifications\Widget\ItemList\SourceList;
 use Icinga\Web\Notification;
 use Icinga\Web\Widget\Tabs;
 use ipl\Html\ValidHtml;
+use ipl\Stdlib\Filter;
 use ipl\Web\Common\BaseItemList;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
@@ -33,7 +34,8 @@ class SourcesController extends CompatController
     public function indexAction(): void
     {
         $sources = Source::on(Database::get())
-            ->columns(['id', 'type',  'name']);
+            ->columns(['id', 'type',  'name'])
+            ->filter(Filter::equal('deleted', 'n'));
 
         $limitControl = $this->createLimitControl();
         $paginationControl = $this->createPaginationControl($sources);

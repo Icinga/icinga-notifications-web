@@ -43,7 +43,8 @@ class ChannelsController extends CompatController
 
     public function indexAction()
     {
-        $channels = Channel::on($this->db);
+        $channels = Channel::on($this->db)
+            ->filter(Filter::equal('deleted', 'n'));
         $this->mergeTabs($this->Module()->getConfigTabs());
         $this->getTabs()->activate('channels');
 

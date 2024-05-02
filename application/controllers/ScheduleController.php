@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Controllers;
 
+use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\MoveRotationForm;
@@ -26,7 +27,10 @@ class ScheduleController extends CompatController
         $id = (int) $this->params->getRequired('id');
 
         $query = Schedule::on(Database::get())
-            ->filter(Filter::equal('schedule.id', $id));
+            ->filter(Filter::all(
+                Filter::equal('schedule.id', $id),
+                Filter::equal('schedule.deleted', 'n')
+            ));
 
         /** @var ?Schedule $schedule */
         $schedule = $query->first();
@@ -112,6 +116,7 @@ class ScheduleController extends CompatController
     public function addRotationAction(): void
     {
         $scheduleId = (int) $this->params->getRequired('schedule');
+        $this->assertScheduleExists($scheduleId);
 
         $form = new RotationConfigForm($scheduleId, Database::get());
         $form->setAction($this->getRequest()->getUrl()->setParam('showCompact')->getAbsoluteUrl());
@@ -145,6 +150,7 @@ class ScheduleController extends CompatController
     {
         $id = (int) $this->params->getRequired('id');
         $scheduleId = (int) $this->params->getRequired('schedule');
+        $this->assertScheduleExists($scheduleId);
 
         $form = new RotationConfigForm($scheduleId, Database::get());
         $form->disableModeSelection();
@@ -207,5 +213,30 @@ class ScheduleController extends CompatController
         $suggestions->forRequest($this->getServerRequest());
 
         $this->getDocument()->addHtml($suggestions);
+    }
+
+    /**
+     * Assert that a schedule with the given ID exists
+     *
+     * @param int $id
+     *
+     * @return void
+     *
+     * @throws HttpNotFoundException If the schedule with the given ID does not exist
+     */
+    private function assertScheduleExists(int $id): void
+    {
+        $query = Schedule::on(Database::get())
+            ->columns('1')
+            ->filter(Filter::all(
+                Filter::equal('schedule.id', $id),
+                Filter::equal('schedule.deleted', 'n')
+            ));
+
+        /** @var ?Schedule $schedule */
+        $schedule = $query->first();
+        if ($schedule === null) {
+            $this->httpNotFound(t('Schedule not found'));
+        }
     }
 }

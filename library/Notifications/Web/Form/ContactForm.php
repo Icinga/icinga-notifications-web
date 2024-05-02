@@ -206,11 +206,15 @@ class ContactForm extends CompatForm
             );
 
             if (! empty(array_diff_assoc($contact, $contactFromDb))) {
+                $contact['changed_at'] = time() * 1000;
                 $this->db->update('contact', $contact, ['id = ?' => $this->contactId]);
             }
 
-            $addressObjects = (ContactAddress::on($this->db))
-                ->filter(Filter::equal('contact_id', $this->contactId));
+            $addressObjects = ContactAddress::on($this->db)
+                ->filter(Filter::all(
+                    Filter::equal('contact_id', $this->contactId),
+                    Filter::equal('deleted', 'n')
+                ));
 
             foreach ($addressObjects as $addressRow) {
                 $addressFromDb[$addressRow->type] = [$addressRow->id, $addressRow->address];
@@ -227,9 +231,12 @@ class ContactForm extends CompatForm
     public function removeContact()
     {
         $this->db->beginTransaction();
-        $this->db->delete('contactgroup_member', ['contact_id = ?' => $this->contactId]);
-        $this->db->delete('contact_address', ['contact_id = ?' => $this->contactId]);
-        $this->db->delete('contact', ['id = ?' => $this->contactId]);
+
+        $markAsDeleted = ['changed_at' => time() * 1000, 'deleted' => 'y'];
+        $this->db->update('contactgroup_member', $markAsDeleted, ['contact_id = ?' => $this->contactId]);
+        $this->db->update('contact_address', $markAsDeleted, ['contact_id = ?' => $this->contactId]);
+        $this->db->update('contact', $markAsDeleted + ['username' => null], ['id = ?' => $this->contactId]);
+
         $this->db->commitTransaction();
     }
 
@@ -256,7 +263,7 @@ class ContactForm extends CompatForm
             } elseif ($addressFromDb[$type][1] !== $addressFromForm[$type]) {
                 $this->db->update(
                     'contact_address',
-                    ['address' => $addressFromForm[$type]],
+                    ['address' => $addressFromForm[$type], 'changed_at' => time() * 1000],
                     [
                         'id = ?'         => $addressFromDb[$type][0],
                         'contact_id = ?' => $this->contactId
@@ -264,7 +271,11 @@ class ContactForm extends CompatForm
                 );
             }
         } elseif (isset($addressFromDb[$type])) {
-            $this->db->delete('contact_address', ['id = ?' => $addressFromDb[$type][0]]);
+            $this->db->update(
+                'contact_address',
+                ['changed_at' => time() * 1000, 'deleted' => 'y'],
+                ['id = ?' => $addressFromDb[$type][0]]
+            );
         }
     }
 

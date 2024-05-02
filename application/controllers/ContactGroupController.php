@@ -7,7 +7,9 @@ namespace Icinga\Module\Notifications\Controllers;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\ContactGroupForm;
+use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Contactgroup;
+use Icinga\Module\Notifications\Model\ContactgroupMember;
 use Icinga\Module\Notifications\Widget\ItemList\ContactList;
 use Icinga\Web\Notification;
 use ipl\Html\Attributes;
@@ -33,7 +35,10 @@ class ContactGroupController extends CompatController
 
         $query = Contactgroup::on(Database::get())
             ->columns(['id', 'name'])
-            ->filter(Filter::equal('id', $groupId));
+            ->filter(Filter::all(
+                Filter::equal('id', $groupId),
+                Filter::equal('deleted', 'n')
+            ));
 
         $group = $query->first();
         if ($group === null) {
@@ -44,7 +49,14 @@ class ContactGroupController extends CompatController
 
         $this->addControl(new HtmlElement('div', new Attributes(['class' => 'header']), Text::create($group->name)));
 
-        $this->addControl($this->createPaginationControl($group->contact));
+        $contacts = $group
+            ->contact
+            ->filter(Filter::all(
+                Filter::equal('contactgroup_member.deleted', 'n'),
+                Filter::equal('deleted', 'n')
+            ));
+
+        $this->addControl($this->createPaginationControl($contacts));
         $this->addControl($this->createLimitControl());
 
         $this->addContent(
@@ -56,7 +68,7 @@ class ContactGroupController extends CompatController
             ))->openInModal()
         );
 
-        $this->addContent(new ContactList($group->contact));
+        $this->addContent(new ContactList($contacts));
 
         $this->addTitleTab(t('Contact Group'));
         $this->setTitle(sprintf(t('Contact Group: %s'), $group->name));
@@ -90,12 +102,11 @@ class ContactGroupController extends CompatController
                 }
             })
             ->on(Form::ON_SUCCESS, function (ContactGroupForm $form) use ($groupId) {
-                if ($form->editGroup()) {
-                    Notification::success(sprintf(
-                        t('Successfully updated contact group %s'),
-                        $form->getValue('group_name')
-                    ));
-                }
+                $form->editGroup();
+                Notification::success(sprintf(
+                    t('Successfully updated contact group %s'),
+                    $form->getValue('group_name')
+                ));
 
                 $this->closeModalAndRefreshRemainingViews(Links::contactGroup($groupId));
             })

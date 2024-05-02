@@ -96,6 +96,8 @@ class Contact extends Model
         $relations->hasMany('rule_escalation_recipient', RuleEscalationRecipient::class)
             ->setJoinType('LEFT');
 
+        $relations->hasMany('contactgroup_member', ContactgroupMember::class);
+
         $relations->belongsToMany('contactgroup', Contactgroup::class)
             ->through('contactgroup_member')
             ->setJoinType('LEFT');

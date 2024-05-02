@@ -87,7 +87,10 @@ class MoveRotationForm extends Form
         /** @var ?Rotation $rotation */
         $rotation = Rotation::on($this->db)
             ->columns(['schedule_id', 'priority'])
-            ->filter(Filter::equal('id', $rotationId))
+            ->filter(Filter::all(
+                Filter::equal('id', $rotationId),
+                Filter::equal('deleted', 'n')
+            ))
             ->first();
         if ($rotation === null) {
             throw new HttpNotFoundException('Rotation not found');
@@ -100,8 +103,9 @@ class MoveRotationForm extends Form
 
         $this->scheduleId = $rotation->schedule_id;
 
+        $changedAt = time() * 1000;
         // Free up the current priority used by the rotation in question
-        $this->db->update('rotation', ['priority' => 9999], ['id = ?' => $rotationId]);
+        $this->db->update('rotation', ['priority' => null, 'deleted' => 'y'], ['id = ?' => $rotationId]);
 
         // Update the priorities of the rotations that are affected by the move
         if ($newPriority < $rotation->priority) {
@@ -110,6 +114,7 @@ class MoveRotationForm extends Form
                     ->columns('id')
                     ->from('rotation')
                     ->where([
+                        'deleted = ?' => 'n',
                         'schedule_id = ?' => $rotation->schedule_id,
                         'priority >= ?' => $newPriority,
                         'priority < ?' => $rotation->priority
@@ -119,7 +124,7 @@ class MoveRotationForm extends Form
             foreach ($affectedRotations as $rotation) {
                 $this->db->update(
                     'rotation',
-                    ['priority' => new Expression('priority + 1')],
+                    ['priority' => new Expression('priority + 1'), 'changed_at' => $changedAt],
                     ['id = ?' => $rotation->id]
                 );
             }
@@ -129,6 +134,7 @@ class MoveRotationForm extends Form
                     ->columns('id')
                     ->from('rotation')
                     ->where([
+                        'deleted = ?' => 'n',
                         'schedule_id = ?' => $rotation->schedule_id,
                         'priority > ?' => $rotation->priority,
                         'priority <= ?' => $newPriority
@@ -138,14 +144,17 @@ class MoveRotationForm extends Form
             foreach ($affectedRotations as $rotation) {
                 $this->db->update(
                     'rotation',
-                    ['priority' => new Expression('priority - 1')],
+                    ['priority' => new Expression('priority - 1'), 'changed_at' => $changedAt],
                     ['id = ?' => $rotation->id]
                 );
             }
         }
 
         // Now insert the rotation at the new priority
-        $this->db->update('rotation', ['priority' => $newPriority], ['id = ?' => $rotationId]);
+        $this->db->update('rotation',
+            ['priority' => $newPriority, 'changed_at' => $changedAt, 'deleted' => 'n'],
+            ['id = ?' => $rotationId]
+        );
 
         if ($transactionStarted) {
             $this->db->commitTransaction();

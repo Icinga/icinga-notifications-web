@@ -11,6 +11,7 @@ use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
+use ipl\Stdlib\Filter;
 
 /**
  * @property int $id
@@ -95,15 +96,15 @@ class RuleEscalationRecipient extends Model
     {
         $recipientModel = null;
         if ($this->contact_id) {
-            $recipientModel = $this->contact->first();
+            $recipientModel = $this->contact->filter(Filter::equal('deleted', 'n'))->first();
         }
 
         if ($this->contactgroup_id) {
-            $recipientModel = $this->contactgroup->first();
+            $recipientModel = $this->contactgroup->filter(Filter::equal('deleted', 'n'))->first();
         }
 
         if ($this->schedule_id) {
-            $recipientModel = $this->schedule->first();
+            $recipientModel = $this->schedule->filter(Filter::equal('deleted', 'n'))->first();
         }
 
         return $recipientModel;

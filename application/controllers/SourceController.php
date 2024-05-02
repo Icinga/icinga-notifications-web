@@ -25,7 +25,10 @@ class SourceController extends CompatController
 
         /** @var ?Source $source */
         $source = Source::on(Database::get())
-            ->filter(Filter::equal('id', $sourceId))
+            ->filter(Filter::all(
+                Filter::equal('id', $sourceId),
+                Filter::equal('deleted', 'n')
+            ))
             ->first();
         if ($source === null) {
             $this->httpNotFound($this->translate('Source not found'));

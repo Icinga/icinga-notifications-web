@@ -57,7 +57,10 @@ class ScheduleForm extends CompatForm
         $db = Database::get();
 
         $schedule = Schedule::on($db)
-            ->filter(Filter::equal('id', $id))
+            ->filter(Filter::all(
+                Filter::equal('id', $id),
+                Filter::equal('deleted', 'n')
+            ))
             ->first();
         if ($schedule === null) {
             throw new HttpNotFoundException($this->translate('Schedule not found'));
@@ -82,7 +85,8 @@ class ScheduleForm extends CompatForm
         $db = Database::get();
 
         $db->update('schedule', [
-            'name' => $this->getValue('name')
+            'name'          => $this->getValue('name'),
+            'changed_at'    => time() * 1000
         ], ['id = ?' => $id]);
     }
 
@@ -93,7 +97,10 @@ class ScheduleForm extends CompatForm
 
         $rotations = Rotation::on($db)
             ->columns('priority')
-            ->filter(Filter::equal('schedule_id', $id))
+            ->filter(Filter::all(
+                Filter::equal('schedule_id', $id),
+                Filter::equal('deleted', 'n')
+            ))
             ->orderBy('priority', SORT_DESC);
 
         $rotationConfigForm = new RotationConfigForm($id, $db);
@@ -102,7 +109,7 @@ class ScheduleForm extends CompatForm
             $rotationConfigForm->wipeRotation($rotation->priority);
         }
 
-        $db->delete('schedule', ['id = ?' => $id]);
+        $db->update('schedule', ['changed_at' => time() * 1000, 'deleted' => 'y'], ['id = ?' => $id]);
 
         $db->commitTransaction();
     }
