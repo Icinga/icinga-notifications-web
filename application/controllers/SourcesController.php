@@ -42,8 +42,9 @@ class SourcesController extends CompatController
         $sortControl = $this->createSortControl(
             $sources,
             [
-                'name' => t('Name'),
-                'type' => t('Type')
+                'name'          => t('Name'),
+                'type'          => t('Type'),
+                'changed_at'    => t('Changed At')
             ]
         );
 
