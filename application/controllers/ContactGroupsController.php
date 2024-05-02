@@ -47,7 +47,8 @@ class ContactGroupsController extends CompatController
         $sortControl = $this->createSortControl(
             $groups,
             [
-                'name' => t('Group Name'),
+                'name'          => t('Group Name'),
+                'changed_at'    => t('Changed At')
             ]
         );
 

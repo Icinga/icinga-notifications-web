@@ -33,7 +33,10 @@ class SchedulesController extends CompatController
         $limitControl = $this->createLimitControl();
         $sortControl = $this->createSortControl(
             $schedules,
-            ['schedule.name' => t('Name')]
+            [
+                'schedule.name' => t('Name'),
+                'changed_at'    => t('Changed At')
+            ]
         );
 
         $paginationControl = $this->createPaginationControl($schedules);

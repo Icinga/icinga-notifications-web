@@ -51,7 +51,8 @@ class ContactsController extends CompatController
         $sortControl = $this->createSortControl(
             $contacts,
             [
-                'full_name' => t('Full Name'),
+                'full_name'     => t('Full Name'),
+                'changed_at'    => t('Changed At')
             ]
         );
 
