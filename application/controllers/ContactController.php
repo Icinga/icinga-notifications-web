@@ -27,12 +27,15 @@ class ContactController extends CompatController
 
     public function indexAction()
     {
-        $contact = Contact::on($this->db);
         $contactId = $this->params->getRequired('id');
+        $query = Contact::on($this->db)
+            ->filter(Filter::equal('id', $contactId));
 
-        $contact->filter(Filter::equal('id', $contactId));
-
-        $contact = $contact->first();
+        /** @var Contact $contact */
+        $contact = $query->first();
+        if ($contact === null) {
+            $this->httpNotFound(t('Contact not found'));
+        }
 
         $this->addTitleTab(sprintf(t('Contact: %s'), $contact->full_name));
 

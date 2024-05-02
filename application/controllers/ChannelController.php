@@ -26,12 +26,15 @@ class ChannelController extends CompatController
 
     public function indexAction()
     {
-        $channel = Channel::on($this->db);
         $channelId = $this->params->getRequired('id');
+        $query = Channel::on($this->db)
+            ->filter(Filter::equal('id', $channelId));
 
-        $channel->filter(Filter::equal('id', $channelId));
-
-        $channel = $channel->first();
+        /** @var Channel $channel */
+        $channel = $query->first();
+        if ($channel === null) {
+            $this->httpNotFound(t('Channel not found'));
+        }
 
         $this->addTitleTab(sprintf(t('Channel: %s'), $channel->name));
 
