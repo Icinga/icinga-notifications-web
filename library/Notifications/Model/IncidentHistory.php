@@ -4,11 +4,40 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use DateTime;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
+use ipl\Orm\Query;
 use ipl\Orm\Relations;
 
+/**
+ * IncidentHistory
+ *
+ * @property int $id
+ * @property int $incident_id
+ * @property ?int $event_id
+ * @property ?int $rule_id
+ * @property ?int $rule_escalation_id
+ * @property DateTime $time
+ * @property string $type
+ * @property ?int $contact_id
+ * @property ?int $channel_id
+ * @property ?string $new_severity
+ * @property ?string $old_severity
+ * @property ?string $new_recipient_role
+ * @property ?string $old_recipient_role
+ * @property ?string $message
+ *
+ * @property Query | Incident $incident
+ * @property Query | Event $event
+ * @property Query | Contact $contact
+ * @property Query | Contactgroup $contactgroup
+ * @property Query | Schedule $schedule
+ * @property Query | Rule $rule
+ * @property Query | RuleEscalation $rule_escalation
+ * @property Query | Channel $channel
+ */
 class IncidentHistory extends Model
 {
     public function getTableName()
