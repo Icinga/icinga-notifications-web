@@ -63,6 +63,7 @@ class IncidentHistoryListItem extends BaseListItem
     {
         switch ($this->item->type) {
             case 'opened':
+                return Icons::OPENED;
             case 'incident_severity_changed':
                 return $this->getSeverityIcon();
             case 'recipient_role_changed':
@@ -73,7 +74,7 @@ class IncidentHistoryListItem extends BaseListItem
                 return Icons::RULE_MATCHED;
             case 'escalation_triggered':
                 return Icons::TRIGGERED;
-            default:
+            case 'notified':
                 return Icons::NOTIFIED;
             default:
                 return Icons::UNDEFINED;
@@ -85,6 +86,8 @@ class IncidentHistoryListItem extends BaseListItem
         switch ($this->item->new_severity) {
             case 'ok':
                 return Icons::OK;
+            case 'warning':
+                return Icons::WARNING;
             case 'err':
                 return Icons::ERROR;
             case 'crit':
@@ -127,9 +130,11 @@ class IncidentHistoryListItem extends BaseListItem
                     t('Incident opened at severity %s'),
                     Event::mapSeverity($this->item->new_severity)
                 );
+
                 break;
             case 'closed':
-                $message = t('All sources recovered, incident closed');
+                $message = t('Incident closed');
+
                 break;
             case "notified":
                 if ($this->item->contactgroup_id) {
@@ -153,6 +158,7 @@ class IncidentHistoryListItem extends BaseListItem
                         $this->item->channel->type
                     );
                 }
+
                 break;
             case 'incident_severity_changed':
                 $message = sprintf(
@@ -160,6 +166,7 @@ class IncidentHistoryListItem extends BaseListItem
                     Event::mapSeverity($this->item->old_severity),
                     Event::mapSeverity($this->item->new_severity)
                 );
+
                 break;
             case 'recipient_role_changed':
                 $newRole = $this->item->new_recipient_role;
@@ -214,6 +221,7 @@ class IncidentHistoryListItem extends BaseListItem
                 break;
             case 'rule_matched':
                 $message = sprintf(t('Rule %s matched on this incident'), $this->item->rule->name);
+
                 break;
             case 'escalation_triggered':
                 $message = sprintf(
@@ -221,6 +229,7 @@ class IncidentHistoryListItem extends BaseListItem
                     $this->item->rule->name,
                     $this->item->rule_escalation->name
                 );
+
                 break;
             default:
                 $message = '';
