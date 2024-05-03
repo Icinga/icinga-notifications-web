@@ -98,7 +98,7 @@ class IncidentHistory extends Model
 
     public function getDefaultSort()
     {
-        return ['incident_history.time desc'];
+        return ['incident_history.time desc, incident_history.type desc'];
     }
 
     public function createRelations(Relations $relations)
