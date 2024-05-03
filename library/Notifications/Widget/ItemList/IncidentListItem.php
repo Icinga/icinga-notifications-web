@@ -12,8 +12,10 @@ use Icinga\Module\Notifications\Model\Source;
 use Icinga\Module\Notifications\Widget\SourceIcon;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
+use ipl\Html\FormattedString;
 use ipl\Html\Html;
 use ipl\Html\HtmlElement;
+use ipl\I18n\Translation;
 use ipl\Web\Common\BaseListItem;
 use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
@@ -25,6 +27,8 @@ use ipl\Web\Widget\TimeSince;
  */
 class IncidentListItem extends BaseListItem
 {
+    use Translation;
+
     /** @var Incident The associated list item */
     protected $item;
 
@@ -84,10 +88,10 @@ class IncidentListItem extends BaseListItem
         $meta->addHtml((new SourceIcon(SourceIcon::SIZE_BIG))->addHtml($source->getIcon()));
 
         if ($this->item->recovered_at !== null) {
-            $meta->add([
-                'closed ',
+            $meta->addHtml(FormattedString::create(
+                $this->translate('closed %s', '(incident) ... <relative time>'),
                 new TimeAgo($this->item->recovered_at->getTimestamp())
-            ]);
+            ));
         } else {
             $meta->addHtml(new TimeSince($this->item->started_at->getTimestamp()));
         }
