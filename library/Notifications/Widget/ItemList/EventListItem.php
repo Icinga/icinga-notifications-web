@@ -8,10 +8,13 @@ use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Event;
 use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\Model\Objects;
+use Icinga\Module\Notifications\Model\Source;
+use Icinga\Module\Notifications\Widget\IconBall;
 use Icinga\Module\Notifications\Widget\SourceIcon;
 use InvalidArgumentException;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
+use ipl\Stdlib\Str;
 use ipl\Web\Common\BaseListItem;
 use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
@@ -50,34 +53,43 @@ class EventListItem extends BaseListItem
         $content = null;
         $severity = $this->item->severity;
         $class = 'severity-' . $severity;
-        switch ($severity) {
-            case 'ok':
-                $content = (new Icon('heart', ['class' => $class]))->setStyle('fa-regular');
-                break;
-            case 'crit':
-                $content = new Icon('circle-exclamation', ['class' => $class]);
-                break;
-            case 'warning':
-                $content = new Icon('exclamation-triangle', ['class' => $class]);
-                break;
-            case 'err':
-                $content = (new Icon('circle-xmark', ['class' => $class]))->setStyle('fa-regular');
-                break;
-            case 'debug':
-                $content = new Icon('bug-slash');
-                break;
-            case 'info':
-                $content = new Icon('info');
-                break;
-            case 'alert':
-                $content = new Icon('bell');
-                break;
-            case 'emerg':
-                $content = new Icon('tower-broadcast');
-                break;
-            case 'notice':
-                $content = new Icon('envelope');
-                break;
+
+        if ($this->item->type === 'internal') {
+            /*
+             * TODO(nc): Add proper handling of internal events once
+             *  https://github.com/Icinga/icinga-notifications/issues/162 gets sorted out
+             */
+            $content = new IconBall('square-up-right', 'fa-solid');
+        } else {
+            switch ($severity) {
+                case 'ok':
+                    $content = (new Icon('heart', ['class' => $class]))->setStyle('fa-regular');
+                    break;
+                case 'crit':
+                    $content = new Icon('circle-exclamation', ['class' => $class]);
+                    break;
+                case 'warning':
+                    $content = new Icon('exclamation-triangle', ['class' => $class]);
+                    break;
+                case 'err':
+                    $content = (new Icon('circle-xmark', ['class' => $class]))->setStyle('fa-regular');
+                    break;
+                case 'debug':
+                    $content = new Icon('bug-slash');
+                    break;
+                case 'info':
+                    $content = new Icon('info');
+                    break;
+                case 'alert':
+                    $content = new Icon('bell');
+                    break;
+                case 'emerg':
+                    $content = new Icon('tower-broadcast');
+                    break;
+                case 'notice':
+                    $content = new Icon('envelope');
+                    break;
+            }
         }
 
         if ($content) {
@@ -102,7 +114,14 @@ class EventListItem extends BaseListItem
 
         $msg = null;
         if ($this->item->severity === null) {
-            $msg = t('acknowledged');
+            $description = strtolower(trim($this->item->message ?? ''));
+            if (Str::startsWith($description, 'incident reached age')) {
+                $msg = t('exceeded time constraint');
+            } elseif (Str::startsWith($description, 'incident reevaluation')) {
+                $msg = t('was reevaluated at daemon startup');
+            } else {
+                $msg = t('was acknowledged');
+            }
         } elseif ($this->item->severity === 'ok') {
             $msg = t('recovered');
         } else {

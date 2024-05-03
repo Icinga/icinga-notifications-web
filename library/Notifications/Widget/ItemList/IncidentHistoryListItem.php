@@ -7,10 +7,9 @@ namespace Icinga\Module\Notifications\Widget\ItemList;
 use Icinga\Module\Notifications\Common\Icons;
 use Icinga\Module\Notifications\Model\Event;
 use Icinga\Module\Notifications\Model\IncidentHistory;
-use Icinga\Module\Notifications\Model\Objects;
+use Icinga\Module\Notifications\Widget\IconBall;
 use Icinga\Module\Notifications\Widget\SourceIcon;
 use ipl\Html\BaseHtmlElement;
-use ipl\Web\Widget\IcingaIcon;
 use ipl\Web\Common\BaseListItem;
 use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\TimeAgo;
@@ -29,19 +28,10 @@ class IncidentHistoryListItem extends BaseListItem
     protected function assembleVisual(BaseHtmlElement $visual): void
     {
         $incidentIcon = $this->getIncidentEventIcon();
-        if ($this->item->type === 'incident_severity_changed' || $this->item->type === 'opened') {
+        if ($this->item->type === 'incident_severity_changed') {
             $content = new Icon($incidentIcon, ['class' => 'severity-' . $this->item->new_severity]);
-        } elseif ($this->item->type === 'rule_matched') {
-            $content = new IcingaIcon($incidentIcon, ['class' => 'type-' . $this->item->type]);
         } else {
-            $content = new Icon($incidentIcon, ['class' => 'type-' . $this->item->type]);
-
-            switch ($this->item->type) {
-                case 'closed':
-                case 'recipient_role_changed':
-                case 'notified':
-                    $content->setStyle('fa-regular');
-            }
+            $content = new IconBall($incidentIcon);
         }
 
         $visual->addHtml($content);
