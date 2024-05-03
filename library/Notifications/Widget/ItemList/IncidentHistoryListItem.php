@@ -5,7 +5,6 @@
 namespace Icinga\Module\Notifications\Widget\ItemList;
 
 use Icinga\Module\Notifications\Common\Icons;
-use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Event;
 use Icinga\Module\Notifications\Model\IncidentHistory;
 use Icinga\Module\Notifications\Model\Objects;
@@ -14,7 +13,6 @@ use ipl\Html\BaseHtmlElement;
 use ipl\Web\Widget\IcingaIcon;
 use ipl\Web\Common\BaseListItem;
 use ipl\Web\Widget\Icon;
-use ipl\Web\Widget\Link;
 use ipl\Web\Widget\TimeAgo;
 
 /**
@@ -47,20 +45,6 @@ class IncidentHistoryListItem extends BaseListItem
         }
 
         $visual->addHtml($content);
-    }
-
-    protected function assembleTitle(BaseHtmlElement $title): void
-    {
-        if ($this->item->type === 'opened' || $this->item->type == 'incident_severity_changed') {
-            $this->getAttributes()
-                ->set('data-action-item', true);
-
-            /** @var Objects $obj */
-            $obj = $this->item->incident->object;
-            $content = new Link($obj->getName(), Links::event($this->item->event_id), ['class' => 'subject']);
-
-            $title->addHtml($content);
-        }
     }
 
     protected function assembleCaption(BaseHtmlElement $caption): void
