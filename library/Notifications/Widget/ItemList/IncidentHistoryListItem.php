@@ -75,6 +75,8 @@ class IncidentHistoryListItem extends BaseListItem
                 return Icons::TRIGGERED;
             default:
                 return Icons::NOTIFIED;
+            default:
+                return Icons::UNDEFINED;
         }
     }
 
@@ -88,11 +90,11 @@ class IncidentHistoryListItem extends BaseListItem
             case 'crit':
                 return Icons::CRITICAL;
             default:
-                return Icons::WARNING;
+                return Icons::UNDEFINED;
         }
     }
 
-    protected function getRoleIcon(): ?string
+    protected function getRoleIcon(): string
     {
         switch ($this->item->new_recipient_role) {
             case 'manager':
@@ -108,7 +110,7 @@ class IncidentHistoryListItem extends BaseListItem
                     }
                 }
 
-                return '';
+                return Icons::UNDEFINED;
         }
     }
 
