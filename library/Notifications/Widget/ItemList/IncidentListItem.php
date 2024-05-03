@@ -23,7 +23,7 @@ use ipl\Web\Widget\TimeAgo;
 use ipl\Web\Widget\TimeSince;
 
 /**
- * Event item of an event list. Represents one database row.
+ * Incident item of an incident list. Represents one database row.
  */
 class IncidentListItem extends BaseListItem
 {

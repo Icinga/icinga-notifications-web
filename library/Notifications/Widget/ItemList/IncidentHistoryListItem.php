@@ -14,7 +14,7 @@ use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\TimeAgo;
 
 /**
- * Event item of an event list. Represents one database row.
+ * Incident history item of an incident history list. Represents one database row.
  */
 class IncidentHistoryListItem extends BaseListItem
 {
