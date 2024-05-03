@@ -120,16 +120,25 @@ class EventListItem extends BaseListItem
 
     protected function assembleHeader(BaseHtmlElement $header): void
     {
+        $content = [];
+        if ($this->item->type !== 'internal') {
+            /** @var Objects $object */
+            $object = $this->item->object;
+            /** @var Source $source */
+            $source = $object->source;
+            $content[] = (new SourceIcon(SourceIcon::SIZE_BIG))->addHtml($source->getIcon());
+        }
+
+        $content[] = new TimeAgo($this->item->time->getTimestamp());
+
         $header->add($this->createTitle());
-        $header->add(Html::tag(
-            'span',
-            ['class' => 'meta'],
-            [
-                (new SourceIcon(SourceIcon::SIZE_BIG))
-                    ->addHtml($this->item->object->source->getIcon()),
-                new TimeAgo($this->item->time->getTimestamp())
-            ]
-        ));
+        $header->add(
+            Html::tag(
+                'span',
+                ['class' => 'meta'],
+                $content
+            )
+        );
     }
 
     protected function assembleMain(BaseHtmlElement $main): void
