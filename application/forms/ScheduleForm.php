@@ -43,13 +43,6 @@ class ScheduleForm extends CompatForm
         return $this;
     }
 
-    public function hasBeenCancelled(): bool
-    {
-        $btn = $this->getPressedSubmitElement();
-
-        return $btn !== null && $btn->getName() === 'cancel';
-    }
-
     public function hasBeenRemoved(): bool
     {
         $btn = $this->getPressedSubmitElement();
@@ -121,15 +114,6 @@ class ScheduleForm extends CompatForm
             'label' => $this->getSubmitLabel()
         ]);
 
-        $additionalButtons = [];
-        $cancelBtn = $this->createElement('submit', 'cancel', [
-            'label' => $this->translate('Cancel'),
-            'class' => 'btn-cancel',
-            'formnovalidate' => true
-        ]);
-        $this->registerElement($cancelBtn);
-        $additionalButtons[] = $cancelBtn;
-
         if ($this->showRemoveButton) {
             $removeBtn = $this->createElement('submit', 'remove', [
                 'label' => $this->translate('Remove'),
@@ -137,10 +121,9 @@ class ScheduleForm extends CompatForm
                 'formnovalidate' => true
             ]);
             $this->registerElement($removeBtn);
-            $additionalButtons[] = $removeBtn;
-        }
 
-        $this->getElement('submit')->prependWrapper((new HtmlDocument())->setHtmlContent(...$additionalButtons));
+            $this->getElement('submit')->prependWrapper((new HtmlDocument())->setHtmlContent($removeBtn));
+        }
 
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
     }

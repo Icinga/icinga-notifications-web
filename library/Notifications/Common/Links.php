@@ -31,6 +31,11 @@ abstract class Links
         return Url::fromPath('notifications/incident', ['id' => $id]);
     }
 
+    public static function contacts(): Url
+    {
+        return Url::fromPath('notifications/contacts');
+    }
+
     public static function contact(int $id): Url
     {
         return Url::fromPath('notifications/contact', ['id' => $id]);
@@ -44,5 +49,25 @@ abstract class Links
     public static function eventRule(int $id): Url
     {
         return Url::fromPath('notifications/event-rule', ['id' => $id]);
+    }
+
+    public static function schedules(): Url
+    {
+        return Url::fromPath('notifications/schedules');
+    }
+
+    public static function schedule(int $id): Url
+    {
+        return Url::fromPath('notifications/schedule', ['id' => $id]);
+    }
+
+    public static function scheduleAdd(): Url
+    {
+        return Url::fromPath('notifications/schedule/add');
+    }
+
+    public static function scheduleSettings(int $id): Url
+    {
+        return Url::fromPath('notifications/schedule/settings', ['id' => $id]);
     }
 }
