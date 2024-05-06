@@ -103,15 +103,15 @@ class ContactsController extends CompatController
         $this->getTabs()->activate('contacts');
     }
 
-    public function addAction()
+    public function addAction(): void
     {
         $this->addTitleTab(t('Add Contact'));
 
         $form = (new ContactForm($this->db))
             ->on(ContactForm::ON_SUCCESS, function (ContactForm $form) {
-                $form->addOrUpdateContact();
+                $form->addContact();
                 Notification::success(t('New contact has successfully been added'));
-                $this->redirectNow(Url::fromPath('notifications/contacts'));
+                $this->redirectNow(Links::contacts());
             })->handleRequest($this->getServerRequest());
 
         $this->addContent($form);
