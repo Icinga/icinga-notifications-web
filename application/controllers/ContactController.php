@@ -15,56 +15,36 @@ use ipl\Web\Compat\CompatController;
 
 class ContactController extends CompatController
 {
-    /** @var Connection */
-    private $db;
-
-    public function init()
+    public function init(): void
     {
         $this->assertPermission('notifications/config/contacts');
-
-        $this->db = Database::get();
     }
 
-    public function indexAction()
+    public function indexAction(): void
     {
         $contactId = $this->params->getRequired('id');
-        $query = Contact::on($this->db)
-            ->filter(Filter::all(
-                Filter::equal('id', $contactId),
-                Filter::equal('deleted', 'n')
-            ));
 
-        /** @var Contact $contact */
-        $contact = $query->first();
-        if ($contact === null) {
-            $this->httpNotFound(t('Contact not found'));
-        }
-
-        $this->addTitleTab(sprintf(t('Contact: %s'), $contact->full_name));
-
-        $form = (new ContactForm($this->db, $contactId))
-            ->populate($contact)
+        $form = (new ContactForm(Database::get()))
+            ->loadContact($contactId)
             ->on(ContactForm::ON_SUCCESS, function (ContactForm $form) {
-                $form->addOrUpdateContact();
-                /** @var FieldsetElement $contactElement */
-                $contactElement = $form->getElement('contact');
+                $form->editContact();
                 Notification::success(sprintf(
                     t('Contact "%s" has successfully been saved'),
-                    $contactElement->getValue('full_name')
+                    $form->getContactName()
                 ));
 
                 $this->redirectNow('__CLOSE__');
             })->on(ContactForm::ON_REMOVE, function (ContactForm $form) {
                 $form->removeContact();
-                /** @var FieldsetElement $contactElement */
-                $contactElement = $form->getElement('contact');
                 Notification::success(sprintf(
                     t('Deleted contact "%s" successfully'),
-                    $contactElement->getValue('full_name')
+                    $form->getContactName()
                 ));
 
                 $this->redirectNow('__CLOSE__');
             })->handleRequest($this->getServerRequest());
+
+        $this->addTitleTab(sprintf(t('Contact: %s'), $form->getContactName()));
 
         $this->addContent($form);
     }
