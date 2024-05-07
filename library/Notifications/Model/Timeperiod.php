@@ -5,8 +5,18 @@
 namespace Icinga\Module\Notifications\Model;
 
 use ipl\Orm\Model;
+use ipl\Orm\Query;
 use ipl\Orm\Relations;
 
+/**
+ * Timeperiod
+ *
+ * @property int $id
+ * @property ?int $owned_by_rotation_id
+ *
+ * @property Query|Rotation $rotation
+ * @property Query|TimeperiodEntry $timeperiod_entry
+ */
 class Timeperiod extends Model
 {
     public function getTableName()
@@ -22,19 +32,14 @@ class Timeperiod extends Model
     public function getColumns()
     {
         return [
-            'owned_by_schedule_id'
+            'owned_by_rotation_id'
         ];
     }
 
     public function createRelations(Relations $relations)
     {
-        $relations->belongsToMany('schedule', Schedule::class)
-            ->through(ScheduleMember::class)
-            ->setJoinType('LEFT');
-        $relations->hasMany('schedule_member', ScheduleMember::class)
-            ->setJoinType('LEFT');
-        $relations->hasOne('parent', Schedule::class)
-            ->setCandidateKey('owned_by_schedule_id')
+        $relations->belongsTo('rotation', Rotation::class)
+            ->setCandidateKey('owned_by_rotation_id')
             ->setJoinType('LEFT');
         $relations->hasMany('timeperiod_entry', TimeperiodEntry::class)
             ->setJoinType('LEFT');

@@ -12,8 +12,7 @@ use ipl\Orm\Relations;
  * @property int $id
  * @property string $name
  *
- * @property Timeperiod|Query $timeperiod
- * @property ScheduleMember|Query $member
+ * @property Rotation|Query $rotation
  * @property RuleEscalationRecipient|Query $rule_escalation_recipient
  * @property IncidentHistory|Query $incident_history
  */
@@ -53,12 +52,7 @@ class Schedule extends Model
 
     public function createRelations(Relations $relations): void
     {
-        $relations->belongsToMany('timeperiod', Timeperiod::class)
-            ->through(ScheduleMember::class)
-            ->setJoinType('LEFT');
-        $relations->hasMany('member', ScheduleMember::class)
-            ->setJoinType('LEFT');
-
+        $relations->hasMany('rotation', Rotation::class);
         $relations->hasMany('rule_escalation_recipient', RuleEscalationRecipient::class)
             ->setJoinType('LEFT');
         $relations->hasMany('incident_history', IncidentHistory::class);
