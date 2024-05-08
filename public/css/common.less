@@ -33,12 +33,33 @@
 
   color: @text-color;
   margin-right: 0.2em;
+
   i.icon {
     vertical-align: text-top;
   }
 
   i.icon:before {
     margin: unset;
+  }
+}
+
+.icon-ball {
+  .ball();
+  .ball-size-l();
+  .ball-solid(@gray-light);
+
+  color: @text-color;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  i.icon::before {
+    font-size: 0.6em;
+  }
+
+  i.icon.fa-paper-plane::before {
+    margin-right: .2em;
   }
 }
 

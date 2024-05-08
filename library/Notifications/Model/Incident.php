@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use DateTime;
 use Icinga\Module\Notifications\Common\Database;
 use ipl\Orm\Behavior\Binary;
 use ipl\Orm\Behavior\MillisecondTimestamp;
@@ -18,6 +19,18 @@ use ipl\Sql\Select;
  * Incident Model
  *
  * @property int $id
+ * @property string $object_id
+ * @property DateTime $started_at
+ * @property ?DateTime $recovered_at
+ * @property string $severity
+ *
+ * @property Query | Objects $object
+ * @property Query | Event $event
+ * @property Query | Contact $contact
+ * @property Query | IncidentContact $incident_contact
+ * @property Query | IncidentHistory $incident_history
+ * @property Query | Rule $rule
+ * @property Query | RuleEscalation $rule_escalation
  */
 class Incident extends Model
 {
@@ -44,10 +57,10 @@ class Incident extends Model
     public function getColumnDefinitions()
     {
         return [
-            'object_id'     => t('Object Id'),
-            'started_at'    => t('Started At'),
-            'recovered_at'  => t('Recovered At'),
-            'severity'      => t('Severity')
+            'object_id'    => t('Object Id'),
+            'started_at'   => t('Started At'),
+            'recovered_at' => t('Recovered At'),
+            'severity'     => t('Severity')
         ];
     }
 

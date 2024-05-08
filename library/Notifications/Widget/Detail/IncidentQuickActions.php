@@ -92,7 +92,7 @@ class IncidentQuickActions extends Form
             'unsubscribe',
             [
                 'class' => ['control-button', 'spinner'],
-                'label' => [new Icon(Icons::UNSUBSCRIBED), t('Unubscribe')],
+                'label' => [new Icon(Icons::UNSUBSCRIBED), t('Unsubscribe')],
                 'title' => t('Unsubscribe from this incident')
             ]
         );

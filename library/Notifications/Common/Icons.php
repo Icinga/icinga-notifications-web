@@ -22,7 +22,7 @@ final class Icons
 
     public const USER_MANAGER = 'user-tie';
 
-    public const CLOSED = 'circle-check';
+    public const CLOSED = 'check';
 
     public const OPENED = 'sun';
 
@@ -38,5 +38,7 @@ final class Icons
 
     public const NOTIFIED = 'paper-plane';
 
-    public const RULE_MATCHED = 'filter-check-circle';
+    public const RULE_MATCHED = 'filter';
+
+    public const UNDEFINED = 'notdef';
 }

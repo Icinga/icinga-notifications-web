@@ -130,10 +130,17 @@ class EventDetail extends BaseHtmlElement
     /** @return ValidHtml[] */
     protected function createSource(): array
     {
-        return [
-            Html::tag('h2', t('Source')),
-            new EventSourceBadge($this->event->object->source)
-        ];
+        $elements = [];
+        if ($this->event->type === 'internal') {
+            // return no source elements for internal events
+            return $elements;
+        }
+
+        $elements[] = Html::tag('h2', t('Source'));
+
+        $elements[] = new EventSourceBadge($this->event->object->source);
+
+        return $elements;
     }
 
     protected function assemble()

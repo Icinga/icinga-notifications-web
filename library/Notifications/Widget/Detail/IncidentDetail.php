@@ -4,7 +4,6 @@
 
 namespace Icinga\Module\Notifications\Widget\Detail;
 
-use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\Model\Objects;
 use Icinga\Module\Notifications\Widget\EventSourceBadge;
@@ -15,8 +14,6 @@ use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use ipl\Html\HtmlElement;
 use ipl\Html\Table;
-use ipl\Orm\Query;
-use ipl\Sql\Select;
 use ipl\Web\Widget\Link;
 use ipl\Web\Widget\StateBall;
 
@@ -93,28 +90,20 @@ class IncidentDetail extends BaseHtmlElement
 
     protected function createHistory()
     {
-        $history = $this->incident->incident_history
-            ->with([
-                'event',
-                'incident.object',
-                'incident.object.source',
-                'contact',
-                'rule',
-                'rule_escalation',
-                'contactgroup',
-                'schedule',
-                'channel'
-            ]);
-
-        $history
-            ->withColumns('incident.object.id_tags')
-            ->on(Query::ON_SELECT_ASSEMBLED, function (Select $select) use ($history) {
-                Database::registerGroupBy($history, $select);
-            });
-
         return [
             Html::tag('h2', t('Incident History')),
-            new IncidentHistoryList($history)
+            new IncidentHistoryList(
+                $this->incident->incident_history
+                    ->with([
+                        'incident.object.source',
+                        'contact',
+                        'rule',
+                        'rule_escalation',
+                        'contactgroup',
+                        'schedule',
+                        'channel'
+                    ])
+            )
         ];
     }
 

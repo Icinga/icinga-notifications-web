@@ -5,16 +5,13 @@
 namespace Icinga\Module\Notifications\Widget\ItemList;
 
 use Icinga\Module\Notifications\Common\Icons;
-use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Event;
 use Icinga\Module\Notifications\Model\IncidentHistory;
-use Icinga\Module\Notifications\Model\Objects;
+use Icinga\Module\Notifications\Widget\IconBall;
 use Icinga\Module\Notifications\Widget\SourceIcon;
 use ipl\Html\BaseHtmlElement;
-use ipl\Web\Widget\IcingaIcon;
 use ipl\Web\Common\BaseListItem;
 use ipl\Web\Widget\Icon;
-use ipl\Web\Widget\Link;
 use ipl\Web\Widget\TimeAgo;
 
 /**
@@ -31,36 +28,13 @@ class IncidentHistoryListItem extends BaseListItem
     protected function assembleVisual(BaseHtmlElement $visual): void
     {
         $incidentIcon = $this->getIncidentEventIcon();
-        if ($this->item->type === 'incident_severity_changed' || $this->item->type === 'opened') {
+        if ($this->item->type === 'incident_severity_changed') {
             $content = new Icon($incidentIcon, ['class' => 'severity-' . $this->item->new_severity]);
-        } elseif ($this->item->type === 'rule_matched') {
-            $content = new IcingaIcon($incidentIcon, ['class' => 'type-' . $this->item->type]);
         } else {
-            $content = new Icon($incidentIcon, ['class' => 'type-' . $this->item->type]);
-
-            switch ($this->item->type) {
-                case 'closed':
-                case 'recipient_role_changed':
-                case 'notified':
-                    $content->setStyle('fa-regular');
-            }
+            $content = new IconBall($incidentIcon);
         }
 
         $visual->addHtml($content);
-    }
-
-    protected function assembleTitle(BaseHtmlElement $title): void
-    {
-        if ($this->item->type === 'opened' || $this->item->type == 'incident_severity_changed') {
-            $this->getAttributes()
-                ->set('data-action-item', true);
-
-            /** @var Objects $obj */
-            $obj = $this->item->incident->object;
-            $content = new Link($obj->getName(), Links::event($this->item->event_id), ['class' => 'subject']);
-
-            $title->addHtml($content);
-        }
     }
 
     protected function assembleCaption(BaseHtmlElement $caption): void
@@ -89,6 +63,7 @@ class IncidentHistoryListItem extends BaseListItem
     {
         switch ($this->item->type) {
             case 'opened':
+                return Icons::OPENED;
             case 'incident_severity_changed':
                 return $this->getSeverityIcon();
             case 'recipient_role_changed':
@@ -99,8 +74,10 @@ class IncidentHistoryListItem extends BaseListItem
                 return Icons::RULE_MATCHED;
             case 'escalation_triggered':
                 return Icons::TRIGGERED;
-            default:
+            case 'notified':
                 return Icons::NOTIFIED;
+            default:
+                return Icons::UNDEFINED;
         }
     }
 
@@ -109,16 +86,18 @@ class IncidentHistoryListItem extends BaseListItem
         switch ($this->item->new_severity) {
             case 'ok':
                 return Icons::OK;
+            case 'warning':
+                return Icons::WARNING;
             case 'err':
                 return Icons::ERROR;
             case 'crit':
                 return Icons::CRITICAL;
             default:
-                return Icons::WARNING;
+                return Icons::UNDEFINED;
         }
     }
 
-    protected function getRoleIcon(): ?string
+    protected function getRoleIcon(): string
     {
         switch ($this->item->new_recipient_role) {
             case 'manager':
@@ -134,7 +113,7 @@ class IncidentHistoryListItem extends BaseListItem
                     }
                 }
 
-                return '';
+                return Icons::UNDEFINED;
         }
     }
 
@@ -151,9 +130,11 @@ class IncidentHistoryListItem extends BaseListItem
                     t('Incident opened at severity %s'),
                     Event::mapSeverity($this->item->new_severity)
                 );
+
                 break;
             case 'closed':
-                $message = t('All sources recovered, incident closed');
+                $message = t('Incident closed');
+
                 break;
             case "notified":
                 if ($this->item->contactgroup_id) {
@@ -177,6 +158,7 @@ class IncidentHistoryListItem extends BaseListItem
                         $this->item->channel->type
                     );
                 }
+
                 break;
             case 'incident_severity_changed':
                 $message = sprintf(
@@ -184,6 +166,7 @@ class IncidentHistoryListItem extends BaseListItem
                     Event::mapSeverity($this->item->old_severity),
                     Event::mapSeverity($this->item->new_severity)
                 );
+
                 break;
             case 'recipient_role_changed':
                 $newRole = $this->item->new_recipient_role;
@@ -238,6 +221,7 @@ class IncidentHistoryListItem extends BaseListItem
                 break;
             case 'rule_matched':
                 $message = sprintf(t('Rule %s matched on this incident'), $this->item->rule->name);
+
                 break;
             case 'escalation_triggered':
                 $message = sprintf(
@@ -245,6 +229,7 @@ class IncidentHistoryListItem extends BaseListItem
                     $this->item->rule->name,
                     $this->item->rule_escalation->name
                 );
+
                 break;
             default:
                 $message = '';

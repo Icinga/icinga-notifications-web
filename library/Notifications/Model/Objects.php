@@ -10,9 +10,25 @@ use ipl\Html\ValidHtml;
 use ipl\Orm\Behavior\Binary;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
+use ipl\Orm\Query;
 use ipl\Orm\Relations;
 
 /**
+ * Object
+ *
+ * @property string $id
+ * @property int $source_id
+ * @property string $name
+ * @property string $host
+ * @property ?string $service
+ * @property ?string $url
+ *
+ * @property Query | Event $event
+ * @property Query | Incident $incident
+ * @property Query | Tag $tag
+ * @property Query | ObjectExtraTag $object_extra_tag
+ * @property Query | ExtraTag $extra_tag
+ * @property Query | Source $source
  * @property array<string, string> $id_tags
  */
 class Objects extends Model

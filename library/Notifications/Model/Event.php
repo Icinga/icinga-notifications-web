@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use DateTime;
 use Icinga\Module\Notifications\Common\Database;
 use ipl\Orm\Behavior\Binary;
 use ipl\Orm\Behavior\MillisecondTimestamp;
@@ -17,7 +18,17 @@ use ipl\Sql\Select;
 /**
  * Event model
  *
- * @property Query|Incident $incident
+ * @property int $id
+ * @property DateTime $time
+ * @property string $object_id
+ * @property string $type
+ * @property ?string $severity
+ * @property ?string $message
+ * @property ?string $username
+ *
+ * @property Query | Objects $object
+ * @property Query | IncidentHistory $incident_history
+ * @property Query | Incident $incident
  */
 class Event extends Model
 {
