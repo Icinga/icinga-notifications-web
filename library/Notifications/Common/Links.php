@@ -95,4 +95,14 @@ abstract class Links
     {
         return Url::fromPath('notifications/contact-group/edit', ['id' => $id]);
     }
+
+    public static function rotationAdd(int $scheduleId): Url
+    {
+        return Url::fromPath('notifications/schedule/add-rotation', ['schedule' => $scheduleId]);
+    }
+
+    public static function rotationSettings(int $id, int $scheduleId): Url
+    {
+        return Url::fromPath('notifications/schedule/edit-rotation', ['id' => $id, 'schedule' => $scheduleId]);
+    }
 }
