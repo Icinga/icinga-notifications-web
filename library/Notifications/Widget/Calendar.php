@@ -148,10 +148,13 @@ class Calendar extends BaseHtmlElement implements EntryProvider
         if ($this->grid === null) {
             if ($this->getControls()->getViewMode() === self::MODE_MONTH) {
                 $this->grid = new MonthGrid($this, $this->getStyle(), $this->getModeStart());
+                $this->getAttributes()->get('class')->addValue('month');
             } elseif ($this->getControls()->getViewMode() === self::MODE_WEEK) {
                 $this->grid = new WeekGrid($this, $this->getStyle(), $this->getModeStart());
+                $this->getAttributes()->get('class')->addValue('week');
             } else {
                 $this->grid = new DayGrid($this, $this->getStyle(), $this->getModeStart());
+                $this->getAttributes()->get('class')->addValue('day');
             }
         }
 

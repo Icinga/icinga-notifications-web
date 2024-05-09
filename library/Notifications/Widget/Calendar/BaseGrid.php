@@ -31,6 +31,12 @@ abstract class BaseGrid extends BaseHtmlElement
 {
     use Translation;
 
+    /** @var string The chronological order of entries is oriented horizontally */
+    protected const HORIZONTAL_FLOW_OF_TIME = 'horizontal-flow';
+
+    /** @var string The chronological order of entries is oriented vertically */
+    protected const VERTICAL_FLOW_OF_TIME = 'vertical-flow';
+
     /** @var string Continuation of an entry that started on the previous grid */
     protected const FROM_PREV_GRID = 'from-prev-grid';
 
@@ -54,7 +60,10 @@ abstract class BaseGrid extends BaseHtmlElement
 
     protected $tag = 'div';
 
-    protected $defaultAttributes = ['class' => 'calendar-grid'];
+    protected $defaultAttributes = ['class' => ['time-grid']];
+
+    /** @var string The orientation of this grid's chronological order of entries */
+    protected $flowOfTime = self::HORIZONTAL_FLOW_OF_TIME;
 
     /** @var EntryProvider */
     protected $provider;
@@ -86,6 +95,9 @@ abstract class BaseGrid extends BaseHtmlElement
         $this->provider = $provider;
         $this->style = $style;
         $this->setGridStart($start);
+
+        // It's done here as there's no real need for this being dynamic
+        $this->defaultAttributes['class'][] = $this->flowOfTime;
     }
 
     public function getGridStart(): DateTime

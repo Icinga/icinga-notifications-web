@@ -119,8 +119,6 @@ class MonthGrid extends BaseGrid
 
     protected function assemble()
     {
-        $this->getAttributes()->add('class', 'month');
-
         $this->addHtml(
             $this->createHeader(),
             $this->createSidebar(),

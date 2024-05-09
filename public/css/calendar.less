@@ -26,7 +26,7 @@
 }
 
 /**
- * Basic rules for a calendar grid
+ * Basic rules for a time grid
  *
  * Required variables:
  * - --primaryColumns: Number of primary columns
@@ -34,7 +34,7 @@
  * - --columnsPerStep: Number of columns per step
  * - --rowsPerStep: Number of rows per step
  */
-.calendar-grid {
+.time-grid {
   --sidebarWidth: 4em;
   --headerHeight: 1.5em;
   --minimumPrimaryColumnWidth: 2em;
@@ -175,7 +175,7 @@
   }
 }
 
-.calendar-grid.month {
+.calendar.month .time-grid {
   --primaryColumns: 7; // days
   --primaryRows: 6; // weeks
   --columnsPerStep: 48; // 24 hours
@@ -189,7 +189,7 @@
   }
 }
 
-.calendar-grid.week {
+.calendar.week .time-grid {
   --primaryColumns: 7; // days
   --primaryRows: 24; // hours
   --columnsPerStep: 4;
@@ -203,7 +203,7 @@
   }
 }
 
-.calendar-grid.day {
+.calendar.day .time-grid {
   --primaryColumns: 1; // days
   --primaryRows: 24; // hours
   --columnsPerStep: 28;
@@ -217,7 +217,7 @@
   }
 }
 
-.calendar-grid {
+.time-grid {
   display: grid;
   grid-template-columns: var(--sidebarWidth) minmax(0, 1fr);
   grid-template-rows: var(--headerHeight) minmax(0, 1fr);
@@ -258,9 +258,10 @@
     font-size: 1.5em;
     font-weight: normal;
   }
+}
 
-  .calendar-grid.month,
-  .calendar-grid.dynamic {
+.time-grid {
+  &.horizontal-flow {
     .entry {
       &.two-way-gradient {
         border-radius: 0;
@@ -283,8 +284,7 @@
     }
   }
 
-  .calendar-grid.week,
-  .calendar-grid.day {
+  &.vertical-flow {
     .entry {
       &.two-way-gradient {
         border-radius: 0;
@@ -373,7 +373,7 @@
 }
 
 @light-mode: {
-  .calendar .entry {
+  .time-grid .entry {
     mix-blend-mode: revert;
   }
 };

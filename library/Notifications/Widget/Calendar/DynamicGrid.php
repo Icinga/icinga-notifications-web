@@ -177,8 +177,6 @@ class DynamicGrid extends BaseGrid
 
     protected function assemble()
     {
-        $this->getAttributes()->add('class', 'dynamic');
-
         $this->style->addFor($this, [
             '--primaryColumns' => $this->days,
             '--columnsPerStep' => 48,

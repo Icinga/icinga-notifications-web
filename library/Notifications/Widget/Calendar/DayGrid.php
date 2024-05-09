@@ -15,6 +15,8 @@ use Traversable;
 
 class DayGrid extends BaseGrid
 {
+    protected $flowOfTime = BaseGrid::VERTICAL_FLOW_OF_TIME;
+
     public function setGridStart(DateTime $start): BaseGrid
     {
         if ($start->format('H:i:s') !== '00:00:00') {
@@ -114,8 +116,6 @@ class DayGrid extends BaseGrid
 
     protected function assemble()
     {
-        $this->getAttributes()->add('class', 'day');
-
         $this->addHtml(
             $this->createHeader(),
             $this->createSidebar(),
