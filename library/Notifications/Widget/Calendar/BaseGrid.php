@@ -176,7 +176,7 @@ abstract class BaseGrid extends BaseHtmlElement
         foreach ($this->createGridSteps() as $step) {
             $url = $this->provider->getStepUrl($step);
             if ($url !== null) {
-                $step->setHtmlContent((new Link(null, $url))->addFrom($step));
+                $step->setHtmlContent((new Link(null, $url))->openInModal()->addFrom($step));
             }
 
             if ($step->getEnd()->format('H') === '00') {
@@ -565,6 +565,7 @@ abstract class BaseGrid extends BaseHtmlElement
     {
         if (($url = $entry->getUrl()) !== null) {
             $entryContainer = new Link(null, $url);
+            $entryContainer->openInModal();
             $html->addHtml($entryContainer);
         } else {
             $entryContainer = $html;
