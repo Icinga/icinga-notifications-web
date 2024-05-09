@@ -1,0 +1,65 @@
+/* Layout */
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+
+  .time-grid {
+    --sidebarWidth: 12em;
+    --stepRowHeight: 4em;
+    --primaryRowHeight: 4em;
+    position: relative;
+
+    .header {
+      box-sizing: border-box;
+      position: sticky;
+      z-index: 1;
+      top: 0;
+    }
+
+    .row-title {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+
+      > span {
+        width: 0;
+        flex: 1 0 auto;
+        margin-left: .5em;
+        .text-ellipsis();
+      }
+    }
+
+    .overlay .entry {
+      margin-top: 1em;
+      margin-bottom: 1em;
+    }
+
+    &::after {
+      content: '';
+      display: block;
+      border-top: 1px solid black;
+      position: absolute;
+      bottom: var(--stepRowHeight);
+      right: 0;
+      left: 0;
+    }
+  }
+}
+
+/* Design */
+
+.timeline {
+  .header {
+    background: @body-bg-color;
+  }
+
+  .column-title .date {
+    font-size: .75em;
+  }
+
+  .rotation-name {
+    font-size: 1.25em;
+    font-weight: bold;
+  }
+}
