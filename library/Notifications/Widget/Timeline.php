@@ -6,6 +6,8 @@ namespace Icinga\Module\Notifications\Widget;
 
 use DateInterval;
 use DateTime;
+use Icinga\Module\Notifications\Common\Links;
+use Icinga\Module\Notifications\Forms\MoveRotationForm;
 use Icinga\Module\Notifications\Widget\Calendar\DynamicGrid;
 use Icinga\Module\Notifications\Widget\Calendar\Entry;
 use Icinga\Module\Notifications\Widget\Calendar\EntryProvider;
@@ -19,6 +21,7 @@ use ipl\I18n\Translation;
 use ipl\Scheduler\RRule;
 use ipl\Web\Style;
 use ipl\Web\Url;
+use ipl\Web\Widget\Icon;
 use SplObjectStorage;
 use Traversable;
 
@@ -262,16 +265,32 @@ class Timeline extends BaseHtmlElement implements EntryProvider
             foreach ($rotations as $rotation) {
                 if (! isset($occupiedPriorities[$rotation->getPriority()])) {
                     $occupiedPriorities[$rotation->getPriority()] = true;
-                    $this->grid->addToSideBar(new HtmlElement(
-                        'div',
-                        Attributes::create(['class' => 'rotation-name']),
-                        new HtmlElement('span', null, Text::create($rotation->getName()))
-                    ));
+                    $this->grid->addToSideBar($this->assembleSidebarEntry($rotation));
                 }
             }
         }
 
         return $this->grid;
+    }
+
+    protected function assembleSidebarEntry(Rotation $rotation): BaseHtmlElement
+    {
+        $entry = new HtmlElement('div', Attributes::create(['class' => 'rotation-name']));
+
+        $form = new MoveRotationForm();
+        $form->setAction(Links::moveRotation()->getAbsoluteUrl());
+        $form->populate([
+            'rotation' => $rotation->getId(),
+            'priority' => $rotation->getPriority()
+        ]);
+
+        $entry->addHtml(
+            $form,
+            new Icon('bars', ['data-drag-initiator' => true]),
+            new HtmlElement('span', null, Text::create($rotation->getName()))
+        );
+
+        return $entry;
     }
 
     protected function assemble()

@@ -105,4 +105,9 @@ abstract class Links
     {
         return Url::fromPath('notifications/schedule/edit-rotation', ['id' => $id, 'schedule' => $scheduleId]);
     }
+
+    public static function moveRotation(): Url
+    {
+        return Url::fromPath('notifications/schedule/move-rotation');
+    }
 }

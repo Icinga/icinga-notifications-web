@@ -19,8 +19,8 @@
 
     .row-title {
       display: flex;
-      flex-direction: column;
-      justify-content: center;
+      align-items: center;
+      justify-content: space-between;
 
       > span {
         width: 0;
@@ -61,5 +61,22 @@
   .rotation-name {
     font-size: 1.25em;
     font-weight: bold;
+    cursor: grab;
+
+    [data-drag-initiator] {
+      color: @gray-light;
+    }
+    &:hover [data-drag-initiator] {
+      color: @text-color;
+    }
+
+    // :not(:empty) is only necessary to increase specificity
+    &:not(:empty).sortable-drag {
+      border: 1px dashed @gray;
+    }
+
+    &.sortable-ghost {
+      opacity: .5;
+    }
   }
 }

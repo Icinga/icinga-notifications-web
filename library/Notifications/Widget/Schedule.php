@@ -19,7 +19,7 @@ class Schedule extends BaseHtmlElement
 
     protected $tag = 'div';
 
-    protected $defaultAttributes = ['class' => 'schedule'];
+    protected $defaultAttributes = ['id' => 'notifications-schedule', 'class' => 'schedule'];
 
     /** @var \Icinga\Module\Notifications\Model\Schedule */
     protected $schedule;

@@ -81,6 +81,8 @@ $section->add(
     ]
 );
 
+$this->provideJsFile('schedule.js');
+
 $cssDirectory = $this->getCssDir();
 $cssFiles = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(
     $cssDirectory,

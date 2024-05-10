@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Controllers;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\EntryForm;
+use Icinga\Module\Notifications\Forms\MoveRotationForm;
 use Icinga\Module\Notifications\Forms\RotationConfigForm;
 use Icinga\Module\Notifications\Forms\ScheduleForm;
 use Icinga\Module\Notifications\Model\Schedule;
@@ -222,6 +223,20 @@ class ScheduleController extends CompatController
             $this->setTitle($this->translate('Edit Rotation'));
             $this->addContent($form);
         }
+    }
+
+    public function moveRotationAction(): void
+    {
+        $this->assertHttpMethod('POST');
+
+        $form = new MoveRotationForm(Database::get());
+        $form->on(MoveRotationForm::ON_SUCCESS, function (MoveRotationForm $form) {
+            $this->redirectNow(Links::schedule($form->getScheduleId()));
+        });
+
+        $form->handleRequest($this->getServerRequest());
+
+        $this->addContent($form);
     }
 
     public function editEntryAction(): void

@@ -27,6 +27,16 @@ class Rotation
     }
 
     /**
+     * Get the ID of the rotation
+     *
+     * @return int
+     */
+    public function getId(): int
+    {
+        return $this->model->id;
+    }
+
+    /**
      * Get the name of the rotation
      *
      * @return string
