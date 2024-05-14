@@ -463,7 +463,7 @@ abstract class BaseGrid extends BaseHtmlElement
                 $colEnd = Util::diffHours($gridStartsAt, $actualEnd) * 2;
             }
 
-            if ($colStart > $gridBorderAt) {
+            if ($colStart > $gridBorderAt || $colEnd === $colStart) {
                 throw new LogicException(sprintf(
                     'Invalid entry (%d) position: %s to %s. Grid dimension: %s to %s',
                     $entry->getId(),
@@ -577,9 +577,10 @@ abstract class BaseGrid extends BaseHtmlElement
             Attributes::create(['class' => 'content'])
         );
 
+        $description = $entry->getDescription();
         $titleAttr = $entry->getStart()->format('H:i')
             . ' | ' . $entry->getAttendee()->getName()
-            . ': ' . $entry->getDescription();
+            . ($description ? ': ' . $description : '');
 
         $startText = null;
         $endText = null;
@@ -622,18 +623,18 @@ abstract class BaseGrid extends BaseHtmlElement
             )
         );
 
-        $content->addHtml(
-            $title,
-            new HtmlElement(
+        $content->addHtml($title);
+        if ($description) {
+            $content->addHtml(new HtmlElement(
                 'div',
                 Attributes::create(['class' => 'description']),
                 new HtmlElement(
                     'p',
-                    Attributes::create(['title' => $entry->getDescription()]),
-                    Text::create($entry->getDescription())
+                    Attributes::create(['title' => $description]),
+                    Text::create($description)
                 )
-            )
-        );
+            ));
+        }
 
         if ($endText) {
             $content->addHtml(
