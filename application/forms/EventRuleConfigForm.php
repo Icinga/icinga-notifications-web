@@ -221,15 +221,16 @@ class EventRuleConfigForm extends Form
         $this->getElement('zero-condition-escalation')->setValue($zeroConditionEscalation);
 
         $this->addHtml(
-            (new HtmlElement('ul', Attributes::create(['class' => 'filter-wrapper'])))
+            (new HtmlElement('div', Attributes::create(['class' => 'filter-wrapper'])))
                 ->addHtml(
-                    new HtmlElement('li', null, (new FlowLine())->getRightArrow()),
-                    new HtmlElement('li', null, $configFilter),
-                    new HtmlElement('li', null, (new FlowLine())->getHorizontalLine())
+                    (new FlowLine())->getRightArrow(),
+                    $configFilter,
+                    (new FlowLine())->getHorizontalLine()
                 )
         );
 
-        $this->add(new Escalations($escalations, $addEscalationButton));
+        $escalationWrapper = (new HtmlElement('div'))->addHtml(new Escalations($escalations), $addEscalationButton);
+        $this->addHtml($escalationWrapper);
     }
 
     /**

@@ -5,7 +5,6 @@
 namespace Icinga\Module\Notifications\Widget\ItemList;
 
 use ipl\Html\BaseHtmlElement;
-use ipl\Html\FormElement\SubmitButtonElement;
 
 class Escalations extends BaseHtmlElement
 {
@@ -16,24 +15,18 @@ class Escalations extends BaseHtmlElement
     /** @var Escalation[] Escalation list items */
     protected $escalations;
 
-    /** @var SubmitButtonElement Escalation add button */
-    protected $addButton;
-
     /**
      * Create the escalations list
      *
      * @param Escalation[] $escalations
-     * @param SubmitButtonElement  $addButton
      */
-    public function __construct(array $escalations, SubmitButtonElement $addButton)
+    public function __construct(array $escalations)
     {
         $this->escalations = $escalations;
-        $this->addButton = $addButton;
     }
 
     protected function assemble(): void
     {
         $this->addHtml(...$this->escalations);
-        $this->addHtml($this->addButton);
     }
 }
