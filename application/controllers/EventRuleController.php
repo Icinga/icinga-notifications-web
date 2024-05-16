@@ -186,7 +186,7 @@ class EventRuleController extends CompatController
             $eventRuleFilterFieldset->getAttributes()->add('class', 'empty-filter');
         }
 
-        $this->getDocument()->addHtml($eventRuleFilterFieldset);
+        $this->getDocument()->add($eventRuleFilterFieldset);
     }
 
     /**

@@ -422,7 +422,7 @@ class EventRuleConfigForm extends Form
             ]);
 
             $id = $db->lastInsertId();
-        } elseif (isset($config['object_filter'])) {
+        } else {
             $db->update('rule', [
                 'object_filter' => $config['object_filter'] ?? null,
             ], ['id = ?' => $id]);
