@@ -82,6 +82,7 @@ class EventRuleController extends CompatController
                     $eventRuleConfigValues['name']
                 ));
 
+                $this->sendExtraUpdates(['#col1']);
                 $this->redirectNow(Links::eventRule((int) $ruleId));
             })
             ->on(
@@ -348,14 +349,12 @@ class EventRuleController extends CompatController
 
         $eventRuleConfig
             ->on(Form::ON_SUCCESS, function (EventRuleConfigForm $form) use ($eventRule) {
-                /** @var string $ruleId */
-                $ruleId = $eventRule['id'];
-                /** @var string $ruleName */
-                $ruleName = $eventRule['name'];
                 $eventRuleConfig = array_merge($eventRule, $form->getValues());
-                $form->addOrUpdateRule($ruleId, $eventRuleConfig);
-                Notification::success(sprintf(t('Successfully add event rule %s'), $ruleName));
-                $this->redirectNow('__CLOSE__');
+                $ruleId = $form->addOrUpdateRule((int) $eventRule['id'], $eventRuleConfig);
+                Notification::success(sprintf(t('Successfully add event rule %s'), $eventRule['name']));
+
+                $this->sendExtraUpdates(['#col1']);
+                $this->redirectNow(Links::eventRule($ruleId));
             })
             ->handleRequest($this->getServerRequest());
 
@@ -416,7 +415,8 @@ class EventRuleController extends CompatController
                     $this->sendExtraUpdates([
                         '#event-rule-form' =>  Url::fromPath(
                             'notifications/event-rule/rule', ['id' => $ruleId]
-                        )->getAbsoluteUrl()
+                        )->getAbsoluteUrl(),
+                        '#col1'
                     ]);
 
                     $this->getResponse()->setHeader('X-Icinga-Container', 'dummy-event-rule-container')
