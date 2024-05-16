@@ -18,6 +18,7 @@ use ipl\Html\Attributes;
 use ipl\Html\Form;
 use ipl\Html\FormElement\SubmitButtonElement;
 use ipl\Html\HtmlElement;
+use ipl\Html\ValidHtml;
 use ipl\I18n\Translation;
 use ipl\Stdlib\Filter;
 use ipl\Stdlib\Filter\Condition;
@@ -86,6 +87,65 @@ class EventRuleConfigForm extends Form
     public function hasZeroConditionEscalation(): bool
     {
         return $this->hasZeroConditionEscalation;
+    }
+
+    /**
+     * Create the external submit buttons for the event rule config
+     *
+     * @return ValidHtml
+     */
+    public function createFormSubmitButtons(): ValidHtml
+    {
+        $buttonsWrapper = new HtmlElement('div', Attributes::create(['class' => ['icinga-controls', 'save-config']]));
+        $ruleId = $this->config['id'];
+
+        if ($ruleId === '-1') {
+            return (new SubmitButtonElement(
+                'save',
+                [
+                    'label'    => $this->translate('Add Event Rule'),
+                    'form'     => 'event-rule-config-form',
+                ]
+            ))->setWrapper($buttonsWrapper);
+        } else {
+            $saveButton = new SubmitButtonElement(
+                'save',
+                [
+                    'label'    => $this->translate('Save'),
+                    'form'     => 'event-rule-config-form',
+                ]
+            );
+
+            $deleteButton = new SubmitButtonElement(
+                'delete',
+                [
+                    'label'          => $this->translate('Delete'),
+                    'form'           => 'event-rule-config-form',
+                    'class'          => 'btn-remove',
+                    'formnovalidate' => true
+                ]
+            );
+
+            $buttonsWrapper->addHtml($saveButton, $deleteButton);
+
+            if ((int) $ruleId > 0) {
+                $incidentCount = Incident::on(Database::get())
+                    ->with('rule')
+                    ->filter(Filter::equal('rule.id', $ruleId))
+                    ->count();
+
+                if ($incidentCount) {
+                    $deleteButton->addAttributes([
+                        'disabled' => true,
+                        'title'    => $this->translate(
+                            'There are active incidents for this event rule and hence cannot be removed'
+                        )
+                    ]);
+                }
+            }
+
+            return $buttonsWrapper;
+        }
     }
 
     protected function assemble(): void

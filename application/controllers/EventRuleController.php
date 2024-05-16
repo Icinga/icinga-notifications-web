@@ -10,13 +10,11 @@ use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\EventRuleConfigElements\EventRuleConfigFilter;
 use Icinga\Module\Notifications\Forms\EventRuleConfigForm;
 use Icinga\Module\Notifications\Forms\EventRuleForm;
-use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ExtraTagSuggestions;
 use Icinga\Web\Notification;
 use ipl\Html\Attributes;
 use ipl\Html\Form;
-use ipl\Html\FormElement\SubmitButtonElement;
 use ipl\Html\Html;
 use ipl\Html\HtmlElement;
 use ipl\Stdlib\Filter;
@@ -97,41 +95,6 @@ class EventRuleController extends CompatController
             )
             ->handleRequest($this->getServerRequest());
 
-        $buttonsWrapper = new HtmlElement('div', Attributes::create(['class' => ['icinga-controls', 'save-config']]));
-        $eventRuleConfigSubmitButton = new SubmitButtonElement(
-            'save',
-            [
-                'label'    => t('Save'),
-                'form'     => 'event-rule-config-form',
-            ]
-        );
-
-        $deleteButton = new SubmitButtonElement(
-            'delete',
-            [
-                'label'          => t('Delete'),
-                'form'           => 'event-rule-config-form',
-                'class'          => 'btn-remove',
-                'formnovalidate' => true
-            ]
-        );
-
-        $buttonsWrapper->addHtml($eventRuleConfigSubmitButton, $deleteButton);
-
-        if ($ruleId > 0) {
-            $incidentCount = Incident::on(Database::get())
-                ->with('rule')
-                ->filter(Filter::equal('rule.id', $ruleId))
-                ->count();
-
-            if ($incidentCount) {
-                $deleteButton->addAttributes([
-                    'disabled' => true,
-                    'title'    => t('There are active incidents for this event rule and hence cannot be removed')
-                ]);
-            }
-        }
-
         $eventRuleForm = Html::tag('div', ['class' => 'event-rule-form', 'id' => 'event-rule-form'], [
             Html::tag('h2', $eventRuleConfigValues['name']),
             (new Link(
@@ -144,7 +107,7 @@ class EventRuleController extends CompatController
         ]);
 
         $this->addControl($eventRuleForm);
-        $this->addControl($buttonsWrapper);
+        $this->addControl($eventRuleConfig->createFormSubmitButtons());
         $this->addContent($eventRuleConfig);
     }
 
@@ -331,14 +294,6 @@ class EventRuleController extends CompatController
             }
         }
 
-        $eventRuleConfigSubmitButton = (new SubmitButtonElement(
-            'save',
-            [
-                'label'          => t('Add Event Rule'),
-                'form'           => 'event-rule-config-form'
-            ]
-        ))->setWrapper(new HtmlElement('div', Attributes::create(['class' => ['icinga-controls', 'save-config']])));
-
         $eventRuleConfig = new EventRuleConfigForm(
             $eventRule,
             Url::fromPath(
@@ -377,7 +332,7 @@ class EventRuleController extends CompatController
         ]);
 
         $this->addControl($eventRuleForm);
-        $this->addControl($eventRuleConfigSubmitButton);
+        $this->addControl($eventRuleConfig->createFormSubmitButtons());
         $this->addContent($eventRuleConfig);
     }
 
