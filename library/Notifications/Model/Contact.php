@@ -9,6 +9,9 @@ use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
 use ipl\Orm\Relations;
 
+/**
+ * @property int $id
+ */
 class Contact extends Model
 {
     public function getTableName(): string
