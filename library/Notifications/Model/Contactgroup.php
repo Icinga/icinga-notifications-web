@@ -7,6 +7,13 @@ namespace Icinga\Module\Notifications\Model;
 use ipl\Orm\Model;
 use ipl\Orm\Relations;
 
+/**
+ * Contact group
+ *
+ * @param int $id
+ * @param string $name
+ * @param string $color
+ */
 class Contactgroup extends Model
 {
     public function getTableName()
@@ -32,5 +39,9 @@ class Contactgroup extends Model
         $relations->hasMany('rule_escalation_recipient', RuleEscalationRecipient::class)
             ->setJoinType('LEFT');
         $relations->hasMany('incident_history', IncidentHistory::class);
+        $relations
+            ->belongsToMany('contact', Contact::class)
+            ->through('contactgroup_member')
+            ->setJoinType('LEFT');
     }
 }
