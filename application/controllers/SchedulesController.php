@@ -111,6 +111,10 @@ class SchedulesController extends CompatController
             ])->add('contacts', [
                 'label' => $this->translate('Contacts'),
                 'url'   => Links::contacts()
+            ])->add('contact-groups', [
+                'label'      => $this->translate('Contact Groups'),
+                'url'        => Links::contactGroups(),
+                'baseTarget' => '_main'
             ]);
     }
 
