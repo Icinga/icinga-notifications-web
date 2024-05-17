@@ -1,4 +1,6 @@
-(function(Icinga) {
+/* Icinga Notifications Web | (c) 2024 Icinga GmbH | GPLv2 */
+
+(function (Icinga) {
 
     "use strict";
 
