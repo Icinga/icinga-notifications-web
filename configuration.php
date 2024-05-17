@@ -35,6 +35,11 @@ $this->providePermission(
     $this->translate('Allow to configure event rules')
 );
 
+$this->providePermission(
+    'notifications/config/contact-groups',
+    $this->translate('Allow to configure contact groups')
+);
+
 $this->provideRestriction(
     'notifications/filter/objects',
     $this->translate('Restrict access to the objects that match the filter')
