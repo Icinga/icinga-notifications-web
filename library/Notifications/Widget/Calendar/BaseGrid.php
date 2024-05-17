@@ -255,14 +255,14 @@ abstract class BaseGrid extends BaseHtmlElement
         /** @var SplObjectStorage<Entry, int[][]> $occupiedCells */
         $occupiedCells = new SplObjectStorage();
         foreach ($entries as $entry) {
-            $actualStart = $this->roundToNearestThirtyMinute($entry->getStart());
+            $actualStart = Util::roundToNearestThirtyMinute($entry->getStart());
             if ($actualStart < $gridStartsAt) {
                 $entryStartPos = 0;
             } else {
                 $entryStartPos = Util::diffHours($gridStartsAt, $actualStart) * 2;
             }
 
-            $actualEnd = $this->roundToNearestThirtyMinute($entry->getEnd());
+            $actualEnd = Util::roundToNearestThirtyMinute($entry->getEnd());
             if ($actualEnd > $gridEndsAt) {
                 $entryEndPos = $amountOfDays * 48;
             } else {
@@ -449,14 +449,14 @@ abstract class BaseGrid extends BaseHtmlElement
                 $lastRow = $rowStart;
             }
 
-            $actualStart = $this->roundToNearestThirtyMinute($entry->getStart());
+            $actualStart = Util::roundToNearestThirtyMinute($entry->getStart());
             if ($actualStart < $gridStartsAt) {
                 $colStart = 0;
             } else {
                 $colStart = Util::diffHours($gridStartsAt, $actualStart) * 2;
             }
 
-            $actualEnd = $this->roundToNearestThirtyMinute($entry->getEnd());
+            $actualEnd = Util::roundToNearestThirtyMinute($entry->getEnd());
             if ($actualEnd > $gridEndsAt) {
                 $colEnd = $gridBorderAt;
             } else {
@@ -647,23 +647,6 @@ abstract class BaseGrid extends BaseHtmlElement
         }
 
         $entryContainer->addHtml($content);
-    }
-
-    protected function roundToNearestThirtyMinute(DateTime $time): DateTime
-    {
-        $hour = (int) $time->format('H');
-        $minute = (int) $time->format('i');
-
-        $time = clone $time;
-        if ($minute < 15) {
-            $time->setTime($hour, 0);
-        } elseif ($minute >= 45) {
-            $time->setTime($hour + 1, 0);
-        } else {
-            $time->setTime($hour, 30);
-        }
-
-        return $time;
     }
 
     /**

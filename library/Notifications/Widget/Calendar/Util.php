@@ -27,4 +27,21 @@ final class Util
 
         return $hours;
     }
+
+    public static function roundToNearestThirtyMinute(DateTime $time): DateTime
+    {
+        $hour = (int) $time->format('H');
+        $minute = (int) $time->format('i');
+
+        $time = clone $time;
+        if ($minute < 15) {
+            $time->setTime($hour, 0);
+        } elseif ($minute >= 45) {
+            $time->setTime($hour + 1, 0);
+        } else {
+            $time->setTime($hour, 30);
+        }
+
+        return $time;
+    }
 }
