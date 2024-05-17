@@ -99,53 +99,43 @@ class EventRuleConfigForm extends Form
         $buttonsWrapper = new HtmlElement('div', Attributes::create(['class' => ['icinga-controls', 'save-config']]));
         $ruleId = $this->config['id'];
 
-        if ($ruleId === '-1') {
-            return (new SubmitButtonElement(
-                'save',
-                [
-                    'label'    => $this->translate('Add Event Rule'),
-                    'form'     => 'event-rule-config-form',
-                ]
-            ))->setWrapper($buttonsWrapper);
-        } else {
-            $saveButton = new SubmitButtonElement(
-                'save',
-                [
-                    'label'    => $this->translate('Save'),
-                    'form'     => 'event-rule-config-form',
-                ]
-            );
+        $saveButton = new SubmitButtonElement(
+            'save',
+            [
+                'label'    => $this->translate('Save'),
+                'form'     => 'event-rule-config-form',
+            ]
+        );
 
-            $deleteButton = new SubmitButtonElement(
-                'delete',
-                [
-                    'label'          => $this->translate('Delete'),
-                    'form'           => 'event-rule-config-form',
-                    'class'          => 'btn-remove',
-                    'formnovalidate' => true
-                ]
-            );
+        $deleteButton = new SubmitButtonElement(
+            'delete',
+            [
+                'label'          => $this->translate('Delete'),
+                'form'           => 'event-rule-config-form',
+                'class'          => 'btn-remove',
+                'formnovalidate' => true
+            ]
+        );
 
-            $buttonsWrapper->addHtml($saveButton, $deleteButton);
+        $buttonsWrapper->addHtml($saveButton, $deleteButton);
 
-            if ((int) $ruleId > 0) {
-                $incidentCount = Incident::on(Database::get())
-                    ->with('rule')
-                    ->filter(Filter::equal('rule.id', $ruleId))
-                    ->count();
+        if ((int) $ruleId > 0) {
+            $incidentCount = Incident::on(Database::get())
+                ->with('rule')
+                ->filter(Filter::equal('rule.id', $ruleId))
+                ->count();
 
-                if ($incidentCount) {
-                    $deleteButton->addAttributes([
-                        'disabled' => true,
-                        'title'    => $this->translate(
-                            'There are active incidents for this event rule and hence cannot be removed'
-                        )
-                    ]);
-                }
+            if ($incidentCount) {
+                $deleteButton->addAttributes([
+                    'disabled' => true,
+                    'title'    => $this->translate(
+                        'There are active incidents for this event rule and hence cannot be removed'
+                    )
+                ]);
             }
-
-            return $buttonsWrapper;
         }
+
+        return $buttonsWrapper;
     }
 
     protected function assemble(): void
@@ -469,24 +459,11 @@ class EventRuleConfigForm extends Form
      *
      * @return int
      */
-    public function addOrUpdateRule(int $id, array $config): int
+    public function updateRule(int $id, array $config): int
     {
         $db = Database::get();
         $db->beginTransaction();
-        if ($id < 0) {
-            $db->insert('rule', [
-                'name'          => $config['name'],
-                'timeperiod_id' => $config['timeperiod_id'] ?? null,
-                'object_filter' => $config['object_filter'] ?? null,
-                'is_active'     => $config['is_active'] ?? 'n'
-            ]);
-
-            $id = $db->lastInsertId();
-        } else {
-            $db->update('rule', [
-                'object_filter' => $config['object_filter'] ?? null,
-            ], ['id = ?' => $id]);
-        }
+        $db->update('rule', ['object_filter' => $config['object_filter'] ?? null], ['id = ?' => $id]);
 
         if (! isset($config['rule_escalation'])) {
             $db->commitTransaction();
@@ -542,7 +519,7 @@ class EventRuleConfigForm extends Form
 
         $db->commitTransaction();
 
-        return (int) $id;
+        return $id;
     }
 
     /**

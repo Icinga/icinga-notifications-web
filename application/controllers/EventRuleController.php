@@ -74,7 +74,7 @@ class EventRuleController extends CompatController
                     return;
                 }
 
-                $form->addOrUpdateRule($ruleId, $diff);
+                $form->updateRule($ruleId, $diff);
                 Notification::success(sprintf(
                     t('Successfully saved event rule %s'),
                     $eventRuleConfigValues['name']
@@ -274,68 +274,6 @@ class EventRuleController extends CompatController
         return $filterStr !== '' ? rawurldecode($filterStr) : null;
     }
 
-    public function addAction(): void
-    {
-        $this->addTitleTab(t('Add Event Rule'));
-        $this->getTabs()->setRefreshUrl(Url::fromRequest());
-
-        // Add an empty container and set it as the X-Icinga-Container when sending extra updates
-        // from the modal for filter or event rule
-        $this->addContent(Html::tag('div', ['class' => 'container', 'id' => 'dummy-event-rule-container']));
-
-        $this->controls->addAttributes(['class' => 'event-rule-detail']);
-        $ruleId = $this->params->get('id');
-
-        if ($this->getRequest()->isPost()) {
-            if ($this->getRequest()->has('searchbar')) {
-                $eventRule['object_filter'] = $this->getRequest()->get('searchbar');
-            } else {
-                $eventRule['object_filter'] = null;
-            }
-        }
-
-        $eventRuleConfig = new EventRuleConfigForm(
-            $eventRule,
-            Url::fromPath(
-                'notifications/event-rule/search-editor',
-                ['id' => $ruleId, 'object_filter' => $eventRule['object_filter']]
-            )
-        );
-
-        $eventRuleConfig
-            ->on(Form::ON_SUCCESS, function (EventRuleConfigForm $form) use ($eventRule) {
-                $eventRuleConfig = array_merge($eventRule, $form->getValues());
-                $ruleId = $form->addOrUpdateRule((int) $eventRule['id'], $eventRuleConfig);
-                Notification::success(sprintf(t('Successfully add event rule %s'), $eventRule['name']));
-
-                $this->sendExtraUpdates(['#col1']);
-                $this->redirectNow(Links::eventRule($ruleId));
-            })
-            ->handleRequest($this->getServerRequest());
-
-        $eventRuleForm = Html::tag('div', ['class' => 'event-rule-form'], [
-            Html::tag('h2', $eventRule['name'] ?? ''),
-            Html::tag(
-                'div',
-                [
-                    'class' => 'not-allowed',
-                    'title' => $this->translate('Cannot edit event rule until it is saved to database')
-                ],
-                (new Link(
-                    new Icon('edit'),
-                    Url::fromPath('notifications/event-rule/edit', [
-                        'id' => -1
-                    ]),
-                    ['class' => ['control-button', 'disabled']]
-                ))->openInModal()
-            )
-        ]);
-
-        $this->addControl($eventRuleForm);
-        $this->addControl($eventRuleConfig->createFormSubmitButtons());
-        $this->addContent($eventRuleConfig);
-    }
-
     public function editAction(): void
     {
         /** @var string $ruleId */
@@ -353,18 +291,24 @@ class EventRuleController extends CompatController
         $eventRuleForm = (new EventRuleForm())
             ->populate($config)
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
-            ->on(Form::ON_SUCCESS, function ($form) use ($ruleId, $config, $db) {
-                $config['name'] = $form->getValue('name');
-                $config['is_active'] = $form->getValue('is_active');
-
+            ->on(Form::ON_SUCCESS, function ($form) use ($ruleId, $db) {
                 if ($ruleId === '-1') {
-                    $redirectUrl = Url::fromPath('notifications/event-rules/add', ['id' => '-1']);
+                    $db->insert('rule', [
+                        'name'          => $form->getValue('name'),
+                        'timeperiod_id' => null,
+                        'object_filter' => null,
+                        'is_active'     => $form->getValue('is_active')
+                    ]);
+
+                    $id = $db->lastInsertId();
+
                     $this->getResponse()->setHeader('X-Icinga-Container', 'col2');
-                    $this->redirectNow($redirectUrl);
+                    $this->sendExtraUpdates(['#col1']);
+                    $this->redirectNow(Links::eventRule($id));
                 } else {
                     $db->update('rule', [
-                        'name'          => $config['name'],
-                        'is_active'     => $config['is_active'] ?? 'n'
+                        'name'          => $form->getValue('name'),
+                        'is_active'     => $form->getValue('is_active')
                     ], ['id = ?' => $ruleId]);
 
                     $this->sendExtraUpdates([
