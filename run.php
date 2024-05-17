@@ -2,6 +2,7 @@
 
 /* Icinga Notifications Web | (c) 2024 Icinga GmbH | GPLv2 */
 
-/** @var $this \Icinga\Application\Modules\Module */
+/** @var \Icinga\Application\Modules\Module $this */
 
 $this->provideHook('Notifications/ObjectsRenderer');
+$this->provideHook('authentication', 'SessionStorage', true);
