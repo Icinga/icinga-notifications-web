@@ -84,20 +84,6 @@ class EventRulesController extends CompatController
         $this->getTabs()->activate('event-rules');
     }
 
-    /**
-     * Get the filter created from query string parameters
-     *
-     * @return Filter\Rule
-     */
-    protected function getFilter(): Filter\Rule
-    {
-        if ($this->filter === null) {
-            $this->filter = QueryString::parse((string) $this->params);
-        }
-
-        return $this->filter;
-    }
-
     public function getTabs(): Tabs
     {
         if ($this->getRequest()->getActionName() === 'index') {
@@ -122,5 +108,19 @@ class EventRulesController extends CompatController
         }
 
         return parent::getTabs();
+    }
+
+    /**
+     * Get the filter created from query string parameters
+     *
+     * @return Filter\Rule
+     */
+    private function getFilter(): Filter\Rule
+    {
+        if ($this->filter === null) {
+            $this->filter = QueryString::parse((string) $this->params);
+        }
+
+        return $this->filter;
     }
 }
