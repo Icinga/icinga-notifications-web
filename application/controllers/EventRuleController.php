@@ -86,11 +86,15 @@ class EventRuleController extends CompatController
             ->on(
                 EventRuleConfigForm::ON_DELETE,
                 function (EventRuleConfigForm $form) use ($ruleId, $eventRuleConfigValues) {
-                    $form->removeRule((int) $ruleId);
-                    Notification::success(
-                        sprintf(t('Successfully deleted event rule %s'), $eventRuleConfigValues['name'])
-                    );
-                    $this->redirectNow('__CLOSE__');
+                    $csrf = $form->getElement('CSRFToken');
+                    if ($csrf !== null && $csrf->isValid()) {
+                        $form->removeRule((int) $ruleId);
+                        Notification::success(
+                            sprintf(t('Successfully deleted event rule %s'), $eventRuleConfigValues['name'])
+                        );
+
+                        $this->redirectNow('__CLOSE__');
+                    }
                 }
             )
             ->handleRequest($this->getServerRequest());
