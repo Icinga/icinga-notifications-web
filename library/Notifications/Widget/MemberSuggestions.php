@@ -1,6 +1,6 @@
 <?php
 
-/* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
+/* Icinga Notifications Web | (c) 2024 Icinga GmbH | GPLv2 */
 
 namespace Icinga\Module\Notifications\Widget;
 
@@ -54,7 +54,7 @@ class MemberSuggestions extends BaseHtmlElement
      *
      * @return $this
      */
-    public function forRequest(ServerRequestInterface $request)
+    public function forRequest(ServerRequestInterface $request): self
     {
         if ($request->getMethod() !== 'POST') {
             return $this;
@@ -72,7 +72,7 @@ class MemberSuggestions extends BaseHtmlElement
         return $this;
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $identifyExcludes = function (string $for): array {
             return array_filter(array_map(function ($term) use ($for) {
@@ -80,7 +80,7 @@ class MemberSuggestions extends BaseHtmlElement
                     return '';
                 }
 
-                list($type, $id) = explode(':', $term, 2);
+                [$type, $id] = explode(':', $term, 2);
 
                 return $type === $for ? $id : '';
             }, $this->excludeTerms));
@@ -130,7 +130,7 @@ class MemberSuggestions extends BaseHtmlElement
         }
     }
 
-    public function renderUnwrapped()
+    public function renderUnwrapped(): string
     {
         $this->ensureAssembled();
 

@@ -10,7 +10,6 @@ use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Web\Session;
 use ipl\Html\FormElement\FieldsetElement;
 use ipl\Html\FormElement\SubmitElement;
-use ipl\Html\FormElement\TextElement;
 use ipl\Html\HtmlDocument;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
@@ -18,7 +17,6 @@ use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
 use ipl\Web\FormElement\TermInput;
 use ipl\Web\FormElement\TermInput\Term;
-use PDOException;
 
 class ContactGroupForm extends CompatForm
 {
@@ -35,23 +33,17 @@ class ContactGroupForm extends CompatForm
         $this->db = $db;
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
 
-        // initialize form fields
-        $groupField = new FieldsetElement(
-            'group',
-            [
-                'label' => $this->translate('Properties')
-            ]
-        );
+        $groupField = new FieldsetElement('group', ['label' => $this->translate('Properties')]);
         $this->addElement($groupField);
 
-        // build form fields
         $callValidation = function (array $terms) {
             $this->validateTerms($terms);
         };
+
         $this->termInput = (new TermInput(
             'group_members',
             [
@@ -65,27 +57,20 @@ class ContactGroupForm extends CompatForm
             ->on(TermInput::ON_ADD, $callValidation)
             ->on(TermInput::ON_SAVE, $callValidation)
             ->on(TermInput::ON_PASTE, $callValidation);
+
         $groupField
             ->addElement(
-                new TextElement(
-                    'group_name',
-                    [
-                        'label'    => $this->translate('Name'),
-                        'required' => true
-                    ]
-                )
+                'text',
+                'group_name',
+                [
+                    'label'    => $this->translate('Name'),
+                    'required' => true
+                ]
             )
             ->addElement($this->termInput);
 
-        // add form actions
-        $buttonSubmit = $this->addElement(
-            new SubmitElement(
-                'submit',
-                [
-                    'label' => $this->translate('Submit')
-                ]
-            )
-        );
+        $this->addElement('submit', 'submit', ['label' => $this->translate('Submit')]);
+
         $buttonCancel = new SubmitElement(
             'cancel',
             [
@@ -97,7 +82,7 @@ class ContactGroupForm extends CompatForm
 
         // bind cancel button and add it in front of the submit button
         $this->registerElement($buttonCancel);
-        $buttonSubmit->getElement('submit')->prependWrapper((new HtmlDocument())->setHtmlContent($buttonCancel));
+        $this->getElement('submit')->prependWrapper((new HtmlDocument())->setHtmlContent($buttonCancel));
     }
 
     public function hasBeenCancelled(): bool
@@ -121,10 +106,11 @@ class ContactGroupForm extends CompatForm
             /** @var Term $term */
             if (strpos($term->getSearchValue(), ':') === false) {
                 $term->setMessage($this->translate('Is not a contact'));
+
                 continue;
             }
 
-            list($type, $id) = explode(':', $term->getSearchValue(), 2);
+            [$type, $id] = explode(':', $term->getSearchValue(), 2);
             if ($type === 'contact') {
                 $contactTerms[$id] = $term;
             }
@@ -144,17 +130,11 @@ class ContactGroupForm extends CompatForm
     /**
      * @return ?int
      */
-    public function addGroup()
+    public function addGroup(): ?int
     {
         $data = $this->getValues();
-        $groupIdentifier = null;
 
-        if (! array_key_exists('group', $data)) {
-            return null;
-        } elseif (
-            ! array_key_exists('group_name', $data['group'])
-            || ! array_key_exists('group_members', $data['group'])
-        ) {
+        if (! isset($data['group']['group_name'], $data['group']['group_members'])) {
             return null;
         }
 
@@ -171,6 +151,7 @@ class ContactGroupForm extends CompatForm
                 'color' => '#000000'
             ]
         );
+
         $groupIdentifier = $this->db->lastInsertId();
 
         foreach ($members as list($type, $identifier)) {
@@ -187,6 +168,6 @@ class ContactGroupForm extends CompatForm
 
         $this->db->commitTransaction();
 
-        return $groupIdentifier ?? intval($groupIdentifier);
+        return $groupIdentifier;
     }
 }

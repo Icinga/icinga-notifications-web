@@ -10,14 +10,9 @@ use ipl\Web\Compat\CompatController;
 
 class ContactGroupController extends CompatController
 {
-    /** @var Connection $db */
-    private $db;
-
-    public function init()
+    public function init(): void
     {
         $this->assertPermission('notifications/config/contact-groups');
-
-        $this->db = Database::get();
     }
 
     public function editAction(): void
