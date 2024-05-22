@@ -67,34 +67,26 @@ class MemberSuggestions extends BaseHtmlElement
 
         $this->setSearchTerm($requestData['term']['label']);
         $this->setOriginalValue($requestData['term']['search']);
-        $this->excludeTerms($requestData['exclude'] ?? []);
+
+        $toExclude = array_filter($requestData['exclude'] ?? [], function ($term) {
+            return is_numeric($term);
+        });
+
+        $this->excludeTerms($toExclude);
 
         return $this;
     }
 
     protected function assemble(): void
     {
-        $identifyExcludes = function (string $for): array {
-            return array_filter(array_map(function ($term) use ($for) {
-                if (strpos($term, ':') === false) {
-                    return '';
-                }
-
-                [$type, $id] = explode(':', $term, 2);
-
-                return $type === $for ? $id : '';
-            }, $this->excludeTerms));
-        };
-
-        $contactsToExclude = $identifyExcludes('contact');
-
         $contactFilter = Filter::like('full_name', $this->searchTerm);
-        if (! empty($contactsToExclude)) {
+
+        if (! empty($this->excludeTerms)) {
             $contactFilter = Filter::all(
                 $contactFilter,
                 Filter::any(
                     Filter::equal('full_name', $this->originalValue),
-                    Filter::unequal('id', $contactsToExclude)
+                    Filter::unequal('id', $this->excludeTerms)
                 )
             );
         }
@@ -110,7 +102,7 @@ class MemberSuggestions extends BaseHtmlElement
                             'type'        => 'button',
                             'value'       => $contact->full_name,
                             'data-label'  => $contact->full_name,
-                            'data-search' => 'contact:' . $contact->id,
+                            'data-search' => $contact->id,
                             'data-color'  => $contact->color,
                             'data-class'  => 'contact'
                         ])

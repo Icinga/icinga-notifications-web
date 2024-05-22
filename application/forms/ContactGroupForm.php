@@ -8,7 +8,6 @@ use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Web\Session;
-use ipl\Html\FormElement\FieldsetElement;
 use ipl\Html\FormElement\SubmitElement;
 use ipl\Html\HtmlDocument;
 use ipl\Sql\Connection;
@@ -37,9 +36,6 @@ class ContactGroupForm extends CompatForm
     {
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
 
-        $groupField = new FieldsetElement('group', ['label' => $this->translate('Properties')]);
-        $this->addElement($groupField);
-
         $callValidation = function (array $terms) {
             $this->validateTerms($terms);
         };
@@ -58,16 +54,13 @@ class ContactGroupForm extends CompatForm
             ->on(TermInput::ON_SAVE, $callValidation)
             ->on(TermInput::ON_PASTE, $callValidation);
 
-        $groupField
-            ->addElement(
-                'text',
-                'group_name',
-                [
-                    'label'    => $this->translate('Name'),
-                    'required' => true
-                ]
-            )
-            ->addElement($this->termInput);
+        $this->addElement('text',
+            'group_name',
+            [
+                'label'    => $this->translate('Name'),
+                'required' => true
+            ]
+        )->addElement($this->termInput);
 
         $this->addElement('submit', 'submit', ['label' => $this->translate('Submit')]);
 
@@ -85,6 +78,11 @@ class ContactGroupForm extends CompatForm
         $this->getElement('submit')->prependWrapper((new HtmlDocument())->setHtmlContent($buttonCancel));
     }
 
+    /**
+     * Check if the cancel button has been pressed
+     *
+     * @return bool
+     */
     public function hasBeenCancelled(): bool
     {
         $btn = $this->getPressedSubmitElement();
@@ -92,6 +90,11 @@ class ContactGroupForm extends CompatForm
         return $btn !== null && $btn->getName() === 'cancel';
     }
 
+    /**
+     * Get part updates
+     *
+     * @return array
+     */
     public function getPartUpdates(): array
     {
         $this->ensureAssembled();
@@ -99,26 +102,31 @@ class ContactGroupForm extends CompatForm
         return $this->termInput->prepareMultipartUpdate($this->request);
     }
 
-    protected function validateTerms($terms): void
+    /**
+     * Validate the terms
+     *
+     * @param Term[] $terms
+     *
+     * @return void
+     */
+    protected function validateTerms(array $terms): void
     {
         $contactTerms = [];
         foreach ($terms as $term) {
-            /** @var Term $term */
-            if (strpos($term->getSearchValue(), ':') === false) {
+            $searchValue = $term->getSearchValue();
+            if (! is_numeric($searchValue)) {
                 $term->setMessage($this->translate('Is not a contact'));
 
                 continue;
             }
 
-            [$type, $id] = explode(':', $term->getSearchValue(), 2);
-            if ($type === 'contact') {
-                $contactTerms[$id] = $term;
-            }
+            $contactTerms[$searchValue] = $term;
         }
 
         if (! empty($contactTerms)) {
             $contacts = (Contact::on(Database::get()))
                 ->filter(Filter::equal('id', array_keys($contactTerms)));
+
             foreach ($contacts as $contact) {
                 $contactTerms[$contact->id]
                     ->setLabel($contact->full_name)
@@ -128,42 +136,35 @@ class ContactGroupForm extends CompatForm
     }
 
     /**
+     * Add a new contact group
+     *
      * @return ?int
      */
     public function addGroup(): ?int
     {
         $data = $this->getValues();
 
-        if (! isset($data['group']['group_name'], $data['group']['group_members'])) {
-            return null;
-        }
-
-        $members = array_map(function ($contact) {
-            return explode(':', $contact, 2);
-        }, explode(',', $data['group']['group_members']));
-
         $this->db->beginTransaction();
 
         $this->db->insert(
             'contactgroup',
             [
-                'name'  => trim($data['group']['group_name']),
+                'name'  => trim($data['group_name']),
                 'color' => '#000000'
             ]
         );
 
         $groupIdentifier = $this->db->lastInsertId();
+        $contactIds = explode(',', $data['group_members']);
 
-        foreach ($members as list($type, $identifier)) {
-            if ($type === 'contact') {
-                $this->db->insert(
-                    'contactgroup_member',
-                    [
-                        'contactgroup_id' => $groupIdentifier,
-                        'contact_id'      => $identifier
-                    ]
-                );
-            }
+        foreach ($contactIds as $contactId) {
+            $this->db->insert(
+                'contactgroup_member',
+                [
+                    'contactgroup_id' => $groupIdentifier,
+                    'contact_id'      => $contactId
+                ]
+            );
         }
 
         $this->db->commitTransaction();
