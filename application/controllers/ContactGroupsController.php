@@ -14,15 +14,20 @@ use Icinga\Web\Notification;
 use ipl\Html\Form;
 use ipl\Html\Text;
 use ipl\Html\ValidHtml;
+use ipl\Stdlib\Filter;
 use ipl\Web\Common\BaseItemList;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
+use ipl\Web\Filter\QueryString;
 use ipl\Web\Widget\ButtonLink;
 use ipl\Web\Widget\Tabs;
 
 class ContactGroupsController extends CompatController
 {
     use SearchControls;
+
+    /** @var Filter\Rule Filter from query string parameters */
+    private $filter;
 
     public function init(): void
     {
@@ -52,8 +57,7 @@ class ContactGroupsController extends CompatController
 
         if ($searchBar->hasBeenSent() && ! $searchBar->isValid()) {
             if ($searchBar->hasBeenSubmitted()) {
-                // TODO(nc): Add proper filter
-                // $filter = $this->getFilter();
+                $filter = $this->getFilter();
             } else {
                 $this->addControl($searchBar);
                 $this->sendMultipartUpdate();
@@ -163,5 +167,19 @@ class ContactGroupsController extends CompatController
         }
 
         return parent::addContent($content);
+    }
+
+    /**
+     * Get the filter created from query string parameters
+     *
+     * @return Filter\Rule
+     */
+    private function getFilter(): Filter\Rule
+    {
+        if ($this->filter === null) {
+            $this->filter = QueryString::parse((string) $this->params);
+        }
+
+        return $this->filter;
     }
 }
