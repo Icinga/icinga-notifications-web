@@ -114,11 +114,12 @@ class ContactGroupsController extends CompatController
                 $groupIdentifier = $form->addGroup();
                 if ($groupIdentifier) {
                     Notification::success(t('New group has been successfully added'));
+                    $this->sendExtraUpdates(['#col1']);
+                    $this->getResponse()->setHeader('X-Icinga-Container', 'col2');
+                    $this->redirectNow(Links::contactGroup($groupIdentifier));
                 } else {
                     Notification::error(t('Failed to add new contact group'));
                 }
-
-                $this->closeModalAndRefreshRemainingViews($this->getRequest()->getUrl()->getAbsoluteUrl());
             })
             ->handleRequest($this->getServerRequest());
 

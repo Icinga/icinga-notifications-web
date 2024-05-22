@@ -8,7 +8,7 @@ use ipl\Web\Common\BaseItemList;
 
 class ContactGroupList extends BaseItemList
 {
-    protected $defaultAttributes = ['class' => ['action-list', 'contact-group-list']];
+    protected $defaultAttributes = ['class' => ['action-list', 'contactgroup-list']];
 
     protected function getItemClass(): string
     {

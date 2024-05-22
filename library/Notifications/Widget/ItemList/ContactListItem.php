@@ -43,7 +43,8 @@ class ContactListItem extends BaseListItem
     protected function assembleFooter(BaseHtmlElement $footer): void
     {
         $contactIcons = new HtmlElement('div', Attributes::create(['class' => 'contact-icons']));
-        if ($this->item->has_email) {
+
+        if (isset($this->item->has_email) && $this->item->has_email) {
             $contactIcons->addHtml(new Icon('at'));
         }
 

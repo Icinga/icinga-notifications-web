@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Forms;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Contact;
+use Icinga\Module\Notifications\Model\Contactgroup;
 use Icinga\Web\Session;
 use ipl\Html\FormElement\SubmitElement;
 use ipl\Html\HtmlDocument;
@@ -26,6 +27,9 @@ class ContactGroupForm extends CompatForm
 
     /** @var TermInput */
     private $termInput;
+
+    /** @var ?int Contact group id */
+    private $contactgroupId;
 
     public function __construct(Connection $db)
     {
@@ -54,7 +58,8 @@ class ContactGroupForm extends CompatForm
             ->on(TermInput::ON_SAVE, $callValidation)
             ->on(TermInput::ON_PASTE, $callValidation);
 
-        $this->addElement('text',
+        $this->addElement(
+            'text',
             'group_name',
             [
                 'label'    => $this->translate('Name'),
@@ -62,20 +67,29 @@ class ContactGroupForm extends CompatForm
             ]
         )->addElement($this->termInput);
 
-        $this->addElement('submit', 'submit', ['label' => $this->translate('Submit')]);
-
-        $buttonCancel = new SubmitElement(
-            'cancel',
+        $this->addElement(
+            'submit',
+            'submit',
             [
-                'label'          => $this->translate('Cancel'),
-                'class'          => 'btn-cancel',
-                'formnovalidate' => true
+                'label' => $this->contactgroupId
+                    ? $this->translate('Save Changes')
+                    : $this->translate('Add Contact Group')
             ]
         );
 
-        // bind cancel button and add it in front of the submit button
-        $this->registerElement($buttonCancel);
-        $this->getElement('submit')->prependWrapper((new HtmlDocument())->setHtmlContent($buttonCancel));
+        if ($this->contactgroupId) {
+            $removeBtn = new SubmitElement(
+                'remove',
+                [
+                    'label'             => $this->translate('Remove'),
+                    'class'             => 'btn-remove',
+                    'formnovalidate'    => true
+                ]
+            );
+
+            $this->registerElement($removeBtn);
+            $this->getElement('submit')->prependWrapper((new HtmlDocument())->setHtmlContent($removeBtn));
+        }
     }
 
     /**
@@ -83,11 +97,12 @@ class ContactGroupForm extends CompatForm
      *
      * @return bool
      */
-    public function hasBeenCancelled(): bool
+    public function hasBeenRemoved(): bool
     {
         $btn = $this->getPressedSubmitElement();
+        $csrf = $this->getElement('CSRFToken');
 
-        return $btn !== null && $btn->getName() === 'cancel';
+        return $csrf !== null && $csrf->isValid() && $btn !== null && $btn->getName() === 'remove';
     }
 
     /**
@@ -136,6 +151,22 @@ class ContactGroupForm extends CompatForm
     }
 
     /**
+     * Load a contact group and populate the form
+     *
+     * @param int $groupId
+     *
+     * @return $this
+     */
+    public function loadContactgroup(int $groupId): self
+    {
+        $this->contactgroupId = $groupId;
+
+        $this->populate($this->fetchDbValues());
+
+        return $this;
+    }
+
+    /**
      * Add a new contact group
      *
      * @return ?int
@@ -170,5 +201,100 @@ class ContactGroupForm extends CompatForm
         $this->db->commitTransaction();
 
         return $groupIdentifier;
+    }
+
+    /**
+     * Edit the contact group
+     *
+     * @return bool False if no changes found, true otherwise
+     */
+    public function editGroup(): bool
+    {
+        $isUpdated = false;
+        $values = $this->getValues();
+
+        $this->db->beginTransaction();
+
+        $storedValues = $this->fetchDbValues();
+
+        if ($values['group_name'] !== $storedValues['group_name']) {
+            $this->db->update(
+                'contactgroup',
+                ['name' => $values['group_name']],
+                ['id = ?' => $this->contactgroupId]
+            );
+
+            $isUpdated = true;
+        }
+
+        $storedContacts =  explode(',', $storedValues['group_members']);
+        $newContacts = explode(',', $values['group_members']);
+
+        $toDelete = array_diff($storedContacts, $newContacts);
+        $toAdd = array_diff($newContacts, $storedContacts);
+
+        if (! empty($toDelete)) {
+            $this->db->delete('contactgroup_member', ['contact_id IN (?)' => $toDelete]);
+
+            $isUpdated = true;
+        }
+
+        if (! empty($toAdd)) {
+            foreach ($toAdd as $contactId) {
+                $this->db->insert(
+                    'contactgroup_member',
+                    [
+                        'contactgroup_id' => $this->contactgroupId,
+                        'contact_id'      => $contactId
+                    ]
+                );
+            }
+
+            $isUpdated = true;
+        }
+
+        $this->db->commitTransaction();
+
+        return $isUpdated;
+    }
+
+    /**
+     * Remove the contact group
+     */
+    public function removeContactgroup(): void
+    {
+        $this->db->beginTransaction();
+
+        $this->db->delete('contactgroup_member', ['contactgroup_id = ?' => $this->contactgroupId]);
+        $this->db->delete('contactgroup', ['id = ?' => $this->contactgroupId]);
+
+        $this->db->commitTransaction();
+    }
+
+    /**
+     * Fetch the values from the database
+     *
+     * @return array
+     */
+    private function fetchDbValues(): array
+    {
+        $query = Contactgroup::on(Database::get())
+            ->columns(['id', 'name'])
+            ->filter(Filter::equal('id', $this->contactgroupId));
+
+        $group = $query->first();
+        if ($group === null) {
+            $this->httpNotFound(t('Contact group not found'));
+        }
+
+        $groupMembers = [];
+        foreach ($group->contact->columns('id') as $contact) {
+            $groupMembers[] = $contact->id;
+        }
+
+        return [
+            'group_name'   => $group->name,
+            'group_members' => implode(',', $groupMembers)
+        ];
     }
 }
