@@ -23,9 +23,7 @@ use function ipl\Stdlib\iterable_value_first;
 
 /**
  * @phpstan-type GridArea array{0: int, 1: int, 2: int, 3: int}
- * @phpstan-type GridContinuationType self::FROM_PREV_GRID | self::TO_NEXT_GRID | self::ACROSS_GRID
- * @phpstan-type EdgeContinuationType self::ACROSS_LEFT_EDGE | self::ACROSS_RIGHT_EDGE | self::ACROSS_BOTH_EDGES
- * @phpstan-type ContinuationType GridContinuationType | EdgeContinuationType
+ * @phpstan-import-type ContinuationType from Entry
  */
 abstract class BaseGrid extends BaseHtmlElement
 {
@@ -36,24 +34,6 @@ abstract class BaseGrid extends BaseHtmlElement
 
     /** @var string The chronological order of entries is oriented vertically */
     protected const VERTICAL_FLOW_OF_TIME = 'vertical-flow';
-
-    /** @var string Continuation of an entry that started on the previous grid */
-    protected const FROM_PREV_GRID = 'from-prev-grid';
-
-    /** @var string Continuation of an entry that continues on the next grid */
-    protected const TO_NEXT_GRID = 'to-next-grid';
-
-    /** @var string Continuation of an entry that started on the previous grid and continues on the next */
-    protected const ACROSS_GRID = 'across-grid';
-
-    /** @var string Continuation of an entry that started on a previous grid row */
-    protected const ACROSS_LEFT_EDGE = 'across-left-edge';
-
-    /** @var string Continuation of an entry that continues on the next grid row */
-    protected const ACROSS_RIGHT_EDGE = 'across-right-edge';
-
-    /** @var string Continuation of an entry that started on a previous grid row and continues on the next */
-    protected const ACROSS_BOTH_EDGES = 'across-both-edges';
 
     /** @var int Return this in {@see getSectionsPerStep} to signal an infinite number of sections */
     protected const INFINITE = 0;
@@ -223,7 +203,7 @@ abstract class BaseGrid extends BaseHtmlElement
      *
      * @param Traversable<int, Entry> $entries
      *
-     * @return Generator<array{0: GridArea, 1: ?ContinuationType}, Entry>
+     * @return Generator<GridArea, Entry>
      */
     final protected function yieldFlowingEntries(Traversable $entries): Generator
     {
@@ -370,21 +350,22 @@ abstract class BaseGrid extends BaseHtmlElement
                 $backward = $continuationType || $fromPrevGrid;
                 $forward = ! $isLastRow || $toNextGrid;
                 if ($backward && $forward) {
-                    $continuationType = self::ACROSS_BOTH_EDGES;
+                    $entry->setContinuationType(Entry::ACROSS_BOTH_EDGES);
                 } elseif ($backward) {
-                    $continuationType = self::ACROSS_LEFT_EDGE;
+                    $entry->setContinuationType(Entry::ACROSS_LEFT_EDGE);
                 } elseif ($forward) {
-                    $continuationType = self::ACROSS_RIGHT_EDGE;
+                    $entry->setContinuationType(Entry::ACROSS_RIGHT_EDGE);
                 } elseif ($fromPrevGrid && $toNextGrid) {
-                    $continuationType = self::ACROSS_GRID;
+                    $entry->setContinuationType(Entry::ACROSS_GRID);
                 } elseif ($fromPrevGrid) {
-                    $continuationType = self::FROM_PREV_GRID;
+                    $entry->setContinuationType(Entry::FROM_PREV_GRID);
                 } elseif ($toNextGrid) {
-                    $continuationType = self::TO_NEXT_GRID;
+                    $entry->setContinuationType(Entry::TO_NEXT_GRID);
                 }
 
-                yield [$gridArea, $continuationType] => $entry;
+                yield $gridArea => $entry;
 
+                $continuationType = $entry->getContinuationType();
                 $fromPrevGrid = false;
                 $remainingRows -= 1;
             }
@@ -412,7 +393,7 @@ abstract class BaseGrid extends BaseHtmlElement
      *
      * @param Traversable<int, Entry> $entries
      *
-     * @return Generator<array{0: GridArea, 1: ?ContinuationType}, Entry>
+     * @return Generator<GridArea, Entry>
      */
     final protected function yieldFixedEntries(Traversable $entries): Generator
     {
@@ -484,16 +465,14 @@ abstract class BaseGrid extends BaseHtmlElement
             $fromPrevGrid = $gridStartsAt > $entry->getStart();
             $toNextGrid = $gridEndsAt < $entry->getEnd();
             if ($fromPrevGrid && $toNextGrid) {
-                $continuationType = self::ACROSS_GRID;
+                $entry->setContinuationType(Entry::ACROSS_GRID);
             } elseif ($fromPrevGrid) {
-                $continuationType = self::FROM_PREV_GRID;
+                $entry->setContinuationType(Entry::FROM_PREV_GRID);
             } elseif ($toNextGrid) {
-                $continuationType = self::TO_NEXT_GRID;
-            } else {
-                $continuationType = null;
+                $entry->setContinuationType(Entry::TO_NEXT_GRID);
             }
 
-            yield [$gridArea, $continuationType] => $entry;
+            yield $gridArea => $entry;
         }
 
         $this->style->addFor($this, [
@@ -516,137 +495,15 @@ abstract class BaseGrid extends BaseHtmlElement
             $generator = $this->yieldFixedEntries($entries);
         }
 
-        foreach ($generator as $data => $entry) {
-            [$gridArea, $continuationType] = $data;
-
-            $gradientClass = null;
-            if ($continuationType === self::ACROSS_GRID || $continuationType === self::ACROSS_BOTH_EDGES) {
-                $gradientClass = 'two-way-gradient';
-            } elseif ($continuationType === self::FROM_PREV_GRID || $continuationType === self::ACROSS_LEFT_EDGE) {
-                $gradientClass = 'opening-gradient';
-            } elseif ($continuationType === self::TO_NEXT_GRID || $continuationType === self::ACROSS_RIGHT_EDGE) {
-                $gradientClass = 'ending-gradient';
-            }
-
-            $entryHtml = new HtmlElement(
-                'div',
-                Attributes::create([
-                    'class' => ['entry', $gradientClass, 'area-' . implode('-', $gridArea)],
-                    'data-entry-id' => $entry->getId(),
-                    'data-row-start' => $gridArea[0],
-                    'data-col-start' => $gridArea[1],
-                    'data-row-end' => $gridArea[2],
-                    'data-col-end' => $gridArea[3]
-                ])
-            );
-
-            $this->style->addFor($entryHtml, [
+        foreach ($generator as $gridArea => $entry) {
+            $this->style->addFor($entry, [
                 '--entry-bg' => $this->getEntryColor($entry, 10),
                 'grid-area' => sprintf('~"%d / %d / %d / %d"', ...$gridArea),
                 'border-color' => $this->getEntryColor($entry, 50)
             ]);
 
-            $this->assembleEntry($entryHtml, $entry, $continuationType);
-
-            $overlay->addHtml($entryHtml);
+            $overlay->addHtml($entry);
         }
-    }
-
-    /**
-     * Assemble the entry in the grid
-     *
-     * @param BaseHtmlElement $html Container where to add the entry's HTML
-     * @param Entry $entry The entry to assemble
-     * @param ?ContinuationType $continuationType Continuation type of the entry's HTML
-     *
-     * @return void
-     */
-    protected function assembleEntry(BaseHtmlElement $html, Entry $entry, ?string $continuationType): void
-    {
-        if (($url = $entry->getUrl()) !== null) {
-            $entryContainer = new Link(null, $url);
-            $entryContainer->openInModal();
-            $html->addHtml($entryContainer);
-        } else {
-            $entryContainer = $html;
-        }
-
-        $title = new HtmlElement('div', Attributes::create(['class' => 'title']));
-        $content = new HtmlElement(
-            'div',
-            Attributes::create(['class' => 'content'])
-        );
-
-        $description = $entry->getDescription();
-        $titleAttr = $entry->getStart()->format('H:i')
-            . ' | ' . $entry->getAttendee()->getName()
-            . ($description ? ': ' . $description : '');
-
-        $startText = null;
-        $endText = null;
-
-        if ($continuationType === self::ACROSS_GRID) {
-            $startText = sprintf($this->translate('starts %s'), $entry->getStart()->format('d/m/y'));
-            $endText = sprintf($this->translate('ends %s'), $entry->getEnd()->format('d/m/y H:i'));
-        } elseif ($continuationType === self::FROM_PREV_GRID) {
-            $startText = sprintf($this->translate('starts %s'), $entry->getStart()->format('d/m/y'));
-        } elseif ($continuationType === self::TO_NEXT_GRID) {
-            $endText = sprintf($this->translate('ends %s'), $entry->getEnd()->format('d/m/y H:i'));
-        }
-
-        if ($startText) {
-            $titleAttr = $startText . ' ' . $titleAttr;
-        }
-
-        if ($endText) {
-            $titleAttr = $titleAttr . ' | ' . $endText;
-        }
-
-        $content->addAttributes(['title' => $titleAttr]);
-
-        if ($continuationType !== null) {
-            $title->addHtml(new HtmlElement(
-                'time',
-                Attributes::create([
-                    'datetime' => $entry->getStart()->format(DateTimeInterface::ATOM)
-                ]),
-                Text::create($entry->getStart()->format($startText ? 'd/m/y H:i' : 'H:i'))
-            ));
-        }
-
-        $title->addHtml(
-            new HtmlElement(
-                'span',
-                Attributes::create(['class' => 'attendee']),
-                $entry->getAttendee()->getIcon(),
-                Text::create($entry->getAttendee()->getName())
-            )
-        );
-
-        $content->addHtml($title);
-        if ($description) {
-            $content->addHtml(new HtmlElement(
-                'div',
-                Attributes::create(['class' => 'description']),
-                new HtmlElement(
-                    'p',
-                    Attributes::create(['title' => $description]),
-                    Text::create($description)
-                )
-            ));
-        }
-
-        if ($endText) {
-            $content->addHtml(
-                HtmlElement::create(
-                    'div',
-                    ['class' => 'ends-at'],
-                    $endText
-                )
-            );
-        }
-
-        $entryContainer->addHtml($content);
     }
 
     /**
