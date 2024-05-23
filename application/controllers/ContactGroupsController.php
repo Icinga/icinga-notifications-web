@@ -98,9 +98,7 @@ class ContactGroupsController extends CompatController
         $form = (new ContactGroupForm(Database::get()))
             ->setAction($this->getRequest()->getUrl()->getAbsoluteUrl())
             ->on(Form::ON_SENT, function (ContactGroupForm $form) {
-                if ($form->hasBeenCancelled()) {
-                    $this->switchToSingleColumnLayout();
-                } elseif (! $form->hasBeenSubmitted()) {
+                if (! $form->hasBeenSubmitted()) {
                     foreach ($form->getPartUpdates() as $update) {
                         if (! is_array($update)) {
                             $update = [$update];

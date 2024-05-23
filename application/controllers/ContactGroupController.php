@@ -77,8 +77,6 @@ class ContactGroupController extends CompatController
                         $form->getValue('group_name')
                     ));
                     $this->switchToSingleColumnLayout();
-                } elseif ($form->hasBeenCancelled()) {
-                    $this->closeModalAndRefreshRelatedView($this->getRequest()->getUrl()->getAbsoluteUrl());
                 } elseif (! $form->hasBeenSubmitted()) {
                     foreach ($form->getPartUpdates() as $update) {
                         if (! is_array($update)) {
