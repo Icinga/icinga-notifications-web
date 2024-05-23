@@ -87,7 +87,7 @@ class ContactGroupController extends CompatController
                     }
                 }
             })
-            ->on(Form::ON_SUCCESS, function (ContactGroupForm $form) {
+            ->on(Form::ON_SUCCESS, function (ContactGroupForm $form) use ($groupId) {
                 if ($form->editGroup()) {
                     Notification::success(sprintf(
                         t('Successfully updated contact group %s'),
@@ -95,7 +95,7 @@ class ContactGroupController extends CompatController
                     ));
                 }
 
-                $this->closeModalAndRefreshRemainingViews($this->getRequest()->getUrl()->getAbsoluteUrl());
+                $this->closeModalAndRefreshRemainingViews(Links::contactGroup($groupId));
             })
             ->handleRequest($this->getServerRequest());
 
