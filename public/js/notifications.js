@@ -267,6 +267,9 @@ const VERSION = 1;
              */
             if (_this.initialized === false) {
                 _this.initialized = true;
+                if (_this.allowedToOperate && _this.hasNotificationPermission() && _this.hasNotificationsEnabled()) {
+                    _this.openEventStream();
+                }
             }
 
             if (url.pathname !== _this.icinga.config.baseUrl + '/account') {
