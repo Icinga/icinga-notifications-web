@@ -14,6 +14,7 @@ use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use ipl\Html\HtmlElement;
 use ipl\Html\Table;
+use ipl\Html\Text;
 
 class IncidentDetail extends BaseHtmlElement
 {
@@ -50,9 +51,15 @@ class IncidentDetail extends BaseHtmlElement
 
     protected function createRelatedObject()
     {
+        $objectUrl = ObjectsRendererHook::renderObjectLink($this->incident->object);
+
+        if (! $objectUrl) {
+            return [];
+        }
+
         return [
-            Html::tag('h2', t('Object')),
-            ObjectsRendererHook::renderObjectLink($this->incident->object)
+            new HtmlElement('h2', null, Text::create(t('Related Object'))),
+            $objectUrl
         ];
     }
 

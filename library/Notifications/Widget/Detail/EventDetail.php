@@ -13,6 +13,8 @@ use Icinga\Module\Notifications\Widget\ItemList\IncidentList;
 use InvalidArgumentException;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
+use ipl\Html\HtmlElement;
+use ipl\Html\Text;
 use ipl\Html\ValidHtml;
 use ipl\Web\Widget\HorizontalKeyValue;
 
@@ -78,9 +80,15 @@ class EventDetail extends BaseHtmlElement
     /** @return ValidHtml[] */
     protected function createRelatedObject(): array
     {
+        $objectUrl = ObjectsRendererHook::renderObjectLink($this->event->object);
+
+        if (! $objectUrl) {
+            return [];
+        }
+
         return [
-            Html::tag('h2', t('Related Object')),
-            ObjectsRendererHook::renderObjectLink($this->event->object)
+            new HtmlElement('h2', null, Text::create(t('Related Object'))),
+            $objectUrl
         ];
     }
 
