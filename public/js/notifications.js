@@ -6,10 +6,29 @@ const VERSION = 1;
 
     'use strict';
 
+    const LOG_PREFIX = '[Notification] - ';
+
+    if (! 'ServiceWorker' in self) {
+        console.error(LOG_PREFIX + "this browser does not support the 'Service Worker API' in the current context");
+
+        return;
+    }
+
+    if (! 'Navigator' in self) {
+        console.error(LOG_PREFIX + "this browser does not support the 'Navigator API' in the current context");
+
+        return;
+    }
+
+    if (! 'Notification' in self) {
+        console.error(LOG_PREFIX + "this browser does not support the 'Notification API' in the current context");
+
+        return;
+    }
+
     Icinga.Behaviors = Icinga.Behaviors || {};
 
     class Notification extends Icinga.EventListener {
-        prefix = '[Notification] - ';
         eventSource = null;
         toggleState = null;
         initialized = false;
@@ -20,7 +39,7 @@ const VERSION = 1;
 
             // only allow to be instantiated in a web context
             if (! self instanceof Window) {
-                this.logger.error(this.prefix + "module should not get loaded outside of a web context!");
+                this.logger.error(LOG_PREFIX + "module should not get loaded outside of a web context!");
                 throw new Error("Attempted to initialize the 'Notification' module outside of a web context!");
             }
 
@@ -30,59 +49,29 @@ const VERSION = 1;
             this.toggleState = new Icinga.Storage.StorageAwareMap
                 .withStorage(Icinga.Storage.BehaviorStorage('notification'), 'toggle')
 
-            // check for required API's
-            this.logger.debug(this.prefix + "checking for the required APIs and permissions");
+            // listen for events
+            this.on('icinga-init', null, this.onInit, this);
+            this.on('rendered', '#main > .container', this.renderHandler, this);
 
-            let isValidated = true;
-            if (! 'ServiceWorker' in self) {
-                this.logger.error(
-                    this.prefix
-                    + "this browser does not support the 'Service Worker API' in the"
-                    + " current context"
-                );
-                isValidated = false;
-            }
-            if (! 'Navigator' in self) {
-                this.logger.error(
-                    this.prefix
-                    + "this browser does not support the 'Navigator API' in the"
-                    + " current context"
-                );
-                isValidated = false;
-            }
-            if (! 'Notification' in self) {
-                this.logger.error(
-                    this.prefix
-                    + "this browser does not support the 'Notification API' in the"
-                    + " current context"
-                );
-                isValidated = false;
-            }
-            if (! isValidated) {
-                // we only log the error and exit early as throwing would completely hang up the web application
-                this.logger.error("The 'Notification' module is missing some required API's");
-                return;
-            }
+            this.logger.debug(LOG_PREFIX + "spawned");
+        }
 
-            this.logger.debug(this.prefix + "spawned");
-            this.load();
+        onInit(event) {
+            event.data.self.load();
         }
 
         load() {
-            this.logger.debug(this.prefix + "loading");
-
-            // listen to render events on container for col1 (to inject notification toggle)
-            this.on('rendered', '#main > #col1.container', this.renderHandler, this);
+            this.logger.debug(LOG_PREFIX + "loading");
 
             // listen to controller (service worker) changes
             navigator.serviceWorker.addEventListener('controllerchange', (event) => {
-                this.logger.debug(this.prefix + "new controller attached ", event.target.controller);
+                this.logger.debug(LOG_PREFIX + "new controller attached ", event.target.controller);
                 if (event.target.controller !== null) {
                     // reset eventsource and handshake flag
                     this.allowedToOperate = false;
                     this.closeEventStream();
 
-                    this.logger.debug(this.prefix + "send handshake to controller");
+                    this.logger.debug(LOG_PREFIX + "send handshake to controller");
                     event.target.controller.postMessage(
                         JSON.stringify({
                             command: 'handshake',
@@ -103,7 +92,7 @@ const VERSION = 1;
                     case 'handshake':
                         if (data.status === 'outdated') {
                             this.logger.debug(
-                                this.prefix
+                                LOG_PREFIX
                                 + "handshake got rejected as we're running an outdated script version"
                             );
 
@@ -117,7 +106,7 @@ const VERSION = 1;
                             this.allowedToOperate = false;
                         } else {
                             this.logger.debug(
-                                this.prefix
+                                LOG_PREFIX
                                 + "handshake got accepted by the controller"
                             );
 
@@ -139,7 +128,7 @@ const VERSION = 1;
                         if (! this.allowedToOperate) {
                             // we are not allowed to open up connections, rejecting the request
                             this.logger.debug(
-                                this.prefix
+                                LOG_PREFIX
                                 + "rejecting the request to open up an event-stream as this tab is not allowed"
                                 + " to (failed the handshake with the controller)"
                             );
@@ -196,19 +185,19 @@ const VERSION = 1;
                     }
                 })
                 .finally(() => {
-                    this.logger.debug(this.prefix + "loaded");
+                    this.logger.debug(LOG_PREFIX + "loaded");
                 })
         }
 
         unload() {
-            this.logger.debug(this.prefix + "unloading");
+            this.logger.debug(LOG_PREFIX + "unloading");
 
             // disconnect EventSource if there's an active connection
             this.closeEventStream();
             this.eventSource = null;
             this.initialized = false;
 
-            this.logger.debug(this.prefix + "unloaded");
+            this.logger.debug(LOG_PREFIX + "unloaded");
         }
 
         reload() {
@@ -218,7 +207,7 @@ const VERSION = 1;
 
         openEventStream() {
             if (! this.hasNotificationPermission() || ! this.hasNotificationsEnabled()) {
-                this.logger.warn(this.prefix + "denied opening event-stream as the notification permissions" +
+                this.logger.warn(LOG_PREFIX + "denied opening event-stream as the notification permissions" +
                     " are missing or the notifications themselves disabled");
 
                 return;
@@ -228,7 +217,7 @@ const VERSION = 1;
             this.closeEventStream();
 
             try {
-                this.logger.debug(this.prefix + "opening event source");
+                this.logger.debug(LOG_PREFIX + "opening event source");
                 this.eventSource = new EventSource(
                     icinga.config.baseUrl + '/notifications/daemon',
                     {withCredentials: true}
@@ -253,7 +242,7 @@ const VERSION = 1;
                         });
                 });
             } catch (error) {
-                this.logger.error(this.prefix + `got an error while trying to open up an event-stream:`, error);
+                this.logger.error(LOG_PREFIX + `got an error while trying to open up an event-stream:`, error);
             }
         }
 
