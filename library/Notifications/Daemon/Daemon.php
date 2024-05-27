@@ -253,6 +253,7 @@ class Daemon extends EventEmitter
         $notifications = IncidentHistory::on(Database::get())
             ->filter(Filter::greaterThan('id', $this->lastIncidentId))
             ->filter(Filter::equal('type', 'notified'))
+            ->filter(Filter::equal('notification_state', 'sent'))
             ->orderBy('id', 'ASC')
             ->with(['incident', 'incident.object']);
         /** @var array<int, array<Connection>> $connections */
