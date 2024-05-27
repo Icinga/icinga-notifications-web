@@ -113,6 +113,7 @@ function processMessage(event) {
             if (('Notification' in self) && (self.Notification.permission === 'granted')) {
                 const notification = data.notification;
                 const title = notification.payload.title;
+                const message = notification.payload.message;
                 let severity = 'unknown';
 
                 // match severity
@@ -132,7 +133,7 @@ function processMessage(event) {
                     title,
                     {
                         icon: data.baseUrl + '/img/notifications/icinga-notifications-' + severity + '.webp',
-                        body: 'changed to severity ' + severity,
+                        body: message,
                         data: {
                             url:
                                 data.baseUrl
