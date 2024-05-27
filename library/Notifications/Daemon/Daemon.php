@@ -251,6 +251,7 @@ class Daemon extends EventEmitter
 
         // grab new notifications and the current connections
         $notifications = IncidentHistory::on(Database::get())
+            ->withColumns(['incident.object.id_tags'])
             ->filter(Filter::greaterThan('id', $this->lastIncidentId))
             ->filter(Filter::equal('type', 'notified'))
             ->filter(Filter::equal('notification_state', 'sent'))
@@ -265,54 +266,20 @@ class Daemon extends EventEmitter
                 /** @var Incident $incident */
                 $incident = $notification->incident;
 
-                $tags = null;
-                /** @var ObjectIdTag $tag */
-                foreach ($incident->object->object_id_tag as $tag) {
-                    $tags[] = $tag;
-                }
+                $event = new Event(
+                    EventIdentifier::ICINGA2_NOTIFICATION,
+                    $notification->contact_id,
+                    (object) [
+                        'incident_id' => $notification->incident_id,
+                        'event_id'    => $notification->event_id,
+                        'severity'    => $incident->severity,
+                        'title'       => $incident->object->getName()->render(),
+                    ]
+                );
 
-                if ($tags !== null) {
-                    $host = $service = $message = '';
+                $this->emit(EventIdentifier::ICINGA2_NOTIFICATION, [$event]);
 
-                    foreach ($tags as $tag) {
-                        switch ($tag->tag) {
-                            case 'host':
-                                $host = $tag->value;
-                                $message = "Host: " . $host;
-
-                                break;
-                            case 'service':
-                                $service = $tag->value;
-                                $message .= ($message === '' ? "Service: " : " | Service: ") . $service;
-
-                                break;
-                        }
-                    }
-
-                    self::$logger::warning(self::PREFIX . $message);
-
-                    // reformat notification time
-                    $time = $notification->time;
-                    $time->setTimezone(new DateTimeZone('UTC'));
-                    $time = $time->format(DateTimeInterface::RFC3339_EXTENDED);
-
-                    $event = new Event(
-                        EventIdentifier::ICINGA2_NOTIFICATION,
-                        $notification->contact_id,
-                        (object) [
-                            'incident_id' => $notification->incident_id,
-                            'event_id'    => $notification->event_id,
-                            'host'        => $host,
-                            'service'     => $service,
-                            'time'        => $time,
-                            'severity'    => $incident->severity
-                        ]
-                    );
-
-                    $this->emit(EventIdentifier::ICINGA2_NOTIFICATION, [$event]);
-
-                    ++$numOfNotifications;
-                }
+                ++$numOfNotifications;
             }
 
             $this->lastIncidentId = $notification->id;

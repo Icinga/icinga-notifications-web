@@ -112,7 +112,7 @@ function processMessage(event) {
              */
             if (('Notification' in self) && (self.Notification.permission === 'granted')) {
                 const notification = data.notification;
-                let title = '';
+                const title = notification.payload.title;
                 let severity = 'unknown';
 
                 // match severity
@@ -127,12 +127,6 @@ function processMessage(event) {
                         severity = 'critical';
                         break;
                 }
-
-                // build title
-                if (notification.payload.service !== '') {
-                    title += "'" + notification.payload.service + "' on ";
-                }
-                title += "'" + notification.payload.host + "'";
 
                 void self.registration.showNotification(
                     title,
