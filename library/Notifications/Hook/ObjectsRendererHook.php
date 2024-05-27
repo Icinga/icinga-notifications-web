@@ -9,6 +9,8 @@ use Generator;
 use Icinga\Application\Hook;
 use Icinga\Application\Logger;
 use Icinga\Module\Notifications\Model\Objects;
+use ipl\Html\Attributes;
+use ipl\Html\HtmlElement;
 use ipl\Html\HtmlString;
 use ipl\Html\ValidHtml;
 use ipl\Web\Url;
@@ -36,6 +38,24 @@ abstract class ObjectsRendererHook
      * @var array<string, ValidHtml>
      */
     private static $objectNameHtmls = [];
+
+    /**
+     * Array of object names with their corresponding object IDs as keys
+     *
+     * It has the following structure : ['object ID' => 'object name'].
+     *
+     * @var array<string, string>
+     */
+    private static $objectNames = [];
+
+    /**
+     * Get the object names for the objects using the object ID tags
+     *
+     * @param array<array<string, string>> $objectIdTags Array of object ID tags of objects belonging to the source
+     *
+     * @return Generator<array<string, string>, string> Generator for object names with their object ID tags as keys
+     */
+    abstract public function getObjectNames(array $objectIdTags): Generator;
 
     /**
      * Get the HTML for the object names for the objects using the object ID tags
@@ -78,11 +98,13 @@ abstract class ObjectsRendererHook
     /**
      * Load HTMLs to be rendered for the object names to the cache using the cached objects
      *
+     * @param bool $asHtml If true loads object names as HTMLs otherwise as string
+     *
      * @return void
      */
-    final public static function load(): void
+    final public static function load(bool $asHtml = true): void
     {
-        self::prepare(self::$objectIdTags);
+        self::prepare(self::$objectIdTags, $asHtml); // Prepare object names as HTML or string
 
         self::$objectIdTags = [];
     }
@@ -94,15 +116,17 @@ abstract class ObjectsRendererHook
      * ['object source type' => ['object ID' => [object ID tags]]].
      *
      * @param array<string, array<string, array<string, string>>> $objectIdTags Array of object ID tags for each source
+     * @param bool $asHtml When true, object names are prepared as HTML otherwise as string
      *
      * @return void
      */
-    private static function prepare(array $objectIdTags): void
+    private static function prepare(array $objectIdTags, bool $asHtml = true): void
     {
         $idTagToObjectIdMap = [];
+        $objectNames = $asHtml ? self::$objectNameHtmls : self::$objectNames;
         foreach ($objectIdTags as $sourceType => $objects) {
             foreach ($objects as $objectId => $tags) {
-                if (! isset(self::$objectNameHtmls[$objectId])) {
+                if (! isset($objectNames[$objectId])) {
                     $idTagToObjectIdMap[$sourceType][] = [$objectId, $tags];
                 }
             }
@@ -123,13 +147,31 @@ abstract class ObjectsRendererHook
                         $idTagToObjectIdMap[$source]
                     );
 
+                    $objectNamesFromSource = $asHtml
+                        ? $hook->getHtmlForObjectNames($objectIDTagsForSource)
+                        : $hook->getObjectNames($objectIDTagsForSource);
+
                     /** @var array $objectIdTag */
-                    foreach ($hook->getHtmlForObjectNames($objectIDTagsForSource) as $objectIdTag => $validHtml) {
+                    foreach ($objectNamesFromSource as $objectIdTag => $objectName) {
                         foreach ($idTagToObjectIdMap[$source] as $key => $val) {
                             $diff = array_intersect_assoc($val[1], $objectIdTag);
                             if (count($diff) === count($val[1])) {
                                 unset($idTagToObjectIdMap[$key]);
-                                $objectDisplayNames[$val[0]] = $validHtml;
+
+                                if ($asHtml) {
+                                    $objectName = HtmlElement::create(
+                                        'div',
+                                        Attributes::create([
+                                            'class' => [
+                                                'icinga-module',
+                                                'module-' . ($source === 'icinga2' ? 'icingadb' : $source)
+                                            ]
+                                        ]),
+                                        $objectName
+                                    );
+                                }
+
+                                $objectDisplayNames[$val[0]] = $objectName;
 
                                 continue 2;
                             }
@@ -141,7 +183,11 @@ abstract class ObjectsRendererHook
             }
         }
 
-        self::$objectNameHtmls += $objectDisplayNames;
+        if ($asHtml) {
+            self::$objectNameHtmls += $objectDisplayNames;
+        } else {
+            self::$objectNames += $objectDisplayNames;
+        }
     }
 
     /**
@@ -164,15 +210,52 @@ abstract class ObjectsRendererHook
             return self::$objectNameHtmls[$objId];
         }
 
+        self::$objectNameHtmls[$objId] = new HtmlString(self::createObjectNameAsString($obj));
+
+        return self::$objectNameHtmls[$objId];
+    }
+
+    /**
+     * Get the object name of the given object as string
+     *
+     * If the object name is not loaded, it is prepared using object ID tags and the same is returned.
+     *
+     * @param Objects $obj
+     * @param bool $prepare If true prepares the object name string from the hook implementation if it is not
+     *                      already present in the cache
+     *
+     * @return string
+     */
+    final public static function getObjectNameAsString(Objects $obj): string
+    {
+        $objId = $obj->id;
+        if (! isset(self::$objectNames[$objId])) {
+            self::prepare([$obj->source->type => [$objId => $obj->id_tags]], false);
+        }
+
+        if (isset(self::$objectNames[$objId])) {
+            return self::$objectNames[$objId];
+        }
+
+        return self::createObjectNameAsString($obj);
+    }
+
+    /**
+     * Create object name string for the given object
+     *
+     * @param Objects $obj
+     *
+     * @return string
+     */
+    private static function createObjectNameAsString(Objects $obj): string
+    {
         $objectTags = [];
 
         foreach ($obj->id_tags as $tag => $value) {
             $objectTags[] = sprintf('%s=%s', $tag, $value);
         }
 
-        self::$objectNameHtmls[$objId] = new HtmlString(implode(', ', $objectTags));
-
-        return self::$objectNameHtmls[$objId];
+        return implode(', ', $objectTags);
     }
 
     /**
@@ -187,8 +270,15 @@ abstract class ObjectsRendererHook
         /** @var self $hook */
         foreach (Hook::all('Notifications\\ObjectsRenderer') as $hook) {
             try {
-                if ($object->source->type === $hook->getSourceType()) {
-                    return $hook->createObjectLink($object->id_tags);
+                $sourceType = $hook->getSourceType();
+                if ($object->source->type === $sourceType) {
+                    return $hook->createObjectLink($object->id_tags)
+                        ->addAttributes([
+                            'class' => [
+                                'icinga-module',
+                                'module-' . ($sourceType === 'icinga2' ? 'icingadb' : $sourceType)
+                            ]
+                        ]);
                 }
             } catch (Exception $e) {
                 Logger::error('Failed to load hook %s:', get_class($hook), $e);
