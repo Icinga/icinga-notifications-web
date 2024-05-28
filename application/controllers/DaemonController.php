@@ -60,7 +60,7 @@ class DaemonController extends CompatController
                 ->getBaseDir() . '/public/js';
 
         $filePath = realpath($root . DIRECTORY_SEPARATOR . 'notifications-' . $fileName . $extension);
-        if ($filePath === false) {
+        if ($filePath === false || substr($filePath, 0, strlen($root)) !== $root) {
             if ($fileName === 'undefined') {
                 $this->httpNotFound(t("No file name submitted"));
             }
