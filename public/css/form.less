@@ -21,43 +21,6 @@
   }
 }
 
-.entry-form {
-  fieldset[name="recipient"] > .control-group {
-    margin-bottom: 0;
-  }
-
-  .term-input-area {
-    label.contact,
-    label.group {
-      display: inline-flex;
-      align-items: center;
-      position: relative;
-
-      &::before {
-        z-index: 1;
-        width: 2em;
-        position: absolute;
-        padding-left: .5em;
-        text-align: center;
-      }
-
-      input[type="text"] {
-        padding-left: 2em + 7/12em;
-      }
-    }
-
-    label.contact {
-      &::before {
-        width: 1.5em;
-      }
-
-      input[type="text"] {
-        padding-left: 1.5em + 7/12em;
-      }
-    }
-  }
-}
-
 .rotation-config {
   .rotation-mode {
     width: 50em;
@@ -116,23 +79,6 @@
 }
 
 /* Style */
-
-.entry-form {
-  label.contact,
-  label.group {
-    &::before {
-      .fa();
-    }
-  }
-
-  label.contact::before {
-    content: "\f007";
-  }
-
-  label.group::before {
-    content: "\f0c0";
-  }
-}
 
 .rotation-config {
   label:not(:hover) {
