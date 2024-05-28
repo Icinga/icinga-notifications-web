@@ -1,0 +1,10 @@
+[Unit]
+Description=Icinga Notifications Background Daemon
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/icingacli notifications daemon run
+Restart=on-success
+
+[Install]
+WantedBy=multi-user.target
