@@ -557,9 +557,9 @@ class RotationConfigForm extends CompatForm
      *
      * @return void
      */
-    public function wipeRotation(): void
+    public function wipeRotation(int $priority = null): void
     {
-        $priority = $this->getValue('priority');
+        $priority = $priority ?? $this->getValue('priority');
         if ($priority === null) {
             throw new LogicException('The priority must be populated');
         }

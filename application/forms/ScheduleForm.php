@@ -6,6 +6,7 @@ namespace Icinga\Module\Notifications\Forms;
 
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Model\Rotation;
 use Icinga\Module\Notifications\Model\Schedule;
 use Icinga\Module\Notifications\Model\Timeperiod;
 use Icinga\Web\Session;
@@ -90,12 +91,15 @@ class ScheduleForm extends CompatForm
         $db = Database::get();
         $db->beginTransaction();
 
-        $timeperiods = Timeperiod::on($db)
-            ->filter(Filter::equal('owned_by_schedule_id', $id));
-        foreach ($timeperiods as $timeperiod) {
-            $db->delete('timeperiod_entry', ['timeperiod_id = ?' => $timeperiod->id]);
-            $db->delete('schedule_member', ['timeperiod_id = ?' => $timeperiod->id]);
-            $db->delete('timeperiod', ['id = ?' => $timeperiod->id]);
+        $rotations = Rotation::on($db)
+            ->columns('priority')
+            ->filter(Filter::equal('schedule_id', $id))
+            ->orderBy('priority', SORT_DESC);
+
+        $rotationConfigForm = new RotationConfigForm($id, $db);
+
+        foreach ($rotations as $rotation) {
+            $rotationConfigForm->wipeRotation($rotation->priority);
         }
 
         $db->delete('schedule', ['id = ?' => $id]);
