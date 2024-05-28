@@ -35,7 +35,7 @@ selfSW.addEventListener('fetch', (event) => {
     // only check dedicated event stream requests towards the daemon
     if (
         ! request.headers.get('accept').startsWith('text/event-stream')
-        || url.pathname.trim() !== '/icingaweb2/notifications/daemon'
+        || url.pathname.match(/\/notifications\/v(\d+)\/subscribe$/) === null
     ) {
         return;
     }

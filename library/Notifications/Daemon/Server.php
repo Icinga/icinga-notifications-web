@@ -276,6 +276,15 @@ class Server
             );
         }
 
+        $version = $request->getHeader('X-Icinga-Notifications-Protocol-Version')[0] ?? 1;
+        self::$logger::debug(
+            self::PREFIX
+            . "<"
+            . $connection->getAddress()
+            . "> received a request with protocol version "
+            . $version
+        );
+
         // request is mapped to an active socket connection; try to authenticate the request
         $authData = $this->authenticate($connection, $request->getCookieParams(), $request->getHeaders());
         if (isset($authData->isValid) && $authData->isValid === false) {

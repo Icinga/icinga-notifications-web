@@ -219,7 +219,7 @@ const VERSION = 1;
             try {
                 this.logger.debug(LOG_PREFIX + "opening event source");
                 this.eventSource = new EventSource(
-                    icinga.config.baseUrl + '/notifications/daemon',
+                    icinga.config.baseUrl + '/notifications/v1/subscribe',
                     {withCredentials: true}
                 );
                 this.eventSource.addEventListener('icinga2.notification', (event) => {
