@@ -25,6 +25,7 @@ selfSW.addEventListener('activate', (event) => {
     event.waitUntil(selfSW.clients.claim());
 });
 selfSW.addEventListener('install', (event) => {
+    // TODO: has no effect in case of an active SSE connection
     event.waitUntil(selfSW.skipWaiting());
 });
 selfSW.addEventListener('fetch', (event) => {
