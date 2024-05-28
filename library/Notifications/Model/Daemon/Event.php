@@ -92,7 +92,7 @@ class Event
 
         $message = 'event: ' . $this->identifier . PHP_EOL;
         $message .= 'data: ' . Json::encode($payload) . PHP_EOL;
-        $message .= 'id: ' . ($this->getLastEventId() + 1) . PHP_EOL;
+        //$message .= 'id: ' . ($this->getLastEventId() + 1) . PHP_EOL;
         $message .= 'retry: ' . $this->reconnectInterval . PHP_EOL;
 
         // ending newline
