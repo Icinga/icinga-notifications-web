@@ -179,13 +179,11 @@ class ChannelForm extends CompatForm
         $config = array_filter(
             $channel['config'],
             function ($configItem, $key) {
-                return (
-                    $configItem !== null
-                    && (
-                        ! isset($this->defaultChannelOptions[$key])
-                        || $this->defaultChannelOptions[$key] !== $configItem
-                    )
-                );
+                if (isset($this->defaultChannelOptions[$key])) {
+                    return $this->defaultChannelOptions[$key] !== $configItem;
+                }
+
+                return $configItem !== null;
             },
             ARRAY_FILTER_USE_BOTH
         );
