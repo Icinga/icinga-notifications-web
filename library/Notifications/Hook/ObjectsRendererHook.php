@@ -10,8 +10,9 @@ use Icinga\Application\Hook;
 use Icinga\Application\Logger;
 use Icinga\Module\Notifications\Model\Objects;
 use ipl\Html\Attributes;
+use ipl\Html\BaseHtmlElement;
 use ipl\Html\HtmlElement;
-use ipl\Html\HtmlString;
+use ipl\Html\Text;
 use ipl\Html\ValidHtml;
 use ipl\Web\Url;
 use ipl\Web\Widget\Link;
@@ -197,9 +198,9 @@ abstract class ObjectsRendererHook
      *
      * @param Objects $obj
      *
-     * @return ValidHtml
+     * @return BaseHtmlElement
      */
-    final public static function getObjectName(Objects $obj): ValidHtml
+    final public static function getObjectName(Objects $obj): BaseHtmlElement
     {
         $objId = $obj->id;
         if (! isset(self::$objectNameHtmls[$objId])) {
@@ -210,7 +211,11 @@ abstract class ObjectsRendererHook
             return self::$objectNameHtmls[$objId];
         }
 
-        self::$objectNameHtmls[$objId] = new HtmlString(self::createObjectNameAsString($obj));
+        self::$objectNameHtmls[$objId] = new HtmlElement(
+            'div',
+            null,
+            Text::create(self::createObjectNameAsString($obj))
+        );
 
         return self::$objectNameHtmls[$objId];
     }
@@ -293,7 +298,7 @@ abstract class ObjectsRendererHook
         $objUrl = Url::fromPath($object->url);
 
         return new Link(
-            self::getObjectName($object),
+            Text::create(self::createObjectNameAsString($object)),
             $objUrl->isExternal() ? $objUrl->getAbsoluteUrl() : $objUrl->getRelativeUrl(),
             ['class' => 'subject', 'data-base-target' => '_next']
         );
