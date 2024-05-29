@@ -58,22 +58,18 @@ class IncidentListItem extends BaseListItem
     {
         $title->addHtml(Html::tag('span', [], sprintf('#%d:', $this->item->id)));
 
+        if (! $this->list->getNoSubjectLink()) {
+            $content = new Link(null, Links::incident($this->item->id));
+        } else {
+            $content = new HtmlElement('span');
+        }
+
         /** @var Objects $obj */
         $obj = $this->item->object;
         $name = $obj->getName();
-        if (! $this->list->getNoSubjectLink()) {
-            $content = new Link(
-                $name,
-                Links::incident($this->item->id),
-                ['class' => 'subject']
-            );
-        } else {
-            $content = Html::tag(
-                'span',
-                ['class' => 'subject'],
-                $name
-            );
-        }
+
+        $content->addAttributes($name->getAttributes());
+        $content->addFrom($name);
 
         $title->addHtml($content);
     }
