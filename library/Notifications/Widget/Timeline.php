@@ -8,6 +8,7 @@ use DateInterval;
 use DateTime;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\MoveRotationForm;
+use Icinga\Module\Notifications\Forms\RotationConfigForm;
 use Icinga\Module\Notifications\Widget\TimeGrid\DynamicGrid;
 use Icinga\Module\Notifications\Widget\TimeGrid\EntryProvider;
 use Icinga\Module\Notifications\Widget\TimeGrid\GridStep;
@@ -147,7 +148,11 @@ class Timeline extends BaseHtmlElement implements EntryProvider
         $occupiedCells = [];
         $resultPosition = $maxPriority + 1;
         foreach ($rotations as $rotation) {
-            $actualHandoff = $rotation->getActualHandoff();
+            $actualHandoff = null;
+            if (RotationConfigForm::EXPERIMENTAL_OVERRIDES) {
+                $actualHandoff = $rotation->getActualHandoff();
+            }
+
             $rotationPosition = $maxPriority - $rotation->getPriority();
             foreach ($rotation->fetchTimeperiodEntries($this->start) as $entry) {
                 $rrule = $entry->getRecurrenceRule();

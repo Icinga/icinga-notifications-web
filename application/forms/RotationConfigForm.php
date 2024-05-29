@@ -40,8 +40,13 @@ class RotationConfigForm extends CompatForm
 {
     use CsrfCounterMeasure;
 
-    /** @var true Whether experimental overrides are enabled */
-    private const EXPERIMENTAL_OVERRIDES = false;
+    /**
+     * Whether experimental overrides are enabled
+     *
+     * @var bool
+     * @internal Ignore this, seriously!
+     */
+    public const EXPERIMENTAL_OVERRIDES = false;
 
     /** @var ?int The ID of the affected schedule */
     protected $scheduleId;
@@ -209,6 +214,9 @@ class RotationConfigForm extends CompatForm
             'schedule' => $rotation->schedule_id,
             'options' => $rotation->options
         ];
+        if (! self::EXPERIMENTAL_OVERRIDES) {
+            $formData['first_handoff'] = $rotation->first_handoff;
+        }
 
         if (self::EXPERIMENTAL_OVERRIDES) {
             $getHandoff = function (Rotation $rotation): DateTime {
@@ -1017,6 +1025,12 @@ class RotationConfigForm extends CompatForm
             ? (clone $this->nextHandoff)->sub(new DateInterval('P1D'))
             : (clone $now)->add(new DateInterval('P30D'));
 
+        $firstHandoffDefault = null;
+        if (self::EXPERIMENTAL_OVERRIDES) {
+            // TODO: May be incorrect if near the next handoff??
+            $firstHandoffDefault = $firstHandoff->format('Y-m-d');
+        }
+
         $this->addElement('input', 'first_handoff', [
             'class' => 'autosubmit',
             'type' => 'date',
@@ -1025,7 +1039,7 @@ class RotationConfigForm extends CompatForm
             'min' => $earliestHandoff !== null ? $earliestHandoff->format('Y-m-d') : null,
             'max' => $latestHandoff->format('Y-m-d'),
             'label' => $this->translate('First Handoff'),
-            'value' => $firstHandoff->format('Y-m-d'), // TODO: May be incorrect if near the next handoff??
+            'value' => $firstHandoffDefault,
             'validators' => [
                 new CallbackValidator(
                     function ($value, $validator) use ($earliestHandoff, $firstHandoff, $latestHandoff) {
