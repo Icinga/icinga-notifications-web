@@ -5,15 +5,15 @@
 namespace Icinga\Module\Notifications\Widget;
 
 use DateTime;
-use Icinga\Module\Notifications\Widget\Calendar\BaseGrid;
 use Icinga\Module\Notifications\Widget\Calendar\Controls;
 use Icinga\Module\Notifications\Widget\Calendar\DayGrid;
 use Icinga\Module\Notifications\Widget\Calendar\Entry;
-use Icinga\Module\Notifications\Widget\Calendar\EntryProvider;
-use Icinga\Module\Notifications\Widget\Calendar\GridStep;
 use Icinga\Module\Notifications\Widget\Calendar\MonthGrid;
-use Icinga\Module\Notifications\Widget\Calendar\Util;
 use Icinga\Module\Notifications\Widget\Calendar\WeekGrid;
+use Icinga\Module\Notifications\Widget\TimeGrid\BaseGrid;
+use Icinga\Module\Notifications\Widget\TimeGrid\EntryProvider;
+use Icinga\Module\Notifications\Widget\TimeGrid\GridStep;
+use Icinga\Module\Notifications\Widget\TimeGrid\Util;
 use IntlDateFormatter;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
@@ -21,7 +21,6 @@ use ipl\Html\FormattedString;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\I18n\StaticTranslator;
-use ipl\Scheduler\RRule;
 use ipl\Web\Style;
 use ipl\Web\Url;
 use LogicException;
@@ -171,14 +170,12 @@ class Calendar extends BaseHtmlElement implements EntryProvider
     public function getEntries(): Traversable
     {
         foreach ($this->entries as $entry) {
-            $rrule = $entry->getRecurrencyRule();
+            $rrule = $entry->getRecurrenceRule();
             $start = $entry->getStart();
             $end = $entry->getEnd();
 
             if ($rrule) {
                 $grid = $this->getGrid();
-                $rrule = new RRule($rrule);
-                $rrule->startAt($entry->getStart());
                 $length = $start->diff($end);
 
                 $visibleHours = Util::diffHours($start, $grid->getGridEnd());
@@ -194,7 +191,6 @@ class Calendar extends BaseHtmlElement implements EntryProvider
                         ->setDescription($entry->getDescription())
                         ->setStart($recurrence)
                         ->setEnd($recurrenceEnd)
-                        ->setIsOccurrence()
                         ->setUrl($entry->getUrl())
                         ->setAttendee($entry->getAttendee());
 

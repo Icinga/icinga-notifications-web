@@ -6,6 +6,8 @@ namespace Icinga\Module\Notifications\Widget\Calendar;
 
 use DateInterval;
 use DateTime;
+use Icinga\Module\Notifications\Widget\TimeGrid\BaseGrid;
+use Icinga\Module\Notifications\Widget\TimeGrid\GridStep;
 use InvalidArgumentException;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;

@@ -7,8 +7,6 @@ namespace Icinga\Module\Notifications\Widget\Timeline;
 use DateTime;
 use Generator;
 use Icinga\Module\Notifications\Common\Links;
-use Icinga\Module\Notifications\Widget\Calendar\Attendee;
-use Icinga\Module\Notifications\Widget\Calendar\Entry;
 use ipl\Stdlib\Filter;
 
 class Rotation
@@ -89,17 +87,17 @@ class Rotation
             ));
         foreach ($entries as $timeperiodEntry) {
             if ($timeperiodEntry->member->contact->id !== null) {
-                $attendee = new Attendee($timeperiodEntry->member->contact->full_name);
+                $member = new Member($timeperiodEntry->member->contact->full_name);
             } else {
-                $attendee = new Attendee($timeperiodEntry->member->contactgroup->name);
-                $attendee->setIcon('users');
+                $member = new Member($timeperiodEntry->member->contactgroup->name);
+                $member->setIcon('users');
             }
 
             $entry = new Entry($timeperiodEntry->id);
-            $entry->setAttendee($attendee);
+            $entry->setMember($member);
             $entry->setStart($timeperiodEntry->start_time);
             $entry->setEnd($timeperiodEntry->end_time);
-            $entry->setRecurrencyRule($timeperiodEntry->rrule);
+            $entry->setRecurrenceRule($timeperiodEntry->rrule);
             $entry->setUrl(Links::rotationSettings($this->model->id, $this->model->schedule_id));
 
             yield $entry;

@@ -8,17 +8,16 @@ use DateInterval;
 use DateTime;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\MoveRotationForm;
-use Icinga\Module\Notifications\Widget\Calendar\DynamicGrid;
-use Icinga\Module\Notifications\Widget\Calendar\Entry;
-use Icinga\Module\Notifications\Widget\Calendar\EntryProvider;
-use Icinga\Module\Notifications\Widget\Calendar\GridStep;
+use Icinga\Module\Notifications\Widget\TimeGrid\DynamicGrid;
+use Icinga\Module\Notifications\Widget\TimeGrid\EntryProvider;
+use Icinga\Module\Notifications\Widget\TimeGrid\GridStep;
+use Icinga\Module\Notifications\Widget\Timeline\Entry;
 use Icinga\Module\Notifications\Widget\Timeline\Rotation;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\I18n\Translation;
-use ipl\Scheduler\RRule;
 use ipl\Web\Style;
 use ipl\Web\Url;
 use ipl\Web\Widget\Icon;
@@ -151,7 +150,7 @@ class Timeline extends BaseHtmlElement implements EntryProvider
             $actualHandoff = $rotation->getActualHandoff();
             $rotationPosition = $maxPriority - $rotation->getPriority();
             foreach ($rotation->fetchTimeperiodEntries($this->start) as $entry) {
-                $rrule = $entry->getRecurrencyRule();
+                $rrule = $entry->getRecurrenceRule();
                 $start = $entry->getStart();
                 $end = $entry->getEnd();
 
@@ -159,9 +158,7 @@ class Timeline extends BaseHtmlElement implements EntryProvider
 
                 if ($rrule) {
                     $grid = $this->getGrid();
-                    $rrule = new RRule($rrule);
                     // TODO: Calculate the nearest start possible, where the rotations restarts
-                    $rrule->startAt($entry->getStart());
                     $length = $start->diff($end);
 
                     $limit = 31; // Mandatory, 1 otherwise, TODO: the rotation should provide a suitable limit
@@ -174,11 +171,10 @@ class Timeline extends BaseHtmlElement implements EntryProvider
                         }
 
                         $occurrence = (new Entry($entry->getId()))
-                            ->setIsOccurrence()
                             ->setStart($recurrence)
                             ->setEnd($recurrenceEnd)
                             ->setUrl($entry->getUrl())
-                            ->setAttendee($entry->getAttendee())
+                            ->setMember($entry->getMember())
                             ->setPosition($entry->getPosition());
 
                         yield $occurrence;
@@ -236,7 +232,7 @@ class Timeline extends BaseHtmlElement implements EntryProvider
                         ->setEnd($end)
                         ->setUrl($entry->getUrl())
                         ->setPosition($resultPosition)
-                        ->setAttendee($entry->getAttendee());
+                        ->setMember($entry->getMember());
 
                     $firstCell = $cell;
                 }

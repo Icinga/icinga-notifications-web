@@ -1,6 +1,6 @@
 <?php
 
-namespace Icinga\Module\Notifications\Widget\Calendar;
+namespace Icinga\Module\Notifications\Widget\TimeGrid;
 
 use ipl\Web\Url;
 use Traversable;

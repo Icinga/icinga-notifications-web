@@ -8,6 +8,9 @@ use InvalidArgumentException;
 use ipl\Html\ValidHtml;
 use ipl\Web\Widget\Icon;
 
+/**
+ * An attendee of a calendar entry
+ */
 class Attendee
 {
     /** @var string */

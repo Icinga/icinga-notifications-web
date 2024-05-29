@@ -2,7 +2,7 @@
 
 /* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Notifications\Widget\Calendar;
+namespace Icinga\Module\Notifications\Widget\TimeGrid;
 
 use DateTime;
 use DateTimeInterface;
