@@ -156,8 +156,8 @@ abstract class ObjectsRendererHook
                     foreach ($objectNamesFromSource as $objectIdTag => $objectName) {
                         foreach ($idTagToObjectIdMap[$source] as $key => $val) {
                             $diff = array_intersect_assoc($val[1], $objectIdTag);
-                            if (count($diff) === count($val[1])) {
-                                unset($idTagToObjectIdMap[$key]);
+                            if (count($diff) === count($val[1]) && count($diff) === count($objectIdTag)) {
+                                unset($idTagToObjectIdMap[$source][$key]);
 
                                 if ($asHtml) {
                                     $objectName = HtmlElement::create(
