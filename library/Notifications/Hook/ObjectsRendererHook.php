@@ -80,9 +80,9 @@ abstract class ObjectsRendererHook
      *
      * @param array<string, string> $objectIdTag
      *
-     * @return ValidHtml
+     * @return ?ValidHtml Returns null if no object with given tag found
      */
-    abstract public function createObjectLink(array $objectIdTag): ValidHtml;
+    abstract public function createObjectLink(array $objectIdTag): ?ValidHtml;
 
     /**
      * Register object ID tags to the cache
@@ -277,13 +277,17 @@ abstract class ObjectsRendererHook
             try {
                 $sourceType = $hook->getSourceType();
                 if ($object->source->type === $sourceType) {
-                    return $hook->createObjectLink($object->id_tags)
-                        ->addAttributes([
-                            'class' => [
-                                'icinga-module',
-                                'module-' . ($sourceType === 'icinga2' ? 'icingadb' : $sourceType)
-                            ]
-                        ]);
+                    $objectLink = $hook->createObjectLink($object->id_tags);
+                    if ($objectLink === null) {
+                        break;
+                    }
+
+                    return $objectLink->addAttributes([
+                        'class' => [
+                            'icinga-module',
+                            'module-' . ($sourceType === 'icinga2' ? 'icingadb' : $sourceType)
+                        ]
+                    ]);
                 }
             } catch (Exception $e) {
                 Logger::error('Failed to load hook %s:', get_class($hook), $e);
