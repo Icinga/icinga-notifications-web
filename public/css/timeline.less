@@ -33,6 +33,17 @@
     .overlay .entry {
       margin-top: 1em;
       margin-bottom: 1em;
+
+      .title {
+        height: 100%;
+        flex-wrap: nowrap;
+        align-items: baseline;
+        padding: .15em .5em;
+
+        .name {
+          .text-ellipsis();
+        }
+      }
     }
 
     &::after {
@@ -78,5 +89,10 @@
     &.sortable-ghost {
       opacity: .5;
     }
+  }
+
+  .entry .icon {
+    font-size: .75em;
+    opacity: .8;
   }
 }
