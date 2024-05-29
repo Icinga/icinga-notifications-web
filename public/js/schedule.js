@@ -16,6 +16,8 @@
 
             this.on('rendered', '#main > .container', this.onRendered, this);
             this.on('end', '#notifications-schedule .sidebar', this.onDrop, this);
+            this.on('mouseenter', '#notifications-schedule .entry', this.onEntryHover, this);
+            this.on('mouseleave', '#notifications-schedule .entry', this.onEntryLeave, this);
         }
 
         onRendered(event)
@@ -69,6 +71,50 @@
             const form = event.item.querySelector(':scope > form');
             form.priority.value = newPriority;
             form.requestSubmit();
+        }
+
+        onEntryHover(event)
+        {
+            const entry = event.currentTarget;
+            const overlay = entry.parentElement;
+            const grid = overlay.previousSibling;
+
+            let relatedElements;
+            if ('rotationPosition' in entry.dataset) {
+                relatedElements = grid.querySelectorAll(
+                    '[data-y-position="' + entry.dataset.rotationPosition + '"]'
+                );
+            } else {
+                relatedElements = overlay.querySelectorAll(
+                    '[data-rotation-position="' + entry.dataset.entryPosition + '"]'
+                );
+            }
+
+            relatedElements.forEach((relatedElement) => {
+                relatedElement.classList.add('highlighted');
+            });
+        }
+
+        onEntryLeave(event)
+        {
+            const entry = event.currentTarget;
+            const overlay = entry.parentElement;
+            const grid = overlay.previousSibling;
+
+            let relatedElements;
+            if ('rotationPosition' in entry.dataset) {
+                relatedElements = grid.querySelectorAll(
+                    '[data-y-position="' + entry.dataset.rotationPosition + '"]'
+                );
+            } else {
+                relatedElements = overlay.querySelectorAll(
+                    '[data-rotation-position="' + entry.dataset.entryPosition + '"]'
+                );
+            }
+
+            relatedElements.forEach((relatedElement) => {
+                relatedElement.classList.remove('highlighted');
+            });
         }
     }
 

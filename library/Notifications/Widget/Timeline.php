@@ -227,12 +227,16 @@ class Timeline extends BaseHtmlElement implements EntryProvider
                         $end = $entry->getEnd();
                     }
 
-                    yield (new Entry($entry->getId()))
+                    $resultEntry = (new Entry($entry->getId()))
                         ->setStart($start)
                         ->setEnd($end)
                         ->setUrl($entry->getUrl())
                         ->setPosition($resultPosition)
                         ->setMember($entry->getMember());
+                    $resultEntry->getAttributes()
+                        ->add('data-rotation-position', $entry->getPosition());
+
+                    yield $resultEntry;
 
                     $firstCell = $cell;
                 }

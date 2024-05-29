@@ -493,8 +493,8 @@ abstract class BaseGrid extends BaseHtmlElement
         foreach ($generator as $gridArea => $entry) {
             $this->style->addFor($entry, [
                 '--entry-bg' => $entry->getColor(10),
-                'grid-area' => sprintf('~"%d / %d / %d / %d"', ...$gridArea),
-                'border-color' => $entry->getColor(50)
+                '--entry-border-color' => $entry->getColor(50),
+                'grid-area' => sprintf('~"%d / %d / %d / %d"', ...$gridArea)
             ]);
 
             $overlay->addHtml($entry);

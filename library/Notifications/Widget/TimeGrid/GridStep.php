@@ -74,8 +74,15 @@ class GridStep extends BaseHtmlElement
 
     protected function registerAttributeCallbacks(Attributes $attributes)
     {
-        $this->getAttributes()->registerAttributeCallback('data-start', function () {
-            return $this->getStart()->format(DateTimeInterface::ATOM);
-        });
+        $this->getAttributes()
+            ->registerAttributeCallback('data-start', function () {
+                return $this->getStart()->format(DateTimeInterface::ATOM);
+            })
+            ->registerAttributeCallback('data-x-position', function () {
+                return $this->coordinates[0];
+            })
+            ->registerAttributeCallback('data-y-position', function () {
+                return $this->coordinates[1];
+            });
     }
 }
