@@ -9,6 +9,7 @@ use DateTimeZone;
 use Evenement\EventEmitter;
 use Icinga\Application\Logger;
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Hook\ObjectsRendererHook;
 use Icinga\Module\Notifications\Model\BrowserSession;
 use Icinga\Module\Notifications\Model\Daemon\Connection;
 use Icinga\Module\Notifications\Model\Daemon\Event;
@@ -251,7 +252,7 @@ class Daemon extends EventEmitter
 
         // grab new notifications and the current connections
         $notifications = IncidentHistory::on(Database::get())
-            ->with(['event', 'incident', 'incident.object'])
+            ->with(['event', 'incident', 'incident.object', 'incident.object.source'])
             ->withColumns(['incident.object.id_tags'])
             ->filter(Filter::greaterThan('id', $this->lastIncidentId))
             ->filter(Filter::equal('type', 'notified'))
@@ -261,29 +262,39 @@ class Daemon extends EventEmitter
         $connections = $this->server->getMatchedConnections();
 
         /** @var IncidentHistory $notification */
+        $notificationsToProcess = [];
         foreach ($notifications as $notification) {
             if (isset($connections[$notification->contact_id])) {
-                /** @var Incident $incident */
-                $incident = $notification->incident;
-
-                $event = new Event(
-                    EventIdentifier::ICINGA2_NOTIFICATION,
-                    $notification->contact_id,
-                    (object) [
-                        'incident_id' => $notification->incident_id,
-                        'event_id'    => $notification->event_id,
-                        'severity'    => $incident->severity,
-                        'title'       => $incident->object->getName()->render(),
-                        'message'     => $notification->event->message
-                    ]
-                );
-
-                $this->emit(EventIdentifier::ICINGA2_NOTIFICATION, [$event]);
+                ObjectsRendererHook::register($notification->incident->object);
+                $notificationsToProcess[] = $notification;
 
                 ++$numOfNotifications;
             }
 
             $this->lastIncidentId = $notification->id;
+        }
+
+        if ($numOfNotifications > 0) {
+            ObjectsRendererHook::load(false);
+
+            foreach ($notificationsToProcess as $notification) {
+                /** @var Incident $incident */
+                $incident = $notification->incident;
+
+                $this->emit(EventIdentifier::ICINGA2_NOTIFICATION, [
+                    new Event(
+                        EventIdentifier::ICINGA2_NOTIFICATION,
+                        $notification->contact_id,
+                        (object) [
+                            'incident_id' => $notification->incident_id,
+                            'event_id'    => $notification->event_id,
+                            'severity'    => $incident->severity,
+                            'title'       => ObjectsRendererHook::getObjectNameAsString($incident->object),
+                            'message'     => $notification->event->message
+                        ]
+                    )
+                ]);
+            }
         }
 
         if ($numOfNotifications > 0) {
