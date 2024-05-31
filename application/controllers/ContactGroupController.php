@@ -68,7 +68,7 @@ class ContactGroupController extends CompatController
 
         $form = (new ContactGroupForm(Database::get()))
             ->loadContactgroup($groupId)
-            ->setAction($this->getRequest()->getUrl()->getAbsoluteUrl())
+            ->setAction((string) Links::contactGroupEdit($groupId))
             ->on(Form::ON_SENT, function (ContactGroupForm $form) {
                 if ($form->hasBeenRemoved()) {
                     $form->removeContactgroup();

@@ -78,7 +78,8 @@ abstract class Links
 
     public static function contactGroupsAdd(): Url
     {
-        return Url::fromPath('notifications/contact-groups/add');
+        return Url::fromPath('notifications/contact-groups/add')
+            ->with(['showCompact' => true, '_disableLayout' => 1]);
     }
 
     public static function contactGroupsSuggestMember(): Url
@@ -94,6 +95,7 @@ abstract class Links
 
     public static function contactGroupEdit(int $id): Url
     {
-        return Url::fromPath('notifications/contact-group/edit', ['id' => $id]);
+        return Url::fromPath('notifications/contact-group/edit', ['id' => $id])
+            ->with(['showCompact' => true, '_disableLayout' => 1]);
     }
 }

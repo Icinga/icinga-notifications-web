@@ -96,7 +96,7 @@ class ContactGroupsController extends CompatController
     public function addAction(): void
     {
         $form = (new ContactGroupForm(Database::get()))
-            ->setAction($this->getRequest()->getUrl()->getAbsoluteUrl())
+            ->setAction((string) Links::contactGroupsAdd())
             ->on(Form::ON_SENT, function (ContactGroupForm $form) {
                 if (! $form->hasBeenSubmitted()) {
                     foreach ($form->getPartUpdates() as $update) {
