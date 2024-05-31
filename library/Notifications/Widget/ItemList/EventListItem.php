@@ -14,6 +14,7 @@ use Icinga\Module\Notifications\Widget\SourceIcon;
 use InvalidArgumentException;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
+use ipl\Html\HtmlElement;
 use ipl\Stdlib\Str;
 use ipl\Web\Common\BaseListItem;
 use ipl\Web\Widget\Icon;
@@ -103,16 +104,19 @@ class EventListItem extends BaseListItem
             $title->addHtml(Html::tag('span', [], sprintf('#%d:', $this->incident->id)));
         }
 
+        if (! $this->list->getNoSubjectLink()) {
+            $content = new Link(null, Links::event($this->item->id));
+        } else {
+            $content = new HtmlElement('span');
+        }
+
         /** @var Objects $obj */
         $obj = $this->item->object;
         $name = $obj->getName();
-        if (! $this->list->getNoSubjectLink()) {
-            $content = new Link($name, Links::event($this->item->id), ['class' => 'subject']);
-        } else {
-            $content = Html::tag('span', ['class' => 'subject'], $name);
-        }
 
-        $msg = null;
+        $content->addAttributes($name->getAttributes());
+        $content->addFrom($name);
+
         if ($this->item->severity === null) {
             $description = strtolower(trim($this->item->message ?? ''));
             if (Str::startsWith($description, 'incident reached age')) {

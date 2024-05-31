@@ -15,8 +15,8 @@ parameters:
 
     scanDirectories:
         - /icingaweb2
-        - /usr/share/icinga-php/ipl
-        - /usr/share/icinga-php/vendor
+        - /usr/share/icinga-php
+        - /usr/share/icingaweb2-modules
 
     ignoreErrors:
         -

@@ -11,5 +11,6 @@ jobs:
     with:
       dependencies: |
         {
-          "/icingaweb2": "https://github.com/Icinga/icingaweb2.git"
+          "/icingaweb2"                             : "https://github.com/Icinga/icingaweb2.git",
+          "/usr/share/icingaweb2-modules/icingadb"  : "https://github.com/Icinga/icingadb-web.git"
         }
