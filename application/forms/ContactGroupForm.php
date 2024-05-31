@@ -25,9 +25,6 @@ class ContactGroupForm extends CompatForm
     /** @var Connection */
     private $db;
 
-    /** @var TermInput */
-    private $termInput;
-
     /** @var ?int Contact group id */
     private $contactgroupId;
 
@@ -44,7 +41,7 @@ class ContactGroupForm extends CompatForm
             $this->validateTerms($terms);
         };
 
-        $this->termInput = (new TermInput(
+        $termInput = (new TermInput(
             'group_members',
             [
                 'label'    => $this->translate('Members'),
@@ -65,7 +62,7 @@ class ContactGroupForm extends CompatForm
                 'label'    => $this->translate('Name'),
                 'required' => true
             ]
-        )->addElement($this->termInput);
+        )->addElement($termInput);
 
         $this->addElement(
             'submit',
@@ -114,7 +111,7 @@ class ContactGroupForm extends CompatForm
     {
         $this->ensureAssembled();
 
-        return $this->termInput->prepareMultipartUpdate($this->request);
+        return $this->getElement('group_members')->prepareMultipartUpdate($this->getRequest());
     }
 
     /**
