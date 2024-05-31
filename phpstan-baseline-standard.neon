@@ -741,11 +741,6 @@ parameters:
 			path: library/Notifications/Model/Event.php
 
 		-
-			message: "#^Parameter \\#1 \\$severity of static method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Event\\:\\:mapSeverity\\(\\) expects string\\|null, mixed given\\.$#"
-			count: 1
-			path: library/Notifications/Model/Event.php
-
-		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Incident\\:\\:createBehaviors\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: library/Notifications/Model/Incident.php
@@ -1251,34 +1246,9 @@ parameters:
 			path: library/Notifications/Widget/CheckboxIcon.php
 
 		-
-			message: "#^Cannot access property \\$source on mixed\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Detail/EventDetail.php
-
-		-
-			message: "#^Cannot call method getTimestamp\\(\\) on mixed\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Detail/EventDetail.php
-
-		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Detail\\\\EventDetail\\:\\:assemble\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: library/Notifications/Widget/Detail/EventDetail.php
-
-		-
-			message: "#^Cannot access property \\$object_extra_tag on mixed\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Detail/IncidentDetail.php
-
-		-
-			message: "#^Cannot access property \\$source on mixed\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Detail/IncidentDetail.php
-
-		-
-			message: "#^Cannot call method with\\(\\) on mixed\\.$#"
-			count: 2
-			path: library/Notifications/Widget/Detail/IncidentDetail.php
 
 		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Detail\\\\IncidentDetail\\:\\:assemble\\(\\) has no return type specified\\.$#"
@@ -1451,21 +1421,6 @@ parameters:
 			path: library/Notifications/Widget/ItemList/EventList.php
 
 		-
-			message: "#^Cannot access property \\$source on mixed\\.$#"
-			count: 1
-			path: library/Notifications/Widget/ItemList/EventListItem.php
-
-		-
-			message: "#^Cannot call method getTimestamp\\(\\) on mixed\\.$#"
-			count: 1
-			path: library/Notifications/Widget/ItemList/EventListItem.php
-
-		-
-			message: "#^Parameter \\#1 \\$id of static method Icinga\\\\Module\\\\Notifications\\\\Common\\\\Links\\:\\:event\\(\\) expects int, mixed given\\.$#"
-			count: 1
-			path: library/Notifications/Widget/ItemList/EventListItem.php
-
-		-
 			message: "#^Parameter \\#2 \\$value of method Icinga\\\\Web\\\\Url\\:\\:setParam\\(\\) expects array\\|bool\\|string, int given\\.$#"
 			count: 1
 			path: library/Notifications/Widget/ItemList/EventRuleList.php
@@ -1524,16 +1479,6 @@ parameters:
 			message: "#^Parameter \\#1 \\$id of static method Icinga\\\\Module\\\\Notifications\\\\Common\\\\Links\\:\\:event\\(\\) expects int, mixed given\\.$#"
 			count: 1
 			path: library/Notifications/Widget/ItemList/IncidentHistoryListItem.php
-
-		-
-			message: "#^Parameter \\#1 \\$severity of static method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Event\\:\\:mapSeverity\\(\\) expects string\\|null, mixed given\\.$#"
-			count: 3
-			path: library/Notifications/Widget/ItemList/IncidentHistoryListItem.php
-
-		-
-			message: "#^Cannot call method getTimestamp\\(\\) on mixed\\.$#"
-			count: 2
-			path: library/Notifications/Widget/ItemList/IncidentListItem.php
 
 		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\ItemList\\\\PageSeparatorItem\\:\\:assemble\\(\\) has no return type specified\\.$#"
@@ -1682,11 +1627,6 @@ parameters:
 
 		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Schedule\\:\\:assemble\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Schedule.php
-
-		-
-			message: "#^Parameter \\#2 \\$value of static method ipl\\\\Stdlib\\\\Filter\\:\\:equal\\(\\) expects array\\|bool\\|float\\|int\\|string, mixed given\\.$#"
 			count: 1
 			path: library/Notifications/Widget/Schedule.php
 

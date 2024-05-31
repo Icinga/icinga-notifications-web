@@ -6,6 +6,8 @@ namespace Icinga\Module\Notifications\Widget\ItemList;
 
 use Icinga\Module\Notifications\Common\LoadMore;
 use Icinga\Module\Notifications\Common\NoSubjectLink;
+use Icinga\Module\Notifications\Hook\ObjectsRendererHook;
+use Icinga\Module\Notifications\Model\Event;
 use ipl\Orm\ResultSet;
 use ipl\Web\Common\BaseItemList;
 
@@ -27,6 +29,14 @@ class EventList extends BaseItemList
     protected function init(): void
     {
         $this->data = $this->getIterator($this->data);
+
+        $this->on(self::ON_ITEM_ADD, function (EventListItem $item, Event $data) {
+            ObjectsRendererHook::register($data->object);
+        });
+
+        $this->on(self::ON_ASSEMBLED, function () {
+            ObjectsRendererHook::load();
+        });
     }
 
     protected function getItemClass(): string

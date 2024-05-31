@@ -4,8 +4,8 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use Icinga\Module\Notifications\Hook\ObjectsRendererHook;
 use Icinga\Module\Notifications\Model\Behavior\IdTagAggregator;
-use ipl\Html\HtmlString;
 use ipl\Html\ValidHtml;
 use ipl\Orm\Behavior\Binary;
 use ipl\Orm\Behaviors;
@@ -91,13 +91,6 @@ class Objects extends Model
 
     public function getName(): ValidHtml
     {
-        //TODO: Once hooks are available, they should render the tags accordingly
-        $objectTags = [];
-
-        foreach ($this->id_tags as $tag => $value) {
-            $objectTags[] = sprintf('%s=%s', $tag, $value);
-        }
-
-        return new HtmlString(implode(', ', $objectTags));
+        return ObjectsRendererHook::getObjectName($this);
     }
 }
