@@ -177,9 +177,12 @@ class Server
     protected function mapRequestToConnection(ServerRequestInterface $request): ?Connection
     {
         $params = $request->getServerParams();
+        $scheme = $request->getUri()->getScheme();
 
         if (isset($params['REMOTE_ADDR']) && isset($params['REMOTE_PORT'])) {
-            $address = Connection::parseHostAndPort($params['REMOTE_ADDR'] . ':' . $params['REMOTE_PORT']);
+            $address = Connection::parseHostAndPort(
+                $scheme . '://' . $params['REMOTE_ADDR'] . ':' . $params['REMOTE_PORT']
+            );
             foreach ($this->connections as $connection) {
                 if ($connection->getAddress() === $address->addr) {
                     return $connection;

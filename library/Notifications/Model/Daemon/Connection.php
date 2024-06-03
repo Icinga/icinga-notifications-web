@@ -125,26 +125,26 @@ class Connection
         ];
 
         // host
-        $host = substr(
-            $raw,
-            strpos($raw, '[') + 1,
-            strpos($raw, ']') - (strpos($raw, '[') + 1)
-        );
-        if (! $host) {
+        $host = parse_url($raw, PHP_URL_HOST);
+        $port = parse_url($raw, PHP_URL_PORT);
+
+        if (! $host || ! $port) {
             return false;
         }
 
-        if (strpos($host, '.')) {
-            // it's an IPv4, stripping empty IPv6 tags
-            $parsed->host = substr($host, strrpos($host, ':') + 1);
+        if (strpos($host, '[') !== false) {
+            // IPv6 format
+            if (strpos($host, '.')) {
+                // IPv4 represented in IPv6
+                $offset = strrpos($host, ':');
+                $parsed->host = substr($host, $offset === false ? 0 : $offset + 1, -1);
+            } else {
+                // it's a native IPv6
+                $parsed->host = $host;
+            }
         } else {
+            // IPv4 format
             $parsed->host = $host;
-        }
-
-        // port
-        $port = substr($raw, strpos($raw, ']') + 2);
-        if (! $port) {
-            return false;
         }
 
         $parsed->port = $port;
