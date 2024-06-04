@@ -172,20 +172,7 @@ class ContactForm extends CompatForm
             }
 
             foreach ($values->contact_address as $contactInfo) {
-                if (! isset($formValues['contact_address'])) {
-                    $formValues['contact_address'] = [
-                        'email'       => null,
-                        'rocketchat' => null
-                    ];
-                }
-
-                if ($contactInfo->type === 'email') {
-                    $formValues['contact_address']['email' ] = $contactInfo->address;
-                }
-
-                if ($contactInfo->type === 'rocketchat') {
-                    $formValues['contact_address']['rocketchat'] = $contactInfo->address;
-                }
+                $formValues['contact_address'][$contactInfo->type] = $contactInfo->address;
             }
 
             $values = $formValues;
@@ -222,8 +209,7 @@ class ContactForm extends CompatForm
             }
         }
 
-        $addr = ! empty($addressFromDb) ? $addressFromDb : $addressFromForm;
-        foreach ($addr as $type => $value) {
+        foreach ($addressFromForm as $type => $value) {
             $this->insertOrUpdateAddress($type, $addressFromForm, $addressFromDb);
         }
 
