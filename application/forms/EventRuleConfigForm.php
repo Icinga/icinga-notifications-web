@@ -50,16 +50,20 @@ class EventRuleConfigForm extends Form
     /** @var bool Whether the config has an escalation with no condition */
     protected $hasZeroConditionEscalation = false;
 
+    /** @var ?string */
+    protected $objectFilter;
+
     /**
      * Create a new EventRuleConfigForm
      *
      * @param array<string, mixed> $config
      * @param Url $searchEditorUrl
      */
-    public function __construct(array $config, Url $searchEditorUrl)
+    public function __construct(array $config, Url $searchEditorUrl, ?string $objectFilter)
     {
         $this->config = $config;
         $this->searchEditorUrl = $searchEditorUrl;
+        $this->objectFilter = $objectFilter;
     }
 
     public function hasBeenSubmitted(): bool
@@ -179,7 +183,7 @@ class EventRuleConfigForm extends Form
             $this->getElement('zero-condition-escalation')->setValue($defaultEscalationPrefix);
         }
 
-        $configFilter = new EventRuleConfigFilter($this->searchEditorUrl, $this->config['object_filter']);
+        $configFilter = new EventRuleConfigFilter($this->searchEditorUrl, $this->objectFilter);
         $this->registerElement($configFilter);
 
         $addEscalationButton = new SubmitButtonElement(
@@ -463,7 +467,8 @@ class EventRuleConfigForm extends Form
     {
         $db = Database::get();
         $db->beginTransaction();
-        $db->update('rule', ['object_filter' => $config['object_filter'] ?? null], ['id = ?' => $id]);
+
+        $db->update('rule', ['object_filter' => $this->objectFilter], ['id = ?' => $id]);
 
         if (! isset($config['rule_escalation'])) {
             $db->commitTransaction();

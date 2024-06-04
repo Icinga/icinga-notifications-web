@@ -48,7 +48,7 @@ class EventRuleController extends CompatController
         $ruleId = $this->params->getRequired('id');
 
         $eventRuleConfigValues = $this->fromDb((int) $ruleId);
-        $filter = &$eventRuleConfigValues['object_filter']; // Assignment by reference to is used as search editor is a
+        $filter = $eventRuleConfigValues['object_filter'];  // Assignment by reference to is used as search editor is a
                                                             // different form and the config must have the updated
                                                             // object_filter as soon as the search editor is closed
 
@@ -65,7 +65,8 @@ class EventRuleController extends CompatController
             Url::fromPath(
                 'notifications/event-rule/search-editor',
                 ['id' => $ruleId, 'object_filter' => $filter]
-            )
+            ),
+            $filter
         ))
             ->populate($eventRuleConfigValues)
             ->on(Form::ON_SUCCESS, function (EventRuleConfigForm $form) use ($ruleId, $eventRuleConfigValues) {
