@@ -48,9 +48,8 @@ class EventRuleController extends CompatController
         $ruleId = $this->params->getRequired('id');
 
         $eventRuleConfigValues = $this->fromDb((int) $ruleId);
-        $filter = $eventRuleConfigValues['object_filter'];  // Assignment by reference to is used as search editor is a
-                                                            // different form and the config must have the updated
-                                                            // object_filter as soon as the search editor is closed
+
+        $filter = $eventRuleConfigValues['object_filter'];
 
         if ($this->getRequest()->isPost()) {
             if ($this->getRequest()->has('searchbar')) {
@@ -296,26 +295,16 @@ class EventRuleController extends CompatController
         $eventRuleForm = (new EventRuleForm())
             ->populate($config)
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
-            ->on(Form::ON_SUCCESS, function ($form) use ($ruleId, $db) {
+            ->on(Form::ON_SUCCESS, function (EventRuleForm $form) use ($ruleId, $db) {
                 if ($ruleId === '-1') {
-                    $db->insert('rule', [
-                        'name'          => $form->getValue('name'),
-                        'timeperiod_id' => null,
-                        'object_filter' => null,
-                        'is_active'     => $form->getValue('is_active')
-                    ]);
-
+                    $db->insert('rule', $form->getValues());
                     $id = $db->lastInsertId();
 
                     $this->getResponse()->setHeader('X-Icinga-Container', 'col2');
                     $this->sendExtraUpdates(['#col1']);
                     $this->redirectNow(Links::eventRule($id));
                 } else {
-                    $db->update('rule', [
-                        'name'          => $form->getValue('name'),
-                        'is_active'     => $form->getValue('is_active')
-                    ], ['id = ?' => $ruleId]);
-
+                    $db->update('rule', $form->getValues(), ['id = ?' => $ruleId]);
                     $this->sendExtraUpdates([
                         '#event-rule-form' =>  Url::fromPath(
                             'notifications/event-rule/rule', ['id' => $ruleId]
