@@ -24,3 +24,29 @@ $this->addRoute(
         ]
     )
 );
+
+$this->addRoute('notifications/api-v1-contacts', new Zend_Controller_Router_Route_Regex(
+    'notifications/api/v1/contacts(?:\/(.+)|\?(.+))?',
+    [
+        'controller'    => 'api-v1-contacts',
+        'action'        => 'index',
+        'module'        => 'notifications',
+        'identifier'    => null
+    ],
+    [
+        1 => 'identifier'
+    ]
+));
+
+$this->addRoute('notifications/api-v1-contactgroups', new Zend_Controller_Router_Route_Regex(
+    'notifications/api/v1/contactgroups(?:\/(.+)|\?(.+))?',
+    [
+        'controller'    => 'api-v1-contactgroups',
+        'action'        => 'index',
+        'module'        => 'notifications',
+        'identifier'    => null
+    ],
+    [
+        1 => 'identifier'
+    ]
+));
