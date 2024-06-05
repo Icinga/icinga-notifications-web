@@ -42,6 +42,11 @@ $this->providePermission(
     $this->translate('Allow to configure contact groups')
 );
 
+$this->providePermission(
+    'notifications/api/v1',
+    $this->translate('Allow to modify configuration via API')
+);
+
 $this->provideRestriction(
     'notifications/filter/objects',
     $this->translate('Restrict access to the objects that match the filter')
