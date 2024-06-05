@@ -1,0 +1,563 @@
+<?php
+
+/* Icinga Notifications Web | (c) 2024 Icinga GmbH | GPLv2 */
+
+namespace Icinga\Module\Notifications\Controllers;
+
+use Icinga\Exception\Http\HttpBadRequestException;
+use Icinga\Exception\Http\HttpException;
+use Icinga\Exception\Http\HttpNotFoundException;
+use Icinga\Module\Notifications\Common\Database;
+use Icinga\Util\Environment;
+use Icinga\Util\Json;
+use ipl\Sql\Compat\FilterProcessor;
+use ipl\Sql\Select;
+use ipl\Stdlib\Filter;
+use ipl\Validator\EmailAddressValidator;
+use ipl\Web\Compat\CompatController;
+use ipl\Web\Filter\QueryString;
+use ipl\Web\Url;
+use Ramsey\Uuid\Uuid;
+
+class ApiV1ContactsController extends CompatController
+{
+    private const ENDPOINT = 'notifications/api/v1/contacts';
+
+    public function indexAction(): void
+    {
+        $this->assertPermission('notifications/api/v1');
+
+        $request = $this->getRequest();
+        if (! $request->isApiRequest()) {
+            $this->httpBadRequest('No API request');
+        }
+
+        $method = $request->getMethod();
+        if (
+            in_array($method, ['POST', 'PUT'])
+            && (
+                ! preg_match('/([^;]*);?/', $request->getHeader('Content-Type'), $matches)
+                || $matches[1] !== 'application/json'
+            )
+        ) {
+            $this->httpBadRequest('No JSON content');
+        }
+
+        $results = [];
+        $responseCode = 200;
+        $db = Database::get();
+        $identifier = $request->getParam('identifier');
+
+        if ($identifier && ! Uuid::isValid($identifier)) {
+            $this->httpBadRequest('The given identifier is not a valid UUID');
+        }
+
+        $filter = FilterProcessor::assembleFilter(
+            QueryString::fromString(rawurldecode(Url::fromRequest()->getQueryString()))
+                ->on(
+                    QueryString::ON_CONDITION,
+                    function (Filter\Condition $condition) {
+                        $column = $condition->getColumn();
+                        if (! in_array($column, ['id', 'full_name', 'username'])) {
+                            $this->httpBadRequest(sprintf(
+                                'Invalid filter column %s given, only id, full_name and username are allowed',
+                                $column
+                            ));
+                        }
+
+                        if ($column === 'id') {
+                            if (! Uuid::isValid($condition->getValue())) {
+                                $this->httpBadRequest('The given filter id is not a valid UUID');
+                            }
+
+                            $condition->setColumn('external_uuid');
+                        }
+                    }
+                )->parse()
+        );
+
+        switch ($method) {
+            case 'GET':
+                $stmt = (new Select())
+                    ->distinct()
+                    ->from('contact co')
+                    ->columns([
+                        'contact_id'        => 'co.id',
+                        'id'                => 'co.external_uuid',
+                        'full_name',
+                        'username',
+                        'default_channel'   => 'ch.name',
+                    ])
+                    ->joinLeft('contact_address ca', 'ca.contact_id = co.id')
+                    ->joinLeft('channel ch', 'ch.id = co.default_channel_id');
+
+                if ($identifier !== null) {
+                    $stmt->where(['external_uuid = ?' => $identifier]);
+                    $result = $db->fetchOne($stmt);
+
+                    if ($result === false) {
+                        $this->httpNotFound('Contact not found');
+                    }
+
+                    if ($result->username === null) {
+                        unset($result->username);
+                    }
+
+                    $groups = $this->fetchGroupIdentifiers($result->contact_id);
+                    if ($groups) {
+                        $result->groups = $groups;
+                    }
+
+                    $addresses = $this->fetchContactAddresses($result->contact_id);
+                    if ($addresses) {
+                        $result->addresses = $addresses;
+                    }
+
+                    unset($result->contact_id);
+                    $results[] = $result;
+
+                    break;
+                }
+
+                if ($filter !== null) {
+                    $stmt->where($filter);
+                }
+
+                $stmt->limit(500);
+                $offset = 0;
+
+                ob_end_clean();
+                Environment::raiseExecutionTime();
+
+                $this->getResponse()
+                    ->setHeader('Content-Type', 'application/json')
+                    ->setHeader('Cache-Control', 'no-store')
+                    ->sendResponse();
+
+                echo '[';
+
+                $res = $db->select($stmt->offset($offset));
+                do {
+                    foreach ($res as $i => $row) {
+                        if ($row->username === null) {
+                            unset($row->username);
+                        }
+
+                        $groups = $this->fetchGroupIdentifiers($row->contact_id);
+                        if ($groups) {
+                            $row->groups = $groups;
+                        }
+
+                        $addresses = $this->fetchContactAddresses($row->contact_id);
+                        if ($addresses) {
+                            $row->addresses = $addresses;
+                        }
+
+                        if ($i > 0 || $offset !== 0) {
+                            echo ",\n";
+                        }
+
+                        unset($row->contact_id);
+
+                        echo Json::sanitize($row);
+                    }
+
+                    $offset += 500;
+                    $res = $db->select($stmt->offset($offset));
+                } while ($res->rowCount());
+
+                echo ']';
+
+                exit;
+            case 'POST':
+                if ($filter !== null) {
+                    $this->httpBadRequest('Cannot filter on POST');
+                }
+
+                $data = $request->getPost();
+
+                $this->assertValidData($data);
+
+                $db->beginTransaction();
+
+                if ($identifier === null) {
+                    if ($this->getContactId($data['id']) !== null) {
+                        throw new HttpException(422, 'Contact already exists');
+                    }
+
+                    $this->addContact($data);
+                } else {
+                    $contactId = $this->getContactId($identifier);
+                    if ($contactId === null) {
+                        $this->httpNotFound('Contact not found');
+                    }
+
+                    if ($identifier === $data['id'] || $this->getContactId($data['id']) !== null) {
+                        throw new HttpException(422, 'Contact already exists');
+                    }
+
+                    $this->removeContact($contactId);
+                    $this->addContact($data);
+                }
+
+                $db->commitTransaction();
+
+                $this->getResponse()->setHeader('Location', self::ENDPOINT . '/' . $data['id']);
+                $responseCode = 201;
+
+                break;
+            case 'PUT':
+                if ($identifier === null) {
+                    $this->httpBadRequest('Identifier is required');
+                }
+
+                $data = $request->getPost();
+
+                $this->assertValidData($data);
+
+                if ($identifier !== $data['id']) {
+                    $this->httpBadRequest('Identifier mismatch');
+                }
+
+                $db->beginTransaction();
+
+                $contactId = $this->getContactId($identifier);
+                if ($contactId !== null) {
+                    if (! empty($data['username'])) {
+                        $this->assertUniqueUsername($data['username']);
+                    }
+
+                    $db->update('contact', [
+                        'full_name'             => $data['full_name'],
+                        'username'              => $data['username'] ?? null,
+                        'default_channel_id'    => $this->getChannelId($data['default_channel'])
+                    ], ['id = ?' => $contactId]);
+
+                    $db->delete('contact_address', ['contact_id = ?' => $contactId]);
+                    $db->delete('contactgroup_member', ['contact_id = ?' => $contactId]);
+
+                    if (! empty($data['addresses'])) {
+                        $this->addAddresses($contactId, $data['addresses']);
+                    }
+
+                    if (! empty($data['groups'])) {
+                        $this->addGroups($contactId, $data['groups']);
+                    }
+
+                    $responseCode = 204;
+                } else {
+                    $this->addContact($data);
+                    $responseCode = 201;
+                }
+
+                $db->commitTransaction();
+
+                break;
+            case 'DELETE':
+                if ($identifier === null) {
+                    $this->httpBadRequest('Identifier is required');
+                }
+
+                $db->beginTransaction();
+
+                $contactId = $this->getContactId($identifier);
+                if ($contactId === null) {
+                    $this->httpNotFound('Contact not found');
+                }
+
+                $this->removeContact($contactId);
+
+                $db->commitTransaction();
+
+                $responseCode = 204;
+
+                break;
+            default:
+                $this->httpBadRequest('Invalid method');
+        }
+
+        $this->getResponse()
+            ->setHttpResponseCode($responseCode)
+            ->json()
+            ->setSuccessData($results)
+            ->sendResponse();
+    }
+
+    /**
+     * Get the channel id with the given name
+     *
+     * @param string $channelName
+     *
+     * @return int
+     *
+     * @throws HttpNotFoundException if the channel does not exist
+     */
+    private function getChannelId(string $channelName): int
+    {
+        $channel = Database::get()->fetchOne(
+            (new Select())
+                ->from('channel')
+                ->columns('id')
+                ->where(['name = ?' => $channelName])
+        );
+
+        if ($channel === false) {
+            $this->httpNotFound('Channel not found');
+        }
+
+        return $channel->id;
+    }
+
+    /**
+     * Fetch the addresses of the contact with the given id
+     *
+     * @param int $contactId
+     *
+     * @return ?string
+     */
+    private function fetchContactAddresses(int $contactId): ?string
+    {
+        $addresses = Database::get()->fetchPairs(
+            (new Select())
+                ->from('contact_address')
+                ->columns(['type', 'address'])
+                ->where(['contact_id = ?' => $contactId])
+        );
+
+        return ! empty($addresses) ? json_encode($addresses) : null;
+    }
+
+    /**
+     * Fetch the group identifiers of the contact with the given id
+     *
+     * @param int $contactId
+     *
+     * @return ?string[]
+     */
+    private function fetchGroupIdentifiers(int $contactId): ?array
+    {
+        $groups = Database::get()->fetchCol(
+            (new Select())
+                ->from('contactgroup_member cgm')
+                ->columns('cg.external_uuid')
+                ->joinLeft('contactgroup cg', 'cg.id = cgm.contactgroup_id')
+                ->where(['cgm.contact_id = ?' => $contactId])
+                ->groupBy('cg.external_uuid')
+        );
+
+        return $groups ?: null;
+    }
+
+    /**
+     * Get the group id with the given identifier
+     *
+     * @param string $identifier
+     *
+     * @return int
+     *
+     * @throws HttpNotFoundException if the contactgroup with the given identifier does not exist
+     */
+    private function getGroupId(string $identifier): int
+    {
+        $group = Database::get()->fetchOne(
+            (new Select())
+                ->from('contactgroup')
+                ->columns('id')
+                ->where(['external_uuid = ?' => $identifier])
+        );
+
+        if ($group === false) {
+            $this->httpNotFound(sprintf('Group with identifier %s not found', $identifier));
+        }
+
+        return $group->id;
+    }
+
+    /**
+     * Get the contact id with the given identifier
+     *
+     * @param string $identifier
+     *
+     * @return ?int Returns null, if contact does not exist
+     */
+    protected function getContactId(string $identifier): ?int
+    {
+        $contact =  Database::get()->fetchOne(
+            (new Select())
+                ->from('contact')
+                ->columns('id')
+                ->where(['external_uuid = ?' => $identifier])
+        );
+
+        return $contact->id ?? null;
+    }
+
+    /**
+     * Add a new contact with the given data
+     *
+     * @param array<string, mixed> $data
+     *
+     * @return void
+     */
+    private function addContact(array $data): void
+    {
+        if (! empty($data['username'])) {
+            $this->assertUniqueUsername($data['username']);
+        }
+
+        Database::get()->insert('contact', [
+            'full_name'             => $data['full_name'],
+            'username'              => $data['username'] ?? null,
+            'default_channel_id'    => $this->getChannelId($data['default_channel']),
+            'external_uuid'         => $data['id']
+        ]);
+
+        $contactId = Database::get()->lastInsertId();
+
+        if (! empty($data['addresses'])) {
+            $this->addAddresses($contactId, $data['addresses']);
+        }
+
+        if (! empty($data['groups'])) {
+            $this->addGroups($contactId, $data['groups']);
+        }
+    }
+
+    /**
+     * Assert that the username is unique
+     *
+     * @param string $username
+     *
+     * @return void
+     *
+     * @throws HttpException if the username already exists
+     */
+    private function assertUniqueUsername(string $username): void
+    {
+        $user = Database::get()->fetchOne(
+            (new Select())
+                ->from('contact')
+                ->columns(1)
+                ->where(['username = ?' => $username])
+        );
+
+        if ($user !== false) {
+            throw new HttpException(422, 'Username already exists');
+        }
+    }
+
+    /**
+     * Assert that the address type exists
+     *
+     * @param string[] $addressTypes
+     *
+     * @return void
+     *
+     * @throws HttpBadRequestException if the username already exists
+     */
+    private function assertAddressTypesExist(array $addressTypes): void
+    {
+        $types = Database::get()->fetchCol(
+            (new Select())
+                ->from('available_channel_type')
+                ->columns('type')
+                ->where(['type IN (?)' => $addressTypes])
+        );
+
+        if (count($types) !== count($addressTypes)) {
+            $this->httpBadRequest(sprintf(
+                'Undefined address type %s given',
+                implode(', ', array_diff($addressTypes, $types))
+            ));
+        }
+    }
+
+    /**
+     * Add the groups to the given contact
+     *
+     * @param int $contactId
+     * @param string[] $groups
+     *
+     * @return void
+     */
+    private function addGroups(int $contactId, array $groups): void
+    {
+        foreach ($groups as $groupIdentifier) {
+            $groupId = $this->getGroupId($groupIdentifier);
+
+            Database::get()->insert('contactgroup_member', [
+                'contact_id'        => $contactId,
+                'contactgroup_id'   => $groupId
+            ]);
+        }
+    }
+
+    /**
+     * Add the addresses to the given contact
+     *
+     * @param int $contactId
+     * @param array<string, string> $addresses
+     *
+     * @return void
+     */
+    private function addAddresses(int $contactId, array $addresses): void
+    {
+        $this->assertAddressTypesExist(array_keys($addresses));
+
+        foreach ($addresses as $type => $address) {
+            Database::get()->insert('contact_address', [
+                'contact_id'    => $contactId,
+                'type'          => $type,
+                'address'       => $address
+            ]);
+        }
+    }
+
+    /**
+     * Remove the contact with the given id
+     *
+     * @param int $id
+     *
+     * @return void
+     */
+    private function removeContact(int $id): void
+    {
+        Database::get()->delete('contactgroup_member', ['contact_id = ?' => $id]);
+        Database::get()->delete('contact_address', ['contact_id = ?' => $id]);
+        Database::get()->delete('contact', ['id = ?' => $id]);
+    }
+
+    /**
+     * Assert that the given data contains the required fields
+     *
+     * @param array<string, mixed> $data
+     *
+     * @return void
+     *
+     * @throws HttpBadRequestException
+     */
+    private function assertValidData(array $data): void
+    {
+        if (! isset($data['id'], $data['full_name'], $data['default_channel'])) {
+            $this->httpBadRequest('The request body must contain the fields id, full_name and default_channel');
+        }
+
+        if (! Uuid::isValid($data['id'])) {
+            $this->httpBadRequest('Given id in the request body is not a valid UUID');
+        }
+
+        if (! empty($data['groups'])) {
+            foreach ($data['groups'] as $group) {
+                if (! Uuid::isValid($group)) {
+                    $this->httpBadRequest('Group identifiers in the request body must be valid UUIDs');
+                }
+            }
+        }
+
+        if (! empty($data['addresses']['email'])
+            && ! (new EmailAddressValidator())->isValid($data['addresses']['email'])
+        ) {
+            $this->httpBadRequest('Request body contains an invalid email address');
+        }
+    }
+}
