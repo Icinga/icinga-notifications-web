@@ -54,7 +54,7 @@ class ContactController extends CompatController
                 $contactElement = $form->getElement('contact');
                 Notification::success(sprintf(
                     t('Deleted contact "%s" successfully'),
-                    $contactElement->getValue()
+                    $contactElement->getValue('full_name')
                 ));
 
                 $this->redirectNow('__CLOSE__');
