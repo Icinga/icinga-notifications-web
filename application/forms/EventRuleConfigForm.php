@@ -657,6 +657,15 @@ class EventRuleConfigForm extends Form
         $values = $this->getValues();
         $dbValuesToCompare = array_intersect_key($this->config, $values);
 
+        if (count($values, COUNT_RECURSIVE) < count($dbValuesToCompare, COUNT_RECURSIVE)) {
+            // fewer values in the form than in the db, escalation(s) has been removed
+            if ($values['object_filter'] === $dbValuesToCompare['object_filter']) {
+                unset($values['object_filter']);
+            }
+
+            return $values;
+        }
+
         $checker = static function ($a, $b) use (&$checker) {
             if (! is_array($a) || ! is_array($b)) {
                 return $a <=> $b;
