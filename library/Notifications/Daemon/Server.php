@@ -4,7 +4,6 @@
 
 namespace Icinga\Module\Notifications\Daemon;
 
-use Exception;
 use Fig\Http\Message\StatusCodeInterface;
 use Icinga\Application\Config;
 use Icinga\Application\Logger;
@@ -20,6 +19,7 @@ use React\Http\HttpServer;
 use React\Http\Message\Response;
 use React\Socket\ConnectionInterface;
 use React\Socket\SocketServer;
+use Throwable;
 
 class Server
 {
@@ -106,12 +106,15 @@ class Server
         $this->http = new HttpServer(function (ServerRequestInterface $request) {
             return $this->handleRequest($request);
         });
+        $this->http->on('error', function (Throwable $error) {
+            self::$logger::error(self::PREFIX . "received an error on the http server: %s", $error);
+        });
         // subscribe to socket events
         $this->socket->on('connection', function (ConnectionInterface $connection) {
             $this->onSocketConnection($connection);
         });
-        $this->socket->on('error', function (Exception $error) {
-            self::$logger::error(self::PREFIX . "received an error on the socket: " . $error->getMessage());
+        $this->socket->on('error', function (Throwable $error) {
+            self::$logger::error(self::PREFIX . "received an error on the socket: %s", $error);
         });
         // attach http server to socket
         $this->http->listen($this->socket);
