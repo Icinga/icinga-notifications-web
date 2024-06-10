@@ -69,7 +69,7 @@ class SessionStorage extends AuthenticationHook
 
             // cleanup existing sessions from this user (only for the current browser)
             $userSessions = BrowserSession::on(Database::get())
-                ->filter(Filter::equal('username', $user->getUsername()))
+                ->filter(Filter::equal('username', trim($user->getUsername())))
                 ->filter(Filter::equal('user_agent', $userAgent))
                 ->execute();
             /** @var BrowserSession $session */
@@ -104,7 +104,10 @@ class SessionStorage extends AuthenticationHook
             }
 
             Logger::debug(
-                "onLogin triggered for user " . $user->getUsername() . " and browser session " . $this->session->getId()
+                "onLogin triggered for user "
+                . trim($user->getUsername())
+                . " and browser session "
+                . $this->session->getId()
             );
         }
     }
@@ -145,7 +148,7 @@ class SessionStorage extends AuthenticationHook
 
             Logger::debug(
                 "onLogout triggered for user "
-                . $user->getUsername()
+                . trim($user->getUsername())
                 . " and browser session "
                 . $this->session->getId()
             );
