@@ -110,14 +110,11 @@ class ContactGroupsController extends CompatController
             })
             ->on(Form::ON_SUCCESS, function (ContactGroupForm $form) {
                 $groupIdentifier = $form->addGroup();
-                if ($groupIdentifier) {
-                    Notification::success(t('New group has been successfully added'));
-                    $this->sendExtraUpdates(['#col1']);
-                    $this->getResponse()->setHeader('X-Icinga-Container', 'col2');
-                    $this->redirectNow(Links::contactGroup($groupIdentifier));
-                } else {
-                    Notification::error(t('Failed to add new contact group'));
-                }
+
+                Notification::success(t('New group has been successfully added'));
+                $this->sendExtraUpdates(['#col1']);
+                $this->getResponse()->setHeader('X-Icinga-Container', 'col2');
+                $this->redirectNow(Links::contactGroup($groupIdentifier));
             })
             ->handleRequest($this->getServerRequest());
 

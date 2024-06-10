@@ -166,9 +166,9 @@ class ContactGroupForm extends CompatForm
     /**
      * Add a new contact group
      *
-     * @return ?int
+     * @return int
      */
-    public function addGroup(): ?int
+    public function addGroup(): int
     {
         $data = $this->getValues();
 
