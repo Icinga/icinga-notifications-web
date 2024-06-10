@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Forms;
 
+use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Contact;
@@ -272,6 +273,8 @@ class ContactGroupForm extends CompatForm
      * Fetch the values from the database
      *
      * @return array
+     *
+     * @throws HttpNotFoundException
      */
     private function fetchDbValues(): array
     {
@@ -281,7 +284,7 @@ class ContactGroupForm extends CompatForm
 
         $group = $query->first();
         if ($group === null) {
-            $this->httpNotFound(t('Contact group not found'));
+            throw new HttpNotFoundException($this->translate('Contact group not found'));
         }
 
         $groupMembers = [];
@@ -290,8 +293,8 @@ class ContactGroupForm extends CompatForm
         }
 
         return [
-            'group_name'   => $group->name,
-            'group_members' => implode(',', $groupMembers)
+            'group_name'        => $group->name,
+            'group_members'     => implode(',', $groupMembers)
         ];
     }
 }
