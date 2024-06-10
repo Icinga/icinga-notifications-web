@@ -132,28 +132,24 @@ class ContactGroupsController extends CompatController
 
     public function getTabs(): Tabs
     {
-        if ($this->getRequest()->getActionName() === 'index') {
-            return parent::getTabs()
-                ->add('schedules', [
-                    'label'      => t('Schedules'),
-                    'url'        => Links::schedules(),
-                    'baseTarget' => '_main'
-                ])->add('event-rules', [
-                    'label'      => t('Event Rules'),
-                    'url'        => Links::eventRules(),
-                    'baseTarget' => '_main'
-                ])->add('contacts', [
-                    'label'      => t('Contacts'),
-                    'url'        => Links::contacts(),
-                    'baseTarget' => '_main'
-                ])->add('contact-groups', [
-                    'label'      => t('Contact Groups'),
-                    'url'        => Links::contactGroups(),
-                    'baseTarget' => '_main'
-                ]);
-        }
-
-        return parent::getTabs();
+        return parent::getTabs()
+            ->add('schedules', [
+                'label'      => t('Schedules'),
+                'url'        => Links::schedules(),
+                'baseTarget' => '_main'
+            ])->add('event-rules', [
+                'label'      => t('Event Rules'),
+                'url'        => Links::eventRules(),
+                'baseTarget' => '_main'
+            ])->add('contacts', [
+                'label'      => t('Contacts'),
+                'url'        => Links::contacts(),
+                'baseTarget' => '_main'
+            ])->add('contact-groups', [
+                'label'      => t('Contact Groups'),
+                'url'        => Links::contactGroups(),
+                'baseTarget' => '_main'
+            ]);
     }
 
     protected function addContent(ValidHtml $content): self
