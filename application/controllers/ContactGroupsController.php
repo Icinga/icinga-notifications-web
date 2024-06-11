@@ -77,7 +77,7 @@ class ContactGroupsController extends CompatController
         $this->addContent(
             (new ButtonLink(
                 Text::create(t('Add Contact Group')),
-                Links::contactGroupsAdd(),
+                Links::contactGroupsAdd()->with(['showCompact' => true, '_disableLayout' => 1]),
                 'plus',
                 ['class' => 'add-new-component']
             ))->openInModal()
@@ -96,7 +96,7 @@ class ContactGroupsController extends CompatController
     public function addAction(): void
     {
         $form = (new ContactGroupForm(Database::get()))
-            ->setAction((string) Links::contactGroupsAdd())
+            ->setAction((string) Links::contactGroupsAdd()->with(['showCompact' => true, '_disableLayout' => 1]))
             ->on(Form::ON_SENT, function (ContactGroupForm $form) {
                 if (! $form->hasBeenSubmitted()) {
                     foreach ($form->getPartUpdates() as $update) {

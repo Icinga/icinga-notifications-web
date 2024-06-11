@@ -18,6 +18,7 @@ use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
 use ipl\Web\FormElement\TermInput;
 use ipl\Web\FormElement\TermInput\Term;
+use ipl\Web\Url;
 
 class ContactGroupForm extends CompatForm
 {
@@ -50,7 +51,9 @@ class ContactGroupForm extends CompatForm
             ]
         ))
             ->setVerticalTermDirection()
-            ->setSuggestionUrl(Links::contactGroupsSuggestMember())
+            ->setSuggestionUrl(
+                Links::contactGroupsSuggestMember()->with(['showCompact' => true, '_disableLayout' => 1])
+            )
             ->on(TermInput::ON_ENRICH, $callValidation)
             ->on(TermInput::ON_ADD, $callValidation)
             ->on(TermInput::ON_SAVE, $callValidation)

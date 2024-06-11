@@ -50,7 +50,7 @@ class ContactGroupController extends CompatController
         $this->addContent(
             (new ButtonLink(
                 Text::create(t('Edit Contact Group')),
-                Links::contactGroupEdit($groupId),
+                Links::contactGroupEdit($groupId)->with(['showCompact' => true, '_disableLayout' => 1]),
                 'edit',
                 ['class' => 'add-new-component']
             ))->openInModal()
@@ -68,7 +68,9 @@ class ContactGroupController extends CompatController
 
         $form = (new ContactGroupForm(Database::get()))
             ->loadContactgroup($groupId)
-            ->setAction((string) Links::contactGroupEdit($groupId))
+            ->setAction(
+                (string) Links::contactGroupEdit($groupId)->with(['showCompact' => true, '_disableLayout' => 1])
+            )
             ->on(Form::ON_SENT, function (ContactGroupForm $form) {
                 if ($form->hasBeenRemoved()) {
                     $form->removeContactgroup();
