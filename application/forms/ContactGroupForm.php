@@ -44,8 +44,7 @@ class ContactGroupForm extends CompatForm
         $termInput = (new TermInput(
             'group_members',
             [
-                'label'    => $this->translate('Members'),
-                'required' => true
+                'label'    => $this->translate('Members')
             ]
         ))
             ->setVerticalTermDirection()
@@ -183,7 +182,11 @@ class ContactGroupForm extends CompatForm
         );
 
         $groupIdentifier = $this->db->lastInsertId();
-        $contactIds = explode(',', $data['group_members']);
+
+        $contactIds = [];
+        if (! empty($data['group_members'])) {
+            $contactIds = explode(',', $data['group_members']);
+        }
 
         foreach ($contactIds as $contactId) {
             $this->db->insert(
@@ -224,8 +227,15 @@ class ContactGroupForm extends CompatForm
             $isUpdated = true;
         }
 
-        $storedContacts =  explode(',', $storedValues['group_members']);
-        $newContacts = explode(',', $values['group_members']);
+        $storedContacts = [];
+        if (! empty($storedValues['group_members'])) {
+            $storedContacts = explode(',', $storedValues['group_members']);
+        }
+
+        $newContacts = [];
+        if (! empty($values['group_members'])) {
+            $newContacts = explode(',', $values['group_members']);
+        }
 
         $toDelete = array_diff($storedContacts, $newContacts);
         $toAdd = array_diff($newContacts, $storedContacts);
