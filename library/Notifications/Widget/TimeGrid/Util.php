@@ -5,6 +5,7 @@
 namespace Icinga\Module\Notifications\Widget\TimeGrid;
 
 use DateTime;
+use InvalidArgumentException;
 
 final class Util
 {
@@ -14,6 +15,9 @@ final class Util
     public static function diffHours(DateTime $from, DateTime $to)
     {
         $diff = $from->diff($to);
+        if ($diff->invert) {
+            throw new InvalidArgumentException('The end date must be after the start date');
+        }
 
         $hours = 0;
         if ($diff->h > 0) {
