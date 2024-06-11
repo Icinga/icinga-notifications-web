@@ -5,7 +5,6 @@
 namespace Icinga\Module\Notifications\Forms;
 
 use Icinga\Exception\Http\HttpNotFoundException;
-use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Contactgroup;
@@ -18,7 +17,6 @@ use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
 use ipl\Web\FormElement\TermInput;
 use ipl\Web\FormElement\TermInput\Term;
-use ipl\Web\Url;
 
 class ContactGroupForm extends CompatForm
 {
@@ -140,7 +138,7 @@ class ContactGroupForm extends CompatForm
         }
 
         if (! empty($contactTerms)) {
-            $contacts = (Contact::on(Database::get()))
+            $contacts = (Contact::on($this->db))
                 ->filter(Filter::equal('id', array_keys($contactTerms)));
 
             foreach ($contacts as $contact) {
@@ -281,7 +279,7 @@ class ContactGroupForm extends CompatForm
      */
     private function fetchDbValues(): array
     {
-        $query = Contactgroup::on(Database::get())
+        $query = Contactgroup::on($this->db)
             ->columns(['id', 'name'])
             ->filter(Filter::equal('id', $this->contactgroupId));
 
