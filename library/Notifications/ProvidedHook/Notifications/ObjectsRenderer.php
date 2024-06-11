@@ -8,6 +8,7 @@ use Generator;
 use Icinga\Module\Icingadb\Common\Database;
 use Icinga\Module\Icingadb\Model\Host;
 use Icinga\Module\Icingadb\Model\Service;
+use Icinga\Module\Icingadb\Redis\VolatileStateResults;
 use Icinga\Module\Icingadb\Widget\ItemList\HostList;
 use Icinga\Module\Icingadb\Widget\ItemList\ServiceList;
 use Icinga\Module\Notifications\Hook\ObjectsRendererHook;
@@ -43,7 +44,8 @@ class ObjectsRenderer extends ObjectsRendererHook
         if ($servicesQuery) {
             $servicesQuery
                 ->with(['state', 'host.state'])
-                ->withColumns(['service.state.soft_state', 'host.state.soft_state']);
+                ->withColumns(['service.state.soft_state', 'host.state.soft_state'])
+                ->setResultSetClass(VolatileStateResults::class);
 
             foreach ($servicesQuery as $service) {
                 $hostElm = [
@@ -85,6 +87,7 @@ class ObjectsRenderer extends ObjectsRendererHook
             $serviceStates = $servicesQuery
                 ->columns([])
                 ->with(['state', 'host.state'])
+                ->setResultSetClass(VolatileStateResults::class)
                 ->first();
 
             if ($serviceStates === null) {
@@ -98,6 +101,7 @@ class ObjectsRenderer extends ObjectsRendererHook
         $hostStates = $hostsQuery
             ->columns([])
             ->with('state')
+            ->setResultSetClass(VolatileStateResults::class)
             ->first();
 
         if ($hostStates === null) {
