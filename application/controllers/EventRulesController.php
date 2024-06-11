@@ -4,19 +4,15 @@
 
 namespace Icinga\Module\Notifications\Controllers;
 
-use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
-use Icinga\Module\Notifications\Forms\EventRuleForm;
 use Icinga\Module\Notifications\Forms\SaveEventRuleForm;
-use Icinga\Module\Notifications\Model\ObjectExtraTag;
 use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Widget\EventRuleConfig;
 use Icinga\Module\Notifications\Widget\ItemList\EventRuleList;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
-use ipl\Html\Form;
 use ipl\Html\Html;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
@@ -241,16 +237,20 @@ class EventRulesController extends CompatController
         if ($this->getRequest()->getActionName() === 'index') {
             return parent::getTabs()
                 ->add('schedules', [
-                    'label'         => $this->translate('Schedules'),
-                    'url'           => Url::fromPath('notifications/schedules'),
-                    'baseTarget'    => '_main'
+                    'label'      => $this->translate('Schedules'),
+                    'url'        => Links::schedules(),
+                    'baseTarget' => '_main'
                 ])->add('event-rules', [
                     'label'      => $this->translate('Event Rules'),
-                    'url'        => Url::fromPath('notifications/event-rules'),
+                    'url'        => Links::eventRules(),
                     'baseTarget' => '_main'
                 ])->add('contacts', [
                     'label'      => $this->translate('Contacts'),
-                    'url'        => Url::fromPath('notifications/contacts'),
+                    'url'        => Links::contacts(),
+                    'baseTarget' => '_main'
+                ])->add('contact-groups', [
+                    'label'      => $this->translate('Contact Groups'),
+                    'url'        => Links::contactGroups(),
                     'baseTarget' => '_main'
                 ]);
         }

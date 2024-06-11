@@ -233,6 +233,7 @@ class ContactForm extends CompatForm
     public function removeContact()
     {
         $this->db->beginTransaction();
+        $this->db->delete('contactgroup_member', ['contact_id = ?' => $this->contactId]);
         $this->db->delete('contact_address', ['contact_id = ?' => $this->contactId]);
         $this->db->delete('contact', ['id = ?' => $this->contactId]);
         $this->db->commitTransaction();

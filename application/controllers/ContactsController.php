@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Controllers;
 
+use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Contact;
@@ -21,7 +22,6 @@ use ipl\Web\Filter\QueryString;
 use ipl\Web\Url;
 use ipl\Web\Widget\ButtonLink;
 use ipl\Html\ValidHtml;
-use ipl\Web\Widget\Tabs;
 
 class ContactsController extends CompatController
 {
@@ -172,16 +172,20 @@ class ContactsController extends CompatController
         if ($this->getRequest()->getActionName() === 'index') {
             return parent::getTabs()
                 ->add('schedules', [
-                    'label'         => $this->translate('Schedules'),
-                    'url'           => Url::fromPath('notifications/schedules'),
-                    'baseTarget'    => '_main'
+                    'label'      => $this->translate('Schedules'),
+                    'url'        => Links::schedules(),
+                    'baseTarget' => '_main'
                 ])->add('event-rules', [
                     'label'      => $this->translate('Event Rules'),
-                    'url'        => Url::fromPath('notifications/event-rules'),
+                    'url'        => Links::eventRules(),
                     'baseTarget' => '_main'
                 ])->add('contacts', [
                     'label'      => $this->translate('Contacts'),
-                    'url'        => Url::fromRequest(),
+                    'url'        => Links::contacts(),
+                    'baseTarget' => '_main'
+                ])->add('contact-groups', [
+                    'label'      => $this->translate('Contact Groups'),
+                    'url'        => Links::contactGroups(),
                     'baseTarget' => '_main'
                 ]);
         }

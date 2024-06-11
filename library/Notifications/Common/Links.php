@@ -70,4 +70,29 @@ abstract class Links
     {
         return Url::fromPath('notifications/schedule/settings', ['id' => $id]);
     }
+
+    public static function contactGroups(): Url
+    {
+        return Url::fromPath('notifications/contact-groups');
+    }
+
+    public static function contactGroupsAdd(): Url
+    {
+        return Url::fromPath('notifications/contact-groups/add');
+    }
+
+    public static function contactGroupsSuggestMember(): Url
+    {
+        return Url::fromPath('notifications/contact-groups/suggest-member');
+    }
+
+    public static function contactGroup(int $id): Url
+    {
+        return Url::fromPath('notifications/contact-group', ['id' => $id]);
+    }
+
+    public static function contactGroupEdit(int $id): Url
+    {
+        return Url::fromPath('notifications/contact-group/edit', ['id' => $id]);
+    }
 }
