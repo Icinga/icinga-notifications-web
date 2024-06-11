@@ -13,7 +13,6 @@ use Icinga\Module\Notifications\Widget\Calendar\WeekGrid;
 use Icinga\Module\Notifications\Widget\TimeGrid\BaseGrid;
 use Icinga\Module\Notifications\Widget\TimeGrid\EntryProvider;
 use Icinga\Module\Notifications\Widget\TimeGrid\GridStep;
-use Icinga\Module\Notifications\Widget\TimeGrid\Util;
 use IntlDateFormatter;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
@@ -169,37 +168,7 @@ class Calendar extends BaseHtmlElement implements EntryProvider
 
     public function getEntries(): Traversable
     {
-        foreach ($this->entries as $entry) {
-            $rrule = $entry->getRecurrenceRule();
-            $start = $entry->getStart();
-            $end = $entry->getEnd();
-
-            if ($rrule) {
-                $grid = $this->getGrid();
-                $length = $start->diff($end);
-
-                $visibleHours = Util::diffHours($start, $grid->getGridEnd());
-                $limit = (int) ceil($visibleHours / (Util::diffHours($start, $end) ?: 0.5));
-                if ($limit > $visibleHours) {
-                    $limit = $visibleHours;
-                }
-
-                $recurrenceStart = (clone $grid->getGridStart())->sub($length);
-                foreach ($rrule->getNextRecurrences($recurrenceStart, $limit) as $recurrence) {
-                    $recurrenceEnd = (clone $recurrence)->add($length);
-                    $occurrence = (new Entry($entry->getId()))
-                        ->setDescription($entry->getDescription())
-                        ->setStart($recurrence)
-                        ->setEnd($recurrenceEnd)
-                        ->setUrl($entry->getUrl())
-                        ->setAttendee($entry->getAttendee());
-
-                    yield $occurrence;
-                }
-            } else {
-                yield $entry;
-            }
-        }
+        yield from $this->entries;
     }
 
     protected function assemble()

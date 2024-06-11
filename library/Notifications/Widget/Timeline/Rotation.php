@@ -4,10 +4,15 @@
 
 namespace Icinga\Module\Notifications\Widget\Timeline;
 
+use DateInterval;
 use DateTime;
 use Generator;
 use Icinga\Module\Notifications\Common\Links;
+use Icinga\Module\Notifications\Forms\RotationConfigForm;
+use ipl\Scheduler\RRule;
 use ipl\Stdlib\Filter;
+use Recurr\Frequency;
+use Recurr\Rule;
 
 class Rotation
 {
@@ -55,24 +60,20 @@ class Rotation
     }
 
     /**
-     * Get the actual handoff of the rotation
-     *
-     * @return DateTime
-     */
-    public function getActualHandoff(): DateTime
-    {
-        return $this->model->actual_handoff;
-    }
-
-    /**
      * Get the next occurrence of the rotation
      *
      * @param DateTime $after The date after which to yield occurrences
+     * @param DateTime $until The date up to which to yield occurrences
      *
      * @return Generator<mixed, Entry>
      */
-    public function fetchTimeperiodEntries(DateTime $after): Generator
+    public function fetchTimeperiodEntries(DateTime $after, DateTime $until): Generator
     {
+        $actualHandoff = null;
+        if (RotationConfigForm::EXPERIMENTAL_OVERRIDES) {
+            $actualHandoff = $this->model->actual_handoff;
+        }
+
         $entries = $this->model->timeperiod->timeperiod_entry
             ->with(['member.contact', 'member.contactgroup'])
             ->filter(Filter::all(
@@ -93,14 +94,62 @@ class Rotation
                 $member->setIcon('users');
             }
 
-            $entry = new Entry($timeperiodEntry->id);
-            $entry->setMember($member);
-            $entry->setStart($timeperiodEntry->start_time);
-            $entry->setEnd($timeperiodEntry->end_time);
-            $entry->setRecurrenceRule($timeperiodEntry->rrule);
-            $entry->setUrl(Links::rotationSettings($this->model->id, $this->model->schedule_id));
+            if ($timeperiodEntry->rrule) {
+                $recurrRule = new Rule($timeperiodEntry->rrule);
+                $limitMultiplier = 1;
+                $interval = $recurrRule->getInterval(); // Frequency::DAILY
+                if ($recurrRule->getFreq() === Frequency::WEEKLY) {
+                    $interval *= 7;
+                    if ($recurrRule->getByDay()) {
+                        $limitMultiplier = count($recurrRule->getByDay());
+                    }
+                } // TODO: Yearly? (Those unoptimized single occurrences)
 
-            yield $entry;
+                $before = (clone $after)->setTime(
+                    (int) $timeperiodEntry->start_time->format('H'),
+                    (int) $timeperiodEntry->start_time->format('i')
+                );
+
+                if ($timeperiodEntry->start_time < $before) {
+                    $daysSinceLatestHandoff = $timeperiodEntry->start_time->diff($before)->days % $interval;
+                    $firstHandoff = (clone $before)->sub(new DateInterval(sprintf('P%dD', $daysSinceLatestHandoff)));
+                } else {
+                    $firstHandoff = $timeperiodEntry->start_time;
+                }
+
+                $rrule = new RRule($timeperiodEntry->rrule);
+                $rrule->startAt($firstHandoff);
+
+                $length = $timeperiodEntry->start_time->diff($timeperiodEntry->end_time);
+                $limit = (((int) ceil($after->diff($until)->days / $interval)) + 1) * $limitMultiplier;
+                foreach ($rrule->getNextRecurrences($firstHandoff, $limit) as $recurrence) {
+                    $recurrenceEnd = (clone $recurrence)->add($length);
+                    if ($recurrence < $actualHandoff && $recurrenceEnd > $actualHandoff) {
+                        $recurrence = $actualHandoff;
+                    }
+
+                    if ($recurrence >= $until || $recurrenceEnd <= $after) {
+                        // This shouldn't happen often, that's why such entries are just ignored
+                        continue;
+                    }
+
+                    $occurrence = (new Entry($timeperiodEntry->id))
+                        ->setMember($member)
+                        ->setStart($recurrence)
+                        ->setEnd($recurrenceEnd)
+                        ->setUrl(Links::rotationSettings($this->model->id, $this->model->schedule_id));
+
+                    yield $occurrence;
+                }
+            } else {
+                $entry = (new Entry($timeperiodEntry->id))
+                    ->setMember($member)
+                    ->setStart($timeperiodEntry->start_time)
+                    ->setEnd($timeperiodEntry->end_time)
+                    ->setUrl(Links::rotationSettings($this->model->id, $this->model->schedule_id));
+
+                yield $entry;
+            }
         }
     }
 }

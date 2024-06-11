@@ -8,7 +8,6 @@ use DateInterval;
 use DateTime;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\MoveRotationForm;
-use Icinga\Module\Notifications\Forms\RotationConfigForm;
 use Icinga\Module\Notifications\Widget\TimeGrid\DynamicGrid;
 use Icinga\Module\Notifications\Widget\TimeGrid\EntryProvider;
 use Icinga\Module\Notifications\Widget\TimeGrid\GridStep;
@@ -148,53 +147,13 @@ class Timeline extends BaseHtmlElement implements EntryProvider
         $occupiedCells = [];
         $resultPosition = $maxPriority + 1;
         foreach ($rotations as $rotation) {
-            $actualHandoff = null;
-            if (RotationConfigForm::EXPERIMENTAL_OVERRIDES) {
-                $actualHandoff = $rotation->getActualHandoff();
-            }
-
             $rotationPosition = $maxPriority - $rotation->getPriority();
-            foreach ($rotation->fetchTimeperiodEntries($this->start) as $entry) {
-                $rrule = $entry->getRecurrenceRule();
-                $start = $entry->getStart();
-                $end = $entry->getEnd();
-
+            foreach ($rotation->fetchTimeperiodEntries($this->start, $this->getGrid()->getGridEnd()) as $entry) {
                 $entry->setPosition($rotationPosition);
 
-                if ($rrule) {
-                    $grid = $this->getGrid();
-                    // TODO: Calculate the nearest start possible, where the rotations restarts
-                    $length = $start->diff($end);
+                yield $entry;
 
-                    $limit = 31; // Mandatory, 1 otherwise, TODO: the rotation should provide a suitable limit
-                    $recurrenceStart = (clone $grid->getGridStart())->sub($length);
-                    foreach ($rrule->getNextRecurrences($recurrenceStart, $limit) as $recurrence) {
-                        $recurrenceEnd = (clone $recurrence)->add($length);
-
-                        if ($recurrence < $actualHandoff && $recurrenceEnd > $actualHandoff) {
-                            $recurrence = $actualHandoff;
-                        }
-
-                        $occurrence = (new Entry($entry->getId()))
-                            ->setStart($recurrence)
-                            ->setEnd($recurrenceEnd)
-                            ->setUrl($entry->getUrl())
-                            ->setMember($entry->getMember())
-                            ->setPosition($entry->getPosition());
-
-                        yield $occurrence;
-
-                        $occupiedCells += $getDesiredCells($occurrence);
-                    }
-                } else {
-                    if ($start < $actualHandoff && $end > $actualHandoff) {
-                        $entry->setStart($actualHandoff);
-                    }
-
-                    yield $entry;
-
-                    $occupiedCells += $getDesiredCells($entry);
-                }
+                $occupiedCells += $getDesiredCells($entry);
             }
         }
 

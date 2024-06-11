@@ -7,7 +7,6 @@ namespace Icinga\Module\Notifications\Widget\TimeGrid;
 use DateTime;
 use ipl\Html\BaseHtmlElement;
 use ipl\I18n\Translation;
-use ipl\Scheduler\RRule;
 use ipl\Web\Url;
 use ipl\Web\Widget\Link;
 
@@ -58,9 +57,6 @@ abstract class Entry extends BaseHtmlElement
 
     /** @var ?ContinuationType The continuation type */
     protected $continuationType;
-
-    /** @var ?string The recurrence rule */
-    protected $rrule;
 
     /** @var Url The URL to show this entry */
     protected $url;
@@ -179,35 +175,6 @@ abstract class Entry extends BaseHtmlElement
     public function getContinuationType(): ?string
     {
         return $this->continuationType;
-    }
-
-    /**
-     * Set the recurrence rule of this entry
-     *
-     * @param ?string $rrule
-     *
-     * @return $this
-     */
-    public function setRecurrenceRule(?string $rrule): self
-    {
-        $this->rrule = $rrule;
-
-        return $this;
-    }
-
-    /**
-     * Get the recurrence rule of this entry
-     *
-     * @return ?RRule
-     */
-    public function getRecurrenceRule(): ?RRule
-    {
-        if ($this->rrule !== null) {
-            return (new RRule($this->rrule))
-                ->startAt($this->getStart());
-        }
-
-        return null;
     }
 
     /**
