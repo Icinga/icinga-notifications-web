@@ -120,8 +120,6 @@ class ContactGroupForm extends CompatForm
      * Validate the terms
      *
      * @param Term[] $terms
-     *
-     * @return void
      */
     protected function validateTerms(array $terms): void
     {
