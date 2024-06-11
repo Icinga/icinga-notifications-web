@@ -18,6 +18,7 @@ use ipl\Validator\CallbackValidator;
 use ipl\Validator\EmailAddressValidator;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
+use Ramsey\Uuid\Uuid;
 
 class ContactForm extends CompatForm
 {
@@ -190,6 +191,7 @@ class ContactForm extends CompatForm
 
         $addressFromDb = [];
         if ($this->contactId === null) {
+            $contact['external_uuid'] = Uuid::uuid4()->toString();
             $this->db->insert('contact', $contact);
             $this->contactId = $this->db->lastInsertId();
         } else {
