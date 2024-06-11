@@ -22,6 +22,7 @@ use ipl\Validator\EmailAddressValidator;
 use ipl\Validator\StringLengthValidator;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
+use Ramsey\Uuid\Uuid;
 
 class ContactForm extends CompatForm
 {
@@ -186,7 +187,11 @@ class ContactForm extends CompatForm
         $contactInfo = $this->getValues();
         $changedAt = (int) (new DateTime())->format("Uv");
         $this->db->beginTransaction();
-        $this->db->insert('contact', $contactInfo['contact'] + ['changed_at' => $changedAt]);
+        $this->db->insert(
+            'contact',
+            $contactInfo['contact'] + ['external_uuid' => Uuid::uuid4()->toString(), 'changed_at' => $changedAt]
+        );
+
         $this->contactId = $this->db->lastInsertId();
 
         foreach (array_filter($contactInfo['contact_address']) as $type => $address) {
