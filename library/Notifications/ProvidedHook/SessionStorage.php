@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\ProvidedHook;
 
+use DateTime;
 use Icinga\Application\Hook\AuthenticationHook;
 use Icinga\Application\Logger;
 use Icinga\Module\Notifications\Common\Database;
@@ -90,9 +91,10 @@ class SessionStorage extends AuthenticationHook
                 $this->database->insert(
                     'browser_session',
                     [
-                        'php_session_id' => $this->session->getId(),
-                        'username'       => trim($user->getUsername()),
-                        'user_agent'     => $userAgent
+                        'php_session_id'   => $this->session->getId(),
+                        'username'         => trim($user->getUsername()),
+                        'user_agent'       => $userAgent,
+                        'authenticated_at' => (new DateTime())->format('Uv')
                     ]
                 );
                 $this->database->commitTransaction();
