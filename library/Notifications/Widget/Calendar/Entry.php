@@ -4,39 +4,31 @@
 
 namespace Icinga\Module\Notifications\Widget\Calendar;
 
-use DateTime;
-use ipl\Web\Url;
+use DateTimeInterface;
+use ipl\Html\Attributes;
+use ipl\Html\BaseHtmlElement;
+use ipl\Html\HtmlElement;
+use ipl\Html\Text;
+use Icinga\Module\Notifications\Widget\TimeGrid;
 
-class Entry
+/**
+ * An entry on a calendar
+ */
+class Entry extends TimeGrid\Entry
 {
-    protected $id;
-
+    /** @var ?string The description */
     protected $description;
-
-    protected $start;
-
-    protected $end;
-
-    protected $rrule;
-
-    /** @var Url */
-    protected $url;
-
-    protected $isOccurrence = false;
 
     /** @var Attendee */
     protected $attendee;
 
-    public function __construct(int $id)
-    {
-        $this->id = $id;
-    }
-
-    public function getId(): int
-    {
-        return $this->id;
-    }
-
+    /**
+     * Set the description
+     *
+     * @param ?string $description
+     *
+     * @return $this
+     */
     public function setDescription(?string $description): self
     {
         $this->description = $description;
@@ -44,71 +36,23 @@ class Entry
         return $this;
     }
 
+    /**
+     * Get the description
+     *
+     * @return ?string
+     */
     public function getDescription(): ?string
     {
         return $this->description;
     }
 
-    public function setStart(DateTime $start): self
-    {
-        $this->start = $start;
-
-        return $this;
-    }
-
-    public function getStart(): ?DateTime
-    {
-        return $this->start;
-    }
-
-    public function setEnd(DateTime $end): self
-    {
-        $this->end = $end;
-
-        return $this;
-    }
-
-    public function getEnd(): ?DateTime
-    {
-        return $this->end;
-    }
-
-    public function setRecurrencyRule(?string $rrule): self
-    {
-        $this->rrule = $rrule;
-
-        return $this;
-    }
-
-    public function getRecurrencyRule(): ?string
-    {
-        return $this->rrule;
-    }
-
-    public function setIsOccurrence(bool $state = true): self
-    {
-        $this->isOccurrence = $state;
-
-        return $this;
-    }
-
-    public function isOccurrence(): bool
-    {
-        return $this->isOccurrence;
-    }
-
-    public function setUrl(?Url $url): self
-    {
-        $this->url = $url;
-
-        return $this;
-    }
-
-    public function getUrl(): ?Url
-    {
-        return $this->url;
-    }
-
+    /**
+     * Set the attendee
+     *
+     * @param Attendee $attendee
+     *
+     * @return $this
+     */
     public function setAttendee(Attendee $attendee): self
     {
         $this->attendee = $attendee;
@@ -116,8 +60,99 @@ class Entry
         return $this;
     }
 
+    /**
+     * Get the attendee
+     *
+     * @return Attendee
+     */
     public function getAttendee(): Attendee
     {
         return $this->attendee;
+    }
+
+    public function getColor(int $transparency): string
+    {
+        return TimeGrid\Util::calculateEntryColor($this->getAttendee()->getName(), $transparency);
+    }
+
+    protected function assembleContainer(BaseHtmlElement $container): void
+    {
+        $title = new HtmlElement('div', Attributes::create(['class' => 'title']));
+        $content = new HtmlElement(
+            'div',
+            Attributes::create(['class' => 'content'])
+        );
+
+        $description = $this->getDescription();
+        $titleAttr = $this->getStart()->format('H:i')
+            . ' | ' . $this->getAttendee()->getName()
+            . ($description ? ': ' . $description : '');
+
+        $startText = null;
+        $endText = null;
+
+        $continuationType = $this->getContinuationType();
+        if ($continuationType === self::ACROSS_GRID) {
+            $startText = sprintf($this->translate('starts %s'), $this->getStart()->format('d/m/y'));
+            $endText = sprintf($this->translate('ends %s'), $this->getEnd()->format('d/m/y H:i'));
+        } elseif ($continuationType === self::FROM_PREV_GRID) {
+            $startText = sprintf($this->translate('starts %s'), $this->getStart()->format('d/m/y'));
+        } elseif ($continuationType === self::TO_NEXT_GRID) {
+            $endText = sprintf($this->translate('ends %s'), $this->getEnd()->format('d/m/y H:i'));
+        }
+
+        if ($startText) {
+            $titleAttr = $startText . ' ' . $titleAttr;
+        }
+
+        if ($endText) {
+            $titleAttr = $titleAttr . ' | ' . $endText;
+        }
+
+        $content->addAttributes(['title' => $titleAttr]);
+
+        if ($continuationType !== null) {
+            $title->addHtml(new HtmlElement(
+                'time',
+                Attributes::create([
+                    'datetime' => $this->getStart()->format(DateTimeInterface::ATOM)
+                ]),
+                Text::create($this->getStart()->format($startText ? 'd/m/y H:i' : 'H:i'))
+            ));
+        }
+
+        $title->addHtml(
+            new HtmlElement(
+                'span',
+                Attributes::create(['class' => 'attendee']),
+                $this->getAttendee()->getIcon(),
+                Text::create($this->getAttendee()->getName())
+            )
+        );
+
+        $content->addHtml($title);
+        if ($description) {
+            $content->addHtml(new HtmlElement(
+                'div',
+                Attributes::create(['class' => 'description']),
+                new HtmlElement(
+                    'p',
+                    Attributes::create(['title' => $description]),
+                    Text::create($description)
+                )
+            ));
+        }
+
+        if ($endText) {
+            $content->addHtml(
+                HtmlElement::create(
+                    'div',
+                    ['class' => 'ends-at'],
+                    $endText
+                )
+            );
+        }
+
+        $container->addHtml($content);
     }
 }

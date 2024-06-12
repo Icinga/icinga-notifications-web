@@ -6,6 +6,8 @@ namespace Icinga\Module\Notifications\Widget\Calendar;
 
 use DateInterval;
 use DateTime;
+use Icinga\Module\Notifications\Widget\TimeGrid\BaseGrid;
+use Icinga\Module\Notifications\Widget\TimeGrid\GridStep;
 use InvalidArgumentException;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
@@ -15,6 +17,8 @@ use Traversable;
 
 class DayGrid extends BaseGrid
 {
+    protected $flowOfTime = BaseGrid::VERTICAL_FLOW_OF_TIME;
+
     public function setGridStart(DateTime $start): BaseGrid
     {
         if ($start->format('H:i:s') !== '00:00:00') {
@@ -46,12 +50,14 @@ class DayGrid extends BaseGrid
 
     protected function createGridSteps(): Traversable
     {
-        $interval = new DateInterval('P1D');
+        $interval = new DateInterval('PT1H');
         $hourStartsAt = clone $this->getGridStart();
         for ($i = 0; $i < 24; $i++) {
-            yield $hourStartsAt;
+            $nextHour = (clone $hourStartsAt)->add($interval);
 
-            $hourStartsAt->add($interval);
+            yield new GridStep($hourStartsAt, $nextHour, 0, $i);
+
+            $hourStartsAt = $nextHour;
         }
     }
 
@@ -69,7 +75,6 @@ class DayGrid extends BaseGrid
         ];
 
         $currentDay = clone $this->getGridStart();
-        $interval = new DateInterval('P1D');
         $header->addHtml(new HtmlElement(
             'div',
             Attributes::create(['class' => 'column-title']),
@@ -113,8 +118,6 @@ class DayGrid extends BaseGrid
 
     protected function assemble()
     {
-        $this->getAttributes()->add('class', 'day');
-
         $this->addHtml(
             $this->createHeader(),
             $this->createSidebar(),

@@ -5,13 +5,14 @@
 namespace Icinga\Module\Notifications\Widget;
 
 use DateTime;
-use Icinga\Module\Notifications\Widget\Calendar\BaseGrid;
 use Icinga\Module\Notifications\Widget\Calendar\Controls;
 use Icinga\Module\Notifications\Widget\Calendar\DayGrid;
 use Icinga\Module\Notifications\Widget\Calendar\Entry;
 use Icinga\Module\Notifications\Widget\Calendar\MonthGrid;
-use Icinga\Module\Notifications\Widget\Calendar\Util;
 use Icinga\Module\Notifications\Widget\Calendar\WeekGrid;
+use Icinga\Module\Notifications\Widget\TimeGrid\BaseGrid;
+use Icinga\Module\Notifications\Widget\TimeGrid\EntryProvider;
+use Icinga\Module\Notifications\Widget\TimeGrid\GridStep;
 use IntlDateFormatter;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
@@ -19,12 +20,12 @@ use ipl\Html\FormattedString;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\I18n\StaticTranslator;
-use ipl\Scheduler\RRule;
+use ipl\Web\Style;
 use ipl\Web\Url;
 use LogicException;
 use Traversable;
 
-class Calendar extends BaseHtmlElement
+class Calendar extends BaseHtmlElement implements EntryProvider
 {
     /** @var string Mode to show an entire month */
     public const MODE_MONTH = 'month';
@@ -41,6 +42,9 @@ class Calendar extends BaseHtmlElement
 
     /** @var Controls */
     protected $controls;
+
+    /** @var Style */
+    protected $style;
 
     /** @var BaseGrid The grid implementation */
     protected $grid;
@@ -70,6 +74,22 @@ class Calendar extends BaseHtmlElement
         return $this->controls;
     }
 
+    public function setStyle(Style $style): self
+    {
+        $this->style = $style;
+
+        return $this;
+    }
+
+    public function getStyle(): Style
+    {
+        if ($this->style === null) {
+            $this->style = new Style();
+        }
+
+        return $this->style;
+    }
+
     public function setAddEntryUrl(?Url $url): self
     {
         $this->addEntryUrl = $url;
@@ -77,9 +97,13 @@ class Calendar extends BaseHtmlElement
         return $this;
     }
 
-    public function getAddEntryUrl(): ?Url
+    public function getStepUrl(GridStep $step): ?Url
     {
-        return $this->addEntryUrl;
+        if ($this->addEntryUrl === null) {
+            return null;
+        }
+
+        return $this->addEntryUrl->with('start', $step->getStart()->format('Y-m-d\TH:i:s'));
     }
 
     public function setUrl(?Url $url): self
@@ -89,12 +113,12 @@ class Calendar extends BaseHtmlElement
         return $this;
     }
 
-    public function prepareDayViewUrl(DateTime $date): ?Url
+    public function getExtraEntryUrl(GridStep $step): ?Url
     {
         return $this->url
             ? (clone $this->url)->overwriteParams([
                 'mode' => 'day',
-                'day'  => $date->format('Y-m-d')
+                'day'  => $step->getStart()->format('Y-m-d')
             ])
             : null;
     }
@@ -121,11 +145,14 @@ class Calendar extends BaseHtmlElement
     {
         if ($this->grid === null) {
             if ($this->getControls()->getViewMode() === self::MODE_MONTH) {
-                $this->grid = new MonthGrid($this, $this->getModeStart());
+                $this->grid = new MonthGrid($this, $this->getStyle(), $this->getModeStart());
+                $this->getAttributes()->get('class')->addValue('month');
             } elseif ($this->getControls()->getViewMode() === self::MODE_WEEK) {
-                $this->grid = new WeekGrid($this, $this->getModeStart());
+                $this->grid = new WeekGrid($this, $this->getStyle(), $this->getModeStart());
+                $this->getAttributes()->get('class')->addValue('week');
             } else {
-                $this->grid = new DayGrid($this, $this->getModeStart());
+                $this->grid = new DayGrid($this, $this->getStyle(), $this->getModeStart());
+                $this->getAttributes()->get('class')->addValue('day');
             }
         }
 
@@ -141,40 +168,7 @@ class Calendar extends BaseHtmlElement
 
     public function getEntries(): Traversable
     {
-        foreach ($this->entries as $entry) {
-            $rrule = $entry->getRecurrencyRule();
-            $start = $entry->getStart();
-            $end = $entry->getEnd();
-
-            if ($rrule) {
-                $grid = $this->getGrid();
-                $rrule = new RRule($rrule);
-                $rrule->startAt($entry->getStart());
-                $length = $start->diff($end);
-
-                $visibleHours = Util::diffHours($start, $grid->getGridEnd());
-                $limit = (int) ceil($visibleHours / (Util::diffHours($start, $end) ?: 0.5));
-                if ($limit > $visibleHours) {
-                    $limit = $visibleHours;
-                }
-
-                $recurrenceStart = (clone $grid->getGridStart())->sub($length);
-                foreach ($rrule->getNextRecurrences($recurrenceStart, $limit) as $recurrence) {
-                    $recurrenceEnd = (clone $recurrence)->add($length);
-                    $occurrence = (new Entry($entry->getId()))
-                        ->setDescription($entry->getDescription())
-                        ->setStart($recurrence)
-                        ->setEnd($recurrenceEnd)
-                        ->setIsOccurrence()
-                        ->setUrl($entry->getUrl())
-                        ->setAttendee($entry->getAttendee());
-
-                    yield $occurrence;
-                }
-            } else {
-                yield $entry;
-            }
-        }
+        yield from $this->entries;
     }
 
     protected function assemble()
@@ -201,7 +195,8 @@ class Calendar extends BaseHtmlElement
                 new HtmlElement('strong', null, Text::create($month)),
                 $modeStart->format('Y')
             )),
-            $this->getGrid()
+            $this->getGrid(),
+            $this->getStyle()
         );
     }
 }

@@ -21,38 +21,58 @@
   }
 }
 
-.entry-form {
-  fieldset[name="recipient"] > .control-group {
-    margin-bottom: 0;
-  }
+.rotation-config {
+  .rotation-mode {
+    width: 50em;
+    padding: .5em;
+    margin: 0 auto;
 
-  .term-input-area {
-    label.contact,
-    label.group {
-      display: inline-flex;
-      align-items: center;
-      position: relative;
-
-      &::before {
-        z-index: 1;
-        width: 2em;
-        position: absolute;
-        padding-left: .5em;
-        text-align: center;
-      }
-
-      input[type="text"] {
-        padding-left: 2em + 7/12em;
-      }
+    h2 {
+      margin: 0;
     }
 
-    label.contact {
-      &::before {
-        width: 1.5em;
-      }
+    ul {
+      display: flex;
+      justify-content: space-between;
 
-      input[type="text"] {
-        padding-left: 1.5em + 7/12em;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+
+      label {
+        display: block;
+        width: 12em;
+        text-align: center;
+
+        input {
+          display: none;
+        }
+
+        img {
+          width: 100%;
+        }
+
+        input:not(:checked) ~ img.checked,
+        input:checked ~ img.unchecked {
+          display: none;
+        }
+      }
+    }
+  }
+
+  .control-group {
+    align-items: baseline;
+  }
+
+  #first-handoff-description {
+    margin: 0 0 0 14em;
+  }
+
+  .term-input-area.read-only {
+    label.contact,
+    label.group {
+      input + i {
+        display: block;
       }
     }
   }
@@ -60,20 +80,28 @@
 
 /* Style */
 
-.entry-form {
-  label.contact,
-  label.group {
-    &::before {
-      .fa();
+.rotation-config {
+  label:not(:hover) {
+    &.contact input:not(:focus) ~ .icon::before {
+      content: "\f007";
+    }
+
+    &.group input:not(:focus) ~ .icon::before {
+      content: "\f0c0";
     }
   }
 
-  label.contact::before {
-    content: "\f007";
-  }
+  .rotation-mode {
+    border: 1px solid @gray-light;
+    .rounded-corners();
 
-  label.group::before {
-    content: "\f0c0";
+    &.disabled {
+      background-color: @gray-lighter;
+    }
+
+    img {
+      .box-shadow();
+    }
   }
 }
 

@@ -6,6 +6,8 @@ namespace Icinga\Module\Notifications\Widget\Calendar;
 
 use DateInterval;
 use DateTime;
+use Icinga\Module\Notifications\Widget\TimeGrid\BaseGrid;
+use Icinga\Module\Notifications\Widget\TimeGrid\GridStep;
 use InvalidArgumentException;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
@@ -33,20 +35,6 @@ class MonthGrid extends BaseGrid
         return (clone $this->getGridStart())->add(new DateInterval('P42D'));
     }
 
-    protected function assembleGridStep(BaseHtmlElement $content, DateTime $step): void
-    {
-        $content->addHtml(Text::create($step->format('j')));
-
-        $dayViewUrl = $this->calendar->prepareDayViewUrl($step);
-        if ($dayViewUrl !== null) {
-            $content->addHtml(
-                (new ExtraEntryCount(null, $dayViewUrl))
-                    ->setGrid($this)
-                    ->setGridStep($step)
-            );
-        }
-    }
-
     protected function getRowStartModifier(): int
     {
         return 2; // The month grid needs the first row for other things
@@ -62,19 +50,21 @@ class MonthGrid extends BaseGrid
         return 7 * 24;
     }
 
-    protected function getGridArea(int $rowStart, int $rowEnd, int $colStart, int $colEnd): array
-    {
-        return [$rowStart, $colStart, $rowEnd, $colEnd];
-    }
-
     protected function createGridSteps(): Traversable
     {
         $interval = new DateInterval('P1D');
         $currentDay = clone $this->getGridStart();
         for ($i = 0; $i < 42; $i++) {
-            yield $currentDay;
+            $nextDay = (clone $currentDay)->add($interval);
 
-            $currentDay->add($interval);
+            yield (new GridStep(
+                $currentDay,
+                $nextDay,
+                $i % 7,
+                (int) floor($i / 7)
+            ))->addHtml(Text::create($currentDay->format('j')));
+
+            $currentDay = $nextDay;
         }
     }
 
@@ -131,8 +121,6 @@ class MonthGrid extends BaseGrid
 
     protected function assemble()
     {
-        $this->getAttributes()->add('class', 'month');
-
         $this->addHtml(
             $this->createHeader(),
             $this->createSidebar(),

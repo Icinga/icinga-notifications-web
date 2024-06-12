@@ -8,6 +8,9 @@ use InvalidArgumentException;
 use ipl\Html\ValidHtml;
 use ipl\Web\Widget\Icon;
 
+/**
+ * An attendee of a calendar entry
+ */
 class Attendee
 {
     /** @var string */
@@ -49,17 +52,5 @@ class Attendee
         }
 
         return $icon;
-    }
-
-    public function setColor(string $color): self
-    {
-        $this->color = $color;
-
-        return $this;
-    }
-
-    public function getColor(): string
-    {
-        return $this->color;
     }
 }

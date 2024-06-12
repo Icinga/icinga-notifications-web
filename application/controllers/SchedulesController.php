@@ -59,7 +59,7 @@ class SchedulesController extends CompatController
         $this->addControl($sortControl);
         $this->addControl($limitControl);
         $this->addControl($searchBar);
-        $this->addControl(
+        $this->addContent(
             (new ButtonLink(
                 t('New Schedule'),
                 Links::scheduleAdd(),

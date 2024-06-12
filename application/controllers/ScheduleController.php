@@ -6,10 +6,10 @@ namespace Icinga\Module\Notifications\Controllers;
 
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
-use Icinga\Module\Notifications\Forms\EntryForm;
+use Icinga\Module\Notifications\Forms\MoveRotationForm;
+use Icinga\Module\Notifications\Forms\RotationConfigForm;
 use Icinga\Module\Notifications\Forms\ScheduleForm;
 use Icinga\Module\Notifications\Model\Schedule;
-use Icinga\Module\Notifications\Widget\Calendar\Controls;
 use Icinga\Module\Notifications\Widget\RecipientSuggestions;
 use Icinga\Module\Notifications\Widget\Schedule as ScheduleWidget;
 use ipl\Html\Form;
@@ -37,20 +37,30 @@ class ScheduleController extends CompatController
         $this->addTitleTab(sprintf(t('Schedule: %s'), $schedule->name));
 
         $this->controls->addHtml(
+            Html::tag('h2', null, $schedule->name),
             (new ButtonLink(
                 null,
                 Links::scheduleSettings($id),
                 'cog'
+            ))->openInModal(),
+            (new ButtonLink(
+                $this->translate('Add Rotation'),
+                Links::rotationAdd($id),
+                'plus'
             ))->openInModal()
         );
 
-        $this->controls->addAttributes(['class' => 'schedule-controls']);
+        $this->controls->addAttributes(['class' => 'schedule-detail-controls']);
 
-        $calendarControls = (new Controls())
+        $scheduleControls = (new ScheduleWidget\Controls())
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
+            ->populate(['mode' => $this->params->get('mode')])
+            ->on(Form::ON_SUCCESS, function (ScheduleWidget\Controls $controls) use ($id) {
+                $this->redirectNow(Links::schedule($id)->with(['mode' => $controls->getMode()]));
+            })
             ->handleRequest($this->getServerRequest());
 
-        $this->addContent(new ScheduleWidget($calendarControls, $schedule));
+        $this->addContent(new ScheduleWidget($schedule, $scheduleControls));
     }
 
     public function settingsAction(): void
@@ -99,24 +109,15 @@ class ScheduleController extends CompatController
         $this->addContent($form);
     }
 
-    public function addEntryAction(): void
+    public function addRotationAction(): void
     {
         $scheduleId = (int) $this->params->getRequired('schedule');
-        $start = $this->params->get('start');
 
-        $form = new EntryForm();
-        $form->setAction($this->getRequest()->getUrl()->getAbsoluteUrl());
+        $form = new RotationConfigForm($scheduleId, Database::get());
+        $form->setAction($this->getRequest()->getUrl()->setParam('showCompact')->getAbsoluteUrl());
         $form->setSuggestionUrl(Url::fromPath('notifications/schedule/suggest-recipient'));
-        $form->populate(['when' => ['start' => $start]]);
-        $form->on(EntryForm::ON_SUCCESS, function ($form) use ($scheduleId) {
-            $form->addEntry($scheduleId);
-            $this->sendExtraUpdates(['#col2']);
-            $this->redirectNow('__CLOSE__');
-        });
-        $form->on(EntryForm::ON_SENT, function () use ($form) {
-            if ($form->hasBeenCancelled()) {
-                $this->redirectNow('__CLOSE__');
-            } elseif (! $form->hasBeenSubmitted()) {
+        $form->on(RotationConfigForm::ON_SENT, function ($form) {
+            if (! $form->hasBeenSubmitted()) {
                 foreach ($form->getPartUpdates() as $update) {
                     if (! is_array($update)) {
                         $update = [$update];
@@ -126,44 +127,42 @@ class ScheduleController extends CompatController
                 }
             }
         });
+        $form->on(RotationConfigForm::ON_SUCCESS, function (RotationConfigForm $form) use ($scheduleId) {
+            $form->addRotation();
+            $this->closeModalAndRefreshRelatedView(Links::schedule($scheduleId));
+        });
 
         $form->handleRequest($this->getServerRequest());
 
         if (empty($this->parts)) {
-            $this->addPart(Html::tag(
-                'div',
-                ['id' => $this->getRequest()->getHeader('X-Icinga-Container')],
-                [
-                    Html::tag('h2', null, $this->translate('Add Entry')),
-                    $form
-                ]
-            ));
+            $this->setTitle($this->translate('Add Rotation'));
+            $this->addContent($form);
         }
     }
 
-    public function editEntryAction(): void
+    public function editRotationAction(): void
     {
-        $entryId = (int) $this->params->getRequired('id');
+        $id = (int) $this->params->getRequired('id');
         $scheduleId = (int) $this->params->getRequired('schedule');
 
-        $form = new EntryForm();
+        $form = new RotationConfigForm($scheduleId, Database::get());
+        $form->disableModeSelection();
         $form->setShowRemoveButton();
-        $form->loadEntry($scheduleId, $entryId);
+        $form->loadRotation($id);
         $form->setSubmitLabel($this->translate('Save Changes'));
-        $form->setAction($this->getRequest()->getUrl()->getAbsoluteUrl());
+        $form->setAction($this->getRequest()->getUrl()->setParam('showCompact')->getAbsoluteUrl());
         $form->setSuggestionUrl(Url::fromPath('notifications/schedule/suggest-recipient'));
-        $form->on(EntryForm::ON_SUCCESS, function () use ($form, $entryId, $scheduleId) {
-            $form->editEntry($scheduleId, $entryId);
-            $this->sendExtraUpdates(['#col2']);
-            $this->redirectNow('__CLOSE__');
+        $form->on(RotationConfigForm::ON_SUCCESS, function (RotationConfigForm $form) use ($id, $scheduleId) {
+            $form->editRotation($id);
+            $this->closeModalAndRefreshRelatedView(Links::schedule($scheduleId));
         });
-        $form->on(EntryForm::ON_SENT, function ($form) use ($entryId, $scheduleId) {
-            if ($form->hasBeenCancelled()) {
-                $this->redirectNow('__CLOSE__');
-            } elseif ($form->hasBeenRemoved()) {
-                $form->removeEntry($scheduleId, $entryId);
-                $this->sendExtraUpdates(['#col2']);
-                $this->redirectNow('__CLOSE__');
+        $form->on(RotationConfigForm::ON_SENT, function (RotationConfigForm $form) use ($id, $scheduleId) {
+            if ($form->hasBeenRemoved()) {
+                $form->removeRotation($id);
+                $this->closeModalAndRefreshRelatedView(Links::schedule($scheduleId));
+            } elseif ($form->hasBeenWiped()) {
+                $form->wipeRotation();
+                $this->closeModalAndRefreshRelatedView(Links::schedule($scheduleId));
             } elseif (! $form->hasBeenSubmitted()) {
                 foreach ($form->getPartUpdates() as $update) {
                     if (! is_array($update)) {
@@ -178,15 +177,23 @@ class ScheduleController extends CompatController
         $form->handleRequest($this->getServerRequest());
 
         if (empty($this->parts)) {
-            $this->addPart(Html::tag(
-                'div',
-                ['id' => $this->getRequest()->getHeader('X-Icinga-Container')],
-                [
-                    Html::tag('h2', null, $this->translate('Edit Entry')),
-                    $form
-                ]
-            ));
+            $this->setTitle($this->translate('Edit Rotation'));
+            $this->addContent($form);
         }
+    }
+
+    public function moveRotationAction(): void
+    {
+        $this->assertHttpMethod('POST');
+
+        $form = new MoveRotationForm(Database::get());
+        $form->on(MoveRotationForm::ON_SUCCESS, function (MoveRotationForm $form) {
+            $this->redirectNow(Links::schedule($form->getScheduleId()));
+        });
+
+        $form->handleRequest($this->getServerRequest());
+
+        $this->addContent($form);
     }
 
     public function suggestRecipientAction(): void

@@ -1,22 +1,20 @@
 /* Layout */
 
-.controls {
-  &.schedule-controls {
-    .box-shadow(0, 0, 0, 1px, @gray-lighter);
-    z-index: 1; // The content may clip, this ensures the separator is always visible
+.add-schedule-control {
+  margin-bottom: 1em;
+}
+
+.schedule-detail-controls {
+  .box-shadow(0, 0, 0, 1px, @gray-lighter);
+  z-index: 2; // The content may clip, this ensures the separator and dropdown is always visible
+  padding-bottom: .5em;
+
+  h2 {
+    display: inline;
   }
 
-  .schedule-control {
-    display: flex;
-    padding-bottom: .5em;
-
-    > *:not(:last-child) {
-      margin-right: .5em;
-    }
-  }
-
-  .add-schedule-control {
-    margin-left: auto;
+  > a:last-of-type {
+    float: right;
   }
 }
 
@@ -26,32 +24,50 @@
   height: 100%;
 
   .schedule-header {
+    display: flex;
     margin-bottom: 1em;
+    justify-content: flex-end;
+
+    .view-mode-switcher {
+      margin-bottom: 0;
+
+      label {
+        min-width: 6em;
+        text-align: center;
+      }
+    }
   }
 }
 
 .schedule-container {
   flex: 1 1 auto;
   display: flex;
+  overflow: auto;
 
   .calendar {
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
 
-    .calendar-grid {
+    .time-grid {
       flex: 1 1 auto;
       height: 0;
     }
   }
 
-  .entry-form:not(:empty) {
+  .timeline {
     flex: 1 1 auto;
-    min-width: 30%;
-    padding-left: 1em;
-
-    .icinga-form {
-      width: 100%;
-    }
   }
+}
+
+/* Design */
+
+.schedule .entry.highlighted {
+  outline: 2px solid var(--entry-border-color);
+  outline-offset: 1px;
+}
+
+.schedule .step.highlighted {
+  background-color: @gray-lighter;
+  border-color: @gray-light;
 }
