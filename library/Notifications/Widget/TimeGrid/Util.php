@@ -72,7 +72,7 @@ final class Util
             //       so if 500 thousand colors of these 16.7 millions are so similar that we can't distinguish them,
             //       there's no need for such a high variance. Hence we'd still need to partition the colors in a way
             //       that they are distinct enough.
-            $hash = hexdec(hash('sha256', $text));
+            $hash = hexdec(substr(hash('sha256', $text), 28, 8));
             // Limit the hue to a maximum of 360 as it's HSL's maximum of 360 degrees
             $h = (int) fmod($hash, 359.0); // TODO: Check if 359 is really of advantage here, instead of 360
             // The hue is already at least 1 degree off to every other, using a limited set of saturation values
