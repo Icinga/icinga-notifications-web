@@ -231,9 +231,10 @@ class ObjectSuggestions extends Suggestions
 
     protected function matchSuggestion($path, $label, $searchTerm)
     {
-        if (preg_match('/[_.](id)$/', $path)) {
-            // Only suggest exotic columns if the user knows the full column path
-            return substr($path, strrpos($path, '.') + 1) === trim($searchTerm, ' *');
+        if (preg_match('/[_.](id|uuid)$/', $path)) {
+            // Only suggest exotic columns if the user knows about them
+            $trimmedSearch = trim($searchTerm, ' *');
+            return substr($path, -strlen($trimmedSearch)) === $trimmedSearch;
         }
 
         return parent::matchSuggestion($path, $label, $searchTerm);
