@@ -103,7 +103,6 @@ class MemberSuggestions extends BaseHtmlElement
                             'value'       => $contact->full_name,
                             'data-label'  => $contact->full_name,
                             'data-search' => $contact->id,
-                            'data-color'  => $contact->color,
                             'data-class'  => 'contact'
                         ])
                     )

@@ -13,7 +13,6 @@ use ipl\Orm\Relations;
  *
  * @param int $id
  * @param string $name
- * @param string $color
  *
  * @property Query | Contact $contact
  * @property Query | RuleEscalationRecipient $rule_escalation_recipient
@@ -34,8 +33,7 @@ class Contactgroup extends Model
     public function getColumns(): array
     {
         return [
-            'name',
-            'color'
+            'name'
         ];
     }
 
