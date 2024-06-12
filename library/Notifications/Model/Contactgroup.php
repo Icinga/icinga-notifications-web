@@ -39,6 +39,16 @@ class Contactgroup extends Model
         ];
     }
 
+    public function getColumnDefinitions(): array
+    {
+        return ['name' => t('Name')];
+    }
+
+    public function getSearchColumns(): array
+    {
+        return ['name'];
+    }
+
     public function createRelations(Relations $relations): void
     {
         $relations->hasMany('rule_escalation_recipient', RuleEscalationRecipient::class)

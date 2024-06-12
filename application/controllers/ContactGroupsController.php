@@ -8,6 +8,7 @@ use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\ContactGroupForm;
 use Icinga\Module\Notifications\Model\Contactgroup;
+use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Widget\ItemList\ContactGroupList;
 use Icinga\Module\Notifications\Widget\MemberSuggestions;
 use Icinga\Web\Notification;
@@ -18,6 +19,8 @@ use ipl\Stdlib\Filter;
 use ipl\Web\Common\BaseItemList;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
+use ipl\Web\Control\LimitControl;
+use ipl\Web\Control\SortControl;
 use ipl\Web\Filter\QueryString;
 use ipl\Web\Widget\ButtonLink;
 use ipl\Web\Widget\Tabs;
@@ -120,6 +123,28 @@ class ContactGroupsController extends CompatController
 
         $this->addContent($form);
         $this->setTitle(t('Add Contact Group'));
+    }
+
+    public function completeAction(): void
+    {
+        $suggestions = new ObjectSuggestions();
+        $suggestions->setModel(Contactgroup::class);
+        $suggestions->forRequest($this->getServerRequest());
+        $this->getDocument()->add($suggestions);
+    }
+
+    public function searchEditorAction(): void
+    {
+        $editor = $this->createSearchEditor(
+            Contactgroup::on(Database::get()),
+            [
+                LimitControl::DEFAULT_LIMIT_PARAM,
+                SortControl::DEFAULT_SORT_PARAM,
+            ]
+        );
+
+        $this->getDocument()->add($editor);
+        $this->setTitle($this->translate('Adjust Filter'));
     }
 
     public function suggestMemberAction(): void
