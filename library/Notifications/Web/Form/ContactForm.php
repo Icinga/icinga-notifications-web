@@ -161,31 +161,17 @@ class ContactForm extends CompatForm
     public function populate($values)
     {
         if ($values instanceof Contact) {
-            $formValues = [];
-            if (! isset($formValues['contact'])) {
-                $formValues['contact'] = [
+            $formValues = [
+                'contact' => [
                     'full_name'          => $values->full_name,
                     'username'           => $values->username,
                     'color'              => $values->color,
                     'default_channel_id' => $values->default_channel_id
-                ];
-            }
+                ]
+            ];
 
             foreach ($values->contact_address as $contactInfo) {
-                if (! isset($formValues['contact_address'])) {
-                    $formValues['contact_address'] = [
-                        'email'       => null,
-                        'rocketchat' => null
-                    ];
-                }
-
-                if ($contactInfo->type === 'email') {
-                    $formValues['contact_address']['email' ] = $contactInfo->address;
-                }
-
-                if ($contactInfo->type === 'rocketchat') {
-                    $formValues['contact_address']['rocketchat'] = $contactInfo->address;
-                }
+                $formValues['contact_address'][$contactInfo->type] = $contactInfo->address;
             }
 
             $values = $formValues;
@@ -196,7 +182,12 @@ class ContactForm extends CompatForm
         return $this;
     }
 
-    public function addOrUpdateContact()
+    /**
+     * Add or update the contact and its corresponding contact addresses
+     *
+     * @return void
+     */
+    public function addOrUpdateContact(): void
     {
         $contactInfo = $this->getValues();
 
@@ -208,22 +199,27 @@ class ContactForm extends CompatForm
         $addressFromDb = [];
         if ($this->contactId === null) {
             $this->db->insert('contact', $contact);
-
             $this->contactId = $this->db->lastInsertId();
         } else {
-            $this->db->update('contact', $contact, ['id = ?' => $this->contactId]);
+            $contactFromDb = (array) $this->db->fetchOne(
+                Contact::on($this->db)->withoutColumns(['id'])
+                    ->filter(Filter::equal('id', $this->contactId))
+                    ->assembleSelect()
+            );
 
-            $addressObjects = ContactAddress::on($this->db);
+            if (! empty(array_diff_assoc($contact, $contactFromDb))) {
+                $this->db->update('contact', $contact, ['id = ?' => $this->contactId]);
+            }
 
-            $addressObjects->filter(Filter::equal('contact_id', $this->contactId));
+            $addressObjects = (ContactAddress::on($this->db))
+                ->filter(Filter::equal('contact_id', $this->contactId));
 
             foreach ($addressObjects as $addressRow) {
-                    $addressFromDb[$addressRow->type] = [$addressRow->id, $addressRow->address];
+                $addressFromDb[$addressRow->type] = [$addressRow->id, $addressRow->address];
             }
         }
 
-        $addr = ! empty($addressFromDb) ? $addressFromDb : $addressFromForm;
-        foreach ($addr as $type => $value) {
+        foreach ($addressFromForm as $type => $value) {
             $this->insertOrUpdateAddress($type, $addressFromForm, $addressFromDb);
         }
 
