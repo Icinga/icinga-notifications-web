@@ -33,13 +33,17 @@ class Contactgroup extends Model
     public function getColumns(): array
     {
         return [
-            'name'
+            'name',
+            'external_uuid'
         ];
     }
 
     public function getColumnDefinitions(): array
     {
-        return ['name' => t('Name')];
+        return [
+            'name'          => t('Name'),
+            'external_uuid' => t('UUID')
+        ];
     }
 
     public function getSearchColumns(): array

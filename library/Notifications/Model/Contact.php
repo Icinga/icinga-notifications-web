@@ -29,15 +29,17 @@ class Contact extends Model
         return [
             'full_name',
             'username',
-            'default_channel_id'
+            'default_channel_id',
+            'external_uuid'
         ];
     }
 
     public function getColumnDefinitions()
     {
         return [
-            'full_name' => t('Full Name'),
-            'username'  => t('Username')
+            'full_name'     => t('Full Name'),
+            'username'      => t('Username'),
+            'external_uuid' => t('UUID')
         ];
     }
 
