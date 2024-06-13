@@ -173,13 +173,7 @@ class ContactGroupForm extends CompatForm
 
         $this->db->beginTransaction();
 
-        $this->db->insert(
-            'contactgroup',
-            [
-                'name'  => trim($data['group_name']),
-                'color' => '#000000'
-            ]
-        );
+        $this->db->insert('contactgroup', ['name' => trim($data['group_name'])]);
 
         $groupIdentifier = $this->db->lastInsertId();
 

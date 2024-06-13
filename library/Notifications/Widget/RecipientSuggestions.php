@@ -119,7 +119,6 @@ class RecipientSuggestions extends BaseHtmlElement
                         'value' => $contact->full_name,
                         'data-label' => $contact->full_name,
                         'data-search' => 'contact:' . $contact->id,
-                        'data-color' => $contact->color,
                         'data-class' => 'contact'
                     ])
                 )
@@ -137,7 +136,6 @@ class RecipientSuggestions extends BaseHtmlElement
                         'value' => $group->name,
                         'data-label' => $group->name,
                         'data-search' => 'group:' . $group->id,
-                        'data-color' => $group->color,
                         'data-class' => 'group'
                     ])
                 )

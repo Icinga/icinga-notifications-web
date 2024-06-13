@@ -111,13 +111,6 @@ class ContactForm extends CompatForm
                 })]
             ]
         )->addElement(
-            'color',
-            'color',
-            [
-                'label' => $this->translate('Color'),
-                'required' => true
-            ]
-        )->addElement(
             'select',
             'default_channel_id',
             [
@@ -165,7 +158,6 @@ class ContactForm extends CompatForm
                 'contact' => [
                     'full_name'          => $values->full_name,
                     'username'           => $values->username,
-                    'color'              => $values->color,
                     'default_channel_id' => $values->default_channel_id
                 ]
             ];

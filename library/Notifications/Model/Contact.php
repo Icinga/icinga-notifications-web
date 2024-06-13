@@ -26,7 +26,6 @@ class Contact extends Model
         return [
             'full_name',
             'username',
-            'color',
             'default_channel_id'
         ];
     }
@@ -35,8 +34,7 @@ class Contact extends Model
     {
         return [
             'full_name' => t('Full Name'),
-            'username'  => t('Username'),
-            'color'     => t('Color')
+            'username'  => t('Username')
         ];
     }
 
