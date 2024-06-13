@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="us-ascii" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" contentStyleType="text/css" height="488px" preserveAspectRatio="none"
+     style="width:858px;height:488px;background:#24273A;" version="1.1" viewBox="0 0 858 488" width="858px"
+     zoomAndPan="magnify">
+    <defs/>
+    <g>
+        <rect fill="#24273A" height="488" style="stroke:none;stroke-width:1.0;" width="858" x="0"
+              y="0"/><!--cluster B-->
+        <g id="cluster_B">
+            <path d="M554.5,127 L612.5,127 A2.25,2.25 0 0 1 614,128.5 L621,146.9688 L849.5,146.9688 A1.5,1.5 0 0 1 851,148.4688 L851,318.5 A1.5,1.5 0 0 1 849.5,320 L554.5,320 A1.5,1.5 0 0 1 553,318.5 L553,128.5 A1.5,1.5 0 0 1 554.5,127 "
+                  fill="#24273A" style="stroke:#CAD3F5;stroke-width:1.5;"/>
+            <line style="stroke:#CAD3F5;stroke-width:1.5;" x1="553" x2="621" y1="146.9688" y2="146.9688"/>
+            <text fill="#CAD3F5" font-family="Helvetica" font-size="12" font-weight="bold" lengthAdjust="spacing"
+                  textLength="55" x="557" y="140.1387">Browser
+            </text>
+        </g><!--cluster S-->
+        <g id="cluster_S">
+            <path d="M634.5,383 L682.5,383 A2.25,2.25 0 0 1 684,384.5 L691,402.9688 L768.5,402.9688 A1.5,1.5 0 0 1 770,404.4688 L770,479.5 A1.5,1.5 0 0 1 768.5,481 L634.5,481 A1.5,1.5 0 0 1 633,479.5 L633,384.5 A1.5,1.5 0 0 1 634.5,383 "
+                  fill="#24273A" style="stroke:#CAD3F5;stroke-width:1.5;"/>
+            <line style="stroke:#CAD3F5;stroke-width:1.5;" x1="633" x2="691" y1="402.9688" y2="402.9688"/>
+            <text fill="#CAD3F5" font-family="Helvetica" font-size="12" font-weight="bold" lengthAdjust="spacing"
+                  textLength="45" x="637" y="396.1387">Server
+            </text>
+        </g><!--entity Tab ..-->
+        <g id="elem_Tab ..">
+            <rect fill="#363A4F" height="33.9688" rx="1.5" ry="1.5" style="stroke:#B7BDF8;stroke-width:0.5;" width="54"
+                  x="773" y="167"/>
+            <text fill="#CAD3F5" font-family="Helvetica" font-size="12" lengthAdjust="spacing" textLength="34" x="783"
+                  y="188.1387">Tab ..
+            </text>
+        </g><!--entity ServiceWorker-->
+        <g id="elem_ServiceWorker">
+            <rect fill="#363A4F" height="33.9688" rx="1.5" ry="1.5" style="stroke:#B7BDF8;stroke-width:0.5;" width="107"
+                  x="657.5" y="262"/>
+            <text fill="#CAD3F5" font-family="Helvetica" font-size="12" lengthAdjust="spacing" textLength="87" x="667.5"
+                  y="283.1387">ServiceWorker
+            </text>
+        </g><!--entity Tab y-->
+        <g id="elem_Tab y">
+            <rect fill="#363A4F" height="33.9688" rx="1.5" ry="1.5" style="stroke:#B7BDF8;stroke-width:0.5;" width="53"
+                  x="684.5" y="167"/>
+            <text fill="#CAD3F5" font-family="Helvetica" font-size="12" lengthAdjust="spacing" textLength="33" x="694.5"
+                  y="188.1387">Tab y
+            </text>
+        </g><!--entity Tab x-->
+        <g id="elem_Tab x">
+            <rect fill="#363A4F" height="33.9688" rx="1.5" ry="1.5" style="stroke:#B7BDF8;stroke-width:0.5;" width="53"
+                  x="596.5" y="167"/>
+            <text fill="#CAD3F5" font-family="Helvetica" font-size="12" lengthAdjust="spacing" textLength="33" x="606.5"
+                  y="188.1387">Tab x
+            </text>
+        </g><!--entity Daemon-->
+        <g id="elem_Daemon">
+            <rect fill="#363A4F" height="33.9688" rx="1.5" ry="1.5" style="stroke:#B7BDF8;stroke-width:0.5;" width="70"
+                  x="676" y="423"/>
+            <text fill="#CAD3F5" font-family="Helvetica" font-size="12" lengthAdjust="spacing" textLength="50" x="686"
+                  y="444.1387">Daemon
+            </text>
+        </g>
+        <g id="elem_GMN13">
+            <path d="M6,429.5 L6,450.4688 A1.5,1.5 0 0 0 7.5,451.9688 L604.5,451.9688 A1.5,1.5 0 0 0 606,450.4688 L606,438 L596,428 L7.5,428 A1.5,1.5 0 0 0 6,429.5 "
+                  fill="#EED49F" style="stroke:#24273A;stroke-width:0.5;"/>
+            <path d="M596,428 L596,437.25 A0.75,0.75 0 0 0 596.75,438 L606,438 L596,428 " fill="#EED49F"
+                  style="stroke:#24273A;stroke-width:1.0;"/>
+            <text fill="#24273A" font-family="Helvetica" font-size="12" lengthAdjust="spacing" textLength="579" x="12"
+                  y="444.1387">The daemon communicates with the forwarded event-stream requests in an unidirectional
+                way.
+            </text>
+        </g>
+        <g id="elem_NB">
+            <path d="M337.5,7.5 L337.5,70.375 A1.5,1.5 0 0 0 339,71.875 L783,71.875 A1.5,1.5 0 0 0 784.5,70.375 L784.5,16 L774.5,6 L339,6 A1.5,1.5 0 0 0 337.5,7.5 "
+                  fill="#EED49F" style="stroke:#24273A;stroke-width:0.5;"/>
+            <path d="M774.5,6 L774.5,15.25 A0.75,0.75 0 0 0 775.25,16 L784.5,16 L774.5,6 " fill="#EED49F"
+                  style="stroke:#24273A;stroke-width:1.0;"/>
+            <text fill="#24273A" font-family="Helvetica" font-size="12" lengthAdjust="spacing" textLength="115"
+                  x="343.5" y="22.1387">Browser consists of
+            </text>
+            <text fill="#24273A" font-family="Helvetica" font-size="12" font-weight="bold" lengthAdjust="spacing"
+                  textLength="9" x="462.5" y="22.1387">n
+            </text>
+            <text fill="#24273A" font-family="Helvetica" font-size="12" lengthAdjust="spacing" textLength="96" x="475.5"
+                  y="22.1387">amount of tabs.
+            </text>
+            <text fill="#24273A" font-family="Helvetica" font-size="12" lengthAdjust="spacing" textLength="426"
+                  x="343.5" y="36.1074">The service worker communicates with the tabs in a bidirectional way.
+            </text>
+            <text fill="#24273A" font-family="Helvetica" font-size="12" lengthAdjust="spacing" textLength="355"
+                  x="343.5" y="50.0762">It also forwards event-stream request towards the daemon
+            </text>
+            <text fill="#24273A" font-family="Helvetica" font-size="12" lengthAdjust="spacing" textLength="357"
+                  x="343.5" y="64.0449">(but limits it to two concurrent event-stream connections).
+            </text>
+        </g><!--link Tab .. to ServiceWorker-->
+        <g id="link_Tab .._ServiceWorker">
+            <path d="M780.3511,205.5343 C764.0111,222.6043 746.7386,240.6553 730.4686,257.6553 " fill="none"
+                  id="Tab ..-ServiceWorker" style="stroke:#F5BDE6;stroke-width:1.0;"/>
+            <polygon fill="#F5BDE6"
+                     points="784.5,201.2,775.387,204.9355,781.0425,204.8119,781.1661,210.4674,784.5,201.2"
+                     style="stroke:#F5BDE6;stroke-width:1.0;"/>
+            <polygon fill="#F5BDE6"
+                     points="726.32,261.99,735.4326,258.2537,729.7771,258.3778,729.653,252.7223,726.32,261.99"
+                     style="stroke:#F5BDE6;stroke-width:1.0;"/>
+        </g><!--link Tab y to ServiceWorker-->
+        <g id="link_Tab y_ServiceWorker">
+            <path d="M711,207.2 C711,224.27 711,238.99 711,255.99 " fill="none" id="Tab y-ServiceWorker"
+                  style="stroke:#F5BDE6;stroke-width:1.0;"/>
+            <polygon fill="#F5BDE6" points="711,201.2,707,210.2,711,206.2,715,210.2,711,201.2"
+                     style="stroke:#F5BDE6;stroke-width:1.0;"/>
+            <polygon fill="#F5BDE6" points="711,261.99,715,252.99,711,256.99,707,252.99,711,261.99"
+                     style="stroke:#F5BDE6;stroke-width:1.0;"/>
+        </g><!--link Tab x to ServiceWorker-->
+        <g id="link_Tab x_ServiceWorker">
+            <path d="M642.4536,205.5585 C658.6036,222.6285 675.6356,240.6323 691.7256,257.6323 " fill="none"
+                  id="Tab x-ServiceWorker" style="stroke:#F5BDE6;stroke-width:1.0;"/>
+            <polygon fill="#F5BDE6"
+                     points="638.33,201.2,641.6097,210.4867,641.7663,204.8321,647.421,204.9887,638.33,201.2"
+                     style="stroke:#F5BDE6;stroke-width:1.0;"/>
+            <polygon fill="#F5BDE6"
+                     points="695.85,261.99,692.5685,252.7039,692.413,258.3586,686.7583,258.2031,695.85,261.99"
+                     style="stroke:#F5BDE6;stroke-width:1.0;"/>
+        </g><!--reverse link ServiceWorker to Daemon-->
+        <g id="link_ServiceWorker_Daemon">
+            <path d="M711,302.12 C711,332.6 711,392.33 711,422.84 " fill="none" id="ServiceWorker-backto-Daemon"
+                  style="stroke:#F5BDE6;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/>
+            <polygon fill="#F5BDE6" points="711,296.12,707,305.12,711,301.12,715,305.12,711,296.12"
+                     style="stroke:#F5BDE6;stroke-width:1.0;"/>
+            <text fill="#CAD3F5" font-family="Helvetica" font-size="12" lengthAdjust="spacing" textLength="80" x="712"
+                  y="356.1387">event-stream
+            </text>
+        </g><!--link GMN13 to S-->
+        <g id="link_GMN13_S">
+            <path d="M606.32,440 C612.01,440 617.7,440 623.39,440 C626.235,440 629.08,440 631.925,440 C632.2806,440 632.6363,440 632.9919,440 "
+                  fill="none" id="GMN13-S" style="stroke:#F5BDE6;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/>
+        </g><!--link NB to B-->
+        <g id="link_NB_B">
+            <path d="M561,72.09 C561,82.465 561,94.4506 561,106.6258 C561,112.7134 561,118.8483 561,124.853 C561,125.2283 561,125.6031 561,125.9773 C561,126.1645 561,126.3514 561,126.5383 "
+                  fill="none" id="NB-B" style="stroke:#F5BDE6;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/>
+        </g><!--SRC=[VL8zRzim4DtrArupjOEaFJ0y25swP7603a664tMs2Oj7XJn6DOh-zvva9qZQfXjnx-vzWP-ykB4CZAFgb6_RDj7S7BmUIryo9nT5MRHnCRJYObQglMiTwJGLvxpKWPmxUj9OJoE9bZ3MUkJ0RI0lxVfi9fjM-UHbeaG1nZL5CTQTdaT6OgSaXv6hQY9teWFZfajnDlKRK4Q7dnNmS4yzckOHcxhUuc77wTax_XxJYTFZ2tx-F_pZ0_ZN6-K5kWhlBi9VYKEKTUkFGsoQvXN7BVZPGjLP4rEeAedA67clY7liZEd-o1ZMvQM2KCHRZvmnMzkmfh2FQQOqyF2EoGfwAfmrmmj8O7U3NqhpKMZ4JEUcOXcmw5rLpVnTPuhN6arEibyOpCcctygcxRUW48kivfJwt5mDvaj2p6l43umk1wiRz7zx0RufQCpn9K_-Pnnel83wMekTVkwBOlJ1Bt6N7UWS5_-kf6GaxwbiBXVn_ELj2NUTVHLqlm40]-->
+    </g>
+</svg>

@@ -2,7 +2,9 @@
 
 /* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-/** @var \Icinga\Application\Modules\Module $this */
+use Icinga\Application\Modules\Module;
+
+/** @var Module $this */
 
 $section = $this->menuSection(
     N_('Notifications'),
@@ -92,3 +94,5 @@ $cssFiles = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(
 foreach ($cssFiles as $path) {
     $this->provideCssFile(ltrim(substr($path, strlen($cssDirectory)), DIRECTORY_SEPARATOR));
 }
+
+$this->provideJsFile('notifications.js');

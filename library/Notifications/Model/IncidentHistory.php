@@ -5,11 +5,14 @@
 namespace Icinga\Module\Notifications\Model;
 
 use DateTime;
+use Icinga\Module\Notifications\Common\Database;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
+use ipl\Sql\Connection;
+use ipl\Sql\Select;
 
 /**
  * IncidentHistory
@@ -103,6 +106,19 @@ class IncidentHistory extends Model
     public function getDefaultSort()
     {
         return ['incident_history.time desc, incident_history.type desc'];
+    }
+
+    public static function on(Connection $db)
+    {
+        $query = parent::on($db);
+
+        $query->on(Query::ON_SELECT_ASSEMBLED, function (Select $select) use ($query) {
+            if (isset($query->getUtilize()['incident_history.incident.object.object_id_tag'])) {
+                Database::registerGroupBy($query, $select);
+            }
+        });
+
+        return $query;
     }
 
     public function createRelations(Relations $relations)
