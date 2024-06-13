@@ -58,6 +58,18 @@
   }
 }
 
+.timeline.minimal-layout{
+  position: relative;
+
+  .empty-notice {
+    position: absolute;
+    width: 100%;
+    line-height: 1.2;
+    text-align: center;
+    z-index: 1
+  }
+}
+
 /* Design */
 
 .timeline {
@@ -95,4 +107,8 @@
     font-size: .75em;
     opacity: .8;
   }
+}
+
+.timeline.minimal-layout .empty-notice {
+  font-size: 1.25em;
 }
