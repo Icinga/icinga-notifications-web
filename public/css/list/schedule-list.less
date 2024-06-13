@@ -1,0 +1,62 @@
+// Layout
+.item-list.schedule-list {
+  .list-item {
+    .main {
+      display: flex;
+      align-items: center;
+      header .title {
+        width: 10em;
+        display: inline-flex;
+      }
+
+      .caption {
+        display: flex;
+        margin-left: 0.5em;
+        width: 100%;
+        height: 2em;
+        align-items: center;
+
+        > .timeline {
+          flex-grow: 1;
+        }
+      }
+    }
+
+    .time-grid {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr);
+
+      .grid {
+        border-width: 0 0 0 2px;
+      }
+
+      .grid,
+      .overlay {
+        grid-area: ~"1 / 1 / 2 / 2";
+
+        .entry {
+          margin: 0;
+
+          .title {
+            align-items: center;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Design
+.schedule-list {
+  .time-grid {
+    .grid {
+      .step {
+        border-bottom: unset;
+      }
+    }
+  }
+
+  .time-grid:after {
+    display: none;
+  }
+}

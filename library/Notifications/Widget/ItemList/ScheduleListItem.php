@@ -4,10 +4,15 @@
 
 namespace Icinga\Module\Notifications\Widget\ItemList;
 
+use DateTime;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Schedule;
+use Icinga\Module\Notifications\Widget\Timeline;
+use Icinga\Module\Notifications\Widget\Timeline\Rotation;
+use Icinga\Util\Csp;
 use ipl\Html\BaseHtmlElement;
 use ipl\Web\Common\BaseListItem;
+use ipl\Web\Style;
 use ipl\Web\Widget\Link;
 
 /**
@@ -41,8 +46,27 @@ class ScheduleListItem extends BaseListItem
         $header->addHtml($this->createTitle());
     }
 
+    protected function assembleCaption(BaseHtmlElement $caption): void
+    {
+        // Number of days is set to 7, since default mode for schedule is week
+        // and the start day should be the current day
+        $timeline = (new Timeline((new DateTime())->setTime(0, 0), 7))
+            ->minimalLayout()
+            ->setStyle(
+                (new Style())
+                    ->setNonce(Csp::getStyleNonce())
+                    ->setModule('notifications')
+            );
+
+        foreach ($this->item->rotation->with('timeperiod')->orderBy('first_handoff', SORT_DESC) as $rotation) {
+            $timeline->addRotation(new Rotation($rotation));
+        }
+
+        $caption->addHtml($timeline);
+    }
+
     protected function assembleMain(BaseHtmlElement $main): void
     {
-        $main->addHtml($this->createHeader());
+        $main->addHtml($this->createHeader(), $this->createCaption());
     }
 }

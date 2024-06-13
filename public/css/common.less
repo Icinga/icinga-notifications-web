@@ -12,6 +12,33 @@
   }
 }
 
+.schedules-header {
+  margin-left: 12em;
+  width: ~"calc(100% - 12em)";
+
+  .header {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(2em, 1fr));
+    text-transform: uppercase;
+
+    .column-title {
+      text-align: center;
+      border-right: 1px solid @gray-lighter;
+      .date {
+        font-size: 0.75em;
+      }
+
+      .day-name {
+        color: @text-color-light;
+      }
+    }
+
+    .column-title:first-of-type {
+      border-left: 2px solid @gray-lighter
+    }
+  }
+}
+
 .controls {
   &.contactgroup-detail,
   &.event-detail,
