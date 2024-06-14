@@ -18,7 +18,18 @@ use ipl\Web\Compat\CompatController;
 use ipl\Web\Filter\QueryString;
 use ipl\Web\Url;
 use Ramsey\Uuid\Uuid;
+use stdClass;
 
+/**
+ * @phpstan-type requestBody array{
+ *       id: string,
+ *       full_name: string,
+ *       default_channel: string,
+ *       username?: string,
+ *       groups?: string[],
+ *       addresses?: array<string,string>
+ *   }
+ */
 class ApiV1ContactsController extends CompatController
 {
     private const ENDPOINT = 'notifications/api/v1/contacts';
@@ -46,6 +57,8 @@ class ApiV1ContactsController extends CompatController
         $results = [];
         $responseCode = 200;
         $db = Database::get();
+
+        /** @var ?string $identifier */
         $identifier = $request->getParam('identifier');
 
         if ($identifier && ! Uuid::isValid($identifier)) {
@@ -93,6 +106,8 @@ class ApiV1ContactsController extends CompatController
 
                 if ($identifier !== null) {
                     $stmt->where(['external_uuid = ?' => $identifier]);
+
+                    /** @var stdClass|false $result */
                     $result = $db->fetchOne($stmt);
 
                     if ($result === false) {
@@ -138,6 +153,7 @@ class ApiV1ContactsController extends CompatController
 
                 $res = $db->select($stmt->offset($offset));
                 do {
+                    /** @var stdClass $row */
                     foreach ($res as $i => $row) {
                         if ($row->username === null) {
                             unset($row->username);
@@ -174,9 +190,7 @@ class ApiV1ContactsController extends CompatController
                     $this->httpBadRequest('Cannot filter on POST');
                 }
 
-                $data = $request->getPost();
-
-                $this->assertValidData($data);
+                $data = $this->getValidatedData();
 
                 $db->beginTransaction();
 
@@ -211,9 +225,7 @@ class ApiV1ContactsController extends CompatController
                     $this->httpBadRequest('Identifier is required');
                 }
 
-                $data = $request->getPost();
-
-                $this->assertValidData($data);
+                $data = $this->getValidatedData();
 
                 if ($identifier !== $data['id']) {
                     $this->httpBadRequest('Identifier mismatch');
@@ -294,6 +306,7 @@ class ApiV1ContactsController extends CompatController
      */
     private function getChannelId(string $channelName): int
     {
+        /** @var stdClass|false $channel */
         $channel = Database::get()->fetchOne(
             (new Select())
                 ->from('channel')
@@ -317,6 +330,7 @@ class ApiV1ContactsController extends CompatController
      */
     private function fetchContactAddresses(int $contactId): ?string
     {
+        /** @var array<string, string> $addresses */
         $addresses = Database::get()->fetchPairs(
             (new Select())
                 ->from('contact_address')
@@ -324,7 +338,11 @@ class ApiV1ContactsController extends CompatController
                 ->where(['contact_id = ?' => $contactId])
         );
 
-        return ! empty($addresses) ? json_encode($addresses) : null;
+        if (! empty($addresses)) {
+            return json_encode($addresses) ?: null;
+        }
+
+        return null;
     }
 
     /**
@@ -359,6 +377,7 @@ class ApiV1ContactsController extends CompatController
      */
     private function getGroupId(string $identifier): int
     {
+        /** @var stdClass|false $group */
         $group = Database::get()->fetchOne(
             (new Select())
                 ->from('contactgroup')
@@ -382,6 +401,7 @@ class ApiV1ContactsController extends CompatController
      */
     protected function getContactId(string $identifier): ?int
     {
+        /** @var stdClass|false $contact */
         $contact =  Database::get()->fetchOne(
             (new Select())
                 ->from('contact')
@@ -395,7 +415,7 @@ class ApiV1ContactsController extends CompatController
     /**
      * Add a new contact with the given data
      *
-     * @param array<string, mixed> $data
+     * @param requestBody $data
      *
      * @return void
      */
@@ -437,7 +457,7 @@ class ApiV1ContactsController extends CompatController
         $user = Database::get()->fetchOne(
             (new Select())
                 ->from('contact')
-                ->columns(1)
+                ->columns('1')
                 ->where(['username = ?' => $username])
         );
 
@@ -500,16 +520,15 @@ class ApiV1ContactsController extends CompatController
     }
 
     /**
-     * Assert that the given data contains the required fields
+     * Get the validated POST|PUT request data
      *
-     * @param array<string, mixed> $data
+     * @return requestBody
      *
-     * @return void
-     *
-     * @throws HttpBadRequestException
+     * @throws HttpBadRequestException if the request body is invalid
      */
-    private function assertValidData(array $data): void
+    private function getValidatedData(): array
     {
+        $data = $this->getRequest()->getPost();
         $msgPrefix = 'Invalid request body: ';
 
         if (
@@ -573,5 +592,8 @@ class ApiV1ContactsController extends CompatController
                 $this->httpBadRequest($msgPrefix . 'an invalid email address given');
             }
         }
+
+        /** @var requestBody $data */
+        return $data;
     }
 }
