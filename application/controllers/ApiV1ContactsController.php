@@ -236,7 +236,7 @@ class ApiV1ContactsController extends CompatController
                 $contactId = $this->getContactId($identifier);
                 if ($contactId !== null) {
                     if (! empty($data['username'])) {
-                        $this->assertUniqueUsername($data['username']);
+                        $this->assertUniqueUsername($data['username'], $contactId);
                     }
 
                     $db->update('contact', [
@@ -447,19 +447,24 @@ class ApiV1ContactsController extends CompatController
      * Assert that the username is unique
      *
      * @param string $username
+     * @param int $contactId The id of the contact to exclude
      *
      * @return void
      *
      * @throws HttpException if the username already exists
      */
-    private function assertUniqueUsername(string $username): void
+    private function assertUniqueUsername(string $username, int $contactId = null): void
     {
-        $user = Database::get()->fetchOne(
-            (new Select())
-                ->from('contact')
-                ->columns('1')
-                ->where(['username = ?' => $username])
-        );
+        $stmt = (new Select())
+            ->from('contact')
+            ->columns('1')
+            ->where(['username = ?' => $username]);
+
+        if ($contactId) {
+            $stmt->where(['id != ?' => $contactId]);
+        }
+
+        $user = Database::get()->fetchOne($stmt);
 
         if ($user !== false) {
             throw new HttpException(422, 'Username already exists');
