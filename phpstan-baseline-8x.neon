@@ -3,11 +3,6 @@ parameters:
 		-
 			message: "#^Parameter \\#2 \\$string of function explode expects string, mixed given\\.$#"
 			count: 2
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Parameter \\#2 \\$string of function explode expects string, mixed given\\.$#"
-			count: 2
 			path: application/forms/EscalationRecipientForm.php
 
 		-
