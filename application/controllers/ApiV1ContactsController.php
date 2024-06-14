@@ -447,32 +447,6 @@ class ApiV1ContactsController extends CompatController
     }
 
     /**
-     * Assert that the address type exists
-     *
-     * @param string[] $addressTypes
-     *
-     * @return void
-     *
-     * @throws HttpBadRequestException if the username already exists
-     */
-    private function assertAddressTypesExist(array $addressTypes): void
-    {
-        $types = Database::get()->fetchCol(
-            (new Select())
-                ->from('available_channel_type')
-                ->columns('type')
-                ->where(['type IN (?)' => $addressTypes])
-        );
-
-        if (count($types) !== count($addressTypes)) {
-            $this->httpBadRequest(sprintf(
-                'Undefined address type %s given',
-                implode(', ', array_diff($addressTypes, $types))
-            ));
-        }
-    }
-
-    /**
      * Add the groups to the given contact
      *
      * @param int $contactId
@@ -502,8 +476,6 @@ class ApiV1ContactsController extends CompatController
      */
     private function addAddresses(int $contactId, array $addresses): void
     {
-        $this->assertAddressTypesExist(array_keys($addresses));
-
         foreach ($addresses as $type => $address) {
             Database::get()->insert('contact_address', [
                 'contact_id'    => $contactId,
@@ -538,26 +510,68 @@ class ApiV1ContactsController extends CompatController
      */
     private function assertValidData(array $data): void
     {
-        if (! isset($data['id'], $data['full_name'], $data['default_channel'])) {
-            $this->httpBadRequest('The request body must contain the fields id, full_name and default_channel');
+        $msgPrefix = 'Invalid request body: ';
+
+        if (
+            ! isset($data['id'], $data['full_name'], $data['default_channel'])
+            || ! is_string($data['id'])
+            || ! is_string($data['full_name'])
+            || ! is_string($data['default_channel'])
+        ) {
+            $this->httpBadRequest(
+                $msgPrefix . 'the fields id, full_name and default_channel must be present and of type string'
+            );
         }
 
         if (! Uuid::isValid($data['id'])) {
-            $this->httpBadRequest('Given id in the request body is not a valid UUID');
+            $this->httpBadRequest($msgPrefix . 'given id is not a valid UUID');
+        }
+
+        if (! empty($data['username']) && ! is_string($data['username'])) {
+            $this->httpBadRequest($msgPrefix . 'expects username to be a string');
         }
 
         if (! empty($data['groups'])) {
+            if (! is_array($data['groups'])) {
+                $this->httpBadRequest($msgPrefix . 'expects groups to be an array');
+            }
+
             foreach ($data['groups'] as $group) {
-                if (! Uuid::isValid($group)) {
-                    $this->httpBadRequest('Group identifiers in the request body must be valid UUIDs');
+                if (! is_string($group) || ! Uuid::isValid($group)) {
+                    $this->httpBadRequest($msgPrefix . 'group identifiers must be valid UUIDs');
                 }
             }
         }
 
-        if (! empty($data['addresses']['email'])
-            && ! (new EmailAddressValidator())->isValid($data['addresses']['email'])
-        ) {
-            $this->httpBadRequest('Request body contains an invalid email address');
+        if (! empty($data['addresses'])) {
+            if (! is_array($data['addresses'])) {
+                $this->httpBadRequest($msgPrefix . 'expects addresses to be an array');
+            }
+
+            $addressTypes = array_keys($data['addresses']);
+
+            $types = Database::get()->fetchCol(
+                (new Select())
+                    ->from('available_channel_type')
+                    ->columns('type')
+                    ->where(['type IN (?)' => $addressTypes])
+            );
+
+            if (count($types) !== count($addressTypes)) {
+                $this->httpBadRequest(sprintf(
+                    $msgPrefix . 'undefined address type %s given',
+                    implode(', ', array_diff($addressTypes, $types))
+                ));
+            }
+            //TODO: is it a good idea to check valid channel types here?, if yes,
+            //default_channel and group identifiers must be checked here as well..404 OR 400?
+
+            if (
+                ! empty($data['addresses']['email'])
+                && ! (new EmailAddressValidator())->isValid($data['addresses']['email'])
+            ) {
+                $this->httpBadRequest($msgPrefix . 'an invalid email address given');
+            }
         }
     }
 }
