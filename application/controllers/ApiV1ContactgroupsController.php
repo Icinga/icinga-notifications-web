@@ -17,7 +17,14 @@ use ipl\Web\Compat\CompatController;
 use ipl\Web\Filter\QueryString;
 use ipl\Web\Url;
 use Ramsey\Uuid\Uuid;
+use stdClass;
 
+/** @phpstan-type requestBody array{
+ *  id: string,
+ *  name: string,
+ *  users?: string[],
+ *  }
+ */
 class ApiV1ContactgroupsController extends CompatController
 {
     private const ENDPOINT = 'notifications/api/v1/contactgroups';
@@ -45,6 +52,8 @@ class ApiV1ContactgroupsController extends CompatController
         $results = [];
         $responseCode = 200;
         $db = Database::get();
+
+        /** @var ?string $identifier */
         $identifier = $request->getParam('identifier');
 
         if ($identifier && ! Uuid::isValid($identifier)) {
@@ -88,6 +97,8 @@ class ApiV1ContactgroupsController extends CompatController
 
                 if ($identifier !== null) {
                     $stmt->where(['external_uuid = ?' => $identifier]);
+
+                    /** @var stdClass|false $result */
                     $result = $db->fetchOne($stmt);
 
                     if ($result === false) {
@@ -124,6 +135,7 @@ class ApiV1ContactgroupsController extends CompatController
 
                 $res = $db->select($stmt->offset($offset));
                 do {
+                    /** @var stdClass $row */
                     foreach ($res as $i => $row) {
                         $users = $this->fetchUserIdentifiers($row->contactgroup_id);
                         if ($users) {
@@ -151,9 +163,7 @@ class ApiV1ContactgroupsController extends CompatController
                     $this->httpBadRequest('Cannot filter on POST');
                 }
 
-                $data = $request->getPost();
-
-                $this->assertValidData($data);
+                $data = $this->getValidatedData();
 
                 $db->beginTransaction();
 
@@ -188,9 +198,7 @@ class ApiV1ContactgroupsController extends CompatController
                     $this->httpBadRequest('Identifier is required');
                 }
 
-                $data = $request->getPost();
-
-                $this->assertValidData($data);
+                $data = $this->getValidatedData();
 
                 if ($identifier !== $data['id']) {
                     $this->httpBadRequest('Identifier mismatch');
@@ -279,6 +287,7 @@ class ApiV1ContactgroupsController extends CompatController
      */
     private function getUserId(string $identifier): int
     {
+        /** @var stdClass|false $user */
         $user = Database::get()->fetchOne(
             (new Select())
                 ->from('contact')
@@ -302,6 +311,7 @@ class ApiV1ContactgroupsController extends CompatController
      */
     private function getContactgroupId(string $identifier): ?int
     {
+        /** @var stdClass|false $contactgroup */
         $contactgroup =  Database::get()->fetchOne(
             (new Select())
                 ->from('contactgroup')
@@ -315,7 +325,7 @@ class ApiV1ContactgroupsController extends CompatController
     /**
      * Add a new contactgroup with the given data
      *
-     * @param array<string, mixed> $data
+     * @param requestBody $data
      *
      * @return void
      */
@@ -367,14 +377,15 @@ class ApiV1ContactgroupsController extends CompatController
     }
 
     /**
-     * Assert that the given data contains the required fields
+     * Get the validated POST|PUT request data
      *
-     * @param array<string, mixed> $data
+     * @return requestBody
      *
-     * @throws HttpBadRequestException
+     * @throws HttpBadRequestException if the request body is invalid
      */
-    private function assertValidData(array $data): void
+    private function getValidatedData(): array
     {
+        $data = $this->getRequest()->getPost();
         $msgPrefix = 'Invalid request body: ';
 
         if (
@@ -404,5 +415,8 @@ class ApiV1ContactgroupsController extends CompatController
                 //TODO: check if users exist, here?
             }
         }
+
+        /** @var requestBody $data */
+        return $data;
     }
 }
