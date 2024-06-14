@@ -375,19 +375,33 @@ class ApiV1ContactgroupsController extends CompatController
      */
     private function assertValidData(array $data): void
     {
-        if (! isset($data['id'], $data['name'])) {
-            $this->httpBadRequest('The request body must contain the fields id and name');
+        $msgPrefix = 'Invalid request body: ';
+
+        if (
+            ! isset($data['id'], $data['name'])
+            || ! is_string($data['id'])
+            || ! is_string($data['name'])
+        ) {
+            $this->httpBadRequest(
+                $msgPrefix . 'the fields id and name must be present and of type string'
+            );
         }
 
         if (! Uuid::isValid($data['id'])) {
-            $this->httpBadRequest('Given id in request body is not a valid UUID');
+            $this->httpBadRequest($msgPrefix . 'given id is not a valid UUID');
         }
 
         if (! empty($data['users'])) {
+            if (! is_array($data['users'])) {
+                $this->httpBadRequest($msgPrefix .  'expects users to be an array');
+            }
+
             foreach ($data['users'] as $user) {
-                if (! Uuid::isValid($user)) {
-                    $this->httpBadRequest('User identifiers in request body must be valid UUIDs');
+                if (! is_string($user) || ! Uuid::isValid($user)) {
+                    $this->httpBadRequest($msgPrefix . 'user identifiers must be valid UUIDs');
                 }
+
+                //TODO: check if users exist, here?
             }
         }
     }
