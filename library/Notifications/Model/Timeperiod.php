@@ -38,7 +38,7 @@ class Timeperiod extends Model
     public function getColumns(): array
     {
         return [
-            'owned_by_schedule_id',
+            'owned_by_rotation_id',
             'changed_at',
             'deleted'
         ];
