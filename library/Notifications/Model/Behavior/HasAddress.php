@@ -30,7 +30,7 @@ class HasAddress implements RewriteColumnBehavior, QueryAwareBehavior
     public function rewriteColumn($column, ?string $relation = null)
     {
         if ($this->isSelectableColumn($column)) {
-            $type = 'email';
+            $type = $column === 'has_email' ? 'email' : 'webhook';
 
             $subQueryRelation = $relation !== null ? $relation . '.contact.contact_address' : 'contact.contact_address';
 
@@ -53,7 +53,7 @@ class HasAddress implements RewriteColumnBehavior, QueryAwareBehavior
 
     public function isSelectableColumn(string $name): bool
     {
-        return $name === 'has_email';
+        return $name === 'has_email' || $name === 'has_webhook';
     }
 
     public function rewriteColumnDefinition(ColumnDefinition $def, string $relation): void
@@ -61,7 +61,9 @@ class HasAddress implements RewriteColumnBehavior, QueryAwareBehavior
         $name = $def->getName();
 
         if ($this->isSelectableColumn($name)) {
-            $def->setLabel(t('Has Email Address'));
+            $def->setLabel(
+                $name === 'has_email' ? t('Has Email Address') : t('Has Webhook')
+            );
         }
     }
 
@@ -70,7 +72,7 @@ class HasAddress implements RewriteColumnBehavior, QueryAwareBehavior
         $column = substr($condition->getColumn(), strlen($relation));
 
         if ($this->isSelectableColumn($column)) {
-            $type = 'email';
+            $type = $column === 'has_email' ? 'email' : 'webhook';
 
             $subQuery = $this->query->createSubQuery(new ContactAddress(), $relation)
                 ->limit(1)
