@@ -1,6 +1,6 @@
 .event-rule-config {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   ul {
     list-style-type: none;
     margin: 0;
@@ -37,13 +37,8 @@
     align-self: flex-end;
   }
 
-  .filter-wrapper {
+  .filter-pipeline {
     display: inline-flex;
-    align-self: flex-start;
-  }
-
-  .filter-wrapper:has(.config-filter .search-controls) {
-    align-items: baseline;
   }
 
   .add-escalation {
@@ -97,7 +92,7 @@
     }
 
     .horizontal-line {
-      min-width: 3.5em;
+      min-width: 3em;
     }
 
     .right-arrow {
@@ -135,7 +130,7 @@
   }
 }
 
-.filter-wrapper,
+.filter-pipeline,
 .escalations {
   .horizontal-line,
   .right-arrow {
@@ -181,10 +176,6 @@
           margin: 0;
         }
       }
-    }
-
-    .default-channel {
-      color: @disabled-gray;
     }
 
     select, input {
@@ -276,6 +267,23 @@
     }
 
     .event-rule-button();
+  }
+}
+
+.filter-pipeline {
+  .horizontal-line,
+  .right-arrow {
+    width: 78/12em;
+  }
+}
+
+.right-arrow:has(+ .filter-wrapper .config-filter.empty-filter) {
+  width: 156/12em
+}
+
+.filter-pipeline:has(.filter-wrapper .config-filter.empty-filter) {
+  .horizontal-line {
+    width: 168/12em;
   }
 }
 

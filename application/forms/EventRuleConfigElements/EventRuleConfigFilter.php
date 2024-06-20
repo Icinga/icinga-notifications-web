@@ -19,7 +19,7 @@ class EventRuleConfigFilter extends FieldsetElement
     /** @var ?string Event rule's object filter */
     protected $objectFilter;
 
-    protected $defaultAttributes = ['class' => 'config-filter'];
+    protected $defaultAttributes = ['id' => 'config-filter', 'class' => 'config-filter'];
 
     public function __construct(Url $searchEditorUrl, ?string $filter)
     {

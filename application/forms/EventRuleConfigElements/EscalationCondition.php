@@ -104,7 +104,7 @@ class EscalationCondition extends FieldsetElement
                 'select',
                 'operator_' . $i,
                 [
-                    'class'    => ['operator-input', 'autosubmit'],
+                    'class'    => 'operator-input',
                     'options'  => array_combine($operators, $operators),
                     'required' => true
                 ]
@@ -117,7 +117,7 @@ class EscalationCondition extends FieldsetElement
                         'select',
                         $valName,
                         [
-                            'class'   => ['autosubmit', 'right-operand'],
+                            'class'   => 'right-operand',
                             'options' => [
                                 'ok'      => $this->translate('Ok', 'notification.severity'),
                                 'debug'   => $this->translate('Debug', 'notification.severity'),
@@ -139,7 +139,7 @@ class EscalationCondition extends FieldsetElement
                         $valName,
                         [
                             'required'   => true,
-                            'class'      => ['autosubmit', 'right-operand'],
+                            'class'      => 'right-operand',
                             'validators' => [
                                 new CallbackValidator(function ($value, $validator) {
                                     if (! preg_match('~^\d+(?:\.?\d*)?[hms]{1}$~', $value)) {
