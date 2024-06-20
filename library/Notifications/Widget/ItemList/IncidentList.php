@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Widget\ItemList;
 
+use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Hook\ObjectsRendererHook;
 use Icinga\Module\Notifications\Model\Incident;
 use ipl\Web\Common\BaseItemList;
@@ -24,6 +25,9 @@ class IncidentList extends BaseItemList
         $this->on(self::ON_ASSEMBLED, function () {
             ObjectsRendererHook::load();
         });
+
+        $this->getAttributes()
+            ->set('data-icinga-detail-url', (string) Links::incident());
     }
 
     protected function getItemClass(): string

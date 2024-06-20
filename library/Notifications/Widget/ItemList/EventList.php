@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Widget\ItemList;
 
+use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Common\LoadMore;
 use Icinga\Module\Notifications\Common\NoSubjectLink;
 use Icinga\Module\Notifications\Hook\ObjectsRendererHook;
@@ -37,6 +38,9 @@ class EventList extends BaseItemList
         $this->on(self::ON_ASSEMBLED, function () {
             ObjectsRendererHook::load();
         });
+
+        $this->getAttributes()
+            ->set('data-icinga-detail-url', (string) Links::event());
     }
 
     protected function getItemClass(): string

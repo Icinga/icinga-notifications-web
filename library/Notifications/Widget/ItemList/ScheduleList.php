@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Widget\ItemList;
 
+use Icinga\Module\Notifications\Common\Links;
 use ipl\Web\Common\BaseItemList;
 
 class ScheduleList extends BaseItemList
@@ -13,5 +14,11 @@ class ScheduleList extends BaseItemList
     protected function getItemClass(): string
     {
         return ScheduleListItem::class;
+    }
+
+    protected function init(): void
+    {
+        $this->getAttributes()
+            ->set('data-icinga-detail-url', (string) Links::schedule());
     }
 }

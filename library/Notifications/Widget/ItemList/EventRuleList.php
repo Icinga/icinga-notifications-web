@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Widget\ItemList;
 
+use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Common\LoadMore;
 use ipl\Web\Common\BaseItemList;
 
@@ -16,5 +17,11 @@ class EventRuleList extends BaseItemList
     protected function getItemClass(): string
     {
         return EventRuleListItem::class;
+    }
+
+    protected function init(): void
+    {
+        $this->getAttributes()
+            ->set('data-icinga-detail-url', (string) Links::eventRule());
     }
 }

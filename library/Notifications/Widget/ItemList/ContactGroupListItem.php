@@ -23,7 +23,9 @@ class ContactGroupListItem extends BaseListItem
 
     protected function init(): void
     {
-        $this->getAttributes()->set('data-action-item', true);
+        $this->getAttributes()
+            ->set('data-action-item', true)
+            ->set('data-icinga-detail-filter', Links::contactGroup($this->item->id)->getQueryString());
     }
 
     protected function assembleVisual(BaseHtmlElement $visual): void

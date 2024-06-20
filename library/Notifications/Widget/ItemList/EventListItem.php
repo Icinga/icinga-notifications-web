@@ -47,6 +47,9 @@ class EventListItem extends BaseListItem
             $this->getAttributes()
                 ->set('data-action-item', true);
         }
+
+        $this->getAttributes()
+            ->set('data-icinga-detail-filter', Links::event($this->item->id)->getQueryString());
     }
 
     protected function assembleVisual(BaseHtmlElement $visual): void
