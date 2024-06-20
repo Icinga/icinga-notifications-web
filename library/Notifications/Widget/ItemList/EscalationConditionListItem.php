@@ -29,12 +29,16 @@ class EscalationConditionListItem extends BaseHtmlElement
     /** @var int */
     protected $position;
 
+    /** @var ?FormElement Unit of the condition value */
+    protected $conditionUnit;
+
     /**
      * Create the condition list item of the escalation
      *
      * @param FormElement $conditionType
      * @param FormElement $operator
      * @param FormElement $conditionVal
+     * @param ?FormElement $conditionUnit,
      * @param ?SubmitButtonElement $removeButton
      */
     public function __construct(
@@ -42,12 +46,14 @@ class EscalationConditionListItem extends BaseHtmlElement
         FormElement $conditionType,
         FormElement $operator,
         FormElement $conditionVal,
+        ?FormElement $conditionUnit,
         ?SubmitButtonElement $removeButton
     ) {
         $this->position = $position;
         $this->conditionType = $conditionType;
         $this->operator = $operator;
         $this->conditionVal = $conditionVal;
+        $this->conditionUnit = $conditionUnit;
         $this->removeButton = $removeButton;
     }
 
@@ -89,6 +95,12 @@ class EscalationConditionListItem extends BaseHtmlElement
         $this->conditionVal->setAttribute('name', 'val_' . $this->position);
 
         $this->addHtml($this->conditionType, $this->operator, $this->conditionVal);
+
+        if ($this->conditionUnit) {
+            $this->conditionUnit->setAttribute('name', 'unit_' . $this->position);
+            $this->addHtml($this->conditionUnit->setAttribute('name', 'unit_' . $this->position));
+        }
+
         if ($this->removeButton) {
             $this->removeButton->setSubmitValue((string) $this->position);
             $this->addHtml($this->removeButton);

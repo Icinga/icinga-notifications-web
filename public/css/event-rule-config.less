@@ -177,6 +177,12 @@
           margin: 0;
         }
 
+        .unit {
+          border-radius: 0 0.4em 0.4em 0;;
+          min-width: 3.5em;
+          margin-left: 1px;
+        }
+
         .errors + .remove-button {
           margin: 0;
         }
@@ -238,6 +244,12 @@
 
 .escalation-recipient .left-operand {
   margin-right: 1px;
+}
+
+// <(needed pixel size)/(font size)>em Readjust number type input element's minimum width in escalation condition
+.escalation-condition .options input[type='number'] {
+  border-radius: 0;
+  min-width: 77/12em;
 }
 
 .escalation-condition,
