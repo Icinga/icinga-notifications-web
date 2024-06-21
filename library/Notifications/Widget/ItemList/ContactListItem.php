@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Widget\ItemList;
 
+use Icinga\Module\Notifications\Common\Icons;
 use Icinga\Module\Notifications\Model\Contact;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
@@ -45,7 +46,11 @@ class ContactListItem extends BaseListItem
         $contactIcons = new HtmlElement('div', Attributes::create(['class' => 'contact-icons']));
 
         if (isset($this->item->has_email) && $this->item->has_email) {
-            $contactIcons->addHtml(new Icon('at'));
+            $contactIcons->addHtml(new Icon(Icons::EMAIL));
+        }
+
+        if (isset($this->item->has_webhook) && $this->item->has_webhook) {
+            $contactIcons->addHtml(new Icon(Icons::WEBHOOK));
         }
 
         $footer->addHtml($contactIcons);

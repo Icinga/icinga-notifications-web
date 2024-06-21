@@ -41,4 +41,8 @@ final class Icons
     public const RULE_MATCHED = 'filter';
 
     public const UNDEFINED = 'notdef';
+
+    public const EMAIL = 'at';
+
+    public const WEBHOOK = 'envelope';
 }
