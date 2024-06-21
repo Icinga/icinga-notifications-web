@@ -99,8 +99,12 @@ class ObjectSuggestions extends Suggestions
     protected function fetchValueSuggestions($column, $searchTerm, Filter\Chain $searchFilter)
     {
         $model = $this->getModel();
-        $query = $model::on(Database::get());
-        $query->limit(static::DEFAULT_LIMIT);
+        $query = $model::on(Database::get())
+            ->limit(static::DEFAULT_LIMIT);
+
+        if (in_array('deleted', $model->getColumns())) {
+            $query->filter(Filter::equal('deleted', 'n'));
+        }
 
         if (strpos($column, ' ') !== false) {
             // $column may be a label
