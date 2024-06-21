@@ -7,6 +7,8 @@ namespace Icinga\Module\Notifications\Forms;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\AvailableChannelType;
+use Icinga\Module\Notifications\Model\Contact;
+use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use Icinga\Web\Session;
 use ipl\Html\Contract\FormSubmitElement;
 use ipl\Html\FormElement\BaseFormElement;
@@ -52,6 +54,7 @@ class ChannelForm extends CompatForm
 
     protected function assemble()
     {
+        $this->addAttributes(['class' => 'channel-form']);
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
 
         $this->addElement(
@@ -111,6 +114,17 @@ class ChannelForm extends CompatForm
         );
 
         if ($this->channelId !== null) {
+            $isInUse = RuleEscalationRecipient::on($this->db)
+                    ->columns('1')
+                    ->filter(Filter::all(
+                        Filter::equal('deleted', 'n'),
+                        Filter::any(
+                            Filter::equal('channel_id', $this->channelId),
+                            Filter::equal('contact.default_channel_id', $this->channelId)
+                        )
+                    ))
+                    ->count();
+
             /** @var FormSubmitElement $deleteButton */
             $deleteButton = $this->createElement(
                 'submit',
@@ -118,7 +132,11 @@ class ChannelForm extends CompatForm
                 [
                     'label'          => $this->translate('Delete'),
                     'class'          => 'btn-remove',
-                    'formnovalidate' => true
+                    'formnovalidate' => true,
+                    'disabled'       => $isInUse,
+                    'title'          => $isInUse
+                        ? $this->translate('Cannot delete channel, contacts or event rules are using it')
+                        : null
                 ]
             );
 
