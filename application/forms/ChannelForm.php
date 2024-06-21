@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Forms;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\AvailableChannelType;
+use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use Icinga\Web\Session;
 use ipl\Html\Contract\FormSubmitElement;
 use ipl\Html\FormElement\BaseFormElement;
@@ -52,6 +53,7 @@ class ChannelForm extends CompatForm
 
     protected function assemble()
     {
+        $this->addAttributes(['class' => 'channel-form']);
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
 
         $this->addElement(
@@ -111,6 +113,17 @@ class ChannelForm extends CompatForm
         );
 
         if ($this->channelId !== null) {
+            $isInUse = RuleEscalationRecipient::on($this->db)
+                ->columns('1')
+                ->filter(Filter::all(
+                    Filter::equal('deleted', 'n'),
+                    Filter::any(
+                        Filter::equal('channel_id', $this->channelId),
+                        Filter::equal('contact.default_channel_id', $this->channelId)
+                    )
+                ))
+                ->first();
+
             /** @var FormSubmitElement $deleteButton */
             $deleteButton = $this->createElement(
                 'submit',
@@ -118,7 +131,14 @@ class ChannelForm extends CompatForm
                 [
                     'label'          => $this->translate('Delete'),
                     'class'          => 'btn-remove',
-                    'formnovalidate' => true
+                    'formnovalidate' => true,
+                    'disabled'       => $isInUse !== null,
+                    'title'          => $isInUse
+                        ? $this->translate(
+                            "Channel is still referenced as a contact's default"
+                            . " channel or in an event rule's escalation"
+                        )
+                        : null
                 ]
             );
 
