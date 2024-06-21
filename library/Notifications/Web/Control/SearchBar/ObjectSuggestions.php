@@ -102,6 +102,10 @@ class ObjectSuggestions extends Suggestions
         $query = $model::on(Database::get());
         $query->limit(static::DEFAULT_LIMIT);
 
+        if ($query->getResolver()->hasSelectableColumn($model, 'deleted')) {
+            $query->filter(Filter::equal('deleted', 'n'));
+        }
+
         if (strpos($column, ' ') !== false) {
             // $column may be a label
             /** @var string $path */
