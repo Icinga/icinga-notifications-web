@@ -75,6 +75,9 @@ class RotationConfigForm extends CompatForm
     /** @var ?DateTime The first handoff of a newer version for this rotation */
     protected $nextHandoff;
 
+    /** @var int The rotation id */
+    protected $rotationId;
+
     /**
      * Set the label for the submit button
      *
@@ -199,27 +202,7 @@ class RotationConfigForm extends CompatForm
      */
     public function loadRotation(int $rotationId): self
     {
-        /** @var ?Rotation $rotation */
-        $rotation = Rotation::on($this->db)
-            ->filter(Filter::all(
-                Filter::equal('id', $rotationId),
-                Filter::equal('deleted', 'n')
-            ))
-            ->first();
-        if ($rotation === null) {
-            throw new HttpNotFoundException($this->translate('Rotation not found'));
-        }
-
-        $formData = [
-            'mode' => $rotation->mode,
-            'name' => $rotation->name,
-            'priority' => $rotation->priority,
-            'schedule' => $rotation->schedule_id,
-            'options' => $rotation->options
-        ];
-        if (! self::EXPERIMENTAL_OVERRIDES) {
-            $formData['first_handoff'] = $rotation->first_handoff;
-        }
+        $this->rotationId = $rotationId;
 
         if (self::EXPERIMENTAL_OVERRIDES) {
             $getHandoff = function (Rotation $rotation): DateTime {
@@ -247,6 +230,17 @@ class RotationConfigForm extends CompatForm
 
                 return $handoff;
             };
+
+            /** @var ?Rotation $rotation */
+            $rotation = Rotation::on($this->db)
+                ->filter(Filter::all(
+                    Filter::equal('id', $this->rotationId),
+                    Filter::equal('deleted', 'n')
+                ))
+                ->first();
+            if ($rotation === null) {
+                throw new HttpNotFoundException($this->translate('Rotation not found'));
+            }
 
             $this->previousHandoff = $getHandoff($rotation);
 
@@ -284,27 +278,7 @@ class RotationConfigForm extends CompatForm
             }
         }
 
-        $membersRes = $rotation
-            ->member
-            ->filter(Filter::equal('deleted', 'n'))
-            ->filter(Filter::any(
-                Filter::equal('contact.deleted', 'n'),
-                Filter::equal('contactgroup.deleted', 'n')
-            ))
-            ->orderBy('position', SORT_ASC);
-
-        $members = [];
-        foreach ($membersRes as $member) {
-            if ($member->contact_id !== null) {
-                $members[] = 'contact:' . $member->contact_id;
-            } else {
-                $members[] = 'group:' . $member->contactgroup_id;
-            }
-        }
-
-        $formData['members'] = implode(',', $members);
-
-        $this->populate($formData);
+        $this->populate($this->fetchDbValues());
 
         return $this;
     }
@@ -440,6 +414,10 @@ class RotationConfigForm extends CompatForm
         $transactionStarted = false;
         if (! $this->db->inTransaction()) {
             $transactionStarted = $this->db->beginTransaction();
+        }
+
+        if (! $this->hasChanges()) {
+            return;
         }
 
         // Delay the creation, avoids intermediate constraint failures
@@ -1601,5 +1579,83 @@ class RotationConfigForm extends CompatForm
         array_unshift($result, $lastHandoff);
 
         return $result;
+    }
+
+    /**
+     * Fetch the values from the database
+     *
+     * @return array
+     *
+     * @throws HttpNotFoundException
+     */
+    private function fetchDbValues(): array
+    {
+        /** @var ?Rotation $rotation */
+        $rotation = Rotation::on($this->db)
+            ->filter(Filter::all(
+                Filter::equal('id', $this->rotationId),
+                Filter::equal('deleted', 'n')
+            ))
+            ->first();
+        if ($rotation === null) {
+            throw new HttpNotFoundException($this->translate('Rotation not found'));
+        }
+
+        $formData = [
+            'mode' => $rotation->mode,
+            'name' => $rotation->name,
+            'priority' => $rotation->priority,
+            'schedule' => $rotation->schedule_id,
+            'options' => $rotation->options
+        ];
+        if (! self::EXPERIMENTAL_OVERRIDES) {
+            $formData['first_handoff'] = $rotation->first_handoff;
+        }
+
+        $membersRes = $rotation
+            ->member
+            ->filter(Filter::equal('deleted', 'n'))
+            ->filter(Filter::any(
+                Filter::equal('contact.deleted', 'n'),
+                Filter::equal('contactgroup.deleted', 'n')
+            ))
+            ->orderBy('position', SORT_ASC);
+
+        $members = [];
+        foreach ($membersRes as $member) {
+            if ($member->contact_id !== null) {
+                $members[] = 'contact:' . $member->contact_id;
+            } else {
+                $members[] = 'group:' . $member->contactgroup_id;
+            }
+        }
+
+        $formData['members'] = implode(',', $members);
+
+        return $formData;
+    }
+
+    /**
+     * Whether the form has changes
+     *
+     * @return bool
+     */
+    public function hasChanges(): bool
+    {
+        $values = $this->getValues();
+        $values['members'] = $this->getValue('members');
+
+        // only keys that are present in $values
+        $dbValuesToCompare = array_intersect_key($this->fetchDbValues(), $values);
+
+        $checker = static function ($a, $b) use (&$checker) {
+            if (! is_array($a) || ! is_array($b)) {
+                return $a <=> $b;
+            }
+
+            return empty(array_udiff_assoc($a, $b, $checker)) ? 0 : 1;
+        };
+
+        return ! empty(array_udiff_assoc($values, $dbValuesToCompare, $checker));
     }
 }
