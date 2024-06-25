@@ -6,6 +6,7 @@ namespace Icinga\Module\Notifications\Model;
 
 use DateTime;
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Common\Icons;
 use ipl\Orm\Behavior\Binary;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
@@ -14,6 +15,7 @@ use ipl\Orm\Query;
 use ipl\Orm\Relations;
 use ipl\Sql\Connection;
 use ipl\Sql\Select;
+use ipl\Web\Widget\Icon;
 
 /**
  * Event model
@@ -152,5 +154,113 @@ class Event extends Model
         }
 
         return $label;
+    }
+
+    /**
+     * Get the type text
+     *
+     * @return string
+     */
+    public function getTypeText(): string
+    {
+        if ($this->type === 'state') {
+            if ($this->severity === 'ok') {
+                return t('recovered', 'notifications.type');
+            }
+
+            return t('ran into a problem', 'notifications.type');
+        }
+
+        switch ($this->type) {
+            case 'acknowledgement-set':
+                return t('has been acknowledged', 'notifications.type');
+            case 'acknowledgement-cleared':
+                return t('was unacknowledged', 'notifications.type');
+            case 'downtime-start':
+                return t('entered a downtime period', 'notifications.type');
+            case 'downtime-end':
+                return t('left a downtime period', 'notifications.type');
+            case 'downtime-removed':
+                return t('prematurely left a downtime period', 'notifications.type');
+            case 'flapping-start':
+                return t('entered a flapping period', 'notifications.type');
+            case 'flapping-end':
+                return t('left a flapping period', 'notifications.type');
+            case 'incident-age':
+                return t('exceeded a time constraint', 'notifications.type');
+            default: // custom
+                return '';
+        }
+    }
+
+    /**
+     * Get the icon for the event
+     *
+     * @return ?Icon
+     */
+    public function getIcon(): ?Icon
+    {
+        $icon = null;
+
+        if ($this->type === 'state') {
+            $severity = $this->severity;
+            $class = 'severity-' . $severity;
+            switch ($severity) {
+                case 'ok':
+                    $icon = (new Icon(Icons::SEVERITY_OK, ['class' => $class]))->setStyle('fa-regular');
+                    break;
+                case 'crit':
+                    $icon = new Icon(Icons::SEVERITY_CRIT, ['class' => $class]);
+                    break;
+                case 'warning':
+                    $icon = new Icon(Icons::SEVERITY_WARN, ['class' => $class]);
+                    break;
+                case 'err':
+                    $icon = (new Icon(Icons::SEVERITY_ERR, ['class' => $class]))->setStyle('fa-regular');
+                    break;
+                case 'debug':
+                    $icon = new Icon(Icons::SEVERITY_DEBUG);
+                    break;
+                case 'info':
+                    $icon = new Icon(Icons::SEVERITY_INFO);
+                    break;
+                case 'alert':
+                    $icon = new Icon(Icons::SEVERITY_ALERT);
+                    break;
+                case 'emerg':
+                    $icon = new Icon(Icons::SEVERITY_EMERG);
+                    break;
+                case 'notice':
+                    $icon = new Icon(Icons::SEVERITY_NOTICE);
+                    break;
+            }
+
+            return $icon;
+        }
+
+        switch ($this->type) {
+            case 'acknowledgement-set':
+                $icon = new Icon(Icons::ACKNOWLEDGED);
+                break;
+            case 'acknowledgement-cleared':
+                $icon = new Icon(Icons::UNACKNOWLEDGED);
+                break;
+            case 'downtime-start':
+            case 'downtime-end':
+            case 'downtime-removed':
+                $icon = new Icon(Icons::DOWNTIME);
+                break;
+            case 'flapping-start':
+            case 'flapping-end':
+                $icon = new Icon(Icons::FLAPPING);
+                break;
+            case 'incident-age':
+                $icon = new Icon(Icons::INCIDENT_AGE);
+                break;
+            case 'custom':
+                $icon = new Icon(Icons::CUSTOM);
+        }
+
+        return $icon;
     }
 }
