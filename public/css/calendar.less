@@ -43,6 +43,7 @@
   --stepRowHeight: 1fr;
 
   .time-grid-header {
+    display: grid;
     align-items: flex-end;
     border-left: 1px solid transparent;
     grid-template-columns: repeat(var(--primaryColumns), minmax(var(--minimumPrimaryColumnWidth), 1fr));
@@ -266,6 +267,14 @@
   .calendar-title {
     font-size: 1.5em;
     font-weight: normal;
+  }
+}
+
+.time-grid-header .column-title {
+  text-align: center;
+  .day-name {
+    color: @text-color-light;
+    text-transform: uppercase;
   }
 }
 
