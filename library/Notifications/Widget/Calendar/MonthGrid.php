@@ -80,7 +80,7 @@ class MonthGrid extends BaseGrid
             $this->translate('Sun', 'sunday')
         ];
 
-        $header = new HtmlElement('div', Attributes::create(['class' => 'header']));
+        $header = new HtmlElement('div', Attributes::create(['class' => 'time-grid-header']));
         foreach ($dayNames as $dayName) {
             $header->addHtml(new HtmlElement(
                 'div',
