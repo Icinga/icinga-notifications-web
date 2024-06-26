@@ -23,7 +23,7 @@ class DaysHeader extends BaseHtmlElement
 
     protected $tag = 'div';
 
-    protected $defaultAttributes = ['class' => 'header'];
+    protected $defaultAttributes = ['class' => ['days-header', 'time-grid-header']];
 
     /** @var DateTime Starting day */
     protected $startDay;
