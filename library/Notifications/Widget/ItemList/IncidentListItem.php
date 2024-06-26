@@ -41,6 +41,9 @@ class IncidentListItem extends BaseListItem
             $this->getAttributes()
                 ->set('data-action-item', true);
         }
+
+        $this->getAttributes()
+            ->set('data-icinga-detail-filter', Links::incident($this->item->id)->getQueryString());
     }
 
     protected function assembleVisual(BaseHtmlElement $visual): void

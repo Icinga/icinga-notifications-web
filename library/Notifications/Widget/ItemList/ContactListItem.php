@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Widget\ItemList;
 
+use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Contact;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
@@ -28,7 +29,8 @@ class ContactListItem extends BaseListItem
     protected function init(): void
     {
         $this->getAttributes()
-            ->set('data-action-item', true);
+            ->set('data-action-item', true)
+            ->set('data-icinga-detail-filter', Links::contactGroup($this->item->id)->getQueryString());
     }
 
     protected function assembleVisual(BaseHtmlElement $visual): void

@@ -24,7 +24,8 @@ class ScheduleListItem extends BaseListItem
     protected function init(): void
     {
         $this->getAttributes()
-            ->set('data-action-item', true);
+            ->set('data-action-item', true)
+            ->set('data-icinga-detail-filter', Links::schedule($this->item->id)->getQueryString());
     }
 
     protected function assembleTitle(BaseHtmlElement $title): void

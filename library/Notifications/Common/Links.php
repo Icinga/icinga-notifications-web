@@ -11,8 +11,12 @@ use ipl\Web\Url;
  */
 abstract class Links
 {
-    public static function event(int $id): Url
+    public static function event(?int $id = null): Url
     {
+        if ($id === null) {
+            return Url::fromPath('notifications/event');
+        }
+
         return Url::fromPath('notifications/event', ['id' => $id]);
     }
 
@@ -26,8 +30,12 @@ abstract class Links
         return Url::fromPath('notifications/incidents');
     }
 
-    public static function incident(int $id): Url
+    public static function incident(?int $id = null): Url
     {
+        if ($id === null) {
+            return Url::fromPath('notifications/incident');
+        }
+
         return Url::fromPath('notifications/incident', ['id' => $id]);
     }
 
@@ -36,8 +44,12 @@ abstract class Links
         return Url::fromPath('notifications/contacts');
     }
 
-    public static function contact(int $id): Url
+    public static function contact(?int $id = null): Url
     {
+        if ($id === null) {
+            return Url::fromPath('notifications/contact');
+        }
+
         return Url::fromPath('notifications/contact', ['id' => $id]);
     }
 
@@ -46,8 +58,12 @@ abstract class Links
         return Url::fromPath('notifications/event-rules');
     }
 
-    public static function eventRule(int $id): Url
+    public static function eventRule(?int $id = null): Url
     {
+        if ($id === null) {
+            return Url::fromPath('notifications/event-rule');
+        }
+
         return Url::fromPath('notifications/event-rule', ['id' => $id]);
     }
 
@@ -56,8 +72,12 @@ abstract class Links
         return Url::fromPath('notifications/schedules');
     }
 
-    public static function schedule(int $id): Url
+    public static function schedule(?int $id = null): Url
     {
+        if ($id === null) {
+            return Url::fromPath('notifications/schedule');
+        }
+
         return Url::fromPath('notifications/schedule', ['id' => $id]);
     }
 
@@ -86,8 +106,12 @@ abstract class Links
         return Url::fromPath('notifications/contact-groups/suggest-member');
     }
 
-    public static function contactGroup(int $id): Url
+    public static function contactGroup(?int $id = null): Url
     {
+        if ($id === null) {
+            return Url::fromPath('notifications/contact-group');
+        }
+
         return Url::fromPath('notifications/contact-group', ['id' => $id]);
     }
 
