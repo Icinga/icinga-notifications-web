@@ -235,7 +235,13 @@ class ContactGroupForm extends CompatForm
         $toAdd = array_diff($newContacts, $storedContacts);
 
         if (! empty($toDelete)) {
-            $this->db->delete('contactgroup_member', ['contact_id IN (?)' => $toDelete]);
+            $this->db->delete(
+                'contactgroup_member',
+                [
+                    'contactgroup_id = ?' => $this->contactgroupId,
+                    'contact_id IN (?)'   => $toDelete
+                ]
+            );
 
             $isUpdated = true;
         }
