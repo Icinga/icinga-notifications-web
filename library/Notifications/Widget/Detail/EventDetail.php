@@ -109,8 +109,8 @@ class EventDetail extends BaseHtmlElement
     protected function createSource(): array
     {
         $elements = [];
-        if ($this->event->type === 'internal') {
-            // return no source elements for internal events
+        if ($this->event->type !== 'state') {
+            // return no source elements for non state events
             return $elements;
         }
 

@@ -51,50 +51,9 @@ class EventListItem extends BaseListItem
 
     protected function assembleVisual(BaseHtmlElement $visual): void
     {
-        $content = null;
-        $severity = $this->item->severity;
-        $class = 'severity-' . $severity;
-
-        if ($this->item->type === 'internal') {
-            /*
-             * TODO(nc): Add proper handling of internal events once
-             *  https://github.com/Icinga/icinga-notifications/issues/162 gets sorted out
-             */
-            $content = new IconBall('square-up-right', 'fa-solid');
-        } else {
-            switch ($severity) {
-                case 'ok':
-                    $content = (new Icon('heart', ['class' => $class]))->setStyle('fa-regular');
-                    break;
-                case 'crit':
-                    $content = new Icon('circle-exclamation', ['class' => $class]);
-                    break;
-                case 'warning':
-                    $content = new Icon('exclamation-triangle', ['class' => $class]);
-                    break;
-                case 'err':
-                    $content = (new Icon('circle-xmark', ['class' => $class]))->setStyle('fa-regular');
-                    break;
-                case 'debug':
-                    $content = new Icon('bug-slash');
-                    break;
-                case 'info':
-                    $content = new Icon('info');
-                    break;
-                case 'alert':
-                    $content = new Icon('bell');
-                    break;
-                case 'emerg':
-                    $content = new Icon('tower-broadcast');
-                    break;
-                case 'notice':
-                    $content = new Icon('envelope');
-                    break;
-            }
-        }
-
-        if ($content) {
-            $visual->addHtml($content);
+        $icon = $this->item->getIcon();
+        if ($icon) {
+            $visual->addHtml($icon);
         }
     }
 
@@ -117,23 +76,8 @@ class EventListItem extends BaseListItem
         $content->addAttributes($name->getAttributes());
         $content->addFrom($name);
 
-        if ($this->item->severity === null) {
-            $description = strtolower(trim($this->item->message ?? ''));
-            if (Str::startsWith($description, 'incident reached age')) {
-                $msg = t('exceeded time constraint');
-            } elseif (Str::startsWith($description, 'incident reevaluation')) {
-                $msg = t('was reevaluated at daemon startup');
-            } else {
-                $msg = t('was acknowledged');
-            }
-        } elseif ($this->item->severity === 'ok') {
-            $msg = t('recovered');
-        } else {
-            $msg = t('ran into a problem');
-        }
-
         $title->addHtml($content);
-        $title->addHtml(Html::tag('span', ['class' => 'state'], $msg));
+        $title->addHtml(HtmlElement::create('span', ['class' => 'state'], $this->item->getTypeText()));
     }
 
     protected function assembleCaption(BaseHtmlElement $caption): void
@@ -144,7 +88,7 @@ class EventListItem extends BaseListItem
     protected function assembleHeader(BaseHtmlElement $header): void
     {
         $content = [];
-        if ($this->item->type !== 'internal') {
+        if ($this->item->type === 'state') {
             /** @var Objects $object */
             $object = $this->item->object;
             /** @var Source $source */
