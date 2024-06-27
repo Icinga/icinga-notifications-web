@@ -20,6 +20,7 @@ use ipl\Stdlib\Filter;
 use ipl\Validator\EmailAddressValidator;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
+use Ramsey\Uuid\Uuid;
 
 /**
  * @phpstan-type ChannelOptionConfig array{
@@ -201,6 +202,7 @@ class ChannelForm extends CompatForm
 
         $channel['config'] = json_encode($this->filterConfig($channel['config']));
         $channel['changed_at'] = time() * 1000;
+        $channel['external_uuid'] = Uuid::uuid4()->toString();
 
         $this->db->insert('channel', $channel);
     }
