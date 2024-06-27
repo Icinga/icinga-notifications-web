@@ -46,7 +46,8 @@ class Channel extends Model
             'type',
             'config',
             'changed_at',
-            'deleted'
+            'deleted',
+            'external_uuid'
         ];
     }
 
@@ -55,7 +56,7 @@ class Channel extends Model
         return [
             'name'          => t('Name'),
             'type'          => t('Type'),
-            'changed_at'    => t('Changed At')
+            'external_uuid' => t('UUID')
         ];
     }
 

@@ -99,7 +99,7 @@ class ApiV1ContactsController extends CompatController
                         'id'                => 'co.external_uuid',
                         'full_name',
                         'username',
-                        'default_channel'   => 'ch.name',
+                        'default_channel'   => 'ch.external_uuid',
                     ])
                     ->joinLeft('contact_address ca', 'ca.contact_id = co.id')
                     ->joinLeft('channel ch', 'ch.id = co.default_channel_id');
@@ -274,22 +274,22 @@ class ApiV1ContactsController extends CompatController
     }
 
     /**
-     * Get the channel id with the given name
+     * Get the channel id with the given identifier
      *
-     * @param string $channelName
+     * @param string $channelIdentifier
      *
      * @return int
      *
      * @throws HttpNotFoundException if the channel does not exist
      */
-    private function getChannelId(string $channelName): int
+    private function getChannelId(string $channelIdentifier): int
     {
         /** @var stdClass|false $channel */
         $channel = Database::get()->fetchOne(
             (new Select())
                 ->from('channel')
                 ->columns('id')
-                ->where(['name = ?' => $channelName])
+                ->where(['external_uuid = ?' => $channelIdentifier])
         );
 
         if ($channel === false) {
@@ -521,6 +521,10 @@ class ApiV1ContactsController extends CompatController
 
         if (! Uuid::isValid($data['id'])) {
             $this->httpBadRequest($msgPrefix . 'given id is not a valid UUID');
+        }
+
+        if (! Uuid::isValid($data['default_channel'])) {
+            $this->httpBadRequest($msgPrefix . 'given default_channel is not a valid UUID');
         }
 
         if (! empty($data['username']) && ! is_string($data['username'])) {
