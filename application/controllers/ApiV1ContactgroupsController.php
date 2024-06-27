@@ -105,10 +105,7 @@ class ApiV1ContactgroupsController extends CompatController
                         $this->httpNotFound('Contactgroup not found');
                     }
 
-                    $users = $this->fetchUserIdentifiers($result->contactgroup_id);
-                    if ($users) {
-                        $result->users = $users;
-                    }
+                    $result->users = $this->fetchUserIdentifiers($result->contactgroup_id);
 
                     unset($result->contactgroup_id);
                     $results[] = $result;
@@ -137,10 +134,7 @@ class ApiV1ContactgroupsController extends CompatController
                 do {
                     /** @var stdClass $row */
                     foreach ($res as $i => $row) {
-                        $users = $this->fetchUserIdentifiers($row->contactgroup_id);
-                        if ($users) {
-                            $row->users = $users;
-                        }
+                        $row->users = $this->fetchUserIdentifiers($row->contactgroup_id);
 
                         if ($i > 0 || $offset !== 0) {
                             echo ",\n";
@@ -260,11 +254,11 @@ class ApiV1ContactgroupsController extends CompatController
      *
      * @param int $contactgroupId
      *
-     * @return ?string[]
+     * @return string[]
      */
-    private function fetchUserIdentifiers(int $contactgroupId): ?array
+    private function fetchUserIdentifiers(int $contactgroupId): array
     {
-        $users = Database::get()->fetchCol(
+        return Database::get()->fetchCol(
             (new Select())
                 ->from('contactgroup_member cgm')
                 ->columns('co.external_uuid')
@@ -272,8 +266,6 @@ class ApiV1ContactgroupsController extends CompatController
                 ->where(['cgm.contactgroup_id = ?' => $contactgroupId])
                 ->groupBy('co.external_uuid')
         );
-
-        return $users ?: null;
     }
 
     /**

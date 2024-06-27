@@ -114,19 +114,8 @@ class ApiV1ContactsController extends CompatController
                         $this->httpNotFound('Contact not found');
                     }
 
-                    if ($result->username === null) {
-                        unset($result->username);
-                    }
-
-                    $groups = $this->fetchGroupIdentifiers($result->contact_id);
-                    if ($groups) {
-                        $result->groups = $groups;
-                    }
-
-                    $addresses = $this->fetchContactAddresses($result->contact_id);
-                    if ($addresses) {
-                        $result->addresses = $addresses;
-                    }
+                    $result->groups = $this->fetchGroupIdentifiers($result->contact_id);
+                    $result->addresses = $this->fetchContactAddresses($result->contact_id);
 
                     unset($result->contact_id);
                     $results[] = $result;
@@ -155,19 +144,8 @@ class ApiV1ContactsController extends CompatController
                 do {
                     /** @var stdClass $row */
                     foreach ($res as $i => $row) {
-                        if ($row->username === null) {
-                            unset($row->username);
-                        }
-
-                        $groups = $this->fetchGroupIdentifiers($row->contact_id);
-                        if ($groups) {
-                            $row->groups = $groups;
-                        }
-
-                        $addresses = $this->fetchContactAddresses($row->contact_id);
-                        if ($addresses) {
-                            $row->addresses = $addresses;
-                        }
+                        $row->groups = $this->fetchGroupIdentifiers($row->contact_id);
+                        $row->addresses = $this->fetchContactAddresses($row->contact_id);
 
                         if ($i > 0 || $offset !== 0) {
                             echo ",\n";
@@ -326,9 +304,9 @@ class ApiV1ContactsController extends CompatController
      *
      * @param int $contactId
      *
-     * @return ?string
+     * @return string
      */
-    private function fetchContactAddresses(int $contactId): ?string
+    private function fetchContactAddresses(int $contactId): string
     {
         /** @var array<string, string> $addresses */
         $addresses = Database::get()->fetchPairs(
@@ -338,11 +316,7 @@ class ApiV1ContactsController extends CompatController
                 ->where(['contact_id = ?' => $contactId])
         );
 
-        if (! empty($addresses)) {
-            return json_encode($addresses) ?: null;
-        }
-
-        return null;
+        return Json::sanitize($addresses, JSON_FORCE_OBJECT);
     }
 
     /**
@@ -350,11 +324,11 @@ class ApiV1ContactsController extends CompatController
      *
      * @param int $contactId
      *
-     * @return ?string[]
+     * @return string[]
      */
-    private function fetchGroupIdentifiers(int $contactId): ?array
+    private function fetchGroupIdentifiers(int $contactId): array
     {
-        $groups = Database::get()->fetchCol(
+        return Database::get()->fetchCol(
             (new Select())
                 ->from('contactgroup_member cgm')
                 ->columns('cg.external_uuid')
@@ -362,8 +336,6 @@ class ApiV1ContactsController extends CompatController
                 ->where(['cgm.contact_id = ?' => $contactId])
                 ->groupBy('cg.external_uuid')
         );
-
-        return $groups ?: null;
     }
 
     /**
