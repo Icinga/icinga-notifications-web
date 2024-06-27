@@ -16,6 +16,7 @@ use ipl\Sql\Connection;
 use ipl\Validator\EmailAddressValidator;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
+use Ramsey\Uuid\Uuid;
 
 /**
  * @phpstan-type ChannelOptionConfig array{
@@ -189,6 +190,7 @@ class ChannelForm extends CompatForm
         );
 
         $channel['config'] = json_encode($config);
+        $channel['external_uuid'] = Uuid::uuid4()->toString();
         if ($this->channelId === null) {
             $this->db->insert('channel', $channel);
         } else {

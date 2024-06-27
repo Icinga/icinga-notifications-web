@@ -26,15 +26,17 @@ class Channel extends Model
         return [
             'name',
             'type',
-            'config'
+            'config',
+            'external_uuid'
         ];
     }
 
     public function getColumnDefinitions()
     {
         return [
-            'name'   => t('Name'),
-            'type'   => t('Type'),
+            'name'          => t('Name'),
+            'type'          => t('Type'),
+            'external_uuid' => t('UUID')
         ];
     }
 

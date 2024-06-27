@@ -99,7 +99,7 @@ class ApiV1ContactsController extends CompatController
                         'id'                => 'co.external_uuid',
                         'full_name',
                         'username',
-                        'default_channel'   => 'ch.name',
+                        'default_channel'   => 'ch.external_uuid',
                     ])
                     ->joinLeft('contact_address ca', 'ca.contact_id = co.id')
                     ->joinLeft('channel ch', 'ch.id = co.default_channel_id');
