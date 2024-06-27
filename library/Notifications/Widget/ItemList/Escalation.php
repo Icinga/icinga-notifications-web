@@ -25,9 +25,6 @@ class Escalation extends BaseHtmlElement
     /** @var EscalationRecipient Escalation recipient fieldset */
     protected $recipient;
 
-    /** @var bool Whether the widget has a remove button */
-    protected $hasNoRemoveButton = false;
-
     /**
      * Create the escalation list item
      *
@@ -69,11 +66,11 @@ class Escalation extends BaseHtmlElement
     /**
      * Create first component of the escalation widget
      *
-     * @return ?FlowLine|SubmitButtonElement
+     * @return FlowLine|SubmitButtonElement
      */
     protected function createFirstComponent()
     {
-        if ($this->hasNoRemoveButton || $this->removeButton === null) {
+        if ($this->removeButton === null) {
             return (new FlowLine())->getHorizontalLine();
         }
 

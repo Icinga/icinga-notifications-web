@@ -161,7 +161,8 @@
   border-radius: 0.5em;
   align-self: flex-start;
 
-  .options {
+  .escalation-condition-list,
+  .escalation-recipient-list {
     list-style-type: none;
     padding: 0;
     margin: 0;
@@ -170,7 +171,8 @@
       display: flex;
       margin-bottom: .4em;
 
-      &.option {
+      &.escaltion-condition-list-item,
+      &.escaltion-recipient-list-item {
         .errors {
           display: inline-flex;
           width: fit-content;
@@ -222,7 +224,10 @@
       background: @search-term-bg;
       color: @search-term-color;
 
-      option { text-align: center; }
+      .escaltion-condition-list-item,
+      .escaltion-recipient-list-item {
+        text-align: center;
+      }
     }
   }
 
@@ -242,16 +247,19 @@
 
 .escalation-condition,
 .escalation-recipient {
-  .options + .add-button,
+  .escalation-condition-list + .add-button,
+  .escalation-recipient-list + .add-button,
   .remove-button {
     .event-rule-button();
   }
 
-  .options + .add-button {
+  .escalation-condition-list + .add-button,
+  .escalation-recipient-list + .add-button {
     width: calc(~"100% - 3.5em");
   }
 
-  .options li {
+  .escalation-condition-list li,
+  .escalation-recipient-list li {
     input, select {
       &:last-child:not(.remove-button) {
         margin-right: 3.5em;

@@ -20,22 +20,16 @@ use ipl\Html\FormElement\SubmitButtonElement;
 use ipl\Html\HtmlElement;
 use ipl\I18n\Translation;
 use ipl\Stdlib\Filter;
-use ipl\Stdlib\Filter\Condition;
 use ipl\Web\Common\CsrfCounterMeasure;
 use Icinga\Module\Notifications\Forms\EventRuleConfigElements\EventRuleConfigFilter;
-use ipl\Web\Filter\QueryString;
 use ipl\Web\Url;
 use ipl\Web\Widget\Icon;
 
 class EventRuleConfigForm extends Form
 {
     use CsrfCounterMeasure;
+
     use Translation;
-
-    public const ON_DELETE = 'delete';
-
-    public const ON_DISCARD = 'discard';
-
     public const ON_CHANGE = 'change';
 
     protected $defaultAttributes = [
@@ -65,28 +59,32 @@ class EventRuleConfigForm extends Form
         $this->searchEditorUrl = $searchEditorUrl;
 
         $this->on(self::ON_SENT, function () {
-            $config = array_merge($this->config, $this->getValues());
+            $csrf = $this->getElement('CSRFToken');
 
-            if ($config !== $this->config) {
-                $this->emit(self::ON_CHANGE, [$this]);
+            if ($csrf !== null && $csrf->isValid()) {
+                $config = array_merge($this->config, $this->getValues());
+                if ($config !== $this->config) {
+                    $this->emit(self::ON_CHANGE, [$this]);
+                }
             }
         });
+    }
+
+    public function isValidEvent($event)
+    {
+        if ($event === self::ON_CHANGE) {
+            return true;
+        }
+
+        return parent::isValidEvent($event);
     }
 
     public function hasBeenSubmitted()
     {
         $pressedButton = $this->getPressedSubmitElement();
 
-        if ($pressedButton) {
-            $buttonName = $pressedButton->getName();
-
-            if ($buttonName === 'delete') {
-                $this->emit(self::ON_DELETE, [$this]);
-            } elseif ($buttonName === 'discard_changes') {
-                $this->emit(self::ON_DISCARD, [$this]);
-            } elseif ($buttonName === 'save') {
-                return true;
-            }
+        if ($pressedButton && $pressedButton->getName() === 'save') {
+            return true;
         }
 
         return false;
@@ -136,7 +134,7 @@ class EventRuleConfigForm extends Form
             ]
         );
 
-        $defaultEscalationPrefix = bin2hex('1');
+        $defaultEscalationPrefix = 1;
 
         $this->addElement('hidden', 'zero-condition-escalation');
 
@@ -147,7 +145,8 @@ class EventRuleConfigForm extends Form
         $configFilter = new EventRuleConfigFilter($this->searchEditorUrl, $this->config['object_filter']);
         $this->registerElement($configFilter);
 
-        $addEscalationButton = new SubmitButtonElement(
+        $addEscalationButton = $this->createElement(
+            'submitButton',
             'add-escalation',
             [
                 'class'          => ['add-button', 'control-button', 'spinner'],
@@ -158,20 +157,19 @@ class EventRuleConfigForm extends Form
         );
 
         $this->registerElement($addEscalationButton);
-        $prefixesElement = $this->createElement('hidden', 'prefixes-map', ['value' => $defaultEscalationPrefix]);
+        $prefixesElement = $this->createElement('hidden', 'prefixes', ['value' => $defaultEscalationPrefix]);
         $this->addElement($prefixesElement);
         $this->handleAdd();
 
-        $prefixesMapString = $prefixesElement->getValue();
-        $prefixesMap = explode(',', $prefixesMapString);
-        $escalationCount = count($prefixesMap);
+        $prefixes = explode(',', $prefixesElement->getValue());
+        $escalationCount = count($prefixes);
         $zeroConditionEscalation = $this->getValue('zero-condition-escalation');
         $removePosition = null;
         $removeEscalationButtons = [];
 
         if ($escalationCount > 1) {
-            foreach ($prefixesMap as $prefixMap) {
-                $removeEscalationButtons[$prefixMap] = $this->createRemoveButton($prefixMap);
+            foreach ($prefixes as $prefix) {
+                $removeEscalationButtons[$prefix] = $this->createRemoveButton($prefix);
             }
 
             $removePosition = $this->getValue('remove-escalation');
@@ -183,36 +181,38 @@ class EventRuleConfigForm extends Form
         $escalations = [];
         $this->hasZeroConditionEscalation = $zeroConditionEscalation !== null;
 
-        foreach ($prefixesMap as $key => $prefixMap) {
-            if ($removePosition === $prefixMap) {
-                if ($zeroConditionEscalation === $prefixMap) {
+        foreach ($prefixes as $key => $prefix) {
+            if ($removePosition === $prefix) {
+                if ($zeroConditionEscalation === $prefix) {
                     $zeroConditionEscalation = null;
                     $this->hasZeroConditionEscalation = false;
                 }
 
-                unset($prefixesMap[$key]);
-                $this->getElement('prefixes-map')->setValue(implode(',', $prefixesMap));
+                unset($prefixes[$key]);
+                $this->getElement('prefixes')->setValue(implode(',', $prefixes));
 
                 continue;
             }
 
-            $escalationCondition = new EscalationCondition($prefixMap, $this);
-            $escalationRecipient = new EscalationRecipient($prefixMap);
+            $escalationCondition = (new EscalationCondition($prefix, $this))
+                ->setCondition($this->config['rule_escalation'][$prefix]['condition'] ?? '');
+            $escalationRecipient = (new EscalationRecipient($prefix))
+                ->setRecipients($this->config['rule_escalation'][$prefix]['recipients'] ?? []);
             $this->registerElement($escalationCondition);
             $this->registerElement($escalationRecipient);
 
             $escalation = new Escalation(
                 $escalationCondition,
                 $escalationRecipient,
-                $removeEscalationButtons[$prefixMap] ?? null
+                $removeEscalationButtons[$prefix] ?? null
             );
 
-            if ($zeroConditionEscalation === $prefixMap && $escalation->addConditionHasBeenPressed()) {
+            if ($zeroConditionEscalation === $prefix && $escalation->addConditionHasBeenPressed()) {
                 $this->hasZeroConditionEscalation = false;
                 $zeroConditionEscalation = null;
             } elseif ($escalation->lastConditionHasBeenRemoved()) {
                 $this->hasZeroConditionEscalation = true;
-                $zeroConditionEscalation = $prefixMap;
+                $zeroConditionEscalation = $prefix;
             }
 
             $escalations[] = $escalation;
@@ -229,8 +229,12 @@ class EventRuleConfigForm extends Form
                 )
         );
 
-        $escalationWrapper = (new HtmlElement('div'))->addHtml(new Escalations($escalations), $addEscalationButton);
-        $this->addHtml($escalationWrapper);
+        $this->addHtml(new HtmlElement(
+            'div',
+            Attributes::create(['class' => 'escalations-wrapper']),
+            new Escalations($escalations),
+            $addEscalationButton
+        ));
     }
 
     /**
@@ -243,12 +247,12 @@ class EventRuleConfigForm extends Form
         $pressedButton = $this->getPressedSubmitElement();
 
         if ($pressedButton && $pressedButton->getName() === 'add-escalation') {
-            $this->clearPopulatedValue('prefixes-map');
-            $prefixesMapString = $this->getValue('prefixes-map', '');
-            $prefixesMap = explode(',', $prefixesMapString);
-            $escalationFakePos = bin2hex(random_bytes(4));
+            $this->clearPopulatedValue('prefixes');
+            $prefixesString = $this->getValue('prefixes', '');
+            $prefixesMap = explode(',', $prefixesString);
+            $escalationFakePos = random_int(-1000, -1);
             $prefixesMap[] = $escalationFakePos;
-            $this->getElement('prefixes-map')
+            $this->getElement('prefixes')
                 ->setValue(implode(',', $prefixesMap));
 
             if ($this->getValue('zero-condition-escalation') === null) {
@@ -264,71 +268,20 @@ class EventRuleConfigForm extends Form
             return parent::populate($values);
         }
 
-        $formValues = [];
-        $formValues['prefixes-map'] = $this->getPrefixesMap(count($values['rule_escalation']));
+        $values['prefixes'] = $this->getPrefixes(count($values['rule_escalation']));
+        $zeroConditionEscalation = array_filter($values['rule_escalation'], function ($escalation) {
+            return $escalation['condition'] === '';
+        });
 
-        foreach ($values['rule_escalation'] as $position => $escalation) {
-            $conditions = explode('|', $escalation['condition'] ?? '');
-            $conditionFormValues = [];
-            $conditionFormValues['condition-count'] = count($conditions);
-            $conditionFormValues['id'] = $escalation['id'] ?? bin2hex(random_bytes(4));
-
-            foreach ($conditions as $key => $condition) {
-                if ($condition === '' && ! isset($formValues['zero-condition-escalation'])) {
-                    $formValues['zero-condition-escalation'] = bin2hex($position);
-                    $conditionFormValues['condition-count'] = 0;
-
-                    continue;
-                }
-
-                $count = $key + 1;
-
-                /** @var Condition $filter */
-                $filter = QueryString::parse($condition);
-                $conditionFormValues['column_' . $count] = $filter->getColumn() === 'placeholder'
-                    ? null
-                    : $filter->getColumn();
-
-                if ($conditionFormValues['column_' . $count]) {
-                    $conditionFormValues['type_' . $count] = $conditionFormValues['column_' . $count];
-                }
-
-                $conditionFormValues['operator_' . $count] = QueryString::getRuleSymbol($filter);
-                $conditionFormValues['val_' . $count] = $filter->getValue();
-            }
-
-            $formValues['escalation-condition_' . bin2hex($position)] = $conditionFormValues;
-            $recipientFormValues = [];
-            if (isset($escalation['recipients'])) {
-                $recipientFormValues['recipient-count'] = count($escalation['recipients']);
-                foreach ($escalation['recipients'] as $key => $recipient) {
-                    if (is_array($recipient)) {
-                        $count = 0;
-                        foreach ($recipient as $elementName => $elementValue) {
-                            if ($elementValue === null) {
-                                continue;
-                            }
-
-                            $count = $key + 1;
-                            $selectedOption = str_replace('id', $elementValue, $elementName, $replaced);
-                            if ($replaced && $elementName !== 'channel_id') {
-                                $recipientFormValues['column_' . $count] = $selectedOption;
-                            } elseif ($elementName === 'channel_id') {
-                                $recipientFormValues['val_' . $count] = $elementValue;
-                            }
-                        }
-
-                        if (isset($recipient['id'])) {
-                            $recipientFormValues['id_' . $count] = (int) $recipient['id'];
-                        }
-                    }
-                }
-            }
-
-            $formValues['escalation-recipient_' . bin2hex($position)] = $recipientFormValues;
+        if (! empty($zeroConditionEscalation)) {
+            $values['zero-condition-escalation'] = array_key_first($zeroConditionEscalation);
         }
 
-        return parent::populate($formValues);
+        foreach ($values['rule_escalation'] as $prefix => $escalation) {
+            $values['escalation-condition_' . $prefix]['id'] = $escalation['id'];
+        }
+
+        return parent::populate($values);
     }
 
     /**
@@ -340,20 +293,18 @@ class EventRuleConfigForm extends Form
     {
         $values = [];
         $escalations = [];
-        $prefixesString = $this->getValue('prefixes-map', '');
+        $prefixesString = $this->getValue('prefixes', '');
 
         /** @var string[] $prefixesMap */
         $prefixesMap = explode(',', $prefixesString);
-        $i = 1;
-        foreach ($prefixesMap as $prefixMap) {
+        foreach ($prefixesMap as $prefix) {
             /** @var EscalationCondition $escalationCondition */
-            $escalationCondition = $this->getElement('escalation-condition_' . $prefixMap);
+            $escalationCondition = $this->getElement('escalation-condition_' . $prefix);
             /** @var EscalationRecipient $escalationRecipient */
-            $escalationRecipient = $this->getElement('escalation-recipient_' . $prefixMap);
-            $escalations[$i]['condition'] = $escalationCondition->getCondition();
-            $escalations[$i]['id'] = $escalationCondition->getValue('id');
-            $escalations[$i]['recipients'] = $escalationRecipient->getRecipients();
-            $i++;
+            $escalationRecipient = $this->getElement('escalation-recipient_' . $prefix);
+            $escalations[$prefix]['condition'] = $escalationCondition->getCondition();
+            $escalations[$prefix]['id'] = $escalationCondition->getValue('id');
+            $escalations[$prefix]['recipients'] = $escalationRecipient->getRecipients();
         }
 
         /** @var EventRuleConfigFilter $configFilter */
@@ -375,11 +326,11 @@ class EventRuleConfigForm extends Form
     {
         /** @var array<int, array<string, mixed>> $escalations */
         $escalations = $this->config['rule_escalation'] ?? [];
-        $pos = hex2bin($prefix);
+        $pos = $prefix;
         $disableRemoveButton = false;
         $escalationId = $escalations[$pos]['id'] ?? null;
 
-        if ($escalationId && ctype_digit($escalationId)) {
+        if ($escalationId) {
             $incidentCount = Incident::on(Database::get())
                 ->with('rule_escalation')
                 ->filter(Filter::equal('rule_escalation.id', $escalationId))
@@ -388,7 +339,9 @@ class EventRuleConfigForm extends Form
             $disableRemoveButton = $incidentCount > 0;
         }
 
-        $button = new SubmitButtonElement(
+        /** @var SubmitButtonElement $button */
+        $button = $this->createElement(
+            'submitButton',
             'remove-escalation',
             [
                 'class'          => ['remove-escalation', 'remove-button', 'control-button', 'spinner'],
@@ -425,7 +378,7 @@ class EventRuleConfigForm extends Form
             $db->insert('rule', [
                 'name'          => $config['name'],
                 'timeperiod_id' => $config['timeperiod_id'] ?? null,
-                'object_filter' => $config['object_filter'] ?? null,
+                'object_filter' => $config['object_filter'] ?: null,
                 'is_active'     => $config['is_active'] ?? 'n'
             ]);
 
@@ -434,7 +387,7 @@ class EventRuleConfigForm extends Form
             $db->update('rule', [
                 'name'          => $config['name'],
                 'timeperiod_id' => $config['timeperiod_id'] ?? null,
-                'object_filter' => $config['object_filter'] ?? null,
+                'object_filter' => $config['object_filter'] ?: null,
                 'is_active'     => $config['is_active'] ?? 'n'
             ], ['id = ?' => $id]);
         }
@@ -588,13 +541,30 @@ class EventRuleConfigForm extends Form
         }
     }
 
-    public function isValidEvent($event)
+    /**
+     * Get whether the delete button was pressed
+     *
+     * @return bool
+     */
+    public function hasBeenRemoved(): bool
     {
-        if (in_array($event, [self::ON_CHANGE, self::ON_DELETE, self::ON_DISCARD])) {
-            return true;
-        }
+        $btn = $this->getPressedSubmitElement();
+        $csrf = $this->getElement('CSRFToken');
 
-        return parent::isValidEvent($event);
+        return $csrf !== null && $csrf->isValid() && $btn !== null && $btn->getName() === 'delete';
+    }
+
+    /**
+     * Get whether the discard button was pressed
+     *
+     * @return bool
+     */
+    public function hasBeenDiscarded(): bool
+    {
+        $btn = $this->getPressedSubmitElement();
+        $csrf = $this->getElement('CSRFToken');
+
+        return $csrf !== null && $csrf->isValid() && $btn !== null && $btn->getName() === 'discard_changes';
     }
 
     /**
@@ -635,11 +605,11 @@ class EventRuleConfigForm extends Form
      *
      * @return string
      */
-    protected function getPrefixesMap(int $escalationCount): string
+    protected function getPrefixes(int $escalationCount): string
     {
         $prefixesMap = [];
         for ($i = 1; $i <= $escalationCount; $i++) {
-            $prefixesMap[] = bin2hex((string) $i);
+            $prefixesMap[] = $i;
         }
 
         return implode(',', $prefixesMap);

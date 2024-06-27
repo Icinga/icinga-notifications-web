@@ -8,7 +8,7 @@ use ipl\Html\BaseHtmlElement;
 
 class EscalationConditionList extends BaseHtmlElement
 {
-    protected $defaultAttributes = ['class' => 'options'];
+    protected $defaultAttributes = ['class' => 'escalation-condition-list'];
 
     protected $tag = 'ul';
 
@@ -16,7 +16,7 @@ class EscalationConditionList extends BaseHtmlElement
     protected $conditions;
 
     /**
-     * Create conditions list of the escalation
+     * Create a list of escalation conditions
      *
      * @param EscalationConditionListItem[] $conditions
      */
@@ -35,12 +35,10 @@ class EscalationConditionList extends BaseHtmlElement
                 continue;
             }
 
-            if ($removedPosition) {
+            if ($removedPosition !==  null) {
                 $condition->setPosition($position - 1);
             }
-        }
 
-        foreach ($this->conditions as $position => $condition) {
             if ($position !== $removedPosition) {
                 $this->addHtml($condition);
             }

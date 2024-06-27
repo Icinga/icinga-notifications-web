@@ -8,9 +8,12 @@ use ipl\Html\BaseHtmlElement;
 use ipl\Html\Contract\FormElement;
 use ipl\Html\FormElement\SubmitButtonElement;
 
+/**
+ * Escalation condition item of an escalation condition list. Represents one condition.
+ */
 class EscalationConditionListItem extends BaseHtmlElement
 {
-    protected $defaultAttributes = ['class' => 'option'];
+    protected $defaultAttributes = ['class' => 'escalation-condition-list-item'];
 
     protected $tag = 'li';
 
@@ -26,7 +29,7 @@ class EscalationConditionListItem extends BaseHtmlElement
     /** @var FormElement Condition value */
     protected $conditionVal;
 
-    /** @var int */
+    /** @var int Position of the condition in the condition list */
     protected $position;
 
     /**
@@ -75,9 +78,14 @@ class EscalationConditionListItem extends BaseHtmlElement
         return $this;
     }
 
-    public function setRemoveButton(?SubmitButtonElement $removeButton): self
+    /**
+     * Removes the remove button from the list item
+     *
+     * @return $this
+     */
+    public function removeRemoveButton(): self
     {
-        $this->removeButton = $removeButton;
+        $this->removeButton = null;
 
         return $this;
     }

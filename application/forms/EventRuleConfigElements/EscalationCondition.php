@@ -19,13 +19,16 @@ class EscalationCondition extends FieldsetElement
     protected $defaultAttributes = ['class' => 'escalation-condition'];
 
     /** @var EscalationConditionListItem[] Condition list items */
-    protected $conditions = [];
+    protected $conditionListItems = [];
 
     /** @var EventRuleConfigForm */
     protected $configForm;
 
     /** @var string */
     protected $prefix;
+
+    /** @var string condition filter */
+    protected $condition;
 
     public function __construct(string $prefix, EventRuleConfigForm $configForm)
     {
@@ -35,12 +38,48 @@ class EscalationCondition extends FieldsetElement
         parent::__construct('escalation-condition_' . $this->prefix);
     }
 
+    /**
+     * Set the condition value
+     *
+     * @param $id
+     * @param $condition
+     *
+     * @return $this
+     */
+    public function setCondition($condition): self
+    {
+        $this->condition = $condition;
+
+        return $this;
+    }
+
+    /**
+     * Get the rendered condition
+     *
+     * @return string
+     */
+    public function getCondition(): string
+    {
+        return $this->condition;
+    }
+
     protected function assemble(): void
     {
-        $this->addElement('hidden', 'condition-count');
+        $filters = QueryString::parse($this->condition);
+
+        if ($filters instanceof Filter\Chain) {
+            $conditionCount = $filters->count();
+        } else {
+            $conditionCount = 1;
+
+            $filters = Filter::all($filters);
+        }
+
+        $this->addElement('hidden', 'condition-count', ['value' => $conditionCount]);
         // Escalation Id to which the condition belongs
         $this->addElement('hidden', 'id');
 
+        /** @var SubmitButtonElement $addCondition */
         $addCondition = $this->createElement(
             'submitButton',
             'add-condition',
@@ -54,25 +93,22 @@ class EscalationCondition extends FieldsetElement
 
         $this->registerElement($addCondition);
 
-        $conditionCount = $this->getValue('condition-count');
-        $zeroConditions = $this->configForm->getValue('zero-condition-escalation') === $this->prefix;
-        $defaultCount = 1;
+        $zeroConditions = (string) $this->configForm->getValue('zero-condition-escalation') === $this->prefix;
         $configHasZeroConditionEscalation = $this->configForm->hasZeroConditionEscalation();
         if ($zeroConditions && $configHasZeroConditionEscalation) {
-            $defaultCount = 0;
-            $conditionCount = $defaultCount;
-        } else {
-            $conditionCount = $conditionCount === null ? $defaultCount : (int) $conditionCount;
+            $conditionCount = 0;
+        } elseif ($conditionCount === 0) {
+            $filters->add(Filter::equal('placeholder', ''));
+
+            $conditionCount += 1;
         }
 
         if ($addCondition->hasBeenPressed()) {
-            ++$conditionCount;
-            if ($defaultCount === 0 && $conditionCount === 1) {
-                $configHasZeroConditionEscalation = false;
-            }
+            $filters->add(Filter::equal('placeholder', ''));
+            $conditionCount += 1;
+            $this->getElement('condition-count')->setValue($conditionCount);
         }
 
-        $this->getElement('condition-count')->setValue($conditionCount);
         if ($conditionCount === 0) {
             $this->addAttributes(['class' => 'zero-escalation-condition']);
             $this->addElement($addCondition);
@@ -83,10 +119,30 @@ class EscalationCondition extends FieldsetElement
         $this->getAttributes()->remove('class', 'zero-escalation-condition');
         $removePosition = null;
 
-        for ($i = 1; $i <= $conditionCount; $i++) {
-            $col = $this->createElement(
+        $position = 1;
+        $operators = ['=', '>', '>=', '<', '<=', '!='];
+        $severityOptions = [
+            'ok'      => $this->translate('Ok', 'notification.severity'),
+            'debug'   => $this->translate('Debug', 'notification.severity'),
+            'info'    => $this->translate('Information', 'notification.severity'),
+            'notice'  => $this->translate('Notice', 'notification.severity'),
+            'warning' => $this->translate('Warning', 'notification.severity'),
+            'err'     => $this->translate('Error', 'notification.severity'),
+            'crit'    => $this->translate('Critical', 'notification.severity'),
+            'alert'   => $this->translate('Alert', 'notification.severity'),
+            'emerg'   => $this->translate('Emergency', 'notification.severity')
+        ];
+
+        /** @var Filter\Condition $filter */
+        foreach ($filters as $filter) {
+            $filterType = $this->getPopulatedValue('column_' . $position) ?? $filter->getColumn();
+            if ($filterType === 'placeholder') {
+                $filterType = '';
+            }
+
+            $typeElement = $this->createElement(
                 'select',
-                'column_' . $i,
+                'column_' . $position,
                 [
                     'class'           => ['autosubmit', 'left-operand'],
                     'options'         => [
@@ -95,51 +151,50 @@ class EscalationCondition extends FieldsetElement
                         'incident_age'      => $this->translate('Incident Age')
                     ],
                     'disabledOptions' => [''],
-                    'required'        => true
+                    'required'        => true,
+                    'value'           => $filterType,
                 ]
             );
 
-            $operators = ['=', '>', '>=', '<', '<=', '!='];
-            $op = $this->createElement(
+            $operatorElement = $this->createElement(
                 'select',
-                'operator_' . $i,
+                'operator_' . $position,
                 [
-                    'class'    => ['operator-input', 'autosubmit'],
-                    'options'  => array_combine($operators, $operators),
-                    'required' => true
+                    'class'     => ['operator-input', 'autosubmit'],
+                    'options'   => array_combine($operators, $operators),
+                    'required'  => true,
+                    'value'     => QueryString::getRuleSymbol($filter),
                 ]
             );
 
-            $valName = 'val_' . $i;
-            switch ($this->getPopulatedValue('column_' . $i)) {
+            $valName = 'val_' . $position;
+            $filterValue = $filter->getValue();
+            switch ($filterType) {
                 case 'incident_severity':
-                    $val = $this->createElement(
+                    $valElement = $this->createElement(
                         'select',
                         $valName,
                         [
                             'class'   => ['autosubmit', 'right-operand'],
-                            'options' => [
-                                'ok'      => $this->translate('Ok', 'notification.severity'),
-                                'debug'   => $this->translate('Debug', 'notification.severity'),
-                                'info'    => $this->translate('Information', 'notification.severity'),
-                                'notice'  => $this->translate('Notice', 'notification.severity'),
-                                'warning' => $this->translate('Warning', 'notification.severity'),
-                                'err'     => $this->translate('Error', 'notification.severity'),
-                                'crit'    => $this->translate('Critical', 'notification.severity'),
-                                'alert'   => $this->translate('Alert', 'notification.severity'),
-                                'emerg'   => $this->translate('Emergency', 'notification.severity')
-                            ]
+                            'options' => $severityOptions,
+                            'value'   => $filterValue
                         ]
                     );
 
                     break;
                 case 'incident_age':
-                    $val = $this->createElement(
+                    if (array_key_exists($filterValue, $severityOptions)) {
+                        $filterValue = '';
+                        $this->clearPopulatedValue($valName);
+                    }
+
+                    $valElement = $this->createElement(
                         'text',
                         $valName,
                         [
                             'required'   => true,
                             'class'      => ['autosubmit', 'right-operand'],
+                            'value'       => $filterValue,
                             'validators' => [
                                 new CallbackValidator(function ($value, $validator) {
                                     if (! preg_match('~^\d+(?:\.?\d*)?[hms]{1}$~', $value)) {
@@ -163,39 +218,49 @@ class EscalationCondition extends FieldsetElement
 
                     break;
                 default:
-                    $val = $this->createElement('text', $valName, [
+                    $valElement = $this->createElement('text', $valName, [
                         'class'       => 'right-operand',
                         'placeholder' => $this->translate('Please make a decision'),
                         'disabled'    => true
                     ]);
             }
 
-            $this->registerElement($col);
-            $this->registerElement($op);
-            $this->registerElement($val);
+            $this->registerElement($typeElement);
+            $this->registerElement($operatorElement);
+            $this->registerElement($valElement);
 
             $removeButton = null;
 
             if (($conditionCount > 1) || ($conditionCount === 1 && ! $configHasZeroConditionEscalation)) {
-                $removeButton = $this->createRemoveButton($i);
+                $removeButton = $this->createRemoveButton($position);
                 if ($removeButton->hasBeenPressed()) {
-                    $removePosition = $i;
+                    $removePosition = $position;
                 }
             }
 
-            (new EventRuleDecorator())->decorate($val);
-            $this->conditions[$i] = new EscalationConditionListItem($i, $col, $op, $val, $removeButton);
+            (new EventRuleDecorator())->decorate($valElement);
+            $this->conditionListItems[$position] = new EscalationConditionListItem(
+                $position,
+                $typeElement,
+                $operatorElement,
+                $valElement,
+                $removeButton
+            );
+
+            $position++;
         }
 
         if ($removePosition) {
             $this->getElement('condition-count')->setValue(--$conditionCount);
             if ($conditionCount === 1 && $configHasZeroConditionEscalation) {
                 $idx = $removePosition === 1 ? 2 : 1;
-                $this->conditions[$idx]->setRemoveButton(null);
+                $this->conditionListItems[$idx]->removeRemoveButton();
+                $filters->getIterator()->offsetUnset($idx);
             }
         }
 
-        $this->add(new EscalationConditionList($this->conditions));
+        $this->condition = (new FilterRenderer($filters))->render();
+        $this->add(new EscalationConditionList($this->conditionListItems));
         $this->addElement($addCondition);
     }
 
@@ -229,41 +294,5 @@ class EscalationCondition extends FieldsetElement
         $this->ensureAssembled();
 
         return parent::hasValue();
-    }
-
-    /**
-     * Get the rendered condition
-     *
-     * @return string
-     */
-    public function getCondition(): string
-    {
-        $count = (int) $this->getValue('condition-count');
-        if ($count === 0) {
-            return '';
-        }
-
-        $filter = Filter::any();
-        $removePosition = (int) $this->getValue('remove');
-        if ($removePosition) {
-            $count += 1;
-        }
-
-        foreach (range(1, $count) as $count) {
-            if ($count === $removePosition) {
-                continue;
-            }
-
-            $chosenType = $this->getValue('column_' . $count, 'placeholder');
-
-            $filterStr = $chosenType
-                . $this->getValue('operator_' . $count)
-                . ($this->getValue('val_' . $count) ?? ($chosenType === 'incident_severity' ? 'ok' : ''));
-
-            $filter->add(QueryString::parse($filterStr));
-        }
-
-        return (new FilterRenderer($filter))
-            ->render();
     }
 }

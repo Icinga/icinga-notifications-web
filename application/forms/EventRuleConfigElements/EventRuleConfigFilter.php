@@ -29,6 +29,16 @@ class EventRuleConfigFilter extends FieldsetElement
         parent::__construct('config-filter');
     }
 
+    /**
+     * Get the event rule's object filter
+     *
+     * @return ?string
+     */
+    public function getObjectFilter(): ?string
+    {
+        return $this->objectFilter;
+    }
+
     protected function assemble(): void
     {
         if (! $this->getObjectFilter()) {
@@ -81,15 +91,5 @@ class EventRuleConfigFilter extends FieldsetElement
         $filterElement->addHtml($searchBar, $editorOpener);
 
         $this->addHtml($filterElement);
-    }
-
-    /**
-     * Get the event rule's object filter
-     *
-     * @return ?string
-     */
-    public function getObjectFilter(): ?string
-    {
-        return $this->objectFilter;
     }
 }

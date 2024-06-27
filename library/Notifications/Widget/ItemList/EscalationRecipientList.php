@@ -8,7 +8,7 @@ use ipl\Html\BaseHtmlElement;
 
 class EscalationRecipientList extends BaseHtmlElement
 {
-    protected $defaultAttributes = ['class' => 'options'];
+    protected $defaultAttributes = ['class' => 'escalation-recipient-list'];
 
     protected $tag = 'ul';
 
@@ -16,7 +16,7 @@ class EscalationRecipientList extends BaseHtmlElement
     protected $recipients;
 
     /**
-     * Create recipients list of the escalation
+     * Create a list of escalation recipients
      *
      * @param EscalationRecipientListItem[] $recipients
      */
@@ -37,17 +37,11 @@ class EscalationRecipientList extends BaseHtmlElement
                 continue;
             }
 
-            if ($removedPosition) {
+            if ($removedPosition !== null) {
                 $recipient->setPosition($position - 1);
             }
-        }
 
-        foreach ($this->recipients as $position => $recipient) {
             if ($position !== $removedPosition) {
-                if ($recipientCount === 1) {
-                    $recipient->removeRemoveButton();
-                }
-
                 $this->addHtml($recipient);
             }
         }

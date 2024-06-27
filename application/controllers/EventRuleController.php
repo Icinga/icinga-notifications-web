@@ -70,21 +70,22 @@ class EventRuleController extends CompatController
                 Notification::success((sprintf(t('Successfully saved event rule %s'), $configValues['name'])));
                 $this->redirectNow(Links::eventRule((int) $ruleId));
             })
-            ->on(EventRuleConfigForm::ON_DELETE, function (EventRuleConfigForm $form) use ($ruleId, $configValues) {
-                $form->removeRule((int) $ruleId);
-                $this->sessionNamespace->delete($ruleId);
-                Notification::success(sprintf(t('Successfully deleted event rule %s'), $configValues['name']));
-                $this->redirectNow(Links::eventRules());
-            })
-            ->on(EventRuleConfigForm::ON_DISCARD, function () use ($ruleId, $configValues) {
-                $this->sessionNamespace->delete($ruleId);
-                Notification::success(
-                    sprintf(
-                        t('Successfully discarded changes to event rule %s'),
-                        $configValues['name']
-                    )
-                );
-                $this->redirectNow(Links::eventRule((int) $ruleId));
+            ->on(EventRuleConfigForm::ON_SENT, function (EventRuleConfigForm $form) use ($ruleId, $configValues) {
+                if ($form->hasBeenRemoved()) {
+                    $form->removeRule((int) $ruleId);
+                    $this->sessionNamespace->delete($ruleId);
+                    Notification::success(sprintf(t('Successfully deleted event rule %s'), $configValues['name']));
+                    $this->redirectNow(Links::eventRules());
+                } elseif ($form->hasBeenDiscarded()) {
+                    $this->sessionNamespace->delete($ruleId);
+                    Notification::success(
+                        sprintf(
+                            t('Successfully discarded changes to event rule %s'),
+                            $configValues['name']
+                        )
+                    );
+                    $this->redirectNow(Links::eventRule((int) $ruleId));
+                }
             })
             ->on(EventRuleConfigForm::ON_CHANGE, function (EventRuleConfigForm $form) use ($ruleId, $configValues) {
                 $formValues = $form->getValues();

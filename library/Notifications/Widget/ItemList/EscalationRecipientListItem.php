@@ -8,6 +8,9 @@ use ipl\Html\BaseHtmlElement;
 use ipl\Html\Contract\FormElement;
 use ipl\Html\FormElement\SubmitButtonElement;
 
+/**
+ * Escalation recipient item of an escalation condition list. Represents one recipient.
+ */
 class EscalationRecipientListItem extends BaseHtmlElement
 {
     protected $defaultAttributes = ['class' => 'option'];
@@ -23,7 +26,7 @@ class EscalationRecipientListItem extends BaseHtmlElement
     /** @var FormElement Recipient channel */
     protected $channel;
 
-    /** @var int */
+    /** @var int Position of the recipient in the recipient list */
     protected $position;
 
     /**
@@ -70,6 +73,11 @@ class EscalationRecipientListItem extends BaseHtmlElement
         return $this;
     }
 
+    /**
+     * Removes the remove button from the list item
+     *
+     * @return $this
+     */
     public function removeRemoveButton(): self
     {
         $this->removeButton = null;
