@@ -39,14 +39,16 @@ class ContactGroupsController extends CompatController
 
     public function indexAction(): void
     {
-        $groups = Contactgroup::on(Database::get());
+        $groups = Contactgroup::on(Database::get())
+            ->filter(Filter::equal('deleted', 'n'));
 
         $limitControl = $this->createLimitControl();
         $paginationControl = $this->createPaginationControl($groups);
         $sortControl = $this->createSortControl(
             $groups,
             [
-                'name' => t('Group Name'),
+                'name'          => t('Group Name'),
+                'changed_at'    => t('Changed At')
             ]
         );
 

@@ -27,12 +27,16 @@ class SchedulesController extends CompatController
 
     public function indexAction(): void
     {
-        $schedules = Schedule::on(Database::get());
+        $schedules = Schedule::on(Database::get())
+            ->filter(Filter::equal('deleted', 'n'));
 
         $limitControl = $this->createLimitControl();
         $sortControl = $this->createSortControl(
             $schedules,
-            ['schedule.name' => t('Name')]
+            [
+                'schedule.name' => t('Name'),
+                'changed_at'    => t('Changed At')
+            ]
         );
 
         $paginationControl = $this->createPaginationControl($schedules);

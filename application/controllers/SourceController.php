@@ -14,7 +14,7 @@ use ipl\Web\Compat\CompatController;
 
 class SourceController extends CompatController
 {
-    public function init()
+    public function init(): void
     {
         $this->assertPermission('config/modules');
     }
@@ -23,38 +23,29 @@ class SourceController extends CompatController
     {
         $sourceId = (int) $this->params->getRequired('id');
 
-        /** @var ?Source $source */
-        $source = Source::on(Database::get())
-            ->filter(Filter::equal('id', $sourceId))
-            ->first();
-        if ($source === null) {
-            $this->httpNotFound($this->translate('Source not found'));
-        }
-
-        $form = (new SourceForm(Database::get(), $sourceId))
-            ->populate($source)
+        $form = (new SourceForm(Database::get()))
+            ->loadSource($sourceId)
             ->on(SourceForm::ON_SUCCESS, function (SourceForm $form) {
-                /** @var string $sourceName */
-                $sourceName = $form->getValue('name');
-
                 /** @var FormSubmitElement $pressedButton */
                 $pressedButton = $form->getPressedSubmitElement();
                 if ($pressedButton->getName() === 'delete') {
+                    $form->removeSource();
                     Notification::success(sprintf(
                         $this->translate('Deleted source "%s" successfully'),
-                        $sourceName
+                        $form->getSourceName()
                     ));
                 } else {
+                    $form->editSource();
                     Notification::success(sprintf(
                         $this->translate('Updated source "%s" successfully'),
-                        $sourceName
+                        $form->getSourceName()
                     ));
                 }
 
                 $this->switchToSingleColumnLayout();
             })->handleRequest($this->getServerRequest());
 
-        $this->addTitleTab(sprintf($this->translate('Source: %s'), $source->name));
+        $this->addTitleTab(sprintf($this->translate('Source: %s'), $form->getSourceName()));
         $this->addContent($form);
     }
 }

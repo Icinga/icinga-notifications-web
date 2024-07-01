@@ -43,7 +43,8 @@ class ChannelsController extends CompatController
 
     public function indexAction()
     {
-        $channels = Channel::on($this->db);
+        $channels = Channel::on($this->db)
+            ->filter(Filter::equal('deleted', 'n'));
         $this->mergeTabs($this->Module()->getConfigTabs());
         $this->getTabs()->activate('channels');
 
@@ -52,8 +53,9 @@ class ChannelsController extends CompatController
         $sortControl = $this->createSortControl(
             $channels,
             [
-                'name' => t('Name'),
-                'type' => t('Type')
+                'name'          => t('Name'),
+                'type'          => t('Type'),
+                'changed_at'    => t('Changed At')
             ]
         );
 
@@ -104,6 +106,7 @@ class ChannelsController extends CompatController
         $this->addTitleTab(t('Add Channel'));
         $form = (new ChannelForm($this->db))
             ->on(ChannelForm::ON_SUCCESS, function (ChannelForm $form) {
+                $form->addChannel();
                 Notification::success(
                     sprintf(
                         t('New channel %s has successfully been added'),

@@ -45,17 +45,17 @@ use ipl\Sql\Select;
  */
 class IncidentHistory extends Model
 {
-    public function getTableName()
+    public function getTableName(): string
     {
         return 'incident_history';
     }
 
-    public function getKeyName()
+    public function getKeyName(): string
     {
         return 'id';
     }
 
-    public function getColumns()
+    public function getColumns(): array
     {
         return [
             'incident_id',
@@ -78,7 +78,7 @@ class IncidentHistory extends Model
         ];
     }
 
-    public function getColumnDefinitions()
+    public function getColumnDefinitions(): array
     {
         return [
             'incident_id'        => t('Incident Id'),
@@ -98,17 +98,17 @@ class IncidentHistory extends Model
         ];
     }
 
-    public function createBehaviors(Behaviors $behaviors)
+    public function createBehaviors(Behaviors $behaviors): void
     {
         $behaviors->add(new MillisecondTimestamp(['time', 'sent_at']));
     }
 
-    public function getDefaultSort()
+    public function getDefaultSort(): array
     {
         return ['incident_history.time desc, incident_history.type desc'];
     }
 
-    public static function on(Connection $db)
+    public static function on(Connection $db): Query
     {
         $query = parent::on($db);
 
@@ -121,7 +121,7 @@ class IncidentHistory extends Model
         return $query;
     }
 
-    public function createRelations(Relations $relations)
+    public function createRelations(Relations $relations): void
     {
         $relations->belongsTo('incident', Incident::class);
 

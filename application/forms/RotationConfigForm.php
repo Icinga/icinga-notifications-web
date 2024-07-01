@@ -75,6 +75,9 @@ class RotationConfigForm extends CompatForm
     /** @var ?DateTime The first handoff of a newer version for this rotation */
     protected $nextHandoff;
 
+    /** @var int The rotation id */
+    protected $rotationId;
+
     /**
      * Set the label for the submit button
      *
@@ -199,97 +202,8 @@ class RotationConfigForm extends CompatForm
      */
     public function loadRotation(int $rotationId): self
     {
-        /** @var ?Rotation $rotation */
-        $rotation = Rotation::on($this->db)
-            ->filter(Filter::equal('id', $rotationId))
-            ->first();
-        if ($rotation === null) {
-            throw new HttpNotFoundException($this->translate('Rotation not found'));
-        }
-
-        $formData = [
-            'mode' => $rotation->mode,
-            'name' => $rotation->name,
-            'priority' => $rotation->priority,
-            'schedule' => $rotation->schedule_id,
-            'options' => $rotation->options
-        ];
-        if (! self::EXPERIMENTAL_OVERRIDES) {
-            $formData['first_handoff'] = $rotation->first_handoff;
-        }
-
-        if (self::EXPERIMENTAL_OVERRIDES) {
-            $getHandoff = function (Rotation $rotation): DateTime {
-                switch ($rotation->mode) {
-                    case '24-7':
-                        $time = $rotation->options['at'];
-
-                        break;
-                    case 'partial':
-                        $time = $rotation->options['from'];
-
-                        break;
-                    case 'multi':
-                        $time = $rotation->options['from_at'];
-
-                        break;
-                    default:
-                        throw new LogicException('Invalid mode');
-                }
-
-                $handoff = DateTime::createFromFormat('Y-m-d H:i', $rotation->first_handoff . ' ' . $time);
-                if ($handoff === false) {
-                    throw new ConfigurationError('Invalid date format');
-                }
-
-                return $handoff;
-            };
-
-            $this->previousHandoff = $getHandoff($rotation);
-
-            /** @var ?TimeperiodEntry $previousShift */
-            $previousShift = TimeperiodEntry::on($this->db)
-                ->columns('until_time')
-                ->filter(Filter::all(
-                    Filter::equal('timeperiod.rotation.schedule_id', $rotation->schedule_id),
-                    Filter::equal('timeperiod.rotation.priority', $rotation->priority),
-                    Filter::unequal('timeperiod.owned_by_rotation_id', $rotation->id),
-                    Filter::lessThanOrEqual('until_time', $this->previousHandoff),
-                    Filter::like('until_time', '*')
-                ))
-                ->orderBy('until_time', SORT_DESC)
-                ->first();
-            if ($previousShift !== null) {
-                $this->previousShift = $previousShift->until_time;
-            }
-
-            /** @var ?Rotation $newerRotation */
-            $newerRotation = Rotation::on($this->db)
-                ->columns(['first_handoff', 'options', 'mode'])
-                ->filter(Filter::all(
-                    Filter::equal('schedule_id', $rotation->schedule_id),
-                    Filter::equal('priority', $rotation->priority),
-                    Filter::greaterThan('first_handoff', $rotation->first_handoff)
-                ))
-                ->orderBy('first_handoff', SORT_ASC)
-                ->first();
-            if ($newerRotation !== null) {
-                $this->nextHandoff = $getHandoff($newerRotation);
-            }
-        }
-
-        $members = [];
-        foreach ($rotation->member->orderBy('position', SORT_ASC) as $member) {
-            if ($member->contact_id !== null) {
-                $members[] = 'contact:' . $member->contact_id;
-            } else {
-                $members[] = 'group:' . $member->contactgroup_id;
-            }
-        }
-
-        $formData['members'] = implode(',', $members);
-
-        $this->populate($formData);
+        $this->rotationId = $rotationId;
+        $this->populate($this->fetchDbValues());
 
         return $this;
     }
@@ -397,7 +311,10 @@ class RotationConfigForm extends CompatForm
             (new Select())
                 ->from('rotation')
                 ->columns(new Expression('MAX(priority) + 1'))
-                ->where(['schedule_id = ?' => $this->scheduleId])
+                ->where([
+                    'schedule_id = ?'   => $this->scheduleId,
+                    'deleted = ?'       => 'n',
+                ])
         ) ?? 0)->send(true);
 
         if ($transactionStarted) {
@@ -424,21 +341,31 @@ class RotationConfigForm extends CompatForm
             $transactionStarted = $this->db->beginTransaction();
         }
 
+        if (! $this->hasChanges()) {
+            return;
+        }
+
         // Delay the creation, avoids intermediate constraint failures
         $createStmt = $this->createRotation((int) $priority);
 
         $allEntriesRemoved = true;
+        $changedAt = time() * 1000;
         if (self::EXPERIMENTAL_OVERRIDES) {
             // We only show a single name, even in case of multiple versions of a rotation.
             // To avoid confusion, we update all versions upon change of the name
-            $this->db->update('rotation', ['name' => $this->getValue('name')], [
-                'schedule_id = ?' => $this->scheduleId,
-                'priority = ?' => $priority
-            ]);
+            $this->db->update(
+                'rotation',
+                ['name' => $this->getValue('name'), 'changed_at' => $changedAt],
+                ['schedule_id = ?' => $this->scheduleId, 'priority = ?' => $priority]
+            );
 
             $firstHandoff = $createStmt->current();
             $timeperiodEntries = TimeperiodEntry::on($this->db)
-                ->filter(Filter::equal('timeperiod.owned_by_rotation_id', $rotationId));
+                ->filter(Filter::all(
+                    Filter::equal('deleted', 'n'),
+                    Filter::equal('timeperiod.deleted', 'n'),
+                    Filter::equal('timeperiod.owned_by_rotation_id', $rotationId)
+                ));
 
             foreach ($timeperiodEntries as $timeperiodEntry) {
                 /** @var TimeperiodEntry $timeperiodEntry */
@@ -468,13 +395,14 @@ class RotationConfigForm extends CompatForm
                 }
 
                 if ($lastHandoff === null) {
-                    // If the handoff didn't happen at all, the entry can safely be removed
+                    // If the handoff didn't happen at all, the entry can safely be removed(marked as removed)
                     $this->db->delete('timeperiod_entry', ['id = ?' => $timeperiodEntry->id]);
                 } else {
                     $allEntriesRemoved = false;
                     $this->db->update('timeperiod_entry', [
-                        'until_time' => $lastShiftEnd->format('U.u') * 1000.0,
-                        'rrule' => $rrule->setUntil($lastHandoff)->getString(Rule::TZ_FIXED)
+                        'until_time'    => $lastShiftEnd->format('U.u') * 1000.0,
+                        'rrule'         => $rrule->setUntil($lastHandoff)->getString(Rule::TZ_FIXED),
+                        'changed_at'    => $changedAt
                     ], ['id = ?' => $timeperiodEntry->id]);
                 }
             }
@@ -524,32 +452,47 @@ class RotationConfigForm extends CompatForm
             (new Select())
                 ->from('timeperiod')
                 ->columns('id')
-                ->where(['owned_by_rotation_id = ?' => $id])
+                ->where([
+                    'owned_by_rotation_id = ?'  => $id,
+                    'deleted = ?'               => 'n',
+                ])
         );
 
-        $this->db->delete('timeperiod_entry', ['timeperiod_id = ?' => $timeperiodId]);
-        $this->db->delete('timeperiod', ['id = ?' => $timeperiodId]);
-        $this->db->delete('rotation_member', ['rotation_id = ?' => $id]);
-        $this->db->delete('rotation', ['id = ?' => $id]);
+        $changedAt = time() * 1000;
+        $markAsDeleted = ['changed_at' => $changedAt, 'deleted' => 'y'];
+
+        $this->db->update('timeperiod_entry', $markAsDeleted, ['timeperiod_id = ?' => $timeperiodId]);
+        $this->db->update('timeperiod', $markAsDeleted, ['id = ?' => $timeperiodId]);
+        $this->db->update('rotation_member', $markAsDeleted + ['position' => null], ['rotation_id = ?' => $id]);
+
+        $this->db->update(
+            'rotation',
+            $markAsDeleted + ['priority' => null, 'first_handoff' => null],
+            ['id = ?' => $id]
+        );
 
         $rotations = Rotation::on($this->db)
-            ->filter(Filter::equal('schedule_id', $this->scheduleId))
-            ->filter(Filter::equal('priority', $priority));
+            ->filter(Filter::all(
+                Filter::equal('deleted', 'n'),
+                Filter::equal('schedule_id', $this->scheduleId),
+                Filter::equal('priority', $priority)
+            ));
         if ($rotations->count() === 0) {
             $affectedRotations = $this->db->select(
                 (new Select())
                     ->columns('id')
                     ->from('rotation')
                     ->where([
-                        'schedule_id = ?' => $this->scheduleId,
-                        'priority > ?' => $priority
+                        'deleted = ?'       => 'n',
+                        'schedule_id = ?'   => $this->scheduleId,
+                        'priority > ?'      => $priority
                     ])
                     ->orderBy('priority ASC')
             );
             foreach ($affectedRotations as $rotation) {
                 $this->db->update(
                     'rotation',
-                    ['priority' => new Expression('priority - 1')],
+                    ['priority' => new Expression('priority - 1'), 'changed_at' => $changedAt],
                     ['id = ?' => $rotation->id]
                 );
             }
@@ -579,8 +522,15 @@ class RotationConfigForm extends CompatForm
 
         $rotations = Rotation::on($this->db)
             ->columns('id')
-            ->filter(Filter::equal('schedule_id', $this->scheduleId))
-            ->filter(Filter::equal('priority', $priority));
+            ->filter(Filter::all(
+                Filter::equal('deleted', 'n'),
+                Filter::equal('schedule_id', $this->scheduleId),
+                Filter::equal('priority', $priority)
+            ));
+
+        $changedAt = time() * 1000;
+        $markAsDeleted = ['changed_at' => $changedAt, 'deleted' => 'y'];
+
         foreach ($rotations as $rotation) {
             $timeperiodId = $this->db->fetchScalar(
                 (new Select())
@@ -589,10 +539,19 @@ class RotationConfigForm extends CompatForm
                     ->where(['owned_by_rotation_id = ?' => $rotation->id])
             );
 
-            $this->db->delete('timeperiod_entry', ['timeperiod_id = ?' => $timeperiodId]);
-            $this->db->delete('timeperiod', ['id = ?' => $timeperiodId]);
-            $this->db->delete('rotation_member', ['rotation_id = ?' => $rotation->id]);
-            $this->db->delete('rotation', ['id = ?' => $rotation->id]);
+            $this->db->update('timeperiod_entry', $markAsDeleted, ['timeperiod_id = ?' => $timeperiodId]);
+            $this->db->update('timeperiod', $markAsDeleted, ['id = ?' => $timeperiodId]);
+            $this->db->update(
+                'rotation_member',
+                $markAsDeleted + ['position' => null],
+                ['rotation_id = ?' => $rotation->id]
+            );
+
+            $this->db->update(
+                'rotation',
+                $markAsDeleted + ['priority' => null, 'first_handoff' => null],
+                ['id = ?' => $rotation->id]
+            );
         }
 
         $affectedRotations = $this->db->select(
@@ -600,15 +559,16 @@ class RotationConfigForm extends CompatForm
                 ->columns('id')
                 ->from('rotation')
                 ->where([
-                    'schedule_id = ?' => $this->scheduleId,
-                    'priority > ?' => $priority
+                    'deleted = ?'       => 'n',
+                    'schedule_id = ?'   => $this->scheduleId,
+                    'priority > ?'      => $priority
                 ])
                 ->orderBy('priority ASC')
         );
         foreach ($affectedRotations as $rotation) {
             $this->db->update(
                 'rotation',
-                ['priority' => new Expression('priority - 1')],
+                ['priority' => new Expression('priority - 1'), 'changed_at' => $changedAt],
                 ['id = ?' => $rotation->id]
             );
         }
@@ -985,6 +945,7 @@ class RotationConfigForm extends CompatForm
                 new CallbackValidator(function ($value, $validator) {
                     $rotations = Rotation::on($this->db)
                         ->columns('id')
+                        ->filter(Filter::equal('deleted', 'n'))
                         ->filter(Filter::equal('schedule_id', $this->scheduleId))
                         ->filter(Filter::equal('name', $value));
                     if (($priority = $this->getValue('priority')) !== null) {
@@ -1118,6 +1079,7 @@ class RotationConfigForm extends CompatForm
 
             if (! empty($contactTerms)) {
                 $contacts = (Contact::on(Database::get()))
+                    ->filter(Filter::equal('deleted', 'n'))
                     ->filter(Filter::equal('id', array_keys($contactTerms)));
                 foreach ($contacts as $contact) {
                     $contactTerms[$contact->id]
@@ -1128,6 +1090,7 @@ class RotationConfigForm extends CompatForm
 
             if (! empty($groupTerms)) {
                 $groups = (Contactgroup::on(Database::get()))
+                    ->filter(Filter::equal('deleted', 'n'))
                     ->filter(Filter::equal('id', array_keys($groupTerms)));
                 foreach ($groups as $group) {
                     $groupTerms[$group->id]
@@ -1542,5 +1505,146 @@ class RotationConfigForm extends CompatForm
         array_unshift($result, $lastHandoff);
 
         return $result;
+    }
+
+    /**
+     * Fetch the values from the database
+     *
+     * @return array
+     *
+     * @throws HttpNotFoundException
+     */
+    private function fetchDbValues(): array
+    {
+        /** @var ?Rotation $rotation */
+        $rotation = Rotation::on($this->db)
+            ->filter(Filter::all(
+                Filter::equal('id', $this->rotationId),
+                Filter::equal('deleted', 'n')
+            ))
+            ->first();
+        if ($rotation === null) {
+            throw new HttpNotFoundException($this->translate('Rotation not found'));
+        }
+
+        $formData = [
+            'mode' => $rotation->mode,
+            'name' => $rotation->name,
+            'priority' => $rotation->priority,
+            'schedule' => $rotation->schedule_id,
+            'options' => $rotation->options
+        ];
+        if (! self::EXPERIMENTAL_OVERRIDES) {
+            $formData['first_handoff'] = $rotation->first_handoff;
+        }
+
+        if (self::EXPERIMENTAL_OVERRIDES) {
+            $getHandoff = function (Rotation $rotation): DateTime {
+                switch ($rotation->mode) {
+                    case '24-7':
+                        $time = $rotation->options['at'];
+
+                        break;
+                    case 'partial':
+                        $time = $rotation->options['from'];
+
+                        break;
+                    case 'multi':
+                        $time = $rotation->options['from_at'];
+
+                        break;
+                    default:
+                        throw new LogicException('Invalid mode');
+                }
+
+                $handoff = DateTime::createFromFormat('Y-m-d H:i', $rotation->first_handoff . ' ' . $time);
+                if ($handoff === false) {
+                    throw new ConfigurationError('Invalid date format');
+                }
+
+                return $handoff;
+            };
+
+            $this->previousHandoff = $getHandoff($rotation);
+
+            /** @var ?TimeperiodEntry $previousShift */
+            $previousShift = TimeperiodEntry::on($this->db)
+                ->columns('until_time')
+                ->filter(Filter::all(
+                    Filter::equal('deleted', 'n'),
+                    Filter::equal('timeperiod.deleted', 'n'),
+                    Filter::equal('timeperiod.rotation.schedule_id', $rotation->schedule_id),
+                    Filter::equal('timeperiod.rotation.priority', $rotation->priority),
+                    Filter::unequal('timeperiod.owned_by_rotation_id', $rotation->id),
+                    Filter::lessThanOrEqual('until_time', $this->previousHandoff),
+                    Filter::like('until_time', '*')
+                ))
+                ->orderBy('until_time', SORT_DESC)
+                ->first();
+            if ($previousShift !== null) {
+                $this->previousShift = $previousShift->until_time;
+            }
+
+            /** @var ?Rotation $newerRotation */
+            $newerRotation = Rotation::on($this->db)
+                ->columns(['first_handoff', 'options', 'mode'])
+                ->filter(Filter::all(
+                    Filter::equal('deleted', 'n'),
+                    Filter::equal('schedule_id', $rotation->schedule_id),
+                    Filter::equal('priority', $rotation->priority),
+                    Filter::greaterThan('first_handoff', $rotation->first_handoff)
+                ))
+                ->orderBy('first_handoff', SORT_ASC)
+                ->first();
+            if ($newerRotation !== null) {
+                $this->nextHandoff = $getHandoff($newerRotation);
+            }
+        }
+
+        $membersRes = $rotation
+            ->member
+            ->filter(Filter::equal('deleted', 'n'))
+            ->filter(Filter::any(
+                Filter::equal('contact.deleted', 'n'),
+                Filter::equal('contactgroup.deleted', 'n')
+            ))
+            ->orderBy('position', SORT_ASC);
+
+        $members = [];
+        foreach ($membersRes as $member) {
+            if ($member->contact_id !== null) {
+                $members[] = 'contact:' . $member->contact_id;
+            } else {
+                $members[] = 'group:' . $member->contactgroup_id;
+            }
+        }
+
+        $formData['members'] = implode(',', $members);
+
+        return $formData;
+    }
+
+    /**
+     * Whether the form has changes
+     *
+     * @return bool
+     */
+    public function hasChanges(): bool
+    {
+        $values = $this->getValues();
+        $values['members'] = $this->getValue('members');
+
+        // only keys that are present in $values
+        $dbValuesToCompare = array_intersect_key($this->fetchDbValues(), $values);
+
+        $checker = static function ($a, $b) use (&$checker) {
+            if (! is_array($a) || ! is_array($b)) {
+                return $a <=> $b;
+            }
+
+            return empty(array_udiff_assoc($a, $b, $checker)) ? 0 : 1;
+        };
+
+        return ! empty(array_udiff_assoc($values, $dbValuesToCompare, $checker));
     }
 }
