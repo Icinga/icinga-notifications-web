@@ -10,7 +10,6 @@ use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\EventRuleForm;
 use Icinga\Module\Notifications\Forms\SaveEventRuleForm;
 use Icinga\Module\Notifications\Model\Incident;
-use Icinga\Module\Notifications\Model\ObjectExtraTag;
 use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ExtraTagSuggestions;
 use Icinga\Module\Notifications\Widget\EventRuleConfig;
@@ -151,7 +150,7 @@ class EventRuleController extends CompatController
     public function fromDb(int $ruleId): array
     {
         $query = Rule::on(Database::get())
-            ->withoutColumns('timeperiod_id')
+            ->columns(['id', 'name', 'object_filter', 'is_active'])
             ->filter(Filter::all(
                 Filter::equal('id', $ruleId),
                 Filter::equal('deleted', 'n')
@@ -164,12 +163,22 @@ class EventRuleController extends CompatController
 
         $config = iterator_to_array($rule);
 
-        foreach ($rule->rule_escalation as $re) {
+        $ruleEscalations = $rule
+            ->rule_escalation
+            ->withoutColumns(['changed_at', 'deleted'])
+            ->filter(Filter::equal('deleted', 'n'));
+
+        foreach ($ruleEscalations as $re) {
             foreach ($re as $k => $v) {
                 $config[$re->getTableName()][$re->position][$k] = $v;
             }
 
-            foreach ($re->rule_escalation_recipient as $recipient) {
+            $escalationRecipients = $re
+                ->rule_escalation_recipient
+                ->withoutColumns(['changed_at', 'deleted'])
+                ->filter(Filter::equal('deleted', 'n'));
+
+            foreach ($escalationRecipients as $recipient) {
                 $config[$re->getTableName()][$re->position]['recipient'][] = iterator_to_array($recipient);
             }
         }
