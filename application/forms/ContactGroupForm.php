@@ -235,7 +235,8 @@ class ContactGroupForm extends CompatForm
         $toAdd = array_diff($newContacts, $storedContacts);
 
         if (! empty($toDelete)) {
-            $this->db->update('contactgroup_member',
+            $this->db->update(
+                'contactgroup_member',
                 ['changed_at' => $changedAt, 'deleted' => 'y'],
                 [
                     'contactgroup_id = ?'   => $this->contactgroupId,
@@ -270,7 +271,8 @@ class ContactGroupForm extends CompatForm
                 }
             }
             if (! empty($removeDeletedFlagFromIds)) {
-                $this->db->update('contactgroup_member',
+                $this->db->update(
+                    'contactgroup_member',
                     ['changed_at' => $changedAt, 'deleted' => 'n'],
                     [
                         'contactgroup_id = ?'   => $this->contactgroupId,

@@ -428,7 +428,8 @@ class RotationConfigForm extends CompatForm
         if (self::EXPERIMENTAL_OVERRIDES) {
             // We only show a single name, even in case of multiple versions of a rotation.
             // To avoid confusion, we update all versions upon change of the name
-            $this->db->update('rotation',
+            $this->db->update(
+                'rotation',
                 ['name' => $this->getValue('name'), 'changed_at' => $changedAt],
                 ['schedule_id = ?' => $this->scheduleId, 'priority = ?' => $priority]
             );

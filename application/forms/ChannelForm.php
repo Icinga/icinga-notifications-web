@@ -217,7 +217,7 @@ class ChannelForm extends CompatForm
         $channel['config'] = json_encode($this->filterConfig($channel['config']));
         $storedValues['config'] = json_encode($this->filterConfig($storedValues['config']));
 
-        if(! empty(array_diff_assoc($channel, $storedValues))) {
+        if (! empty(array_diff_assoc($channel, $storedValues))) {
             $channel['changed_at'] = time() * 1000;
 
             $this->db->update('channel', $channel, ['id = ?' => $this->channelId]);

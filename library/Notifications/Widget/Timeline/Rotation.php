@@ -79,8 +79,8 @@ class Rotation
             ->filter(Filter::all(
                 Filter::equal('deleted', 'n'),
                 Filter::any(
-                  Filter::equal('member.contact.deleted', 'n'),
-                  Filter::equal('member.contactgroup.deleted', 'n')
+                    Filter::equal('member.contact.deleted', 'n'),
+                    Filter::equal('member.contactgroup.deleted', 'n')
                 ),
                 Filter::any(
                     Filter::like('rrule', '*'), // It's either a repeating entry

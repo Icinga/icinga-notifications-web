@@ -151,7 +151,8 @@ class MoveRotationForm extends Form
         }
 
         // Now insert the rotation at the new priority
-        $this->db->update('rotation',
+        $this->db->update(
+            'rotation',
             ['priority' => $newPriority, 'changed_at' => $changedAt, 'deleted' => 'n'],
             ['id = ?' => $rotationId]
         );

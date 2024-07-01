@@ -512,7 +512,7 @@ class SaveEventRuleForm extends Form
             );
         }
 
-        $db->update('rule_escalation', $markAsDeleted + ['position' => null],  ['rule_id = ?' => $id]);
+        $db->update('rule_escalation', $markAsDeleted + ['position' => null], ['rule_id = ?' => $id]);
         $db->update('rule', $markAsDeleted, ['id = ?' => $id]);
 
         $db->commitTransaction();
