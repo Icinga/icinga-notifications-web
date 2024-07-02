@@ -76,7 +76,7 @@ class WeekGrid extends BaseGrid
             t('Sun', 'sunday')
         ];
 
-        $header = new HtmlElement('div', Attributes::create(['class' => 'header']));
+        $header = new HtmlElement('div', Attributes::create(['class' => 'time-grid-header']));
 
         $currentDay = clone $this->getGridStart();
         $interval = new DateInterval('P1D');

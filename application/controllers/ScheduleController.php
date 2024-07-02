@@ -129,6 +129,7 @@ class ScheduleController extends CompatController
         });
         $form->on(RotationConfigForm::ON_SUCCESS, function (RotationConfigForm $form) use ($scheduleId) {
             $form->addRotation();
+            $this->sendExtraUpdates(['#col1']);
             $this->closeModalAndRefreshRelatedView(Links::schedule($scheduleId));
         });
 
@@ -154,14 +155,17 @@ class ScheduleController extends CompatController
         $form->setSuggestionUrl(Url::fromPath('notifications/schedule/suggest-recipient'));
         $form->on(RotationConfigForm::ON_SUCCESS, function (RotationConfigForm $form) use ($id, $scheduleId) {
             $form->editRotation($id);
+            $this->sendExtraUpdates(['#col1']);
             $this->closeModalAndRefreshRelatedView(Links::schedule($scheduleId));
         });
         $form->on(RotationConfigForm::ON_SENT, function (RotationConfigForm $form) use ($id, $scheduleId) {
             if ($form->hasBeenRemoved()) {
                 $form->removeRotation($id);
+                $this->sendExtraUpdates(['#col1']);
                 $this->closeModalAndRefreshRelatedView(Links::schedule($scheduleId));
             } elseif ($form->hasBeenWiped()) {
                 $form->wipeRotation();
+                $this->sendExtraUpdates(['#col1']);
                 $this->closeModalAndRefreshRelatedView(Links::schedule($scheduleId));
             } elseif (! $form->hasBeenSubmitted()) {
                 foreach ($form->getPartUpdates() as $update) {
@@ -188,6 +192,7 @@ class ScheduleController extends CompatController
 
         $form = new MoveRotationForm(Database::get());
         $form->on(MoveRotationForm::ON_SUCCESS, function (MoveRotationForm $form) {
+            $this->sendExtraUpdates(['#col1']);
             $this->redirectNow(Links::schedule($form->getScheduleId()));
         });
 

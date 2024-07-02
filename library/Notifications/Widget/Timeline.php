@@ -12,6 +12,7 @@ use Icinga\Module\Notifications\Widget\TimeGrid\DynamicGrid;
 use Icinga\Module\Notifications\Widget\TimeGrid\EntryProvider;
 use Icinga\Module\Notifications\Widget\TimeGrid\GridStep;
 use Icinga\Module\Notifications\Widget\Timeline\Entry;
+use Icinga\Module\Notifications\Widget\Timeline\MinimalGrid;
 use Icinga\Module\Notifications\Widget\Timeline\Rotation;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
@@ -44,8 +45,11 @@ class Timeline extends BaseHtmlElement implements EntryProvider
     /** @var Style */
     protected $style;
 
-    /** @var ?DynamicGrid */
+    /** @var ?DynamicGrid|MinimalGrid */
     protected $grid;
+
+    /** @var bool Whether to create the Timeline only with the Result using MinimalGrid */
+    protected $minimalLayout = false;
 
     /**
      * Set the style object to register inline styles in
@@ -85,6 +89,18 @@ class Timeline extends BaseHtmlElement implements EntryProvider
     {
         $this->start = $start;
         $this->days = $days;
+    }
+
+    /**
+     * Set whether to create the Timeline only with the Result
+     *
+     * @return $this
+     */
+    public function minimalLayout(): self
+    {
+        $this->minimalLayout = true;
+
+        return $this;
     }
 
     /**
@@ -140,18 +156,24 @@ class Timeline extends BaseHtmlElement implements EntryProvider
             return array_fill((int) $cellStart, (int) $numberOfRequiredCells, $e);
         };
 
-        $maxPriority = array_reduce($rotations, function (int $carry, Rotation $rotation) {
-            return max($carry, $rotation->getPriority());
-        }, 0);
+        $resultPosition = 0;
+        $maxPriority = 0;
+
+        if (! $this->minimalLayout) {
+            $maxPriority = array_reduce($rotations, function (int $carry, Rotation $rotation) {
+                return max($carry, $rotation->getPriority());
+            }, 0);
+            $resultPosition = $maxPriority + 1;
+        }
 
         $occupiedCells = [];
-        $resultPosition = $maxPriority + 1;
         foreach ($rotations as $rotation) {
-            $rotationPosition = $maxPriority - $rotation->getPriority();
             foreach ($rotation->fetchTimeperiodEntries($this->start, $this->getGrid()->getGridEnd()) as $entry) {
-                $entry->setPosition($rotationPosition);
+                if (! $this->minimalLayout) {
+                    $entry->setPosition($maxPriority - $rotation->getPriority());
 
-                yield $entry;
+                    yield $entry;
+                }
 
                 $occupiedCells += $getDesiredCells($entry);
             }
@@ -194,11 +216,14 @@ class Timeline extends BaseHtmlElement implements EntryProvider
                     $resultEntry = (new Entry($entry->getId()))
                         ->setStart($start)
                         ->setEnd($end)
-                        ->setUrl($entry->getUrl())
-                        ->setPosition($resultPosition)
                         ->setMember($entry->getMember());
-                    $resultEntry->getAttributes()
-                        ->add('data-rotation-position', $entry->getPosition());
+
+                    if (! $this->minimalLayout) {
+                        $resultEntry->setPosition($resultPosition);
+                        $resultEntry->setUrl($entry->getUrl());
+                        $resultEntry->getAttributes()
+                            ->add('data-rotation-position', $entry->getPosition());
+                    }
 
                     yield $resultEntry;
 
@@ -213,23 +238,28 @@ class Timeline extends BaseHtmlElement implements EntryProvider
     /**
      * Get the grid for this timeline
      *
-     * @return DynamicGrid
+     * @return DynamicGrid|MinimalGrid
      */
-    protected function getGrid(): DynamicGrid
+    protected function getGrid()
     {
         if ($this->grid === null) {
-            $this->grid = new DynamicGrid($this, $this->getStyle(), $this->start);
-            $this->grid->setDays($this->days);
+            if ($this->minimalLayout) {
+                $this->grid = new MinimalGrid($this, $this->getStyle(), $this->start);
+            } else {
+                $this->grid = (new DynamicGrid($this, $this->getStyle(), $this->start))->setDays($this->days);
+            }
 
-            $rotations = $this->rotations;
-            usort($rotations, function (Rotation $a, Rotation $b) {
-                return $b->getPriority() <=> $a->getPriority();
-            });
-            $occupiedPriorities = [];
-            foreach ($rotations as $rotation) {
-                if (! isset($occupiedPriorities[$rotation->getPriority()])) {
-                    $occupiedPriorities[$rotation->getPriority()] = true;
-                    $this->grid->addToSideBar($this->assembleSidebarEntry($rotation));
+            if (! $this->minimalLayout) {
+                $rotations = $this->rotations;
+                usort($rotations, function (Rotation $a, Rotation $b) {
+                    return $b->getPriority() <=> $a->getPriority();
+                });
+                $occupiedPriorities = [];
+                foreach ($rotations as $rotation) {
+                    if (! isset($occupiedPriorities[$rotation->getPriority()])) {
+                        $occupiedPriorities[$rotation->getPriority()] = true;
+                        $this->grid->addToSideBar($this->assembleSidebarEntry($rotation));
+                    }
                 }
             }
         }
@@ -260,22 +290,29 @@ class Timeline extends BaseHtmlElement implements EntryProvider
     protected function assemble()
     {
         if (empty($this->rotations)) {
+            $emptyNotice = new HtmlElement(
+                'div',
+                Attributes::create(['class' => 'empty-notice']),
+                Text::create($this->translate('No rotations configured'))
+            );
+
+            if ($this->minimalLayout) {
+                $this->getAttributes()->add(['class' => 'minimal-layout']);
+                $this->addHtml($emptyNotice);
+            } else {
+                $this->getGrid()->addToSideBar($emptyNotice);
+            }
+        }
+
+        if (! $this->minimalLayout) {
             $this->getGrid()->addToSideBar(
                 new HtmlElement(
                     'div',
-                    Attributes::create(['class' => 'empty-notice']),
-                    Text::create($this->translate('No rotations configured'))
+                    null,
+                    Text::create($this->translate('Result'))
                 )
             );
         }
-
-        $this->getGrid()->addToSideBar(
-            new HtmlElement(
-                'div',
-                null,
-                Text::create($this->translate('Result'))
-            )
-        );
 
         $this->addHtml(
             $this->getGrid(),
