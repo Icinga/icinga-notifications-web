@@ -289,7 +289,11 @@ class ContactForm extends CompatForm
         $this->addElement($address);
 
         foreach ($plugins as $type => $label) {
-            $element = $this->createElement('text', $type, ['label' => $label]);
+            $element = $this->createElement('text', $type, [
+                'label'      => $label,
+                'validators' => [new StringLengthValidator(['max' => 255])]
+            ]);
+
             if ($type === 'email') {
                 $element->addAttributes(['validators' => [new EmailAddressValidator()]]);
             }
