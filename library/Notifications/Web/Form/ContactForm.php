@@ -16,6 +16,7 @@ use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
 use ipl\Validator\CallbackValidator;
 use ipl\Validator\EmailAddressValidator;
+use ipl\Validator\StringLengthValidator;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
 
@@ -95,20 +96,25 @@ class ContactForm extends CompatForm
             'username',
             [
                 'label' => $this->translate('Username'),
-                'validators' => [new CallbackValidator(function ($value, $validator) {
-                    $contact = Contact::on($this->db)->filter(Filter::equal('username', $value));
-                    if ($this->contactId) {
-                        $contact->filter(Filter::unequal('id', $this->contactId));
-                    }
+                'validators' => [
+                    new StringLengthValidator(['max' => 254]),
+                    new CallbackValidator(function ($value, $validator) {
+                        $contact = Contact::on($this->db)->filter(Filter::equal('username', $value));
+                        if ($this->contactId) {
+                            $contact->filter(Filter::unequal('id', $this->contactId));
+                        }
 
-                    if ($contact->first() !== null) {
-                        $validator->addMessage($this->translate('A contact with the same username already exists.'));
+                        if ($contact->first() !== null) {
+                            $validator->addMessage($this->translate(
+                                'A contact with the same username already exists.'
+                            ));
 
-                        return false;
-                    }
+                            return false;
+                        }
 
-                    return true;
-                })]
+                        return true;
+                    })
+                ]
             ]
         )->addElement(
             'select',
