@@ -50,3 +50,16 @@ $this->addRoute('notifications/api-v1-contactgroups', new Zend_Controller_Router
         1 => 'identifier'
     ]
 ));
+
+$this->addRoute('notifications/api-v1-channels', new Zend_Controller_Router_Route_Regex(
+    'notifications/api/v1/channels(?:\/(.+)|\?(.+))?',
+    [
+        'controller'    => 'api-v1-channels',
+        'action'        => 'index',
+        'module'        => 'notifications',
+        'identifier'    => null
+    ],
+    [
+        1 => 'identifier'
+    ]
+));
