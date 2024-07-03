@@ -252,31 +252,29 @@ class ContactGroupForm extends CompatForm
                     ->columns(['contact_id'])
                     ->where([
                         'contactgroup_id = ?'   => $this->contactgroupId,
+                        'deleted = ?'           => 'y',
                         'contact_id IN (?)'     => $toAdd
                     ])
             );
 
-            $removeDeletedFlagFromIds = [];
+            $toAdd = array_diff($toAdd, $contactsMarkedAsDeleted);
             foreach ($toAdd as $contactId) {
-                if (in_array($contactId, $contactsMarkedAsDeleted)) {
-                    $removeDeletedFlagFromIds[] = $contactId;
-                } else {
-                    $this->db->insert(
-                        'contactgroup_member',
-                        [
-                            'contactgroup_id'   => $this->contactgroupId,
-                            'contact_id'        => $contactId
-                        ]
-                    );
-                }
+                $this->db->insert(
+                    'contactgroup_member',
+                    [
+                        'contactgroup_id'   => $this->contactgroupId,
+                        'contact_id'        => $contactId
+                    ]
+                );
             }
-            if (! empty($removeDeletedFlagFromIds)) {
+
+            if (! empty($contactsMarkedAsDeleted)) {
                 $this->db->update(
                     'contactgroup_member',
                     ['changed_at' => $changedAt, 'deleted' => 'n'],
                     [
                         'contactgroup_id = ?'   => $this->contactgroupId,
-                        'contact_id IN (?)'     => $removeDeletedFlagFromIds
+                        'contact_id IN (?)'     => $contactsMarkedAsDeleted
                     ]
                 );
             }
