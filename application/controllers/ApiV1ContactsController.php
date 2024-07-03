@@ -65,8 +65,13 @@ class ApiV1ContactsController extends CompatController
             $this->httpBadRequest('The given identifier is not a valid UUID');
         }
 
+        $filterStr = rawurldecode(Url::fromRequest()->getQueryString());
+        if ($method !== 'GET' && $filterStr) {
+            $this->httpBadRequest('Filter is only allowed for GET requests');
+        }
+
         $filter = FilterProcessor::assembleFilter(
-            QueryString::fromString(rawurldecode(Url::fromRequest()->getQueryString()))
+            QueryString::fromString($filterStr)
                 ->on(
                     QueryString::ON_CONDITION,
                     function (Filter\Condition $condition) {
@@ -164,10 +169,6 @@ class ApiV1ContactsController extends CompatController
 
                 exit;
             case 'POST':
-                if ($filter !== null) {
-                    $this->httpBadRequest('Cannot filter on POST');
-                }
-
                 $data = $this->getValidatedData();
 
                 $db->beginTransaction();
