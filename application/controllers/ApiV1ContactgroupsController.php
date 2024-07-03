@@ -60,8 +60,13 @@ class ApiV1ContactgroupsController extends CompatController
             $this->httpBadRequest('The given identifier is not a valid UUID');
         }
 
+        $filterStr = rawurldecode(Url::fromRequest()->getQueryString());
+        if ($method !== 'GET' && $filterStr) {
+            $this->httpBadRequest('Filter is only allowed for GET requests');
+        }
+
         $filter = FilterProcessor::assembleFilter(
-            QueryString::fromString(rawurldecode(Url::fromRequest()->getQueryString()))
+            QueryString::fromString($filterStr)
                 ->on(
                     QueryString::ON_CONDITION,
                     function (Filter\Condition $condition) {
