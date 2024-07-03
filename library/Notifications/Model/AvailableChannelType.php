@@ -12,7 +12,7 @@ use ipl\Orm\Relations;
  * @property string $type
  * @property string $name
  * @property string $version
- * @property string $author_name
+ * @property string $author
  * @property string $config_attrs
  *
  * @property Query|Channel $channel
@@ -34,7 +34,7 @@ class AvailableChannelType extends Model
         return [
             'name',
             'version',
-            'author_name',
+            'author',
             'config_attrs',
         ];
     }

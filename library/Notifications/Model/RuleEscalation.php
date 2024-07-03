@@ -9,23 +9,24 @@ use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
+use ipl\Orm\Query;
 use ipl\Orm\Relations;
 
 /**
  * @property int $id
  * @property int $rule_id
- * @property int $position
+ * @property ?int $position
  * @property ?string $condition
  * @property ?string $name
  * @property ?string $fallback_for
  * @property DateTime $changed_at
  * @property bool $deleted
  *
- * @property Rule $rule
- * @property Incident $incident
- * @property Contact $contact
- * @property RuleEscalationRecipient $rule_escalation_recipient
- * @property IncidentHistory $incident_history
+ * @property Query|Rule $rule
+ * @property Query|Incident $incident
+ * @property Query|Contact $contact
+ * @property Query|RuleEscalationRecipient $rule_escalation_recipient
+ * @property Query|IncidentHistory $incident_history
  */
 class RuleEscalation extends Model
 {

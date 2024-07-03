@@ -10,7 +10,7 @@ use ipl\Orm\Relations;
 
 /**
  * @property int $incident_id
- * @property int $contact_id
+ * @property ?int $contact_id
  * @property string $role
  *
  * @property Query|Incident $incident

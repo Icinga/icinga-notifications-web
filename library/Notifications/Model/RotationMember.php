@@ -19,7 +19,7 @@ use ipl\Orm\Relations;
  * @property int $rotation_id
  * @property ?int $contact_id
  * @property ?int $contactgroup_id
- * @property int $position
+ * @property ?int $position
  * @property DateTime $changed_at
  * @property bool $deleted
  *

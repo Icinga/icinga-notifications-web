@@ -31,9 +31,9 @@ use ipl\Web\Widget\Icon;
  * @property ?bool $mute
  * @property ?string $mute_reason
  *
- * @property Query | Objects $object
- * @property Query | IncidentHistory $incident_history
- * @property Query | Incident $incident
+ * @property Query|Objects $object
+ * @property Query|IncidentHistory $incident_history
+ * @property Query|Incident $incident
  */
 class Event extends Model
 {

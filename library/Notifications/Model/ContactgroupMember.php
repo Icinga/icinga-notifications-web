@@ -15,13 +15,13 @@ use ipl\Orm\Relations;
 /**
  * Contactgroup Member
  *
- * @param string $contactgroup_id
- * @param string $contact_id
+ * @param int $contactgroup_id
+ * @param int $contact_id
  * @param DateTime $changed_at
  * @param bool $deleted
  *
- * @property Query | Contactgroup $contactgroup
- * @property Query | Contact $contact
+ * @property Query|Contactgroup $contactgroup
+ * @property Query|Contact $contact
  */
 class ContactgroupMember extends Model
 {

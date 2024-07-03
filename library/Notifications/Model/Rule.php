@@ -15,7 +15,7 @@ use ipl\Orm\Relations;
 /**
  * @property int $id
  * @property string $name
- * @property int $timeperiod_id
+ * @property ?int $timeperiod_id
  * @property ?string $object_filter
  * @property string $is_active
  * @property DateTime $changed_at

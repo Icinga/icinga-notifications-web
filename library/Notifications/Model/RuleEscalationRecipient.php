@@ -16,10 +16,10 @@ use ipl\Stdlib\Filter;
 /**
  * @property int $id
  * @property int $rule_escalation_id
- * @property int $contact_id
- * @property int $contactgroup_id
- * @property int $schedule_id
- * @property int $channel_id
+ * @property ?int $contact_id
+ * @property ?int $contactgroup_id
+ * @property ?int $schedule_id
+ * @property ?int $channel_id
  * @property DateTime $changed_at
  * @property bool $deleted
  *

@@ -18,9 +18,9 @@ use ipl\Orm\Relations;
  * @property DateTime $changed_at
  * @property bool $deleted
  *
- * @property Rotation|Query $rotation
- * @property RuleEscalationRecipient|Query $rule_escalation_recipient
- * @property IncidentHistory|Query $incident_history
+ * @property Query|Rotation $rotation
+ * @property Query|RuleEscalationRecipient $rule_escalation_recipient
+ * @property Query|IncidentHistory $incident_history
  */
 class Schedule extends Model
 {

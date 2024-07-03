@@ -18,7 +18,6 @@ use ipl\Orm\Relations;
  * @property string $full_name
  * @property ?string $username
  * @property int $default_channel_id
- * @property string $color
  * @property DateTime $changed_at
  * @property bool $deleted
  *
@@ -29,6 +28,8 @@ use ipl\Orm\Relations;
  * @property Query|RotationMember $rotation_member
  * @property Query|ContactAddress $contact_address
  * @property Query|RuleEscalationRecipient $rule_escalation_recipient
+ * @property Query|ContactgroupMember $contactgroup_member
+ * @property Query|Contactgroup $contactgroup
  */
 class Contact extends Model
 {

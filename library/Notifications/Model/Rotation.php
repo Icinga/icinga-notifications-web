@@ -19,7 +19,7 @@ use ipl\Orm\Relations;
  *
  * @property int $id
  * @property int $schedule_id
- * @property int $priority
+ * @property ?int $priority
  * @property string $name
  * @property string $mode
  * @property string|array $options

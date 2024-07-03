@@ -15,14 +15,15 @@ use ipl\Orm\Relations;
 /**
  * Contact group
  *
- * @property string $id
+ * @property int $id
  * @property string $name
  * @property DateTime $changed_at
  * @property bool $deleted
  *
- * @property Query | Contact $contact
- * @property Query | RuleEscalationRecipient $rule_escalation_recipient
- * @property Query | IncidentHistory $incident_history
+ * @property Query|Contact $contact
+ * @property Query|ContactgroupMember $contactgroup_member
+ * @property Query|RuleEscalationRecipient $rule_escalation_recipient
+ * @property Query|IncidentHistory $incident_history
  */
 class Contactgroup extends Model
 {

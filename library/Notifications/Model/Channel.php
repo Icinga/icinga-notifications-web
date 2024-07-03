@@ -19,7 +19,7 @@ use ipl\Web\Widget\Icon;
  * @property int $id
  * @property string $name
  * @property string $type
- * @property string $config
+ * @property ?string $config
  * @property DateTime $changed_at
  * @property bool $deleted
  *
