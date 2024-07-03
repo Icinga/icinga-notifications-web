@@ -150,7 +150,7 @@ class EventRuleController extends CompatController
     public function fromDb(int $ruleId): array
     {
         $query = Rule::on(Database::get())
-            ->columns(['id', 'name', 'object_filter', 'is_active'])
+            ->columns(['id', 'name', 'object_filter'])
             ->filter(Filter::all(
                 Filter::equal('id', $ruleId),
                 Filter::equal('deleted', 'n')
@@ -260,7 +260,6 @@ class EventRuleController extends CompatController
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->on(Form::ON_SUCCESS, function ($form) use ($ruleId, $cache, $config) {
                 $config['name'] = $form->getValue('name');
-                $config['is_active'] = $form->getValue('is_active');
 
                 if ($cache || $ruleId === '-1') {
                     $this->sessionNamespace->set($ruleId, $config);

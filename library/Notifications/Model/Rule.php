@@ -17,7 +17,6 @@ use ipl\Orm\Relations;
  * @property string $name
  * @property ?int $timeperiod_id
  * @property ?string $object_filter
- * @property string $is_active
  * @property DateTime $changed_at
  * @property bool $deleted
  *
@@ -43,7 +42,6 @@ class Rule extends Model
             'name',
             'timeperiod_id',
             'object_filter',
-            'is_active',
             'changed_at',
             'deleted'
         ];
@@ -55,7 +53,6 @@ class Rule extends Model
             'name'          => t('Name'),
             'timeperiod_id' => t('Timeperiod ID'),
             'object_filter' => t('Object Filter'),
-            'is_active'     => t('Is Active'),
             'changed_at'    => t('Changed At')
         ];
     }

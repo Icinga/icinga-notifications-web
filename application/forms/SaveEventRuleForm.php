@@ -245,8 +245,7 @@ class SaveEventRuleForm extends Form
         $db->insert('rule', [
             'name' => $config['name'],
             'timeperiod_id' => $config['timeperiod_id'] ?? null,
-            'object_filter' => $config['object_filter'] ?? null,
-            'is_active' => $config['is_active'] ?? 'n'
+            'object_filter' => $config['object_filter'] ?? null
         ]);
         $ruleId = $db->lastInsertId();
 
@@ -411,8 +410,7 @@ class SaveEventRuleForm extends Form
         $values = $this->getChanges($storedValues, $config);
 
         $data = array_filter([
-            'name'      => $values['name'] ?? null,
-            'is_active' => $values['is_active'] ?? null
+            'name'      => $values['name'] ?? null
         ]);
 
         if (array_key_exists('object_filter', $values)) {
@@ -537,7 +535,7 @@ class SaveEventRuleForm extends Form
     private function fetchDbValues(): array
     {
         $query = Rule::on(Database::get())
-            ->columns(['id', 'name', 'object_filter', 'is_active'])
+            ->columns(['id', 'name', 'object_filter'])
             ->filter(Filter::all(
                 Filter::equal('id', $this->ruleId),
                 Filter::equal('deleted', 'n')
@@ -593,10 +591,6 @@ class SaveEventRuleForm extends Form
 
             if ($formValues['object_filter'] === $dbValuesToCompare['object_filter']) {
                 unset($formValues['object_filter']);
-            }
-
-            if ($formValues['is_active'] === $dbValuesToCompare['is_active']) {
-                unset($formValues['is_active']);
             }
 
             return $formValues;
