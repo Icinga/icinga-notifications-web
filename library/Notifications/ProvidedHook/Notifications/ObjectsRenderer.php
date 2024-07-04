@@ -170,8 +170,10 @@ class ObjectsRenderer extends ObjectsRendererHook
             $servicesQuery = Service::on($this->getDb())
                 ->with('host')
                 ->columns([
+                    'service.id',
                     'service.name',
                     'service.display_name',
+                    'host.id',
                     'host.name',
                     'host.display_name',
                 ])
