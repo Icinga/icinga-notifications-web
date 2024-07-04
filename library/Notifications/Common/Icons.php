@@ -54,6 +54,10 @@ final class Icons
 
     public const CUSTOM = 'message';
 
+    public const MUTE = 'volume-xmark';
+
+    public const UNMUTE = 'volume-high';
+
     public const SEVERITY_OK = 'heart';
 
     public const SEVERITY_CRIT = 'circle-exclamation';

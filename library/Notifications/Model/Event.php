@@ -8,6 +8,7 @@ use DateTime;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Icons;
 use ipl\Orm\Behavior\Binary;
+use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
@@ -27,6 +28,8 @@ use ipl\Web\Widget\Icon;
  * @property ?string $severity
  * @property ?string $message
  * @property ?string $username
+ * @property ?bool $mute
+ * @property ?string $mute_reason
  *
  * @property Query | Objects $object
  * @property Query | IncidentHistory $incident_history
@@ -53,6 +56,8 @@ class Event extends Model
             'severity',
             'message',
             'username',
+            'mute',
+            'mute_reason'
         ];
     }
 
@@ -64,7 +69,9 @@ class Event extends Model
             'type'      => t('Type'),
             'severity'  => t('Severity'),
             'message'   => t('Message'),
-            'username'  => t('Username')
+            'username'  => t('Username'),
+            'mute'      => t('Mute'),
+            'mute_reason' => t('Mute Reason')
         ];
     }
 
@@ -95,6 +102,7 @@ class Event extends Model
     {
         $behaviors->add(new MillisecondTimestamp(['time']));
         $behaviors->add(new Binary(['object_id']));
+        $behaviors->add(new BoolCast(['mute']));
     }
 
     public function createRelations(Relations $relations)
@@ -188,6 +196,10 @@ class Event extends Model
                 return t('left a flapping period', 'notifications.type');
             case 'incident-age':
                 return t('exceeded a time constraint', 'notifications.type');
+            case 'mute':
+                return t('was muted', 'notifications.type');
+            case 'unmute':
+                return t('was unmuted', 'notifications.type');
             default: // custom
                 return '';
         }
@@ -259,6 +271,13 @@ class Event extends Model
                 break;
             case 'custom':
                 $icon = new Icon(Icons::CUSTOM);
+                break;
+            case 'mute':
+                $icon = new Icon(Icons::MUTE);
+                break;
+            case 'unmute':
+                $icon = new Icon(Icons::UNMUTE);
+                break;
         }
 
         return $icon;
