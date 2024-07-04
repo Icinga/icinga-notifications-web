@@ -58,6 +58,10 @@ class IncidentHistoryListItem extends BaseListItem
         switch ($this->item->type) {
             case 'opened':
                 return Icons::OPENED;
+            case 'muted':
+                return Icons::MUTE;
+            case 'unmuted':
+                return Icons::UNMUTE;
             case 'incident_severity_changed':
                 return $this->getSeverityIcon();
             case 'recipient_role_changed':
@@ -180,6 +184,10 @@ class IncidentHistoryListItem extends BaseListItem
                     );
                 }
 
+                if ($this->item->notification_state === 'suppressed') {
+                    $this->getAttributes()->add('class', 'notification-suppressed');
+                }
+
                 break;
             case 'incident_severity_changed':
                 $message = sprintf(
@@ -250,6 +258,14 @@ class IncidentHistoryListItem extends BaseListItem
                     $this->item->rule->name,
                     $this->item->rule_escalation->name
                 );
+
+                break;
+            case 'muted':
+                $message = t('Notifications for this incident have been muted');
+
+                break;
+            case 'unmuted':
+                $message = t('Notifications for this incident have been unmuted');
 
                 break;
             default:

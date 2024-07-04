@@ -79,6 +79,10 @@ class IncidentListItem extends BaseListItem
         $header->add($this->createTitle());
         $meta = new HtmlElement('span', Attributes::create(['class' => 'meta']));
 
+        if ($this->item->severity !== 'ok' && $this->item->object->mute_reason !== null) {
+            $meta->addHtml(new Icon(Icons::MUTE, ['title' => $this->item->object->mute_reason]));
+        }
+
         /** @var Source $source */
         $source = $this->item->object->source;
         $meta->addHtml((new SourceIcon(SourceIcon::SIZE_BIG))->addHtml($source->getIcon()));
