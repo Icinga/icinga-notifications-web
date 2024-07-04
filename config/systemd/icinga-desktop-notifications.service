@@ -1,5 +1,5 @@
 [Unit]
-Description=Icinga Notifications Background Daemon
+Description=Icinga Desktop Notifications Daemon
 
 [Service]
 Type=simple
