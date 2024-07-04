@@ -97,7 +97,7 @@ class SourcesController extends CompatController
         $form = (new SourceForm(Database::get()))
             ->on(SourceForm::ON_SUCCESS, function (SourceForm $form) {
                 $form->addSource();
-                Notification::success(sprintf(t('Added new source %s has successfully'), $form->getSourceName()));
+                Notification::success(sprintf(t('Added new source %s successfully'), $form->getSourceName()));
                 $this->switchToSingleColumnLayout();
             })
             ->handleRequest($this->getServerRequest());
