@@ -114,7 +114,10 @@ class ScheduleForm extends CompatForm
             $rotationConfigForm->wipeRotation($rotation->priority);
         }
 
-        $this->db->update('schedule', ['changed_at' => time() * 1000, 'deleted' => 'y'], ['id = ?' => $id]);
+        $markAsDeleted = ['changed_at' => time() * 1000, 'deleted' => 'y'];
+
+        $this->db->update('rule_escalation_recipient', $markAsDeleted, ['schedule_id = ?' => $id]);
+        $this->db->update('schedule', $markAsDeleted, ['id = ?' => $id]);
 
         $this->db->commitTransaction();
     }

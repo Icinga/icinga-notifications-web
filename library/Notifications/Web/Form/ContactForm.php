@@ -8,6 +8,7 @@ use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Model\AvailableChannelType;
 use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\Contact;
+use Icinga\Module\Notifications\Model\RotationMember;
 use Icinga\Web\Session;
 use ipl\Html\Contract\FormSubmitElement;
 use ipl\Html\FormElement\FieldsetElement;
@@ -263,6 +264,45 @@ class ContactForm extends CompatForm
         $this->db->beginTransaction();
 
         $markAsDeleted = ['changed_at' => time() * 1000, 'deleted' => 'y'];
+
+        $rotationIds = $this->db->fetchCol(
+            RotationMember::on($this->db)
+                ->columns('rotation_id')
+                ->filter(Filter::equal('contact_id', $this->contactId))
+                ->assembleSelect()
+        );
+
+        $this->db->update(
+            'rotation_member',
+            $markAsDeleted + ['position' => null],
+            ['contact_id = ?' => $this->contactId]
+        );
+
+        if (! empty($rotationIds)) {
+            $rotationIdsWithOtherMembers = $this->db->fetchCol(
+                RotationMember::on($this->db)
+                    ->columns('rotation_id')
+                    ->filter(
+                        Filter::all(
+                            Filter::equal('rotation_id', $rotationIds),
+                            Filter::unequal('contact_id', $this->contactId),
+                            Filter::equal('deleted', 'n')
+                        )
+                    )->assembleSelect()
+            );
+
+            $toRemoveRotations = array_diff($rotationIds, $rotationIdsWithOtherMembers);
+
+            if (! empty($toRemoveRotations)) {
+                $this->db->update(
+                    'rotation',
+                    $markAsDeleted + ['priority' => null, 'first_handoff' => null],
+                    ['id IN (?)' => $toRemoveRotations]
+                );
+            }
+        }
+
+        $this->db->update('rule_escalation_recipient', $markAsDeleted, ['contact_id = ?' => $this->contactId]);
         $this->db->update('contactgroup_member', $markAsDeleted, ['contact_id = ?' => $this->contactId]);
         $this->db->update('contact_address', $markAsDeleted, ['contact_id = ?' => $this->contactId]);
         $this->db->update('contact', $markAsDeleted + ['username' => null], ['id = ?' => $this->contactId]);
