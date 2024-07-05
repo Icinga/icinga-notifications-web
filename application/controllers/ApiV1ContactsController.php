@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Controllers;
 
+use Exception;
 use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Http\HttpException;
 use Icinga\Exception\Http\HttpNotFoundException;
@@ -506,8 +507,13 @@ class ApiV1ContactsController extends CompatController
      */
     private function getValidatedData(): array
     {
-        $data = $this->getRequest()->getPost();
         $msgPrefix = 'Invalid request body: ';
+
+        try {
+            $data = $this->getRequest()->getPost();
+        } catch (Exception $e) {
+            $this->httpBadRequest($msgPrefix . 'given content is not a valid JSON');
+        }
 
         if (
             ! isset($data['id'], $data['full_name'], $data['default_channel'])
