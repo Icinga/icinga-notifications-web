@@ -11,6 +11,7 @@ use Icinga\Module\Notifications\Widget\Timeline;
 use Icinga\Module\Notifications\Widget\Timeline\Rotation;
 use Icinga\Util\Csp;
 use ipl\Html\BaseHtmlElement;
+use ipl\Stdlib\Filter;
 use ipl\Web\Common\BaseListItem;
 use ipl\Web\Style;
 use ipl\Web\Widget\Link;
@@ -58,7 +59,13 @@ class ScheduleListItem extends BaseListItem
                     ->setModule('notifications')
             );
 
-        foreach ($this->item->rotation->with('timeperiod')->orderBy('first_handoff', SORT_DESC) as $rotation) {
+        $rotations = $this->item
+            ->rotation
+            ->with('timeperiod')
+            ->filter(Filter::equal('deleted', 'n'))
+            ->orderBy('first_handoff', SORT_DESC);
+
+        foreach ($rotations as $rotation) {
             $timeline->addRotation(new Rotation($rotation));
         }
 
