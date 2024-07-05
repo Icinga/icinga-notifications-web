@@ -57,15 +57,37 @@ class EventDetail extends BaseHtmlElement
             $info[] = new HorizontalKeyValue(t('Severity'), $severity);
         }
 
+        if ($this->event->mute !== null) {
+            $info[] = new HorizontalKeyValue(
+                t('Muted'),
+                $this->event->mute ? t('Yes') : t('No')
+            );
+        }
+
         return $info;
     }
 
     /** @return ValidHtml[] */
     protected function createMessage(): array
     {
-        return [
-            Html::tag('h2', t('Message')),
-            Html::tag(
+        $messages = [];
+
+        if ($this->event->mute_reason !== null) {
+            $messages[] = Html::tag('h2', t('Mute Reason'));
+            $messages[] = Html::tag(
+                'div',
+                [
+                    'id'                    => 'mute-reason-' . $this->event->id,
+                    'class'                 => 'collapsible',
+                    'data-visible-height'   => 100
+                ],
+                $this->event->mute_reason
+            );
+        }
+
+        if ($this->event->message !== null) {
+            $messages[] = Html::tag('h2', t('Message'));
+            $messages[] = Html::tag(
                 'div',
                 [
                     'id'                    => 'message-' . $this->event->id,
@@ -73,8 +95,10 @@ class EventDetail extends BaseHtmlElement
                     'data-visible-height'   => 100
                 ],
                 $this->event->message
-            )
-        ];
+            );
+        }
+
+        return $messages;
     }
 
     /** @return ValidHtml[] */

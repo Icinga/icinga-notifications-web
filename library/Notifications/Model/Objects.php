@@ -22,6 +22,7 @@ use ipl\Orm\Relations;
  * @property string $host
  * @property ?string $service
  * @property ?string $url
+ * @property ?string $mute_reason
  *
  * @property Query | Event $event
  * @property Query | Incident $incident
@@ -48,7 +49,8 @@ class Objects extends Model
         return [
             'source_id',
             'name',
-            'url'
+            'url',
+            'mute_reason'
         ];
     }
 

@@ -15,6 +15,8 @@ use ipl\Orm\Query;
 use ipl\Sql\Adapter\Pgsql;
 use ipl\Stdlib\Filter;
 
+use function ipl\Stdlib\iterable_key_first;
+
 class IdTagAggregator extends PropertyBehavior implements RewriteColumnBehavior, QueryAwareBehavior
 {
     /** @var Query */
@@ -37,10 +39,14 @@ class IdTagAggregator extends PropertyBehavior implements RewriteColumnBehavior,
             $path = ($relation ?? $this->query->getModel()->getTableAlias()) . '.object_id_tag';
 
             $this->query->utilize($path);
-            $pathAlias = $this->query->getResolver()->getAlias(
-                $this->query->getResolver()->resolveRelation($path)->getTarget()
-            );
 
+            $pathRelation = $this->query->getResolver()->resolveRelation($path);
+            if ($relation !== null) {
+                // TODO: This is really another case where ipl-orm could automatically adjust the join type...
+                $pathRelation->setJoinType($this->query->getResolver()->resolveRelation($relation)->getJoinType());
+            }
+
+            $pathAlias = $this->query->getResolver()->getAlias($pathRelation->getTarget());
             $myAlias = $this->query->getResolver()->getAlias(
                 $relation
                     ? $this->query->getResolver()->resolveRelation($relation)->getTarget()
@@ -49,8 +55,8 @@ class IdTagAggregator extends PropertyBehavior implements RewriteColumnBehavior,
 
             return new AliasedExpression("{$myAlias}_id_tags", sprintf(
                 $this->query->getDb()->getAdapter() instanceof Pgsql
-                    ? 'json_object_agg(%s, %s)'
-                    : 'json_objectagg(%s, %s)',
+                    ? 'json_object_agg(COALESCE(%s, \'\'), %s)'
+                    : 'json_objectagg(COALESCE(%s, \'\'), %s)',
                 $this->query->getResolver()->qualifyColumn('tag', $pathAlias),
                 $this->query->getResolver()->qualifyColumn('value', $pathAlias)
             ));
@@ -68,7 +74,12 @@ class IdTagAggregator extends PropertyBehavior implements RewriteColumnBehavior,
             return [];
         }
 
-        return json_decode($value, true) ?? [];
+        $tags = json_decode($value, true) ?? [];
+        if (iterable_key_first($tags) === '') {
+            return [];
+        }
+
+        return $tags;
     }
 
     public function toDb($value, $key, $context)

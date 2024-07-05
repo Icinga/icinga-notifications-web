@@ -9,15 +9,12 @@ use Icinga\Module\Notifications\Model\Event;
 use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\Model\Objects;
 use Icinga\Module\Notifications\Model\Source;
-use Icinga\Module\Notifications\Widget\IconBall;
 use Icinga\Module\Notifications\Widget\SourceIcon;
 use InvalidArgumentException;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use ipl\Html\HtmlElement;
-use ipl\Stdlib\Str;
 use ipl\Web\Common\BaseListItem;
-use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
 use ipl\Web\Widget\TimeAgo;
 
@@ -82,7 +79,25 @@ class EventListItem extends BaseListItem
 
     protected function assembleCaption(BaseHtmlElement $caption): void
     {
-        $caption->add($this->item->message);
+        switch ($this->item->type) {
+            case 'mute':
+            case 'unmute':
+            case 'flapping-start':
+            case 'flapping-end':
+            case 'downtime-start':
+            case 'downtime-end':
+            case 'downtime-removed':
+            case 'acknowledgement-set':
+            case 'acknowledgement-cleared':
+                if ($this->item->mute_reason !== null) {
+                    $caption->add($this->item->mute_reason);
+                    break;
+                }
+
+                // Sometimes these events have no mute reason, but a message
+            default:
+                $caption->add($this->item->message);
+        }
     }
 
     protected function assembleHeader(BaseHtmlElement $header): void

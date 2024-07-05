@@ -150,6 +150,8 @@ class IncidentHistory extends Model
                 return t('failed', 'notifications.transmission.state');
             case 'pending':
                 return t('pending', 'notifications.transmission.state');
+            case 'suppressed':
+                return t('suppressed', 'notifications.transmission.state');
             default:
                 return t('unknown', 'notifications.transmission.state');
         }
