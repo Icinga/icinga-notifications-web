@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Controllers;
 
+use Exception;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Util\Environment;
 use Icinga\Util\Json;
@@ -41,8 +42,8 @@ class ApiV1ChannelsController extends CompatController
             $this->httpBadRequest('The given identifier is not a valid UUID');
         }
 
-        $filter = FilterProcessor::assembleFilter(
-            QueryString::fromString(rawurldecode(Url::fromRequest()->getQueryString()))
+        try {
+            $filterRule = QueryString::fromString(rawurldecode(Url::fromRequest()->getQueryString()))
                 ->on(
                     QueryString::ON_CONDITION,
                     function (Filter\Condition $condition) {
@@ -62,8 +63,12 @@ class ApiV1ChannelsController extends CompatController
                             $condition->setColumn('external_uuid');
                         }
                     }
-                )->parse()
-        );
+                )->parse();
+
+            $filter = FilterProcessor::assembleFilter($filterRule);
+        } catch (Exception $e) {
+            $this->httpBadRequest($e->getMessage());
+        }
 
         $stmt = (new Select())
             ->distinct()
