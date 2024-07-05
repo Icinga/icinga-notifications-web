@@ -71,8 +71,8 @@ class ApiV1ContactsController extends CompatController
             $this->httpBadRequest('Filter is only allowed for GET requests');
         }
 
-        $filter = FilterProcessor::assembleFilter(
-            QueryString::fromString($filterStr)
+        try {
+            $filterRule = QueryString::fromString($filterStr)
                 ->on(
                     QueryString::ON_CONDITION,
                     function (Filter\Condition $condition) {
@@ -92,8 +92,12 @@ class ApiV1ContactsController extends CompatController
                             $condition->setColumn('external_uuid');
                         }
                     }
-                )->parse()
-        );
+                )->parse();
+
+            $filter = FilterProcessor::assembleFilter($filterRule);
+        } catch (Exception $e) {
+            $this->httpBadRequest($e->getMessage());
+        }
 
         switch ($method) {
             case 'GET':
