@@ -37,6 +37,10 @@ class RuleEscalationRecipientBadge extends BaseHtmlElement
     public function createBadge()
     {
         $recipientModel = $this->recipient->getRecipient();
+        if ($recipientModel === null) {
+            return;
+        }
+
         $nameColumn = 'name';
         $icon = 'users';
 
