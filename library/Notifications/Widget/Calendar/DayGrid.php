@@ -63,7 +63,7 @@ class DayGrid extends BaseGrid
 
     protected function createHeader(): BaseHtmlElement
     {
-        $header = new HtmlElement('div', Attributes::create(['class' => 'header']));
+        $header = new HtmlElement('div', Attributes::create(['class' => 'time-grid-header']));
         $dayNames = [
             'Mon' => t('Mon', 'monday'),
             'Tue' => t('Tue', 'tuesday'),

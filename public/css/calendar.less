@@ -42,14 +42,13 @@
   --primaryRowHeight: 1fr;
   --stepRowHeight: 1fr;
 
-  .header {
+  .time-grid-header {
     display: grid;
     align-items: flex-end;
     border-left: 1px solid transparent;
     grid-template-columns: repeat(var(--primaryColumns), minmax(var(--minimumPrimaryColumnWidth), 1fr));
 
     .column-title {
-      text-align: center;
       border-right: 1px solid transparent;
     }
   }
@@ -233,7 +232,7 @@
   grid-template-columns: var(--sidebarWidth) minmax(0, 1fr);
   grid-template-rows: var(--headerHeight) minmax(0, 1fr);
 
-  .header {
+  .time-grid-header {
     grid-area: ~"1 / 2 / 3 / 3";
   }
 
@@ -268,6 +267,14 @@
   .calendar-title {
     font-size: 1.5em;
     font-weight: normal;
+  }
+}
+
+.time-grid-header .column-title {
+  text-align: center;
+  .day-name {
+    color: @text-color-light;
+    text-transform: uppercase;
   }
 }
 
@@ -365,11 +372,6 @@
   }
 
   .column-title {
-    .day-name {
-      color: @text-color-light;
-      text-transform: uppercase;
-    }
-
     .day-number {
       font-weight: bold;
       font-size: 1.5em;

@@ -6,13 +6,10 @@ namespace Icinga\Module\Notifications\Widget\TimeGrid;
 
 use DateInterval;
 use DateTime;
-use IntlDateFormatter;
 use InvalidArgumentException;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\HtmlElement;
-use ipl\Html\Text;
-use Locale;
 use LogicException;
 use Traversable;
 
@@ -98,59 +95,7 @@ class DynamicGrid extends BaseGrid
 
     protected function createHeader(): BaseHtmlElement
     {
-        $dayNames = [
-            $this->translate('Mon', 'monday'),
-            $this->translate('Tue', 'tuesday'),
-            $this->translate('Wed', 'wednesday'),
-            $this->translate('Thu', 'thursday'),
-            $this->translate('Fri', 'friday'),
-            $this->translate('Sat', 'saturday'),
-            $this->translate('Sun', 'sunday')
-        ];
-
-        $interval = new DateInterval('P1D');
-        $today = (new DateTime())->setTime(0, 0);
-        $time = clone $this->getGridStart();
-        $dateFormatter = new IntlDateFormatter(
-            Locale::getDefault(),
-            IntlDateFormatter::MEDIUM,
-            IntlDateFormatter::NONE
-        );
-
-        $header = new HtmlElement('div', Attributes::create(['class' => 'header']));
-        for ($i = 0; $i < $this->days; $i++) {
-            if ($time == $today) {
-                $title = [new HtmlElement(
-                    'span',
-                    Attributes::create(['class' => 'day-name']),
-                    Text::create($this->translate('Today'))
-                )];
-            } else {
-                $title = [
-                    new HtmlElement(
-                        'span',
-                        Attributes::create(['class' => 'date']),
-                        Text::create($time->format($this->translate('d/m', 'day-name, time')))
-                    ),
-                    Text::create(' '),
-                    new HtmlElement(
-                        'span',
-                        Attributes::create(['class' => 'day-name']),
-                        Text::create($dayNames[$time->format('N') - 1])
-                    )
-                ];
-            }
-
-            $header->addHtml(new HtmlElement(
-                'div',
-                Attributes::create(['class' => 'column-title', 'title' => $dateFormatter->format($time)]),
-                ...$title
-            ));
-
-            $time->add($interval);
-        }
-
-        return $header;
+        return new DaysHeader($this->getGridStart(), $this->days);
     }
 
     protected function createGridSteps(): Traversable
