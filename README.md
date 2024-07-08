@@ -1,39 +1,58 @@
 # Icinga Notifications Web
 
-> **Warning**
->
-> This is an early preview version for you to try, but do not use this in production. There may still be severe bugs
-> and incompatible changes may happen without any notice. At the moment, we don't provide any support for this.
+[![PHP Support](https://img.shields.io/badge/php-%3E%3D%207.2-777BB4?logo=PHP)](https://php.net/)
+![Build Status](https://github.com/Icinga/icinga-notifications-web/actions/workflows/php.yml/badge.svg?branch=main)
+[![Github Tag](https://img.shields.io/github/tag/Icinga/icinga-notifications-web.svg)](https://github.com/Icinga/icinga-notifications-web/releases/latest)
+
+> [!WARNING]
+> This is an early beta version for you to try, but do not use this in production. There may still be severe bugs.
+> 
+> At the moment, we don't provide any support for this module.
 
 Icinga Notifications is a set of components that processes received events from various sources, manages incidents and
 forwards notifications to predefined contacts, consisting of:
 
-* The [Icinga Notifications daemon](https://github.com/Icinga/icinga-notifications), which receives events and sends notifications
-* An Icinga Web module (this repository), that provides graphical configuration and further processing of the data collected by the daemon
-* And Icinga 2 and other custom sources that propagate state updates and acknowledgement events to the daemon
+* [Icinga Notifications](https://github.com/Icinga/icinga-notifications), which receives events and sends notifications.
+* Icinga Notifications Web, which provides graphical configuration.
 
-## Installation
+Icinga 2 itself and miscellaneous other sources propagate state updates and other events to [Icinga Notifications](https://github.com/Icinga/icinga-notifications).
 
-First, install the [daemon](https://github.com/Icinga/icinga-notifications).
+## Big Picture
 
-Then install this like any other [module](https://icinga.com/docs/icinga-web/latest/doc/08-Modules/). Use `notifications` as name.
+![Icinga Notifications Architecture](doc/res/notifications-architecture.png)
 
-## Configuration
+Because Icinga Notifications consists of several components,
+this section tries to help understand how these components relate.
 
-After you have enabled the module, create a new database resource pointing to the database you have created
-during the installation process of the daemon. Then choose it as the backend for the module at:
-`Configuration -> Modules -> notifications -> Database (Tab)`
+First, the Icinga Notifications configuration resides in a SQL database.
+It can be conveniently tweaked via Icinga Notifications Web directly from a web browser.
+The Icinga Notifications daemon uses this database to read the current configuration.
 
-Your next step should be to set up the channels you want to use to send notifications over. You do this at:
-`Configuration -> Modules -> notifications -> Channels (Tab)`.
+As in any Icinga setup, all host and service checks are defined in Icinga 2.
+By querying the Icinga 2 API, the Icinga Notifications daemon retrieves state changes, acknowledgements and other events.
+These events are stored in the database and are available for further inspection in Icinga Notifications Web.
+Next to Icinga 2, other notification sources can be configured.
 
-> **Note**
->
-> Make sure the **daemon** is able to connect to the SMTP host or Rocket.Chat Instance!
+Depending on its configuration, the daemon will take action on these events.
+This optionally includes escalations that are sent through a channel plugin.
+Each of those channel plugins implements a domain-specific transport, e.g., the `email` channel sends emails via SMTP.
+When configured, Icinga Notifications will use channel plugins to notify end users or talk to other APIs.
 
-The base configuration is now done. You can continue now by setting up your first contacts, event rules and schedules!
-You do this at: `Notifications -> Configuration`
+## Available Channels
+
+Icinga Notifications comes with multiple channels out of the box:
+
+* _email_: Email submission via SMTP
+* _rocketchat_: Rocket.Chat
+* _webhook_: Configurable HTTP/HTTPS queries for third-party backends
+
+Additional custom channels can be developed independently of Icinga Notifications,
+following the [channel specification](https://icinga.com/docs/icinga-notifications/latest/doc/10-Channels).
+
+## Documentation
+
+Icinga Notifications Web documentation is available at [icinga.com/docs](https://icinga.com/docs/icinga-notifications-web/latest).
 
 ## License
 
-Icinga Notifications is licensed under the terms of the [GNU General Public License Version 2](LICENSE).
+Icinga Notifications Web and its documentation are licensed under the terms of the [GNU General Public License Version 2](LICENSE).
