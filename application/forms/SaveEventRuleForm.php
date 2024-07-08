@@ -323,10 +323,7 @@ class SaveEventRuleForm extends Form
 
                 $recipients = RuleEscalationRecipient::on($db)
                     ->columns('id')
-                    ->filter(Filter::all(
-                        Filter::equal('rule_escalation_id', $escalationId),
-                        Filter::equal('deleted', 'n')
-                    ));
+                    ->filter(Filter::equal('rule_escalation_id', $escalationId));
 
                 foreach ($recipients as $recipient) {
                     $recipientId = $recipient->id;
@@ -495,10 +492,8 @@ class SaveEventRuleForm extends Form
         $escalationsToRemove = $db->fetchCol(
             RuleEscalation::on($db)
                 ->columns('id')
-                ->filter(Filter::all(
-                    Filter::equal('rule_id', $id),
-                    Filter::equal('deleted', 'n')
-                ))->assembleSelect()
+                ->filter(Filter::equal('rule_id', $id))
+                ->assembleSelect()
         );
 
         $markAsDeleted = ['changed_at' => time() * 1000, 'deleted' => 'y'];
@@ -536,10 +531,7 @@ class SaveEventRuleForm extends Form
     {
         $query = Rule::on(Database::get())
             ->columns(['id', 'name', 'object_filter'])
-            ->filter(Filter::all(
-                Filter::equal('id', $this->ruleId),
-                Filter::equal('deleted', 'n')
-            ));
+            ->filter(Filter::equal('id', $this->ruleId));
 
         $rule = $query->first();
         if ($rule === null) {
@@ -550,8 +542,7 @@ class SaveEventRuleForm extends Form
 
         $ruleEscalations = $rule
             ->rule_escalation
-            ->withoutColumns(['changed_at', 'deleted'])
-            ->filter(Filter::equal('deleted', 'n'));
+            ->withoutColumns(['changed_at', 'deleted']);
 
         foreach ($ruleEscalations as $re) {
             foreach ($re as $k => $v) {
@@ -560,8 +551,7 @@ class SaveEventRuleForm extends Form
 
             $escalationRecipients = $re
                 ->rule_escalation_recipient
-                ->withoutColumns(['changed_at', 'deleted'])
-                ->filter(Filter::equal('deleted', 'n'));
+                ->withoutColumns(['changed_at', 'deleted']);
 
             foreach ($escalationRecipients as $recipient) {
                 $config[$re->getTableName()][$re->position]['recipient'][] = iterator_to_array($recipient);

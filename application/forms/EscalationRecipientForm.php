@@ -11,7 +11,6 @@ use Icinga\Module\Notifications\Model\Contactgroup;
 use Icinga\Module\Notifications\Model\Schedule;
 use ipl\Html\Contract\FormElement;
 use ipl\Html\Html;
-use ipl\Stdlib\Filter;
 use ipl\Web\Widget\Icon;
 
 class EscalationRecipientForm extends BaseEscalationForm
@@ -26,15 +25,15 @@ class EscalationRecipientForm extends BaseEscalationForm
     protected function fetchOptions(): array
     {
         $options = [];
-        foreach (Contact::on(Database::get())->filter(Filter::equal('deleted', 'n')) as $contact) {
+        foreach (Contact::on(Database::get()) as $contact) {
             $options['Contacts']['contact_' . $contact->id] = $contact->full_name;
         }
 
-        foreach (Contactgroup::on(Database::get())->filter(Filter::equal('deleted', 'n')) as $contactgroup) {
+        foreach (Contactgroup::on(Database::get()) as $contactgroup) {
             $options['Contact Groups']['contactgroup_' . $contactgroup->id] = $contactgroup->name;
         }
 
-        foreach (Schedule::on(Database::get())->filter(Filter::equal('deleted', 'n')) as $schedule) {
+        foreach (Schedule::on(Database::get()) as $schedule) {
             $options['Schedules']['schedule_' . $schedule->id] = $schedule->name;
         }
 

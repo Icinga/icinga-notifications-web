@@ -115,12 +115,9 @@ class ChannelForm extends CompatForm
         if ($this->channelId !== null) {
             $isInUse = RuleEscalationRecipient::on($this->db)
                 ->columns('1')
-                ->filter(Filter::all(
-                    Filter::equal('deleted', 'n'),
-                    Filter::any(
-                        Filter::equal('channel_id', $this->channelId),
-                        Filter::equal('contact.default_channel_id', $this->channelId)
-                    )
+                ->filter(Filter::any(
+                    Filter::equal('channel_id', $this->channelId),
+                    Filter::equal('contact.default_channel_id', $this->channelId)
                 ))
                 ->first();
 
@@ -418,10 +415,7 @@ class ChannelForm extends CompatForm
     {
         /** @var Channel $channel */
         $channel = Channel::on($this->db)
-            ->filter(Filter::all(
-                Filter::equal('id', $this->channelId),
-                Filter::equal('deleted', 'n')
-            ))
+            ->filter(Filter::equal('id', $this->channelId))
             ->first();
 
         if ($channel === null) {

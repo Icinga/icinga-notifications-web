@@ -12,7 +12,6 @@ use ipl\Orm\Model;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
 use ipl\Sql\Connection;
-use ipl\Stdlib\Filter;
 use ipl\Web\Widget\Icon;
 
 /**
@@ -119,8 +118,7 @@ class Channel extends Model
     public static function fetchChannelNames(Connection $conn): array
     {
         $channels = [];
-        $query = Channel::on($conn)
-            ->filter(Filter::equal('deleted', 'n'));
+        $query = Channel::on($conn);
         /** @var Channel $channel */
         foreach ($query as $channel) {
             $name = $channel->name;

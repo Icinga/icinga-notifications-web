@@ -102,10 +102,7 @@ class ScheduleForm extends CompatForm
 
         $rotations = Rotation::on($this->db)
             ->columns('priority')
-            ->filter(Filter::all(
-                Filter::equal('schedule_id', $id),
-                Filter::equal('deleted', 'n')
-            ))
+            ->filter(Filter::equal('schedule_id', $id))
             ->orderBy('priority', SORT_DESC);
 
         $rotationConfigForm = new RotationConfigForm($id, $this->db);
@@ -159,10 +156,7 @@ class ScheduleForm extends CompatForm
         /** @var ?Schedule $schedule */
         $schedule = Schedule::on($this->db)
             ->columns('name')
-            ->filter(Filter::all(
-                Filter::equal('id', $this->scheduleId),
-                Filter::equal('deleted', 'n')
-            ))
+            ->filter(Filter::equal('id', $this->scheduleId))
             ->first();
 
         if ($schedule === null) {

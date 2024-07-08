@@ -108,13 +108,7 @@ class RecipientSuggestions extends BaseHtmlElement
             ));
         }
 
-        $query = Contact::on(Database::get())
-            ->filter(Filter::all(
-                $contactFilter,
-                Filter::equal('deleted', 'n')
-            ));
-
-        foreach ($query as $contact) {
+        foreach (Contact::on(Database::get())->filter($contactFilter) as $contact) {
             $this->addHtml(new HtmlElement(
                 'li',
                 null,
@@ -131,13 +125,7 @@ class RecipientSuggestions extends BaseHtmlElement
             ));
         }
 
-        $query = Contactgroup::on(Database::get())
-            ->filter(Filter::all(
-                $groupFilter,
-                Filter::equal('deleted', 'n')
-            ));
-
-        foreach ($query as $group) {
+        foreach (Contactgroup::on(Database::get())->filter($groupFilter) as $group) {
             $this->addHtml(new HtmlElement(
                 'li',
                 null,

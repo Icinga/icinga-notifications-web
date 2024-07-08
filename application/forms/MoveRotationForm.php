@@ -87,10 +87,7 @@ class MoveRotationForm extends Form
         /** @var ?Rotation $rotation */
         $rotation = Rotation::on($this->db)
             ->columns(['schedule_id', 'priority'])
-            ->filter(Filter::all(
-                Filter::equal('id', $rotationId),
-                Filter::equal('deleted', 'n')
-            ))
+            ->filter(Filter::equal('id', $rotationId))
             ->first();
         if ($rotation === null) {
             throw new HttpNotFoundException('Rotation not found');
@@ -114,7 +111,6 @@ class MoveRotationForm extends Form
                     ->columns('id')
                     ->from('rotation')
                     ->where([
-                        'deleted = ?' => 'n',
                         'schedule_id = ?' => $rotation->schedule_id,
                         'priority >= ?' => $newPriority,
                         'priority < ?' => $rotation->priority
@@ -134,7 +130,6 @@ class MoveRotationForm extends Form
                     ->columns('id')
                     ->from('rotation')
                     ->where([
-                        'deleted = ?' => 'n',
                         'schedule_id = ?' => $rotation->schedule_id,
                         'priority > ?' => $rotation->priority,
                         'priority <= ?' => $newPriority

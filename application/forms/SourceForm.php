@@ -359,10 +359,7 @@ class SourceForm extends CompatForm
     {
         /** @var ?Source $source */
         $source = Source::on($this->db)
-            ->filter(Filter::all(
-                Filter::equal('id', $this->sourceId),
-                Filter::equal('deleted', 'n')
-            ))
+            ->filter(Filter::equal('id', $this->sourceId))
             ->first();
 
         if ($source === null) {

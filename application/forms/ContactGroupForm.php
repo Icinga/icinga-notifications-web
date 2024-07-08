@@ -5,7 +5,6 @@
 namespace Icinga\Module\Notifications\Forms;
 
 use Icinga\Exception\Http\HttpNotFoundException;
-use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Contactgroup;
@@ -312,8 +311,7 @@ class ContactGroupForm extends CompatForm
                     ->columns('rotation_id')
                     ->filter(Filter::all(
                         Filter::equal('rotation_id', $rotationIds),
-                        Filter::unequal('contactgroup_id', $this->contactgroupId),
-                        Filter::equal('deleted', 'n')
+                        Filter::unequal('contactgroup_id', $this->contactgroupId)
                     ))->assembleSelect()
             );
 
@@ -351,26 +349,16 @@ class ContactGroupForm extends CompatForm
     {
         $query = Contactgroup::on($this->db)
             ->columns(['id', 'name'])
-            ->filter(Filter::all(
-                Filter::equal('id', $this->contactgroupId),
-                Filter::equal('deleted', 'n')
-            ));
+            ->filter(Filter::equal('id', $this->contactgroupId));
 
         $group = $query->first();
         if ($group === null) {
             throw new HttpNotFoundException($this->translate('Contact group not found'));
         }
 
-        $contacts = Contact::on(Database::get())
-            ->filter(Filter::all(
-                Filter::equal('contactgroup_member.contactgroup_id', $group->id),
-                Filter::equal('contactgroup_member.deleted', 'n'),
-                Filter::equal('deleted', 'n')
-            ));
-
         $groupMembers = [];
-        foreach ($contacts as $contact) {
-            $groupMembers[] = $contact->id;
+        foreach ($group->contactgroup_member as $contact) {
+            $groupMembers[] = $contact->contact_id;
         }
 
         return [

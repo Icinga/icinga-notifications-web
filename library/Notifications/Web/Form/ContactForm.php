@@ -99,10 +99,7 @@ class ContactForm extends CompatForm
                     new StringLengthValidator(['max' => 254]),
                     new CallbackValidator(function ($value, $validator) {
                         $contact = Contact::on($this->db)
-                            ->filter(Filter::all(
-                                Filter::equal('username', $value),
-                                Filter::equal('deleted', 'n')
-                            ));
+                            ->filter(Filter::equal('username', $value));
                         if ($this->contactId) {
                             $contact->filter(Filter::unequal('id', $this->contactId));
                         }
@@ -285,8 +282,7 @@ class ContactForm extends CompatForm
                     ->filter(
                         Filter::all(
                             Filter::equal('rotation_id', $rotationIds),
-                            Filter::unequal('contact_id', $this->contactId),
-                            Filter::equal('deleted', 'n')
+                            Filter::unequal('contact_id', $this->contactId)
                         )
                     )->assembleSelect()
             );
@@ -331,10 +327,7 @@ class ContactForm extends CompatForm
     {
         /** @var ?Contact $contact */
         $contact = Contact::on($this->db)
-            ->filter(Filter::all(
-                Filter::equal('id', $this->contactId),
-                Filter::equal('deleted', 'n')
-            ))
+            ->filter(Filter::equal('id', $this->contactId))
             ->first();
 
         if ($contact === null) {
@@ -347,12 +340,9 @@ class ContactForm extends CompatForm
             'default_channel_id' => (string) $contact->default_channel_id
         ];
 
-        $contractAddr = $contact->contact_address
-            ->filter(Filter::equal('deleted', 'n'));
-
         $values['contact_address'] = [];
         $values['contact_address_with_id'] = []; //TODO: only used in editContact(), find better solution
-        foreach ($contractAddr as $contactInfo) {
+        foreach ($contact->contact_address as $contactInfo) {
             $values['contact_address'][$contactInfo->type] = $contactInfo->address;
             $values['contact_address_with_id'][$contactInfo->type] = [$contactInfo->id, $contactInfo->address];
         }

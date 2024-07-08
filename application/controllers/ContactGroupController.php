@@ -35,10 +35,7 @@ class ContactGroupController extends CompatController
 
         $query = Contactgroup::on(Database::get())
             ->columns(['id', 'name'])
-            ->filter(Filter::all(
-                Filter::equal('id', $groupId),
-                Filter::equal('deleted', 'n')
-            ));
+            ->filter(Filter::equal('id', $groupId));
 
         $group = $query->first();
         if ($group === null) {
@@ -51,10 +48,7 @@ class ContactGroupController extends CompatController
 
         $contacts = $group
             ->contact
-            ->filter(Filter::all(
-                Filter::equal('contactgroup_member.deleted', 'n'),
-                Filter::equal('deleted', 'n')
-            ));
+            ->filter(Filter::equal('contactgroup_member.deleted', 'n'));
 
         $this->addControl($this->createPaginationControl($contacts));
         $this->addControl($this->createLimitControl());

@@ -79,10 +79,7 @@ class MemberSuggestions extends BaseHtmlElement
 
     protected function assemble(): void
     {
-        $contactFilter = Filter::all(
-            Filter::like('full_name', $this->searchTerm),
-            Filter::equal('deleted', 'n')
-        );
+        $contactFilter = Filter::like('full_name', $this->searchTerm);
 
         if (! empty($this->excludeTerms)) {
             $contactFilter = Filter::all(

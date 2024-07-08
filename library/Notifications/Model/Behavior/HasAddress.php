@@ -37,10 +37,7 @@ class HasAddress implements RewriteColumnBehavior, QueryAwareBehavior
             $subQuery = $this->query->createSubQuery(new ContactAddress(), $subQueryRelation)
                 ->limit(1)
                 ->columns([new Expression('1')])
-                ->filter(Filter::all(
-                    Filter::equal('type', $type),
-                    Filter::equal('deleted', 'n')
-                ));
+                ->filter(Filter::equal('type', $type));
 
             $column = $relation !== null ? str_replace('.', '_', $relation) . "_$column" : $column;
 
@@ -78,10 +75,7 @@ class HasAddress implements RewriteColumnBehavior, QueryAwareBehavior
             $subQuery = $this->query->createSubQuery(new ContactAddress(), $relation)
                 ->limit(1)
                 ->columns([new Expression('1')])
-                ->filter(Filter::all(
-                    Filter::equal('type', $type),
-                    Filter::equal('deleted', 'n')
-                ));
+                ->filter(Filter::equal('type', $type));
 
             if ($condition->getValue()) {
                 if ($condition instanceof Filter\Unequal) {

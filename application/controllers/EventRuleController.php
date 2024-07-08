@@ -151,10 +151,7 @@ class EventRuleController extends CompatController
     {
         $query = Rule::on(Database::get())
             ->columns(['id', 'name', 'object_filter'])
-            ->filter(Filter::all(
-                Filter::equal('id', $ruleId),
-                Filter::equal('deleted', 'n')
-            ));
+            ->filter(Filter::equal('id', $ruleId));
 
         $rule = $query->first();
         if ($rule === null) {
@@ -165,8 +162,7 @@ class EventRuleController extends CompatController
 
         $ruleEscalations = $rule
             ->rule_escalation
-            ->withoutColumns(['changed_at', 'deleted'])
-            ->filter(Filter::equal('deleted', 'n'));
+            ->withoutColumns(['changed_at', 'deleted']);
 
         foreach ($ruleEscalations as $re) {
             foreach ($re as $k => $v) {
@@ -175,8 +171,7 @@ class EventRuleController extends CompatController
 
             $escalationRecipients = $re
                 ->rule_escalation_recipient
-                ->withoutColumns(['changed_at', 'deleted'])
-                ->filter(Filter::equal('deleted', 'n'));
+                ->withoutColumns(['changed_at', 'deleted']);
 
             foreach ($escalationRecipients as $recipient) {
                 $config[$re->getTableName()][$re->position]['recipient'][] = iterator_to_array($recipient);

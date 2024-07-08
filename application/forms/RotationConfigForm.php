@@ -233,10 +233,7 @@ class RotationConfigForm extends CompatForm
 
             /** @var ?Rotation $rotation */
             $rotation = Rotation::on($this->db)
-                ->filter(Filter::all(
-                    Filter::equal('id', $this->rotationId),
-                    Filter::equal('deleted', 'n')
-                ))
+                ->filter(Filter::equal('id', $this->rotationId))
                 ->first();
             if ($rotation === null) {
                 throw new HttpNotFoundException($this->translate('Rotation not found'));
@@ -248,8 +245,6 @@ class RotationConfigForm extends CompatForm
             $previousShift = TimeperiodEntry::on($this->db)
                 ->columns('until_time')
                 ->filter(Filter::all(
-                    Filter::equal('deleted', 'n'),
-                    Filter::equal('timeperiod.deleted', 'n'),
                     Filter::equal('timeperiod.rotation.schedule_id', $rotation->schedule_id),
                     Filter::equal('timeperiod.rotation.priority', $rotation->priority),
                     Filter::unequal('timeperiod.owned_by_rotation_id', $rotation->id),
@@ -266,7 +261,6 @@ class RotationConfigForm extends CompatForm
             $newerRotation = Rotation::on($this->db)
                 ->columns(['first_handoff', 'options', 'mode'])
                 ->filter(Filter::all(
-                    Filter::equal('deleted', 'n'),
                     Filter::equal('schedule_id', $rotation->schedule_id),
                     Filter::equal('priority', $rotation->priority),
                     Filter::greaterThan('first_handoff', $rotation->first_handoff)
@@ -386,10 +380,7 @@ class RotationConfigForm extends CompatForm
             (new Select())
                 ->from('rotation')
                 ->columns(new Expression('MAX(priority) + 1'))
-                ->where([
-                    'schedule_id = ?'   => $this->scheduleId,
-                    'deleted = ?'       => 'n',
-                ])
+                ->where(['schedule_id = ?' => $this->scheduleId])
         ) ?? 0)->send(true);
 
         if ($transactionStarted) {
@@ -436,11 +427,7 @@ class RotationConfigForm extends CompatForm
 
             $firstHandoff = $createStmt->current();
             $timeperiodEntries = TimeperiodEntry::on($this->db)
-                ->filter(Filter::all(
-                    Filter::equal('deleted', 'n'),
-                    Filter::equal('timeperiod.deleted', 'n'),
-                    Filter::equal('timeperiod.owned_by_rotation_id', $rotationId)
-                ));
+                ->filter(Filter::equal('timeperiod.owned_by_rotation_id', $rotationId));
 
             foreach ($timeperiodEntries as $timeperiodEntry) {
                 /** @var TimeperiodEntry $timeperiodEntry */
@@ -527,10 +514,7 @@ class RotationConfigForm extends CompatForm
             (new Select())
                 ->from('timeperiod')
                 ->columns('id')
-                ->where([
-                    'owned_by_rotation_id = ?'  => $id,
-                    'deleted = ?'               => 'n',
-                ])
+                ->where(['owned_by_rotation_id = ?' => $id])
         );
 
         $changedAt = time() * 1000;
@@ -547,20 +531,16 @@ class RotationConfigForm extends CompatForm
         );
 
         $rotations = Rotation::on($this->db)
-            ->filter(Filter::all(
-                Filter::equal('deleted', 'n'),
-                Filter::equal('schedule_id', $this->scheduleId),
-                Filter::equal('priority', $priority)
-            ));
+            ->filter(Filter::equal('schedule_id', $this->scheduleId))
+            ->filter(Filter::equal('priority', $priority));
         if ($rotations->count() === 0) {
             $affectedRotations = $this->db->select(
                 (new Select())
                     ->columns('id')
                     ->from('rotation')
                     ->where([
-                        'deleted = ?'       => 'n',
-                        'schedule_id = ?'   => $this->scheduleId,
-                        'priority > ?'      => $priority
+                        'schedule_id = ?' => $this->scheduleId,
+                        'priority > ?' => $priority
                     ])
                     ->orderBy('priority ASC')
             );
@@ -597,11 +577,8 @@ class RotationConfigForm extends CompatForm
 
         $rotations = Rotation::on($this->db)
             ->columns('id')
-            ->filter(Filter::all(
-                Filter::equal('deleted', 'n'),
-                Filter::equal('schedule_id', $this->scheduleId),
-                Filter::equal('priority', $priority)
-            ));
+            ->filter(Filter::equal('schedule_id', $this->scheduleId))
+            ->filter(Filter::equal('priority', $priority));
 
         $changedAt = time() * 1000;
         $markAsDeleted = ['changed_at' => $changedAt, 'deleted' => 'y'];
@@ -634,9 +611,8 @@ class RotationConfigForm extends CompatForm
                 ->columns('id')
                 ->from('rotation')
                 ->where([
-                    'deleted = ?'       => 'n',
-                    'schedule_id = ?'   => $this->scheduleId,
-                    'priority > ?'      => $priority
+                    'schedule_id = ?' => $this->scheduleId,
+                    'priority > ?' => $priority
                 ])
                 ->orderBy('priority ASC')
         );
@@ -1020,7 +996,6 @@ class RotationConfigForm extends CompatForm
                 new CallbackValidator(function ($value, $validator) {
                     $rotations = Rotation::on($this->db)
                         ->columns('id')
-                        ->filter(Filter::equal('deleted', 'n'))
                         ->filter(Filter::equal('schedule_id', $this->scheduleId))
                         ->filter(Filter::equal('name', $value));
                     if (($priority = $this->getValue('priority')) !== null) {
@@ -1154,7 +1129,6 @@ class RotationConfigForm extends CompatForm
 
             if (! empty($contactTerms)) {
                 $contacts = (Contact::on(Database::get()))
-                    ->filter(Filter::equal('deleted', 'n'))
                     ->filter(Filter::equal('id', array_keys($contactTerms)));
                 foreach ($contacts as $contact) {
                     $contactTerms[$contact->id]
@@ -1165,7 +1139,6 @@ class RotationConfigForm extends CompatForm
 
             if (! empty($groupTerms)) {
                 $groups = (Contactgroup::on(Database::get()))
-                    ->filter(Filter::equal('deleted', 'n'))
                     ->filter(Filter::equal('id', array_keys($groupTerms)));
                 foreach ($groups as $group) {
                     $groupTerms[$group->id]
@@ -1593,10 +1566,7 @@ class RotationConfigForm extends CompatForm
     {
         /** @var ?Rotation $rotation */
         $rotation = Rotation::on($this->db)
-            ->filter(Filter::all(
-                Filter::equal('id', $this->rotationId),
-                Filter::equal('deleted', 'n')
-            ))
+            ->filter(Filter::equal('id', $this->rotationId))
             ->first();
         if ($rotation === null) {
             throw new HttpNotFoundException($this->translate('Rotation not found'));
@@ -1613,17 +1583,8 @@ class RotationConfigForm extends CompatForm
             $formData['first_handoff'] = $rotation->first_handoff;
         }
 
-        $membersRes = $rotation
-            ->member
-            ->filter(Filter::equal('deleted', 'n'))
-            ->filter(Filter::any(
-                Filter::equal('contact.deleted', 'n'),
-                Filter::equal('contactgroup.deleted', 'n')
-            ))
-            ->orderBy('position', SORT_ASC);
-
         $members = [];
-        foreach ($membersRes as $member) {
+        foreach ($rotation->member->orderBy('position', SORT_ASC) as $member) {
             if ($member->contact_id !== null) {
                 $members[] = 'contact:' . $member->contact_id;
             } else {

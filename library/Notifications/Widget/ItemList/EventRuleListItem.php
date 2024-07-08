@@ -9,7 +9,6 @@ use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Widget\RuleEscalationRecipientBadge;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
-use ipl\Stdlib\Filter;
 use ipl\Web\Common\BaseListItem;
 use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
@@ -39,7 +38,7 @@ class EventRuleListItem extends BaseListItem
             $meta->add(Html::tag('span', new Icon('filter')));
         }
 
-        $escalationCount = $this->item->rule_escalation->filter(Filter::equal('deleted', 'n'))->count();
+        $escalationCount = $this->item->rule_escalation->count();
         if ($escalationCount > 1) {
             $meta->add(Html::tag('span', [new Icon('code-branch'), $escalationCount]));
         }
@@ -56,13 +55,12 @@ class EventRuleListItem extends BaseListItem
     {
         $header->add($this->createTitle());
         //TODO(sd): need fixes?
-        $rs = $this->item->rule_escalation->filter(Filter::equal('deleted', 'n'))->first();
+        $rs = $this->item->rule_escalation->first();
         if ($rs) {
-            $recipients = $rs->rule_escalation_recipient->filter(Filter::equal('deleted', 'n'));
-            $recipientCount = $recipients->count();
+            $recipientCount = $rs->rule_escalation_recipient->count();
             if ($recipientCount) {
                 $header->add(new RuleEscalationRecipientBadge(
-                    $recipients->first(),
+                    $rs->rule_escalation_recipient->first(),
                     $recipientCount - 1
                 ));
             }

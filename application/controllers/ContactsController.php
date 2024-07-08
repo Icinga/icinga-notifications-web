@@ -43,8 +43,7 @@ class ContactsController extends CompatController
     public function indexAction()
     {
         $contacts = Contact::on($this->db)
-            ->withColumns('has_email')
-            ->filter(Filter::equal('deleted', 'n'));
+            ->withColumns('has_email');
 
         $limitControl = $this->createLimitControl();
         $paginationControl = $this->createPaginationControl($contacts);

@@ -10,7 +10,6 @@ use Icinga\Util\Csp;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\HtmlElement;
-use ipl\Stdlib\Filter;
 use ipl\Web\Common\BaseTarget;
 use ipl\Web\Style;
 
@@ -47,16 +46,7 @@ class Schedule extends BaseHtmlElement
      */
     protected function assembleTimeline(Timeline $timeline): void
     {
-        $rotations = $this->schedule
-            ->rotation
-            ->with('timeperiod')
-            ->filter(Filter::all(
-                Filter::equal('deleted', 'n'),
-                Filter::equal('timeperiod.deleted', 'n')
-            ))
-            ->orderBy('first_handoff', SORT_DESC);
-
-        foreach ($rotations as $rotation) {
+        foreach ($this->schedule->rotation->with('timeperiod')->orderBy('first_handoff', SORT_DESC) as $rotation) {
             $timeline->addRotation(new Rotation($rotation));
         }
     }

@@ -47,10 +47,7 @@ class IncidentController extends CompatController
 
         $contact = Contact::on(Database::get())
             ->columns('id')
-            ->filter(Filter::all(
-                Filter::equal('username', $this->Auth()->getUser()->getUsername()),
-                Filter::equal('deleted', 'n')
-            ))
+            ->filter(Filter::equal('username', $this->Auth()->getUser()->getUsername()))
             ->first();
 
         if ($contact !== null) {
