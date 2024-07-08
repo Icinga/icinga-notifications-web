@@ -3,10 +3,11 @@
 With Icinga Notifications, users are able to enable desktop notifications which will inform them about severity
 changes in incidents they are notified about.
 
-> **Note**
->
-> This feature is currently considered experimental and might not work as expected in all cases.
-> We will continue to improve this feature in the future. Your feedback is highly appreciated.
+!!! Note
+
+    This feature is currently considered experimental and might not work as expected in all cases.
+
+    We will continue to improve this feature in the future. Your feedback is highly appreciated.
 
 ## How It Works
 
@@ -81,11 +82,12 @@ location ~ ^/icingaweb2/notifications/v(\d+)/subscribe$ {
 }
 ```
 
-> **Note**
->
-> Since these connections are long-lived, the default web server configuration might impose a too small limit on
-> the maximum number of connections. Make sure to adjust this limit to a higher value. If working correctly, the
-> daemon will limit the number of connections per client to 2.
+!!! Note
+
+    Since these connections are long-lived, the default web server configuration might impose a too small limit on
+    the maximum number of connections. Make sure to adjust this limit to a higher value.
+    
+    If working correctly, the daemon will limit the number of connections per client to 2.
 
 ### Enable The Daemon
 
@@ -93,11 +95,12 @@ The default `systemd` service, shipped with package installations, runs the back
 
 <!-- {% if not icingaDocs %} -->
 
-> **Note**
->
-> If you haven't installed this module from packages, you have to configure this as a `systemd` service yourself by just
-> copying the example service definition from `/usr/share/icingaweb2/modules/notifications/config/systemd/icinga-desktop-notifications.service`
-> to `/etc/systemd/system/icinga-desktop-notifications.service`.
+!!! Note
+
+    If you haven't installed this module from packages, you have to configure this as a `systemd` service yourself by just
+    copying the example service definition from `/usr/share/icingaweb2/modules/notifications/config/systemd/icinga-desktop-notifications.service`
+    to `/etc/systemd/system/icinga-desktop-notifications.service`.
+
 <!-- {% endif %} -->
 
 You can run the following command to enable and start the daemon.
