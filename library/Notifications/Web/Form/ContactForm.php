@@ -10,6 +10,7 @@ use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Rotation;
 use Icinga\Module\Notifications\Model\RotationMember;
+use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use Icinga\Web\Session;
 use ipl\Html\Contract\FormSubmitElement;
 use ipl\Html\FormElement\FieldsetElement;
@@ -302,7 +303,36 @@ class ContactForm extends CompatForm
             }
         }
 
+        $escalationIds = $this->db->fetchCol(
+            RuleEscalationRecipient::on($this->db)
+                ->columns('rule_escalation_id')
+                ->filter(Filter::equal('contact_id', $this->contactId))
+                ->assembleSelect()
+        );
+
         $this->db->update('rule_escalation_recipient', $markAsDeleted, ['contact_id = ?' => $this->contactId]);
+
+        if (! empty($escalationIds)) {
+            $escalationIdsWithOtherRecipients = $this->db->fetchCol(
+                RuleEscalationRecipient::on($this->db)
+                    ->columns('rule_escalation_id')
+                    ->filter(Filter::all(
+                        Filter::equal('rule_escalation_id', $escalationIds),
+                        Filter::unequal('contact_id', $this->contactId)
+                    ))->assembleSelect()
+            );
+
+            $toRemoveEscalations = array_diff($escalationIds, $escalationIdsWithOtherRecipients);
+
+            if (! empty($toRemoveEscalations)) {
+                $this->db->update(
+                    'rule_escalation',
+                    $markAsDeleted + ['position' => null],
+                    ['id IN (?)' => $toRemoveEscalations]
+                );
+            }
+        }
+
         $this->db->update('contactgroup_member', $markAsDeleted, ['contact_id = ?' => $this->contactId]);
         $this->db->update('contact_address', $markAsDeleted, ['contact_id = ?' => $this->contactId]);
         $this->db->update('contact', $markAsDeleted + ['username' => null], ['id = ?' => $this->contactId]);

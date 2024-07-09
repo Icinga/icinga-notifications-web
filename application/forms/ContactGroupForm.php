@@ -10,6 +10,8 @@ use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Contactgroup;
 use Icinga\Module\Notifications\Model\Rotation;
 use Icinga\Module\Notifications\Model\RotationMember;
+use Icinga\Module\Notifications\Model\RuleEscalation;
+use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use Icinga\Web\Session;
 use ipl\Html\FormElement\SubmitElement;
 use ipl\Html\HtmlDocument;
@@ -330,11 +332,39 @@ class ContactGroupForm extends CompatForm
             }
         }
 
+        $escalationIds = $this->db->fetchCol(
+            RuleEscalationRecipient::on($this->db)
+            ->columns('rule_escalation_id')
+            ->filter(Filter::equal('contactgroup_id', $this->contactgroupId))
+            ->assembleSelect()
+        );
+
         $this->db->update(
             'rule_escalation_recipient',
             $markAsDeleted,
             ['contactgroup_id = ?' => $this->contactgroupId]
         );
+
+        if (! empty($escalationIds)) {
+            $escalationIdsWithOtherRecipients = $this->db->fetchCol(
+                RuleEscalationRecipient::on($this->db)
+                    ->columns('rule_escalation_id')
+                    ->filter(Filter::all(
+                        Filter::equal('rule_escalation_id', $escalationIds),
+                        Filter::unequal('contactgroup_id', $this->contactgroupId)
+                    ))->assembleSelect()
+            );
+
+            $toRemoveEscalations = array_diff($escalationIds, $escalationIdsWithOtherRecipients);
+
+            if (! empty($toRemoveEscalations)) {
+                $this->db->update(
+                    'rule_escalation',
+                    $markAsDeleted + ['position' => null],
+                    ['id IN (?)' => $toRemoveEscalations]
+                );
+            }
+        }
 
         $this->db->update('contactgroup_member', $markAsDeleted, ['contactgroup_id = ?' => $this->contactgroupId]);
         $this->db->update('contactgroup', $markAsDeleted, ['id = ?' => $this->contactgroupId]);

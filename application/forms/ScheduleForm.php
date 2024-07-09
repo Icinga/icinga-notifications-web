@@ -6,6 +6,7 @@ namespace Icinga\Module\Notifications\Forms;
 
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Model\Rotation;
+use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use Icinga\Module\Notifications\Model\Schedule;
 use Icinga\Web\Session;
 use ipl\Html\HtmlDocument;
@@ -112,7 +113,36 @@ class ScheduleForm extends CompatForm
 
         $markAsDeleted = ['changed_at' => time() * 1000, 'deleted' => 'y'];
 
+        $escalationIds = $this->db->fetchCol(
+            RuleEscalationRecipient::on($this->db)
+                ->columns('rule_escalation_id')
+                ->filter(Filter::equal('schedule_id', $id))
+                ->assembleSelect()
+        );
+
         $this->db->update('rule_escalation_recipient', $markAsDeleted, ['schedule_id = ?' => $id]);
+
+        if (! empty($escalationIds)) {
+            $escalationIdsWithOtherRecipients = $this->db->fetchCol(
+                RuleEscalationRecipient::on($this->db)
+                    ->columns('rule_escalation_id')
+                    ->filter(Filter::all(
+                        Filter::equal('rule_escalation_id', $escalationIds),
+                        Filter::unequal('schedule_id', $id)
+                    ))->assembleSelect()
+            );
+
+            $toRemoveEscalations = array_diff($escalationIds, $escalationIdsWithOtherRecipients);
+
+            if (! empty($toRemoveEscalations)) {
+                $this->db->update(
+                    'rule_escalation',
+                    $markAsDeleted + ['position' => null],
+                    ['id IN (?)' => $toRemoveEscalations]
+                );
+            }
+        }
+
         $this->db->update('schedule', $markAsDeleted, ['id = ?' => $id]);
 
         $this->db->commitTransaction();
