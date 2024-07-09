@@ -101,14 +101,13 @@ class ScheduleForm extends CompatForm
         $this->db->beginTransaction();
 
         $rotations = Rotation::on($this->db)
-            ->columns('priority')
+            ->columns(['id', 'schedule_id', 'priority', 'timeperiod.id'])
             ->filter(Filter::equal('schedule_id', $id))
             ->orderBy('priority', SORT_DESC);
 
-        $rotationConfigForm = new RotationConfigForm($id, $this->db);
-
+        /** @var Rotation $rotation */
         foreach ($rotations as $rotation) {
-            $rotationConfigForm->wipeRotation($rotation->priority);
+            $rotation->delete();
         }
 
         $markAsDeleted = ['changed_at' => time() * 1000, 'deleted' => 'y'];

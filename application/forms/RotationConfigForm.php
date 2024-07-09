@@ -510,48 +510,13 @@ class RotationConfigForm extends CompatForm
             $transactionStarted = $this->db->beginTransaction();
         }
 
-        $timeperiodId = $this->db->fetchScalar(
-            (new Select())
-                ->from('timeperiod')
-                ->columns('id')
-                ->where(['owned_by_rotation_id = ?' => $id])
-        );
+        /** @var Rotation $rotation */
+        $rotation = Rotation::on($this->db)
+            ->columns(['id', 'schedule_id', 'priority', 'timeperiod.id'])
+            ->filter(Filter::equal('id', $id))
+            ->first();
 
-        $changedAt = time() * 1000;
-        $markAsDeleted = ['changed_at' => $changedAt, 'deleted' => 'y'];
-
-        $this->db->update('timeperiod_entry', $markAsDeleted, ['timeperiod_id = ?' => $timeperiodId]);
-        $this->db->update('timeperiod', $markAsDeleted, ['id = ?' => $timeperiodId]);
-        $this->db->update('rotation_member', $markAsDeleted + ['position' => null], ['rotation_id = ?' => $id]);
-
-        $this->db->update(
-            'rotation',
-            $markAsDeleted + ['priority' => null, 'first_handoff' => null],
-            ['id = ?' => $id]
-        );
-
-        $rotations = Rotation::on($this->db)
-            ->filter(Filter::equal('schedule_id', $this->scheduleId))
-            ->filter(Filter::equal('priority', $priority));
-        if ($rotations->count() === 0) {
-            $affectedRotations = $this->db->select(
-                (new Select())
-                    ->columns('id')
-                    ->from('rotation')
-                    ->where([
-                        'schedule_id = ?' => $this->scheduleId,
-                        'priority > ?' => $priority
-                    ])
-                    ->orderBy('priority ASC')
-            );
-            foreach ($affectedRotations as $rotation) {
-                $this->db->update(
-                    'rotation',
-                    ['priority' => new Expression('priority - 1'), 'changed_at' => $changedAt],
-                    ['id = ?' => $rotation->id]
-                );
-            }
-        }
+        $rotation->delete();
 
         if ($transactionStarted) {
             $this->db->commitTransaction();
@@ -576,52 +541,13 @@ class RotationConfigForm extends CompatForm
         }
 
         $rotations = Rotation::on($this->db)
-            ->columns('id')
+            ->columns(['id', 'schedule_id', 'priority', 'timeperiod.id'])
             ->filter(Filter::equal('schedule_id', $this->scheduleId))
             ->filter(Filter::equal('priority', $priority));
 
-        $changedAt = time() * 1000;
-        $markAsDeleted = ['changed_at' => $changedAt, 'deleted' => 'y'];
-
+        /** @var Rotation $rotation */
         foreach ($rotations as $rotation) {
-            $timeperiodId = $this->db->fetchScalar(
-                (new Select())
-                    ->from('timeperiod')
-                    ->columns('id')
-                    ->where(['owned_by_rotation_id = ?' => $rotation->id])
-            );
-
-            $this->db->update('timeperiod_entry', $markAsDeleted, ['timeperiod_id = ?' => $timeperiodId]);
-            $this->db->update('timeperiod', $markAsDeleted, ['id = ?' => $timeperiodId]);
-            $this->db->update(
-                'rotation_member',
-                $markAsDeleted + ['position' => null],
-                ['rotation_id = ?' => $rotation->id]
-            );
-
-            $this->db->update(
-                'rotation',
-                $markAsDeleted + ['priority' => null, 'first_handoff' => null],
-                ['id = ?' => $rotation->id]
-            );
-        }
-
-        $affectedRotations = $this->db->select(
-            (new Select())
-                ->columns('id')
-                ->from('rotation')
-                ->where([
-                    'schedule_id = ?' => $this->scheduleId,
-                    'priority > ?' => $priority
-                ])
-                ->orderBy('priority ASC')
-        );
-        foreach ($affectedRotations as $rotation) {
-            $this->db->update(
-                'rotation',
-                ['priority' => new Expression('priority - 1'), 'changed_at' => $changedAt],
-                ['id = ?' => $rotation->id]
-            );
+            $rotation->delete();
         }
 
         if ($transactionStarted) {

@@ -8,6 +8,7 @@ use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Model\AvailableChannelType;
 use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\Contact;
+use Icinga\Module\Notifications\Model\Rotation;
 use Icinga\Module\Notifications\Model\RotationMember;
 use Icinga\Web\Session;
 use ipl\Html\Contract\FormSubmitElement;
@@ -290,11 +291,14 @@ class ContactForm extends CompatForm
             $toRemoveRotations = array_diff($rotationIds, $rotationIdsWithOtherMembers);
 
             if (! empty($toRemoveRotations)) {
-                $this->db->update(
-                    'rotation',
-                    $markAsDeleted + ['priority' => null, 'first_handoff' => null],
-                    ['id IN (?)' => $toRemoveRotations]
-                );
+                $rotations = Rotation::on($this->db)
+                    ->columns(['id', 'schedule_id', 'priority', 'timeperiod.id'])
+                    ->filter(Filter::equal('id', $toRemoveRotations));
+
+                /** @var Rotation $rotation */
+                foreach ($rotations as $rotation) {
+                    $rotation->delete();
+                }
             }
         }
 

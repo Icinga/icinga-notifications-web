@@ -107,8 +107,6 @@ class Rotation extends Model
     /**
      * Delete rotation and all related references
      *
-     * The call must be wrapped in a transaction
-     *
      * @return void
      */
     public function delete(): void
@@ -123,7 +121,7 @@ class Rotation extends Model
         if ($this->timeperiod instanceof Timeperiod) {
             $timeperiodId = $this->timeperiod->id;
         } else {
-            $timeperiodId = $this->timeperiod->columns('id')->first();
+            $timeperiodId = $this->timeperiod->columns('id')->first()->id;
         }
 
         $changedAt = time() * 1000;
