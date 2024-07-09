@@ -43,7 +43,7 @@ class ApiV1ChannelsController extends CompatController
         }
 
         try {
-            $filterRule = QueryString::fromString(rawurldecode(Url::fromRequest()->getQueryString()))
+            $filterRule = QueryString::fromString(Url::fromRequest()->getQueryString())
                 ->on(
                     QueryString::ON_CONDITION,
                     function (Filter\Condition $condition) {
