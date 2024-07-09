@@ -5,6 +5,8 @@
 namespace Icinga\Module\Notifications\Model;
 
 use DateTime;
+use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Forms\RotationConfigForm;
 use Icinga\Util\Json;
 use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
@@ -13,6 +15,8 @@ use ipl\Orm\Contract\RetrieveBehavior;
 use ipl\Orm\Model;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
+use ipl\Sql\Expression;
+use ipl\Stdlib\Filter;
 
 /**
  * Rotation
@@ -98,5 +102,72 @@ class Rotation extends Model
                 }
             }
         });
+    }
+
+    /**
+     * Delete rotation and all related references
+     *
+     * The call must be wrapped in a transaction
+     *
+     * @return void
+     */
+    public function delete(): void
+    {
+        $db = Database::get();
+        $transactionStarted = false;
+        if (! $db->inTransaction()) {
+            $transactionStarted = true;
+            $db->beginTransaction();
+        }
+
+        if ($this->timeperiod instanceof Timeperiod) {
+            $timeperiodId = $this->timeperiod->id;
+        } else {
+            $timeperiodId = $this->timeperiod->columns('id')->first();
+        }
+
+        $changedAt = time() * 1000;
+        $markAsDeleted = ['changed_at' => $changedAt, 'deleted' => 'y'];
+
+        $db->update('timeperiod_entry', $markAsDeleted, ['timeperiod_id = ?' => $timeperiodId]);
+        $db->update('timeperiod', $markAsDeleted, ['id = ?' => $timeperiodId]);
+        $db->update('rotation_member', $markAsDeleted + ['position' => null], ['rotation_id = ?' => $this->id]);
+
+        $db->update(
+            'rotation',
+            $markAsDeleted + ['priority' => null, 'first_handoff' => null],
+            ['id = ?' => $this->id]
+        );
+
+        $requirePriorityUpdate = true;
+        if (RotationConfigForm::EXPERIMENTAL_OVERRIDES) {
+            $rotations = self::on($db)
+                ->columns('1')
+                ->filter(Filter::equal('schedule_id', $this->schedule_id))
+                ->filter(Filter::equal('priority', $this->priority))
+                ->first();
+
+            $requirePriorityUpdate = $rotations === null;
+        }
+
+        if ($requirePriorityUpdate) {
+            $affectedRotations = self::on($db)
+                ->columns('id')
+                ->filter(Filter::equal('schedule_id', $this->schedule_id))
+                ->filter(Filter::greaterThan('priority', $this->priority))
+                ->orderBy('priority', SORT_ASC);
+
+            foreach ($affectedRotations as $rotation) {
+                $db->update(
+                    'rotation',
+                    ['priority' => new Expression('priority - 1'), 'changed_at' => $changedAt],
+                    ['id = ?' => $rotation->id]
+                );
+            }
+        }
+
+        if ($transactionStarted) {
+            $db->commitTransaction();
+        }
     }
 }
