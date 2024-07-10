@@ -46,9 +46,11 @@ class ContactGroupController extends CompatController
 
         $this->addControl(new HtmlElement('div', new Attributes(['class' => 'header']), Text::create($group->name)));
 
-        $contacts = $group
-            ->contact
-            ->filter(Filter::equal('contactgroup_member.deleted', 'n'));
+        $contacts = Contact::on(Database::get())
+            ->filter(Filter::all(
+                Filter::equal('contactgroup_member.contactgroup_id', $groupId),
+                Filter::equal('contactgroup_member.deleted', 'n')
+            ));
 
         $this->addControl($this->createPaginationControl($contacts));
         $this->addControl($this->createLimitControl());
