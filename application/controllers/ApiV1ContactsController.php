@@ -226,11 +226,12 @@ class ApiV1ContactsController extends CompatController
                     $db->update('contact', [
                         'full_name'             => $data['full_name'],
                         'username'              => $data['username'] ?? null,
-                        'default_channel_id'    => $this->getChannelId($data['default_channel'])
+                        'default_channel_id'    => $this->getChannelId($data['default_channel']),
                     ], ['id = ?' => $contactId]);
 
-                    $db->delete('contact_address', ['contact_id = ?' => $contactId]);
-                    $db->delete('contactgroup_member', ['contact_id = ?' => $contactId]);
+                    $markAsDeleted = ['deleted' => 'y'];
+                    $db->update('contact_address', $markAsDeleted, ['contact_id = ?' => $contactId, 'deleted = ?' => 'n']);
+                    $db->update('contactgroup_member', $markAsDeleted, ['contact_id = ?' => $contactId, 'deleted = ?' => 'n']);
 
                     if (! empty($data['addresses'])) {
                         $this->addAddresses($contactId, $data['addresses']);
@@ -497,9 +498,26 @@ class ApiV1ContactsController extends CompatController
      */
     private function removeContact(int $id): void
     {
-        Database::get()->delete('contactgroup_member', ['contact_id = ?' => $id]);
-        Database::get()->delete('contact_address', ['contact_id = ?' => $id]);
-        Database::get()->delete('contact', ['id = ?' => $id]);
+        $db = Database::get();
+        $markAsDeleted = ['deleted' => 'y'];
+
+        $db->update(
+            'rotation_member',
+            $markAsDeleted + ['position' => null],
+            ['contact_id = ?' => $id, 'deleted = ?' => 'n']
+        );
+
+        $db->update(
+            'rule_escalation_recipient',
+            $markAsDeleted,
+            ['contact_id = ?' => $id, 'deleted = ?' => 'n']
+        );
+
+        $db->update('contactgroup_member', $markAsDeleted, ['contact_id = ?' => $id, 'deleted = ?' => 'n']);
+        $db->update('contact_address', $markAsDeleted, ['contact_id = ?' => $id, 'deleted = ?' => 'n']);
+        $db->update('contact', $markAsDeleted, ['id = ?' => $id]);
+
+        //TODO: properly remove rotations|escalations with no members as in form
     }
 
     /**

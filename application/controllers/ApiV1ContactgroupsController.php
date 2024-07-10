@@ -213,8 +213,7 @@ class ApiV1ContactgroupsController extends CompatController
                 $contactgroupId = $this->getContactgroupId($identifier);
                 if ($contactgroupId !== null) {
                     $db->update('contactgroup', ['name' => $data['name']], ['id = ?' => $contactgroupId]);
-
-                    $db->delete('contactgroup_member', ['contactgroup_id = ?' => $contactgroupId]);
+                    $db->update('contactgroup_member', ['deleted' => 'y'], ['contactgroup_id = ?' => $contactgroupId, 'deleted = ?' => 'n']);
 
                     if (! empty($data['users'])) {
                         $this->addUsers($contactgroupId, $data['users']);
@@ -374,8 +373,25 @@ class ApiV1ContactgroupsController extends CompatController
      */
     private function removeContactgroup(int $id): void
     {
-        Database::get()->delete('contactgroup_member', ['contactgroup_id = ?' => $id]);
-        Database::get()->delete('contactgroup', ['id = ?' => $id]);
+        $db = Database::get();
+        $markAsDeleted = ['deleted' => 'y'];
+
+        $db->update(
+            'rotation_member',
+            $markAsDeleted + ['position' => null],
+            ['contactgroup_id = ?' => $id, 'deleted = ?' => 'n']
+        );
+
+        $db->update(
+            'rule_escalation_recipient',
+            $markAsDeleted,
+            ['contactgroup_id = ?' => $id, 'deleted = ?' => 'n']
+        );
+
+        $db->update('contactgroup_member', $markAsDeleted, ['contactgroup_id = ?' => $id, 'deleted = ?' => 'n']);
+        $db->update('contactgroup', $markAsDeleted, ['id = ?' => $id]);
+
+        //TODO: properly remove rotations|escalations with no members as in form
     }
 
     /**
