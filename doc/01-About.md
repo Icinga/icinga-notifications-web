@@ -1,25 +1,22 @@
 # Icinga Notifications Web
 
-[![PHP Support](https://img.shields.io/badge/php-%3E%3D%207.2-777BB4?logo=PHP)](https://php.net/)
-![Build Status](https://github.com/Icinga/icinga-notifications-web/actions/workflows/php.yml/badge.svg?branch=main)
-[![Github Tag](https://img.shields.io/github/tag/Icinga/icinga-notifications-web.svg)](https://github.com/Icinga/icinga-notifications-web/releases/latest)
+!!! warning
 
-> [!WARNING]
-> This is an early beta version for you to try, but do not use this in production. There may still be severe bugs.
-> 
-> At the moment, we don't provide any support for this module.
+    This is an early beta version for you to try, but do not use this in production. There may still be severe bugs.
 
-Icinga Notifications is a set of components that processes received events from various sources, manages incidents and
-forwards notifications to predefined contacts, consisting of:
+    At the moment, we don't provide any support for this module.
+
+Icinga Notifications is a set of components that processes received events from miscellaneous sources, manages
+incidents and forwards notifications to predefined contacts, consisting of:
 
 * [Icinga Notifications](https://github.com/Icinga/icinga-notifications), which receives events and sends notifications.
 * Icinga Notifications Web, which provides graphical configuration.
 
-Icinga 2 itself and miscellaneous other sources propagate state updates and other events to [Icinga Notifications](https://github.com/Icinga/icinga-notifications).
+Icinga 2 itself and other sources propagate state updates and other events to [Icinga Notifications](https://github.com/Icinga/icinga-notifications).
 
 ## Big Picture
 
-![Icinga Notifications Architecture](doc/res/notifications-architecture.png)
+![Icinga Notifications Architecture](res/notifications-architecture.png)
 
 Because Icinga Notifications consists of several components,
 this section tries to help understand how these components relate.
@@ -49,10 +46,10 @@ Icinga Notifications comes with multiple channels out of the box:
 Additional custom channels can be developed independently of Icinga Notifications,
 following the [channel specification](https://icinga.com/docs/icinga-notifications/latest/doc/10-Channels).
 
-## Documentation
+## Installation
 
-Icinga Notifications Web documentation is available at [icinga.com/docs](https://icinga.com/docs/icinga-notifications-web/latest).
+To install Icinga Notifications Web see [Installation](02-Installation.md).
 
 ## License
 
-Icinga Notifications Web and its documentation are licensed under the terms of the [GNU General Public License Version 2](LICENSE).
+Icinga Notifications Web and its documentation are licensed under the terms of the [GNU General Public License Version 2](https://github.com/Icinga/icinga-notifications-web?tab=GPL-2.0-1-ov-file#readme).
