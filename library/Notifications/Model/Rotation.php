@@ -127,9 +127,14 @@ class Rotation extends Model
         $changedAt = time() * 1000;
         $markAsDeleted = ['changed_at' => $changedAt, 'deleted' => 'y'];
 
-        $db->update('timeperiod_entry', $markAsDeleted, ['timeperiod_id = ?' => $timeperiodId]);
+        $db->update('timeperiod_entry', $markAsDeleted, ['timeperiod_id = ?' => $timeperiodId,  'deleted = ?' => 'n']);
         $db->update('timeperiod', $markAsDeleted, ['id = ?' => $timeperiodId]);
-        $db->update('rotation_member', $markAsDeleted + ['position' => null], ['rotation_id = ?' => $this->id]);
+
+        $db->update(
+            'rotation_member',
+            $markAsDeleted + ['position' => null],
+            ['rotation_id = ?' => $this->id, 'deleted = ?' => 'n']
+        );
 
         $db->update(
             'rotation',

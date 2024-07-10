@@ -243,7 +243,8 @@ class ContactGroupForm extends CompatForm
                 ['changed_at' => $changedAt, 'deleted' => 'y'],
                 [
                     'contactgroup_id = ?'   => $this->contactgroupId,
-                    'contact_id IN (?)'     => $toDelete
+                    'contact_id IN (?)'     => $toDelete,
+                    'deleted = ?'           => 'n'
                 ]
             );
         }
@@ -294,6 +295,7 @@ class ContactGroupForm extends CompatForm
         $this->db->beginTransaction();
 
         $markAsDeleted = ['changed_at' => time() * 1000, 'deleted' => 'y'];
+        $updateCondition = ['contactgroup_id = ?' => $this->contactgroupId, 'deleted = ?' => 'n'];
 
         $rotationIds = $this->db->fetchCol(
             RotationMember::on($this->db)
@@ -302,11 +304,7 @@ class ContactGroupForm extends CompatForm
                 ->assembleSelect()
         );
 
-        $this->db->update(
-            'rotation_member',
-            $markAsDeleted + ['position' => null],
-            ['contactgroup_id = ?' => $this->contactgroupId]
-        );
+        $this->db->update('rotation_member', $markAsDeleted + ['position' => null], $updateCondition);
 
         if (! empty($rotationIds)) {
             $rotationIdsWithOtherMembers = $this->db->fetchCol(
@@ -339,11 +337,7 @@ class ContactGroupForm extends CompatForm
             ->assembleSelect()
         );
 
-        $this->db->update(
-            'rule_escalation_recipient',
-            $markAsDeleted,
-            ['contactgroup_id = ?' => $this->contactgroupId]
-        );
+        $this->db->update('rule_escalation_recipient', $markAsDeleted, $updateCondition);
 
         if (! empty($escalationIds)) {
             $escalationIdsWithOtherRecipients = $this->db->fetchCol(
@@ -366,8 +360,13 @@ class ContactGroupForm extends CompatForm
             }
         }
 
-        $this->db->update('contactgroup_member', $markAsDeleted, ['contactgroup_id = ?' => $this->contactgroupId]);
-        $this->db->update('contactgroup', $markAsDeleted, ['id = ?' => $this->contactgroupId]);
+        $this->db->update('contactgroup_member', $markAsDeleted, $updateCondition);
+
+        $this->db->update(
+            'contactgroup',
+            $markAsDeleted,
+            ['id = ?' => $this->contactgroupId, 'deleted = ?' => 'n']
+        );
 
         $this->db->commitTransaction();
     }

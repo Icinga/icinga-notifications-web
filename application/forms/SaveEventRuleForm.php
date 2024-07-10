@@ -344,7 +344,7 @@ class SaveEventRuleForm extends Form
                     $db->update(
                         'rule_escalation_recipient',
                         ['changed_at' => $changedAt, 'deleted' => 'y'],
-                        ['id IN (?)' => $recipientsToRemove]
+                        ['id IN (?)' => $recipientsToRemove, 'deleted = ?' => 'n']
                     );
                 }
             }
@@ -455,7 +455,7 @@ class SaveEventRuleForm extends Form
             $db->update(
                 'rule_escalation_recipient',
                 $markAsDeleted,
-                ['rule_escalation_id IN (?)' => $escalationsToRemove]
+                ['rule_escalation_id IN (?)' => $escalationsToRemove, 'deleted = ?' => 'n']
             );
 
             $db->update(
@@ -501,7 +501,7 @@ class SaveEventRuleForm extends Form
             $db->update(
                 'rule_escalation_recipient',
                 $markAsDeleted,
-                ['rule_escalation_id IN (?)' => $escalationsToRemove]
+                ['rule_escalation_id IN (?)' => $escalationsToRemove, 'deleted = ?' => 'n']
             );
         }
 
