@@ -61,21 +61,9 @@ class EventRuleController extends CompatController
             );
         }
 
-        $disableRemoveButton = false;
-        if (ctype_digit($ruleId)) {
-            $incidents = Incident::on(Database::get())
-                ->with('rule')
-                ->filter(Filter::equal('rule.id', $ruleId));
-
-            if ($incidents->count() > 0) {
-                $disableRemoveButton = true;
-            }
-        }
-
         $saveForm = (new SaveEventRuleForm())
             ->setShowRemoveButton()
             ->setShowDismissChangesButton($cache !== null)
-            ->setRemoveButtonDisabled($disableRemoveButton)
             ->setSubmitButtonDisabled($cache === null)
             ->setSubmitLabel($this->translate('Save Changes'))
             ->on(SaveEventRuleForm::ON_SUCCESS, function ($form) use ($ruleId, $eventRuleConfig) {
