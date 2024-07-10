@@ -528,6 +528,10 @@ class SaveEventRuleForm extends Form
             }
         }
 
+        if (! isset($config['rule_escalation'])) {
+            $config['rule_escalation'] = [];
+        }
+
         $config['showSearchbar'] = ! empty($config['object_filter']);
 
         return $config;
