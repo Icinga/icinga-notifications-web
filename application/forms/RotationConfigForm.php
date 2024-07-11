@@ -310,10 +310,12 @@ class RotationConfigForm extends CompatForm
             $data['actual_handoff'] = $firstHandoff->format('U.u') * 1000.0;
         }
 
+        $changedAt = time() * 1000;
+        $data['changed_at'] = $changedAt;
         $this->db->insert('rotation', $data);
         $rotationId = $this->db->lastInsertId();
 
-        $this->db->insert('timeperiod', ['owned_by_rotation_id' => $rotationId]);
+        $this->db->insert('timeperiod', ['owned_by_rotation_id' => $rotationId, 'changed_at' => $changedAt]);
         $timeperiodId = $this->db->lastInsertId();
 
         $knownMembers = [];
@@ -330,13 +332,15 @@ class RotationConfigForm extends CompatForm
                     $this->db->insert('rotation_member', [
                         'rotation_id' => $rotationId,
                         'contact_id' => $id,
-                        'position' => $position
+                        'position' => $position,
+                        'changed_at' => $changedAt
                     ]);
                 } elseif ($type === 'group') {
                     $this->db->insert('rotation_member', [
                         'rotation_id' => $rotationId,
                         'contactgroup_id' => $id,
-                        'position' => $position
+                        'position' => $position,
+                        'changed_at' => $changedAt
                     ]);
                 }
 
@@ -360,6 +364,7 @@ class RotationConfigForm extends CompatForm
                 'until_time' => $untilTime,
                 'timezone' => $rrule->getStartDate()->getTimezone()->getName(),
                 'rrule' => $rrule->getString(Rule::TZ_FIXED),
+                'changed_at' => $changedAt
             ]);
         }
     }
@@ -448,7 +453,8 @@ class RotationConfigForm extends CompatForm
                         'start_time' => $gapStart->format('U.u') * 1000.0,
                         'end_time' => $gapEnd->format('U.u') * 1000.0,
                         'until_time' => $gapEnd->format('U.u') * 1000.0,
-                        'timezone' => $gapStart->getTimezone()->getName()
+                        'timezone' => $gapStart->getTimezone()->getName(),
+                        'changed_at' => $changedAt
                     ]);
                 }
 

@@ -200,6 +200,7 @@ class ChannelForm extends CompatForm
         $channel = $this->getValues();
 
         $channel['config'] = json_encode($this->filterConfig($channel['config']));
+        $channel['changed_at'] = time() * 1000;
 
         $this->db->insert('channel', $channel);
     }

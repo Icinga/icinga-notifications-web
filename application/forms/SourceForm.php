@@ -294,6 +294,8 @@ class SourceForm extends CompatForm
             self::HASH_ALGORITHM
         );
 
+        $source['changed_at'] = time() * 1000;
+
         $this->db->insert('source', $source);
     }
 

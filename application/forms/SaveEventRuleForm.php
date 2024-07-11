@@ -212,10 +212,12 @@ class SaveEventRuleForm extends Form
 
         $db->beginTransaction();
 
+        $changedAt = time() * 1000;
         $db->insert('rule', [
             'name' => $config['name'],
             'timeperiod_id' => $config['timeperiod_id'] ?? null,
-            'object_filter' => $config['object_filter'] ?? null
+            'object_filter' => $config['object_filter'] ?? null,
+            'changed_at'    => $changedAt
         ]);
         $ruleId = $db->lastInsertId();
 
@@ -225,14 +227,16 @@ class SaveEventRuleForm extends Form
                 'position' => $position,
                 'condition' => $escalationConfig['condition'] ?? null,
                 'name' => $escalationConfig['name'] ?? null,
-                'fallback_for' => $escalationConfig['fallback_for'] ?? null
+                'fallback_for' => $escalationConfig['fallback_for'] ?? null,
+                'changed_at' => $changedAt
             ]);
             $escalationId = $db->lastInsertId();
 
             foreach ($escalationConfig['recipient'] ?? [] as $recipientConfig) {
                 $data = [
                     'rule_escalation_id' => $escalationId,
-                    'channel_id' => $recipientConfig['channel_id']
+                    'channel_id' => $recipientConfig['channel_id'],
+                    'changed_at' => $changedAt
                 ];
 
                 switch (true) {
@@ -276,7 +280,8 @@ class SaveEventRuleForm extends Form
                     'position' => $position,
                     'condition' => $escalationConfig['condition'] ?? null,
                     'name' => $escalationConfig['name'] ?? null,
-                    'fallback_for' => $escalationConfig['fallback_for'] ?? null
+                    'fallback_for' => $escalationConfig['fallback_for'] ?? null,
+                    'changed_at' => $changedAt
                 ]);
 
                 $escalationId = $db->lastInsertId();
@@ -322,7 +327,8 @@ class SaveEventRuleForm extends Form
             foreach ($escalationConfig['recipient'] ?? [] as $recipientConfig) {
                 $data = [
                     'rule_escalation_id' => $escalationId,
-                    'channel_id' => $recipientConfig['channel_id']
+                    'channel_id' => $recipientConfig['channel_id'],
+                    'changed_at' => $changedAt
                 ];
 
                 switch (true) {

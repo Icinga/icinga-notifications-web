@@ -183,16 +183,17 @@ class ContactForm extends CompatForm
     public function addContact(): void
     {
         $contactInfo = $this->getValues();
-
+        $changedAt = time() * 1000;
         $this->db->beginTransaction();
-        $this->db->insert('contact', $contactInfo['contact']);
+        $this->db->insert('contact', $contactInfo['contact'] + ['changed_at' => $changedAt]);
         $this->contactId = $this->db->lastInsertId();
 
         foreach (array_filter($contactInfo['contact_address']) as $type => $address) {
             $address = [
                 'contact_id' => $this->contactId,
                 'type'       => $type,
-                'address'    => $address
+                'address'    => $address,
+                'changed_at' => $changedAt
             ];
 
             $this->db->insert('contact_address', $address);
@@ -236,7 +237,8 @@ class ContactForm extends CompatForm
                 $address = [
                     'contact_id' => $this->contactId,
                     'type'       => $type,
-                    'address'    => $address
+                    'address'    => $address,
+                    'changed_at' => $changedAt
                 ];
 
                 $this->db->insert('contact_address', $address);

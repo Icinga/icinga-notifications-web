@@ -178,7 +178,8 @@ class ContactGroupForm extends CompatForm
 
         $this->db->beginTransaction();
 
-        $this->db->insert('contactgroup', ['name' => trim($data['group_name'])]);
+        $changedAt = time() * 1000;
+        $this->db->insert('contactgroup', ['name' => trim($data['group_name']), 'changed_at' => $changedAt]);
 
         $groupIdentifier = $this->db->lastInsertId();
 
@@ -191,8 +192,9 @@ class ContactGroupForm extends CompatForm
             $this->db->insert(
                 'contactgroup_member',
                 [
-                    'contactgroup_id' => $groupIdentifier,
-                    'contact_id'      => $contactId
+                    'contactgroup_id'   => $groupIdentifier,
+                    'contact_id'        => $contactId,
+                    'changed_at'        => $changedAt
                 ]
             );
         }
@@ -267,7 +269,8 @@ class ContactGroupForm extends CompatForm
                     'contactgroup_member',
                     [
                         'contactgroup_id'   => $this->contactgroupId,
-                        'contact_id'        => $contactId
+                        'contact_id'        => $contactId,
+                        'changed_at'        => $changedAt
                     ]
                 );
             }
