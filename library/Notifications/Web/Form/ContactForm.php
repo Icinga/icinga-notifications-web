@@ -265,14 +265,25 @@ class ContactForm extends CompatForm
         $markAsDeleted = ['changed_at' => time() * 1000, 'deleted' => 'y'];
         $updateCondition = ['contact_id = ?' => $this->contactId, 'deleted = ?' => 'n'];
 
-        $rotationIds = $this->db->fetchCol(
+        $rotationAndMemberIds = $this->db->fetchPairs(
             RotationMember::on($this->db)
-                ->columns('rotation_id')
+                ->columns(['id', 'rotation_id'])
                 ->filter(Filter::equal('contact_id', $this->contactId))
                 ->assembleSelect()
         );
 
+        $rotationMemberIds = array_keys($rotationAndMemberIds);
+        $rotationIds = array_values($rotationAndMemberIds);
+
         $this->db->update('rotation_member', $markAsDeleted + ['position' => null], $updateCondition);
+
+        if (! empty($rotationMemberIds)) {
+            $this->db->update(
+                'timeperiod_entry',
+                $markAsDeleted,
+                ['rotation_member_id IN (?)' => $rotationMemberIds, 'deleted = ?' => 'n']
+            );
+        }
 
         if (! empty($rotationIds)) {
             $rotationIdsWithOtherMembers = $this->db->fetchCol(
