@@ -110,4 +110,9 @@ abstract class Links
     {
         return Url::fromPath('notifications/schedule/move-rotation');
     }
+
+    public static function ruleFilterSuggestionUrl(int $id): Url
+    {
+        return Url::fromPath("notifications/event-rule/complete", ['id' => $id]);
+    }
 }

@@ -6,7 +6,22 @@ namespace Icinga\Module\Notifications\Model;
 
 use ipl\Orm\Model;
 use ipl\Orm\Relations;
+use ipl\Orm\Query;
 
+/**
+ * @property int $id
+ * @property int $rule_escalation_id
+ * @property ?int $contact_id
+ * @property ?int $contactgroup_id
+ * @property ?int $schedule_id
+ * @property ?int $channel_id
+ *
+ * @property Query|Channel $channel
+ * @property Query|Contact $contact
+ * @property Query|Contactgroup $contactgroup
+ * @property Query|RuleEscalation $rule_escalation
+ * @property Query|Schedule $schedule
+ */
 class RuleEscalationRecipient extends Model
 {
     public function getTableName()
@@ -64,15 +79,21 @@ class RuleEscalationRecipient extends Model
     {
         $recipientModel = null;
         if ($this->contact_id) {
-            $recipientModel = $this->contact->first();
+            /** @var Query<Contact> $contact */
+            $contact = $this->contact;
+            $recipientModel = $contact->first();
         }
 
         if ($this->contactgroup_id) {
-            $recipientModel = $this->contactgroup->first();
+            /** @var Query<Contactgroup> $contactgroup */
+            $contactgroup = $this->contactgroup;
+            $recipientModel = $contactgroup->first();
         }
 
         if ($this->schedule_id) {
-            $recipientModel = $this->schedule->first();
+            /** @var Query<Schedule> $schedule */
+            $schedule = $this->schedule;
+            $recipientModel = $schedule->first();
         }
 
         return $recipientModel;
