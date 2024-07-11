@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Forms;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\AvailableChannelType;
+use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use Icinga\Web\Session;
 use ipl\Html\Contract\FormSubmitElement;
@@ -113,13 +114,17 @@ class ChannelForm extends CompatForm
         );
 
         if ($this->channelId !== null) {
-            $isInUse = RuleEscalationRecipient::on($this->db)
+            $isInUse = Contact::on($this->db)
                 ->columns('1')
-                ->filter(Filter::any(
-                    Filter::equal('channel_id', $this->channelId),
-                    Filter::equal('contact.default_channel_id', $this->channelId)
-                ))
+                ->filter(Filter::equal('default_channel_id', $this->channelId))
                 ->first();
+
+            if ($isInUse === null) {
+                $isInUse = RuleEscalationRecipient::on($this->db)
+                    ->columns('1')
+                    ->filter(Filter::equal('channel_id', $this->channelId))
+                    ->first();
+            }
 
             /** @var FormSubmitElement $deleteButton */
             $deleteButton = $this->createElement(
