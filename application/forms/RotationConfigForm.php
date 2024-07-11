@@ -416,6 +416,7 @@ class RotationConfigForm extends CompatForm
 
         $allEntriesRemoved = true;
         $changedAt = time() * 1000;
+        $markAsDeleted = ['changed_at' => $changedAt, 'deleted' => 'y'];
         if (self::EXPERIMENTAL_OVERRIDES) {
             // We only show a single name, even in case of multiple versions of a rotation.
             // To avoid confusion, we update all versions upon change of the name
@@ -458,7 +459,7 @@ class RotationConfigForm extends CompatForm
 
                 if ($lastHandoff === null) {
                     // If the handoff didn't happen at all, the entry can safely be removed
-                    $this->db->delete('timeperiod_entry', ['id = ?' => $timeperiodEntry->id]);
+                    $this->db->update('timeperiod_entry', $markAsDeleted, ['id = ?' => $timeperiodEntry->id]);
                 } else {
                     $allEntriesRemoved = false;
                     $this->db->update('timeperiod_entry', [
@@ -469,18 +470,33 @@ class RotationConfigForm extends CompatForm
                 }
             }
         } else {
-            $this->db->delete('timeperiod_entry', [
-                'timeperiod_id = ?' => (new Select())
-                    ->from('timeperiod')
-                    ->columns('id')
-                    ->where(['owned_by_rotation_id = ?' => $rotationId])
-            ]);
+            $this->db->update(
+                'timeperiod_entry',
+                $markAsDeleted,
+                [
+                    'deleted = ?'       => 'n',
+                    'timeperiod_id = ?' => (new Select())
+                        ->from('timeperiod')
+                        ->columns('id')
+                        ->where(['owned_by_rotation_id = ?' => $rotationId])
+                ]
+            );
         }
 
         if ($allEntriesRemoved) {
-            $this->db->delete('timeperiod', ['owned_by_rotation_id = ?' => $rotationId]);
-            $this->db->delete('rotation_member', ['rotation_id = ?' => $rotationId]);
-            $this->db->delete('rotation', ['id = ?' => $rotationId]);
+            $this->db->update('timeperiod', $markAsDeleted, ['owned_by_rotation_id = ?' => $rotationId]);
+
+            $this->db->update(
+                'rotation_member',
+                $markAsDeleted + ['position' => null],
+                ['rotation_id = ?' => $rotationId, 'deleted = ?' => 'n']
+            );
+
+            $this->db->update(
+                'rotation',
+                $markAsDeleted + ['priority' => null, 'first_handoff' => null],
+                ['id = ?' => $rotationId]
+            );
         }
 
         // Once constraint failures are impossible, create the new version
