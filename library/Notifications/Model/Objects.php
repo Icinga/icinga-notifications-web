@@ -19,32 +19,30 @@ use ipl\Orm\Relations;
  * @property string $id
  * @property int $source_id
  * @property string $name
- * @property string $host
- * @property ?string $service
  * @property ?string $url
  * @property ?string $mute_reason
  *
- * @property Query | Event $event
- * @property Query | Incident $incident
- * @property Query | Tag $tag
- * @property Query | ObjectExtraTag $object_extra_tag
- * @property Query | ExtraTag $extra_tag
- * @property Query | Source $source
+ * @property Query|Event $event
+ * @property Query|Incident $incident
+ * @property Query|Tag $tag
+ * @property Query|ObjectExtraTag $object_extra_tag
+ * @property Query|ExtraTag $extra_tag
+ * @property Query|Source $source
  * @property array<string, string> $id_tags
  */
 class Objects extends Model
 {
-    public function getTableName()
+    public function getTableName(): string
     {
         return 'object';
     }
 
-    public function getKeyName()
+    public function getKeyName(): string
     {
         return 'id';
     }
 
-    public function getColumns()
+    public function getColumns(): array
     {
         return [
             'source_id',
@@ -57,7 +55,7 @@ class Objects extends Model
     /**
      * @return string[]
      */
-    public function getSearchColumns()
+    public function getSearchColumns(): array
     {
         return ['object_id_tag.tag', 'object_id_tag.value'];
     }
@@ -65,18 +63,18 @@ class Objects extends Model
     /**
      * @return string
      */
-    public function getDefaultSort()
+    public function getDefaultSort(): string
     {
         return 'object.name';
     }
 
-    public function createBehaviors(Behaviors $behaviors)
+    public function createBehaviors(Behaviors $behaviors): void
     {
         $behaviors->add(new Binary(['id']));
         $behaviors->add(new IdTagAggregator());
     }
 
-    public function createRelations(Relations $relations)
+    public function createRelations(Relations $relations): void
     {
         $relations->hasMany('event', Event::class);
         $relations->hasMany('incident', Incident::class);

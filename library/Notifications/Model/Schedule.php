@@ -4,6 +4,10 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use DateTime;
+use ipl\Orm\Behavior\BoolCast;
+use ipl\Orm\Behavior\MillisecondTimestamp;
+use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
@@ -11,10 +15,12 @@ use ipl\Orm\Relations;
 /**
  * @property int $id
  * @property string $name
+ * @property DateTime $changed_at
+ * @property bool $deleted
  *
- * @property Rotation|Query $rotation
- * @property RuleEscalationRecipient|Query $rule_escalation_recipient
- * @property IncidentHistory|Query $incident_history
+ * @property Query|Rotation $rotation
+ * @property Query|RuleEscalationRecipient $rule_escalation_recipient
+ * @property Query|IncidentHistory $incident_history
  */
 class Schedule extends Model
 {
@@ -31,13 +37,18 @@ class Schedule extends Model
     public function getColumns(): array
     {
         return [
-            'name'
+            'name',
+            'changed_at',
+            'deleted'
         ];
     }
 
     public function getColumnDefinitions(): array
     {
-        return ['name' => t('Name')];
+        return [
+            'name'          => t('Name'),
+            'changed_at'    => t('Changed At')
+        ];
     }
 
     public function getSearchColumns(): array
@@ -48,6 +59,12 @@ class Schedule extends Model
     public function getDefaultSort(): string
     {
         return 'name';
+    }
+
+    public function createBehaviors(Behaviors $behaviors): void
+    {
+        $behaviors->add(new MillisecondTimestamp(['changed_at']));
+        $behaviors->add(new BoolCast(['deleted']));
     }
 
     public function createRelations(Relations $relations): void

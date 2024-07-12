@@ -4,6 +4,10 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use DateTime;
+use ipl\Orm\Behavior\BoolCast;
+use ipl\Orm\Behavior\MillisecondTimestamp;
+use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
@@ -15,7 +19,9 @@ use ipl\Orm\Relations;
  * @property int $rotation_id
  * @property ?int $contact_id
  * @property ?int $contactgroup_id
- * @property int $position
+ * @property ?int $position
+ * @property DateTime $changed_at
+ * @property bool $deleted
  *
  * @property Query|Rotation $rotation
  * @property Query|Contact $contact
@@ -24,27 +30,35 @@ use ipl\Orm\Relations;
  */
 class RotationMember extends Model
 {
-    public function getTableName()
+    public function getTableName(): string
     {
         return 'rotation_member';
     }
 
-    public function getKeyName()
+    public function getKeyName(): string
     {
         return 'id';
     }
 
-    public function getColumns()
+    public function getColumns(): array
     {
         return [
             'rotation_id',
             'contact_id',
             'contactgroup_id',
-            'position'
+            'position',
+            'changed_at',
+            'deleted'
         ];
     }
 
-    public function createRelations(Relations $relations)
+    public function createBehaviors(Behaviors $behaviors): void
+    {
+        $behaviors->add(new MillisecondTimestamp(['changed_at']));
+        $behaviors->add(new BoolCast(['deleted']));
+    }
+
+    public function createRelations(Relations $relations): void
     {
         $relations->belongsTo('rotation', Rotation::class);
         $relations->belongsTo('contact', Contact::class)

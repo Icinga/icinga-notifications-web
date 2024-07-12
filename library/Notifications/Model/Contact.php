@@ -4,13 +4,32 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use DateTime;
+use ipl\Orm\Behavior\BoolCast;
 use Icinga\Module\Notifications\Model\Behavior\HasAddress;
+use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
+use ipl\Orm\Query;
 use ipl\Orm\Relations;
 
 /**
  * @property int $id
+ * @property string $full_name
+ * @property ?string $username
+ * @property int $default_channel_id
+ * @property DateTime $changed_at
+ * @property bool $deleted
+ *
+ * @property Query|Channel $channel
+ * @property Query|Incident $incident
+ * @property Query|IncidentContact $incident_contact
+ * @property Query|IncidentHistory $incident_history
+ * @property Query|RotationMember $rotation_member
+ * @property Query|ContactAddress $contact_address
+ * @property Query|RuleEscalationRecipient $rule_escalation_recipient
+ * @property Query|ContactgroupMember $contactgroup_member
+ * @property Query|Contactgroup $contactgroup
  */
 class Contact extends Model
 {
@@ -29,34 +48,39 @@ class Contact extends Model
         return [
             'full_name',
             'username',
-            'default_channel_id'
+            'default_channel_id',
+            'changed_at',
+            'deleted'
         ];
     }
 
-    public function getColumnDefinitions()
+    public function getColumnDefinitions(): array
     {
         return [
-            'full_name' => t('Full Name'),
-            'username'  => t('Username')
+            'full_name'     => t('Full Name'),
+            'username'      => t('Username'),
+            'changed_at'    => t('Changed At')
         ];
     }
 
-    public function getSearchColumns()
+    public function getSearchColumns(): array
     {
         return ['full_name'];
     }
 
-    public function createBehaviors(Behaviors $behaviors)
+    public function createBehaviors(Behaviors $behaviors): void
     {
         $behaviors->add(new HasAddress());
+        $behaviors->add(new MillisecondTimestamp(['changed_at']));
+        $behaviors->add(new BoolCast(['deleted']));
     }
 
-    public function getDefaultSort()
+    public function getDefaultSort(): array
     {
         return ['full_name'];
     }
 
-    public function createRelations(Relations $relations)
+    public function createRelations(Relations $relations): void
     {
         $relations->belongsTo('channel', Channel::class)
             ->setCandidateKey('default_channel_id');
@@ -72,6 +96,8 @@ class Contact extends Model
         $relations->hasMany('contact_address', ContactAddress::class);
         $relations->hasMany('rule_escalation_recipient', RuleEscalationRecipient::class)
             ->setJoinType('LEFT');
+
+        $relations->hasMany('contactgroup_member', ContactgroupMember::class);
 
         $relations->belongsToMany('contactgroup', Contactgroup::class)
             ->through('contactgroup_member')

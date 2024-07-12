@@ -8,10 +8,15 @@ use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Contactgroup;
+use Icinga\Module\Notifications\Model\Rotation;
+use Icinga\Module\Notifications\Model\RotationMember;
+use Icinga\Module\Notifications\Model\RuleEscalation;
+use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use Icinga\Web\Session;
 use ipl\Html\FormElement\SubmitElement;
 use ipl\Html\HtmlDocument;
 use ipl\Sql\Connection;
+use ipl\Sql\Select;
 use ipl\Stdlib\Filter;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
@@ -173,7 +178,8 @@ class ContactGroupForm extends CompatForm
 
         $this->db->beginTransaction();
 
-        $this->db->insert('contactgroup', ['name' => trim($data['group_name'])]);
+        $changedAt = time() * 1000;
+        $this->db->insert('contactgroup', ['name' => trim($data['group_name']), 'changed_at' => $changedAt]);
 
         $groupIdentifier = $this->db->lastInsertId();
 
@@ -186,8 +192,9 @@ class ContactGroupForm extends CompatForm
             $this->db->insert(
                 'contactgroup_member',
                 [
-                    'contactgroup_id' => $groupIdentifier,
-                    'contact_id'      => $contactId
+                    'contactgroup_id'   => $groupIdentifier,
+                    'contact_id'        => $contactId,
+                    'changed_at'        => $changedAt
                 ]
             );
         }
@@ -200,25 +207,23 @@ class ContactGroupForm extends CompatForm
     /**
      * Edit the contact group
      *
-     * @return bool False if no changes found, true otherwise
+     * @return void
      */
-    public function editGroup(): bool
+    public function editGroup(): void
     {
-        $isUpdated = false;
         $values = $this->getValues();
 
         $this->db->beginTransaction();
 
         $storedValues = $this->fetchDbValues();
 
+        $changedAt = time() * 1000;
         if ($values['group_name'] !== $storedValues['group_name']) {
             $this->db->update(
                 'contactgroup',
-                ['name' => $values['group_name']],
+                ['name' => $values['group_name'], 'changed_at' => $changedAt],
                 ['id = ?' => $this->contactgroupId]
             );
-
-            $isUpdated = true;
         }
 
         $storedContacts = [];
@@ -235,34 +240,54 @@ class ContactGroupForm extends CompatForm
         $toAdd = array_diff($newContacts, $storedContacts);
 
         if (! empty($toDelete)) {
-            $this->db->delete(
+            $this->db->update(
                 'contactgroup_member',
+                ['changed_at' => $changedAt, 'deleted' => 'y'],
                 [
-                    'contactgroup_id = ?' => $this->contactgroupId,
-                    'contact_id IN (?)'   => $toDelete
+                    'contactgroup_id = ?'   => $this->contactgroupId,
+                    'contact_id IN (?)'     => $toDelete,
+                    'deleted = ?'           => 'n'
                 ]
             );
-
-            $isUpdated = true;
         }
 
         if (! empty($toAdd)) {
+            $contactsMarkedAsDeleted = $this->db->fetchCol(
+                (new Select())
+                    ->from('contactgroup_member')
+                    ->columns(['contact_id'])
+                    ->where([
+                        'contactgroup_id = ?'   => $this->contactgroupId,
+                        'deleted = ?'           => 'y',
+                        'contact_id IN (?)'     => $toAdd
+                    ])
+            );
+
+            $toAdd = array_diff($toAdd, $contactsMarkedAsDeleted);
             foreach ($toAdd as $contactId) {
                 $this->db->insert(
                     'contactgroup_member',
                     [
-                        'contactgroup_id' => $this->contactgroupId,
-                        'contact_id'      => $contactId
+                        'contactgroup_id'   => $this->contactgroupId,
+                        'contact_id'        => $contactId,
+                        'changed_at'        => $changedAt
                     ]
                 );
             }
 
-            $isUpdated = true;
+            if (! empty($contactsMarkedAsDeleted)) {
+                $this->db->update(
+                    'contactgroup_member',
+                    ['changed_at' => $changedAt, 'deleted' => 'n'],
+                    [
+                        'contactgroup_id = ?'   => $this->contactgroupId,
+                        'contact_id IN (?)'     => $contactsMarkedAsDeleted
+                    ]
+                );
+            }
         }
 
         $this->db->commitTransaction();
-
-        return $isUpdated;
     }
 
     /**
@@ -272,8 +297,90 @@ class ContactGroupForm extends CompatForm
     {
         $this->db->beginTransaction();
 
-        $this->db->delete('contactgroup_member', ['contactgroup_id = ?' => $this->contactgroupId]);
-        $this->db->delete('contactgroup', ['id = ?' => $this->contactgroupId]);
+        $markAsDeleted = ['changed_at' => time() * 1000, 'deleted' => 'y'];
+        $updateCondition = ['contactgroup_id = ?' => $this->contactgroupId, 'deleted = ?' => 'n'];
+
+        $rotationAndMemberIds = $this->db->fetchPairs(
+            RotationMember::on($this->db)
+                ->columns(['id', 'rotation_id'])
+                ->filter(Filter::equal('contactgroup_id', $this->contactgroupId))
+                ->assembleSelect()
+        );
+
+        $rotationMemberIds = array_keys($rotationAndMemberIds);
+        $rotationIds = array_values($rotationAndMemberIds);
+
+        $this->db->update('rotation_member', $markAsDeleted + ['position' => null], $updateCondition);
+
+        if (! empty($rotationMemberIds)) {
+            $this->db->update(
+                'timeperiod_entry',
+                $markAsDeleted,
+                ['rotation_member_id IN (?)' => $rotationMemberIds, 'deleted = ?' => 'n']
+            );
+        }
+
+        if (! empty($rotationIds)) {
+            $rotationIdsWithOtherMembers = $this->db->fetchCol(
+                RotationMember::on($this->db)
+                    ->columns('rotation_id')
+                    ->filter(Filter::all(
+                        Filter::equal('rotation_id', $rotationIds),
+                        Filter::unequal('contactgroup_id', $this->contactgroupId)
+                    ))->assembleSelect()
+            );
+
+            $toRemoveRotations = array_diff($rotationIds, $rotationIdsWithOtherMembers);
+
+            if (! empty($toRemoveRotations)) {
+                $rotations = Rotation::on($this->db)
+                    ->columns(['id', 'schedule_id', 'priority', 'timeperiod.id'])
+                    ->filter(Filter::equal('id', $toRemoveRotations));
+
+                /** @var Rotation $rotation */
+                foreach ($rotations as $rotation) {
+                    $rotation->delete();
+                }
+            }
+        }
+
+        $escalationIds = $this->db->fetchCol(
+            RuleEscalationRecipient::on($this->db)
+            ->columns('rule_escalation_id')
+            ->filter(Filter::equal('contactgroup_id', $this->contactgroupId))
+            ->assembleSelect()
+        );
+
+        $this->db->update('rule_escalation_recipient', $markAsDeleted, $updateCondition);
+
+        if (! empty($escalationIds)) {
+            $escalationIdsWithOtherRecipients = $this->db->fetchCol(
+                RuleEscalationRecipient::on($this->db)
+                    ->columns('rule_escalation_id')
+                    ->filter(Filter::all(
+                        Filter::equal('rule_escalation_id', $escalationIds),
+                        Filter::unequal('contactgroup_id', $this->contactgroupId)
+                    ))->assembleSelect()
+            );
+
+            $toRemoveEscalations = array_diff($escalationIds, $escalationIdsWithOtherRecipients);
+
+            if (! empty($toRemoveEscalations)) {
+                $this->db->update(
+                    'rule_escalation',
+                    $markAsDeleted + ['position' => null],
+                    ['id IN (?)' => $toRemoveEscalations]
+                );
+            }
+        }
+
+        $this->db->update('contactgroup_member', $markAsDeleted, $updateCondition);
+
+        $this->db->update(
+            'contactgroup',
+            $markAsDeleted,
+            ['id = ?' => $this->contactgroupId, 'deleted = ?' => 'n']
+        );
 
         $this->db->commitTransaction();
     }
@@ -297,8 +404,8 @@ class ContactGroupForm extends CompatForm
         }
 
         $groupMembers = [];
-        foreach ($group->contact->columns('id') as $contact) {
-            $groupMembers[] = $contact->id;
+        foreach ($group->contactgroup_member as $contact) {
+            $groupMembers[] = $contact->contact_id;
         }
 
         return [

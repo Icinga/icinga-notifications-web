@@ -27,15 +27,6 @@ class EventRuleForm extends CompatForm
             ]
         );
 
-        $this->addElement(
-            'checkbox',
-            'is_active',
-            [
-                'label'  => $this->translate('Event Rule is active'),
-                'value'  => 'y'
-            ]
-        );
-
         $this->addElement('submit', 'btn_submit', [
             'label' => $this->translate('Save')
         ]);

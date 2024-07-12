@@ -4,12 +4,14 @@
 
 namespace Icinga\Module\Notifications\Forms;
 
+use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Model\Source;
 use Icinga\Web\Session;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Contract\FormSubmitElement;
 use ipl\Html\FormElement\CheckboxElement;
 use ipl\Sql\Connection;
+use ipl\Stdlib\Filter;
 use ipl\Validator\CallbackValidator;
 use ipl\Validator\X509CertValidator;
 use ipl\Web\Common\CsrfCounterMeasure;
@@ -28,10 +30,9 @@ class SourceForm extends CompatForm
     /** @var ?int */
     private $sourceId;
 
-    public function __construct(Connection $db, ?int $sourceId = null)
+    public function __construct(Connection $db)
     {
         $this->db = $db;
-        $this->sourceId = $sourceId;
     }
 
     protected function assemble(): void
@@ -263,37 +264,55 @@ class SourceForm extends CompatForm
         return parent::hasBeenSubmitted();
     }
 
-    /** @param iterable<string, mixed>|Source $values */
-    public function populate($values)
+    /**
+     * Load the source with given id
+     *
+     * @param int $id
+     *
+     * @return $this
+     */
+    public function loadSource(int $id): self
     {
-        if ($values instanceof Source) {
-            $values = [
-                'name' => $values->name,
-                'type' => $values->type,
-                'icinga2_base_url' => $values->icinga2_base_url,
-                'icinga2_auth_user' => $values->icinga2_auth_user,
-                'icinga2_auth_pass' => $values->icinga2_auth_pass,
-                'icinga2_ca_pem' => $values->icinga2_ca_pem,
-                'icinga2_common_name' => $values->icinga2_common_name,
-                'icinga2_insecure_tls' => $values->icinga2_insecure_tls
-            ];
-        }
+        $this->sourceId = $id;
 
-        parent::populate($values);
+        $this->populate($this->fetchDbValues());
 
         return $this;
     }
 
-    protected function onSuccess(): void
+    /**
+     * Add the new source
+     */
+    public function addSource(): void
     {
-        $pressedButton = $this->getPressedSubmitElement();
-        if ($pressedButton && $pressedButton->getName() === 'delete') {
-            $this->db->delete('source', ['id = ?' => $this->sourceId]);
+        $source = $this->getValues();
 
-            return;
-        }
+        // Not using PASSWORD_DEFAULT, as the used algorithm should
+        // be kept in sync with what the daemon understands
+        $source['listener_password_hash'] = password_hash(
+            $this->getValue('listener_password'),
+            self::HASH_ALGORITHM
+        );
+
+        $source['changed_at'] = time() * 1000;
+
+        $this->db->insert('source', $source);
+    }
+
+    /**
+     * Edit the source
+     *
+     * @return void
+     */
+    public function editSource(): void
+    {
+        $this->db->beginTransaction();
 
         $source = $this->getValues();
+
+        if (empty(array_diff_assoc($source, $this->fetchDbValues()))) {
+            return;
+        }
 
         /** @var ?string $listenerPassword */
         $listenerPassword = $this->getValue('listener_password');
@@ -303,10 +322,61 @@ class SourceForm extends CompatForm
             $source['listener_password_hash'] = password_hash($listenerPassword, self::HASH_ALGORITHM);
         }
 
-        if ($this->sourceId === null) {
-            $this->db->insert('source', $source);
-        } else {
-            $this->db->update('source', $source, ['id = ?' => $this->sourceId]);
+        $source['changed_at'] = time() * 1000;
+        $this->db->update('source', $source, ['id = ?' => $this->sourceId]);
+
+        $this->db->commitTransaction();
+    }
+
+    /**
+     * Remove the source
+     */
+    public function removeSource(): void
+    {
+        $this->db->update(
+            'source',
+            ['changed_at' => time() * 1000, 'deleted' => 'y'],
+            ['id = ?' => $this->sourceId]
+        );
+    }
+
+    /**
+     * Get the source name
+     *
+     * @return string
+     */
+    public function getSourceName(): string
+    {
+        return $this->getValue('name');
+    }
+
+    /**
+     * Fetch the values from the database
+     *
+     * @return array
+     *
+     * @throws HttpNotFoundException
+     */
+    private function fetchDbValues(): array
+    {
+        /** @var ?Source $source */
+        $source = Source::on($this->db)
+            ->filter(Filter::equal('id', $this->sourceId))
+            ->first();
+
+        if ($source === null) {
+            throw new HttpNotFoundException($this->translate('Source not found'));
         }
+
+        return [
+            'name'                  => $source->name,
+            'type'                  => $source->type,
+            'icinga2_base_url'      => $source->icinga2_base_url,
+            'icinga2_auth_user'     => $source->icinga2_auth_user,
+            'icinga2_auth_pass'     => $source->icinga2_auth_pass,
+            'icinga2_ca_pem'        => $source->icinga2_ca_pem,
+            'icinga2_common_name'   => $source->icinga2_common_name,
+            'icinga2_insecure_tls'  => $source->icinga2_insecure_tls
+        ];
     }
 }

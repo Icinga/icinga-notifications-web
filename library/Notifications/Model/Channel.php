@@ -4,11 +4,29 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use DateTime;
+use ipl\Orm\Behavior\BoolCast;
+use ipl\Orm\Behavior\MillisecondTimestamp;
+use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
+use ipl\Orm\Query;
 use ipl\Orm\Relations;
 use ipl\Sql\Connection;
 use ipl\Web\Widget\Icon;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $type
+ * @property ?string $config
+ * @property DateTime $changed_at
+ * @property bool $deleted
+ *
+ * @property Query|IncidentHistory $incident_history
+ * @property Query|RuleEscalationRecipient $rule_escalation_recipient
+ * @property Query|Contact $contact
+ * @property Query|AvailableChannelType $available_channel_type
+ */
 class Channel extends Model
 {
     public function getTableName(): string
@@ -26,30 +44,39 @@ class Channel extends Model
         return [
             'name',
             'type',
-            'config'
+            'config',
+            'changed_at',
+            'deleted'
         ];
     }
 
-    public function getColumnDefinitions()
+    public function getColumnDefinitions(): array
     {
         return [
-            'name'   => t('Name'),
-            'type'   => t('Type'),
+            'name'          => t('Name'),
+            'type'          => t('Type'),
+            'changed_at'    => t('Changed At')
         ];
     }
 
-    public function getSearchColumns()
+    public function getSearchColumns(): array
     {
         return ['name'];
     }
 
 
-    public function getDefaultSort()
+    public function getDefaultSort(): array
     {
         return ['name'];
     }
 
-    public function createRelations(Relations $relations)
+    public function createBehaviors(Behaviors $behaviors): void
+    {
+        $behaviors->add(new MillisecondTimestamp(['changed_at']));
+        $behaviors->add(new BoolCast(['deleted']));
+    }
+
+    public function createRelations(Relations $relations): void
     {
         $relations->hasMany('incident_history', IncidentHistory::class)->setJoinType('LEFT');
         $relations->hasMany('rule_escalation_recipient', RuleEscalationRecipient::class)->setJoinType('LEFT');
@@ -91,9 +118,9 @@ class Channel extends Model
     public static function fetchChannelNames(Connection $conn): array
     {
         $channels = [];
+        $query = Channel::on($conn);
         /** @var Channel $channel */
-        foreach (Channel::on($conn) as $channel) {
-            /** @var string $name */
+        foreach ($query as $channel) {
             $name = $channel->name;
             $channels[$channel->id] = $name;
         }

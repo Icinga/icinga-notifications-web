@@ -51,7 +51,8 @@ class EventRulesController extends CompatController
         $sortControl = $this->createSortControl(
             $eventRules,
             [
-                'name' => t('Name'),
+                'name'          => t('Name'),
+                'changed_at'    => t('Changed At')
             ]
         );
 

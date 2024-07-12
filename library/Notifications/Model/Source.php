@@ -4,7 +4,12 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use DateTime;
+use ipl\Orm\Behavior\BoolCast;
+use ipl\Orm\Behavior\MillisecondTimestamp;
+use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
+use ipl\Orm\Query;
 use ipl\Orm\Relations;
 use ipl\Web\Widget\IcingaIcon;
 use ipl\Web\Widget\Icon;
@@ -20,23 +25,27 @@ use ipl\Web\Widget\Icon;
  * @property ?string $icinga2_ca_pem
  * @property ?string $icinga2_common_name
  * @property string $icinga2_insecure_tls
+ * @property DateTime $changed_at
+ * @property bool $deleted
+ *
+ * @property Query|Objects $object
  */
 class Source extends Model
 {
     /** @var string The type name used by Icinga sources */
     public const ICINGA_TYPE_NAME = 'icinga2';
 
-    public function getTableName()
+    public function getTableName(): string
     {
         return 'source';
     }
 
-    public function getKeyName()
+    public function getKeyName(): string
     {
         return 'id';
     }
 
-    public function getColumns()
+    public function getColumns(): array
     {
         return [
             'type',
@@ -47,29 +56,38 @@ class Source extends Model
             'icinga2_auth_pass',
             'icinga2_ca_pem',
             'icinga2_common_name',
-            'icinga2_insecure_tls'
+            'icinga2_insecure_tls',
+            'changed_at',
+            'deleted'
         ];
     }
 
-    public function getColumnDefinitions()
+    public function getColumnDefinitions(): array
     {
         return [
-            'type' => t('Type'),
-            'name' => t('Name')
+            'type'          => t('Type'),
+            'name'          => t('Name'),
+            'changed_at'    => t('Changed At')
         ];
     }
 
-    public function getSearchColumns()
+    public function getSearchColumns(): array
     {
         return ['type'];
     }
 
-    public function getDefaultSort()
+    public function getDefaultSort(): string
     {
         return 'source.name';
     }
 
-    public function createRelations(Relations $relations)
+    public function createBehaviors(Behaviors $behaviors): void
+    {
+        $behaviors->add(new MillisecondTimestamp(['changed_at']));
+        $behaviors->add(new BoolCast(['deleted']));
+    }
+
+    public function createRelations(Relations $relations): void
     {
         $relations->hasMany('object', Objects::class);
     }

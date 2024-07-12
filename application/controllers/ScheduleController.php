@@ -68,7 +68,7 @@ class ScheduleController extends CompatController
         $this->setTitle($this->translate('Edit Schedule'));
         $scheduleId = (int) $this->params->getRequired('id');
 
-        $form = new ScheduleForm();
+        $form = new ScheduleForm(Database::get());
         $form->setShowRemoveButton();
         $form->loadSchedule($scheduleId);
         $form->setSubmitLabel($this->translate('Save Changes'));
@@ -95,7 +95,7 @@ class ScheduleController extends CompatController
     public function addAction(): void
     {
         $this->setTitle($this->translate('New Schedule'));
-        $form = (new ScheduleForm())
+        $form = (new ScheduleForm(Database::get()))
             ->setAction($this->getRequest()->getUrl()->getAbsoluteUrl())
             ->on(Form::ON_SUCCESS, function (ScheduleForm $form) {
                 $scheduleId = $form->addSchedule();

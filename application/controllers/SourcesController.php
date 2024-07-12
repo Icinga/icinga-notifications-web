@@ -40,8 +40,9 @@ class SourcesController extends CompatController
         $sortControl = $this->createSortControl(
             $sources,
             [
-                'name' => t('Name'),
-                'type' => t('Type')
+                'name'          => t('Name'),
+                'type'          => t('Type'),
+                'changed_at'    => t('Changed At')
             ]
         );
 
@@ -93,9 +94,8 @@ class SourcesController extends CompatController
     {
         $form = (new SourceForm(Database::get()))
             ->on(SourceForm::ON_SUCCESS, function (SourceForm $form) {
-                /** @var string $sourceName */
-                $sourceName = $form->getValue('name');
-                Notification::success(sprintf(t('Added new source %s has successfully'), $sourceName));
+                $form->addSource();
+                Notification::success(sprintf(t('Added new source %s successfully'), $form->getSourceName()));
                 $this->switchToSingleColumnLayout();
             })
             ->handleRequest($this->getServerRequest());

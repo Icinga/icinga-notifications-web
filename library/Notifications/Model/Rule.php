@@ -4,52 +4,76 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use DateTime;
+use ipl\Orm\Behavior\BoolCast;
+use ipl\Orm\Behavior\MillisecondTimestamp;
+use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
+use ipl\Orm\Query;
 use ipl\Orm\Relations;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property ?int $timeperiod_id
+ * @property ?string $object_filter
+ * @property DateTime $changed_at
+ * @property bool $deleted
+ *
+ * @property Query|RuleEscalation $rule_escalation
+ * @property Query|Incident $incident
+ * @property Query|IncidentHistory $incident_history
+ */
 class Rule extends Model
 {
-    public function getTableName()
+    public function getTableName(): string
     {
         return 'rule';
     }
 
-    public function getKeyName()
+    public function getKeyName(): string
     {
         return 'id';
     }
 
-    public function getColumns()
+    public function getColumns(): array
     {
         return [
             'name',
             'timeperiod_id',
             'object_filter',
-            'is_active'
+            'changed_at',
+            'deleted'
         ];
     }
 
-    public function getColumnDefinitions()
+    public function getColumnDefinitions(): array
     {
         return [
             'name'          => t('Name'),
             'timeperiod_id' => t('Timeperiod ID'),
             'object_filter' => t('Object Filter'),
-            'is_active'     => t('Is Active')
+            'changed_at'    => t('Changed At')
         ];
     }
 
-    public function getSearchColumns()
+    public function getSearchColumns(): array
     {
         return ['name'];
     }
 
-    public function getDefaultSort()
+    public function getDefaultSort(): array
     {
         return ['name'];
     }
 
-    public function createRelations(Relations $relations)
+    public function createBehaviors(Behaviors $behaviors): void
+    {
+        $behaviors->add(new MillisecondTimestamp(['changed_at']));
+        $behaviors->add(new BoolCast(['deleted']));
+    }
+
+    public function createRelations(Relations $relations): void
     {
         $relations->hasMany('rule_escalation', RuleEscalation::class);
 

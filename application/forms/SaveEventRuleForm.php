@@ -5,7 +5,9 @@
 namespace Icinga\Module\Notifications\Forms;
 
 use Exception;
+use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Model\RuleEscalation;
 use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use Icinga\Web\Notification;
@@ -44,8 +46,8 @@ class SaveEventRuleForm extends Form
     /** @var bool Whether to show a button to dismiss cached changes */
     protected $showDismissChangesButton = false;
 
-    /** @var bool Whether to disable the remove button */
-    protected $disableRemoveButton = false;
+    /** @var int The rule id */
+    protected $ruleId;
 
     /**
      * Create a new SaveEventRuleForm
@@ -74,20 +76,6 @@ class SaveEventRuleForm extends Form
     public function setSubmitButtonDisabled(bool $state = true): self
     {
         $this->disableSubmitButton = $state;
-
-        return $this;
-    }
-
-    /**
-     * Set whether to enable or disable the remove button
-     *
-     * @param bool $state
-     *
-     * @return $this
-     */
-    public function setRemoveButtonDisabled(bool $state = true): self
-    {
-        $this->disableRemoveButton = $state;
 
         return $this;
     }
@@ -191,19 +179,6 @@ class SaveEventRuleForm extends Form
             ]);
             $this->registerElement($removeBtn);
 
-            $this->getElement('remove')
-                ->getAttributes()
-                ->registerAttributeCallback('disabled', function () {
-                    return $this->disableRemoveButton;
-                })
-                ->registerAttributeCallback('title', function () {
-                    if ($this->disableRemoveButton) {
-                        return $this->translate(
-                            'There exist active incidents for this event rule and hence cannot be deleted'
-                        );
-                    }
-                });
-
             $additionalButtons[] = $removeBtn;
         }
 
@@ -237,11 +212,12 @@ class SaveEventRuleForm extends Form
 
         $db->beginTransaction();
 
+        $changedAt = time() * 1000;
         $db->insert('rule', [
             'name' => $config['name'],
             'timeperiod_id' => $config['timeperiod_id'] ?? null,
             'object_filter' => $config['object_filter'] ?? null,
-            'is_active' => $config['is_active'] ?? 'n'
+            'changed_at'    => $changedAt
         ]);
         $ruleId = $db->lastInsertId();
 
@@ -251,14 +227,16 @@ class SaveEventRuleForm extends Form
                 'position' => $position,
                 'condition' => $escalationConfig['condition'] ?? null,
                 'name' => $escalationConfig['name'] ?? null,
-                'fallback_for' => $escalationConfig['fallback_for'] ?? null
+                'fallback_for' => $escalationConfig['fallback_for'] ?? null,
+                'changed_at' => $changedAt
             ]);
             $escalationId = $db->lastInsertId();
 
             foreach ($escalationConfig['recipient'] ?? [] as $recipientConfig) {
                 $data = [
                     'rule_escalation_id' => $escalationId,
-                    'channel_id' => $recipientConfig['channel_id']
+                    'channel_id' => $recipientConfig['channel_id'],
+                    'changed_at' => $changedAt
                 ];
 
                 switch (true) {
@@ -294,6 +272,7 @@ class SaveEventRuleForm extends Form
      */
     private function insertOrUpdateEscalations($ruleId, array $escalations, Connection $db, bool $insert = false): void
     {
+        $changedAt = time() * 1000;
         foreach ($escalations as $position => $escalationConfig) {
             if ($insert) {
                 $db->insert('rule_escalation', [
@@ -301,18 +280,19 @@ class SaveEventRuleForm extends Form
                     'position' => $position,
                     'condition' => $escalationConfig['condition'] ?? null,
                     'name' => $escalationConfig['name'] ?? null,
-                    'fallback_for' => $escalationConfig['fallback_for'] ?? null
+                    'fallback_for' => $escalationConfig['fallback_for'] ?? null,
+                    'changed_at' => $changedAt
                 ]);
 
                 $escalationId = $db->lastInsertId();
             } else {
                 $escalationId = $escalationConfig['id'];
-
                 $db->update('rule_escalation', [
                     'position' => $position,
                     'condition' => $escalationConfig['condition'] ?? null,
                     'name' => $escalationConfig['name'] ?? null,
-                    'fallback_for' => $escalationConfig['fallback_for'] ?? null
+                    'fallback_for' => $escalationConfig['fallback_for'] ?? null,
+                    'changed_at' => $changedAt
                 ], ['id = ?' => $escalationId, 'rule_id = ?' => $ruleId]);
                 $recipientsToRemove = [];
 
@@ -336,14 +316,19 @@ class SaveEventRuleForm extends Form
                 }
 
                 if (! empty($recipientsToRemove)) {
-                    $db->delete('rule_escalation_recipient', ['id IN (?)' => $recipientsToRemove]);
+                    $db->update(
+                        'rule_escalation_recipient',
+                        ['changed_at' => $changedAt, 'deleted' => 'y'],
+                        ['id IN (?)' => $recipientsToRemove, 'deleted = ?' => 'n']
+                    );
                 }
             }
 
             foreach ($escalationConfig['recipient'] ?? [] as $recipientConfig) {
                 $data = [
                     'rule_escalation_id' => $escalationId,
-                    'channel_id' => $recipientConfig['channel_id']
+                    'channel_id' => $recipientConfig['channel_id'],
+                    'changed_at' => $changedAt
                 ];
 
                 switch (true) {
@@ -367,7 +352,11 @@ class SaveEventRuleForm extends Form
                 if (! isset($recipientConfig['id'])) {
                     $db->insert('rule_escalation_recipient', $data);
                 } else {
-                    $db->update('rule_escalation_recipient', $data, ['id = ?' => $recipientConfig['id']]);
+                    $db->update(
+                        'rule_escalation_recipient',
+                        $data + ['changed_at' => $changedAt],
+                        ['id = ?' => $recipientConfig['id']]
+                    );
                 }
             }
         }
@@ -383,27 +372,42 @@ class SaveEventRuleForm extends Form
      */
     public function editRule(int $id, array $config): void
     {
+        $this->ruleId = $id;
+
         $db = Database::get();
 
         $db->beginTransaction();
 
-        $db->update('rule', [
-            'name' => $config['name'],
-            'timeperiod_id' => $config['timeperiod_id'] ?? null,
-            'object_filter' => $config['object_filter'] ?? null,
-            'is_active' => $config['is_active'] ?? 'n'
-        ], ['id = ?' => $id]);
+        $storedValues = $this->fetchDbValues();
 
-        $escalationsFromDb = RuleEscalation::on($db)
-            ->filter(Filter::equal('rule_id', $id));
+        $values = $this->getChanges($storedValues, $config);
+
+        $data = array_filter([
+            'name'      => $values['name'] ?? null
+        ]);
+
+        if (array_key_exists('object_filter', $values)) {
+            $data['object_filter'] = $values['object_filter'];
+        }
+
+        $changedAt = time() * 1000;
+        if (! empty($data)) {
+            $db->update('rule', $data + ['changed_at' => $changedAt], ['id = ?' => $id]);
+        }
+
+        if (! isset($values['rule_escalation'])) {
+            $db->commitTransaction();
+
+            return;
+        }
 
         $escalationsInCache = $config['rule_escalation'];
 
         $escalationsToUpdate = [];
         $escalationsToRemove = [];
 
-        foreach ($escalationsFromDb as $escalationInDB) {
-            $escalationId = $escalationInDB->id;
+        foreach ($storedValues['rule_escalation'] as $escalationInDB) {
+            $escalationId = $escalationInDB['id'];
             $escalationInCache = array_filter($escalationsInCache, function (array $element) use ($escalationId) {
                 return (int) $element['id'] === $escalationId;
             });
@@ -422,9 +426,19 @@ class SaveEventRuleForm extends Form
         // Escalations to add
         $escalationsToAdd = $escalationsInCache;
 
+        $markAsDeleted = ['changed_at' => $changedAt, 'deleted' => 'y'];
         if (! empty($escalationsToRemove)) {
-            $db->delete('rule_escalation_recipient', ['rule_escalation_id IN (?)' => $escalationsToRemove]);
-            $db->delete('rule_escalation', ['id IN (?)' => $escalationsToRemove]);
+            $db->update(
+                'rule_escalation_recipient',
+                $markAsDeleted,
+                ['rule_escalation_id IN (?)' => $escalationsToRemove, 'deleted = ?' => 'n']
+            );
+
+            $db->update(
+                'rule_escalation',
+                $markAsDeleted + ['position' => null],
+                ['id IN (?)' => $escalationsToRemove]
+            );
         }
 
         if (! empty($escalationsToAdd)) {
@@ -451,21 +465,24 @@ class SaveEventRuleForm extends Form
 
         $db->beginTransaction();
 
-        $escalations = RuleEscalation::on($db)
-            ->columns('id')
-            ->filter(Filter::equal('rule_id', $id));
+        $escalationsToRemove = $db->fetchCol(
+            RuleEscalation::on($db)
+                ->columns('id')
+                ->filter(Filter::equal('rule_id', $id))
+                ->assembleSelect()
+        );
 
-        $escalationsToRemove = [];
-        foreach ($escalations as $escalation) {
-            $escalationsToRemove[] = $escalation->id;
-        }
-
+        $markAsDeleted = ['changed_at' => time() * 1000, 'deleted' => 'y'];
         if (! empty($escalationsToRemove)) {
-            $db->delete('rule_escalation_recipient', ['rule_escalation_id IN (?)' => $escalationsToRemove]);
+            $db->update(
+                'rule_escalation_recipient',
+                $markAsDeleted,
+                ['rule_escalation_id IN (?)' => $escalationsToRemove, 'deleted = ?' => 'n']
+            );
         }
 
-        $db->delete('rule_escalation', ['rule_id = ?' => $id]);
-        $db->delete('rule', ['id = ?' => $id]);
+        $db->update('rule_escalation', $markAsDeleted + ['position' => null], ['rule_id = ?' => $id]);
+        $db->update('rule', $markAsDeleted, ['id = ?' => $id]);
 
         $db->commitTransaction();
     }
@@ -477,5 +494,86 @@ class SaveEventRuleForm extends Form
                 Notification::error($this->translate($message->getMessage()));
             }
         }
+    }
+
+    /**
+     * Fetch the values from the database
+     *
+     * @return array
+     *
+     * @throws HttpNotFoundException
+     */
+    private function fetchDbValues(): array
+    {
+        $query = Rule::on(Database::get())
+            ->columns(['id', 'name', 'object_filter'])
+            ->filter(Filter::equal('id', $this->ruleId));
+
+        $rule = $query->first();
+        if ($rule === null) {
+            throw new HttpNotFoundException($this->translate('Rule not found'));
+        }
+
+        $config = iterator_to_array($rule);
+
+        $ruleEscalations = $rule
+            ->rule_escalation
+            ->withoutColumns(['changed_at', 'deleted']);
+
+        foreach ($ruleEscalations as $re) {
+            foreach ($re as $k => $v) {
+                $config[$re->getTableName()][$re->position][$k] = $v;
+            }
+
+            $escalationRecipients = $re
+                ->rule_escalation_recipient
+                ->withoutColumns(['changed_at', 'deleted']);
+
+            foreach ($escalationRecipients as $recipient) {
+                $config[$re->getTableName()][$re->position]['recipient'][] = iterator_to_array($recipient);
+            }
+        }
+
+        if (! isset($config['rule_escalation'])) {
+            $config['rule_escalation'] = [];
+        }
+
+        $config['showSearchbar'] = ! empty($config['object_filter']);
+
+        return $config;
+    }
+
+    /**
+     * Get the newly made changes
+     *
+     * @return array
+     */
+    public function getChanges(array $storedValues, array $formValues): array
+    {
+        unset($formValues['conditionPlusButtonPosition']);
+        $dbValuesToCompare = array_intersect_key($storedValues, $formValues);
+
+        if (count($formValues, COUNT_RECURSIVE) < count($dbValuesToCompare, COUNT_RECURSIVE)) {
+            // fewer values in the form than in the db, escalation(s) has been removed
+            if ($formValues['name'] === $dbValuesToCompare['name']) {
+                unset($formValues['name']);
+            }
+
+            if ($formValues['object_filter'] === $dbValuesToCompare['object_filter']) {
+                unset($formValues['object_filter']);
+            }
+
+            return $formValues;
+        }
+
+        $checker = static function ($a, $b) use (&$checker) {
+            if (! is_array($a) || ! is_array($b)) {
+                return $a <=> $b;
+            }
+
+            return empty(array_udiff_assoc($a, $b, $checker)) ? 0 : 1;
+        };
+
+        return array_udiff_assoc($formValues, $dbValuesToCompare, $checker);
     }
 }

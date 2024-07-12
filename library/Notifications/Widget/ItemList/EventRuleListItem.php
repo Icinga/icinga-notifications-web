@@ -6,7 +6,6 @@ namespace Icinga\Module\Notifications\Widget\ItemList;
 
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Rule;
-use Icinga\Module\Notifications\Widget\CheckboxIcon;
 use Icinga\Module\Notifications\Widget\RuleEscalationRecipientBadge;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
@@ -29,11 +28,6 @@ class EventRuleListItem extends BaseListItem
     {
         $this->getAttributes()
             ->set('data-action-item', true);
-    }
-
-    protected function assembleVisual(BaseHtmlElement $visual): void
-    {
-        $visual->add(new CheckboxIcon($this->item->is_active === 'y'));
     }
 
     protected function assembleFooter(BaseHtmlElement $footer): void

@@ -4,8 +4,11 @@
 
 namespace Icinga\Module\Notifications\Forms;
 
+use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\AvailableChannelType;
+use Icinga\Module\Notifications\Model\Contact;
+use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use Icinga\Web\Session;
 use ipl\Html\Contract\FormSubmitElement;
 use ipl\Html\FormElement\BaseFormElement;
@@ -13,6 +16,7 @@ use ipl\Html\FormElement\FieldsetElement;
 use ipl\I18n\GettextTranslator;
 use ipl\I18n\StaticTranslator;
 use ipl\Sql\Connection;
+use ipl\Stdlib\Filter;
 use ipl\Validator\EmailAddressValidator;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
@@ -43,14 +47,14 @@ class ChannelForm extends CompatForm
     /** @var array<string, mixed> */
     private $defaultChannelOptions = [];
 
-    public function __construct(Connection $db, ?int $channelId = null)
+    public function __construct(Connection $db)
     {
         $this->db = $db;
-        $this->channelId = $channelId;
     }
 
     protected function assemble()
     {
+        $this->addAttributes(['class' => 'channel-form']);
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
 
         $this->addElement(
@@ -110,6 +114,18 @@ class ChannelForm extends CompatForm
         );
 
         if ($this->channelId !== null) {
+            $isInUse = Contact::on($this->db)
+                ->columns('1')
+                ->filter(Filter::equal('default_channel_id', $this->channelId))
+                ->first();
+
+            if ($isInUse === null) {
+                $isInUse = RuleEscalationRecipient::on($this->db)
+                    ->columns('1')
+                    ->filter(Filter::equal('channel_id', $this->channelId))
+                    ->first();
+            }
+
             /** @var FormSubmitElement $deleteButton */
             $deleteButton = $this->createElement(
                 'submit',
@@ -117,7 +133,14 @@ class ChannelForm extends CompatForm
                 [
                     'label'          => $this->translate('Delete'),
                     'class'          => 'btn-remove',
-                    'formnovalidate' => true
+                    'formnovalidate' => true,
+                    'disabled'       => $isInUse !== null,
+                    'title'          => $isInUse
+                        ? $this->translate(
+                            "Channel is still referenced as a contact's default"
+                            . " channel or in an event rule's escalation"
+                        )
+                        : null
                 ]
             );
 
@@ -152,48 +175,80 @@ class ChannelForm extends CompatForm
         return parent::hasBeenSubmitted();
     }
 
-    public function populate($values)
+    /**
+     * Load the channel with given id
+     *
+     * @param int $id
+     *
+     * @return $this
+     *
+     * @throws HttpNotFoundException
+     */
+    public function loadChannel(int $id): self
     {
-        if ($values instanceof Channel) {
-            $values = [
-                'name'      => $values->name,
-                'type'      => $values->type,
-                'config'    => json_decode($values->config, true) ?? []
-            ];
-        }
-
-        parent::populate($values);
+        $this->channelId = $id;
+        $this->populate($this->fetchDbValues());
 
         return $this;
     }
 
-    protected function onSuccess()
+    /**
+     * Add the new channel
+     */
+    public function addChannel(): void
     {
-        if ($this->getPressedSubmitElement()->getName() === 'delete') {
-            $this->db->delete('channel', ['id = ?' => $this->channelId]);
+        $channel = $this->getValues();
 
-            return;
-        }
+        $channel['config'] = json_encode($this->filterConfig($channel['config']));
+        $channel['changed_at'] = time() * 1000;
+
+        $this->db->insert('channel', $channel);
+    }
+
+    /**
+     * Edit the channel
+     *
+     * @return void
+     */
+    public function editChannel(): void
+    {
+        $this->db->beginTransaction();
 
         $channel = $this->getValues();
-        $config = array_filter(
-            $channel['config'],
-            function ($configItem, $key) {
-                if (isset($this->defaultChannelOptions[$key])) {
-                    return $this->defaultChannelOptions[$key] !== $configItem;
-                }
+        $storedValues = $this->fetchDbValues();
 
-                return $configItem !== null;
-            },
-            ARRAY_FILTER_USE_BOTH
-        );
+        $channel['config'] = json_encode($this->filterConfig($channel['config']));
+        $storedValues['config'] = json_encode($this->filterConfig($storedValues['config']));
 
-        $channel['config'] = json_encode($config);
-        if ($this->channelId === null) {
-            $this->db->insert('channel', $channel);
-        } else {
+        if (! empty(array_diff_assoc($channel, $storedValues))) {
+            $channel['changed_at'] = time() * 1000;
+
             $this->db->update('channel', $channel, ['id = ?' => $this->channelId]);
         }
+
+        $this->db->commitTransaction();
+    }
+
+    /**
+     * Remove the channel
+     */
+    public function removeChannel(): void
+    {
+        $this->db->update(
+            'channel',
+            ['changed_at' => time() * 1000, 'deleted' => 'y'],
+            ['id = ?' => $this->channelId]
+        );
+    }
+
+    /**
+     * Get the channel name
+     *
+     * @return string
+     */
+    public function getChannelName(): string
+    {
+        return $this->getValue('name');
     }
 
     /**
@@ -331,5 +386,52 @@ class ChannelForm extends CompatForm
         $locale = $translator->getLocale();
 
         return $localeMap[$locale] ?? $localeMap[$default] ?? null;
+    }
+
+    /**
+     * Filter the config array
+     *
+     * @param array $config
+     *
+     * @return ChannelOptionConfig
+     */
+    private function filterConfig(array $config): array
+    {
+        return array_filter(
+            $config,
+            function ($configItem, $key) {
+                if (isset($this->defaultChannelOptions[$key])) {
+                    return $this->defaultChannelOptions[$key] !== $configItem;
+                }
+
+                return $configItem !== null;
+            },
+            ARRAY_FILTER_USE_BOTH
+        );
+    }
+
+    /**
+     * Fetch the values from the database
+     *
+     * @return array
+     *
+     * @throws HttpNotFoundException
+     */
+    private function fetchDbValues(): array
+    {
+        /** @var Channel $channel */
+        $channel = Channel::on($this->db)
+            ->filter(Filter::equal('id', $this->channelId))
+            ->first();
+
+        if ($channel === null) {
+            throw new HttpNotFoundException($this->translate('Channel not found'));
+        }
+
+        return [
+            'name'      => $channel->name,
+            'type'      => $channel->type,
+            'config'    => json_decode($channel->config, true) ?? []
+        ];
     }
 }

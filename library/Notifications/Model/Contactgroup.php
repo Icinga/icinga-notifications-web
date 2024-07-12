@@ -4,6 +4,10 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use DateTime;
+use ipl\Orm\Behavior\BoolCast;
+use ipl\Orm\Behavior\MillisecondTimestamp;
+use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
@@ -11,12 +15,15 @@ use ipl\Orm\Relations;
 /**
  * Contact group
  *
- * @param int $id
- * @param string $name
+ * @property int $id
+ * @property string $name
+ * @property DateTime $changed_at
+ * @property bool $deleted
  *
- * @property Query | Contact $contact
- * @property Query | RuleEscalationRecipient $rule_escalation_recipient
- * @property Query | IncidentHistory $incident_history
+ * @property Query|Contact $contact
+ * @property Query|ContactgroupMember $contactgroup_member
+ * @property Query|RuleEscalationRecipient $rule_escalation_recipient
+ * @property Query|IncidentHistory $incident_history
  */
 class Contactgroup extends Model
 {
@@ -33,7 +40,9 @@ class Contactgroup extends Model
     public function getColumns(): array
     {
         return [
-            'name'
+            'name',
+            'changed_at',
+            'deleted'
         ];
     }
 
@@ -47,11 +56,18 @@ class Contactgroup extends Model
         return ['name'];
     }
 
+    public function createBehaviors(Behaviors $behaviors): void
+    {
+        $behaviors->add(new MillisecondTimestamp(['changed_at']));
+        $behaviors->add(new BoolCast(['deleted']));
+    }
+
     public function createRelations(Relations $relations): void
     {
         $relations->hasMany('rule_escalation_recipient', RuleEscalationRecipient::class)
             ->setJoinType('LEFT');
         $relations->hasMany('incident_history', IncidentHistory::class);
+        $relations->hasMany('contactgroup_member', ContactgroupMember::class);
         $relations
             ->belongsToMany('contact', Contact::class)
             ->through('contactgroup_member')

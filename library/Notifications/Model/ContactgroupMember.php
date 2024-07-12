@@ -13,33 +13,33 @@ use ipl\Orm\Query;
 use ipl\Orm\Relations;
 
 /**
- * @property int $id
- * @property int $contact_id
- * @property string $type
- * @property string $address
- * @property DateTime $changed_at
- * @property bool $deleted
+ * Contactgroup Member
  *
+ * @param int $contactgroup_id
+ * @param int $contact_id
+ * @param DateTime $changed_at
+ * @param bool $deleted
+ *
+ * @property Query|Contactgroup $contactgroup
  * @property Query|Contact $contact
  */
-class ContactAddress extends Model
+class ContactgroupMember extends Model
 {
     public function getTableName(): string
     {
-        return 'contact_address';
+        return 'contactgroup_member';
     }
 
-    public function getKeyName(): string
+    public function getKeyName(): array
     {
-        return 'id';
+        return ['contactgroup_id', 'contact_id'];
     }
 
     public function getColumns(): array
     {
         return [
+            'contactgroup_id',
             'contact_id',
-            'type',
-            'address',
             'changed_at',
             'deleted'
         ];
@@ -53,6 +53,7 @@ class ContactAddress extends Model
 
     public function createRelations(Relations $relations): void
     {
+        $relations->belongsTo('contactgroup', Contactgroup::class);
         $relations->belongsTo('contact', Contact::class);
     }
 }

@@ -10,7 +10,6 @@ use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\EventRuleForm;
 use Icinga\Module\Notifications\Forms\SaveEventRuleForm;
 use Icinga\Module\Notifications\Model\Incident;
-use Icinga\Module\Notifications\Model\ObjectExtraTag;
 use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ExtraTagSuggestions;
 use Icinga\Module\Notifications\Widget\EventRuleConfig;
@@ -62,21 +61,9 @@ class EventRuleController extends CompatController
             );
         }
 
-        $disableRemoveButton = false;
-        if (ctype_digit($ruleId)) {
-            $incidents = Incident::on(Database::get())
-                ->with('rule')
-                ->filter(Filter::equal('rule.id', $ruleId));
-
-            if ($incidents->count() > 0) {
-                $disableRemoveButton = true;
-            }
-        }
-
         $saveForm = (new SaveEventRuleForm())
             ->setShowRemoveButton()
             ->setShowDismissChangesButton($cache !== null)
-            ->setRemoveButtonDisabled($disableRemoveButton)
             ->setSubmitButtonDisabled($cache === null)
             ->setSubmitLabel($this->translate('Save Changes'))
             ->on(SaveEventRuleForm::ON_SUCCESS, function ($form) use ($ruleId, $eventRuleConfig) {
@@ -151,7 +138,7 @@ class EventRuleController extends CompatController
     public function fromDb(int $ruleId): array
     {
         $query = Rule::on(Database::get())
-            ->withoutColumns('timeperiod_id')
+            ->columns(['id', 'name', 'object_filter'])
             ->filter(Filter::equal('id', $ruleId));
 
         $rule = $query->first();
@@ -161,12 +148,20 @@ class EventRuleController extends CompatController
 
         $config = iterator_to_array($rule);
 
-        foreach ($rule->rule_escalation as $re) {
+        $ruleEscalations = $rule
+            ->rule_escalation
+            ->withoutColumns(['changed_at', 'deleted']);
+
+        foreach ($ruleEscalations as $re) {
             foreach ($re as $k => $v) {
                 $config[$re->getTableName()][$re->position][$k] = $v;
             }
 
-            foreach ($re->rule_escalation_recipient as $recipient) {
+            $escalationRecipients = $re
+                ->rule_escalation_recipient
+                ->withoutColumns(['changed_at', 'deleted']);
+
+            foreach ($escalationRecipients as $recipient) {
                 $config[$re->getTableName()][$re->position]['recipient'][] = iterator_to_array($recipient);
             }
         }
@@ -248,7 +243,6 @@ class EventRuleController extends CompatController
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->on(Form::ON_SUCCESS, function ($form) use ($ruleId, $cache, $config) {
                 $config['name'] = $form->getValue('name');
-                $config['is_active'] = $form->getValue('is_active');
 
                 if ($cache || $ruleId === '-1') {
                     $this->sessionNamespace->set($ruleId, $config);
