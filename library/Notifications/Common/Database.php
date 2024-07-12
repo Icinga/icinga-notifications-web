@@ -23,7 +23,7 @@ final class Database
     /**
      * @var string[] Tables with a deleted flag
      *
-     * The filter `deleted=n` is automatically added to these tables.
+     * The filter `deleted=n` is automatically added to these tables, when select statement is executed
      */
     private const TABLES_WITH_DELETED_FLAG = [
         'channel',
@@ -135,29 +135,28 @@ final class Database
                 });
         }
 
-        $db->getQueryBuilder()
-            ->on(QueryBuilder::ON_ASSEMBLE_SELECT, function (Select $select) {
-                $from = $select->getFrom();
-                $baseTableName = reset($from);
+        $db->getQueryBuilder()->on(QueryBuilder::ON_ASSEMBLE_SELECT, function (Select $select) {
+            $from = $select->getFrom();
+            $baseTableName = reset($from);
 
-                if (! in_array($baseTableName, self::TABLES_WITH_DELETED_FLAG, true)) {
-                    return;
-                }
+            if (! in_array($baseTableName, self::TABLES_WITH_DELETED_FLAG, true)) {
+                return;
+            }
 
-                $baseTableAlias = key($from);
-                if (! is_string($baseTableAlias)) {
-                    $baseTableAlias = $baseTableName;
-                }
+            $baseTableAlias = key($from);
+            if (! is_string($baseTableAlias)) {
+                $baseTableAlias = $baseTableName;
+            }
 
-                $condition = 'deleted = ?';
-                $where = $select->getWhere();
+            $condition = 'deleted = ?';
+            $where = $select->getWhere();
 
-                if ($where && self::hasCondition($baseTableAlias, $condition, $where)) {
-                    return;
-                }
+            if ($where && self::hasCondition($baseTableAlias, $condition, $where)) {
+                return;
+            }
 
-                $select->where([$baseTableAlias . '.' . $condition => 'n']);
-            });
+            $select->where([$baseTableAlias . '.' . $condition => 'n']);
+        });
 
         $db->getQueryBuilder()->on(QueryBuilder::ON_ASSEMBLE_INSERT, function (Insert $insert) use ($adapter) {
             $tableName = $insert->getInto();
