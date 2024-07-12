@@ -294,8 +294,6 @@ class SourceForm extends CompatForm
             self::HASH_ALGORITHM
         );
 
-        $source['changed_at'] = time() * 1000;
-
         $this->db->insert('source', $source);
     }
 
@@ -322,7 +320,6 @@ class SourceForm extends CompatForm
             $source['listener_password_hash'] = password_hash($listenerPassword, self::HASH_ALGORITHM);
         }
 
-        $source['changed_at'] = time() * 1000;
         $this->db->update('source', $source, ['id = ?' => $this->sourceId]);
 
         $this->db->commitTransaction();
@@ -333,11 +330,7 @@ class SourceForm extends CompatForm
      */
     public function removeSource(): void
     {
-        $this->db->update(
-            'source',
-            ['changed_at' => time() * 1000, 'deleted' => 'y'],
-            ['id = ?' => $this->sourceId]
-        );
+        $this->db->update('source', ['deleted' => 'y'], ['id = ?' => $this->sourceId]);
     }
 
     /**

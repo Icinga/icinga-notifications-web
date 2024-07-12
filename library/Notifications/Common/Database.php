@@ -12,8 +12,10 @@ use ipl\Sql\Adapter\Pgsql;
 use ipl\Sql\Config as SqlConfig;
 use ipl\Sql\Connection;
 use ipl\Sql\Expression;
+use ipl\Sql\Insert;
 use ipl\Sql\QueryBuilder;
 use ipl\Sql\Select;
+use ipl\Sql\Update;
 use PDO;
 
 final class Database
@@ -39,6 +41,13 @@ final class Database
         'timeperiod',
         'timeperiod_entry',
     ];
+
+    /**
+     * @var string[] Tables with a `changed_at` column
+     *
+     * The `changed_at` column of these tables is automatically added and updated
+     */
+    private const TABLES_WITH_CHANGED_AT_COLUMN = self::TABLES_WITH_DELETED_FLAG;
 
     /** @var Connection Database connection */
     private static $instance;
@@ -149,6 +158,29 @@ final class Database
 
                 $select->where([$baseTableAlias . '.' . $condition => 'n']);
             });
+
+        $db->getQueryBuilder()->on(QueryBuilder::ON_ASSEMBLE_INSERT, function (Insert $insert) {
+            $tableName = $insert->getInto();
+
+            if (in_array($tableName, self::TABLES_WITH_CHANGED_AT_COLUMN, true)) {
+                $columns = array_combine($insert->getColumns(), $insert->getValues());
+                $columns['changed_at'] = time() * 1000;
+
+                $insert->values($columns);
+            }
+        });
+
+        $db->getQueryBuilder()->on(QueryBuilder::ON_ASSEMBLE_UPDATE, function (Update $update) {
+            $table = $update->getTable();
+            $tableName = reset($table);
+
+            if (in_array($tableName, self::TABLES_WITH_CHANGED_AT_COLUMN, true)) {
+                $columns = $update->getSet();
+                $columns['changed_at'] = time() * 1000;
+
+                $update->set($columns);
+            }
+        });
 
         return $db;
     }

@@ -212,12 +212,10 @@ class SaveEventRuleForm extends Form
 
         $db->beginTransaction();
 
-        $changedAt = time() * 1000;
         $db->insert('rule', [
             'name' => $config['name'],
             'timeperiod_id' => $config['timeperiod_id'] ?? null,
-            'object_filter' => $config['object_filter'] ?? null,
-            'changed_at'    => $changedAt
+            'object_filter' => $config['object_filter'] ?? null
         ]);
         $ruleId = $db->lastInsertId();
 
@@ -227,16 +225,14 @@ class SaveEventRuleForm extends Form
                 'position' => $position,
                 'condition' => $escalationConfig['condition'] ?? null,
                 'name' => $escalationConfig['name'] ?? null,
-                'fallback_for' => $escalationConfig['fallback_for'] ?? null,
-                'changed_at' => $changedAt
+                'fallback_for' => $escalationConfig['fallback_for'] ?? null
             ]);
             $escalationId = $db->lastInsertId();
 
             foreach ($escalationConfig['recipient'] ?? [] as $recipientConfig) {
                 $data = [
                     'rule_escalation_id' => $escalationId,
-                    'channel_id' => $recipientConfig['channel_id'],
-                    'changed_at' => $changedAt
+                    'channel_id' => $recipientConfig['channel_id']
                 ];
 
                 switch (true) {
@@ -272,7 +268,6 @@ class SaveEventRuleForm extends Form
      */
     private function insertOrUpdateEscalations($ruleId, array $escalations, Connection $db, bool $insert = false): void
     {
-        $changedAt = time() * 1000;
         foreach ($escalations as $position => $escalationConfig) {
             if ($insert) {
                 $db->insert('rule_escalation', [
@@ -280,8 +275,7 @@ class SaveEventRuleForm extends Form
                     'position' => $position,
                     'condition' => $escalationConfig['condition'] ?? null,
                     'name' => $escalationConfig['name'] ?? null,
-                    'fallback_for' => $escalationConfig['fallback_for'] ?? null,
-                    'changed_at' => $changedAt
+                    'fallback_for' => $escalationConfig['fallback_for'] ?? null
                 ]);
 
                 $escalationId = $db->lastInsertId();
@@ -291,8 +285,7 @@ class SaveEventRuleForm extends Form
                     'position' => $position,
                     'condition' => $escalationConfig['condition'] ?? null,
                     'name' => $escalationConfig['name'] ?? null,
-                    'fallback_for' => $escalationConfig['fallback_for'] ?? null,
-                    'changed_at' => $changedAt
+                    'fallback_for' => $escalationConfig['fallback_for'] ?? null
                 ], ['id = ?' => $escalationId, 'rule_id = ?' => $ruleId]);
                 $recipientsToRemove = [];
 
@@ -318,7 +311,7 @@ class SaveEventRuleForm extends Form
                 if (! empty($recipientsToRemove)) {
                     $db->update(
                         'rule_escalation_recipient',
-                        ['changed_at' => $changedAt, 'deleted' => 'y'],
+                        ['deleted' => 'y'],
                         ['id IN (?)' => $recipientsToRemove, 'deleted = ?' => 'n']
                     );
                 }
@@ -327,8 +320,7 @@ class SaveEventRuleForm extends Form
             foreach ($escalationConfig['recipient'] ?? [] as $recipientConfig) {
                 $data = [
                     'rule_escalation_id' => $escalationId,
-                    'channel_id' => $recipientConfig['channel_id'],
-                    'changed_at' => $changedAt
+                    'channel_id' => $recipientConfig['channel_id']
                 ];
 
                 switch (true) {
@@ -352,11 +344,7 @@ class SaveEventRuleForm extends Form
                 if (! isset($recipientConfig['id'])) {
                     $db->insert('rule_escalation_recipient', $data);
                 } else {
-                    $db->update(
-                        'rule_escalation_recipient',
-                        $data + ['changed_at' => $changedAt],
-                        ['id = ?' => $recipientConfig['id']]
-                    );
+                    $db->update('rule_escalation_recipient', $data, ['id = ?' => $recipientConfig['id']]);
                 }
             }
         }
@@ -390,9 +378,8 @@ class SaveEventRuleForm extends Form
             $data['object_filter'] = $values['object_filter'];
         }
 
-        $changedAt = time() * 1000;
         if (! empty($data)) {
-            $db->update('rule', $data + ['changed_at' => $changedAt], ['id = ?' => $id]);
+            $db->update('rule', $data, ['id = ?' => $id]);
         }
 
         if (! isset($values['rule_escalation'])) {
@@ -426,7 +413,7 @@ class SaveEventRuleForm extends Form
         // Escalations to add
         $escalationsToAdd = $escalationsInCache;
 
-        $markAsDeleted = ['changed_at' => $changedAt, 'deleted' => 'y'];
+        $markAsDeleted = ['deleted' => 'y'];
         if (! empty($escalationsToRemove)) {
             $db->update(
                 'rule_escalation_recipient',
@@ -472,7 +459,7 @@ class SaveEventRuleForm extends Form
                 ->assembleSelect()
         );
 
-        $markAsDeleted = ['changed_at' => time() * 1000, 'deleted' => 'y'];
+        $markAsDeleted = ['deleted' => 'y'];
         if (! empty($escalationsToRemove)) {
             $db->update(
                 'rule_escalation_recipient',

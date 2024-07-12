@@ -178,8 +178,7 @@ class ContactGroupForm extends CompatForm
 
         $this->db->beginTransaction();
 
-        $changedAt = time() * 1000;
-        $this->db->insert('contactgroup', ['name' => trim($data['group_name']), 'changed_at' => $changedAt]);
+        $this->db->insert('contactgroup', ['name' => trim($data['group_name'])]);
 
         $groupIdentifier = $this->db->lastInsertId();
 
@@ -193,8 +192,7 @@ class ContactGroupForm extends CompatForm
                 'contactgroup_member',
                 [
                     'contactgroup_id'   => $groupIdentifier,
-                    'contact_id'        => $contactId,
-                    'changed_at'        => $changedAt
+                    'contact_id'        => $contactId
                 ]
             );
         }
@@ -217,13 +215,8 @@ class ContactGroupForm extends CompatForm
 
         $storedValues = $this->fetchDbValues();
 
-        $changedAt = time() * 1000;
         if ($values['group_name'] !== $storedValues['group_name']) {
-            $this->db->update(
-                'contactgroup',
-                ['name' => $values['group_name'], 'changed_at' => $changedAt],
-                ['id = ?' => $this->contactgroupId]
-            );
+            $this->db->update('contactgroup', ['name' => $values['group_name']], ['id = ?' => $this->contactgroupId]);
         }
 
         $storedContacts = [];
@@ -242,7 +235,7 @@ class ContactGroupForm extends CompatForm
         if (! empty($toDelete)) {
             $this->db->update(
                 'contactgroup_member',
-                ['changed_at' => $changedAt, 'deleted' => 'y'],
+                ['deleted' => 'y'],
                 [
                     'contactgroup_id = ?'   => $this->contactgroupId,
                     'contact_id IN (?)'     => $toDelete,
@@ -269,8 +262,7 @@ class ContactGroupForm extends CompatForm
                     'contactgroup_member',
                     [
                         'contactgroup_id'   => $this->contactgroupId,
-                        'contact_id'        => $contactId,
-                        'changed_at'        => $changedAt
+                        'contact_id'        => $contactId
                     ]
                 );
             }
@@ -278,7 +270,7 @@ class ContactGroupForm extends CompatForm
             if (! empty($contactsMarkedAsDeleted)) {
                 $this->db->update(
                     'contactgroup_member',
-                    ['changed_at' => $changedAt, 'deleted' => 'n'],
+                    ['deleted' => 'n'],
                     [
                         'contactgroup_id = ?'   => $this->contactgroupId,
                         'contact_id IN (?)'     => $contactsMarkedAsDeleted
@@ -297,7 +289,7 @@ class ContactGroupForm extends CompatForm
     {
         $this->db->beginTransaction();
 
-        $markAsDeleted = ['changed_at' => time() * 1000, 'deleted' => 'y'];
+        $markAsDeleted = ['deleted' => 'y'];
         $updateCondition = ['contactgroup_id = ?' => $this->contactgroupId, 'deleted = ?' => 'n'];
 
         $rotationAndMemberIds = $this->db->fetchPairs(
