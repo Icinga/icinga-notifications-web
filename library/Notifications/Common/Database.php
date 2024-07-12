@@ -159,24 +159,36 @@ final class Database
                 $select->where([$baseTableAlias . '.' . $condition => 'n']);
             });
 
-        $db->getQueryBuilder()->on(QueryBuilder::ON_ASSEMBLE_INSERT, function (Insert $insert) {
+        $db->getQueryBuilder()->on(QueryBuilder::ON_ASSEMBLE_INSERT, function (Insert $insert) use ($adapter) {
             $tableName = $insert->getInto();
 
             if (in_array($tableName, self::TABLES_WITH_CHANGED_AT_COLUMN, true)) {
+                if ($adapter instanceof Pgsql) {
+                    $changedAt = new Expression('EXTRACT(EPOCH FROM NOW()) * 1000');
+                } else {
+                    $changedAt = new Expression('FLOOR(UNIX_TIMESTAMP(NOW(3)) * 1000)');
+                }
+
                 $columns = array_combine($insert->getColumns(), $insert->getValues());
-                $columns['changed_at'] = time() * 1000;
+                $columns['changed_at'] = $changedAt;
 
                 $insert->values($columns);
             }
         });
 
-        $db->getQueryBuilder()->on(QueryBuilder::ON_ASSEMBLE_UPDATE, function (Update $update) {
+        $db->getQueryBuilder()->on(QueryBuilder::ON_ASSEMBLE_UPDATE, function (Update $update) use ($adapter) {
             $table = $update->getTable();
             $tableName = reset($table);
 
             if (in_array($tableName, self::TABLES_WITH_CHANGED_AT_COLUMN, true)) {
+                if ($adapter instanceof Pgsql) {
+                    $changedAt = new Expression('EXTRACT(EPOCH FROM NOW()) * 1000');
+                } else {
+                    $changedAt = new Expression('FLOOR(UNIX_TIMESTAMP(NOW(3)) * 1000)');
+                }
+
                 $columns = $update->getSet();
-                $columns['changed_at'] = time() * 1000;
+                $columns['changed_at'] = $changedAt;
 
                 $update->set($columns);
             }
