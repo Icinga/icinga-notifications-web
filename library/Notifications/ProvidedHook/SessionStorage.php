@@ -39,8 +39,7 @@ class SessionStorage extends AuthenticationHook
             // user successfully authenticated
             $rawUserAgent = (new UserAgent())->getAgent();
             if ($rawUserAgent) {
-                // limit user-agent to 4k chars
-                $userAgent = substr(trim($rawUserAgent), 0, 4096);
+                $userAgent = trim($rawUserAgent);
             } else {
                 $userAgent = 'default';
             }
@@ -124,8 +123,7 @@ class SessionStorage extends AuthenticationHook
 
             $rawUserAgent = (new UserAgent())->getAgent();
             if ($rawUserAgent) {
-                // limit user-agent to 4k chars
-                $userAgent = substr(trim($rawUserAgent), 0, 4096);
+                $userAgent = trim($rawUserAgent);
             } else {
                 $userAgent = 'default';
             }

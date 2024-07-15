@@ -406,8 +406,7 @@ class Server
 
             if ($browserSession !== null) {
                 if (isset($headers['User-Agent'][0])) {
-                    // limit user-agent to 4k chars
-                    $userAgent = substr(trim($headers['User-Agent'][0]), 0, 4096);
+                    $userAgent = trim($headers['User-Agent'][0]);
                 } else {
                     $userAgent = 'default';
                 }
