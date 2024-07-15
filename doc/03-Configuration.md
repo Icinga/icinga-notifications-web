@@ -63,6 +63,8 @@ You need to provide at least one valid source for this module to function proper
 
     - `objects/query/*`
 
+    - `status/query`
+
 If you want the notifications module to process Icinga 2 events, you will need to add it as a source:
 
 1. Navigate to `Configuration → Module → notifications → Sources` and add a new source.
