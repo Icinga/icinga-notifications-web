@@ -218,7 +218,7 @@ class ChannelForm extends CompatForm
         $storedValues = $this->fetchDbValues();
 
         $channel['config'] = json_encode($this->filterConfig($channel['config']));
-        $storedValues['config'] = json_encode($this->filterConfig($storedValues['config']));
+        $storedValues['config'] = json_encode($storedValues['config']);
 
         if (! empty(array_diff_assoc($channel, $storedValues))) {
             $channel['changed_at'] = time() * 1000;
@@ -397,17 +397,19 @@ class ChannelForm extends CompatForm
      */
     private function filterConfig(array $config): array
     {
-        return array_filter(
-            $config,
-            function ($configItem, $key) {
-                if (isset($this->defaultChannelOptions[$key])) {
-                    return $this->defaultChannelOptions[$key] !== $configItem;
+        foreach ($config as $key => $value) {
+            if (isset($this->defaultChannelOptions[$key])) {
+                if ($value === null) {
+                    $config[$key] = '';
+                } elseif ($this->defaultChannelOptions[$key] === $value) {
+                    unset($config[$key]);
                 }
+            } elseif ($value === null) {
+                unset($config[$key]);
+            }
+        }
 
-                return $configItem !== null;
-            },
-            ARRAY_FILTER_USE_BOTH
-        );
+        return $config;
     }
 
     /**
