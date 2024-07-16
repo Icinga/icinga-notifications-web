@@ -413,7 +413,7 @@ class SaveEventRuleForm extends Form
             });
 
             if ($escalationInCache) {
-                $position = array_key_first($escalationInCache);
+                $position = key($escalationInCache);
                 // Escalations in DB to update
                 $escalationsToUpdate[$position] = $escalationInCache[$position];
                 unset($escalationsInCache[$position]);

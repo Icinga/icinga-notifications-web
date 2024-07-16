@@ -257,7 +257,7 @@ class EscalationConditionForm extends BaseEscalationForm
             unset($this->options[$toRemove]);
 
             if ($this->deleteRemoveButton && count($this->options) === 1) {
-                $key = array_key_last($this->options);
+                $key = key($this->options);
                 $this->options[$key]->remove($this->getElement('remove_' . $key));
             }
         }
