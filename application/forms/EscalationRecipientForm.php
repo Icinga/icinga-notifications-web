@@ -224,7 +224,7 @@ class EscalationRecipientForm extends BaseEscalationForm
             unset($this->options[$toRemove]);
 
             if (count($this->options) === 1) {
-                $key = array_key_last($this->options);
+                $key = key($this->options);
                 $this->options[$key]->remove($this->getElement('remove_' . $key));
             }
         }

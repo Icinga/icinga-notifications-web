@@ -83,7 +83,7 @@ class EventRuleConfig extends BaseHtmlElement
 
         $addEscalation = (new AddEscalationForm())
             ->on(AddEscalationForm::ON_SENT, function () use ($escalations) {
-                $newPosition = (int) array_key_last($escalations) + 1;
+                $newPosition = count($escalations) + 1;
                 $this->config['rule_escalation'][$newPosition] = ['id' => $this->generateFakeEscalationId()];
                 if ($this->config['conditionPlusButtonPosition'] === null) {
                     $this->config['conditionPlusButtonPosition'] = $newPosition;
