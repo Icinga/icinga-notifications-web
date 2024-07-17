@@ -225,7 +225,7 @@ class SaveEventRuleForm extends Form
             $db->insert('rule_escalation', [
                 'rule_id' => $ruleId,
                 'position' => $position,
-                'condition' => $escalationConfig['condition'] ?? null,
+                $db->quoteIdentifier('condition') => $escalationConfig['condition'] ?? null,
                 'name' => $escalationConfig['name'] ?? null,
                 'fallback_for' => $escalationConfig['fallback_for'] ?? null,
                 'changed_at' => $changedAt
@@ -278,7 +278,7 @@ class SaveEventRuleForm extends Form
                 $db->insert('rule_escalation', [
                     'rule_id' => $ruleId,
                     'position' => $position,
-                    'condition' => $escalationConfig['condition'] ?? null,
+                    $db->quoteIdentifier('condition') => $escalationConfig['condition'] ?? null,
                     'name' => $escalationConfig['name'] ?? null,
                     'fallback_for' => $escalationConfig['fallback_for'] ?? null,
                     'changed_at' => $changedAt
@@ -289,7 +289,7 @@ class SaveEventRuleForm extends Form
                 $escalationId = $escalationConfig['id'];
                 $db->update('rule_escalation', [
                     'position' => $position,
-                    'condition' => $escalationConfig['condition'] ?? null,
+                    $db->quoteIdentifier('condition') => $escalationConfig['condition'] ?? null,
                     'name' => $escalationConfig['name'] ?? null,
                     'fallback_for' => $escalationConfig['fallback_for'] ?? null,
                     'changed_at' => $changedAt
