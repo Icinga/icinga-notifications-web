@@ -22,6 +22,7 @@ use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
 use ipl\Web\FormElement\TermInput;
 use ipl\Web\FormElement\TermInput\Term;
+use Ramsey\Uuid\Uuid;
 
 class ContactGroupForm extends CompatForm
 {
@@ -179,7 +180,13 @@ class ContactGroupForm extends CompatForm
         $this->db->beginTransaction();
 
         $changedAt = time() * 1000;
-        $this->db->insert('contactgroup', ['name' => trim($data['group_name']), 'changed_at' => $changedAt]);
+        $this->db->insert(
+            'contactgroup',
+            [
+                'name'          => $data['group_name'],
+                'external_uuid' => Uuid::uuid4()->toString()
+            ]
+        );
 
         $groupIdentifier = $this->db->lastInsertId();
 

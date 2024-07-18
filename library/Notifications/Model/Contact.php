@@ -50,7 +50,8 @@ class Contact extends Model
             'username',
             'default_channel_id',
             'changed_at',
-            'deleted'
+            'deleted',
+            'external_uuid'
         ];
     }
 
@@ -59,7 +60,7 @@ class Contact extends Model
         return [
             'full_name'     => t('Full Name'),
             'username'      => t('Username'),
-            'changed_at'    => t('Changed At')
+            'external_uuid' => t('UUID')
         ];
     }
 
