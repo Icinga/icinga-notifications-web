@@ -107,3 +107,12 @@ You can run the following command to enable and start the daemon.
 ```
 systemctl enable --now icinga-desktop-notifications.service
 ```
+
+## Known Issues
+
+**Using Chromium on Ubuntu as a snap, notifications have no icons.**
+
+This is caused by the sandbox snaps are running in. See the following issues for more information:
+
+* https://bugs.launchpad.net/ubuntu/+source/chromium-browser/+bug/1903893
+* https://issues.chromium.org/issues/40738200
