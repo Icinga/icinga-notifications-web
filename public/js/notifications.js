@@ -20,6 +20,12 @@ const VERSION = 1;
         return;
     }
 
+    if (! navigator.serviceWorker) {
+        console.error(LOG_PREFIX + "this browser does not support the 'Service Worker API' in the current context");
+
+        return;
+    }
+
     if (! 'Notification' in self) {
         console.error(LOG_PREFIX + "this browser does not support the 'Notification API' in the current context");
 
