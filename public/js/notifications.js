@@ -8,25 +8,19 @@ const VERSION = 1;
 
     const LOG_PREFIX = '[Notification] - ';
 
-    if (! 'ServiceWorker' in self) {
+    if (! ('ServiceWorker' in self)) {
         console.error(LOG_PREFIX + "this browser does not support the 'Service Worker API' in the current context");
 
         return;
     }
 
-    if (! 'Navigator' in self) {
+    if (! ('Navigator' in self)) {
         console.error(LOG_PREFIX + "this browser does not support the 'Navigator API' in the current context");
 
         return;
     }
 
-    if (! navigator.serviceWorker) {
-        console.error(LOG_PREFIX + "this browser does not support the 'Service Worker API' in the current context");
-
-        return;
-    }
-
-    if (! 'Notification' in self) {
+    if (! ('Notification' in self)) {
         console.error(LOG_PREFIX + "this browser does not support the 'Notification API' in the current context");
 
         return;
@@ -44,7 +38,7 @@ const VERSION = 1;
             super(icinga);
 
             // only allow to be instantiated in a web context
-            if (! self instanceof Window) {
+            if (! (self instanceof Window)) {
                 this.logger.error(LOG_PREFIX + "module should not get loaded outside of a web context!");
                 throw new Error("Attempted to initialize the 'Notification' module outside of a web context!");
             }
