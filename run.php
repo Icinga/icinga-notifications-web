@@ -4,7 +4,10 @@
 
 /** @var \Icinga\Application\Modules\Module $this */
 
-$this->provideHook('Notifications/ObjectsRenderer');
+if ($this::exists('icingadb')) {
+    $this->provideHook('Notifications/ObjectsRenderer');
+}
+
 $this->provideHook('authentication', 'SessionStorage', true);
 $this->addRoute(
     'static-file',
