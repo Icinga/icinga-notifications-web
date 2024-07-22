@@ -42,8 +42,8 @@ In there, add a new section with the following content:
 
 ```ini
 [daemon]
-host = [::] ; The IP address to listen on
-port = 9001 ; The port to listen on
+host = 127.0.0.1 ; The IP address to listen on
+port = 5664 ; The port to listen on
 ```
 
 The values shown above are the default values. You can adjust them to your needs.
@@ -63,8 +63,8 @@ daemon's configuration.
 <LocationMatch "^/icingaweb2/notifications/v(?<version>\d+)/subscribe">
     SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
     RequestHeader set X-Icinga-Notifications-Protocol-Version %{MATCH_VERSION}e
-    ProxyPass http://127.0.0.1:9001 connectiontimeout=30 timeout=30 flushpackets=on
-    ProxyPassReverse http://127.0.0.1:9001
+    ProxyPass http://127.0.0.1:5664 connectiontimeout=30 timeout=30 flushpackets=on
+    ProxyPassReverse http://127.0.0.1:5664
 </LocationMatch>
 ```
 
@@ -72,7 +72,7 @@ daemon's configuration.
 
 ```
 location ~ ^/icingaweb2/notifications/v(\d+)/subscribe$ {
-    proxy_pass http://127.0.0.1:9001;
+    proxy_pass http://127.0.0.1:5664;
     proxy_set_header Connection "";
     proxy_set_header X-Icinga-Notifications-Protocol-Version $1;
     proxy_http_version 1.1;

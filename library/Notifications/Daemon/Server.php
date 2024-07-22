@@ -97,9 +97,9 @@ class Server
 
         $this->connections = [];
         $this->socket = new SocketServer(
-            $this->config->get('daemon', 'host', '[::]')
+            $this->config->get('daemon', 'host', '127.0.0.1')
             . ':'
-            . $this->config->get('daemon', 'port', '9001'),
+            . $this->config->get('daemon', 'port', '5664'),
             [],
             $this->mainLoop
         );
