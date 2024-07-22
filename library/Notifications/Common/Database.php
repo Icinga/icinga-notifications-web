@@ -12,8 +12,10 @@ use ipl\Sql\Adapter\Pgsql;
 use ipl\Sql\Config as SqlConfig;
 use ipl\Sql\Connection;
 use ipl\Sql\Expression;
+use ipl\Sql\Insert;
 use ipl\Sql\QueryBuilder;
 use ipl\Sql\Select;
+use ipl\Sql\Update;
 use PDO;
 
 final class Database
@@ -21,7 +23,7 @@ final class Database
     /**
      * @var string[] Tables with a deleted flag
      *
-     * The filter `deleted=n` is automatically added to these tables.
+     * The filter `deleted=n` is automatically added to these tables, when select statement is executed
      */
     private const TABLES_WITH_DELETED_FLAG = [
         'channel',
@@ -39,6 +41,13 @@ final class Database
         'timeperiod',
         'timeperiod_entry',
     ];
+
+    /**
+     * @var string[] Tables with a `changed_at` column
+     *
+     * The `changed_at` column of these tables is automatically added and updated
+     */
+    private const TABLES_WITH_CHANGED_AT_COLUMN = self::TABLES_WITH_DELETED_FLAG;
 
     /** @var Connection Database connection */
     private static $instance;
@@ -126,29 +135,63 @@ final class Database
                 });
         }
 
-        $db->getQueryBuilder()
-            ->on(QueryBuilder::ON_ASSEMBLE_SELECT, function (Select $select) {
-                $from = $select->getFrom();
-                $baseTableName = reset($from);
+        $db->getQueryBuilder()->on(QueryBuilder::ON_ASSEMBLE_SELECT, function (Select $select) {
+            $from = $select->getFrom();
+            $baseTableName = reset($from);
 
-                if (! in_array($baseTableName, self::TABLES_WITH_DELETED_FLAG, true)) {
-                    return;
+            if (! in_array($baseTableName, self::TABLES_WITH_DELETED_FLAG, true)) {
+                return;
+            }
+
+            $baseTableAlias = key($from);
+            if (! is_string($baseTableAlias)) {
+                $baseTableAlias = $baseTableName;
+            }
+
+            $condition = 'deleted = ?';
+            $where = $select->getWhere();
+
+            if ($where && self::hasCondition($baseTableAlias, $condition, $where)) {
+                return;
+            }
+
+            $select->where([$baseTableAlias . '.' . $condition => 'n']);
+        });
+
+        $db->getQueryBuilder()->on(QueryBuilder::ON_ASSEMBLE_INSERT, function (Insert $insert) use ($adapter) {
+            $tableName = $insert->getInto();
+
+            if (in_array($tableName, self::TABLES_WITH_CHANGED_AT_COLUMN, true)) {
+                if ($adapter instanceof Pgsql) {
+                    $changedAt = new Expression('EXTRACT(EPOCH FROM NOW()) * 1000');
+                } else {
+                    $changedAt = new Expression('FLOOR(UNIX_TIMESTAMP(NOW(3)) * 1000)');
                 }
 
-                $baseTableAlias = key($from);
-                if (! is_string($baseTableAlias)) {
-                    $baseTableAlias = $baseTableName;
+                $columns = array_combine($insert->getColumns(), $insert->getValues());
+                $columns['changed_at'] = $changedAt;
+
+                $insert->values($columns);
+            }
+        });
+
+        $db->getQueryBuilder()->on(QueryBuilder::ON_ASSEMBLE_UPDATE, function (Update $update) use ($adapter) {
+            $table = $update->getTable();
+            $tableName = reset($table);
+
+            if (in_array($tableName, self::TABLES_WITH_CHANGED_AT_COLUMN, true)) {
+                if ($adapter instanceof Pgsql) {
+                    $changedAt = new Expression('EXTRACT(EPOCH FROM NOW()) * 1000');
+                } else {
+                    $changedAt = new Expression('FLOOR(UNIX_TIMESTAMP(NOW(3)) * 1000)');
                 }
 
-                $condition = 'deleted = ?';
-                $where = $select->getWhere();
+                $columns = $update->getSet();
+                $columns['changed_at'] = $changedAt;
 
-                if ($where && self::hasCondition($baseTableAlias, $condition, $where)) {
-                    return;
-                }
-
-                $select->where([$baseTableAlias . '.' . $condition => 'n']);
-            });
+                $update->set($columns);
+            }
+        });
 
         return $db;
     }

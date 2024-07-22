@@ -71,10 +71,7 @@ class ScheduleForm extends CompatForm
 
     public function addSchedule(): int
     {
-        $this->db->insert('schedule', [
-            'name' => $this->getValue('name'),
-            'changed_at' => time() * 1000
-        ]);
+        $this->db->insert('schedule', ['name' => $this->getValue('name')]);
 
         return $this->db->lastInsertId();
     }
@@ -90,10 +87,7 @@ class ScheduleForm extends CompatForm
             return;
         }
 
-        $this->db->update('schedule', [
-            'name'          => $values['name'],
-            'changed_at'    => time() * 1000
-        ], ['id = ?' => $id]);
+        $this->db->update('schedule', ['name' => $values['name']], ['id = ?' => $id]);
 
         $this->db->commitTransaction();
     }
@@ -112,7 +106,7 @@ class ScheduleForm extends CompatForm
             $rotation->delete();
         }
 
-        $markAsDeleted = ['changed_at' => time() * 1000, 'deleted' => 'y'];
+        $markAsDeleted = ['deleted' => 'y'];
 
         $escalationIds = $this->db->fetchCol(
             RuleEscalationRecipient::on($this->db)

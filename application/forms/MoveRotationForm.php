@@ -100,7 +100,6 @@ class MoveRotationForm extends Form
 
         $this->scheduleId = $rotation->schedule_id;
 
-        $changedAt = time() * 1000;
         // Free up the current priority used by the rotation in question
         $this->db->update('rotation', ['priority' => null, 'deleted' => 'y'], ['id = ?' => $rotationId]);
 
@@ -120,7 +119,7 @@ class MoveRotationForm extends Form
             foreach ($affectedRotations as $rotation) {
                 $this->db->update(
                     'rotation',
-                    ['priority' => new Expression('priority + 1'), 'changed_at' => $changedAt],
+                    ['priority' => new Expression('priority + 1')],
                     ['id = ?' => $rotation->id]
                 );
             }
@@ -139,7 +138,7 @@ class MoveRotationForm extends Form
             foreach ($affectedRotations as $rotation) {
                 $this->db->update(
                     'rotation',
-                    ['priority' => new Expression('priority - 1'), 'changed_at' => $changedAt],
+                    ['priority' => new Expression('priority - 1')],
                     ['id = ?' => $rotation->id]
                 );
             }
@@ -148,7 +147,7 @@ class MoveRotationForm extends Form
         // Now insert the rotation at the new priority
         $this->db->update(
             'rotation',
-            ['priority' => $newPriority, 'changed_at' => $changedAt, 'deleted' => 'n'],
+            ['priority' => $newPriority, 'deleted' => 'n'],
             ['id = ?' => $rotationId]
         );
 

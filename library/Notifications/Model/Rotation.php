@@ -124,8 +124,7 @@ class Rotation extends Model
             $timeperiodId = $this->timeperiod->columns('id')->first()->id;
         }
 
-        $changedAt = time() * 1000;
-        $markAsDeleted = ['changed_at' => $changedAt, 'deleted' => 'y'];
+        $markAsDeleted = ['deleted' => 'y'];
 
         $db->update('timeperiod_entry', $markAsDeleted, ['timeperiod_id = ?' => $timeperiodId,  'deleted = ?' => 'n']);
         $db->update('timeperiod', $markAsDeleted, ['id = ?' => $timeperiodId]);
@@ -163,7 +162,7 @@ class Rotation extends Model
             foreach ($affectedRotations as $rotation) {
                 $db->update(
                     'rotation',
-                    ['priority' => new Expression('priority - 1'), 'changed_at' => $changedAt],
+                    ['priority' => new Expression('priority - 1')],
                     ['id = ?' => $rotation->id]
                 );
             }
