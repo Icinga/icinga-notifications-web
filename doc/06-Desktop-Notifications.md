@@ -68,6 +68,14 @@ daemon's configuration.
 </LocationMatch>
 ```
 
+!!! Note
+
+    The following modules need to be enabled in Apache for this configuration to work:
+
+    - `proxy`  
+    - `proxy_http`  
+    - `headers`
+
 **Nginx**
 
 ```

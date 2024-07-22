@@ -59,10 +59,8 @@ You need to provide at least one valid source for this module to function proper
 
     The API user needs the following [permissions](https://icinga.com/docs/icinga-2/latest/doc/12-icinga2-api/#overview):
 
-    - `events/*`
-
-    - `objects/query/*`
-
+    - `events/*`  
+    - `objects/query/*`  
     - `status/query`
 
 If you want the notifications module to process Icinga 2 events, you will need to add it as a source:
