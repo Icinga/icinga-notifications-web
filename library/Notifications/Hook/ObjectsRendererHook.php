@@ -4,7 +4,6 @@
 
 namespace Icinga\Module\Notifications\Hook;
 
-use Exception;
 use Generator;
 use Icinga\Application\Hook;
 use Icinga\Application\Logger;
@@ -16,6 +15,7 @@ use ipl\Html\Text;
 use ipl\Html\ValidHtml;
 use ipl\Web\Url;
 use ipl\Web\Widget\Link;
+use Throwable;
 
 /**
  * Base hook to prepare and render objects
@@ -178,7 +178,7 @@ abstract class ObjectsRendererHook
                             }
                         }
                     }
-                } catch (Exception $e) {
+                } catch (Throwable $e) {
                     Logger::error('Failed to load hook %s:', get_class($hook), $e);
                 }
             }
@@ -289,7 +289,7 @@ abstract class ObjectsRendererHook
                         ]
                     ]);
                 }
-            } catch (Exception $e) {
+            } catch (Throwable $e) {
                 Logger::error('Failed to load hook %s:', get_class($hook), $e);
             }
         }
