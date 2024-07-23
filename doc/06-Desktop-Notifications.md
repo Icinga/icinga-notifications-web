@@ -99,7 +99,7 @@ location ~ ^/icingaweb2/notifications/v(\d+)/subscribe$ {
 
 ### Enable The Daemon
 
-The default `systemd` service, shipped with package installations, runs the background daemon.
+The default `systemd` service, shipped with the package `icinga-desktop-notifications`, runs the background daemon.
 
 <!-- {% if not icingaDocs %} -->
 
