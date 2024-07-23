@@ -99,16 +99,15 @@ location ~ ^/icingaweb2/notifications/v(\d+)/subscribe$ {
 
 ### Enable The Daemon
 
-The default `systemd` service, shipped with package installations, runs the background daemon.
+The default `systemd` service, shipped with the package `icinga-desktop-notifications`, runs the background daemon.
 
 <!-- {% if not icingaDocs %} -->
 
-!!! Note
-
-    If you haven't installed this module from packages, you have to configure this as a `systemd` service yourself by just
-    copying the example service definition from `/usr/share/icingaweb2/modules/notifications/config/systemd/icinga-desktop-notifications.service`
-    to `/etc/systemd/system/icinga-desktop-notifications.service`.
-
+> **Note**
+>
+> If you haven't installed this module from packages, you have to configure this as a `systemd` service yourself by just
+> copying the example service definition from `/usr/share/icingaweb2/modules/notifications/config/systemd/icinga-desktop-notifications.service`
+> to `/etc/systemd/system/icinga-desktop-notifications.service`.
 <!-- {% endif %} -->
 
 You can run the following command to enable and start the daemon.
