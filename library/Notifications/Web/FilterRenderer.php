@@ -9,7 +9,7 @@ use ipl\Web\Filter\Renderer;
 
 class FilterRenderer extends Renderer
 {
-    protected function renderCondition(Filter\Condition $condition)
+    protected function renderCondition(Filter\Condition $condition): void
     {
         $value = $condition->getValue();
         if (is_bool($value) && ! $value) {
