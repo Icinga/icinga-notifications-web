@@ -92,7 +92,7 @@ class IncidentDetail extends BaseHtmlElement
         ];
     }
 
-    protected function createObjectTag()
+    protected function createObjectTag(): array
     {
         $tags = [];
         foreach ($this->incident->object->object_extra_tag as $extraTag) {
@@ -104,7 +104,7 @@ class IncidentDetail extends BaseHtmlElement
         }
 
         return [
-            Html::tag('h2', t('Object Tags')),
+            new HtmlElement('h2', null, new Text(t('Object Tags'))),
             (new Table())
                 ->addHtml(...$tags)
                 ->addAttributes(['class' => 'object-tags-table'])
