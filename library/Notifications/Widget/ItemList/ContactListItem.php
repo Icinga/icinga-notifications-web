@@ -11,7 +11,6 @@ use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\Web\Common\BaseListItem;
 use ipl\Web\Url;
-use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
 
 /**
@@ -38,17 +37,6 @@ class ContactListItem extends BaseListItem
             Attributes::create(['class' => 'contact-ball']),
             Text::create($this->item->full_name[0])
         ));
-    }
-
-    protected function assembleFooter(BaseHtmlElement $footer): void
-    {
-        $contactIcons = new HtmlElement('div', Attributes::create(['class' => 'contact-icons']));
-
-        if (isset($this->item->has_email) && $this->item->has_email) {
-            $contactIcons->addHtml(new Icon('at'));
-        }
-
-        $footer->addHtml($contactIcons);
     }
 
     protected function assembleTitle(BaseHtmlElement $title): void
