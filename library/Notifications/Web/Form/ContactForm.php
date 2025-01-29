@@ -124,6 +124,7 @@ class ContactForm extends CompatForm
             [
                 'label'             => $this->translate('Default Channel'),
                 'required'          => true,
+                'class'             => 'autosubmit',
                 'disabledOptions'   => [''],
                 'options'           => $channelOptions
             ]
@@ -402,23 +403,26 @@ class ContactForm extends CompatForm
      */
     private function addAddressElements(): void
     {
-        $plugins = $this->db->fetchPairs(
-            AvailableChannelType::on($this->db)
-                ->columns(['type', 'name'])
-                ->assembleSelect()
-        );
+        $plugins = AvailableChannelType::on($this->db)
+            ->columns(['type', 'name', 'channel.id'])
+            ->execute();
 
-        if (empty($plugins)) {
+        if (! $plugins->hasResult()) {
             return;
         }
+
+        $selectedChannelId = (int) $this->getValue('contact')['default_channel_id'];
 
         $address = new FieldsetElement('contact_address', ['label' => $this->translate('Addresses')]);
         $this->addElement($address);
 
-        foreach ($plugins as $type => $label) {
+        foreach ($plugins as $plugin) {
+            $type = $plugin->type;
+
             $element = $this->createElement('text', $type, [
-                'label'      => $label,
-                'validators' => [new StringLengthValidator(['max' => 255])]
+                'label'      => $plugin->name,
+                'validators' => [new StringLengthValidator(['max' => 255])],
+                'required'   => $plugin->channel->id === $selectedChannelId
             ]);
 
             if ($type === 'email') {
