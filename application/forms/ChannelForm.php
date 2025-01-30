@@ -334,6 +334,11 @@ class ChannelForm extends CompatForm
             'label' => $this->fromCurrentLocale($elementConfig['label'])
         ];
 
+        if ($elementConfig['type'] === 'bool') {
+            $options['checkedValue'] = 'checked';
+            $options['uncheckedValue'] = 'unchecked';
+        }
+
         if (isset($elementConfig['help'])) {
             $options['description'] = $this->fromCurrentLocale($elementConfig['help']);
         }
@@ -398,6 +403,10 @@ class ChannelForm extends CompatForm
     private function filterConfig(array $config): array
     {
         foreach ($config as $key => $value) {
+            if (in_array($value, ['checked', 'unchecked'], true)) {
+                $config[$key] = $value === 'checked';
+            }
+
             if (isset($this->defaultChannelOptions[$key])) {
                 if ($value === null) {
                     $config[$key] = '';
