@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Controllers;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\ChannelForm;
+use Icinga\Module\Notifications\Model\AvailableChannelType;
 use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\View\ChannelRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
@@ -15,6 +16,7 @@ use Icinga\Web\Notification;
 use Icinga\Web\Widget\Tab;
 use Icinga\Web\Widget\Tabs;
 use ipl\Sql\Connection;
+use ipl\Sql\Expression;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
@@ -84,15 +86,25 @@ class ChannelsController extends CompatController
         $this->addControl($sortControl);
         $this->addControl($limitControl);
         $this->addControl($searchBar);
-        $this->addContent(
-            (new ButtonLink(t('Add Channel'), Links::channelAdd(), 'plus'))
-                ->setBaseTarget('_next')
-                ->addAttributes(['class' => 'add-new-component'])
-        );
 
+        $addButton = (new ButtonLink(
+            t('Add Channel'),
+            Links::channelAdd(),
+            'plus',
+            ['class' => 'add-new-component']
+        ))->setBaseTarget('_next');
+
+        $emptyStateMessage = null;
+        if (AvailableChannelType::on($this->db)->columns([new Expression('1')])->first() === null) {
+            $emptyStateMessage = t('No channel types available. Make sure Icinga Notifications is running.');
+            $addButton->disable($emptyStateMessage);
+        }
+
+        $this->addContent($addButton);
         $this->addContent(
             (new ObjectList($channels, new ChannelRenderer()))
                 ->setItemLayoutClass(MinimalItemLayout::class)
+                ->setEmptyStateMessage($emptyStateMessage)
         );
 
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {
