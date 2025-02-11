@@ -829,6 +829,12 @@ class RotationConfigForm extends CompatForm
         ]);
         $from = $options->getElement('from_day');
 
+        $selectedDay = (int) $from->getValue();
+
+        for ($i = 1; $i <= $selectedDay; $i++) {
+            $toDays[$i] = sprintf('%s (%s)', $toDays[$i], $this->translate('Next week'));
+        }
+
         $options->addElement('select', 'to_day', [
             'class' => 'autosubmit',
             'required' => true,
