@@ -153,7 +153,7 @@ class ScheduleForm extends CompatForm
     {
         $this->addElement('text', 'name', [
             'required' => true,
-            'label' => $this->translate('Name')
+            'label' => $this->translate('Schedule Name')
         ]);
 
         $this->addElement('submit', 'submit', [
