@@ -11,6 +11,7 @@ use Icinga\Module\Notifications\Forms\MoveRotationForm;
 use Icinga\Module\Notifications\Widget\TimeGrid\DynamicGrid;
 use Icinga\Module\Notifications\Widget\TimeGrid\EntryProvider;
 use Icinga\Module\Notifications\Widget\TimeGrid\GridStep;
+use Icinga\Module\Notifications\Widget\TimeGrid\Timescale;
 use Icinga\Module\Notifications\Widget\Timeline\Entry;
 use Icinga\Module\Notifications\Widget\Timeline\MinimalGrid;
 use Icinga\Module\Notifications\Widget\Timeline\Rotation;
@@ -316,6 +317,9 @@ class Timeline extends BaseHtmlElement implements EntryProvider
                     Text::create($this->translate('Result'))
                 )
             );
+
+            $this->getGrid()
+                ->addHtml(new Timescale($this->days, $this->getStyle()));
         }
 
         $this->addHtml(
