@@ -16,7 +16,7 @@
     .time-grid-header {
       box-sizing: border-box;
       position: sticky;
-      z-index: 1;
+      z-index: 2; // overlap the .clock .time-hand
       top: 0;
       height: var(--daysHeaderHeight);
     }
@@ -51,6 +51,7 @@
     .overlay .entry {
       margin-top: 1em;
       margin-bottom: 1em;
+      z-index: 2; // overlap the .clock .time-hand
 
       .title {
         height: 100%;
@@ -122,6 +123,34 @@
         grid-area: ~"1 / -2 / 1 / -1";
       }
     }
+
+    .clock {
+      display: grid;
+      grid-template-columns: repeat(var(--primaryColumns), 1fr);
+      grid-area: ~"3 / 2 / 4 / 3";
+      border-top: 1px solid transparent; // left not required, otherwise the .time-hand is not aligned properly
+
+      .current-day {
+        display: grid;
+        grid-template-columns: repeat(var(--columnsPerStep), 1fr);
+        grid-area: ~"1 / 1 / 2 / 2";
+
+        .time-hand {
+          grid-area: ~"1 / var(--timeStartColumn) / 2 / calc(var(--timeStartColumn) + 1)";
+          display: flex;
+          align-items: flex-end;
+          width: 1px;
+          border-left: 1px solid red;
+          z-index: 1;
+
+          .now {
+            .rounded-corners();
+            padding: 0 .25em;
+            transform: translate(-50%, 50%);
+          }
+        }
+      }
+    }
   }
 }
 
@@ -191,6 +220,13 @@
   .timescale .timestamp {
     color: @gray-semilight;
     background: @body-bg-color;
+  }
+
+  .clock .now {
+    background-color: @gray-light;
+    font-size: 0.75em;
+    color: red;
+    .user-select(none);
   }
 }
 

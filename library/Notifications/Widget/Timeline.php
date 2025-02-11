@@ -12,9 +12,11 @@ use Icinga\Module\Notifications\Widget\TimeGrid\DynamicGrid;
 use Icinga\Module\Notifications\Widget\TimeGrid\EntryProvider;
 use Icinga\Module\Notifications\Widget\TimeGrid\GridStep;
 use Icinga\Module\Notifications\Widget\TimeGrid\Timescale;
+use Icinga\Module\Notifications\Widget\TimeGrid\Util;
 use Icinga\Module\Notifications\Widget\Timeline\Entry;
 use Icinga\Module\Notifications\Widget\Timeline\MinimalGrid;
 use Icinga\Module\Notifications\Widget\Timeline\Rotation;
+use IntlDateFormatter;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\HtmlElement;
@@ -24,6 +26,7 @@ use ipl\Web\Style;
 use ipl\Web\Url;
 use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
+use Locale;
 use SplObjectStorage;
 use Traversable;
 
@@ -318,8 +321,41 @@ class Timeline extends BaseHtmlElement implements EntryProvider
                 )
             );
 
+            $dateFormatter = new IntlDateFormatter(
+                Locale::getDefault(),
+                IntlDateFormatter::NONE,
+                IntlDateFormatter::SHORT
+            );
+
+            $now = new DateTime();
+            $currentTime = new HtmlElement(
+                'div',
+                new Attributes(['class' => 'time-hand']),
+                new HtmlElement(
+                    'div',
+                    new Attributes(['class' => 'now', 'title' => $dateFormatter->format($now)]),
+                    Text::create($this->translate('now'))
+                )
+            );
+
+            $now = Util::roundToNearestThirtyMinute($now);
+
+            $this->getStyle()->addFor($currentTime, [
+                '--timeStartColumn' =>
+                    $now->format('G') * 2 // 2 columns per hour
+                    + ($now->format('i') >= 30 ? 1 : 0) // 1 column for the half hour
+                    + 1 // CSS starts counting columns from 1, not zero
+            ]);
+
+            $clock = new HtmlElement(
+                'div',
+                new Attributes(['class' => 'clock']),
+                new HtmlElement('div', new Attributes(['class' => 'current-day']), $currentTime)
+            );
+
             $this->getGrid()
-                ->addHtml(new Timescale($this->days, $this->getStyle()));
+                ->addHtml(new Timescale($this->days, $this->getStyle()))
+                ->addHtml($clock);
         }
 
         $this->addHtml(
