@@ -722,11 +722,13 @@ class RotationConfigForm extends CompatForm
                 7 => $this->translate('Sunday')
             ]
         ]);
+
+        $timeOptions = $this->getTimeOptions();
         $options->addElement('select', 'from', [
             'class' => 'autosubmit',
             'required' => true,
             'value' => '00:00',
-            'options' => $this->getTimeOptions(),
+            'options' => $timeOptions,
             'label' => $this->translate('From')
         ]);
         $from = $options->getElement('from');
@@ -740,9 +742,18 @@ class RotationConfigForm extends CompatForm
             'validators' => [new GreaterThanValidator()]
         ]);
 
+        $selectedFromTime = $from->getValue();
+        foreach ($timeOptions as $key => $value) {
+            $timeOptions[$key] = sprintf('%s (%s)', $value, $this->translate('Next Day'));
+
+            if ($selectedFromTime === $key) {
+                break;
+            }
+        }
+
         $to = $options->createElement('select', 'to', [
             'required' => true,
-            'options' => $this->getTimeOptions()
+            'options' => $timeOptions
         ]);
         $options->registerElement($to);
 
