@@ -80,13 +80,14 @@
   .rotation-name {
     font-size: 1.25em;
     font-weight: bold;
-    cursor: grab;
 
     [data-drag-initiator] {
       color: @gray-light;
-    }
-    &:hover [data-drag-initiator] {
-      color: @text-color;
+
+      &:hover {
+        cursor: grab;
+        color: @list-item-title-hover-color;
+      }
     }
 
     // :not(:empty) is only necessary to increase specificity
