@@ -28,6 +28,20 @@
         margin-left: .5em;
         .text-ellipsis();
       }
+
+      > a {
+        display: flex;
+        width: 100%;
+        align-items: baseline;
+        margin-left: .5em;
+
+        span {
+          width: 0;
+          flex: 1 0 auto;
+          margin-right: 0.25em;
+          .text-ellipsis();
+        }
+      }
     }
 
     .overlay .entry {
@@ -97,6 +111,22 @@
 
     &.sortable-ghost {
       opacity: .5;
+    }
+
+    > a {
+      text-decoration: none;
+
+      i {
+        display: none;
+      }
+
+      &:hover {
+        color: @list-item-title-hover-color;
+
+        i {
+          display: inline-block;
+        }
+      }
     }
   }
 
