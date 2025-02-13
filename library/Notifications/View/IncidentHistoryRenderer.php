@@ -38,6 +38,10 @@ class IncidentHistoryRenderer implements ItemRenderer
             $content = new Icon($incidentIcon, ['class' => 'severity-' . $item->new_severity]);
         } else {
             $content = new IconBall($incidentIcon);
+
+            if ($item->type === 'notified') {
+                $content->addAttributes(['class' => ['notification', $this->item->notification_state]]);
+            }
         }
 
         $visual->addHtml($content);
