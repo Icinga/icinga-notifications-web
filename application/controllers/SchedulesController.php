@@ -110,10 +110,12 @@ class SchedulesController extends CompatController
                 'baseTarget'    => '_main'
             ])->add('event-rules', [
                 'label' => $this->translate('Event Rules'),
-                'url'   => Links::eventRules()
+                'url'   => Links::eventRules(),
+                'baseTarget' => '_main'
             ])->add('contacts', [
                 'label' => $this->translate('Contacts'),
-                'url'   => Links::contacts()
+                'url'   => Links::contacts(),
+                'baseTarget' => '_main'
             ])->add('contact-groups', [
                 'label'      => $this->translate('Contact Groups'),
                 'url'        => Links::contactGroups(),
