@@ -15,6 +15,7 @@ use ipl\Html\Html;
 use ipl\Html\HtmlElement;
 use ipl\Html\Table;
 use ipl\Html\Text;
+use ipl\Stdlib\Filter;
 
 class IncidentDetail extends BaseHtmlElement
 {
@@ -36,7 +37,12 @@ class IncidentDetail extends BaseHtmlElement
     protected function createContacts()
     {
         $contacts = [];
-        foreach ($this->incident->incident_contact->with('contact')->orderBy('role', SORT_DESC) as $incident_contact) {
+        $query = $this->incident->incident_contact
+            ->with('contact')
+            ->filter(Filter::equal('contact.deleted', 'n'))
+            ->orderBy('role', SORT_DESC);
+
+        foreach ($query as $incident_contact) {
             $contact = $incident_contact->contact;
             $contact->role = $incident_contact->role;
 
