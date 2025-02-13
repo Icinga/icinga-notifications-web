@@ -27,7 +27,27 @@
     }
   }
 
-  .list-item.notification-suppressed {
-    opacity: .75;
+  .list-item {
+    &.notification-suppressed {
+      opacity: .75;
+    }
+
+    .visual .notification {
+      &.failed {
+        color: @state-critical;
+      }
+
+      &.pending {
+
+      }
+
+      &.suppressed {
+        color: @state-warning;
+      }
+
+      &.sent {
+        color: @state-ok;
+      }
+    }
   }
 }
