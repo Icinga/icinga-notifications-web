@@ -53,6 +53,7 @@ class ContactGroupForm extends CompatForm
             ]
         ))
             ->setVerticalTermDirection()
+            ->setReadOnly()
             ->setSuggestionUrl(
                 Links::contactGroupsSuggestMember()->with(['showCompact' => true, '_disableLayout' => 1])
             )
