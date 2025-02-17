@@ -74,6 +74,7 @@ class ContactForm extends CompatForm
 
     protected function assemble()
     {
+        $this->addAttributes(['class' => 'contact-form']);
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
 
         // Fieldset for contact full name and username
@@ -85,9 +86,6 @@ class ContactForm extends CompatForm
         ));
 
         $this->addElement($contact);
-
-        $channelOptions = ['' => sprintf(' - %s - ', $this->translate('Please choose'))];
-        $channelOptions += Channel::fetchChannelNames($this->db);
 
         $contact->addElement(
             'text',
@@ -122,19 +120,27 @@ class ContactForm extends CompatForm
                     })
                 ]
             ]
-        )
-        ->addElement(
+        );
+
+        $defaultChannel = $this->createElement(
             'select',
             'default_channel_id',
             [
                 'label'             => $this->translate('Default Channel'),
                 'required'          => true,
                 'disabledOptions'   => [''],
-                'options'           => $channelOptions
+                'options'           => ['' => sprintf(' - %s - ', $this->translate('Please choose'))]
+                    + Channel::fetchChannelNames($this->db),
             ]
         );
 
+        $this
+            ->registerElement($defaultChannel)
+            ->decorate($defaultChannel);
+
         $this->addAddressElements();
+
+        $this->addHtml($defaultChannel);
 
         $this->addElement(
             'submit',
@@ -188,7 +194,10 @@ class ContactForm extends CompatForm
     public function addContact(): void
     {
         $contactInfo = $this->getValues();
+        $contactInfo['contact']['default_channel_id'] = $contactInfo['default_channel_id'];
+
         $changedAt = (int) (new DateTime())->format("Uv");
+
         $this->db->beginTransaction();
         $this->db->insert('contact', $contactInfo['contact'] + ['changed_at' => $changedAt]);
         $this->contactId = $this->db->lastInsertId();
@@ -217,7 +226,10 @@ class ContactForm extends CompatForm
         $this->db->beginTransaction();
 
         $values = $this->getValues();
+        $values['contact']['default_channel_id'] = $values['default_channel_id'];
+
         $storedValues = $this->fetchDbValues();
+        $storedValues['contact']['default_channel_id'] = $storedValues['default_channel_id'];
 
         $changedAt = (int) (new DateTime())->format("Uv");
         if ($storedValues['contact'] !== $values['contact']) {
@@ -385,10 +397,11 @@ class ContactForm extends CompatForm
         }
 
         $values['contact'] =  [
-            'full_name'          => $contact->full_name,
-            'username'           => $contact->username,
-            'default_channel_id' => (string) $contact->default_channel_id
+            'full_name' => $contact->full_name,
+            'username'  => $contact->username
         ];
+
+        $values['default_channel_id'] = (string) $contact->default_channel_id;
 
         $values['contact_address'] = [];
         $values['contact_address_with_id'] = []; //TODO: only used in editContact(), find better solution
@@ -421,7 +434,7 @@ class ContactForm extends CompatForm
         $address->addHtml(new HtmlElement(
             'p',
             new Attributes(['class' => 'description']),
-            new Text($this->translate("Configure the channels available for this contact here"))
+            new Text($this->translate('Configure the channels available for this contact here'))
         ));
 
         $this->addElement($address);
