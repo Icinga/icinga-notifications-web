@@ -120,7 +120,14 @@ class ContactForm extends CompatForm
                     })
                 ]
             ]
-        );
+        )->addHtml(new HtmlElement(
+            'p',
+            new Attributes(['class' => 'description']),
+            new Text($this->translate(
+                'Use this to associate actions in the UI, such as incident management, with this contact.'
+                . ' To successfully receive desktop notifications, this is also required.'
+            ))
+        ));
 
         $channelQuery = Channel::on($this->db)
             ->columns(['id', 'name', 'type']);
@@ -154,6 +161,14 @@ class ContactForm extends CompatForm
 
         $this->decorate($defaultChannel);
         $this->addHtml($defaultChannel);
+        $this->addHtml(new HtmlElement(
+            'p',
+            new Attributes(['class' => 'description']),
+            new Text($this->translate(
+                "Contact will be notified via the default channel, when no specific channel is configured"
+                . " in an event rule."
+            ))
+        ));
 
         $this->addElement(
             'submit',
