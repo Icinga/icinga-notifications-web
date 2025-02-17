@@ -120,7 +120,14 @@ class ContactForm extends CompatForm
                     })
                 ]
             ]
-        );
+        )->addHtml(new HtmlElement(
+            'p',
+            new Attributes(['class' => 'description']),
+            new Text($this->translate(
+                'Add an Icinga Web user to associate with this contact. Users from external authentication'
+                . " backends won't be suggested and must be entered manually."
+            ))
+        ));
 
         $channelQuery = Channel::on($this->db)
             ->columns(['id', 'name', 'type']);
@@ -154,6 +161,14 @@ class ContactForm extends CompatForm
 
         $this->decorate($defaultChannel);
         $this->addHtml($defaultChannel);
+        $this->addHtml(new HtmlElement(
+            'p',
+            new Attributes(['class' => 'description']),
+            new Text($this->translate(
+                "Contact will be notified via the default channel, when no specific channel is configured"
+                . " in a schedule or event rule."
+            ))
+        ));
 
         $this->addElement(
             'submit',
