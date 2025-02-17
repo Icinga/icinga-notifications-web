@@ -122,21 +122,33 @@ class ContactForm extends CompatForm
             ]
         );
 
+        $channelQuery = Channel::on($this->db)
+            ->columns(['id', 'name', 'type']);
+
+        $channelNames = [];
+        $channelTypes = [];
+        foreach ($channelQuery as $channel) {
+            $channelNames[$channel->id] = $channel->name;
+            $channelTypes[$channel->id] = $channel->type;
+        }
+
         $defaultChannel = $this->createElement(
             'select',
             'default_channel_id',
             [
                 'label'             => $this->translate('Default Channel'),
                 'required'          => true,
+                'class'             => 'autosubmit',
                 'disabledOptions'   => [''],
-                'options'           => ['' => sprintf(' - %s - ', $this->translate('Please choose'))]
-                    + Channel::fetchChannelNames($this->db),
+                'options'           => [
+                    '' => sprintf(' - %s - ', $this->translate('Please choose'))
+                ] + $channelNames,
             ]
         );
 
         $contact->registerElement($defaultChannel);
 
-        $this->addAddressElements();
+        $this->addAddressElements($channelTypes[$defaultChannel->getValue()] ?? null);
 
         $this->addHtml(new HtmlElement('hr'));
 
@@ -410,9 +422,11 @@ class ContactForm extends CompatForm
     /**
      * Add address elements for all existing channel plugins
      *
+     * @param ?string $defaultType The selected default channel type
+     *
      * @return void
      */
-    private function addAddressElements(): void
+    private function addAddressElements(?string $defaultType): void
     {
         $plugins = $this->db->fetchPairs(
             AvailableChannelType::on($this->db)
@@ -433,10 +447,11 @@ class ContactForm extends CompatForm
 
         $this->addElement($address);
 
-        foreach ($plugins as $type => $label) {
+        foreach ($plugins as $type => $name) {
             $element = $this->createElement('text', $type, [
-                'label'      => $label,
-                'validators' => [new StringLengthValidator(['max' => 255])]
+                'label'      => $name,
+                'validators' => [new StringLengthValidator(['max' => 255])],
+                'required'   => $type === $defaultType
             ]);
 
             if ($type === 'email') {
