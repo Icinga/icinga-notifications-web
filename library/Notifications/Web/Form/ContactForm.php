@@ -13,8 +13,11 @@ use Icinga\Module\Notifications\Model\Rotation;
 use Icinga\Module\Notifications\Model\RotationMember;
 use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use Icinga\Web\Session;
+use ipl\Html\Attributes;
 use ipl\Html\Contract\FormSubmitElement;
 use ipl\Html\FormElement\FieldsetElement;
+use ipl\Html\HtmlElement;
+use ipl\Html\Text;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
 use ipl\Validator\CallbackValidator;
@@ -119,7 +122,8 @@ class ContactForm extends CompatForm
                     })
                 ]
             ]
-        )->addElement(
+        )
+        ->addElement(
             'select',
             'default_channel_id',
             [
@@ -414,6 +418,12 @@ class ContactForm extends CompatForm
         }
 
         $address = new FieldsetElement('contact_address', ['label' => $this->translate('Channels')]);
+        $address->addHtml(new HtmlElement(
+            'p',
+            new Attributes(['class' => 'description']),
+            new Text($this->translate('Configure the channels available for this contact here.'))
+        ));
+
         $this->addElement($address);
 
         foreach ($plugins as $type => $label) {
