@@ -120,7 +120,14 @@ class ContactForm extends CompatForm
                     })
                 ]
             ]
-        );
+        )->addHtml(new HtmlElement(
+            'p',
+            new Attributes(['class' => 'description']),
+            new Text($this->translate(
+                "Link existing Icinga Web users. Users from external authentication backends"
+                . " won't be suggested and must be entered manually."
+            ))
+        ));
 
         $defaultChannel = $this->createElement(
             'select',
@@ -142,6 +149,14 @@ class ContactForm extends CompatForm
         $this->addAddressElements();
 
         $this->addHtml($defaultChannel);
+        $this->addHtml(new HtmlElement(
+            'p',
+            new Attributes(['class' => 'description']),
+            new Text($this->translate(
+                "Contact will be notified via the default channel, when no specific channel is configured"
+                . " in a schedule or event rule"
+            ))
+        ));
 
         $this->addElement(
             'submit',
