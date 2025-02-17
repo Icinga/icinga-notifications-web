@@ -90,14 +90,14 @@ class ContactForm extends CompatForm
             'text',
             'full_name',
             [
-                'label' => $this->translate('Full Name'),
+                'label' => $this->translate('Contact Name'),
                 'required' => true
             ]
         )->addElement(
             'text',
             'username',
             [
-                'label' => $this->translate('Username'),
+                'label' => $this->translate('Icinga Web User'),
                 'validators' => [
                     new StringLengthValidator(['max' => 254]),
                     new CallbackValidator(function ($value, $validator) {
@@ -137,7 +137,7 @@ class ContactForm extends CompatForm
             'submit',
             [
                 'label' => $this->contactId === null ?
-                    $this->translate('Add Contact') :
+                    $this->translate('Create Contact') :
                     $this->translate('Save Changes')
             ]
         );
@@ -147,7 +147,7 @@ class ContactForm extends CompatForm
                 'submit',
                 'delete',
                 [
-                    'label'          => $this->translate('Delete'),
+                    'label'          => $this->translate('Delete Contact'),
                     'class'          => 'btn-remove',
                     'formnovalidate' => true
                 ]
@@ -413,7 +413,7 @@ class ContactForm extends CompatForm
             return;
         }
 
-        $address = new FieldsetElement('contact_address', ['label' => $this->translate('Addresses')]);
+        $address = new FieldsetElement('contact_address', ['label' => $this->translate('Channels')]);
         $this->addElement($address);
 
         foreach ($plugins as $type => $label) {
