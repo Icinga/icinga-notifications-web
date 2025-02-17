@@ -74,6 +74,7 @@ class ContactForm extends CompatForm
 
     protected function assemble()
     {
+        $this->addAttributes(['class' => 'contact-form']);
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
 
         // Fieldset for contact full name and username
@@ -85,9 +86,6 @@ class ContactForm extends CompatForm
         ));
 
         $this->addElement($contact);
-
-        $channelOptions = ['' => sprintf(' - %s - ', $this->translate('Please choose'))];
-        $channelOptions += Channel::fetchChannelNames($this->db);
 
         $contact->addElement(
             'text',
@@ -122,19 +120,28 @@ class ContactForm extends CompatForm
                     })
                 ]
             ]
-        )
-        ->addElement(
+        );
+
+        $defaultChannel = $this->createElement(
             'select',
             'default_channel_id',
             [
                 'label'             => $this->translate('Default Channel'),
                 'required'          => true,
                 'disabledOptions'   => [''],
-                'options'           => $channelOptions
+                'options'           => ['' => sprintf(' - %s - ', $this->translate('Please choose'))]
+                    + Channel::fetchChannelNames($this->db),
             ]
         );
 
+        $contact->registerElement($defaultChannel);
+
         $this->addAddressElements();
+
+        $this->addHtml(new HtmlElement('hr'));
+
+        $this->decorate($defaultChannel);
+        $this->addHtml($defaultChannel);
 
         $this->addElement(
             'submit',
@@ -384,7 +391,7 @@ class ContactForm extends CompatForm
             throw new HttpNotFoundException(t('Contact not found'));
         }
 
-        $values['contact'] =  [
+        $values['contact'] = [
             'full_name'          => $contact->full_name,
             'username'           => $contact->username,
             'default_channel_id' => (string) $contact->default_channel_id
