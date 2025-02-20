@@ -19,6 +19,10 @@
   input[type="date"] {
     width: auto;
   }
+
+  fieldset p.description:last-child { // fieldset > .control-group:last-of-type unset the last element's bottom margin
+    margin-top: 1em;
+  }
 }
 
 .rotation-config {
@@ -85,6 +89,12 @@
 }
 
 /* Style */
+
+.icinga-controls {
+  p.description {
+    color: @text-color-light;
+  }
+}
 
 .rotation-mode {
   --img-24-7: url('../img/notifications/pictogram/24-7-dark.jpg');
