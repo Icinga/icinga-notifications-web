@@ -25,6 +25,8 @@ use ipl\Validator\EmailAddressValidator;
 use ipl\Validator\StringLengthValidator;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
+use ipl\Web\FormElement\SuggestionElement;
+use ipl\Web\Url;
 
 class ContactForm extends CompatForm
 {
@@ -94,40 +96,51 @@ class ContactForm extends CompatForm
                 'label' => $this->translate('Contact Name'),
                 'required' => true
             ]
-        )->addElement(
-            'text',
-            'username',
-            [
-                'label' => $this->translate('Icinga Web User'),
-                'validators' => [
-                    new StringLengthValidator(['max' => 254]),
-                    new CallbackValidator(function ($value, $validator) {
-                        $contact = Contact::on($this->db)
-                            ->filter(Filter::equal('username', $value));
-                        if ($this->contactId) {
-                            $contact->filter(Filter::unequal('id', $this->contactId));
-                        }
+        );
 
-                        if ($contact->first() !== null) {
-                            $validator->addMessage($this->translate(
-                                'A contact with the same username already exists.'
-                            ));
+        $contact
+            ->addElement(
+                new SuggestionElement(
+                    'username',
+                    Url::fromPath(
+                        'notifications/contact/suggest-icinga-web-user',
+                        ['showCompact' => true, '_disableLayout' => 1]
+                    ),
+                    [
+                        'label' => $this->translate('Icinga Web User'),
+                        'validators' => [
+                            new StringLengthValidator(['max' => 254]),
+                            new CallbackValidator(function ($value, $validator) {
+                                $contact = Contact::on($this->db)
+                                    ->filter(Filter::equal('username', $value));
+                                if ($this->contactId) {
+                                    $contact->filter(Filter::unequal('id', $this->contactId));
+                                }
 
-                            return false;
-                        }
+                                if ($contact->first() !== null) {
+                                    $validator->addMessage($this->translate(
+                                        'A contact with the same username already exists.'
+                                    ));
 
-                        return true;
-                    })
-                ]
-            ]
-        )->addHtml(new HtmlElement(
-            'p',
-            new Attributes(['class' => 'description']),
-            new Text($this->translate(
-                'Add an Icinga Web user to associate with this contact. Users from external authentication'
-                . " backends won't be suggested and must be entered manually."
-            ))
-        ));
+                                    return false;
+                                }
+
+                                return true;
+                            })
+                        ]
+                    ]
+                )
+            )
+            ->addHtml(
+                new HtmlElement(
+                    'p',
+                    new Attributes(['class' => 'description']),
+                    new Text($this->translate(
+                        'Add an Icinga Web user to associate with this contact. Users from external authentication'
+                        . " backends won't be suggested and must be entered manually."
+                    ))
+                )
+            );
 
         $channelQuery = Channel::on($this->db)
             ->columns(['id', 'name', 'type']);
