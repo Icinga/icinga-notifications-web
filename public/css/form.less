@@ -186,3 +186,11 @@
     margin-left: 0.5em;
   }
 }
+
+.icinga-form p.description {
+  color: @text-color-light;
+
+  &:last-child { // fieldset > .control-group:last-of-type rule unset the last element's bottom margin
+    margin-top: 1em;
+  }
+}
