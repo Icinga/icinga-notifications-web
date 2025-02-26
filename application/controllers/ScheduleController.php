@@ -112,6 +112,7 @@ class ScheduleController extends CompatController
     public function addRotationAction(): void
     {
         $scheduleId = (int) $this->params->getRequired('schedule');
+        $this->setTitle($this->translate('Add Rotation'));
 
         $form = new RotationConfigForm($scheduleId, Database::get());
         $form->setAction($this->getRequest()->getUrl()->setParam('showCompact')->getAbsoluteUrl());
@@ -136,7 +137,6 @@ class ScheduleController extends CompatController
         $form->handleRequest($this->getServerRequest());
 
         if (empty($this->parts)) {
-            $this->setTitle($this->translate('Add Rotation'));
             $this->addContent($form);
         }
     }
@@ -145,6 +145,7 @@ class ScheduleController extends CompatController
     {
         $id = (int) $this->params->getRequired('id');
         $scheduleId = (int) $this->params->getRequired('schedule');
+        $this->setTitle($this->translate('Edit Rotation'));
 
         $form = new RotationConfigForm($scheduleId, Database::get());
         $form->disableModeSelection();
@@ -181,7 +182,6 @@ class ScheduleController extends CompatController
         $form->handleRequest($this->getServerRequest());
 
         if (empty($this->parts)) {
-            $this->setTitle($this->translate('Edit Rotation'));
             $this->addContent($form);
         }
     }
