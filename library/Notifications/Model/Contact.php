@@ -6,7 +6,6 @@ namespace Icinga\Module\Notifications\Model;
 
 use DateTime;
 use ipl\Orm\Behavior\BoolCast;
-use Icinga\Module\Notifications\Model\Behavior\HasAddress;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
@@ -70,7 +69,6 @@ class Contact extends Model
 
     public function createBehaviors(Behaviors $behaviors): void
     {
-        $behaviors->add(new HasAddress());
         $behaviors->add(new MillisecondTimestamp(['changed_at']));
         $behaviors->add(new BoolCast(['deleted']));
     }
