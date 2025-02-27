@@ -582,9 +582,9 @@ class RotationConfigForm extends CompatForm
         $value = $this->getPopulatedValue('mode');
 
         $modes = [
-            '24-7' => $this->translate('24/7'),
             'partial' => $this->translate('Partial Day'),
-            'multi' => $this->translate('Multi Day')
+            'multi' => $this->translate('Multi Day'),
+            '24-7' => $this->translate('24/7')
         ];
 
         $modeList = new HtmlElement('ul');
