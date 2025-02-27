@@ -602,6 +602,56 @@ class RotationConfigForm extends CompatForm
                 $value = $mode;
             }
 
+            switch ($mode) {
+                case 'partial':
+                    $labelDescription = [
+                        new HtmlElement(
+                            'span',
+                            null,
+                            Text::create($this->translate('Daily shifts with a daily handoff at a defined time.'))
+                        ),
+                        new HtmlElement(
+                            'span',
+                            new Attributes(['class' => 'example']),
+                            Text::create($this->translate('e.g. Working hours (Mon - Fri, 9AM - 5PM)'))
+                        )
+                    ];
+
+                    break;
+                case 'multi':
+                    $labelDescription = [
+                        new HtmlElement(
+                            'span',
+                            null,
+                            Text::create($this->translate(
+                                'Shifts start at a certain time on one day of the week and end on another.'
+                            ))
+                        ),
+                        new HtmlElement(
+                            'span',
+                            new Attributes(['class' => 'example']),
+                            Text::create($this->translate('e.g. Weekend shifts (Fri 5PM - Mon 9AM)'))
+                        )
+                    ];
+
+                    break;
+                case '24-7':
+                    $labelDescription = [
+                        new HtmlElement(
+                            'span',
+                            null,
+                            Text::create($this->translate(
+                                '24 h shifts starting at a certain time at the day on every day of the week.'
+                            ))
+                        ),
+                        new HtmlElement(
+                            'span',
+                            new Attributes(['class' => 'example']),
+                            Text::create($this->translate('e.g. Daily, 9AM - 5PM'))
+                        )
+                    ];
+            }
+
             $modeList->addHtml(new HtmlElement(
                 'li',
                 null,
@@ -609,15 +659,9 @@ class RotationConfigForm extends CompatForm
                     'label',
                     null,
                     $radio,
-                    new HtmlElement('img', Attributes::create([
-                        'src' => Url::fromPath(sprintf('img/notifications/pictogram/%s-gray.jpg', $mode)),
-                        'class' => 'unchecked'
-                    ])),
-                    new HtmlElement('img', Attributes::create([
-                        'src' => Url::fromPath(sprintf('img/notifications/pictogram/%s-colored.jpg', $mode)),
-                        'class' => 'checked'
-                    ])),
-                    Text::create($label)
+                    new HtmlElement('div', Attributes::create(['class' => ['mode-img', 'img-' . $mode]])),
+                    Text::create($label),
+                    ...$labelDescription
                 )
             ));
         }
