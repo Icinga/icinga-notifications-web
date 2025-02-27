@@ -220,22 +220,22 @@ class SourceForm extends CompatForm
         );
 
         if ($this->sourceId !== null) {
-            /** @var FormSubmitElement $deleteButton */
-            $deleteButton = $this->createElement(
+            /** @var FormSubmitElement $removeButton */
+            $removeButton = $this->createElement(
                 'submit',
-                'delete',
+                'remove',
                 [
-                    'label'          => $this->translate('Delete'),
+                    'label'          => $this->translate('Remove'),
                     'class'          => 'btn-remove',
                     'formnovalidate' => true
                 ]
             );
 
-            $this->registerElement($deleteButton);
+            $this->registerElement($removeButton);
 
             /** @var BaseHtmlElement $submitWrapper */
             $submitWrapper = $this->getElement('save')->getWrapper();
-            $submitWrapper->prepend($deleteButton);
+            $submitWrapper->prepend($removeButton);
         }
     }
 

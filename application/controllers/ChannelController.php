@@ -22,10 +22,10 @@ class ChannelController extends CompatController
         $form = (new ChannelForm(Database::get()))
             ->loadChannel($channelId)
             ->on(ChannelForm::ON_SUCCESS, function (ChannelForm $form) {
-                if ($form->getPressedSubmitElement()->getName() === 'delete') {
+                if ($form->getPressedSubmitElement()->getName() === 'remove') {
                     $form->removeChannel();
                     Notification::success(sprintf(
-                        t('Deleted channel "%s" successfully'),
+                        t('Removed channel "%s" successfully'),
                         $form->getValue('name')
                     ));
                 } else {
