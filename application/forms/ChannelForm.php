@@ -5,6 +5,7 @@
 namespace Icinga\Module\Notifications\Forms;
 
 use Icinga\Exception\Http\HttpNotFoundException;
+use Icinga\Exception\IcingaException;
 use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\AvailableChannelType;
 use Icinga\Module\Notifications\Model\Contact;
@@ -54,6 +55,14 @@ class ChannelForm extends CompatForm
 
     protected function assemble()
     {
+        $query = AvailableChannelType::on($this->db)
+            ->columns(['type', 'name', 'config_attrs'])
+            ->execute();
+
+        if (! $query->hasResult()) {
+            throw new IcingaException('No channel types available. Make sure Icinga Notifications is running.');
+        }
+
         $this->addAttributes(['class' => 'channel-form']);
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
 
@@ -66,8 +75,6 @@ class ChannelForm extends CompatForm
                 'required'      => true
             ]
         );
-
-        $query = AvailableChannelType::on($this->db)->columns(['type', 'name', 'config_attrs']);
 
         /** @var string[] $typesConfig */
         $typesConfig = [];

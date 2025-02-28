@@ -6,6 +6,7 @@ namespace Icinga\Module\Notifications\Controllers;
 
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Forms\ChannelForm;
+use Icinga\Module\Notifications\Model\AvailableChannelType;
 use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Widget\ItemList\ChannelList;
@@ -14,6 +15,7 @@ use Icinga\Web\Widget\Tab;
 use Icinga\Web\Widget\Tabs;
 use ipl\Html\ValidHtml;
 use ipl\Sql\Connection;
+use ipl\Sql\Expression;
 use ipl\Stdlib\Filter;
 use ipl\Web\Common\BaseItemList;
 use ipl\Web\Compat\CompatController;
@@ -23,6 +25,7 @@ use ipl\Web\Control\SortControl;
 use ipl\Web\Filter\QueryString;
 use ipl\Web\Url;
 use ipl\Web\Widget\ButtonLink;
+use ipl\Web\Widget\EmptyStateBar;
 
 class ChannelsController extends CompatController
 {
@@ -84,16 +87,27 @@ class ChannelsController extends CompatController
         $this->addControl($sortControl);
         $this->addControl($limitControl);
         $this->addControl($searchBar);
-        $this->addContent(
-            (new ButtonLink(
-                t('Add Channel'),
-                Url::fromPath('notifications/channels/add'),
-                'plus'
-            ))->setBaseTarget('_next')
-            ->addAttributes(['class' => 'add-new-component'])
-        );
 
-        $this->addContent(new ChannelList($channels));
+        $typesExists = AvailableChannelType::on($this->db)
+                ->columns([new Expression('1')])
+                ->first() !== null;
+
+        if ($typesExists) {
+            $this->addContent(
+                (new ButtonLink(
+                    t('Add Channel'),
+                    Url::fromPath('notifications/channels/add'),
+                    'plus'
+                ))->setBaseTarget('_next')
+                    ->addAttributes(['class' => 'add-new-component'])
+            );
+
+            $this->addContent(new ChannelList($channels));
+        } else {
+            $this->addContent(new EmptyStateBar(
+                t('No channel types available. Make sure Icinga Notifications is running.')
+            ));
+        }
 
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {
             $this->sendMultipartUpdate();
