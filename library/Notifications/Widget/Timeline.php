@@ -24,6 +24,7 @@ use ipl\Html\Text;
 use ipl\I18n\Translation;
 use ipl\Web\Style;
 use ipl\Web\Url;
+use ipl\Web\Widget\ButtonLink;
 use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
 use Locale;
@@ -297,21 +298,6 @@ class Timeline extends BaseHtmlElement implements EntryProvider
 
     protected function assemble()
     {
-        if (empty($this->rotations)) {
-            $emptyNotice = new HtmlElement(
-                'div',
-                Attributes::create(['class' => 'empty-notice']),
-                Text::create($this->translate('No rotations configured'))
-            );
-
-            if ($this->minimalLayout) {
-                $this->getAttributes()->add(['class' => 'minimal-layout']);
-                $this->addHtml($emptyNotice);
-            } else {
-                $this->getGrid()->addToSideBar($emptyNotice);
-            }
-        }
-
         if (! $this->minimalLayout) {
             $this->getGrid()->addToSideBar(
                 new HtmlElement(
@@ -356,6 +342,42 @@ class Timeline extends BaseHtmlElement implements EntryProvider
             $this->getGrid()
                 ->addHtml(new Timescale($this->days, $this->getStyle()))
                 ->addHtml($clock);
+        }
+
+        if (! $this->rotations) {
+            $emptyNotice = new HtmlElement(
+                'div',
+                Attributes::create(['class' => 'empty-notice']),
+                Text::create($this->translate('No rotations configured, yet.'))
+            );
+
+            if ($this->minimalLayout) {
+                $this->getAttributes()->add(['class' => 'minimal-layout']);
+                $this->addHtml($emptyNotice);
+            } else {
+                $this->addHtml(new HtmlElement(
+                    'span',
+                    new Attributes(['class' => 'empty-state-notice']),
+                    new Icon('info-circle'),
+                    new Text($this->translate(
+                        'With schedules Contacts can rotate in recurring shifts. You can add'
+                        .' multiple rotation layers to a schedule.'
+                    ))
+                ));
+
+                $this->getGrid()
+                    ->addAttributes(['class' => 'empty'])
+                    ->addHtml(new HtmlElement(
+                        'div',
+                        new Attributes(['class' => 'btn-container']),
+                        $emptyNotice,
+                        (new ButtonLink(
+                            $this->translate('Add your first Rotation'),
+                            Links::rotationAdd(Url::fromRequest()->getParam('id')),
+                            'plus'
+                        ))->openInModal()
+                    ));
+            }
         }
 
         $this->addHtml(
