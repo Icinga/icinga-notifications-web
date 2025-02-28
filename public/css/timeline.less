@@ -5,6 +5,20 @@
   flex-direction: column;
   overflow: hidden;
 
+  .empty-state-notice {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1em;
+    margin-bottom: 2em;
+
+    > span {
+      padding-left: 0.5em;
+      flex-grow: 1;
+      text-align: center;
+    }
+  }
+
   .time-grid {
     --sidebarWidth: 12em;
     --stepRowHeight: 4em;
@@ -42,6 +56,14 @@
           .text-ellipsis();
         }
       }
+    }
+
+    .btn-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      height: var(--primaryRowHeight);
     }
 
     .overlay {
@@ -115,8 +137,8 @@
       position: absolute;
       right: 0;
       left: 0;
-      // -1 to exclude result row
-      top: ~"calc((var(--stepRowHeight) * calc(var(--primaryRows) - 1)) + var(--daysHeaderHeight))";
+      // -1 to exclude result row, max to have minimum 1 row
+      top: ~"calc(var(--stepRowHeight) * max(calc(var(--primaryRows) - 1), 1) + var(--daysHeaderHeight))";
     }
 
     .timescale {
@@ -216,6 +238,16 @@
 /* Design */
 
 .timeline {
+  .empty-state-notice {
+    border: 1px solid @gray-light;
+    color: @text-color-light;
+    .rounded-corners();
+
+    .icon {
+      font-size: 1.75em;
+    }
+  }
+
   .time-grid-header {
     background: @body-bg-color;
   }
@@ -255,6 +287,24 @@
     }
   }
 
+  .btn-container {
+    background-color: fade(@gray-light, 25%);
+
+    .empty-notice {
+      margin-right: 1em;
+      color: @text-color-light;
+    }
+
+    .button-link {
+      border: 1px solid;
+
+      &:hover {
+        color: @text-color-on-icinga-blue;
+        background-color: @icinga-blue;
+      }
+    }
+  }
+
   .entry .icon {
     font-size: .75em;
     opacity: .8;
@@ -282,6 +332,31 @@
   color: @text-color-light;
 }
 
+.time-grid.empty {
+  .btn-container {
+    grid-area: ~"3 / 1 / 3 / 3";
+  }
+
+  // .empty-state is placed under the .days-header, Everything below .empty-state element must slide down one row
+  // so the grid-row-start and grid-row-end is increased by 1
+  .sidebar {
+    grid-area: ~"4 / 1 / 5 / 2";
+  }
+
+  .grid,
+  .overlay {
+    grid-area: ~"4 / 2 / 5 / 3";
+  }
+
+  .timescale {
+    grid-area: ~"5 / 2 / 5 / 3";
+  }
+
+  .clock {
+    grid-area: ~"3 / 2 / 5 / 3";
+  }
+}
+
 #layout.twocols:not(.wide-layout) .days-header .column-title {
   display: flex;
   flex-direction: column;
@@ -290,6 +365,6 @@
   padding-bottom: .25em;
 }
 
-#layout.twocols .schedule-detail .timescale:has(:nth-child(n+62)) { // month view (--timestampsPerDay * --primaryColumns = 62)
+#layout.twocols .schedule .timescale:has(:nth-child(n+62)) { // month view (--timestampsPerDay * --primaryColumns = 62)
   display: none;
 }
