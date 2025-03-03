@@ -41,7 +41,8 @@
             Sortable.create(sideBar, {
                 scroll: true,
                 direction: 'vertical',
-                draggable: '.rotation-name'
+                draggable: '.rotation-name',
+                handle: '.rotation-name > i[data-drag-initiator]'
             });
         }
 

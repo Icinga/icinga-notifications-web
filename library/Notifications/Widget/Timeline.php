@@ -22,6 +22,7 @@ use ipl\I18n\Translation;
 use ipl\Web\Style;
 use ipl\Web\Url;
 use ipl\Web\Widget\Icon;
+use ipl\Web\Widget\Link;
 use SplObjectStorage;
 use Traversable;
 
@@ -281,7 +282,10 @@ class Timeline extends BaseHtmlElement implements EntryProvider
         $entry->addHtml(
             $form,
             new Icon('bars', ['data-drag-initiator' => true]),
-            new HtmlElement('span', null, Text::create($rotation->getName()))
+            (new Link(
+                [new HtmlElement('span', null, Text::create($rotation->getName())), new Icon('cog')],
+                Links::rotationSettings($rotation->getId(), $rotation->getScheduleId())
+            ))->openInModal()
         );
 
         return $entry;
