@@ -722,11 +722,13 @@ class RotationConfigForm extends CompatForm
                 7 => $this->translate('Sunday')
             ]
         ]);
+
+        $timeOptions = $this->getTimeOptions();
         $options->addElement('select', 'from', [
             'class' => 'autosubmit',
             'required' => true,
             'value' => '00:00',
-            'options' => $this->getTimeOptions(),
+            'options' => $timeOptions,
             'label' => $this->translate('From')
         ]);
         $from = $options->getElement('from');
@@ -740,9 +742,18 @@ class RotationConfigForm extends CompatForm
             'validators' => [new GreaterThanValidator()]
         ]);
 
+        $selectedFromTime = $from->getValue();
+        foreach ($timeOptions as $key => $value) {
+            $timeOptions[$key] = sprintf('%s (%s)', $value, $this->translate('Next Day'));
+
+            if ($selectedFromTime === $key) {
+                break;
+            }
+        }
+
         $to = $options->createElement('select', 'to', [
             'required' => true,
-            'options' => $this->getTimeOptions()
+            'options' => $timeOptions
         ]);
         $options->registerElement($to);
 
@@ -818,27 +829,18 @@ class RotationConfigForm extends CompatForm
         ]);
         $from = $options->getElement('from_day');
 
+        $selectedFromDay = (int) $from->getValue();
+
+        for ($i = 1; $i <= $selectedFromDay; $i++) {
+            $toDays[$i] = sprintf('%s (%s)', $toDays[$i], $this->translate('Next week'));
+        }
+
         $options->addElement('select', 'to_day', [
             'class' => 'autosubmit',
             'required' => true,
             'options' => $toDays,
             'value' => 7,
-            'label' => $this->translate('To', 'notifications.rotation'),
-            'validators' => [
-                new CallbackValidator(function ($value, $validator) use ($options) {
-                    if ($value !== $options->getValue('from_day')) {
-                        return true;
-                    }
-
-                    if ($options->getValue('from_at') < $options->getValue('to_at')) {
-                        $validator->addMessage($this->translate('Shifts cannot last longer than 7 days'));
-
-                        return false;
-                    }
-
-                    return true;
-                })
-            ]
+            'label' => $this->translate('To', 'notifications.rotation')
         ]);
         $to = $options->getElement('to_day');
 
@@ -850,17 +852,24 @@ class RotationConfigForm extends CompatForm
             'label' => $this->translate('Handoff every')
         ]);
 
+        $timeOptions = $this->getTimeOptions();
         $fromAt = $options->createElement('select', 'from_at', [
             'class' => 'autosubmit',
             'required' => true,
-            'options' => $this->getTimeOptions()
+            'options' => $timeOptions
         ]);
         $options->registerElement($fromAt);
+
+        if ($selectedFromDay === (int) $to->getValue()) {
+            $selectedFromAt = $fromAt->getValue();
+            $keyIndex = array_search($selectedFromAt, array_keys($timeOptions));
+            $timeOptions = array_slice($timeOptions, 0, $keyIndex + 1, true);
+        }
 
         $toAt = $options->createElement('select', 'to_at', [
             'class' => 'autosubmit',
             'required' => true,
-            'options' => $this->getTimeOptions()
+            'options' => $timeOptions
         ]);
         $options->registerElement($toAt);
 
