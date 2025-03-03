@@ -310,12 +310,10 @@ class RotationConfigForm extends CompatForm
             $data['actual_handoff'] = $firstHandoff->format('U.u') * 1000.0;
         }
 
-        $changedAt = time() * 1000;
-        $data['changed_at'] = $changedAt;
         $this->db->insert('rotation', $data);
         $rotationId = $this->db->lastInsertId();
 
-        $this->db->insert('timeperiod', ['owned_by_rotation_id' => $rotationId, 'changed_at' => $changedAt]);
+        $this->db->insert('timeperiod', ['owned_by_rotation_id' => $rotationId]);
         $timeperiodId = $this->db->lastInsertId();
 
         $knownMembers = [];
@@ -332,15 +330,13 @@ class RotationConfigForm extends CompatForm
                     $this->db->insert('rotation_member', [
                         'rotation_id' => $rotationId,
                         'contact_id' => $id,
-                        'position' => $position,
-                        'changed_at' => $changedAt
+                        'position' => $position
                     ]);
                 } elseif ($type === 'group') {
                     $this->db->insert('rotation_member', [
                         'rotation_id' => $rotationId,
                         'contactgroup_id' => $id,
-                        'position' => $position,
-                        'changed_at' => $changedAt
+                        'position' => $position
                     ]);
                 }
 
@@ -363,8 +359,7 @@ class RotationConfigForm extends CompatForm
                 'end_time' => $endTime,
                 'until_time' => $untilTime,
                 'timezone' => $rrule->getStartDate()->getTimezone()->getName(),
-                'rrule' => $rrule->getString(Rule::TZ_FIXED),
-                'changed_at' => $changedAt
+                'rrule' => $rrule->getString(Rule::TZ_FIXED)
             ]);
         }
     }
@@ -420,14 +415,13 @@ class RotationConfigForm extends CompatForm
         $createStmt = $this->createRotation((int) $priority);
 
         $allEntriesRemoved = true;
-        $changedAt = time() * 1000;
-        $markAsDeleted = ['changed_at' => $changedAt, 'deleted' => 'y'];
+        $markAsDeleted = ['deleted' => 'y'];
         if (self::EXPERIMENTAL_OVERRIDES) {
             // We only show a single name, even in case of multiple versions of a rotation.
             // To avoid confusion, we update all versions upon change of the name
             $this->db->update(
                 'rotation',
-                ['name' => $this->getValue('name'), 'changed_at' => $changedAt],
+                ['name' => $this->getValue('name')],
                 ['schedule_id = ?' => $this->scheduleId, 'priority = ?' => $priority]
             );
 
@@ -453,8 +447,7 @@ class RotationConfigForm extends CompatForm
                         'start_time' => $gapStart->format('U.u') * 1000.0,
                         'end_time' => $gapEnd->format('U.u') * 1000.0,
                         'until_time' => $gapEnd->format('U.u') * 1000.0,
-                        'timezone' => $gapStart->getTimezone()->getName(),
-                        'changed_at' => $changedAt
+                        'timezone' => $gapStart->getTimezone()->getName()
                     ]);
                 }
 
@@ -470,8 +463,7 @@ class RotationConfigForm extends CompatForm
                     $allEntriesRemoved = false;
                     $this->db->update('timeperiod_entry', [
                         'until_time'    => $lastShiftEnd->format('U.u') * 1000.0,
-                        'rrule'         => $rrule->setUntil($lastHandoff)->getString(Rule::TZ_FIXED),
-                        'changed_at'    => $changedAt
+                        'rrule'         => $rrule->setUntil($lastHandoff)->getString(Rule::TZ_FIXED)
                     ], ['id = ?' => $timeperiodEntry->id]);
                 }
             }

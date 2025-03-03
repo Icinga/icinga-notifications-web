@@ -200,7 +200,6 @@ class ChannelForm extends CompatForm
         $channel = $this->getValues();
 
         $channel['config'] = json_encode($this->filterConfig($channel['config']));
-        $channel['changed_at'] = time() * 1000;
 
         $this->db->insert('channel', $channel);
     }
@@ -221,8 +220,6 @@ class ChannelForm extends CompatForm
         $storedValues['config'] = json_encode($storedValues['config']);
 
         if (! empty(array_diff_assoc($channel, $storedValues))) {
-            $channel['changed_at'] = time() * 1000;
-
             $this->db->update('channel', $channel, ['id = ?' => $this->channelId]);
         }
 
@@ -234,11 +231,7 @@ class ChannelForm extends CompatForm
      */
     public function removeChannel(): void
     {
-        $this->db->update(
-            'channel',
-            ['changed_at' => time() * 1000, 'deleted' => 'y'],
-            ['id = ?' => $this->channelId]
-        );
+        $this->db->update('channel', ['deleted' => 'y'], ['id = ?' => $this->channelId]);
     }
 
     /**

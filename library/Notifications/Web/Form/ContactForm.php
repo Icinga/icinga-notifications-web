@@ -183,17 +183,15 @@ class ContactForm extends CompatForm
     public function addContact(): void
     {
         $contactInfo = $this->getValues();
-        $changedAt = time() * 1000;
         $this->db->beginTransaction();
-        $this->db->insert('contact', $contactInfo['contact'] + ['changed_at' => $changedAt]);
+        $this->db->insert('contact', $contactInfo['contact']);
         $this->contactId = $this->db->lastInsertId();
 
         foreach (array_filter($contactInfo['contact_address']) as $type => $address) {
             $address = [
                 'contact_id' => $this->contactId,
                 'type'       => $type,
-                'address'    => $address,
-                'changed_at' => $changedAt
+                'address'    => $address
             ];
 
             $this->db->insert('contact_address', $address);
@@ -214,13 +212,8 @@ class ContactForm extends CompatForm
         $values = $this->getValues();
         $storedValues = $this->fetchDbValues();
 
-        $changedAt = time() * 1000;
         if ($storedValues['contact'] !== $values['contact']) {
-            $this->db->update(
-                'contact',
-                $values['contact'] + ['changed_at' => $changedAt],
-                ['id = ?' => $this->contactId]
-            );
+            $this->db->update('contact', $values['contact'], ['id = ?' => $this->contactId]);
         }
 
         $storedAddresses = $storedValues['contact_address_with_id'];
@@ -229,7 +222,7 @@ class ContactForm extends CompatForm
                 if (isset($storedAddresses[$type])) {
                     $this->db->update(
                         'contact_address',
-                        ['changed_at' => $changedAt, 'deleted' => 'y'],
+                        ['deleted' => 'y'],
                         ['id = ?' => $storedAddresses[$type][0], 'deleted = ?' => 'n']
                     );
                 }
@@ -237,15 +230,14 @@ class ContactForm extends CompatForm
                 $address = [
                     'contact_id' => $this->contactId,
                     'type'       => $type,
-                    'address'    => $address,
-                    'changed_at' => $changedAt
+                    'address'    => $address
                 ];
 
                 $this->db->insert('contact_address', $address);
             } elseif ($storedAddresses[$type][1] !== $address) {
                 $this->db->update(
                     'contact_address',
-                    ['address' => $address, 'changed_at' => $changedAt],
+                    ['address' => $address],
                     [
                         'id = ?'         => $storedAddresses[$type][0],
                         'contact_id = ?' => $this->contactId
@@ -264,7 +256,7 @@ class ContactForm extends CompatForm
     {
         $this->db->beginTransaction();
 
-        $markAsDeleted = ['changed_at' => time() * 1000, 'deleted' => 'y'];
+        $markAsDeleted = ['deleted' => 'y'];
         $updateCondition = ['contact_id = ?' => $this->contactId, 'deleted = ?' => 'n'];
 
         $rotationAndMemberIds = $this->db->fetchPairs(
