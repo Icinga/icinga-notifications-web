@@ -24,7 +24,7 @@
 .rotation-config {
   .rotation-mode {
     width: 50em;
-    padding: .5em;
+    padding: .5em 1em;
     margin: 0 auto;
 
     h2 {
@@ -39,22 +39,28 @@
       margin: 0;
       padding: 0;
 
+      li {
+        flex: 1 1 auto;
+        width: 0;
+
+        &:not(:last-child) {
+          margin-right: 1em;
+        }
+      }
+
       label {
-        display: block;
-        width: 12em;
-        text-align: center;
+        display: flex;
+        flex-direction: column;
+        width: auto;
 
         input {
           display: none;
         }
 
-        img {
-          width: 100%;
-        }
-
-        input:not(:checked) ~ img.checked,
-        input:checked ~ img.unchecked {
-          display: none;
+        .mode-img {
+          width: 8em;
+          margin-bottom: .5em;
+          outline: 3px solid @icinga-blue;
         }
       }
     }
@@ -80,6 +86,20 @@
 
 /* Style */
 
+.rotation-mode {
+  --img-24-7: url('../img/notifications/pictogram/24-7-dark.jpg');
+  --img-partial: url("../img/notifications/pictogram/partial-dark.jpg");
+  --img-multi: url("../img/notifications/pictogram/multi-dark.jpg");
+}
+
+@light-mode: {
+  .rotation-mode {
+    --img-24-7: url("../img/notifications/pictogram/24-7-light.jpg");
+    --img-partial: url("../img/notifications/pictogram/partial-light.jpg");
+    --img-multi: url("../img/notifications/pictogram/multi-light.jpg");
+  }
+};
+
 .rotation-config {
   label:not(:hover) {
     &.contact input:not(:focus) ~ .icon::before {
@@ -99,8 +119,43 @@
       background-color: @gray-lighter;
     }
 
-    img {
-      .box-shadow();
+    label {
+      font-weight: bold;
+
+      * {
+        font-weight: normal;
+      }
+
+      .example {
+         font-style: italic;
+         color: @gray;
+       }
+    }
+
+    .mode-img {
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: contain;
+      aspect-ratio: 2;
+
+      .rounded-corners();
+
+      &.img-24-7 {
+        background-image: var(--img-24-7);
+      }
+
+      &.img-partial {
+        background-image: var(--img-partial);
+      }
+
+      &.img-multi {
+        background-image: var(--img-multi);
+      }
+    }
+
+    input:not(:checked) + .mode-img {
+      filter: grayscale(100%);
+      outline: 1px solid @gray-light;
     }
   }
 }
