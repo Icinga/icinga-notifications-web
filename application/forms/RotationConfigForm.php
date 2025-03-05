@@ -788,6 +788,7 @@ class RotationConfigForm extends CompatForm
 
         $selectedFromTime = $from->getValue();
         foreach ($timeOptions as $key => $value) {
+            unset($timeOptions[$key]); // unset to re-add it at the end of array
             $timeOptions[$key] = sprintf('%s (%s)', $value, $this->translate('Next Day'));
 
             if ($selectedFromTime === $key) {
@@ -876,7 +877,9 @@ class RotationConfigForm extends CompatForm
         $selectedFromDay = (int) $from->getValue();
 
         for ($i = 1; $i <= $selectedFromDay; $i++) {
-            $toDays[$i] = sprintf('%s (%s)', $toDays[$i], $this->translate('Next week'));
+            $day = $toDays[$i];
+            unset($toDays[$i]); // unset to re-add it at the end of array
+            $toDays[$i] = sprintf('%s (%s)', $day, $this->translate('Next week'));
         }
 
         $options->addElement('select', 'to_day', [
