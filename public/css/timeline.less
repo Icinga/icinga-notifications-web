@@ -5,6 +5,24 @@
   flex-direction: column;
   overflow: hidden;
 
+  .empty-state-notice {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    height: 4em;
+    margin-bottom: 2em;
+    color: @text-color-light;
+    border: 1px solid @gray-light;
+    .rounded-corners();
+
+    .icon {
+      position: absolute;
+      left: 1em;
+      font-size: 1.75em;
+    }
+  }
+
   .time-grid {
     --sidebarWidth: 12em;
     --stepRowHeight: 4em;
@@ -43,6 +61,36 @@
           margin-right: 0.25em;
           .text-ellipsis();
         }
+      }
+    }
+
+    .sidebar .placeholder {
+      background-color: @gray-lighter;
+      border-top: 1px solid @gray-lighter;
+      margin-top: -1px; // to cover the border-bottom area of the previous sibling
+    }
+
+    .btn-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      height: var(--primaryRowHeight);
+    }
+
+    .overlay .btn-container {
+      // Make the button gray and add the hint text
+      pointer-events: all; // allow to click on the buttons
+      padding-right: var(--sidebarWidth); // center the button taking the sidebar width into account
+
+      .button-link:not(:hover) {
+        color: @disabled-gray;
+        background: none;
+      }
+
+      .hint {
+        margin-left: .5em;
+        color: @text-color-light;
       }
     }
 
@@ -205,6 +253,24 @@
     }
   }
 
+  .btn-container {
+    background-color: @gray-lighter;
+
+    .empty-notice {
+      margin-right: 1em;
+      color: @text-color-light;
+    }
+
+    .button-link {
+      border: 1px solid;
+
+      &:hover {
+        color: @text-color-on-icinga-blue;
+        background-color: @icinga-blue;
+      }
+    }
+  }
+
   .entry .icon {
     font-size: .75em;
     opacity: .8;
@@ -230,3 +296,29 @@
 .days-header .column-title .date {
   font-size: .75em;
 }
+
+.time-grid.empty {
+  .btn-container {
+    grid-area: ~"3 / 1 / 3 / 3";
+  }
+
+  // .empty-state is placed under the .days-header, Everything below .empty-state element must slide down one row
+  // so the grid-row-start and grid-row-end is increased by 1
+  .sidebar {
+    grid-area: ~"4 / 1 / 5 / 2";
+  }
+
+  .grid,
+  .overlay {
+    grid-area: ~"4 / 2 / 5 / 3";
+  }
+
+  .timescale {
+    grid-area: ~"5 / 2 / 5 / 3";
+  }
+
+  .clock {
+    display: none;
+  }
+}
+
