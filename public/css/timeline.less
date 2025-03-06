@@ -69,12 +69,36 @@
       }
     }
 
+    .sidebar .placeholderXXX {
+      background-color: fade(@gray-light, 25%);
+      border-top: 1px solid @gray-lighter;
+      margin-top: -1px; // to cover the border-bottom area of the previous sibling
+    }
+
     .btn-container {
       display: flex;
       justify-content: center;
       align-items: center;
       text-align: center;
       height: var(--primaryRowHeight);
+    }
+
+    &:not(.empty) .btn-container {
+      margin-left: ~"calc(var(--sidebarWidth) * -1)"; // overlap sidebar's .placeholder
+    }
+
+    .overlay .btn-container {
+      pointer-events: all; // allow to click on the buttons
+
+      .button-link:not(:hover) {
+        color: @disabled-gray;
+        background: none;
+      }
+
+      .hint {
+        margin-left: .5em;
+        color: @text-color-light;
+      }
     }
 
     .overlay .entry {
@@ -242,7 +266,7 @@
   }
 
   .btn-container {
-    background-color: fade(@gray-light, 25%);
+    background-color: mix(@gray-light, @body-bg-color, 25%);
 
     .empty-notice {
       margin-right: 1em;
@@ -313,3 +337,9 @@
 #layout.twocols .schedule .timescale:has(:nth-child(n+62)) { // month view (--timestampsPerDay * --primaryColumns = 62)
   display: none;
 }
+
+@light-mode: {
+  .timeline .btn-container {
+    background-color: mix(#d0d3da, #F5F9FA, 25%); //@gray-light, @light-body-bg-color
+  }
+};
