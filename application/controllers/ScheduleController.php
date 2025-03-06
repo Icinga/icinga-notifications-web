@@ -42,11 +42,6 @@ class ScheduleController extends CompatController
                 null,
                 Links::scheduleSettings($id),
                 'cog'
-            ))->openInModal(),
-            (new ButtonLink(
-                $this->translate('Add Rotation'),
-                Links::rotationAdd($id),
-                'plus'
             ))->openInModal()
         );
 
