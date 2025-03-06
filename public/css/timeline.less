@@ -64,9 +64,27 @@
       align-items: center;
       text-align: center;
       height: var(--primaryRowHeight);
+
+      .empty-notice {
+        margin-right: 1em;
+      }
+
+      .button-link {
+        border: 1px solid;
+      }
+
+      .hint {
+        margin-left: .5em;
+      }
+    }
+
+    &:not(.empty) .btn-container {
+      margin-left: ~"calc(var(--sidebarWidth) * -1)"; // overlap sidebar's .placeholder
     }
 
     .overlay {
+      overflow: visible; // Required to extend the .btn-container to the sidebar.
+
       .entry {
         margin-top: 1em;
         margin-bottom: 1em;
@@ -288,20 +306,25 @@
   }
 
   .btn-container {
-    background-color: fade(@gray-light, 25%);
+    pointer-events: all; // allow to click on the buttons
+    background-color: mix(@gray-light, @body-bg-color, 25%);
 
     .empty-notice {
-      margin-right: 1em;
       color: @text-color-light;
     }
 
     .button-link {
-      border: 1px solid;
+      color: @disabled-gray;
+      background: none;
 
       &:hover {
         color: @text-color-on-icinga-blue;
         background-color: @icinga-blue;
       }
+    }
+
+    .hint {
+      color: @text-color-light;
     }
   }
 
@@ -368,3 +391,9 @@
 #layout.twocols .schedule .timescale:has(:nth-child(n+62)) { // month view (--timestampsPerDay * --primaryColumns = 62)
   display: none;
 }
+
+@light-mode: {
+  .timeline .btn-container {
+    background-color: mix(#d0d3da, #F5F9FA, 25%); //@gray-light, @light-body-bg-color
+  }
+};

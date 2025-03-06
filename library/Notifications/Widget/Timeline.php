@@ -265,7 +265,7 @@ class Timeline extends BaseHtmlElement implements EntryProvider
                 $this->grid = (new DynamicGrid($this, $this->getStyle(), $this->start))->setDays($this->days);
             }
 
-            if (! $this->minimalLayout) {
+            if (! $this->minimalLayout && ! empty($this->rotations)) {
                 $rotations = $this->rotations;
                 usort($rotations, function (Rotation $a, Rotation $b) {
                     return $b->getPriority() <=> $a->getPriority();
@@ -277,6 +277,9 @@ class Timeline extends BaseHtmlElement implements EntryProvider
                         $this->grid->addToSideBar($this->assembleSidebarEntry($rotation));
                     }
                 }
+
+                // placeholder for `.btn-container` to match the row count of grid. The result row is rendered below it
+                $this->grid->addToSideBar(new HtmlElement('div', new Attributes(['class' => 'placeholder'])));
             }
         }
 
