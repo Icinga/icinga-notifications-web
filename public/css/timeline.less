@@ -64,12 +64,34 @@
       }
     }
 
+    .sidebar .placeholder {
+      background-color: @gray-lighter;
+      border-top: 1px solid @gray-lighter;
+      margin-top: -1px; // to cover the border-bottom area of the previous sibling
+    }
+
     .btn-container {
       display: flex;
       justify-content: center;
       align-items: center;
       text-align: center;
       height: var(--primaryRowHeight);
+    }
+
+    .overlay .btn-container {
+      // Make the button gray and add the hint text
+      pointer-events: all; // allow to click on the buttons
+      padding-right: var(--sidebarWidth); // center the button taking the sidebar width into account
+
+      .button-link:not(:hover) {
+        color: @disabled-gray;
+        background: none;
+      }
+
+      .hint {
+        margin-left: .5em;
+        color: @text-color-light;
+      }
     }
 
     .overlay .entry {
