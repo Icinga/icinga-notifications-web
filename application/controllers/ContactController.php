@@ -37,7 +37,7 @@ class ContactController extends CompatController
             })->on(ContactForm::ON_REMOVE, function (ContactForm $form) {
                 $form->removeContact();
                 Notification::success(sprintf(
-                    t('Deleted contact "%s" successfully'),
+                    t('Removed contact "%s" successfully'),
                     $form->getContactName()
                 ));
 

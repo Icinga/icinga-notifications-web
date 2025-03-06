@@ -28,10 +28,10 @@ class SourceController extends CompatController
             ->on(SourceForm::ON_SUCCESS, function (SourceForm $form) {
                 /** @var FormSubmitElement $pressedButton */
                 $pressedButton = $form->getPressedSubmitElement();
-                if ($pressedButton->getName() === 'delete') {
+                if ($pressedButton->getName() === 'remove') {
                     $form->removeSource();
                     Notification::success(sprintf(
-                        $this->translate('Deleted source "%s" successfully'),
+                        $this->translate('Removed source "%s" successfully'),
                         $form->getSourceName()
                     ));
                 } else {

@@ -126,12 +126,12 @@ class ChannelForm extends CompatForm
                     ->first();
             }
 
-            /** @var FormSubmitElement $deleteButton */
-            $deleteButton = $this->createElement(
+            /** @var FormSubmitElement $removeButton */
+            $removeButton = $this->createElement(
                 'submit',
-                'delete',
+                'remove',
                 [
-                    'label'          => $this->translate('Delete'),
+                    'label'          => $this->translate('Remove'),
                     'class'          => 'btn-remove',
                     'formnovalidate' => true,
                     'disabled'       => $isInUse !== null,
@@ -144,16 +144,16 @@ class ChannelForm extends CompatForm
                 ]
             );
 
-            $this->registerElement($deleteButton);
+            $this->registerElement($removeButton);
             $this->getElement('submit')
                 ->getWrapper()
-                ->prepend($deleteButton);
+                ->prepend($removeButton);
         }
     }
 
     public function isValid()
     {
-        if ($this->getPressedSubmitElement()->getName() === 'delete') {
+        if ($this->getPressedSubmitElement()->getName() === 'remove') {
             $csrfElement = $this->getElement('CSRFToken');
 
             if (! $csrfElement->isValid()) {
@@ -168,7 +168,7 @@ class ChannelForm extends CompatForm
 
     public function hasBeenSubmitted()
     {
-        if ($this->getPressedSubmitElement() !== null && $this->getPressedSubmitElement()->getName() === 'delete') {
+        if ($this->getPressedSubmitElement() !== null && $this->getPressedSubmitElement()->getName() === 'remove') {
             return true;
         }
 
