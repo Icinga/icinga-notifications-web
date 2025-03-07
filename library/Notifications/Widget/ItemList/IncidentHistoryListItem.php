@@ -31,6 +31,10 @@ class IncidentHistoryListItem extends BaseListItem
             $content = new Icon($incidentIcon, ['class' => 'severity-' . $this->item->new_severity]);
         } else {
             $content = new IconBall($incidentIcon);
+
+            if ($this->item->type === 'notified') {
+                $content->addAttributes(['class' => ['notification', $this->item->notification_state]]);
+            }
         }
 
         $visual->addHtml($content);
