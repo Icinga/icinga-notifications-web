@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Forms;
 
+use DateTime;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Model\Source;
 use Icinga\Web\Session;
@@ -294,7 +295,7 @@ class SourceForm extends CompatForm
             self::HASH_ALGORITHM
         );
 
-        $source['changed_at'] = time() * 1000;
+        $source['changed_at'] = (int) (new DateTime())->format("Uv");
 
         $this->db->insert('source', $source);
     }
@@ -322,7 +323,7 @@ class SourceForm extends CompatForm
             $source['listener_password_hash'] = password_hash($listenerPassword, self::HASH_ALGORITHM);
         }
 
-        $source['changed_at'] = time() * 1000;
+        $source['changed_at'] = (int) (new DateTime())->format("Uv");
         $this->db->update('source', $source, ['id = ?' => $this->sourceId]);
 
         $this->db->commitTransaction();
@@ -335,7 +336,7 @@ class SourceForm extends CompatForm
     {
         $this->db->update(
             'source',
-            ['changed_at' => time() * 1000, 'deleted' => 'y'],
+            ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'],
             ['id = ?' => $this->sourceId]
         );
     }

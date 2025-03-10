@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Widget\Detail;
 
+use DateTime;
 use Exception;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Icons;
@@ -233,7 +234,7 @@ class IncidentQuickActions extends Form
                 'type'                  => 'recipient_role_changed',
                 'new_recipient_role'    => $newRole,
                 'old_recipient_role'    => $oldRole,
-                'time'                  => time() * 1000.0
+                'time'                  => (int) (new DateTime())->format("Uv")
             ]
         );
     }

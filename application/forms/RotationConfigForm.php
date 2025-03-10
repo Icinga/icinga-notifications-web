@@ -310,7 +310,7 @@ class RotationConfigForm extends CompatForm
             $data['actual_handoff'] = $firstHandoff->format('U.u') * 1000.0;
         }
 
-        $changedAt = time() * 1000;
+        $changedAt = (int) (new DateTime())->format("Uv");
 
         $rotationsToMove = Rotation::on($this->db)
             ->columns('id')
@@ -429,7 +429,7 @@ class RotationConfigForm extends CompatForm
         $createStmt = $this->createRotation((int) $priority);
 
         $allEntriesRemoved = true;
-        $changedAt = time() * 1000;
+        $changedAt = (int) (new DateTime())->format("Uv");
         $markAsDeleted = ['changed_at' => $changedAt, 'deleted' => 'y'];
         if (self::EXPERIMENTAL_OVERRIDES) {
             // We only show a single name, even in case of multiple versions of a rotation.

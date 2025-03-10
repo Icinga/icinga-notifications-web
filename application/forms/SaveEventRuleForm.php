@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Forms;
 
+use DateTime;
 use Exception;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Common\Database;
@@ -212,7 +213,7 @@ class SaveEventRuleForm extends Form
 
         $db->beginTransaction();
 
-        $changedAt = time() * 1000;
+        $changedAt = (int) (new DateTime())->format("Uv");
         $db->insert('rule', [
             'name' => $config['name'],
             'timeperiod_id' => $config['timeperiod_id'] ?? null,
@@ -272,7 +273,7 @@ class SaveEventRuleForm extends Form
      */
     private function insertOrUpdateEscalations($ruleId, array $escalations, Connection $db, bool $insert = false): void
     {
-        $changedAt = time() * 1000;
+        $changedAt = (int) (new DateTime())->format("Uv");
         foreach ($escalations as $position => $escalationConfig) {
             if ($insert) {
                 $db->insert('rule_escalation', [
@@ -390,7 +391,7 @@ class SaveEventRuleForm extends Form
             $data['object_filter'] = $values['object_filter'];
         }
 
-        $changedAt = time() * 1000;
+        $changedAt = (int) (new DateTime())->format("Uv");
         if (! empty($data)) {
             $db->update('rule', $data + ['changed_at' => $changedAt], ['id = ?' => $id]);
         }
@@ -472,7 +473,7 @@ class SaveEventRuleForm extends Form
                 ->assembleSelect()
         );
 
-        $markAsDeleted = ['changed_at' => time() * 1000, 'deleted' => 'y'];
+        $markAsDeleted = ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'];
         if (! empty($escalationsToRemove)) {
             $db->update(
                 'rule_escalation_recipient',

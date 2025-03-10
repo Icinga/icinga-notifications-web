@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Forms;
 
+use DateTime;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Model\Rotation;
 use Icinga\Web\Session;
@@ -100,7 +101,7 @@ class MoveRotationForm extends Form
 
         $this->scheduleId = $rotation->schedule_id;
 
-        $changedAt = time() * 1000;
+        $changedAt = (int) (new DateTime())->format("Uv");
         // Free up the current priority used by the rotation in question
         $this->db->update('rotation', ['priority' => null, 'deleted' => 'y'], ['id = ?' => $rotationId]);
 
