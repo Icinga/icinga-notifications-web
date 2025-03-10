@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Forms;
 
+use DateTime;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\AvailableChannelType;
@@ -200,7 +201,7 @@ class ChannelForm extends CompatForm
         $channel = $this->getValues();
 
         $channel['config'] = json_encode($this->filterConfig($channel['config']));
-        $channel['changed_at'] = time() * 1000;
+        $channel['changed_at'] = (int) (new DateTime())->format("Uv");
 
         $this->db->insert('channel', $channel);
     }
@@ -221,7 +222,7 @@ class ChannelForm extends CompatForm
         $storedValues['config'] = json_encode($storedValues['config']);
 
         if (! empty(array_diff_assoc($channel, $storedValues))) {
-            $channel['changed_at'] = time() * 1000;
+            $channel['changed_at'] = (int) (new DateTime())->format("Uv");
 
             $this->db->update('channel', $channel, ['id = ?' => $this->channelId]);
         }
@@ -236,7 +237,7 @@ class ChannelForm extends CompatForm
     {
         $this->db->update(
             'channel',
-            ['changed_at' => time() * 1000, 'deleted' => 'y'],
+            ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'],
             ['id = ?' => $this->channelId]
         );
     }

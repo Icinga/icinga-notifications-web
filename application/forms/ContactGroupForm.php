@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Forms;
 
+use DateTime;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Contact;
@@ -179,7 +180,7 @@ class ContactGroupForm extends CompatForm
 
         $this->db->beginTransaction();
 
-        $changedAt = time() * 1000;
+        $changedAt = (int) (new DateTime())->format("Uv");
         $this->db->insert('contactgroup', ['name' => trim($data['group_name']), 'changed_at' => $changedAt]);
 
         $groupIdentifier = $this->db->lastInsertId();
@@ -218,7 +219,7 @@ class ContactGroupForm extends CompatForm
 
         $storedValues = $this->fetchDbValues();
 
-        $changedAt = time() * 1000;
+        $changedAt = (int) (new DateTime())->format("Uv");
         if ($values['group_name'] !== $storedValues['group_name']) {
             $this->db->update(
                 'contactgroup',
@@ -298,7 +299,7 @@ class ContactGroupForm extends CompatForm
     {
         $this->db->beginTransaction();
 
-        $markAsDeleted = ['changed_at' => time() * 1000, 'deleted' => 'y'];
+        $markAsDeleted = ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'];
         $updateCondition = ['contactgroup_id = ?' => $this->contactgroupId, 'deleted = ?' => 'n'];
 
         $rotationAndMemberIds = $this->db->fetchPairs(
