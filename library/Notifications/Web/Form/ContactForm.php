@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Web\Form;
 
+use DateTime;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Model\AvailableChannelType;
 use Icinga\Module\Notifications\Model\Channel;
@@ -183,7 +184,7 @@ class ContactForm extends CompatForm
     public function addContact(): void
     {
         $contactInfo = $this->getValues();
-        $changedAt = time() * 1000;
+        $changedAt = (int) (new DateTime())->format("Uv");
         $this->db->beginTransaction();
         $this->db->insert('contact', $contactInfo['contact'] + ['changed_at' => $changedAt]);
         $this->contactId = $this->db->lastInsertId();
@@ -214,7 +215,7 @@ class ContactForm extends CompatForm
         $values = $this->getValues();
         $storedValues = $this->fetchDbValues();
 
-        $changedAt = time() * 1000;
+        $changedAt = (int) (new DateTime())->format("Uv");
         if ($storedValues['contact'] !== $values['contact']) {
             $this->db->update(
                 'contact',
@@ -264,7 +265,7 @@ class ContactForm extends CompatForm
     {
         $this->db->beginTransaction();
 
-        $markAsDeleted = ['changed_at' => time() * 1000, 'deleted' => 'y'];
+        $markAsDeleted = ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'];
         $updateCondition = ['contact_id = ?' => $this->contactId, 'deleted = ?' => 'n'];
 
         $rotationAndMemberIds = $this->db->fetchPairs(

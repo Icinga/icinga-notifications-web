@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Forms;
 
+use DateTime;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Model\Rotation;
 use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
@@ -73,7 +74,7 @@ class ScheduleForm extends CompatForm
     {
         $this->db->insert('schedule', [
             'name' => $this->getValue('name'),
-            'changed_at' => time() * 1000
+            'changed_at' => (int) (new DateTime())->format("Uv")
         ]);
 
         return $this->db->lastInsertId();
@@ -92,7 +93,7 @@ class ScheduleForm extends CompatForm
 
         $this->db->update('schedule', [
             'name'          => $values['name'],
-            'changed_at'    => time() * 1000
+            'changed_at'    => (int) (new DateTime())->format("Uv")
         ], ['id = ?' => $id]);
 
         $this->db->commitTransaction();
@@ -112,7 +113,7 @@ class ScheduleForm extends CompatForm
             $rotation->delete();
         }
 
-        $markAsDeleted = ['changed_at' => time() * 1000, 'deleted' => 'y'];
+        $markAsDeleted = ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'];
 
         $escalationIds = $this->db->fetchCol(
             RuleEscalationRecipient::on($this->db)
