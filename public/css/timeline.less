@@ -58,6 +58,32 @@
           .text-ellipsis();
         }
       }
+
+      &.future {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        position: relative;
+        padding-left: 6px; // 2px before + 1px border + 2px after + 1px border
+
+        &:before,
+        &:after {
+          content: '';
+          display: block;
+          position: absolute;
+          border: 1px solid var(--entry-border-color);
+          border-right: transparent;
+          height: ~"calc(100% + 2px)"; // border top and bottom
+          width: 100%;
+          left: 2px;
+          .rounded-corners(0.25em);
+        }
+
+        &:after {
+          left: 5px; // 2px before + 1px border + 2px after
+        }
+      }
     }
 
     &::after {
