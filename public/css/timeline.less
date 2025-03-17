@@ -44,19 +44,53 @@
       }
     }
 
-    .overlay .entry {
-      margin-top: 1em;
-      margin-bottom: 1em;
-      z-index: 2; // overlap the .clock .time-hand
+    .overlay {
+      .entry {
+        margin-top: 1em;
+        margin-bottom: 1em;
+        z-index: 2; // overlap the .clock .time-hand
 
-      .title {
-        height: 100%;
-        flex-wrap: nowrap;
-        align-items: baseline;
-        padding: .15em .5em;
+        .title {
+          height: 100%;
+          flex-wrap: nowrap;
+          align-items: baseline;
+          padding: .15em .5em;
 
-        .name {
-          .text-ellipsis();
+          .name {
+            .text-ellipsis();
+          }
+        }
+      }
+
+      .future-entry {
+        display: flex;
+        justify-content: end;
+
+        .entry {
+          display: flex;
+          align-items: center;
+          justify-content: end;
+          flex-shrink: 0;
+          position: relative;
+          padding-right: .25em;
+          width: 3em;
+
+          &:before,
+          &:after {
+            content: '';
+            display: block;
+            position: absolute;
+            border: 1px solid var(--entry-border-color);
+            top: -1px;
+            bottom: -1px;
+            left: 2px;
+            width: 100%;
+            .rounded-corners(0.25em);
+          }
+
+          &:after {
+            left: 5px; // 2px before + 1px border + 2px after
+          }
         }
       }
     }
