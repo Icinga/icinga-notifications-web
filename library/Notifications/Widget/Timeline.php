@@ -14,6 +14,7 @@ use Icinga\Module\Notifications\Widget\TimeGrid\GridStep;
 use Icinga\Module\Notifications\Widget\TimeGrid\Timescale;
 use Icinga\Module\Notifications\Widget\TimeGrid\Util;
 use Icinga\Module\Notifications\Widget\Timeline\Entry;
+use Icinga\Module\Notifications\Widget\Timeline\FutureEntry;
 use Icinga\Module\Notifications\Widget\Timeline\MinimalGrid;
 use Icinga\Module\Notifications\Widget\Timeline\Rotation;
 use IntlDateFormatter;
@@ -173,7 +174,9 @@ class Timeline extends BaseHtmlElement implements EntryProvider
 
         $occupiedCells = [];
         foreach ($rotations as $rotation) {
+            $entryFound = false;
             foreach ($rotation->fetchTimeperiodEntries($this->start, $this->getGrid()->getGridEnd()) as $entry) {
+                $entryFound = true;
                 if (! $this->minimalLayout) {
                     $entry->setPosition($maxPriority - $rotation->getPriority());
 
@@ -181,6 +184,10 @@ class Timeline extends BaseHtmlElement implements EntryProvider
                 }
 
                 $occupiedCells += $getDesiredCells($entry);
+            }
+
+            if (! $entryFound && ! $this->minimalLayout) {
+                yield (new FutureEntry())->setPosition($maxPriority - $rotation->getPriority());
             }
         }
 
