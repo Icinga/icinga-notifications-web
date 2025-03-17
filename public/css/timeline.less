@@ -48,19 +48,55 @@
       }
     }
 
-    .overlay .entry {
-      margin-top: 1em;
-      margin-bottom: 1em;
-      z-index: 2; // overlap the .clock .time-hand
+    .overlay {
+      .entry {
+        margin-top: 1em;
+        margin-bottom: 1em;
+        z-index: 2; // overlap the .clock .time-hand
 
-      .title {
-        height: 100%;
-        flex-wrap: nowrap;
-        align-items: baseline;
-        padding: .15em .5em;
+        .title {
+          height: 100%;
+          flex-wrap: nowrap;
+          align-items: baseline;
+          padding: .15em .5em;
 
-        .name {
-          .text-ellipsis();
+          .name {
+            .text-ellipsis();
+          }
+        }
+      }
+
+      .future-entry {
+        display: flex;
+        justify-content: end;
+
+        .entry {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          position: relative;
+          padding-left: 6px; // 2px before + 1px border + 2px after + 1px border
+
+          width: 2em;
+          flex-shrink: 0;
+
+          &:before,
+          &:after {
+            content: '';
+            display: block;
+            position: absolute;
+            border: 1px solid var(--entry-border-color);
+            border-right: transparent;
+            height: ~"calc(100% + 2px)"; // border top and bottom
+            width: 100%;
+            left: 2px;
+            .rounded-corners(0.25em);
+          }
+
+          &:after {
+            left: 5px; // 2px before + 1px border + 2px after
+          }
         }
       }
     }
