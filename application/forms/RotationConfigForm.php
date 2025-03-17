@@ -280,16 +280,16 @@ class RotationConfigForm extends CompatForm
     /**
      * Insert a new rotation in the database
      *
-     * @param int $priority The priority of the rotation
+     * @param ?int $priority The priority of the rotation when editing an existing one
      *
      * @return Generator<int, DateTime> The first handoff of the rotation, as value
      */
-    private function createRotation(int $priority): Generator
+    private function createRotation(int $priority = null): Generator
     {
         $data = $this->getValues();
         $data['options'] = Json::encode($data['options']);
         $data['schedule_id'] = $this->scheduleId;
-        $data['priority'] = $priority;
+        $data['priority'] = $priority ?? 0;
 
         $members = array_map(function ($member) {
             return explode(':', $member, 2);
@@ -312,17 +312,19 @@ class RotationConfigForm extends CompatForm
 
         $changedAt = time() * 1000;
 
-        $rotationsToMove = Rotation::on($this->db)
-            ->columns('id')
-            ->filter(Filter::equal('schedule_id', $this->scheduleId))
-            ->orderBy('priority', SORT_DESC);
+        if ($priority === null) {
+            $rotationsToMove = Rotation::on($this->db)
+                ->columns('id')
+                ->filter(Filter::equal('schedule_id', $this->scheduleId))
+                ->orderBy('priority', SORT_DESC);
 
-        foreach ($rotationsToMove as $rotation) {
-            $this->db->update(
-                'rotation',
-                ['priority' => new Expression('priority + 1'), 'changed_at' => $changedAt],
-                ['id = ?' => $rotation->id]
-            );
+            foreach ($rotationsToMove as $rotation) {
+                $this->db->update(
+                    'rotation',
+                    ['priority' => new Expression('priority + 1'), 'changed_at' => $changedAt],
+                    ['id = ?' => $rotation->id]
+                );
+            }
         }
 
         $data['changed_at'] = $changedAt;
@@ -395,7 +397,7 @@ class RotationConfigForm extends CompatForm
             $transactionStarted = $this->db->beginTransaction();
         }
 
-        $this->createRotation(0)->send(true);
+        $this->createRotation()->send(true);
 
         if ($transactionStarted) {
             $this->db->commitTransaction();
