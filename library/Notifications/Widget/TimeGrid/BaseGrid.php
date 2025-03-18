@@ -7,11 +7,15 @@ namespace Icinga\Module\Notifications\Widget\TimeGrid;
 use DateInterval;
 use DateTime;
 use Generator;
+use Icinga\Module\Notifications\Common\Links;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\HtmlElement;
+use ipl\Html\Text;
 use ipl\I18n\Translation;
 use ipl\Web\Style;
+use ipl\Web\Url;
+use ipl\Web\Widget\ButtonLink;
 use ipl\Web\Widget\Link;
 use LogicException;
 use SplObjectStorage;
@@ -471,7 +475,7 @@ abstract class BaseGrid extends BaseHtmlElement
         }
 
         $this->style->addFor($this, [
-            '--primaryRows' => $lastRow === 1 ? 1 : $lastRow - $rowStartModifier + 1,
+            '--primaryRows' => $lastRow === 1 ? 1 : $lastRow - $rowStartModifier + 1 + 1, // +1 to create extra row for add rotation button
             '--rowsPerStep' => 1
         ]);
     }
@@ -490,11 +494,44 @@ abstract class BaseGrid extends BaseHtmlElement
             $generator = $this->yieldFixedEntries($entries);
         }
 
+        $addButtonCreated = false;
         foreach ($generator as $gridArea => $entry) {
+            [$rowStart, $colStart, $rowEnd, $colEnd] = $gridArea;
+
+            if (! $addButtonCreated && $entry->getAttributes()->has('data-rotation-position')) {
+                $btn = new HtmlElement('div', new Attributes(['class' => 'btn-container']));
+
+                $btn->addHtml(
+                    (new ButtonLink(
+                        $this->translate('Add another Rotation'),
+                        Links::rotationAdd(Url::fromRequest()->getParam('id')),
+                        'plus'
+                    ))->openInModal(),
+                    new HtmlElement(
+                        'span',
+                        new Attributes(['class' => 'hint']),
+                        new Text($this->translate('to override rotations above'))
+                    )
+                );
+
+                // take up the entire row
+                $this->style->addFor($btn, [
+                    'grid-area' => sprintf('~"%d / %d / %d / %d"', $rowStart, 1, $rowEnd, -1)
+                ]);
+
+                $overlay->addHtml($btn);
+                $addButtonCreated = true;
+            }
+
+            if ($addButtonCreated) { // result row must be below
+                $rowStart++;
+                $rowEnd++;
+            }
+
             $this->style->addFor($entry, [
                 '--entry-bg' => $entry->getColor(10),
                 '--entry-border-color' => $entry->getColor(50),
-                'grid-area' => sprintf('~"%d / %d / %d / %d"', ...$gridArea)
+                'grid-area' => sprintf('~"%d / %d / %d / %d"', $rowStart, $colStart, $rowEnd, $colEnd)
             ]);
 
             $overlay->addHtml($entry);
