@@ -93,6 +93,7 @@ class SourcesController extends CompatController
     public function addAction(): void
     {
         $form = (new SourceForm(Database::get()))
+            ->setPasswordPlaceholder(false)
             ->on(SourceForm::ON_SUCCESS, function (SourceForm $form) {
                 $form->addSource();
                 Notification::success(sprintf(t('Added new source %s successfully'), $form->getSourceName()));

@@ -30,6 +30,9 @@ class SourceForm extends CompatForm
     /** @var ?int */
     private $sourceId;
 
+    /** @var bool Whether the password fields get replaced by a placeholder */
+    protected $passwordPlaceholder = true;
+
     public function __construct(Connection $db)
     {
         $this->db = $db;
@@ -104,9 +107,10 @@ class SourceForm extends CompatForm
                 'password',
                 'icinga2_auth_pass',
                 [
-                    'required'      => true,
-                    'label'         => $this->translate('API Password'),
-                    'autocomplete'  => 'new-password'
+                    'required'       => true,
+                    'label'          => $this->translate('API Password'),
+                    'no-replacement' => ! $this->passwordPlaceholder,
+                    'autocomplete'   => 'new-password'
                 ]
             );
             $this->addElement(
@@ -172,24 +176,26 @@ class SourceForm extends CompatForm
                 'password',
                 'listener_password',
                 [
-                    'ignore'        => true,
-                    'required'      => $this->sourceId === null,
-                    'label'         => $this->sourceId !== null
+                    'ignore'         => true,
+                    'required'       => $this->sourceId === null,
+                    'label'          => $this->sourceId !== null
                         ? $this->translate('New Password')
                         : $this->translate('Password'),
-                    'autocomplete'  => 'new-password',
-                    'validators'    => [['name' => 'StringLength', 'options' => ['min' => 16]]]
+                    'no-replacement' => ! $this->passwordPlaceholder,
+                    'autocomplete'   => 'new-password',
+                    'validators'     => [['name' => 'StringLength', 'options' => ['min' => 16]]]
                 ]
             );
             $this->addElement(
                 'password',
                 'listener_password_dupe',
                 [
-                    'ignore'        => true,
-                    'required'      => $this->sourceId === null,
-                    'label'         => $this->translate('Repeat Password'),
-                    'autocomplete'  => 'new-password',
-                    'validators'    => [new CallbackValidator(function (string $value, CallbackValidator $validator) {
+                    'ignore'         => true,
+                    'required'       => $this->sourceId === null,
+                    'label'          => $this->translate('Repeat Password'),
+                    'no-replacement' => ! $this->passwordPlaceholder,
+                    'autocomplete'   => 'new-password',
+                    'validators'     => [new CallbackValidator(function (string $value, CallbackValidator $validator) {
                         if ($value !== $this->getValue('listener_password')) {
                             $validator->addMessage($this->translate('Passwords do not match'));
 
@@ -237,6 +243,20 @@ class SourceForm extends CompatForm
             $submitWrapper = $this->getElement('save')->getWrapper();
             $submitWrapper->prepend($deleteButton);
         }
+    }
+
+    /**
+     * Set whether password fields should get replaced by a placeholder
+     *
+     * @param bool $state
+     *
+     * @return $this
+     */
+    public function setPasswordPlaceholder(bool $state = true): self
+    {
+        $this->passwordPlaceholder = $state;
+
+        return $this;
     }
 
     public function isValid()
