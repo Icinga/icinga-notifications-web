@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Widget\TimeGrid;
 use DateInterval;
 use DateTime;
 use Generator;
+use Icinga\Module\Notifications\Widget\Timeline\FutureEntry;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\HtmlElement;
@@ -425,46 +426,57 @@ abstract class BaseGrid extends BaseHtmlElement
                 $lastRow = $rowStart;
             }
 
-            $actualStart = Util::roundToNearestThirtyMinute($entry->getStart());
-            if ($actualStart < $gridStartsAt) {
-                $colStart = 0;
-            } else {
-                $colStart = Util::diffHours($gridStartsAt, $actualStart) * 2;
-            }
-
-            $actualEnd = Util::roundToNearestThirtyMinute($entry->getEnd());
-            if ($actualEnd > $gridEndsAt) {
+            if ($entry instanceof FutureEntry) {
+                $colStart = ($this->getNoOfVisuallyConnectedHours() / 24 + 1) * - 1;
                 $colEnd = $gridBorderAt;
             } else {
-                $colEnd = Util::diffHours($gridStartsAt, $actualEnd) * 2;
-            }
+                $actualStart = Util::roundToNearestThirtyMinute($entry->getStart());
+                if ($actualStart < $gridStartsAt) {
+                    $colStart = 0;
+                } else {
+                    $colStart = Util::diffHours($gridStartsAt, $actualStart) * 2;
+                }
 
-            if ($colStart > $gridBorderAt || $colEnd === $colStart) {
-                throw new LogicException(sprintf(
-                    'Invalid entry (%d) position: %s to %s. Grid dimension: %s to %s',
-                    $entry->getId(),
-                    $actualStart->format('Y-m-d H:i:s'),
-                    $actualEnd->format('Y-m-d H:i:s'),
-                    $gridStartsAt->format('Y-m-d'),
-                    $gridEndsAt->format('Y-m-d')
-                ));
+                $actualEnd = Util::roundToNearestThirtyMinute($entry->getEnd());
+                if ($actualEnd > $gridEndsAt) {
+                    $colEnd = $gridBorderAt;
+                } else {
+                    $colEnd = Util::diffHours($gridStartsAt, $actualEnd) * 2;
+                }
+
+                if ($colStart > $gridBorderAt || $colEnd === $colStart) {
+                    throw new LogicException(sprintf(
+                        'Invalid entry (%d) position: %s to %s. Grid dimension: %s to %s',
+                        $entry->getId(),
+                        $actualStart->format('Y-m-d H:i:s'),
+                        $actualEnd->format('Y-m-d H:i:s'),
+                        $gridStartsAt->format('Y-m-d'),
+                        $gridEndsAt->format('Y-m-d')
+                    ));
+                }
+
+                $colStart++;
             }
 
             $gridArea = $this->getGridArea(
                 $rowStart,
                 $rowStart + 1,
-                $colStart + 1,
+                $colStart,
                 $colEnd + 1
             );
 
-            $fromPrevGrid = $gridStartsAt > $entry->getStart();
-            $toNextGrid = $gridEndsAt < $entry->getEnd();
-            if ($fromPrevGrid && $toNextGrid) {
-                $entry->setContinuationType(Entry::ACROSS_GRID);
-            } elseif ($fromPrevGrid) {
-                $entry->setContinuationType(Entry::FROM_PREV_GRID);
-            } elseif ($toNextGrid) {
+            if ($entry instanceof FutureEntry) {
                 $entry->setContinuationType(Entry::TO_NEXT_GRID);
+            } else {
+                $fromPrevGrid = $gridStartsAt > $entry->getStart();
+                $toNextGrid = $gridEndsAt < $entry->getEnd();
+                if ($fromPrevGrid && $toNextGrid) {
+                    $entry->setContinuationType(Entry::ACROSS_GRID);
+                } elseif ($fromPrevGrid) {
+                    $entry->setContinuationType(Entry::FROM_PREV_GRID);
+                } elseif ($toNextGrid) {
+                    $entry->setContinuationType(Entry::TO_NEXT_GRID);
+                }
             }
 
             yield $gridArea => $entry;
