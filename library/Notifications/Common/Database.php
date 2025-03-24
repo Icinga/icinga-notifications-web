@@ -82,6 +82,13 @@ final class Database
         $db = new Connection($config);
 
         $adapter = $db->getAdapter();
+
+        $db->prepexec(
+            $adapter instanceof Pgsql
+                ? 'SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE'
+                : 'SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE'
+        );
+
         if ($adapter instanceof Pgsql) {
             $db->getQueryBuilder()
                 ->on(QueryBuilder::ON_ASSEMBLE_SELECT, function (Select $select) {
