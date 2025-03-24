@@ -9,7 +9,6 @@ use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\Model\Objects;
 use Icinga\Module\Notifications\Model\Source;
-use Icinga\Module\Notifications\Widget\SourceIcon;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\FormattedString;
@@ -17,6 +16,7 @@ use ipl\Html\Html;
 use ipl\Html\HtmlElement;
 use ipl\I18n\Translation;
 use ipl\Web\Common\BaseListItem;
+use ipl\Web\Widget\Ball;
 use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
 use ipl\Web\Widget\TimeAgo;
@@ -85,7 +85,9 @@ class IncidentListItem extends BaseListItem
 
         /** @var Source $source */
         $source = $this->item->object->source;
-        $meta->addHtml((new SourceIcon(SourceIcon::SIZE_BIG))->addHtml($source->getIcon()));
+        $meta->addHtml((new Ball(Ball::SIZE_BIG))
+            ->addAttributes(['class' => 'source-icon'])
+            ->addHtml($source->getIcon()));
 
         if ($this->item->recovered_at !== null) {
             $meta->addHtml(FormattedString::create(
