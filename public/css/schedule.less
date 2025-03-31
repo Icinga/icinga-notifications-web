@@ -58,12 +58,20 @@
 
 /* Design */
 
-.schedule .entry.highlighted {
-  outline: 2px solid var(--entry-border-color);
-  outline-offset: 1px;
-}
+.schedule {
+  .entry.highlighted {
+    outline: 2px solid var(--entry-border-color);
+    outline-offset: 1px;
+  }
 
-.schedule .step.highlighted {
-  background-color: @gray-lighter;
-  border-color: @gray-light;
+  .sidebar .row-title.highlighted,
+  .step.highlighted {
+    background-color: @gray-lighter;
+    border-color: @gray-light;
+  }
+
+  .sidebar .row-title.highlighted {
+    margin-top: -1px; // cover the border-top area
+    padding-top: 1px;
+  }
 }
