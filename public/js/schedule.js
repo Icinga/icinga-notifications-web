@@ -79,12 +79,15 @@
             const entry = event.currentTarget;
             const overlay = entry.parentElement;
             const grid = overlay.previousSibling;
+            const sideBar = grid.previousSibling;
 
             let relatedElements;
             if ('rotationPosition' in entry.dataset) {
-                relatedElements = grid.querySelectorAll(
-                    '[data-y-position="' + entry.dataset.rotationPosition + '"]'
+                relatedElements = Array.from(
+                    grid.querySelectorAll('[data-y-position="' + entry.dataset.rotationPosition + '"]')
                 );
+
+                relatedElements.push(sideBar.childNodes[Number(entry.dataset.rotationPosition)]);
             } else {
                 relatedElements = overlay.querySelectorAll(
                     '[data-rotation-position="' + entry.dataset.entryPosition + '"]'
@@ -116,12 +119,15 @@
             const entry = event.currentTarget;
             const overlay = entry.parentElement;
             const grid = overlay.previousSibling;
+            const sideBar = grid.previousSibling;
 
             let relatedElements;
             if ('rotationPosition' in entry.dataset) {
-                relatedElements = grid.querySelectorAll(
-                    '[data-y-position="' + entry.dataset.rotationPosition + '"]'
+                relatedElements = Array.from(
+                    grid.querySelectorAll('[data-y-position="' + entry.dataset.rotationPosition + '"]')
                 );
+
+                relatedElements.push(sideBar.childNodes[Number(entry.dataset.rotationPosition)]);
             } else {
                 relatedElements = overlay.querySelectorAll(
                     '[data-rotation-position="' + entry.dataset.entryPosition + '"]'
