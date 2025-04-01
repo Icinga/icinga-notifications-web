@@ -13,7 +13,7 @@ Make sure you use `notifications` as the module name. The following requirements
   or [PostgreSQL](https://www.php.net/manual/en/ref.pdo-pgsql.php) PDO PHP libraries
 - [Icinga Notifications](https://github.com/Icinga/icinga-notifications)
 - [Icinga Web](https://github.com/Icinga/icingaweb2) (≥2.9)
-- [Icinga PHP Library (ipl)](https://github.com/Icinga/icinga-php-library) (≥0.14.0)
+- [Icinga PHP Library (ipl)](https://github.com/Icinga/icinga-php-library) (≥0.15.0)
 - [Icinga PHP Thirdparty](https://github.com/Icinga/icinga-php-thirdparty) (≥0.12.0)
 
 <!-- {% include "02-Installation.md" %} -->

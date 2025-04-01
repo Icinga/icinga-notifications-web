@@ -9,12 +9,12 @@ use Icinga\Module\Notifications\Model\Event;
 use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\Model\Objects;
 use Icinga\Module\Notifications\Model\Source;
-use Icinga\Module\Notifications\Widget\SourceIcon;
 use InvalidArgumentException;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use ipl\Html\HtmlElement;
 use ipl\Web\Common\BaseListItem;
+use ipl\Web\Widget\Ball;
 use ipl\Web\Widget\Link;
 use ipl\Web\Widget\TimeAgo;
 
@@ -108,7 +108,9 @@ class EventListItem extends BaseListItem
             $object = $this->item->object;
             /** @var Source $source */
             $source = $object->source;
-            $content[] = (new SourceIcon(SourceIcon::SIZE_BIG))->addHtml($source->getIcon());
+            $content[] = (new Ball(Ball::SIZE_BIG))
+                ->addAttributes(['class' => 'source-icon'])
+                ->addHtml($source->getIcon());
         }
 
         $content[] = new TimeAgo($this->item->time->getTimestamp());
