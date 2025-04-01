@@ -20,6 +20,11 @@
             this.on('mouseleave', '#notifications-schedule .entry', this.onEntryLeave, this);
         }
 
+        /**
+         * Make the sidebar sortable and add drag&drop support.
+         *
+         * @param event The event object.
+         */
         onRendered(event)
         {
             if (event.target !== event.currentTarget) {
@@ -46,6 +51,11 @@
             });
         }
 
+        /**
+         * Handle drop event on the sidebar.
+         *
+         * @param event The event object.
+         */
         onDrop(event)
         {
             event = event.originalEvent;
@@ -74,32 +84,19 @@
             form.requestSubmit();
         }
 
+        /**
+         * Handle hover (`mouseenter`) event on schedule entries.
+         *
+         * @param event The mouse event object.
+         */
         onEntryHover(event)
         {
-            const entry = event.currentTarget;
-            const overlay = entry.parentElement;
-            const grid = overlay.previousSibling;
-            const sideBar = grid.previousSibling;
+            const [relatedEntries, tooltip] = event.data.self.identifyRelatedEntries(event);
 
-            let relatedElements;
-            if ('rotationPosition' in entry.dataset) {
-                relatedElements = Array.from(
-                    grid.querySelectorAll('[data-y-position="' + entry.dataset.rotationPosition + '"]')
-                );
+            relatedEntries.forEach(element => element.classList.add('highlighted'));
 
-                relatedElements.push(sideBar.childNodes[Number(entry.dataset.rotationPosition)]);
-            } else {
-                relatedElements = overlay.querySelectorAll(
-                    '[data-rotation-position="' + entry.dataset.entryPosition + '"]'
-                );
-            }
-
-            relatedElements.forEach((relatedElement) => {
-                relatedElement.classList.add('highlighted');
-            });
-
-            const tooltip = entry.querySelector('.rotation-info');
             if (tooltip) {
+                const grid = event.currentTarget.parentElement.previousSibling;
                 requestAnimationFrame(() => {
                     const tooltipRect = tooltip.getBoundingClientRect();
                     const gridRect = grid.getBoundingClientRect();
@@ -114,34 +111,52 @@
             }
         }
 
+        /**
+         * Handle hover (`mouseleave`) event on schedule entries.
+         *
+         * @param event The mouse event object.
+         */
         onEntryLeave(event)
         {
+            const [relatedEntries, tooltip] = event.data.self.identifyRelatedEntries(event);
+
+            relatedEntries.forEach(element => element.classList.remove('highlighted'));
+
+            if (tooltip) {
+                tooltip.classList.remove('is-left', 'is-bottom');
+            }
+        }
+
+        /**
+         * Identify hover-related entries.
+         *
+         * @param event The mouse event object.
+         *
+         * @returns {[HTMLElement[]|NodeListOf<HTMLElement>, HTMLElement|null]}
+         */
+        identifyRelatedEntries(event) {
             const entry = event.currentTarget;
             const overlay = entry.parentElement;
             const grid = overlay.previousSibling;
             const sideBar = grid.previousSibling;
 
-            let relatedElements;
+            let relatedEntries;
             if ('rotationPosition' in entry.dataset) {
-                relatedElements = Array.from(
+                relatedEntries = Array.from(
                     grid.querySelectorAll('[data-y-position="' + entry.dataset.rotationPosition + '"]')
                 );
 
-                relatedElements.push(sideBar.childNodes[Number(entry.dataset.rotationPosition)]);
+                relatedEntries.push(sideBar.childNodes[Number(entry.dataset.rotationPosition)]);
             } else {
-                relatedElements = overlay.querySelectorAll(
+                relatedEntries = overlay.querySelectorAll(
                     '[data-rotation-position="' + entry.dataset.entryPosition + '"]'
-                );
+                )
             }
 
-            relatedElements.forEach((relatedElement) => {
-                relatedElement.classList.remove('highlighted');
-            });
-
-            const tooltip = entry.querySelector('.rotation-info');
-            if (tooltip) {
-                tooltip.classList.remove('is-left', 'is-bottom');
-            }
+            return [
+                relatedEntries,
+                entry.querySelector('.rotation-info')
+            ];
         }
     }
 
