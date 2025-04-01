@@ -20,6 +20,11 @@
             this.on('mouseleave', '#notifications-schedule .entry', this.onEntryLeave, this);
         }
 
+        /**
+         * Make the sidebar sortable and add drag&drop support.
+         *
+         * @param event The event object.
+         */
         onRendered(event)
         {
             if (event.target !== event.currentTarget) {
@@ -46,6 +51,11 @@
             });
         }
 
+        /**
+         * Handle drop event on the sidebar.
+         *
+         * @param event The event object.
+         */
         onDrop(event)
         {
             event = event.originalEvent;
@@ -74,33 +84,33 @@
             form.requestSubmit();
         }
 
+        /**
+         * Handle hover (`mouseenter`) event on schedule entries.
+         *
+         * @param event The mouse event object.
+         */
         onEntryHover(event)
         {
-            const entry = event.currentTarget;
-            const overlay = entry.parentElement;
-            const grid = overlay.previousSibling;
-            const sideBar = grid.previousSibling;
-
-            let relatedElements;
-            if ('rotationPosition' in entry.dataset) {
-                relatedElements = Array.from(
-                    grid.querySelectorAll('[data-y-position="' + entry.dataset.rotationPosition + '"]')
-                );
-
-                relatedElements.push(sideBar.childNodes[Number(entry.dataset.rotationPosition)]);
-            } else {
-                relatedElements = overlay.querySelectorAll(
-                    '[data-rotation-position="' + entry.dataset.entryPosition + '"]'
-                );
-            }
-
-            relatedElements.forEach((relatedElement) => {
-                relatedElement.classList.add('highlighted');
-            });
+            event.data.self.handleEntryHover(event, true);
         }
 
+        /**
+         * Handle hover (`mouseleave`) event on schedule entries.
+         *
+         * @param event The mouse event object.
+         */
         onEntryLeave(event)
         {
+            event.data.self.handleEntryHover(event);
+        }
+
+        /**
+         * Handle hover (`mouseenter`|`mouseleave`) events on schedule entries.
+         *
+         * @param event The mouse event object.
+         * @param {boolean} isHovered Whether the entry is hovered.
+         */
+        handleEntryHover(event, isHovered = false) {
             const entry = event.currentTarget;
             const overlay = entry.parentElement;
             const grid = overlay.previousSibling;
@@ -119,9 +129,15 @@
                 );
             }
 
-            relatedElements.forEach((relatedElement) => {
-                relatedElement.classList.remove('highlighted');
-            });
+            if (isHovered) {
+                relatedElements.forEach((relatedElement) => {
+                    relatedElement.classList.add('highlighted');
+                });
+            } else {
+                relatedElements.forEach((relatedElement) => {
+                    relatedElement.classList.remove('highlighted');
+                });
+            }
         }
     }
 
