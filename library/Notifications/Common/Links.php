@@ -41,6 +41,21 @@ abstract class Links
         return Url::fromPath('notifications/contact', ['id' => $id]);
     }
 
+    public static function channels(): Url
+    {
+        return Url::fromPath('notifications/channels');
+    }
+
+    public static function channel(int $id): Url
+    {
+        return Url::fromPath('notifications/channel', ['id' => $id]);
+    }
+
+    public static function channelAdd(): Url
+    {
+        return Url::fromPath('notifications/channels/add');
+    }
+
     public static function eventRules(): Url
     {
         return Url::fromPath('notifications/event-rules');
