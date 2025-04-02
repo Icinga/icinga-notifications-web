@@ -5,6 +5,27 @@
   flex-direction: column;
   overflow: hidden;
 
+  .empty-state-notice {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1em;
+    margin-bottom: 2em;
+    border: 1px solid @gray-light;
+    .rounded-corners();
+    color: @text-color-light;
+
+    .icon {
+      font-size: 1.75em;
+    }
+
+    > span {
+      padding-left: 0.5em;
+      flex-grow: 1;
+      text-align: center;
+    }
+  }
+
   .time-grid {
     --sidebarWidth: 12em;
     --stepRowHeight: 4em;
@@ -48,6 +69,38 @@
       }
     }
 
+    .sidebar .placeholderXXX {
+      background-color: fade(@gray-light, 25%);
+      border-top: 1px solid @gray-lighter;
+      margin-top: -1px; // to cover the border-bottom area of the previous sibling
+    }
+
+    .btn-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      height: var(--primaryRowHeight);
+    }
+
+    &:not(.empty) .btn-container {
+      margin-left: ~"calc(var(--sidebarWidth) * -1)"; // overlap sidebar's .placeholder
+    }
+
+    .overlay .btn-container {
+      pointer-events: all; // allow to click on the buttons
+
+      .button-link:not(:hover) {
+        color: @disabled-gray;
+        background: none;
+      }
+
+      .hint {
+        margin-left: .5em;
+        color: @text-color-light;
+      }
+    }
+
     .overlay .entry {
       margin-top: 1em;
       margin-bottom: 1em;
@@ -72,8 +125,8 @@
       position: absolute;
       right: 0;
       left: 0;
-      // -1 to exclude result row
-      top: ~"calc((var(--stepRowHeight) * calc(var(--primaryRows) - 1)) + var(--daysHeaderHeight))";
+      // -1 to exclude result row, max to have minimum 1 row
+      top: ~"calc(var(--stepRowHeight) * max(calc(var(--primaryRows) - 1), 1) + var(--daysHeaderHeight))";
     }
 
     .timescale {
@@ -212,6 +265,24 @@
     }
   }
 
+  .btn-container {
+    background-color: mix(@gray-light, @body-bg-color, 25%);
+
+    .empty-notice {
+      margin-right: 1em;
+      color: @text-color-light;
+    }
+
+    .button-link {
+      border: 1px solid;
+
+      &:hover {
+        color: @text-color-on-icinga-blue;
+        background-color: @icinga-blue;
+      }
+    }
+  }
+
   .entry .icon {
     font-size: .75em;
     opacity: .8;
@@ -238,6 +309,37 @@
   font-size: .75em;
 }
 
+.time-grid.empty {
+  .btn-container {
+    grid-area: ~"3 / 1 / 3 / 3";
+  }
+
+  // .empty-state is placed under the .days-header, Everything below .empty-state element must slide down one row
+  // so the grid-row-start and grid-row-end is increased by 1
+  .sidebar {
+    grid-area: ~"4 / 1 / 5 / 2";
+  }
+
+  .grid,
+  .overlay {
+    grid-area: ~"4 / 2 / 5 / 3";
+  }
+
+  .timescale {
+    grid-area: ~"5 / 2 / 5 / 3";
+  }
+
+    .clock {
+      grid-area: ~"3 / 2 / 5 / 3";
+    }
+}
+
 #layout.twocols .schedule .timescale:has(:nth-child(n+62)) { // month view (--timestampsPerDay * --primaryColumns = 62)
   display: none;
 }
+
+@light-mode: {
+  .timeline .btn-container {
+    background-color: mix(#d0d3da, #F5F9FA, 25%); //@gray-light, @light-body-bg-color
+  }
+};
