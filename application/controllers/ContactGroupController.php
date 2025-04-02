@@ -9,8 +9,8 @@ use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\ContactGroupForm;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Contactgroup;
-use Icinga\Module\Notifications\Model\ContactgroupMember;
-use Icinga\Module\Notifications\Widget\ItemList\ContactList;
+use Icinga\Module\Notifications\View\ContactRenderer;
+use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Web\Notification;
 use ipl\Html\Attributes;
 use ipl\Html\Form;
@@ -20,6 +20,7 @@ use ipl\Html\ValidHtml;
 use ipl\Stdlib\Filter;
 use ipl\Web\Common\BaseItemList;
 use ipl\Web\Compat\CompatController;
+use ipl\Web\Layout\MinimalItemLayout;
 use ipl\Web\Widget\ButtonLink;
 
 class ContactGroupController extends CompatController
@@ -64,7 +65,10 @@ class ContactGroupController extends CompatController
             ))->openInModal()
         );
 
-        $this->addContent(new ContactList($contacts));
+        $this->addContent(
+            (new ObjectList($contacts, new ContactRenderer()))
+                ->setItemLayoutClass(MinimalItemLayout::class)
+        );
 
         $this->addTitleTab(t('Contact Group'));
         $this->setTitle(sprintf(t('Contact Group: %s'), $group->name));
