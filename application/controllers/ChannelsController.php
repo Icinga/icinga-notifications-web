@@ -5,10 +5,12 @@
 namespace Icinga\Module\Notifications\Controllers;
 
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\ChannelForm;
 use Icinga\Module\Notifications\Model\Channel;
+use Icinga\Module\Notifications\View\ChannelRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
-use Icinga\Module\Notifications\Widget\ItemList\ChannelList;
+use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Web\Notification;
 use Icinga\Web\Widget\Tab;
 use Icinga\Web\Widget\Tabs;
@@ -21,7 +23,7 @@ use ipl\Web\Compat\SearchControls;
 use ipl\Web\Control\LimitControl;
 use ipl\Web\Control\SortControl;
 use ipl\Web\Filter\QueryString;
-use ipl\Web\Url;
+use ipl\Web\Layout\MinimalItemLayout;
 use ipl\Web\Widget\ButtonLink;
 
 class ChannelsController extends CompatController
@@ -85,15 +87,15 @@ class ChannelsController extends CompatController
         $this->addControl($limitControl);
         $this->addControl($searchBar);
         $this->addContent(
-            (new ButtonLink(
-                t('Add Channel'),
-                Url::fromPath('notifications/channels/add'),
-                'plus'
-            ))->setBaseTarget('_next')
-            ->addAttributes(['class' => 'add-new-component'])
+            (new ButtonLink(t('Add Channel'), Links::channelAdd(), 'plus'))
+                ->setBaseTarget('_next')
+                ->addAttributes(['class' => 'add-new-component'])
         );
 
-        $this->addContent(new ChannelList($channels));
+        $this->addContent(
+            (new ObjectList($channels, new ChannelRenderer()))
+                ->setItemLayoutClass(MinimalItemLayout::class)
+        );
 
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {
             $this->sendMultipartUpdate();
@@ -112,7 +114,7 @@ class ChannelsController extends CompatController
                         $form->getValue('name')
                     )
                 );
-                $this->redirectNow(Url::fromPath('notifications/channels'));
+                $this->redirectNow(Links::channels());
             })
             ->handleRequest($this->getServerRequest());
 
