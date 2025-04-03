@@ -4,11 +4,17 @@
 
 namespace Icinga\Module\Notifications\Controllers;
 
+use DateTime;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Schedule;
+use Icinga\Module\Notifications\View\ScheduleRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
-use Icinga\Module\Notifications\Widget\ItemList\ScheduleList;
+use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
+use Icinga\Module\Notifications\Widget\TimeGrid\DaysHeader;
+use ipl\Html\Attributes;
+use ipl\Html\HtmlDocument;
+use ipl\Html\HtmlElement;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
@@ -16,6 +22,7 @@ use ipl\Web\Control\LimitControl;
 use ipl\Web\Control\SortControl;
 use ipl\Web\Filter\QueryString;
 use ipl\Web\Widget\ButtonLink;
+use ipl\Web\Widget\ItemList;
 use ipl\Web\Widget\Tabs;
 
 class SchedulesController extends CompatController
@@ -73,7 +80,20 @@ class SchedulesController extends CompatController
             ))->openInModal()
         );
 
-        $this->addContent(new ScheduleList($schedules));
+        $scheduleList = new ObjectList($schedules, new ScheduleRenderer());
+        $scheduleList->on(HtmlDocument::ON_ASSEMBLED, function (ItemList $scheduleList) {
+            $scheduleList->prependWrapper(
+                (new HtmlDocument())->add(
+                    HtmlElement::create(
+                        'div',
+                        Attributes::create(['class' => 'schedules-header']),
+                        new DaysHeader((new DateTime())->setTime(0, 0), 7)
+                    )
+                )
+            );
+        });
+
+        $this->addContent($scheduleList);
 
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {
             $this->sendMultipartUpdate();
