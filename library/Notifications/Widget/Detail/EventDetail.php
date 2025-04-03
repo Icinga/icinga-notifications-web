@@ -8,15 +8,19 @@ use Icinga\Date\DateFormatter;
 use Icinga\Module\Notifications\Hook\ObjectsRendererHook;
 use Icinga\Module\Notifications\Model\Event;
 use Icinga\Module\Notifications\Model\Incident;
+use Icinga\Module\Notifications\View\IncidentRenderer;
 use Icinga\Module\Notifications\Widget\EventSourceBadge;
-use Icinga\Module\Notifications\Widget\ItemList\IncidentList;
+use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use InvalidArgumentException;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\Html\ValidHtml;
+use ipl\Web\Layout\MinimalItemLayout;
 use ipl\Web\Widget\HorizontalKeyValue;
+use ipl\Web\Widget\ItemList;
+use ipl\Web\Widget\ListItem;
 
 class EventDetail extends BaseHtmlElement
 {
@@ -123,9 +127,18 @@ class EventDetail extends BaseHtmlElement
             return null;
         }
 
+        $incidentItem = (new ObjectList([$this->incident], new IncidentRenderer()))
+            ->setItemLayoutClass(MinimalItemLayout::class)
+            ->on(ItemList::ON_ITEM_ADD, function (ListItem $item, Incident $data) {
+                ObjectsRendererHook::register($data->object);
+            })
+            ->on(ItemList::ON_ASSEMBLED, function () {
+                ObjectsRendererHook::load();
+            });
+
         return [
             Html::tag('h2', t('Incident')),
-            new IncidentList([$this->incident])
+            $incidentItem
         ];
     }
 
