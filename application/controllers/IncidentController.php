@@ -11,7 +11,7 @@ use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\Widget\Detail\IncidentDetail;
 use Icinga\Module\Notifications\Widget\Detail\IncidentQuickActions;
-use Icinga\Module\Notifications\Widget\ItemList\IncidentList;
+use Icinga\Module\Notifications\Widget\Detail\ObjectHeader;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 
@@ -38,10 +38,7 @@ class IncidentController extends CompatController
             $this->httpNotFound(t('Incident not found'));
         }
 
-        $this->addControl(
-            (new IncidentList($query))
-                ->setNoSubjectLink()
-        );
+        $this->addControl(new ObjectHeader($incident));
 
         $this->controls->addAttributes(['class' => 'incident-detail']);
 

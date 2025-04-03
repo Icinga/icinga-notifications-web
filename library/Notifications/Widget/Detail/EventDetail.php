@@ -8,8 +8,9 @@ use Icinga\Date\DateFormatter;
 use Icinga\Module\Notifications\Hook\ObjectsRendererHook;
 use Icinga\Module\Notifications\Model\Event;
 use Icinga\Module\Notifications\Model\Incident;
+use Icinga\Module\Notifications\View\IncidentRenderer;
 use Icinga\Module\Notifications\Widget\EventSourceBadge;
-use Icinga\Module\Notifications\Widget\ItemList\IncidentList;
+use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use InvalidArgumentException;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
@@ -125,7 +126,7 @@ class EventDetail extends BaseHtmlElement
 
         return [
             Html::tag('h2', t('Incident')),
-            new IncidentList([$this->incident])
+            new ObjectList([$this->incident], new IncidentRenderer())
         ];
     }
 
