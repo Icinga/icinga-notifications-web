@@ -6,9 +6,10 @@ namespace Icinga\Module\Notifications\Controllers;
 
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\View\IncidentRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Model\Incident;
-use Icinga\Module\Notifications\Widget\ItemList\IncidentList;
+use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
@@ -68,7 +69,7 @@ class IncidentsController extends CompatController
         $this->addControl($limitControl);
         $this->addControl($searchBar);
 
-        $this->addContent(new IncidentList($incidents));
+        $this->addContent(new ObjectList($incidents, new IncidentRenderer()));
 
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {
             $this->sendMultipartUpdate();

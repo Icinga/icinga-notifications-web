@@ -5,11 +5,12 @@
 namespace Icinga\Module\Notifications\Controllers;
 
 use Icinga\Module\Notifications\Common\Links;
+use Icinga\Module\Notifications\View\ContactRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Web\Form\ContactForm;
-use Icinga\Module\Notifications\Widget\ItemList\ContactList;
+use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Web\Notification;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
@@ -80,15 +81,12 @@ class ContactsController extends CompatController
         $this->addControl($limitControl);
         $this->addControl($searchBar);
         $this->addContent(
-            (new ButtonLink(
-                t('Add Contact'),
-                'notifications/contacts/add',
-                'plus'
-            ))->setBaseTarget('_next')
-            ->addAttributes(['class' => 'add-new-component'])
+            (new ButtonLink(t('Add Contact'), Links::contactAdd(), 'plus'))
+                ->setBaseTarget('_next')
+                ->addAttributes(['class' => 'add-new-component'])
         );
 
-        $this->addContent(new ContactList($contacts));
+        $this->addContent(new ObjectList($contacts, new ContactRenderer()));
 
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {
             $this->sendMultipartUpdate();

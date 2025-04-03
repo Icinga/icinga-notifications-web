@@ -8,8 +8,9 @@ use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\ContactGroupForm;
 use Icinga\Module\Notifications\Model\Contactgroup;
+use Icinga\Module\Notifications\View\ContactgroupRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
-use Icinga\Module\Notifications\Widget\ItemList\ContactGroupList;
+use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Module\Notifications\Widget\MemberSuggestions;
 use Icinga\Web\Notification;
 use ipl\Html\Form;
@@ -87,7 +88,7 @@ class ContactGroupsController extends CompatController
             ))->openInModal()
         );
 
-        $this->addContent(new ContactGroupList($groups));
+        $this->addContent(new ObjectList($groups, new ContactgroupRenderer()));
 
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {
             $this->sendMultipartUpdate();

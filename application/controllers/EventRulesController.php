@@ -8,9 +8,10 @@ use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\SaveEventRuleForm;
 use Icinga\Module\Notifications\Model\Rule;
+use Icinga\Module\Notifications\View\EventRuleRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Widget\EventRuleConfig;
-use Icinga\Module\Notifications\Widget\ItemList\EventRuleList;
+use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\Html;
@@ -21,6 +22,7 @@ use ipl\Web\Control\LimitControl;
 use ipl\Web\Control\SearchEditor;
 use ipl\Web\Control\SortControl;
 use ipl\Web\Filter\QueryString;
+use ipl\Web\Layout\DetailedItemLayout;
 use ipl\Web\Url;
 use ipl\Web\Widget\ButtonLink;
 use ipl\Web\Widget\Icon;
@@ -91,7 +93,10 @@ class EventRulesController extends CompatController
             ->addAttributes(['class' => 'new-event-rule'])
         );
 
-        $this->addContent(new EventRuleList($eventRules));
+        $this->addContent(
+            (new ObjectList($eventRules, new EventRuleRenderer()))
+            ->setItemLayoutClass(DetailedItemLayout::class)
+        );
 
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {
             $this->sendMultipartUpdate();
