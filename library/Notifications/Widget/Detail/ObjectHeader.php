@@ -6,7 +6,9 @@ namespace Icinga\Module\Notifications\Widget\Detail;
 
 use Icinga\Exception\NotImplementedError;
 use Icinga\Module\Notifications\Model\Event;
+use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\View\EventRenderer;
+use Icinga\Module\Notifications\View\IncidentRenderer;
 use ipl\Html\BaseHtmlElement;
 use ipl\Orm\Model;
 use ipl\Web\Layout\HeaderItemLayout;
@@ -16,7 +18,7 @@ use ipl\Web\Layout\HeaderItemLayout;
  *
  * Create a header
  *
- * @template Item of Event
+ * @template Item of Event|Incident
  */
 class ObjectHeader extends BaseHtmlElement
 {
@@ -43,6 +45,10 @@ class ObjectHeader extends BaseHtmlElement
         switch (true) {
             case $this->object instanceof Event:
                 $renderer = new EventRenderer();
+
+                break;
+            case $this->object instanceof Incident:
+                $renderer = new IncidentRenderer();
 
                 break;
             default:
