@@ -5,12 +5,8 @@
 namespace Icinga\Module\Notifications\Controllers;
 
 use Icinga\Module\Notifications\Common\Database;
-use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Web\Form\ContactForm;
 use Icinga\Web\Notification;
-use ipl\Html\FormElement\FieldsetElement;
-use ipl\Sql\Connection;
-use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 
 class ContactController extends CompatController

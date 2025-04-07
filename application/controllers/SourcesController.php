@@ -12,8 +12,6 @@ use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Web\Notification;
 use Icinga\Web\Widget\Tabs;
-use ipl\Html\ValidHtml;
-use ipl\Web\Common\BaseItemList;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
 use ipl\Web\Control\LimitControl;
@@ -129,22 +127,6 @@ class SourcesController extends CompatController
 
         $this->setTitle($this->translate('Adjust Filter'));
         $this->getDocument()->add($editor);
-    }
-
-    /**
-     * Add attribute 'class' => 'full-width' if the content is an instance of BaseItemList
-     *
-     * @param ValidHtml $content
-     *
-     * @return $this
-     */
-    protected function addContent(ValidHtml $content)
-    {
-        if ($content instanceof BaseItemList) {
-            $this->content->getAttributes()->add('class', 'full-width');
-        }
-
-        return parent::addContent($content);
     }
 
     /**

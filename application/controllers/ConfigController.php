@@ -6,11 +6,9 @@ namespace Icinga\Module\Notifications\Controllers;
 
 use Icinga\Application\Config;
 use Icinga\Module\Notifications\Forms\DatabaseConfigForm;
-use Icinga\Web\Form;
 use Icinga\Web\Notification;
 use Icinga\Web\Widget\Tab;
 use Icinga\Web\Widget\Tabs;
-use ipl\Html\HtmlString;
 use ipl\Web\Compat\CompatController;
 
 class ConfigController extends CompatController
