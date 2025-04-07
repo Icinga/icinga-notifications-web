@@ -35,6 +35,9 @@ class LoadMoreObjectList extends ObjectList
             throw new NotImplementedError('Not implemented');
         });
 
+        //TODO(sd): because parent (ObjectList) constructor is skipped
+        $this->addAttributes(['class' => 'action-list']);
+
         $this->data = $this->getIterator($data);
     }
 }

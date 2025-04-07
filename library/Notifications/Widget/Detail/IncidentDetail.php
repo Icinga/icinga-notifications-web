@@ -7,8 +7,8 @@ namespace Icinga\Module\Notifications\Widget\Detail;
 use Icinga\Module\Notifications\Hook\ObjectsRendererHook;
 use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\View\IncidentContactRenderer;
+use Icinga\Module\Notifications\View\IncidentHistoryRenderer;
 use Icinga\Module\Notifications\Widget\EventSourceBadge;
-use Icinga\Module\Notifications\Widget\ItemList\IncidentHistoryList;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
@@ -74,19 +74,21 @@ class IncidentDetail extends BaseHtmlElement
 
     protected function createHistory()
     {
+        $query = $this->incident->incident_history
+            ->with([
+                'contact',
+                'rule',
+                'rule_escalation',
+                'contactgroup',
+                'schedule',
+                'channel'
+            ]);
+
         return [
             Html::tag('h2', t('Incident History')),
-            new IncidentHistoryList(
-                $this->incident->incident_history
-                    ->with([
-                        'contact',
-                        'rule',
-                        'rule_escalation',
-                        'contactgroup',
-                        'schedule',
-                        'channel'
-                    ])
-            )
+            (new ObjectList($query, new IncidentHistoryRenderer()))
+                ->setItemLayoutClass(MinimalItemLayout::class)
+                ->disableActionList()
         ];
     }
 
