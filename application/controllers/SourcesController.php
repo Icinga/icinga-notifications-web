@@ -7,8 +7,9 @@ namespace Icinga\Module\Notifications\Controllers;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Forms\SourceForm;
 use Icinga\Module\Notifications\Model\Source;
+use Icinga\Module\Notifications\View\SourceRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
-use Icinga\Module\Notifications\Widget\ItemList\SourceList;
+use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Web\Notification;
 use Icinga\Web\Widget\Tabs;
 use ipl\Html\ValidHtml;
@@ -18,6 +19,7 @@ use ipl\Web\Compat\SearchControls;
 use ipl\Web\Control\LimitControl;
 use ipl\Web\Control\SortControl;
 use ipl\Web\Filter\QueryString;
+use ipl\Web\Layout\MinimalItemLayout;
 use ipl\Web\Url;
 use ipl\Web\Widget\ButtonLink;
 
@@ -83,7 +85,10 @@ class SourcesController extends CompatController
 
         $this->mergeTabs($this->Module()->getConfigTabs());
         $this->getTabs()->activate('sources');
-        $this->addContent(new SourceList($sources->execute()));
+        $this->addContent(
+            (new ObjectList($sources, new SourceRenderer()))
+                ->setItemLayoutClass(MinimalItemLayout::class)
+        );
 
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {
             $this->sendMultipartUpdate();
