@@ -203,7 +203,9 @@ class ChannelForm extends CompatForm
         $channel['config'] = json_encode($this->filterConfig($channel['config']));
         $channel['changed_at'] = (int) (new DateTime())->format("Uv");
 
+        $this->db->beginTransaction();
         $this->db->insert('channel', $channel);
+        $this->db->commitTransaction();
     }
 
     /**
@@ -235,11 +237,15 @@ class ChannelForm extends CompatForm
      */
     public function removeChannel(): void
     {
+        $this->db->beginTransaction();
+
         $this->db->update(
             'channel',
             ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'],
             ['id = ?' => $this->channelId]
         );
+
+        $this->db->commitTransaction();
     }
 
     /**
