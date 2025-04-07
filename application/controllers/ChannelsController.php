@@ -14,10 +14,8 @@ use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Web\Notification;
 use Icinga\Web\Widget\Tab;
 use Icinga\Web\Widget\Tabs;
-use ipl\Html\ValidHtml;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
-use ipl\Web\Common\BaseItemList;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
 use ipl\Web\Control\LimitControl;
@@ -119,22 +117,6 @@ class ChannelsController extends CompatController
             ->handleRequest($this->getServerRequest());
 
         $this->addContent($form);
-    }
-
-    /**
-     * Add attribute 'class' => 'full-width' if the content is an instance of BaseItemList
-     *
-     * @param ValidHtml $content
-     *
-     * @return ChannelsController
-     */
-    protected function addContent(ValidHtml $content)
-    {
-        if ($content instanceof BaseItemList) {
-            $this->content->getAttributes()->add('class', 'full-width');
-        }
-
-        return parent::addContent($content);
     }
 
     public function completeAction(): void

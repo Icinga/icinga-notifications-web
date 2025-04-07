@@ -16,9 +16,7 @@ use ipl\Html\Attributes;
 use ipl\Html\Form;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
-use ipl\Html\ValidHtml;
 use ipl\Stdlib\Filter;
-use ipl\Web\Common\BaseItemList;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Layout\MinimalItemLayout;
 use ipl\Web\Widget\ButtonLink;
@@ -114,14 +112,5 @@ class ContactGroupController extends CompatController
 
         $this->addContent($form);
         $this->setTitle(t('Edit Contact Group'));
-    }
-
-    protected function addContent(ValidHtml $content): self
-    {
-        if ($content instanceof BaseItemList) {
-            $this->content->getAttributes()->add('class', 'full-width');
-        }
-
-        return parent::addContent($content);
     }
 }
