@@ -15,9 +15,7 @@ use Icinga\Module\Notifications\Widget\MemberSuggestions;
 use Icinga\Web\Notification;
 use ipl\Html\Form;
 use ipl\Html\Text;
-use ipl\Html\ValidHtml;
 use ipl\Stdlib\Filter;
-use ipl\Web\Common\BaseItemList;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
 use ipl\Web\Control\LimitControl;
@@ -181,15 +179,6 @@ class ContactGroupsController extends CompatController
                 'url'        => Links::contactGroups(),
                 'baseTarget' => '_main'
             ]);
-    }
-
-    protected function addContent(ValidHtml $content): self
-    {
-        if ($content instanceof BaseItemList) {
-            $this->content->getAttributes()->add('class', 'full-width');
-        }
-
-        return parent::addContent($content);
     }
 
     /**
