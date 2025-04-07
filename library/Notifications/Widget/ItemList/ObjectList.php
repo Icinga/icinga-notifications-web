@@ -4,7 +4,16 @@
 
 namespace Icinga\Module\Notifications\Widget\ItemList;
 
+use Icinga\Module\Notifications\Model\Channel;
+use Icinga\Module\Notifications\Model\Contact;
+use Icinga\Module\Notifications\Model\Contactgroup;
 use Icinga\Module\Notifications\Model\Event;
+use Icinga\Module\Notifications\Model\Incident;
+use Icinga\Module\Notifications\Model\IncidentContact;
+use Icinga\Module\Notifications\Model\IncidentHistory;
+use Icinga\Module\Notifications\Model\Rule;
+use Icinga\Module\Notifications\Model\Schedule;
+use Icinga\Module\Notifications\Model\Source;
 use ipl\Web\Widget\ItemList;
 use ipl\Web\Widget\ListItem;
 
@@ -13,7 +22,7 @@ use ipl\Web\Widget\ListItem;
  *
  * Create a list
  *
- * @template Item of Event
+ * @template Item of Event|Incident|IncidentHistory|IncidentContact|Source|Channel|Contact|Contactgroup|Rule|Schedule
  *
  * @extends ItemList<Item>
  */
