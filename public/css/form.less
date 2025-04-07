@@ -171,3 +171,26 @@
     border-color: transparent;
   }
 }
+
+.contact-form {
+  fieldset[name="contact_address"] {
+    padding-bottom: 1em;
+    border-bottom: 1px solid @gray-light;
+  }
+
+  input.search {
+    padding-left: 1.5em; // property was overwritten .icinga-controls
+  }
+
+  .search-suggestions .badge {
+    margin-left: 0.5em;
+  }
+}
+
+.icinga-form p.description {
+  color: @text-color-light;
+
+  &:last-child { // fieldset > .control-group:last-of-type rule unset the last element's bottom margin
+    margin-top: 1em;
+  }
+}
