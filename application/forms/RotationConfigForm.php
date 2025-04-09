@@ -312,19 +312,6 @@ class RotationConfigForm extends CompatForm
 
         $changedAt = (int) (new DateTime())->format("Uv");
 
-        $rotationsToMove = Rotation::on($this->db)
-            ->columns('id')
-            ->filter(Filter::equal('schedule_id', $this->scheduleId))
-            ->orderBy('priority', SORT_DESC);
-
-        foreach ($rotationsToMove as $rotation) {
-            $this->db->update(
-                'rotation',
-                ['priority' => new Expression('priority + 1'), 'changed_at' => $changedAt],
-                ['id = ?' => $rotation->id]
-            );
-        }
-
         $data['changed_at'] = $changedAt;
         $this->db->insert('rotation', $data);
         $rotationId = $this->db->lastInsertId();
@@ -393,6 +380,22 @@ class RotationConfigForm extends CompatForm
         $transactionStarted = false;
         if (! $this->db->inTransaction()) {
             $transactionStarted = $this->db->beginTransaction();
+        }
+
+        $rotationsToMove = Rotation::on($this->db)
+            ->columns('id')
+            ->filter(Filter::equal('schedule_id', $this->scheduleId))
+            ->orderBy('priority', SORT_DESC);
+
+        foreach ($rotationsToMove as $rotation) {
+            $this->db->update(
+                'rotation',
+                [
+                    'priority'      => new Expression('priority + 1'),
+                    'changed_at'    => (int) (new DateTime())->format("Uv")
+                ],
+                ['id = ?' => $rotation->id]
+            );
         }
 
         $this->createRotation(0)->send(true);
