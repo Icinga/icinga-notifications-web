@@ -655,13 +655,14 @@ class RotationConfigForm extends CompatForm
                             'span',
                             null,
                             Text::create($this->translate(
-                                '24 h shifts starting at a certain time at the day on every day of the week.'
+                                'Shifts start at a certain time of a day and last until the same time'
+                                . ' on the next or any later day.'
                             ))
                         ),
                         new HtmlElement(
                             'span',
                             new Attributes(['class' => 'example']),
-                            Text::create($this->translate('e.g. Daily, 9AM - 5PM'))
+                            Text::create($this->translate('e.g. On-Call (24/7)'))
                         )
                     ];
             }
