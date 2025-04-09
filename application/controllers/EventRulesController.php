@@ -90,7 +90,7 @@ class EventRulesController extends CompatController
                 Url::fromPath('notifications/event-rule/edit', ['id' => -1, 'clearCache' => true]),
                 'plus'
             ))->openInModal()
-            ->addAttributes(['class' => 'new-event-rule'])
+            ->addAttributes(['class' => 'add-new-component'])
         );
 
         $this->addContent(
