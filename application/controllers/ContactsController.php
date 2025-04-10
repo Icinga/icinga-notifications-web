@@ -5,22 +5,22 @@
 namespace Icinga\Module\Notifications\Controllers;
 
 use Icinga\Module\Notifications\Common\Links;
+use Icinga\Module\Notifications\View\ContactRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Web\Form\ContactForm;
-use Icinga\Module\Notifications\Widget\ItemList\ContactList;
+use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Web\Notification;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
-use ipl\Web\Common\BaseItemList;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
 use ipl\Web\Control\LimitControl;
 use ipl\Web\Control\SortControl;
 use ipl\Web\Filter\QueryString;
+use ipl\Web\Layout\MinimalItemLayout;
 use ipl\Web\Widget\ButtonLink;
-use ipl\Html\ValidHtml;
 
 class ContactsController extends CompatController
 {
@@ -80,15 +80,15 @@ class ContactsController extends CompatController
         $this->addControl($limitControl);
         $this->addControl($searchBar);
         $this->addContent(
-            (new ButtonLink(
-                t('Add Contact'),
-                'notifications/contacts/add',
-                'plus'
-            ))->setBaseTarget('_next')
-            ->addAttributes(['class' => 'add-new-component'])
+            (new ButtonLink(t('Add Contact'), Links::contactAdd(), 'plus'))
+                ->setBaseTarget('_next')
+                ->addAttributes(['class' => 'add-new-component'])
         );
 
-        $this->addContent(new ContactList($contacts));
+        $this->addContent(
+            (new ObjectList($contacts, new ContactRenderer()))
+                ->setItemLayoutClass(MinimalItemLayout::class)
+        );
 
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {
             $this->sendMultipartUpdate();
@@ -112,22 +112,6 @@ class ContactsController extends CompatController
             })->handleRequest($this->getServerRequest());
 
         $this->addContent($form);
-    }
-
-    /**
-     * Add attribute 'class' => 'full-width' if the content is an instance of BaseItemList
-     *
-     * @param ValidHtml $content
-     *
-     * @return ContactsController
-     */
-    protected function addContent(ValidHtml $content)
-    {
-        if ($content instanceof BaseItemList) {
-            $this->content->getAttributes()->add('class', 'full-width');
-        }
-
-        return parent::addContent($content);
     }
 
     public function completeAction(): void

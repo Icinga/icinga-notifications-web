@@ -9,8 +9,7 @@ use Icinga\Module\Icingadb\Common\Database;
 use Icinga\Module\Icingadb\Model\Host;
 use Icinga\Module\Icingadb\Model\Service;
 use Icinga\Module\Icingadb\Redis\VolatileStateResults;
-use Icinga\Module\Icingadb\Widget\ItemList\HostList;
-use Icinga\Module\Icingadb\Widget\ItemList\ServiceList;
+use Icinga\Module\Icingadb\Widget\ItemList\ObjectList;
 use Icinga\Module\Notifications\Hook\ObjectsRendererHook;
 use ipl\Html\Attributes;
 use ipl\Html\Html;
@@ -94,7 +93,7 @@ class ObjectsRenderer extends ObjectsRendererHook
                 return null;
             }
 
-            return (new ServiceList([$serviceStates]))
+            return (new ObjectList([$serviceStates]))
                 ->setViewMode('minimal');
         }
 
@@ -108,7 +107,7 @@ class ObjectsRenderer extends ObjectsRendererHook
             return null;
         }
 
-        return (new HostList([$hostStates]))
+        return (new ObjectList([$hostStates]))
             ->setViewMode('minimal');
     }
 

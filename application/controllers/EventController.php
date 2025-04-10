@@ -4,13 +4,11 @@
 
 namespace Icinga\Module\Notifications\Controllers;
 
-use ArrayObject;
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Event;
 use Icinga\Module\Notifications\Widget\Detail\EventDetail;
-use Icinga\Module\Notifications\Widget\ItemList\EventList;
-use ipl\Orm\ResultSet;
+use Icinga\Module\Notifications\Widget\Detail\ObjectHeader;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 
@@ -40,11 +38,7 @@ class EventController extends CompatController
             $this->httpNotFound(t('Event not found'));
         }
 
-        $this->addControl(
-            (new EventList(new ResultSet(new ArrayObject([$event]))))
-                ->setPageSize(1)
-                ->setNoSubjectLink()
-        );
+        $this->addControl(new ObjectHeader($event));
 
         $this->controls->addAttributes(['class' => 'event-detail']);
 
