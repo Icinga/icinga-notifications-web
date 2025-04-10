@@ -285,7 +285,13 @@ class Timeline extends BaseHtmlElement implements EntryProvider
 
         $entry->addHtml(
             $form,
-            new Icon('bars', ['data-drag-initiator' => true]),
+            new Icon(
+                'bars',
+                [
+                    'data-drag-initiator' => true,
+                    'title' => $this->translate('Drag to change the priority of the rotation')
+                ]
+            ),
             (new Link(
                 [new HtmlElement('span', null, Text::create($rotation->getName())), new Icon('cog')],
                 Links::rotationSettings($rotation->getId(), $rotation->getScheduleId())
