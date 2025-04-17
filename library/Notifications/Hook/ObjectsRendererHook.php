@@ -283,6 +283,7 @@ abstract class ObjectsRendererHook
                     }
 
                     return $objectLink->addAttributes([
+                        'data-base-target' => '_next',
                         'class' => [
                             'icinga-module',
                             'module-' . ($sourceType === 'icinga2' ? 'icingadb' : $sourceType)
