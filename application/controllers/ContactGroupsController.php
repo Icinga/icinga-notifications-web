@@ -8,20 +8,20 @@ use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\ContactGroupForm;
 use Icinga\Module\Notifications\Model\Contactgroup;
+use Icinga\Module\Notifications\View\ContactgroupRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
-use Icinga\Module\Notifications\Widget\ItemList\ContactGroupList;
+use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Module\Notifications\Widget\MemberSuggestions;
 use Icinga\Web\Notification;
 use ipl\Html\Form;
 use ipl\Html\Text;
-use ipl\Html\ValidHtml;
 use ipl\Stdlib\Filter;
-use ipl\Web\Common\BaseItemList;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
 use ipl\Web\Control\LimitControl;
 use ipl\Web\Control\SortControl;
 use ipl\Web\Filter\QueryString;
+use ipl\Web\Layout\MinimalItemLayout;
 use ipl\Web\Widget\ButtonLink;
 use ipl\Web\Widget\Tabs;
 
@@ -87,7 +87,10 @@ class ContactGroupsController extends CompatController
             ))->openInModal()
         );
 
-        $this->addContent(new ContactGroupList($groups));
+        $this->addContent(
+            (new ObjectList($groups, new ContactgroupRenderer()))
+                ->setItemLayoutClass(MinimalItemLayout::class)
+        );
 
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {
             $this->sendMultipartUpdate();
@@ -176,15 +179,6 @@ class ContactGroupsController extends CompatController
                 'url'        => Links::contactGroups(),
                 'baseTarget' => '_main'
             ]);
-    }
-
-    protected function addContent(ValidHtml $content): self
-    {
-        if ($content instanceof BaseItemList) {
-            $this->content->getAttributes()->add('class', 'full-width');
-        }
-
-        return parent::addContent($content);
     }
 
     /**

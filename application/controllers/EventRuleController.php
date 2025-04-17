@@ -9,7 +9,6 @@ use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\EventRuleForm;
 use Icinga\Module\Notifications\Forms\SaveEventRuleForm;
-use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ExtraTagSuggestions;
 use Icinga\Module\Notifications\Widget\EventRuleConfig;
