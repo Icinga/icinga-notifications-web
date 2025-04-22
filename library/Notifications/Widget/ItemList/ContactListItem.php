@@ -35,7 +35,7 @@ class ContactListItem extends BaseListItem
         $visual->addHtml(new HtmlElement(
             'div',
             Attributes::create(['class' => 'contact-ball']),
-            Text::create($this->item->full_name[0])
+            Text::create(grapheme_substr($this->item->full_name, 0, 1))
         ));
     }
 
