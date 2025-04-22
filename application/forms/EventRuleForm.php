@@ -16,7 +16,7 @@ class EventRuleForm extends CompatForm
 
     protected function assemble()
     {
-        $this->add($this->createCsrfCounterMeasure(Session::getSession()->getId()));
+        $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
 
         $this->addElement(
             'text',
