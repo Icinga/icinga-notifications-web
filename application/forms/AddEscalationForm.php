@@ -26,7 +26,7 @@ class AddEscalationForm extends Form
     protected function assemble()
     {
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
-        $this->add($this->createUidElement());
+        $this->addElement($this->createUidElement());
 
 
         $this->addElement(
