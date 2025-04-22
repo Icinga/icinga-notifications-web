@@ -25,7 +25,7 @@ class AddFilterForm extends Form
 
     protected function assemble()
     {
-        $this->add($this->createCsrfCounterMeasure(Session::getSession()->getId()));
+        $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
         $this->add($this->createUidElement());
 
 
