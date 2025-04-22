@@ -73,6 +73,8 @@ class IncidentsController extends CompatController
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {
             $this->sendMultipartUpdate();
         }
+
+        $this->setAutorefreshInterval(10);
     }
 
     public function completeAction(): void
