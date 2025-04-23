@@ -199,8 +199,7 @@ class ChannelForm extends CompatForm
     public function addChannel(): void
     {
         $channel = $this->getValues();
-
-        $channel['config'] = json_encode($this->filterConfig($channel['config']));
+        $channel['config'] = json_encode($this->filterConfig($channel['config']), JSON_FORCE_OBJECT);
         $channel['changed_at'] = (int) (new DateTime())->format("Uv");
 
         $this->db->transaction(function (Connection $db) use ($channel): void {
@@ -220,8 +219,8 @@ class ChannelForm extends CompatForm
         $channel = $this->getValues();
         $storedValues = $this->fetchDbValues();
 
-        $channel['config'] = json_encode($this->filterConfig($channel['config']));
-        $storedValues['config'] = json_encode($storedValues['config']);
+        $channel['config'] = json_encode($this->filterConfig($channel['config']), JSON_FORCE_OBJECT);
+        $storedValues['config'] = json_encode($storedValues['config'], JSON_FORCE_OBJECT);
 
         if (! empty(array_diff_assoc($channel, $storedValues))) {
             $channel['changed_at'] = (int) (new DateTime())->format("Uv");
