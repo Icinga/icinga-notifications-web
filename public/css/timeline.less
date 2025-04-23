@@ -227,6 +227,12 @@
   font-size: .75em;
 }
 
+#layout.twocols:not(.wide-layout) .days-header .column-title {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
 #layout.twocols .schedule .timescale:has(:nth-child(n+62)) { // month view (--timestampsPerDay * --primaryColumns = 62)
   display: none;
 }
