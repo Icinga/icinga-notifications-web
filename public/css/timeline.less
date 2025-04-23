@@ -225,12 +225,15 @@
 
 .days-header .column-title .date {
   font-size: .75em;
+  color: @text-color-light;
 }
 
 #layout.twocols:not(.wide-layout) .days-header .column-title {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+  line-height: 1.25;
+  padding-bottom: .25em;
 }
 
 #layout.twocols .schedule .timescale:has(:nth-child(n+62)) { // month view (--timestampsPerDay * --primaryColumns = 62)
