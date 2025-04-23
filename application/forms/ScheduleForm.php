@@ -72,12 +72,14 @@ class ScheduleForm extends CompatForm
 
     public function addSchedule(): int
     {
-        $this->db->insert('schedule', [
-            'name' => $this->getValue('name'),
-            'changed_at' => (int) (new DateTime())->format("Uv")
-        ]);
+        return $this->db->transaction(function (Connection $db) {
+            $db->insert('schedule', [
+                'name' => $this->getValue('name'),
+                'changed_at' => (int) (new DateTime())->format("Uv")
+            ]);
 
-        return $this->db->lastInsertId();
+            return $db->lastInsertId();
+        });
     }
 
     public function editSchedule(int $id): void

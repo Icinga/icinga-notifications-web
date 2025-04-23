@@ -297,7 +297,9 @@ class SourceForm extends CompatForm
 
         $source['changed_at'] = (int) (new DateTime())->format("Uv");
 
-        $this->db->insert('source', $source);
+        $this->db->transaction(function (Connection $db) use ($source): void {
+            $db->insert('source', $source);
+        });
     }
 
     /**
@@ -334,11 +336,13 @@ class SourceForm extends CompatForm
      */
     public function removeSource(): void
     {
-        $this->db->update(
-            'source',
-            ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'],
-            ['id = ?' => $this->sourceId]
-        );
+        $this->db->transaction(function (Connection $db): void {
+            $db->update(
+                'source',
+                ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'],
+                ['id = ?' => $this->sourceId]
+            );
+        });
     }
 
     /**
