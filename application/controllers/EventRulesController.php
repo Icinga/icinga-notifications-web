@@ -14,7 +14,9 @@ use Icinga\Module\Notifications\Widget\ItemList\EventRuleList;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\Html;
+use ipl\Html\ValidHtml;
 use ipl\Stdlib\Filter;
+use ipl\Web\Common\BaseItemList;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
 use ipl\Web\Control\LimitControl;
@@ -166,6 +168,22 @@ class EventRulesController extends CompatController
 
         $this->addControl($eventRuleFormAndSave);
         $this->addContent($eventRuleConfig);
+    }
+
+    /**
+     * Add attribute 'class' => 'full-width' if the content is an instance of BaseItemList
+     *
+     * @param ValidHtml $content
+     *
+     * @return EventRulesController
+     */
+    protected function addContent(ValidHtml $content)
+    {
+        if ($content instanceof BaseItemList) {
+            $this->content->getAttributes()->add('class', 'full-width');
+        }
+
+        return parent::addContent($content);
     }
 
     public function completeAction(): void

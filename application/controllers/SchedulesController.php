@@ -9,7 +9,9 @@ use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Schedule;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Widget\ItemList\ScheduleList;
+use ipl\Html\ValidHtml;
 use ipl\Stdlib\Filter;
+use ipl\Web\Common\BaseItemList;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
 use ipl\Web\Control\LimitControl;
@@ -80,6 +82,22 @@ class SchedulesController extends CompatController
         }
 
         $this->getTabs()->activate('schedules');
+    }
+
+    /**
+     * Add attribute 'class' => 'full-width' if the content is an instance of BaseItemList
+     *
+     * @param ValidHtml $content
+     *
+     * @return SchedulesController
+     */
+    protected function addContent(ValidHtml $content)
+    {
+        if ($content instanceof BaseItemList) {
+            $this->content->getAttributes()->add('class', 'full-width');
+        }
+
+        return parent::addContent($content);
     }
 
     public function completeAction(): void
