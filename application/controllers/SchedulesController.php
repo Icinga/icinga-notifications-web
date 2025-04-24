@@ -70,7 +70,7 @@ class SchedulesController extends CompatController
                 Links::scheduleAdd(),
                 'plus',
                 [
-                    'class' => 'add-schedule-control'
+                    'class' => 'add-new-component'
                 ]
             ))->openInModal()
         );
