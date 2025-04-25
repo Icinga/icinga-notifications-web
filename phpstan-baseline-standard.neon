@@ -1,38 +1,13 @@
 parameters:
 	ignoreErrors:
 		-
-			message: "#^Cannot access property \\$name on ipl\\\\Orm\\\\Model\\|null\\.$#"
-			count: 1
-			path: application/controllers/ChannelController.php
-
-		-
 			message: "#^Cannot call method getName\\(\\) on ipl\\\\Html\\\\Contract\\\\FormSubmitElement\\|null\\.$#"
 			count: 1
 			path: application/controllers/ChannelController.php
 
 		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Controllers\\\\ChannelController\\:\\:indexAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: application/controllers/ChannelController.php
-
-		-
-			message: "#^Parameter \\#1 \\$values of method Icinga\\\\Module\\\\Notifications\\\\Forms\\\\ChannelForm\\:\\:populate\\(\\) expects iterable\\<string, mixed\\>, ipl\\\\Orm\\\\Model\\|null given\\.$#"
-			count: 1
-			path: application/controllers/ChannelController.php
-
-		-
-			message: "#^Parameter \\#2 \\$channelId of class Icinga\\\\Module\\\\Notifications\\\\Forms\\\\ChannelForm constructor expects int\\|null, mixed given\\.$#"
-			count: 1
-			path: application/controllers/ChannelController.php
-
-		-
-			message: "#^Parameter \\#2 \\$value of static method ipl\\\\Stdlib\\\\Filter\\:\\:equal\\(\\) expects array\\|bool\\|float\\|int\\|string, mixed given\\.$#"
-			count: 1
-			path: application/controllers/ChannelController.php
-
-		-
 			message: "#^Parameter \\#2 \\.\\.\\.\\$values of function sprintf expects bool\\|float\\|int\\|string\\|null, mixed given\\.$#"
-			count: 3
+			count: 2
 			path: application/controllers/ChannelController.php
 
 		-
@@ -42,11 +17,6 @@ parameters:
 
 		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Controllers\\\\ChannelsController\\:\\:indexAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: application/controllers/ChannelsController.php
-
-		-
-			message: "#^Parameter \\#1 \\$name of method ipl\\\\Web\\\\Widget\\\\Tabs\\:\\:add\\(\\) expects string, mixed given\\.$#"
 			count: 1
 			path: application/controllers/ChannelsController.php
 
@@ -61,41 +31,6 @@ parameters:
 			path: application/controllers/ConfigController.php
 
 		-
-			message: "#^Parameter \\#1 \\$name of method ipl\\\\Web\\\\Widget\\\\Tabs\\:\\:add\\(\\) expects string, mixed given\\.$#"
-			count: 1
-			path: application/controllers/ConfigController.php
-
-		-
-			message: "#^Cannot access property \\$full_name on ipl\\\\Orm\\\\Model\\|null\\.$#"
-			count: 1
-			path: application/controllers/ContactController.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Controllers\\\\ContactController\\:\\:indexAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: application/controllers/ContactController.php
-
-		-
-			message: "#^Parameter \\#1 \\$values of method Icinga\\\\Module\\\\Notifications\\\\Web\\\\Form\\\\ContactForm\\:\\:populate\\(\\) expects iterable\\<string, mixed\\>, ipl\\\\Orm\\\\Model\\|null given\\.$#"
-			count: 1
-			path: application/controllers/ContactController.php
-
-		-
-			message: "#^Parameter \\#2 \\$value of static method ipl\\\\Stdlib\\\\Filter\\:\\:equal\\(\\) expects array\\|bool\\|float\\|int\\|string, mixed given\\.$#"
-			count: 1
-			path: application/controllers/ContactController.php
-
-		-
-			message: "#^Parameter \\#2 \\.\\.\\.\\$values of function sprintf expects bool\\|float\\|int\\|string\\|null, mixed given\\.$#"
-			count: 3
-			path: application/controllers/ContactController.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Controllers\\\\ContactsController\\:\\:addAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: application/controllers/ContactsController.php
-
-		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Controllers\\\\ContactsController\\:\\:indexAction\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: application/controllers/ContactsController.php
@@ -106,32 +41,7 @@ parameters:
 			path: application/controllers/EventController.php
 
 		-
-			message: "#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\\.$#"
-			count: 2
-			path: application/controllers/EventRuleController.php
-
-		-
 			message: "#^Cannot access offset 'object_filter' on mixed\\.$#"
-			count: 2
-			path: application/controllers/EventRuleController.php
-
-		-
-			message: "#^Cannot access property \\$position on mixed\\.$#"
-			count: 2
-			path: application/controllers/EventRuleController.php
-
-		-
-			message: "#^Cannot access property \\$rule_escalation on ipl\\\\Orm\\\\Model\\|null\\.$#"
-			count: 1
-			path: application/controllers/EventRuleController.php
-
-		-
-			message: "#^Cannot access property \\$rule_escalation_recipient on mixed\\.$#"
-			count: 1
-			path: application/controllers/EventRuleController.php
-
-		-
-			message: "#^Cannot call method getTableName\\(\\) on mixed\\.$#"
 			count: 2
 			path: application/controllers/EventRuleController.php
 
@@ -247,7 +157,7 @@ parameters:
 
 		-
 			message: "#^Cannot call method getName\\(\\) on ipl\\\\Html\\\\Contract\\\\FormSubmitElement\\|null\\.$#"
-			count: 2
+			count: 1
 			path: application/forms/ChannelForm.php
 
 		-
@@ -261,174 +171,9 @@ parameters:
 			path: application/forms/ChannelForm.php
 
 		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Forms\\\\ChannelForm\\:\\:onSuccess\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: application/forms/ChannelForm.php
-
-		-
-			message: "#^Parameter \\#1 \\$json of function json_decode expects string, mixed given\\.$#"
-			count: 1
-			path: application/forms/ChannelForm.php
-
-		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Forms\\\\DatabaseConfigForm\\:\\:assemble\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: application/forms/DatabaseConfigForm.php
-
-		-
-			message: "#^Call to an undefined method ipl\\\\Html\\\\Contract\\\\FormElement\\:\\:isChecked\\(\\)\\.$#"
-			count: 1
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Call to an undefined method ipl\\\\Html\\\\Contract\\\\FormElement\\:\\:prepareMultipartUpdate\\(\\)\\.$#"
-			count: 2
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Call to an undefined method ipl\\\\Html\\\\Contract\\\\FormElement\\:\\:setDescription\\(\\)\\.$#"
-			count: 3
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Call to an undefined method ipl\\\\Html\\\\Contract\\\\FormElement\\:\\:setLabel\\(\\)\\.$#"
-			count: 1
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Call to an undefined method ipl\\\\Scheduler\\\\RRule\\:\\:getUntil\\(\\)\\.$#"
-			count: 1
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Call to an undefined method ipl\\\\Sql\\\\Connection\\:\\:lastInsertId\\(\\)\\.$#"
-			count: 1
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Cannot access offset 'frequency' on mixed\\.$#"
-			count: 1
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Cannot access offset 'rrule' on mixed\\.$#"
-			count: 1
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Cannot access offset 'start' on mixed\\.$#"
-			count: 1
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Cannot access property \\$contact_id on mixed\\.$#"
-			count: 6
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Cannot access property \\$contactgroup_id on mixed\\.$#"
-			count: 4
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Cannot access property \\$full_name on mixed\\.$#"
-			count: 1
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Cannot access property \\$id on mixed\\.$#"
-			count: 2
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Cannot access property \\$name on mixed\\.$#"
-			count: 1
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Cannot call method add\\(\\) on DateTime\\|false\\.$#"
-			count: 1
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Cannot call method diff\\(\\) on mixed\\.$#"
-			count: 1
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Cannot call method format\\(\\) on DateTime\\|false\\.$#"
-			count: 1
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Cannot call method format\\(\\) on mixed\\.$#"
-			count: 2
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Cannot call method getTimezone\\(\\) on DateTime\\|false\\.$#"
-			count: 1
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Cannot cast mixed to int\\.$#"
-			count: 2
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Cannot clone non\\-object variable \\$start of type DateTime\\|false\\.$#"
-			count: 1
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Forms\\\\EntryForm\\:\\:assemble\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Forms\\\\EntryForm\\:\\:formValuesToDb\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Forms\\\\EntryForm\\:\\:getPartUpdates\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Method class@anonymous/application/forms/EntryForm\\.php\\:142\\:\\:assemble\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Method ipl\\\\Html\\\\Contract\\\\FormElement\\:\\:getValue\\(\\) invoked with 1 parameter, 0 required\\.$#"
-			count: 1
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Parameter \\#1 \\$json of static method ipl\\\\Scheduler\\\\RRule\\:\\:fromJson\\(\\) expects string, string\\|false given\\.$#"
-			count: 1
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Parameter \\#1 \\.\\.\\.\\$content of method ipl\\\\Html\\\\HtmlDocument\\:\\:setHtmlContent\\(\\) expects ipl\\\\Html\\\\ValidHtml, ipl\\\\Html\\\\Contract\\\\Wrappable\\|null given\\.$#"
-			count: 1
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Parameter \\#2 \\$datetime of static method DateTime\\:\\:createFromFormat\\(\\) expects string, mixed given\\.$#"
-			count: 2
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Parameter \\#2 \\$value of static method ipl\\\\Stdlib\\\\Filter\\:\\:equal\\(\\) expects array\\|bool\\|float\\|int\\|string, mixed given\\.$#"
-			count: 1
-			path: application/forms/EntryForm.php
-
-		-
-			message: "#^Property Icinga\\\\Module\\\\Notifications\\\\Forms\\\\EntryForm\\:\\:\\$submitLabel \\(string\\) on left side of \\?\\? is not nullable\\.$#"
-			count: 1
-			path: application/forms/EntryForm.php
 
 		-
 			message: "#^Call to an undefined method ipl\\\\Html\\\\Contract\\\\FormElement\\:\\:setName\\(\\)\\.$#"
@@ -537,7 +282,7 @@ parameters:
 
 		-
 			message: "#^Cannot access property \\$id on mixed\\.$#"
-			count: 3
+			count: 1
 			path: application/forms/SaveEventRuleForm.php
 
 		-
@@ -581,11 +326,6 @@ parameters:
 			path: application/forms/ScheduleForm.php
 
 		-
-			message: "#^Cannot access property \\$id on mixed\\.$#"
-			count: 3
-			path: application/forms/ScheduleForm.php
-
-		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Forms\\\\ScheduleForm\\:\\:assemble\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: application/forms/ScheduleForm.php
@@ -599,36 +339,6 @@ parameters:
 			message: "#^Argument of an invalid type array\\|null supplied for foreach, only iterables are supported\\.$#"
 			count: 1
 			path: library/Notifications/Common/Database.php
-
-		-
-			message: "#^Parameter \\#1 \\$identifier of method ipl\\\\Sql\\\\Connection\\:\\:quoteIdentifier\\(\\) expects array\\<string\\>\\|string, array\\<int, mixed\\> given\\.$#"
-			count: 1
-			path: library/Notifications/Model/Behavior/HasAddress.php
-
-		-
-			message: "#^Parameter \\#1 \\$name of method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Behavior\\\\HasAddress\\:\\:isSelectableColumn\\(\\) expects string, mixed given\\.$#"
-			count: 1
-			path: library/Notifications/Model/Behavior/HasAddress.php
-
-		-
-			message: "#^Parameter \\#1 \\$string of function strlen expects string, string\\|null given\\.$#"
-			count: 1
-			path: library/Notifications/Model/Behavior/HasAddress.php
-
-		-
-			message: "#^Parameter \\#2 \\$targetPath of method ipl\\\\Orm\\\\Query\\:\\:createSubQuery\\(\\) expects string, string\\|null given\\.$#"
-			count: 1
-			path: library/Notifications/Model/Behavior/HasAddress.php
-
-		-
-			message: "#^Part \\$column \\(mixed\\) of encapsed string cannot be cast to string\\.$#"
-			count: 1
-			path: library/Notifications/Model/Behavior/HasAddress.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Channel\\:\\:createRelations\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Model/Channel.php
 
 		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Channel\\:\\:getColumnDefinitions\\(\\) return type has no value type specified in iterable type array\\.$#"
@@ -646,16 +356,6 @@ parameters:
 			path: library/Notifications/Model/Channel.php
 
 		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Contact\\:\\:createBehaviors\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Model/Contact.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Contact\\:\\:createRelations\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Model/Contact.php
-
-		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Contact\\:\\:getColumnDefinitions\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: library/Notifications/Model/Contact.php
@@ -671,32 +371,7 @@ parameters:
 			path: library/Notifications/Model/Contact.php
 
 		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\ContactAddress\\:\\:createRelations\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Model/ContactAddress.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Contactgroup\\:\\:createRelations\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Model/Contactgroup.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Event\\:\\:createBehaviors\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Model/Event.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Event\\:\\:createRelations\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Model/Event.php
-
-		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Event\\:\\:getColumnDefinitions\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: library/Notifications/Model/Event.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Event\\:\\:getDefaultSort\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: library/Notifications/Model/Event.php
 
@@ -704,16 +379,6 @@ parameters:
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Event\\:\\:getSearchColumns\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: library/Notifications/Model/Event.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Incident\\:\\:createBehaviors\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Model/Incident.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Incident\\:\\:createRelations\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Model/Incident.php
 
 		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Incident\\:\\:getColumnDefinitions\\(\\) return type has no value type specified in iterable type array\\.$#"
@@ -731,24 +396,9 @@ parameters:
 			path: library/Notifications/Model/Incident.php
 
 		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\IncidentContact\\:\\:createRelations\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Model/IncidentContact.php
-
-		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\IncidentContact\\:\\:getColumnDefinitions\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: library/Notifications/Model/IncidentContact.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\IncidentHistory\\:\\:createBehaviors\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Model/IncidentHistory.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\IncidentHistory\\:\\:createRelations\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Model/IncidentHistory.php
 
 		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\IncidentHistory\\:\\:getColumnDefinitions\\(\\) return type has no value type specified in iterable type array\\.$#"
@@ -759,31 +409,6 @@ parameters:
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\IncidentHistory\\:\\:getDefaultSort\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: library/Notifications/Model/IncidentHistory.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\ObjectExtraTag\\:\\:createBehaviors\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Model/ObjectExtraTag.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\ObjectExtraTag\\:\\:createRelations\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Model/ObjectExtraTag.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Objects\\:\\:createBehaviors\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Model/Objects.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Objects\\:\\:createRelations\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Model/Objects.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Rule\\:\\:createRelations\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Model/Rule.php
 
 		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Rule\\:\\:getColumnDefinitions\\(\\) return type has no value type specified in iterable type array\\.$#"
@@ -801,11 +426,6 @@ parameters:
 			path: library/Notifications/Model/Rule.php
 
 		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\RuleEscalation\\:\\:createRelations\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Model/RuleEscalation.php
-
-		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\RuleEscalation\\:\\:getColumnDefinitions\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: library/Notifications/Model/RuleEscalation.php
@@ -821,16 +441,6 @@ parameters:
 			path: library/Notifications/Model/RuleEscalation.php
 
 		-
-			message: "#^Cannot call method first\\(\\) on mixed\\.$#"
-			count: 3
-			path: library/Notifications/Model/RuleEscalationRecipient.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\RuleEscalationRecipient\\:\\:createRelations\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Model/RuleEscalationRecipient.php
-
-		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\RuleEscalationRecipient\\:\\:getColumnDefinitions\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: library/Notifications/Model/RuleEscalationRecipient.php
@@ -841,22 +451,7 @@ parameters:
 			path: library/Notifications/Model/RuleEscalationRecipient.php
 
 		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\ScheduleMember\\:\\:createRelations\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Model/ScheduleMember.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Source\\:\\:createRelations\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Model/Source.php
-
-		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Source\\:\\:getColumnDefinitions\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: library/Notifications/Model/Source.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Source\\:\\:getDefaultSort\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: library/Notifications/Model/Source.php
 
@@ -864,21 +459,6 @@ parameters:
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Source\\:\\:getSearchColumns\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: library/Notifications/Model/Source.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\Timeperiod\\:\\:createRelations\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Model/Timeperiod.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\TimeperiodEntry\\:\\:createBehaviors\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Model/TimeperiodEntry.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\TimeperiodEntry\\:\\:createRelations\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Model/TimeperiodEntry.php
 
 		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Model\\\\TimeperiodEntry\\:\\:getDefaultSort\\(\\) return type has no value type specified in iterable type array\\.$#"
@@ -936,11 +516,6 @@ parameters:
 			path: library/Notifications/Web/Control/SearchBar/ObjectSuggestions.php
 
 		-
-			message: "#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\\.$#"
-			count: 1
-			path: library/Notifications/Web/Form/ContactForm.php
-
-		-
 			message: "#^Cannot access property \\$address on mixed\\.$#"
 			count: 2
 			path: library/Notifications/Web/Form/ContactForm.php
@@ -961,27 +536,7 @@ parameters:
 			path: library/Notifications/Web/Form/ContactForm.php
 
 		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Web\\\\Form\\\\ContactForm\\:\\:__construct\\(\\) has parameter \\$contactId with no type specified\\.$#"
-			count: 1
-			path: library/Notifications/Web/Form/ContactForm.php
-
-		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Web\\\\Form\\\\ContactForm\\:\\:assemble\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Web/Form/ContactForm.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Web\\\\Form\\\\ContactForm\\:\\:insertOrUpdateAddress\\(\\) has parameter \\$addressFromDb with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: library/Notifications/Web/Form/ContactForm.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Web\\\\Form\\\\ContactForm\\:\\:insertOrUpdateAddress\\(\\) has parameter \\$addressFromForm with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: library/Notifications/Web/Form/ContactForm.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Web\\\\Form\\\\ContactForm\\:\\:removeContact\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: library/Notifications/Web/Form/ContactForm.php
 
@@ -1001,22 +556,7 @@ parameters:
 			path: library/Notifications/Web/Form/EventRuleDecorator.php
 
 		-
-			message: "#^Call to an undefined method DateTimeInterface\\:\\:add\\(\\)\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Calendar.php
-
-		-
-			message: "#^Cannot call method diff\\(\\) on DateTime\\|null\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Calendar.php
-
-		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\:\\:assemble\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Calendar.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\:\\:getEntries\\(\\) return type has no value type specified in iterable type Traversable\\.$#"
 			count: 1
 			path: library/Notifications/Widget/Calendar.php
 
@@ -1031,26 +571,6 @@ parameters:
 			path: library/Notifications/Widget/Calendar.php
 
 		-
-			message: "#^Parameter \\#1 \\$from of static method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\\\Util\\:\\:diffHours\\(\\) expects DateTime, DateTime\\|null given\\.$#"
-			count: 2
-			path: library/Notifications/Widget/Calendar.php
-
-		-
-			message: "#^Parameter \\#1 \\$start of method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\\\Entry\\:\\:setStart\\(\\) expects DateTime, DateTimeInterface given\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Calendar.php
-
-		-
-			message: "#^Parameter \\#1 \\$start of method ipl\\\\Scheduler\\\\RRule\\:\\:startAt\\(\\) expects DateTimeInterface, DateTime\\|null given\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Calendar.php
-
-		-
-			message: "#^Parameter \\#2 \\$to of static method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\\\Util\\:\\:diffHours\\(\\) expects DateTime, DateTime\\|null given\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Calendar.php
-
-		-
 			message: "#^Property Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\:\\:\\$addEntryUrl \\(ipl\\\\Web\\\\Url\\) does not accept ipl\\\\Web\\\\Url\\|null\\.$#"
 			count: 1
 			path: library/Notifications/Widget/Calendar.php
@@ -1059,31 +579,6 @@ parameters:
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\\\Attendee\\:\\:setIcon\\(\\) has parameter \\$icon with no type specified\\.$#"
 			count: 1
 			path: library/Notifications/Widget/Calendar/Attendee.php
-
-		-
-			message: "#^Cannot call method format\\(\\) on DateTime\\|null\\.$#"
-			count: 7
-			path: library/Notifications/Widget/Calendar/BaseGrid.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\\\BaseGrid\\:\\:createGridSteps\\(\\) return type has no value type specified in iterable type Traversable\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Calendar/BaseGrid.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\\\BaseGrid\\:\\:getGridArea\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Calendar/BaseGrid.php
-
-		-
-			message: "#^Parameter \\#1 \\$content of static method ipl\\\\Html\\\\Text\\:\\:create\\(\\) expects string, string\\|null given\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Calendar/BaseGrid.php
-
-		-
-			message: "#^Property Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\\\BaseGrid\\:\\:\\$extraEntriesCount type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Calendar/BaseGrid.php
 
 		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\\\Controls\\:\\:assemble\\(\\) has no return type specified\\.$#"
@@ -1101,94 +596,14 @@ parameters:
 			path: library/Notifications/Widget/Calendar/DayGrid.php
 
 		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\\\DayGrid\\:\\:createGridSteps\\(\\) return type has no value type specified in iterable type Traversable\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Calendar/DayGrid.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\\\DayGrid\\:\\:getGridArea\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Calendar/DayGrid.php
-
-		-
-			message: "#^Property Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\\\Entry\\:\\:\\$description has no type specified\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Calendar/Entry.php
-
-		-
-			message: "#^Property Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\\\Entry\\:\\:\\$end has no type specified\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Calendar/Entry.php
-
-		-
-			message: "#^Property Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\\\Entry\\:\\:\\$id has no type specified\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Calendar/Entry.php
-
-		-
-			message: "#^Property Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\\\Entry\\:\\:\\$isOccurrence has no type specified\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Calendar/Entry.php
-
-		-
-			message: "#^Property Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\\\Entry\\:\\:\\$rrule has no type specified\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Calendar/Entry.php
-
-		-
-			message: "#^Property Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\\\Entry\\:\\:\\$start has no type specified\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Calendar/Entry.php
-
-		-
-			message: "#^Property Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\\\Entry\\:\\:\\$url \\(ipl\\\\Web\\\\Url\\) does not accept ipl\\\\Web\\\\Url\\|null\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Calendar/Entry.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\\\ExtraEntryCount\\:\\:assemble\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Calendar/ExtraEntryCount.php
-
-		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\\\MonthGrid\\:\\:assemble\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: library/Notifications/Widget/Calendar/MonthGrid.php
 
 		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\\\MonthGrid\\:\\:createGridSteps\\(\\) return type has no value type specified in iterable type Traversable\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Calendar/MonthGrid.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\\\MonthGrid\\:\\:getGridArea\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Calendar/MonthGrid.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\\\Util\\:\\:diffHours\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Calendar/Util.php
-
-		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\\\WeekGrid\\:\\:assemble\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: library/Notifications/Widget/Calendar/WeekGrid.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\\\WeekGrid\\:\\:createGridSteps\\(\\) return type has no value type specified in iterable type Traversable\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Calendar/WeekGrid.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\\\WeekGrid\\:\\:getGridArea\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Calendar/WeekGrid.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\CheckboxIcon\\:\\:assemble\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Widget/CheckboxIcon.php
 
 		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Detail\\\\EventDetail\\:\\:assemble\\(\\) has no return type specified\\.$#"
@@ -1207,11 +622,6 @@ parameters:
 
 		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Detail\\\\IncidentDetail\\:\\:createHistory\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Detail/IncidentDetail.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Detail\\\\IncidentDetail\\:\\:createObjectTag\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: library/Notifications/Widget/Detail/IncidentDetail.php
 
@@ -1346,46 +756,6 @@ parameters:
 			path: library/Notifications/Widget/FlowLine.php
 
 		-
-			message: "#^Cannot access offset 0 on mixed\\.$#"
-			count: 1
-			path: library/Notifications/Widget/ItemList/ContactListItem.php
-
-		-
-			message: "#^Parameter \\#1 \\$content of static method ipl\\\\Html\\\\Text\\:\\:create\\(\\) expects string, mixed given\\.$#"
-			count: 1
-			path: library/Notifications/Widget/ItemList/ContactListItem.php
-
-		-
-			message: "#^Parameter \\#2 \\$value of method Icinga\\\\Web\\\\Url\\:\\:setParam\\(\\) expects array\\|bool\\|string, int given\\.$#"
-			count: 1
-			path: library/Notifications/Widget/ItemList/EventList.php
-
-		-
-			message: "#^Property Icinga\\\\Module\\\\Notifications\\\\Widget\\\\ItemList\\\\EventList\\:\\:\\$data \\(ipl\\\\Orm\\\\ResultSet\\) does not accept Generator\\.$#"
-			count: 1
-			path: library/Notifications/Widget/ItemList/EventList.php
-
-		-
-			message: "#^Parameter \\#2 \\$value of method Icinga\\\\Web\\\\Url\\:\\:setParam\\(\\) expects array\\|bool\\|string, int given\\.$#"
-			count: 1
-			path: library/Notifications/Widget/ItemList/EventRuleList.php
-
-		-
-			message: "#^Cannot call method count\\(\\) on mixed\\.$#"
-			count: 1
-			path: library/Notifications/Widget/ItemList/EventRuleListItem.php
-
-		-
-			message: "#^Cannot call method first\\(\\) on mixed\\.$#"
-			count: 1
-			path: library/Notifications/Widget/ItemList/EventRuleListItem.php
-
-		-
-			message: "#^Parameter \\#1 \\$id of static method Icinga\\\\Module\\\\Notifications\\\\Common\\\\Links\\:\\:eventRule\\(\\) expects int, mixed given\\.$#"
-			count: 1
-			path: library/Notifications/Widget/ItemList/EventRuleListItem.php
-
-		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\ItemList\\\\PageSeparatorItem\\:\\:assemble\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: library/Notifications/Widget/ItemList/PageSeparatorItem.php
@@ -1407,11 +777,6 @@ parameters:
 
 		-
 			message: "#^Cannot access offset 'term' on mixed\\.$#"
-			count: 2
-			path: library/Notifications/Widget/RecipientSuggestions.php
-
-		-
-			message: "#^Cannot access property \\$color on mixed\\.$#"
 			count: 2
 			path: library/Notifications/Widget/RecipientSuggestions.php
 
@@ -1456,16 +821,6 @@ parameters:
 			path: library/Notifications/Widget/RecipientSuggestions.php
 
 		-
-			message: "#^Cannot access property \\$full_name on ipl\\\\Orm\\\\Model\\|null\\.$#"
-			count: 1
-			path: library/Notifications/Widget/RuleEscalationRecipientBadge.php
-
-		-
-			message: "#^Cannot access property \\$name on ipl\\\\Orm\\\\Model\\|null\\.$#"
-			count: 1
-			path: library/Notifications/Widget/RuleEscalationRecipientBadge.php
-
-		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\RuleEscalationRecipientBadge\\:\\:assemble\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: library/Notifications/Widget/RuleEscalationRecipientBadge.php
@@ -1479,66 +834,6 @@ parameters:
 			message: "#^Property Icinga\\\\Module\\\\Notifications\\\\Widget\\\\RuleEscalationRecipientBadge\\:\\:\\$moreCount \\(int\\) does not accept int\\|null\\.$#"
 			count: 1
 			path: library/Notifications/Widget/RuleEscalationRecipientBadge.php
-
-		-
-			message: "#^Cannot access property \\$contact on mixed\\.$#"
-			count: 2
-			path: library/Notifications/Widget/Schedule.php
-
-		-
-			message: "#^Cannot access property \\$contact_id on mixed\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Schedule.php
-
-		-
-			message: "#^Cannot access property \\$contactgroup on mixed\\.$#"
-			count: 2
-			path: library/Notifications/Widget/Schedule.php
-
-		-
-			message: "#^Cannot access property \\$description on mixed\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Schedule.php
-
-		-
-			message: "#^Cannot access property \\$end_time on mixed\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Schedule.php
-
-		-
-			message: "#^Cannot access property \\$id on mixed\\.$#"
-			count: 2
-			path: library/Notifications/Widget/Schedule.php
-
-		-
-			message: "#^Cannot access property \\$rrule on mixed\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Schedule.php
-
-		-
-			message: "#^Cannot access property \\$start_time on mixed\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Schedule.php
-
-		-
-			message: "#^Cannot access property \\$timeperiod_id on mixed\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Schedule.php
-
-		-
-			message: "#^Cannot access property \\$timezone on mixed\\.$#"
-			count: 2
-			path: library/Notifications/Widget/Schedule.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Schedule\\:\\:assemble\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Schedule.php
-
-		-
-			message: "#^Property Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Schedule\\:\\:\\$schedule \\(Icinga\\\\Module\\\\Notifications\\\\Model\\\\Schedule\\) does not accept Icinga\\\\Module\\\\Notifications\\\\Model\\\\Schedule\\|null\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Schedule.php
 
 		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\ShowMore\\:\\:assemble\\(\\) has no return type specified\\.$#"

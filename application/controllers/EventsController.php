@@ -6,9 +6,10 @@ namespace Icinga\Module\Notifications\Controllers;
 
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Hook\ObjectsRendererHook;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
-use Icinga\Module\Notifications\Widget\ItemList\EventList;
 use Icinga\Module\Notifications\Model\Event;
+use Icinga\Module\Notifications\Widget\ItemList\LoadMoreObjectList;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
@@ -16,6 +17,8 @@ use ipl\Web\Control\LimitControl;
 use ipl\Web\Control\SortControl;
 use ipl\Web\Filter\QueryString;
 use ipl\Web\Url;
+use ipl\Web\Widget\ItemList;
+use ipl\Web\Widget\ListItem;
 
 class EventsController extends CompatController
 {
@@ -83,9 +86,15 @@ class EventsController extends CompatController
         $url = Url::fromRequest()->onlyWith($preserveParams);
         $url->setQueryString(QueryString::render($filter) . '&' . $url->getParams()->toString());
 
-        $eventList = (new EventList($events->execute()))
+        $eventList = (new LoadMoreObjectList($events->execute()))
             ->setPageSize($limitControl->getLimit())
-            ->setLoadMoreUrl($url->setParam('before', $before));
+            ->setLoadMoreUrl($url->setParam('before', $before))
+            ->on(ItemList::ON_ITEM_ADD, function (ListItem $item, Event $data) {
+                ObjectsRendererHook::register($data->object);
+            })
+            ->on(ItemList::ON_ASSEMBLED, function () {
+                ObjectsRendererHook::load();
+            });
 
         if ($compact) {
             $eventList->setPageNumber($page);

@@ -2,9 +2,11 @@
 
 /* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Notifications\Widget;
+namespace Icinga\Module\Notifications\Widget\Detail;
 
-use Icinga\Module\Notifications\Widget\Schedule\Controls;
+use Icinga\Module\Notifications\Model\Schedule;
+use Icinga\Module\Notifications\Widget\Detail\ScheduleDetail\Controls;
+use Icinga\Module\Notifications\Widget\Timeline;
 use Icinga\Module\Notifications\Widget\Timeline\Rotation;
 use Icinga\Util\Csp;
 use ipl\Html\Attributes;
@@ -13,15 +15,15 @@ use ipl\Html\HtmlElement;
 use ipl\Web\Common\BaseTarget;
 use ipl\Web\Style;
 
-class Schedule extends BaseHtmlElement
+class ScheduleDetail extends BaseHtmlElement
 {
     use BaseTarget;
 
     protected $tag = 'div';
 
-    protected $defaultAttributes = ['id' => 'notifications-schedule', 'class' => 'schedule'];
+    protected $defaultAttributes = ['id' => 'notifications-schedule', 'class' => 'schedule-detail'];
 
-    /** @var \Icinga\Module\Notifications\Model\Schedule */
+    /** @var Schedule */
     protected $schedule;
 
     /** @var Controls */
@@ -30,10 +32,10 @@ class Schedule extends BaseHtmlElement
     /**
      * Create a new Schedule
      *
-     * @param \Icinga\Module\Notifications\Model\Schedule $schedule
+     * @param Schedule $schedule
      * @param Controls $controls
      */
-    public function __construct(\Icinga\Module\Notifications\Model\Schedule $schedule, Controls $controls)
+    public function __construct(Schedule $schedule, Controls $controls)
     {
         $this->schedule = $schedule;
         $this->controls = $controls;

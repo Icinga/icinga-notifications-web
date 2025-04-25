@@ -6,15 +6,20 @@ namespace Icinga\Module\Notifications\Controllers;
 
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Hook\ObjectsRendererHook;
+use Icinga\Module\Notifications\View\IncidentRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Model\Incident;
-use Icinga\Module\Notifications\Widget\ItemList\IncidentList;
+use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
 use ipl\Web\Control\LimitControl;
 use ipl\Web\Control\SortControl;
 use ipl\Web\Filter\QueryString;
+use ipl\Web\Layout\MinimalItemLayout;
+use ipl\Web\Widget\ItemList;
+use ipl\Web\Widget\ListItem;
 
 class IncidentsController extends CompatController
 {
@@ -68,7 +73,16 @@ class IncidentsController extends CompatController
         $this->addControl($limitControl);
         $this->addControl($searchBar);
 
-        $this->addContent(new IncidentList($incidents));
+        $incidentList = (new ObjectList($incidents, new IncidentRenderer()))
+            ->setItemLayoutClass(MinimalItemLayout::class)
+            ->on(ItemList::ON_ITEM_ADD, function (ListItem $item, Incident $data) {
+                ObjectsRendererHook::register($data->object);
+            })
+            ->on(ItemList::ON_ASSEMBLED, function () {
+                ObjectsRendererHook::load();
+            });
+
+        $this->addContent($incidentList);
 
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {
             $this->sendMultipartUpdate();

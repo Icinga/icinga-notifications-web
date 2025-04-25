@@ -6,10 +6,8 @@ namespace Icinga\Module\Notifications\Controllers;
 
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Forms\SourceForm;
-use Icinga\Module\Notifications\Model\Source;
 use Icinga\Web\Notification;
 use ipl\Html\Contract\FormSubmitElement;
-use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 
 class SourceController extends CompatController

@@ -9,8 +9,8 @@ use Icinga\Module\Icingadb\Common\Database;
 use Icinga\Module\Icingadb\Model\Host;
 use Icinga\Module\Icingadb\Model\Service;
 use Icinga\Module\Icingadb\Redis\VolatileStateResults;
-use Icinga\Module\Icingadb\Widget\ItemList\HostList;
-use Icinga\Module\Icingadb\Widget\ItemList\ServiceList;
+use Icinga\Module\Icingadb\View\HostRenderer;
+use Icinga\Module\Icingadb\View\ServiceRenderer;
 use Icinga\Module\Notifications\Hook\ObjectsRendererHook;
 use ipl\Html\Attributes;
 use ipl\Html\Html;
@@ -19,6 +19,7 @@ use ipl\Html\Text;
 use ipl\Html\ValidHtml;
 use ipl\Orm\Query;
 use ipl\Stdlib\Filter;
+use ipl\Web\Layout\MinimalItemLayout;
 use ipl\Web\Widget\StateBall;
 
 class ObjectsRenderer extends ObjectsRendererHook
@@ -94,8 +95,9 @@ class ObjectsRenderer extends ObjectsRendererHook
                 return null;
             }
 
-            return (new ServiceList([$serviceStates]))
-                ->setViewMode('minimal');
+            $item = new MinimalItemLayout($serviceStates, new ServiceRenderer());
+
+            return new HtmlElement('div', $item->getAttributes(), $item);
         }
 
         $hostStates = $hostsQuery
@@ -108,8 +110,9 @@ class ObjectsRenderer extends ObjectsRendererHook
             return null;
         }
 
-        return (new HostList([$hostStates]))
-            ->setViewMode('minimal');
+        $item = new MinimalItemLayout($hostStates, new HostRenderer());
+
+        return new HtmlElement('div', $item->getAttributes(), $item);
     }
 
     public function getObjectNames(array $objectIdTags): Generator

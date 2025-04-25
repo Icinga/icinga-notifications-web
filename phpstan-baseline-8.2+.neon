@@ -1,6 +1,0 @@
-parameters:
-	ignoreErrors:
-		-
-			message: "#^Parameter \\#1 \\$iterator of function iterator_to_array expects iterable, ipl\\\\Orm\\\\Model\\|null given\\.$#"
-			count: 1
-			path: application/controllers/EventRuleController.php

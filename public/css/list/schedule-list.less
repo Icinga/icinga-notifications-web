@@ -1,7 +1,8 @@
 // Header
 .schedules-header {
   margin-left: 12em;
-  width: ~"calc(100% - 12em)";
+  margin-right: 1em;
+  width: ~"calc(100% - 13em)"; // margin-left + margin-right
 
   .days-header {
     display: grid;
@@ -15,47 +16,44 @@
 }
 
 // Layout
-.item-list.schedule-list {
-  .list-item {
-    .main {
-      display: flex;
-      align-items: center;
-      header .title {
-        width: 10em;
-        display: inline-flex;
-      }
-
-      .caption {
-        display: flex;
-        margin-left: 0.5em;
-        width: 100%;
-        height: 2em;
-        align-items: center;
-
-        > .timeline {
-          flex-grow: 1;
-        }
-      }
+.item-list .schedule {
+  .main {
+    display: flex;
+    align-items: center;
+    header .title {
+      width: 10em;
+      display: inline-flex;
     }
 
-    .timeline .time-grid {
-      grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: minmax(0, 1fr);
+    .caption {
+      display: flex;
+      width: 100%;
+      height: 2em;
+      align-items: center;
 
-      .grid {
-        border-width: 0 0 0 2px;
+      > .timeline {
+        flex-grow: 1;
       }
+    }
+  }
 
-      .grid,
-      .overlay {
-        grid-area: ~"1 / 1 / 2 / 2";
+  .timeline .time-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
 
-        .entry {
-          margin: 0;
+    .grid {
+      border-width: 0 0 0 2px;
+    }
 
-          .title {
-            align-items: center;
-          }
+    .grid,
+    .overlay {
+      grid-area: ~"1 / 1 / 2 / 2";
+
+      .entry {
+        margin: 0;
+
+        .title {
+          align-items: center;
         }
       }
     }
@@ -63,7 +61,7 @@
 }
 
 // Design
-.schedule-list .timeline {
+.item-list .schedule .timeline {
   .time-grid {
     .grid {
       .step {

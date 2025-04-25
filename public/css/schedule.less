@@ -1,9 +1,5 @@
 /* Layout */
 
-.add-schedule-control {
-  margin-bottom: 1em;
-}
-
 .schedule-detail-controls {
   .box-shadow(0, 0, 0, 1px, @gray-lighter);
   z-index: 2; // The content may clip, this ensures the separator and dropdown is always visible
@@ -18,7 +14,7 @@
   }
 }
 
-.schedule {
+.schedule-detail {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -62,12 +58,12 @@
 
 /* Design */
 
-.schedule .entry.highlighted {
+.schedule-detail .entry.highlighted {
   outline: 2px solid var(--entry-border-color);
   outline-offset: 1px;
 }
 
-.schedule .step.highlighted {
+.schedule-detail .step.highlighted {
   background-color: @gray-lighter;
   border-color: @gray-light;
 }

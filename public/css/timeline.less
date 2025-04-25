@@ -11,7 +11,10 @@
     --primaryRowHeight: 4em;
     --daysHeaderHeight: 3em;
     position: relative;
-    margin-right: 1em; // make midnight timestamp visible
+
+    &:has(.timescale) {
+        margin-right: 1em; // make midnight timestamp visible
+    }
 
     .time-grid-header {
       box-sizing: border-box;
@@ -236,6 +239,6 @@
   padding-bottom: .25em;
 }
 
-#layout.twocols .schedule .timescale:has(:nth-child(n+62)) { // month view (--timestampsPerDay * --primaryColumns = 62)
+#layout.twocols .schedule-detail .timescale:has(:nth-child(n+62)) { // month view (--timestampsPerDay * --primaryColumns = 62)
   display: none;
 }

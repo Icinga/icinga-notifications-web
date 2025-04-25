@@ -1,17 +1,3 @@
-& > .content.full-width {
-  padding-left: 0;
-  padding-right: 0;
-
-  .list-item {
-    padding-left: 1em;
-    padding-right: 1em;
-  }
-
-  .item-list > .empty-state {
-    margin: 0 1em;
-  }
-}
-
 .controls {
   &.contactgroup-detail,
   &.event-detail,
@@ -92,13 +78,15 @@
   color: @text-color-light;
 }
 
-.full-width .add-new-component {
+.add-new-component {
   margin: 0 0 1em 1em;
 }
 
-.event-list .list-item,
-.incident-list .list-item {
-  .meta > :not(:last-child) {
+.item-layout.rule footer {
+  justify-content: end;
+  align-items: baseline;
+
+  > :not(:last-child) {
     margin-right: 0.5em;
   }
 }

@@ -8,14 +8,15 @@ use Icinga\Date\DateFormatter;
 use Icinga\Module\Notifications\Hook\ObjectsRendererHook;
 use Icinga\Module\Notifications\Model\Event;
 use Icinga\Module\Notifications\Model\Incident;
+use Icinga\Module\Notifications\View\IncidentRenderer;
 use Icinga\Module\Notifications\Widget\EventSourceBadge;
-use Icinga\Module\Notifications\Widget\ItemList\IncidentList;
 use InvalidArgumentException;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\Html\ValidHtml;
+use ipl\Web\Layout\MinimalItemLayout;
 use ipl\Web\Widget\HorizontalKeyValue;
 
 class EventDetail extends BaseHtmlElement
@@ -123,9 +124,11 @@ class EventDetail extends BaseHtmlElement
             return null;
         }
 
+        $incidentItem = new MinimalItemLayout($this->incident, new IncidentRenderer());
+
         return [
             Html::tag('h2', t('Incident')),
-            new IncidentList([$this->incident])
+            new HtmlElement('div', $incidentItem->getAttributes(), $incidentItem)
         ];
     }
 
