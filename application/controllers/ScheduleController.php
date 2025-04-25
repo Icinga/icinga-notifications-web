@@ -11,7 +11,7 @@ use Icinga\Module\Notifications\Forms\RotationConfigForm;
 use Icinga\Module\Notifications\Forms\ScheduleForm;
 use Icinga\Module\Notifications\Model\Schedule;
 use Icinga\Module\Notifications\Widget\RecipientSuggestions;
-use Icinga\Module\Notifications\Widget\Schedule as ScheduleWidget;
+use Icinga\Module\Notifications\Widget\Detail\ScheduleDetail;
 use ipl\Html\Form;
 use ipl\Html\Html;
 use ipl\Stdlib\Filter;
@@ -52,15 +52,15 @@ class ScheduleController extends CompatController
 
         $this->controls->addAttributes(['class' => 'schedule-detail-controls']);
 
-        $scheduleControls = (new ScheduleWidget\Controls())
+        $scheduleControls = (new ScheduleDetail\Controls())
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->populate(['mode' => $this->params->get('mode')])
-            ->on(Form::ON_SUCCESS, function (ScheduleWidget\Controls $controls) use ($id) {
+            ->on(Form::ON_SUCCESS, function (ScheduleDetail\Controls $controls) use ($id) {
                 $this->redirectNow(Links::schedule($id)->with(['mode' => $controls->getMode()]));
             })
             ->handleRequest($this->getServerRequest());
 
-        $this->addContent(new ScheduleWidget($schedule, $scheduleControls));
+        $this->addContent(new ScheduleDetail($schedule, $scheduleControls));
     }
 
     public function settingsAction(): void
