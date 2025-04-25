@@ -14,6 +14,7 @@ use ipl\Sql\Connection;
 use ipl\Sql\Expression;
 use ipl\Sql\QueryBuilder;
 use ipl\Sql\Select;
+use ipl\Sql\Update;
 use PDO;
 
 final class Database
@@ -155,6 +156,16 @@ final class Database
                 }
 
                 $select->where([$baseTableAlias . '.' . $condition => 'n']);
+            })
+            ->on(QueryBuilder::ON_ASSEMBLE_UPDATE, function (Update $update) use ($db): void {
+                $set = $update->getSet();
+
+                if (! isset($set['changed_at'])) {
+                    return;
+                }
+
+                $set['changed_at'] = new Expression('GREATEST(?, 1 + changed_at)', null, $set['changed_at']);
+                $update->set($set);
             });
 
         return $db;
