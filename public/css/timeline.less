@@ -11,7 +11,10 @@
     --primaryRowHeight: 4em;
     --daysHeaderHeight: 3em;
     position: relative;
-    margin-right: 1em; // make midnight timestamp visible
+
+    &:has(.timescale) {
+        margin-right: 1em; // make midnight timestamp visible
+    }
 
     .time-grid-header {
       box-sizing: border-box;
