@@ -21,7 +21,7 @@ class ScheduleRenderer implements ItemRenderer
 {
     public function assembleAttributes($item, Attributes $attributes, string $layout): void
     {
-        $attributes->get('class')->addValue('schedule-item');
+        $attributes->get('class')->addValue('schedule');
     }
 
     public function assembleVisual($item, HtmlDocument $visual, string $layout): void
