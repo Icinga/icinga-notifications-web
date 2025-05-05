@@ -6,14 +6,16 @@ namespace Icinga\Module\Notifications\Forms;
 
 use DateTime;
 use Icinga\Exception\Http\HttpNotFoundException;
-use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\AvailableChannelType;
+use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use Icinga\Web\Session;
+use ipl\Html\Attributes;
 use ipl\Html\Contract\FormSubmitElement;
 use ipl\Html\FormElement\BaseFormElement;
 use ipl\Html\FormElement\FieldsetElement;
+use ipl\Html\HtmlElement;
 use ipl\I18n\GettextTranslator;
 use ipl\I18n\StaticTranslator;
 use ipl\Sql\Connection;
@@ -267,6 +269,24 @@ class ChannelForm extends CompatForm
         $elementsConfig = json_decode($config, true);
 
         if (empty($elementsConfig)) {
+            $this->prependHtml(
+                HtmlElement::create(
+                    'ul',
+                    Attributes::create(['class' => 'errors']),
+                    HtmlElement::create(
+                        'li',
+                        null,
+                        sprintf(
+                            $this->translate(
+                                'Could not decode options for type \'%s\'.'
+                                . ' Check if your database\'s character set is correctly configured.'
+                            ),
+                            $type
+                        )
+                    )
+                )
+            );
+
             return;
         }
 
@@ -448,5 +468,21 @@ class ChannelForm extends CompatForm
             'type'      => $channel->type,
             'config'    => json_decode($channel->config, true) ?? []
         ];
+    }
+
+    /**
+     * Validate all elements
+     *
+     * @return $this
+     */
+    public function validate(): self
+    {
+        parent::validate();
+
+        if (! $this->hasElement('config')) {
+            $this->isValid = false;
+        }
+
+        return $this;
     }
 }
