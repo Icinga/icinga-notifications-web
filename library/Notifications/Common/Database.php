@@ -82,6 +82,13 @@ final class Database
                 . ",NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'";
         }
 
+        if (empty($config->charset)) {
+            $config->charset = match ($config->db) {
+                'mysql' => 'utf8mb4',
+                default => 'utf8',
+            };
+        }
+
         $db = new Connection($config);
 
         $adapter = $db->getAdapter();
