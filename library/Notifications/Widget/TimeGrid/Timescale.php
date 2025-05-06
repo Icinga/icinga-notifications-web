@@ -66,13 +66,13 @@ class Timescale extends BaseHtmlElement
         $time = new DateTime();
         $dayTimestamps = [];
         for ($i = 0; $i < $timestampPerDay; $i++) {
-            // am-pm is separated by non-breaking whitespace
-            $parts = preg_split('/\s/u', $dateFormatter->format($time->setTime($i * $timeIntervals, 0)));
-
-            $stamp = [new HtmlElement('span', null, new Text($parts[0]))];
-            if (isset($parts[1])) {
-                $stamp[] = new HtmlElement('span', null, new Text($parts[1]));
-            }
+            $stamp = array_map(
+                function ($part) {
+                    return new HtmlElement('span', null, new Text($part));
+                },
+                // am-pm is separated by non-breaking whitespace
+                preg_split('/\s/u', $dateFormatter->format($time->setTime($i * $timeIntervals, 0)))
+            );
 
             $dayTimestamps[] = new HtmlElement('span', new Attributes(['class' => 'timestamp']), ...$stamp);
             $dayTimestamps[] = new HtmlElement('span', new Attributes(['class' => 'ticks']));
