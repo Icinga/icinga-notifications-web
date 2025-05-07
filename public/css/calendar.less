@@ -83,7 +83,7 @@
   .grid,
   .overlay {
     display: grid;
-    overflow: hidden;
+   // overflow: hidden; //TODO(sd): is this required?
     grid-template-rows: repeat(~"calc(var(--primaryRows) * var(--rowsPerStep))", var(--stepRowHeight));
     grid-template-columns: repeat(~"calc(var(--primaryColumns) * var(--columnsPerStep))", minmax(var(--minimumStepColumnWidth), 1fr));
     border-width: 1px 0 0 1px;
