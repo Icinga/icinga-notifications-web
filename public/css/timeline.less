@@ -74,7 +74,11 @@
 
     .timescale {
       display: grid;
-      grid-template-columns: repeat(~"calc(var(--primaryColumns) * var(--timestampsPerDay))", minmax(0,1fr));
+      grid-template-columns: repeat(
+        ~"calc(var(--primaryColumns) * var(--timestampsPerDay))",
+        minmax(~"calc(var(--minimumPrimaryColumnWidth) / var(--timestampsPerDay))", 1fr)
+      );
+
       border-left: 1px solid @gray-lighter; // this is required to maintain the grid layout
       grid-area: ~"4 / 2 / 4 / 3";
 
@@ -100,7 +104,7 @@
         align-items: center;
         margin-top: 0.5em;
         padding-top: 0.5em;
-        font-size: .5em;
+        font-size: .75em;
         position: relative;
         left: -50%;
         line-height: 1;
@@ -114,21 +118,21 @@
         }
       }
 
-      span:nth-last-of-type(2), // last .ticks before .midnight
-      .midnight {
+      > span.ticks:nth-last-of-type(2), // last .ticks and .midnight
+      > .timestamp.midnight {
         grid-area: ~"1 / -2 / 1 / -1";
       }
     }
 
     .clock {
       display: grid;
-      grid-template-columns: repeat(var(--primaryColumns), 1fr);
+      grid-template-columns: repeat(var(--primaryColumns), minmax(var(--minimumPrimaryColumnWidth), 1fr));
       grid-area: ~"3 / 2 / 4 / 3";
       border-top: 1px solid transparent; // left not required, otherwise the .time-hand is not aligned properly
 
       .current-day {
         display: grid;
-        grid-template-columns: repeat(var(--columnsPerStep), 1fr);
+        grid-template-columns: repeat(var(--columnsPerStep), minmax(var(--minimumStepColumnWidth), 1fr));
         grid-area: ~"1 / 1 / 2 / 2";
 
         .time-hand {
