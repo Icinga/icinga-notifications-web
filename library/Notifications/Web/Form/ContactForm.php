@@ -6,6 +6,7 @@ namespace Icinga\Module\Notifications\Web\Form;
 
 use DateTime;
 use Icinga\Exception\Http\HttpNotFoundException;
+use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\AvailableChannelType;
 use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\Contact;
@@ -17,6 +18,7 @@ use ipl\Html\Attributes;
 use ipl\Html\Contract\FormSubmitElement;
 use ipl\Html\FormElement\FieldsetElement;
 use ipl\Html\HtmlElement;
+use ipl\Html\TemplateString;
 use ipl\Html\Text;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
@@ -26,6 +28,8 @@ use ipl\Validator\StringLengthValidator;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
 use ipl\Web\Url;
+use ipl\Web\Widget\ActionLink;
+use ipl\Web\Widget\EmptyStateBar;
 
 class ContactForm extends CompatForm
 {
@@ -170,6 +174,15 @@ class ContactForm extends CompatForm
             ->registerElement($defaultChannel)
             ->decorate($defaultChannel);
 
+        if (empty($channelNames)) {
+            $this->prependHtml(new EmptyStateBar(
+                TemplateString::create(
+                    $this->translate('No channels available. Please create a {{#link}}channel{{/link}} first'),
+                    ['link' => new ActionLink(null, Links::channels(), attributes: ['data-base-target' => '_next'])]
+                )
+            ));
+        }
+
         $this->addAddressElements($channelTypes[$this->getValue('default_channel_id')] ?? null);
         $this->addHtml($defaultChannel);
         $this->addHtml(new HtmlElement(
@@ -190,6 +203,7 @@ class ContactForm extends CompatForm
                     $this->translate('Save Changes')
             ]
         );
+
         if ($this->contactId !== null) {
             /** @var FormSubmitElement $deleteButton */
             $deleteButton = $this->createElement(
