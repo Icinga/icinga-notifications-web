@@ -6,6 +6,7 @@ namespace Icinga\Module\Notifications\Web\Form;
 
 use DateTime;
 use Icinga\Exception\Http\HttpNotFoundException;
+use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\AvailableChannelType;
 use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\Contact;
@@ -13,8 +14,12 @@ use Icinga\Module\Notifications\Model\Rotation;
 use Icinga\Module\Notifications\Model\RotationMember;
 use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use Icinga\Web\Session;
+use ipl\Html\Attributes;
 use ipl\Html\Contract\FormSubmitElement;
 use ipl\Html\FormElement\FieldsetElement;
+use ipl\Html\HtmlElement;
+use ipl\Html\TemplateString;
+use ipl\Html\Text;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
 use ipl\Validator\CallbackValidator;
@@ -22,6 +27,9 @@ use ipl\Validator\EmailAddressValidator;
 use ipl\Validator\StringLengthValidator;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
+use ipl\Web\Url;
+use ipl\Web\Widget\ActionLink;
+use ipl\Web\Widget\EmptyStateBar;
 
 class ContactForm extends CompatForm
 {
@@ -71,6 +79,7 @@ class ContactForm extends CompatForm
 
     protected function assemble()
     {
+        $this->addAttributes(['class' => 'contact-form']);
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
 
         // Fieldset for contact full name and username
@@ -83,71 +92,125 @@ class ContactForm extends CompatForm
 
         $this->addElement($contact);
 
-        $channelOptions = ['' => sprintf(' - %s - ', $this->translate('Please choose'))];
-        $channelOptions += Channel::fetchChannelNames($this->db);
-
         $contact->addElement(
             'text',
             'full_name',
             [
-                'label' => $this->translate('Full Name'),
+                'label' => $this->translate('Contact Name'),
                 'required' => true
             ]
-        )->addElement(
-            'text',
-            'username',
-            [
-                'label' => $this->translate('Username'),
-                'validators' => [
-                    new StringLengthValidator(['max' => 254]),
-                    new CallbackValidator(function ($value, $validator) {
-                        $contact = Contact::on($this->db)
-                            ->filter(Filter::equal('username', $value));
-                        if ($this->contactId) {
-                            $contact->filter(Filter::unequal('id', $this->contactId));
-                        }
+        );
 
-                        if ($contact->first() !== null) {
-                            $validator->addMessage($this->translate(
-                                'A contact with the same username already exists.'
-                            ));
+        $suggestionsId = 'icinga-user-suggestions';
+        $contact
+            ->addHtml(new HtmlElement('div', new Attributes(['id' => $suggestionsId, 'class' => 'search-suggestions'])))
+            ->addElement(
+                'text',
+                'username',
+                [
+                    'label' => $this->translate('Icinga Web User'),
+                    'validators' => [
+                        new StringLengthValidator(['max' => 254]),
+                        new CallbackValidator(function ($value, $validator) {
+                            $contact = Contact::on($this->db)
+                                ->filter(Filter::equal('username', $value));
+                            if ($this->contactId) {
+                                $contact->filter(Filter::unequal('id', $this->contactId));
+                            }
 
-                            return false;
-                        }
+                            if ($contact->first() !== null) {
+                                $validator->addMessage($this->translate(
+                                    'A contact with the same username already exists.'
+                                ));
 
-                        return true;
-                    })
+                                return false;
+                            }
+
+                            return true;
+                        })
+                    ],
+                    'placeholder'           => $this->translate('Start typing to see suggestions ...'),
+                    'autocomplete'          => 'off',
+                    'class'                 => 'search',
+                    'data-enrichment-type'  => 'completion',
+                    'data-term-suggestions' => '#' . $suggestionsId,
+                    'data-suggest-url'      => Url::fromPath('notifications/contact/suggest-icinga-web-user')
+                        ->with(['showCompact' => true, '_disableLayout' => 1]),
                 ]
-            ]
-        )->addElement(
+            )->addHtml(new HtmlElement(
+                'p',
+                new Attributes(['class' => 'description']),
+                new Text($this->translate(
+                    "Link existing Icinga Web users. Users from external authentication backends"
+                    . " won't be suggested and must be entered manually."
+                ))
+            ));
+
+        $channelQuery = Channel::on($this->db)
+            ->columns(['id', 'name', 'type']);
+
+        $channelNames = [];
+        $channelTypes = [];
+        foreach ($channelQuery as $channel) {
+            $channelNames[$channel->id] = $channel->name;
+            $channelTypes[$channel->id] = $channel->type;
+        }
+
+        $defaultChannel = $this->createElement(
             'select',
             'default_channel_id',
             [
                 'label'             => $this->translate('Default Channel'),
                 'required'          => true,
+                'class'             => 'autosubmit',
                 'disabledOptions'   => [''],
-                'options'           => $channelOptions
+                'options'           => [
+                    '' => sprintf(' - %s - ', $this->translate('Please choose'))
+                ] + $channelNames,
             ]
         );
 
-        $this->addAddressElements();
+        $this
+            ->registerElement($defaultChannel)
+            ->decorate($defaultChannel);
+
+        if (empty($channelNames)) {
+            $this->prependHtml(new EmptyStateBar(
+                TemplateString::create(
+                    $this->translate('No channels available. Please create a {{#link}}channel{{/link}} first'),
+                    ['link' => new ActionLink(null, Links::channels(), attributes: ['data-base-target' => '_next'])]
+                )
+            ));
+        }
+
+        $this->addAddressElements($channelTypes[$this->getValue('default_channel_id')] ?? null);
+        $this->addHtml($defaultChannel);
+        $this->addHtml(new HtmlElement(
+            'p',
+            new Attributes(['class' => 'description']),
+            new Text($this->translate(
+                "Contact will be notified via the default channel, when no specific channel is configured"
+                . " in a schedule or event rule"
+            ))
+        ));
 
         $this->addElement(
             'submit',
             'submit',
             [
                 'label' => $this->contactId === null ?
-                    $this->translate('Add Contact') :
+                    $this->translate('Create Contact') :
                     $this->translate('Save Changes')
             ]
         );
+
         if ($this->contactId !== null) {
             /** @var FormSubmitElement $deleteButton */
             $deleteButton = $this->createElement(
                 'submit',
                 'delete',
                 [
-                    'label'          => $this->translate('Delete'),
+                    'label'          => $this->translate('Delete Contact'),
                     'class'          => 'btn-remove',
                     'formnovalidate' => true
                 ]
@@ -184,7 +247,10 @@ class ContactForm extends CompatForm
     public function addContact(): void
     {
         $contactInfo = $this->getValues();
+        $contactInfo['contact']['default_channel_id'] = $contactInfo['default_channel_id'];
+
         $changedAt = (int) (new DateTime())->format("Uv");
+
         $this->db->beginTransaction();
         $this->db->insert('contact', $contactInfo['contact'] + ['changed_at' => $changedAt]);
         $this->contactId = $this->db->lastInsertId();
@@ -213,7 +279,10 @@ class ContactForm extends CompatForm
         $this->db->beginTransaction();
 
         $values = $this->getValues();
+        $values['contact']['default_channel_id'] = $values['default_channel_id'];
+
         $storedValues = $this->fetchDbValues();
+        $storedValues['contact']['default_channel_id'] = $storedValues['default_channel_id'];
 
         $changedAt = (int) (new DateTime())->format("Uv");
         if ($storedValues['contact'] !== $values['contact']) {
@@ -381,10 +450,11 @@ class ContactForm extends CompatForm
         }
 
         $values['contact'] =  [
-            'full_name'          => $contact->full_name,
-            'username'           => $contact->username,
-            'default_channel_id' => (string) $contact->default_channel_id
+            'full_name' => $contact->full_name,
+            'username'  => $contact->username
         ];
+
+        $values['default_channel_id'] = (string) $contact->default_channel_id;
 
         $values['contact_address'] = [];
         $values['contact_address_with_id'] = []; //TODO: only used in editContact(), find better solution
@@ -399,9 +469,11 @@ class ContactForm extends CompatForm
     /**
      * Add address elements for all existing channel plugins
      *
+     * @param ?string $defaultType The selected default channel type
+     *
      * @return void
      */
-    private function addAddressElements(): void
+    private function addAddressElements(?string $defaultType): void
     {
         $plugins = $this->db->fetchPairs(
             AvailableChannelType::on($this->db)
@@ -413,13 +485,20 @@ class ContactForm extends CompatForm
             return;
         }
 
-        $address = new FieldsetElement('contact_address', ['label' => $this->translate('Addresses')]);
+        $address = new FieldsetElement('contact_address', ['label' => $this->translate('Channels')]);
+        $address->addHtml(new HtmlElement(
+            'p',
+            new Attributes(['class' => 'description']),
+            new Text($this->translate('Configure the channels available for this contact here'))
+        ));
+
         $this->addElement($address);
 
-        foreach ($plugins as $type => $label) {
+        foreach ($plugins as $type => $name) {
             $element = $this->createElement('text', $type, [
-                'label'      => $label,
-                'validators' => [new StringLengthValidator(['max' => 255])]
+                'label'      => $name,
+                'validators' => [new StringLengthValidator(['max' => 255])],
+                'required'   => $type === $defaultType
             ]);
 
             if ($type === 'email') {
