@@ -5,6 +5,7 @@
 namespace Icinga\Module\Notifications\Controllers;
 
 use Icinga\Module\Notifications\Common\Links;
+use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\View\ContactRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Common\Database;
@@ -12,6 +13,8 @@ use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Web\Form\ContactForm;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Web\Notification;
+use ipl\Html\HtmlElement;
+use ipl\Html\TemplateString;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
@@ -20,6 +23,7 @@ use ipl\Web\Control\LimitControl;
 use ipl\Web\Control\SortControl;
 use ipl\Web\Filter\QueryString;
 use ipl\Web\Layout\MinimalItemLayout;
+use ipl\Web\Widget\ActionLink;
 use ipl\Web\Widget\ButtonLink;
 
 class ContactsController extends CompatController
@@ -79,15 +83,43 @@ class ContactsController extends CompatController
         $this->addControl($sortControl);
         $this->addControl($limitControl);
         $this->addControl($searchBar);
-        $this->addContent(
-            (new ButtonLink(t('Add Contact'), Links::contactAdd(), 'plus'))
-                ->setBaseTarget('_next')
-                ->addAttributes(['class' => 'add-new-component'])
-        );
+
+        $addButton = (new ButtonLink(
+            t('Add Contact'),
+            Links::contactAdd(),
+            'plus',
+            ['class' => 'add-new-component']
+        ))->setBaseTarget('_next');
+
+        $emptyStateMessage = null;
+        if (Channel::on($this->db)->columns('1')->first() === null) {
+            $addButton
+                ->setDisabled()
+                ->addAttributes(['title' => t('A channel is required to add a contact')]);
+
+            $emptyStateMessage = new HtmlElement(
+                'span',
+                null,
+                TemplateString::create(
+                    $this->translate(
+                        'No contacts found. To add a new contact, please {{#link}}configure a Channel{{/link}} first.'
+                        .' A default channel is required for the contact.'
+                    ),
+                    ['link' => new ActionLink(
+                        null,
+                        Links::channelAdd(),
+                        attributes: ['data-base-target' => '_next']
+                    )]
+                )
+            );
+        }
+
+        $this->addContent($addButton);
 
         $this->addContent(
             (new ObjectList($contacts, new ContactRenderer()))
                 ->setItemLayoutClass(MinimalItemLayout::class)
+                ->setEmptyStateMessage($emptyStateMessage)
         );
 
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {
