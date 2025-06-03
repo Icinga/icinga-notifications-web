@@ -1,0 +1,8 @@
+name: L10n Update
+
+on:
+  pull_request:
+
+jobs:
+  update:
+    uses: icinga/github-actions/.github/workflows/L10n-update.yml@main
