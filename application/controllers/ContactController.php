@@ -6,6 +6,7 @@ namespace Icinga\Module\Notifications\Controllers;
 
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Web\Form\ContactForm;
+use Icinga\Module\Notifications\Widget\IcingaWebUserSuggestions;
 use Icinga\Web\Notification;
 use ipl\Web\Compat\CompatController;
 
@@ -43,5 +44,13 @@ class ContactController extends CompatController
         $this->addTitleTab(sprintf(t('Contact: %s'), $form->getContactName()));
 
         $this->addContent($form);
+    }
+
+    public function suggestIcingaWebUserAction(): void
+    {
+        $users = new IcingaWebUserSuggestions();
+        $users->forRequest($this->getServerRequest());
+
+        $this->getDocument()->addHtml($users);
     }
 }
