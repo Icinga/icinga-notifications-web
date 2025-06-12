@@ -27,7 +27,7 @@ class ContactForm extends CompatForm
 {
     use CsrfCounterMeasure;
 
-    /** @var string Emitted in case the contact should be deleted */
+    /** @var string Emitted in case the contact should be removed */
     public const ON_REMOVE = 'on_remove';
 
     /** @var Connection */
@@ -57,7 +57,7 @@ class ContactForm extends CompatForm
         $btn = $this->getPressedSubmitElement();
         $csrf = $this->getElement('CSRFToken');
 
-        return $csrf !== null && $csrf->isValid() && $btn !== null && $btn->getName() === 'delete';
+        return $csrf !== null && $csrf->isValid() && $btn !== null && $btn->getName() === 'remove';
     }
 
     public function isValidEvent($event)
@@ -142,21 +142,21 @@ class ContactForm extends CompatForm
             ]
         );
         if ($this->contactId !== null) {
-            /** @var FormSubmitElement $deleteButton */
-            $deleteButton = $this->createElement(
+            /** @var FormSubmitElement $removeButton */
+            $removeButton = $this->createElement(
                 'submit',
-                'delete',
+                'remove',
                 [
-                    'label'          => $this->translate('Delete'),
+                    'label'          => $this->translate('Remove'),
                     'class'          => 'btn-remove',
                     'formnovalidate' => true
                 ]
             );
 
-            $this->registerElement($deleteButton);
+            $this->registerElement($removeButton);
             $this->getElement('submit')
                 ->getWrapper()
-                ->prepend($deleteButton);
+                ->prepend($removeButton);
         }
     }
 
