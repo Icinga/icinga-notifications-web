@@ -919,11 +919,28 @@ class RotationConfigForm extends CompatForm
             'options' => $timeOptions
         ]);
         $options->registerElement($fromAt);
+        $selectedFromAt = $fromAt->getValue();
 
-        if ($selectedFromDay === (int) $to->getValue()) {
-            $selectedFromAt = $fromAt->getValue();
-            $keyIndex = array_search($selectedFromAt, array_keys($timeOptions));
-            $timeOptions = array_slice($timeOptions, 0, $keyIndex + 1, true);
+        // Small optimization only, out-of-range options are only required under certain conditions
+        $removeOutOfRangeToAtOptions = function () use ($selectedFromAt, $timeOptions) {
+            return array_slice(
+                $timeOptions,
+                0,
+                array_search($selectedFromAt, array_keys($timeOptions), true) + 1,
+                true
+            );
+        };
+
+        $timeOptionsFirstKey = array_key_first($timeOptions);
+        $selectedToDay = (int) $to->getValue();
+        $endOfDay = 'endOfDay';
+        if ($selectedFromDay === $selectedToDay) {
+            $timeOptions = $removeOutOfRangeToAtOptions();
+        } else {
+            $timeOptions[$endOfDay] = sprintf(
+                $this->translate('%s (End of day)'),
+                $timeOptions[$timeOptionsFirstKey]
+            );
         }
 
         $toAt = $options->createElement('select', 'to_at', [
@@ -932,6 +949,17 @@ class RotationConfigForm extends CompatForm
             'options' => $timeOptions
         ]);
         $options->registerElement($toAt);
+
+        if ($toAt->getValue() === $endOfDay) {
+            $selectedToDay = $selectedToDay === 7 ? 1 : $selectedToDay + 1;
+
+            if ($selectedFromDay === $selectedToDay) {
+                $toAt->setOptions($removeOutOfRangeToAtOptions());
+            }
+
+            $to->setValue($selectedToDay);
+            $toAt->setValue($timeOptionsFirstKey);
+        }
 
         $from->prependWrapper(
             (new HtmlDocument())->addHtml(
