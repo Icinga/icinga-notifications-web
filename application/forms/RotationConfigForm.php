@@ -48,6 +48,8 @@ class RotationConfigForm extends CompatForm
      */
     public const EXPERIMENTAL_OVERRIDES = false;
 
+    protected const DAY_END = 'dayEnd';
+
     /** @var ?int The ID of the affected schedule */
     protected $scheduleId;
 
@@ -924,6 +926,12 @@ class RotationConfigForm extends CompatForm
             $selectedFromAt = $fromAt->getValue();
             $keyIndex = array_search($selectedFromAt, array_keys($timeOptions));
             $timeOptions = array_slice($timeOptions, 0, $keyIndex + 1, true);
+        } else {
+            $timeOptions[self::DAY_END] = sprintf('%s (%s)', $timeOptions[array_key_first($timeOptions)], $this->translate('End of day'));
+            $options->addElement('hidden', self::DAY_END, [
+                'value' => self::DAY_END,
+                'ignore' => true
+            ]);
         }
 
         $toAt = $options->createElement('select', 'to_at', [
@@ -1636,5 +1644,20 @@ class RotationConfigForm extends CompatForm
         };
 
         return ! empty(array_udiff_assoc($values, $dbValuesToCompare, $checker));
+    }
+
+    public function getValues(): array
+    { //TODO: find a better solution, when a method accesses the values with $element->getValue(), the override is skipped
+        $options = $this->getValue('options');
+        if ($this->getValue('mode') === 'multi' && $options['to_at'] === self::DAY_END) {
+            $newValues = [
+                'to_day' => $options['to_day'] + 1,
+                'to_at' => array_key_first($this->getTimeOptions())
+            ];
+
+            $this->getElement('options')->populate($newValues);
+        }
+
+        return parent::getValues();
     }
 }
