@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Controllers;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\ContactGroupForm;
+use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Contactgroup;
 use Icinga\Module\Notifications\View\ContactgroupRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
@@ -14,7 +15,7 @@ use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Module\Notifications\Widget\MemberSuggestions;
 use Icinga\Web\Notification;
 use ipl\Html\Form;
-use ipl\Html\Text;
+use ipl\Html\TemplateString;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
@@ -22,6 +23,7 @@ use ipl\Web\Control\LimitControl;
 use ipl\Web\Control\SortControl;
 use ipl\Web\Filter\QueryString;
 use ipl\Web\Layout\MinimalItemLayout;
+use ipl\Web\Widget\ActionLink;
 use ipl\Web\Widget\ButtonLink;
 use ipl\Web\Widget\Tabs;
 
@@ -78,18 +80,35 @@ class ContactGroupsController extends CompatController
         $this->addControl($sortControl);
         $this->addControl($limitControl);
         $this->addControl($searchBar);
-        $this->addContent(
-            (new ButtonLink(
-                Text::create(t('Add Contact Group')),
-                Links::contactGroupsAdd()->with(['showCompact' => true, '_disableLayout' => 1]),
-                'plus',
-                ['class' => 'add-new-component']
-            ))->openInModal()
+
+        $addButton = new ButtonLink(
+            $this->translate('Add Contact Group'),
+            Links::contactGroupsAdd()->with(['showCompact' => true, '_disableLayout' => 1]),
+            'plus',
+            ['class' => 'add-new-component']
         );
+
+        $emptyStateMessage = null;
+        if (Contact::on(Database::get())->columns('1')->limit(1)->first() === null) {
+            $addButton->disable($this->translate('A contact is required to add a contact group'));
+
+            $emptyStateMessage = TemplateString::create(
+                $this->translate(
+                    'No contact groups found. To add a new contact group,'
+                    . ' please {{#link}}add a contact{{/link}} first.'
+                ),
+                ['link' => (new ActionLink(null, Links::contactAdd()))->setBaseTarget('_next')]
+            );
+        } else {
+            $addButton->openInModal();
+        }
+
+        $this->addContent($addButton);
 
         $this->addContent(
             (new ObjectList($groups, new ContactgroupRenderer()))
                 ->setItemLayoutClass(MinimalItemLayout::class)
+                ->setEmptyStateMessage($emptyStateMessage)
         );
 
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {
