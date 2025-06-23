@@ -10,11 +10,10 @@ use Icinga\Module\Notifications\Forms\ContactGroupForm;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Contactgroup;
 use Icinga\Module\Notifications\View\ContactRenderer;
+use Icinga\Module\Notifications\Widget\Detail\ObjectHeader;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Web\Notification;
-use ipl\Html\Attributes;
 use ipl\Html\Form;
-use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
@@ -43,7 +42,7 @@ class ContactGroupController extends CompatController
 
         $this->controls->addAttributes(['class' => 'contactgroup-detail']);
 
-        $this->addControl(new HtmlElement('div', new Attributes(['class' => 'header']), Text::create($group->name)));
+        $this->addControl(new ObjectHeader($group));
 
         $contacts = Contact::on(Database::get())
             ->filter(Filter::all(
