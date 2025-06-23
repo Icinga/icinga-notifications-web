@@ -32,7 +32,11 @@ class ContactgroupRenderer implements ItemRenderer
 
     public function assembleTitle($item, HtmlDocument $title, string $layout): void
     {
-        $title->addHtml(new Link($item->name, Links::contactGroup($item->id), ['class' => 'subject']));
+        if ($layout === 'header') {
+            $title->addHtml(new HtmlElement('span', new Attributes(['class' => 'subject']), Text::create($item->name)));
+        } else {
+            $title->addHtml(new Link($item->name, Links::contactGroup($item->id), ['class' => 'subject']));
+        }
     }
 
     public function assembleCaption($item, HtmlDocument $caption, string $layout): void

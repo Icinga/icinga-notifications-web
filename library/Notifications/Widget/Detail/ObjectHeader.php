@@ -5,8 +5,10 @@
 namespace Icinga\Module\Notifications\Widget\Detail;
 
 use Icinga\Exception\NotImplementedError;
+use Icinga\Module\Notifications\Model\Contactgroup;
 use Icinga\Module\Notifications\Model\Event;
 use Icinga\Module\Notifications\Model\Incident;
+use Icinga\Module\Notifications\View\ContactgroupRenderer;
 use Icinga\Module\Notifications\View\EventRenderer;
 use Icinga\Module\Notifications\View\IncidentRenderer;
 use ipl\Html\BaseHtmlElement;
@@ -49,6 +51,10 @@ class ObjectHeader extends BaseHtmlElement
                 break;
             case $this->object instanceof Incident:
                 $renderer = new IncidentRenderer();
+
+                break;
+            case $this->object instanceof Contactgroup:
+                $renderer = new ContactgroupRenderer();
 
                 break;
             default:
