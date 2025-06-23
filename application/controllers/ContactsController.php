@@ -108,7 +108,7 @@ class ContactsController extends CompatController
             ->on(ContactForm::ON_SUCCESS, function (ContactForm $form) {
                 $form->addContact();
                 Notification::success(t('New contact has successfully been added'));
-                $this->redirectNow(Links::contacts());
+                $this->redirectNow('__CLOSE__');
             })->handleRequest($this->getServerRequest());
 
         $this->addContent($form);
