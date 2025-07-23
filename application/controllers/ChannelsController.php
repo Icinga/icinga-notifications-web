@@ -15,7 +15,6 @@ use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Web\Notification;
 use Icinga\Web\Widget\Tab;
 use Icinga\Web\Widget\Tabs;
-use ipl\Sql\Connection;
 use ipl\Sql\Expression;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
@@ -30,22 +29,17 @@ class ChannelsController extends CompatController
 {
     use SearchControls;
 
-    /** @var Connection */
-    private $db;
-
     /** @var Filter\Rule Filter from query string parameters */
     private $filter;
 
-    public function init()
+    public function init(): void
     {
         $this->assertPermission('config/modules');
-
-        $this->db = Database::get();
     }
 
-    public function indexAction()
+    public function indexAction(): void
     {
-        $channels = Channel::on($this->db);
+        $channels = Channel::on(Database::get());
         $this->mergeTabs($this->Module()->getConfigTabs());
         $this->getTabs()->activate('channels');
 
@@ -95,7 +89,7 @@ class ChannelsController extends CompatController
         ))->setBaseTarget('_next');
 
         $emptyStateMessage = null;
-        if (AvailableChannelType::on($this->db)->columns([new Expression('1')])->first() === null) {
+        if (AvailableChannelType::on(Database::get())->columns([new Expression('1')])->first() === null) {
             $emptyStateMessage = t('No channel types available. Make sure Icinga Notifications is running.');
             $addButton->disable($emptyStateMessage);
         }
@@ -112,10 +106,10 @@ class ChannelsController extends CompatController
         }
     }
 
-    public function addAction()
+    public function addAction(): void
     {
         $this->addTitleTab(t('Add Channel'));
-        $form = (new ChannelForm($this->db))
+        $form = (new ChannelForm(Database::get()))
             ->on(ChannelForm::ON_SUCCESS, function (ChannelForm $form) {
                 $form->addChannel();
                 Notification::success(
@@ -142,7 +136,7 @@ class ChannelsController extends CompatController
     public function searchEditorAction(): void
     {
         $editor = $this->createSearchEditor(
-            Channel::on($this->db),
+            Channel::on(Database::get()),
             [
                 LimitControl::DEFAULT_LIMIT_PARAM,
                 SortControl::DEFAULT_SORT_PARAM,
