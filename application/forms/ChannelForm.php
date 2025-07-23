@@ -59,7 +59,7 @@ class ChannelForm extends CompatForm
     /**
      * @throws ConfigurationError
      */
-    protected function assemble()
+    protected function assemble(): void
     {
         $query = AvailableChannelType::on($this->db)
             ->columns(['type', 'name', 'config_attrs'])
@@ -164,7 +164,7 @@ class ChannelForm extends CompatForm
         }
     }
 
-    public function isValid()
+    public function isValid(): bool
     {
         if ($this->getPressedSubmitElement()->getName() === 'delete') {
             $csrfElement = $this->getElement('CSRFToken');
@@ -179,7 +179,7 @@ class ChannelForm extends CompatForm
         return parent::isValid();
     }
 
-    public function hasBeenSubmitted()
+    public function hasBeenSubmitted(): bool
     {
         if ($this->getPressedSubmitElement() !== null && $this->getPressedSubmitElement()->getName() === 'delete') {
             return true;
