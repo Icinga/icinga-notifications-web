@@ -5,6 +5,7 @@
 namespace Icinga\Module\Notifications\Forms;
 
 use DateTime;
+use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Model\AvailableChannelType;
 use Icinga\Module\Notifications\Model\Channel;
@@ -55,8 +56,19 @@ class ChannelForm extends CompatForm
         $this->db = $db;
     }
 
-    protected function assemble()
+    /**
+     * @throws ConfigurationError
+     */
+    protected function assemble(): void
     {
+        $query = AvailableChannelType::on($this->db)
+            ->columns(['type', 'name', 'config_attrs'])
+            ->execute();
+
+        if (! $query->hasResult()) {
+            throw new ConfigurationError('No channel types available. Make sure Icinga Notifications is running.');
+        }
+
         $this->addAttributes(['class' => 'channel-form']);
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
 
@@ -69,8 +81,6 @@ class ChannelForm extends CompatForm
                 'required'      => true
             ]
         );
-
-        $query = AvailableChannelType::on($this->db)->columns(['type', 'name', 'config_attrs']);
 
         /** @var string[] $typesConfig */
         $typesConfig = [];
@@ -154,7 +164,7 @@ class ChannelForm extends CompatForm
         }
     }
 
-    public function isValid()
+    public function isValid(): bool
     {
         if ($this->getPressedSubmitElement()->getName() === 'delete') {
             $csrfElement = $this->getElement('CSRFToken');
@@ -169,7 +179,7 @@ class ChannelForm extends CompatForm
         return parent::isValid();
     }
 
-    public function hasBeenSubmitted()
+    public function hasBeenSubmitted(): bool
     {
         if ($this->getPressedSubmitElement() !== null && $this->getPressedSubmitElement()->getName() === 'delete') {
             return true;
