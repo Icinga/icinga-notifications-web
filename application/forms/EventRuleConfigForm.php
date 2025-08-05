@@ -142,7 +142,7 @@ class EventRuleConfigForm extends Form
             $this->getElement('zero-condition-escalation')->setValue($defaultEscalationPrefix);
         }
 
-        $configFilter = new EventRuleConfigFilter($this->searchEditorUrl, $this->config['object_filter']);
+        $configFilter = new EventRuleConfigFilter($this->searchEditorUrl, $this->config['object_filter'] ?? null);
         $this->registerElement($configFilter);
 
         $addEscalationButton = $this->createElement(
@@ -428,7 +428,7 @@ class EventRuleConfigForm extends Form
 
         $db->commitTransaction();
 
-        return (int) $id;
+        return $id;
     }
 
     /**

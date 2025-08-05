@@ -41,18 +41,16 @@ class EventRuleController extends CompatController
 
     public function indexAction(): void
     {
-        $this->sessionNamespace->delete('-1');
-
         $this->addTitleTab(t('Event Rule'));
         $this->controls->addAttributes(['class' => 'event-rule-detail']);
 
-        $ruleId = $this->params->getRequired('id');
+        $ruleId = (int) $this->params->getRequired('id');
         $configValues = $this->sessionNamespace->get($ruleId);
         $this->controls->addAttributes(['class' => 'event-rule-detail']);
 
         $disableSave = false;
         if ($configValues === null) {
-            $configValues = $this->fromDb((int) $ruleId);
+            $configValues = $this->fromDb($ruleId);
             $disableSave = true;
         }
 
@@ -64,14 +62,15 @@ class EventRuleController extends CompatController
         $eventRuleConfig
             ->populate($configValues)
             ->on(Form::ON_SUCCESS, function (EventRuleConfigForm $form) use ($ruleId, $configValues) {
-                $form->addOrUpdateRule((int) $ruleId, $configValues);
+                $insertId = $form->addOrUpdateRule($ruleId, $configValues);
                 $this->sessionNamespace->delete($ruleId);
                 Notification::success((sprintf(t('Successfully saved event rule %s'), $configValues['name'])));
-                $this->redirectNow(Links::eventRule((int) $ruleId));
+                $this->sendExtraUpdates(['#col1']);
+                $this->redirectNow(Links::eventRule($insertId));
             })
             ->on(EventRuleConfigForm::ON_SENT, function (EventRuleConfigForm $form) use ($ruleId, $configValues) {
                 if ($form->hasBeenRemoved()) {
-                    $form->removeRule((int) $ruleId);
+                    $form->removeRule($ruleId);
                     $this->sessionNamespace->delete($ruleId);
                     Notification::success(sprintf(t('Successfully deleted event rule %s'), $configValues['name']));
                     $this->redirectNow(Links::eventRules());
@@ -83,7 +82,12 @@ class EventRuleController extends CompatController
                             $configValues['name']
                         )
                     );
-                    $this->redirectNow(Links::eventRule((int) $ruleId));
+
+                    if ($ruleId === -1) {
+                        $this->switchToSingleColumnLayout();
+                    } else {
+                        $this->redirectNow(Links::eventRule($ruleId));
+                    }
                 }
             })
             ->on(EventRuleConfigForm::ON_CHANGE, function (EventRuleConfigForm $form) use ($ruleId, $configValues) {
@@ -121,15 +125,18 @@ class EventRuleController extends CompatController
             ]
         );
 
-        $deleteButton = new SubmitButtonElement(
-            'delete',
-            [
-                'label'          => t('Delete'),
-                'form'           => 'event-rule-config-form',
-                'class'          => 'btn-remove',
-                'formnovalidate' => true
-            ]
-        );
+        $deleteButton = null;
+        if ($ruleId !== -1) {
+            $deleteButton = new SubmitButtonElement(
+                'delete',
+                [
+                    'label'          => t('Delete'),
+                    'form'           => 'event-rule-config-form',
+                    'class'          => 'btn-remove',
+                    'formnovalidate' => true
+                ]
+            );
+        }
 
         $buttonsWrapper->add([$eventRuleConfigSubmitButton, $discardChangesButton, $deleteButton]);
 
@@ -289,39 +296,19 @@ class EventRuleController extends CompatController
 
     public function editAction(): void
     {
-        /** @var string $ruleId */
-        $ruleId = $this->params->getRequired('id');
-        $config = $this->sessionNamespace->get($ruleId);
-        if ($config === null) {
-            if ($ruleId === '-1') {
-                $config = ['id' => $ruleId];
-            } else {
-                $config = $this->fromDb((int) $ruleId);
-            }
-        }
+        $ruleId = (int) $this->params->getRequired('id');
+        $config = $this->sessionNamespace->get($ruleId) ?? $this->fromDb($ruleId);
 
         $eventRuleForm = (new EventRuleForm())
             ->populate($config)
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->on(Form::ON_SUCCESS, function ($form) use ($ruleId, $config) {
                 $config['name'] = $form->getValue('name');
-                if ($ruleId === '-1') {
-                    $redirectUrl = Url::fromPath('notifications/event-rules/add', ['id' => '-1']);
-                } else {
-                    $redirectUrl = Url::fromPath('notifications/event-rule', ['id' => $ruleId]);
-                    $this->sendExtraUpdates(['#col1']);
-                }
-
                 $this->sessionNamespace->set($ruleId, $config);
-                $this->getResponse()->setHeader('X-Icinga-Container', 'col2');
-                $this->redirectNow($redirectUrl);
+                $this->closeModalAndRefreshRemainingViews(Links::eventRule($ruleId));
             })->handleRequest($this->getServerRequest());
 
-        if ($ruleId === '-1') {
-            $this->setTitle($this->translate('New Event Rule'));
-        } else {
-            $this->setTitle($this->translate('Edit Event Rule'));
-        }
+        $this->setTitle($this->translate('Edit Event Rule'));
 
         $this->addContent($eventRuleForm);
     }
