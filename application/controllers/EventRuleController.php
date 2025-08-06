@@ -23,6 +23,7 @@ use ipl\Web\Compat\CompatController;
 use ipl\Web\Control\SearchEditor;
 use ipl\Web\Filter\QueryString;
 use ipl\Web\Url;
+use ipl\Web\Widget\EmptyStateBar;
 use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
 
@@ -31,7 +32,7 @@ class EventRuleController extends CompatController
     use Auth;
 
     /** @var Session\SessionNamespace */
-    private $sessionNamespace;
+    private Session\SessionNamespace $sessionNamespace;
 
     public function init()
     {
@@ -41,47 +42,50 @@ class EventRuleController extends CompatController
 
     public function indexAction(): void
     {
-        $this->addTitleTab(t('Event Rule'));
-        $this->controls->addAttributes(['class' => 'event-rule-detail']);
+        $this->addTitleTab($this->translate('Event Rule'));
+        $this->content->addAttributes(['class' => 'event-rule-detail']);
 
         $ruleId = (int) $this->params->getRequired('id');
-        $configValues = $this->sessionNamespace->get($ruleId);
-        $this->controls->addAttributes(['class' => 'event-rule-detail']);
+        $config = $this->sessionNamespace->get($ruleId);
 
-        $disableSave = false;
-        if ($configValues === null) {
-            $configValues = $this->fromDb($ruleId);
-            $disableSave = true;
+        $fromCache = true;
+        if ($config === null) {
+            $config = $this->fromDb($ruleId);
+            $fromCache = false;
         }
 
         $eventRuleConfig = new EventRuleConfigForm(
-            $configValues,
+            $config,
             Url::fromPath('notifications/event-rule/search-editor', ['id' => $ruleId])
         );
 
         $eventRuleConfig
-            ->populate($configValues)
-            ->on(Form::ON_SUCCESS, function (EventRuleConfigForm $form) use ($ruleId, $configValues) {
-                $insertId = $form->addOrUpdateRule($ruleId, $configValues);
+            ->populate($config)
+            ->on(Form::ON_SUCCESS, function (EventRuleConfigForm $form) use ($ruleId, $config) {
+                $insertId = $form->addOrUpdateRule($ruleId, $config);
                 $this->sessionNamespace->delete($ruleId);
-                Notification::success((sprintf(t('Successfully saved event rule %s'), $configValues['name'])));
+                Notification::success(sprintf(
+                    $this->translate('Successfully saved event rule %s'),
+                    $config['name']
+                ));
                 $this->sendExtraUpdates(['#col1']);
                 $this->redirectNow(Links::eventRule($insertId));
             })
-            ->on(EventRuleConfigForm::ON_SENT, function (EventRuleConfigForm $form) use ($ruleId, $configValues) {
+            ->on(EventRuleConfigForm::ON_SENT, function (EventRuleConfigForm $form) use ($ruleId, $config) {
                 if ($form->hasBeenRemoved()) {
                     $form->removeRule($ruleId);
                     $this->sessionNamespace->delete($ruleId);
-                    Notification::success(sprintf(t('Successfully deleted event rule %s'), $configValues['name']));
+                    Notification::success(sprintf(
+                        $this->translate('Successfully deleted event rule %s'),
+                        $config['name']
+                    ));
                     $this->redirectNow(Links::eventRules());
                 } elseif ($form->hasBeenDiscarded()) {
                     $this->sessionNamespace->delete($ruleId);
-                    Notification::success(
-                        sprintf(
-                            t('Successfully discarded changes to event rule %s'),
-                            $configValues['name']
-                        )
-                    );
+                    Notification::success(sprintf(
+                        $this->translate('Successfully discarded changes to event rule %s'),
+                        $config['name']
+                    ));
 
                     if ($ruleId === -1) {
                         $this->switchToSingleColumnLayout();
@@ -90,38 +94,35 @@ class EventRuleController extends CompatController
                     }
                 }
             })
-            ->on(EventRuleConfigForm::ON_CHANGE, function (EventRuleConfigForm $form) use ($ruleId, $configValues) {
+            ->on(EventRuleConfigForm::ON_CHANGE, function (EventRuleConfigForm $form) use ($ruleId, $config) {
                 $formValues = $form->getValues();
-                $configValues = array_merge($configValues, $formValues);
-                $configValues['rule_escalation'] = $formValues['rule_escalation'];
-                $this->sessionNamespace->set($ruleId, $configValues);
+                $config = array_merge($config, $formValues);
+                $config['rule_escalation'] = $formValues['rule_escalation'];
+                $this->sessionNamespace->set($ruleId, $config);
             })
             ->handleRequest($this->getServerRequest());
 
-        $cache = $this->sessionNamespace->get($ruleId);
         $discardChangesButton = null;
-        if ($cache !== null) {
-            $this->addContent(Html::tag('div', ['class' => 'cache-notice'], t('There are unsaved changes.')));
+        if ($fromCache) {
+            $this->addContent(new EmptyStateBar($this->translate('There are unsaved changes.')));
             $discardChangesButton = new SubmitButtonElement(
                 'discard_changes',
                 [
-                    'label'          => t('Discard Changes'),
+                    'label'          => $this->translate('Discard Changes'),
                     'form'           => 'event-rule-config-form',
                     'class'          => 'btn-discard-changes',
-                    'formnovalidate' => true,
+                    'formnovalidate' => true
                 ]
             );
-
-            $disableSave = false;
         }
 
         $buttonsWrapper = new HtmlElement('div', Attributes::create(['class' => ['icinga-controls', 'save-config']]));
         $eventRuleConfigSubmitButton = new SubmitButtonElement(
             'save',
             [
-                'label'    => t('Save'),
+                'label'    => $this->translate('Save'),
                 'form'     => 'event-rule-config-form',
-                'disabled' => $disableSave
+                'disabled' => $fromCache
             ]
         );
 
@@ -130,7 +131,7 @@ class EventRuleController extends CompatController
             $deleteButton = new SubmitButtonElement(
                 'delete',
                 [
-                    'label'          => t('Delete'),
+                    'label'          => $this->translate('Delete'),
                     'form'           => 'event-rule-config-form',
                     'class'          => 'btn-remove',
                     'formnovalidate' => true
@@ -141,7 +142,7 @@ class EventRuleController extends CompatController
         $buttonsWrapper->add([$eventRuleConfigSubmitButton, $discardChangesButton, $deleteButton]);
 
         $eventRuleForm = Html::tag('div', ['class' => 'event-rule-form'], [
-            Html::tag('h2', $configValues['name']),
+            Html::tag('h2', $config['name']),
             (new Link(
                 new Icon('edit'),
                 Url::fromPath('notifications/event-rule/edit', [
@@ -171,38 +172,38 @@ class EventRuleController extends CompatController
 
         $rule = $query->first();
         if ($rule === null) {
-            $this->httpNotFound(t('Rule not found'));
+            $this->httpNotFound($this->translate('Rule not found'));
         }
 
         $config = iterator_to_array($rule);
 
         $ruleEscalations = $rule
             ->rule_escalation
-            ->withoutColumns(['changed_at', 'deleted']);
+            ->columns(['id', 'position', 'condition']);
 
         foreach ($ruleEscalations as $re) {
             foreach ($re as $k => $v) {
-                if (in_array($k, ['id', 'condition'])) {
+                if ($k !== 'position') {
                     $config[$re->getTableName()][$re->position][$k] = (string) $v;
                 }
             }
 
             $escalationRecipients = $re
                 ->rule_escalation_recipient
-                ->withoutColumns(['changed_at', 'deleted']);
+                ->columns(['id', 'position', 'contact_id', 'contactgroup_id', 'schedule_id', 'channel_id']);
 
             foreach ($escalationRecipients as $recipient) {
-                $requiredValues = [];
+                $recipientData = [];
 
                 foreach ($recipient as $k => $v) {
                     if ($v !== null && in_array($k, ['contact_id', 'contactgroup_id', 'schedule_id'])) {
-                        $requiredValues[$k] = (string) $v;
+                        $recipientData[$k] = (string) $v;
                     } elseif (in_array($k, ['id', 'channel_id'])) {
-                        $requiredValues[$k] = $v ? (string) $v : null;
+                        $recipientData[$k] = $v ? (string) $v : null;
                     }
                 }
 
-                $config[$re->getTableName()][$re->position]['recipients'][] = $requiredValues;
+                $config[$re->getTableName()][$re->position]['recipients'][] = $recipientData;
             }
         }
 
@@ -230,19 +231,12 @@ class EventRuleController extends CompatController
      */
     public function searchEditorAction(): void
     {
-        /** @var string $ruleId */
-        $ruleId = $this->params->shiftRequired('id');
-
-        $eventRule = $this->sessionNamespace->get($ruleId);
-
-        if ($eventRule === null) {
-            $eventRule = $this->fromDb((int) $ruleId);
-        }
+        $ruleId = (int) $this->params->shiftRequired('id');
+        $config = $this->sessionNamespace->get($ruleId) ?? $this->fromDb($ruleId);
 
         $editor = new SearchEditor();
 
-        $objectFilter = $eventRule['object_filter'] ?? '';
-        $editor->setQueryString($objectFilter)
+        $editor->setQueryString($config['object_filter'] ?? '')
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->setSuggestionUrl(
                 Url::fromPath('notifications/event-rule/complete', [
@@ -252,17 +246,13 @@ class EventRuleController extends CompatController
                 ])
             );
 
-        $editor->on(SearchEditor::ON_SUCCESS, function (SearchEditor $form) use ($ruleId, $eventRule) {
-            $eventRule['object_filter'] = self::createFilterString($form->getFilter());
-            $this->sessionNamespace->set($ruleId, $eventRule);
-            $this->getResponse()
-                ->setHeader('X-Icinga-Container', '_self')
-                ->redirectAndExit(
-                    Url::fromPath(
-                        'notifications/event-rule',
-                        ['id' => $ruleId]
-                    )
-                );
+        $editor->on(Form::ON_SUCCESS, function (SearchEditor $form) use ($ruleId, $config) {
+            $config['object_filter'] = $this->createFilterString($form->getFilter());
+            $this->sessionNamespace->set($ruleId, $config);
+            $this->closeModalAndRefreshRelatedView(Url::fromPath(
+                'notifications/event-rule',
+                ['id' => $ruleId]
+            ));
         });
 
         $editor->handleRequest($this->getServerRequest());
@@ -278,7 +268,7 @@ class EventRuleController extends CompatController
      *
      * @return ?string
      */
-    public static function createFilterString(Filter\Rule $filters): ?string
+    private function createFilterString(Filter\Rule $filters): ?string
     {
         if ($filters instanceof Filter\Chain) {
             foreach ($filters as $filter) {
