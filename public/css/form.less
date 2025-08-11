@@ -171,3 +171,22 @@
     border-color: transparent;
   }
 }
+
+.contact-form {
+  hr {
+    border: none;
+    border-top: 1px solid var(--gray-light, @gray-light);
+  }
+}
+
+form {
+  p.description {
+    color: @text-color-light;
+  }
+
+  fieldset p.description:last-child { // fieldset > .control-group:last-of-type unset the last element's bottom margin
+    margin-top: 1em;
+  }
+}
+
+

@@ -4,10 +4,17 @@
 
 namespace Icinga\Module\Notifications\Controllers;
 
+use Exception;
+use Icinga\Application\Config;
+use Icinga\Authentication\User\DomainAwareInterface;
+use Icinga\Authentication\User\UserBackend;
+use Icinga\Data\Selectable;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Web\Form\ContactForm;
+use Icinga\Repository\Repository;
 use Icinga\Web\Notification;
 use ipl\Web\Compat\CompatController;
+use ipl\Web\FormElement\SearchSuggestions;
 
 class ContactController extends CompatController
 {
@@ -43,5 +50,61 @@ class ContactController extends CompatController
         $this->addTitleTab(sprintf(t('Contact: %s'), $form->getContactName()));
 
         $this->addContent($form);
+    }
+
+    public function suggestIcingaWebUserAction(): void
+    {
+        $suggestions = new SearchSuggestions((function () use (&$suggestions) {
+            $userBackends = [];
+            foreach (Config::app('authentication') as $backendName => $backendConfig) {
+                $candidate = UserBackend::create($backendName, $backendConfig);
+                if ($candidate instanceof Selectable) {
+                    $userBackends[] = $candidate;
+                }
+            }
+
+            $limit = 10;
+            while ($limit > 0 && ! empty($userBackends)) {
+                /** @var Repository $backend */
+                $backend = array_shift($userBackends);
+                $query = $backend->select()
+                    ->from('user', ['user_name'])
+                    ->where('user_name', $suggestions->getSearchTerm())
+                    ->limit($limit);
+
+                try {
+                    /** @var string[] $names */
+                    $names = $query->fetchColumn();
+                } catch (Exception) {
+                    continue;
+                }
+
+                if (empty($names)) {
+                    continue;
+                }
+
+                $domain = null;
+                if ($backend instanceof DomainAwareInterface && $backend->getDomain()) {
+                    $domain = '@' . $backend->getDomain();
+                }
+
+                foreach ($names as $name) {
+                    yield [
+                        'search' => $name . $domain,
+                        'label'  => $name . $domain,
+                        'backend' => $backend->getName(),
+                    ];
+                }
+
+                $limit -= count($names);
+            }
+        })());
+
+        $suggestions->setGroupingCallback(function (array $data) {
+            return $data['backend'];
+        });
+
+        $suggestions->forRequest($this->getServerRequest());
+        $this->getDocument()->addHtml($suggestions);
     }
 }

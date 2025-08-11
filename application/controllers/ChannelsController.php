@@ -112,7 +112,7 @@ class ChannelsController extends CompatController
                         $form->getValue('name')
                     )
                 );
-                $this->redirectNow(Links::channels());
+                $this->switchToSingleColumnLayout();
             })
             ->handleRequest($this->getServerRequest());
 
