@@ -178,8 +178,8 @@ class ContactForm extends CompatForm
             'p',
             new Attributes(['class' => 'description']),
             new Text($this->translate(
-                "Contact will be notified via the default channel, when no specific channel is configured"
-                . " in a schedule or event rule."
+                'Use this to associate actions in the UI, such as incident management, with this contact.'
+                . ' To successfully receive desktop notifications, this is also required.'
             ))
         ));
 
