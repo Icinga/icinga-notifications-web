@@ -136,8 +136,8 @@ class ContactForm extends CompatForm
                     'p',
                     new Attributes(['class' => 'description']),
                     new Text($this->translate(
-                        'Add an Icinga Web user to associate with this contact. Users from external authentication'
-                        . " backends won't be suggested and must be entered manually."
+                        'Use this to associate actions in the UI, such as incident management, with this contact.'
+                        . ' To successfully receive desktop notifications, this is also required.'
                     ))
                 )
             );
