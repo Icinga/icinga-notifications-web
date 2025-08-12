@@ -13,8 +13,6 @@ use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Web\Session;
 use ipl\Html\Form;
-use ipl\Html\Html;
-use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
 use ipl\Web\Control\LimitControl;
@@ -23,19 +21,14 @@ use ipl\Web\Filter\QueryString;
 use ipl\Web\Layout\DetailedItemLayout;
 use ipl\Web\Url;
 use ipl\Web\Widget\ButtonLink;
-use ipl\Web\Widget\Link;
 
 class EventRulesController extends CompatController
 {
     use SearchControls;
 
-    /** @var Session\SessionNamespace */
-    private Session\SessionNamespace $sessionNamespace;
-
     public function init()
     {
         $this->assertPermission('notifications/config/event-rules');
-        $this->sessionNamespace = Session::getSession()->getNamespace('notifications');
     }
 
     public function indexAction(): void
@@ -47,8 +40,8 @@ class EventRulesController extends CompatController
         $sortControl = $this->createSortControl(
             $eventRules,
             [
-                'name'          => t('Name'),
-                'changed_at'    => t('Changed At')
+                'name'          => $this->translate('Name'),
+                'changed_at'    => $this->translate('Changed At')
             ]
         );
 
@@ -79,23 +72,14 @@ class EventRulesController extends CompatController
         $this->addControl($limitControl);
         $this->addControl($searchBar);
 
-        $addButton =
+        $this->addContent(
             (new ButtonLink(
-                t('Add Event Rule'),
+                $this->translate('Add Event Rule'),
                 Url::fromPath('notifications/event-rules/add'),
-                'plus'
-            ))->openInModal();
-        if (isset($this->sessionNamespace->{-1})) {
-            $this->addContent(Html::tag('div', ['class' => 'add-new-component'], [
-                $addButton->disable($this->translate(
-                    'You have unsaved changes. Please save or discard them first.'
-                )),
-                (new Link($this->translate('Continue Editing'), Links::eventRule(-1)))
-                    ->setBaseTarget('_next')
-            ]));
-        } else {
-            $this->addContent($addButton->addAttributes(['class' => 'add-new-component']));
-        }
+                'plus',
+                ['class' => 'add-new-component']
+            ))->openInModal()
+        );
 
         $this->addContent(
             (new ObjectList($eventRules, new EventRuleRenderer()))
@@ -116,12 +100,12 @@ class EventRulesController extends CompatController
 
         $eventRuleForm = (new EventRuleForm())
             ->populate(['id' => -1])
+            ->setCsrfCounterMeasureId(Session::getSession()->getId())
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->on(Form::ON_SUCCESS, function ($form) {
-                $this->sessionNamespace->set(-1, ['id' => -1, 'name' => $form->getValue('name')]);
                 $this->sendExtraUpdates(['#col1']);
                 $this->getResponse()->setHeader('X-Icinga-Container', 'col2');
-                $this->redirectNow(Links::eventRule(-1));
+                $this->redirectNow(Links::eventRule(-1)->addParams(['name' => $form->getValue('name')]));
             })->handleRequest($this->getServerRequest());
 
         $this->addContent($eventRuleForm);

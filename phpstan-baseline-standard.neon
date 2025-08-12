@@ -141,21 +141,6 @@ parameters:
 			path: application/controllers/ScheduleController.php
 
 		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Forms\\\\AddEscalationForm\\:\\:assemble\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: application/forms/AddEscalationForm.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Forms\\\\AddFilterForm\\:\\:assemble\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: application/forms/AddFilterForm.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Forms\\\\BaseEscalationForm\\:\\:assemble\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: application/forms/BaseEscalationForm.php
-
-		-
 			message: "#^Cannot call method getName\\(\\) on ipl\\\\Html\\\\Contract\\\\FormSubmitElement\\|null\\.$#"
 			count: 1
 			path: application/forms/ChannelForm.php
@@ -176,149 +161,9 @@ parameters:
 			path: application/forms/DatabaseConfigForm.php
 
 		-
-			message: "#^Call to an undefined method ipl\\\\Html\\\\Contract\\\\FormElement\\:\\:setName\\(\\)\\.$#"
-			count: 4
-			path: application/forms/EscalationConditionForm.php
-
-		-
-			message: "#^Call to an undefined method ipl\\\\Html\\\\ValidHtml\\:\\:remove\\(\\)\\.$#"
-			count: 1
-			path: application/forms/EscalationConditionForm.php
-
-		-
-			message: "#^Call to an undefined method ipl\\\\Stdlib\\\\Filter\\\\Rule\\:\\:getColumn\\(\\)\\.$#"
-			count: 2
-			path: application/forms/EscalationConditionForm.php
-
-		-
-			message: "#^Call to an undefined method ipl\\\\Stdlib\\\\Filter\\\\Rule\\:\\:getValue\\(\\)\\.$#"
-			count: 1
-			path: application/forms/EscalationConditionForm.php
-
-		-
-			message: "#^Cannot access offset non\\-falsy\\-string on iterable\\<string, mixed\\>\\.$#"
-			count: 2
-			path: application/forms/EscalationConditionForm.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Forms\\\\EscalationConditionForm\\:\\:getValues\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: application/forms/EscalationConditionForm.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Forms\\\\EscalationConditionForm\\:\\:getValues\\(\\) should return array but returns string\\.$#"
-			count: 1
-			path: application/forms/EscalationConditionForm.php
-
-		-
-			message: "#^Parameter \\#1 \\$string of static method ipl\\\\Web\\\\Filter\\\\QueryString\\:\\:parse\\(\\) expects string, mixed given\\.$#"
-			count: 1
-			path: application/forms/EscalationConditionForm.php
-
-		-
-			message: "#^Call to an undefined method ipl\\\\Html\\\\Contract\\\\FormElement\\:\\:setDisabledOptions\\(\\)\\.$#"
-			count: 1
-			path: application/forms/EscalationRecipientForm.php
-
-		-
-			message: "#^Call to an undefined method ipl\\\\Html\\\\Contract\\\\FormElement\\:\\:setName\\(\\)\\.$#"
-			count: 3
-			path: application/forms/EscalationRecipientForm.php
-
-		-
-			message: "#^Call to an undefined method ipl\\\\Html\\\\Contract\\\\FormElement\\:\\:setOptions\\(\\)\\.$#"
-			count: 1
-			path: application/forms/EscalationRecipientForm.php
-
-		-
-			message: "#^Call to an undefined method ipl\\\\Html\\\\ValidHtml\\:\\:remove\\(\\)\\.$#"
-			count: 1
-			path: application/forms/EscalationRecipientForm.php
-
-		-
-			message: "#^Cannot access offset non\\-falsy\\-string on iterable\\<string, mixed\\>\\.$#"
-			count: 3
-			path: application/forms/EscalationRecipientForm.php
-
-		-
-			message: "#^Cannot access property \\$full_name on mixed\\.$#"
-			count: 1
-			path: application/forms/EscalationRecipientForm.php
-
-		-
-			message: "#^Cannot access property \\$id on mixed\\.$#"
-			count: 3
-			path: application/forms/EscalationRecipientForm.php
-
-		-
-			message: "#^Cannot access property \\$name on mixed\\.$#"
-			count: 2
-			path: application/forms/EscalationRecipientForm.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Forms\\\\EscalationRecipientForm\\:\\:fetchOptions\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: application/forms/EscalationRecipientForm.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Forms\\\\EscalationRecipientForm\\:\\:getValues\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: application/forms/EscalationRecipientForm.php
-
-		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Forms\\\\EventRuleForm\\:\\:assemble\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: application/forms/EventRuleForm.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Forms\\\\RemoveEscalationForm\\:\\:assemble\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: application/forms/RemoveEscalationForm.php
-
-		-
-			message: "#^Call to an undefined method ipl\\\\Sql\\\\Connection\\:\\:lastInsertId\\(\\)\\.$#"
-			count: 3
-			path: application/forms/SaveEventRuleForm.php
-
-		-
-			message: "#^Cannot access property \\$id on mixed\\.$#"
-			count: 1
-			path: application/forms/SaveEventRuleForm.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Forms\\\\SaveEventRuleForm\\:\\:addRule\\(\\) has parameter \\$config with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: application/forms/SaveEventRuleForm.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Forms\\\\SaveEventRuleForm\\:\\:assemble\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: application/forms/SaveEventRuleForm.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Forms\\\\SaveEventRuleForm\\:\\:editRule\\(\\) has parameter \\$config with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: application/forms/SaveEventRuleForm.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Forms\\\\SaveEventRuleForm\\:\\:insertOrUpdateEscalations\\(\\) has parameter \\$escalations with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: application/forms/SaveEventRuleForm.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Forms\\\\SaveEventRuleForm\\:\\:insertOrUpdateEscalations\\(\\) has parameter \\$ruleId with no type specified\\.$#"
-			count: 1
-			path: application/forms/SaveEventRuleForm.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Forms\\\\SaveEventRuleForm\\:\\:onError\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: application/forms/SaveEventRuleForm.php
-
-		-
-			message: "#^Property Icinga\\\\Module\\\\Notifications\\\\Forms\\\\SaveEventRuleForm\\:\\:\\$submitLabel \\(string\\) on left side of \\?\\? is not nullable\\.$#"
-			count: 1
-			path: application/forms/SaveEventRuleForm.php
 
 		-
 			message: "#^Call to an undefined method ipl\\\\Sql\\\\Connection\\:\\:lastInsertId\\(\\)\\.$#"
@@ -556,6 +401,11 @@ parameters:
 			path: library/Notifications/Web/Form/EventRuleDecorator.php
 
 		-
+			message: "#^Parameter \\#1 \\$datetime of function strtotime expects string, mixed given\\.$#"
+			count: 1
+			path: library/Notifications/Widget/Calendar.php
+
+		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Calendar\\:\\:assemble\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: library/Notifications/Widget/Calendar.php
@@ -661,99 +511,9 @@ parameters:
 			path: library/Notifications/Widget/Detail/IncidentQuickActions.php
 
 		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Escalations\\:\\:addEscalation\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Escalations.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Escalations\\:\\:addEscalation\\(\\) has parameter \\$escalation with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Escalations.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Escalations\\:\\:assemble\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Escalations.php
-
-		-
-			message: "#^Property Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Escalations\\:\\:\\$config has no type specified\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Escalations.php
-
-		-
-			message: "#^Property Icinga\\\\Module\\\\Notifications\\\\Widget\\\\Escalations\\:\\:\\$escalations has no type specified\\.$#"
-			count: 1
-			path: library/Notifications/Widget/Escalations.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\EventRuleConfig\\:\\:__construct\\(\\) has parameter \\$config with no type specified\\.$#"
-			count: 1
-			path: library/Notifications/Widget/EventRuleConfig.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\EventRuleConfig\\:\\:assemble\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Widget/EventRuleConfig.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\EventRuleConfig\\:\\:createConditionForm\\(\\) has parameter \\$values with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: library/Notifications/Widget/EventRuleConfig.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\EventRuleConfig\\:\\:createFilterString\\(\\) has parameter \\$filters with no type specified\\.$#"
-			count: 1
-			path: library/Notifications/Widget/EventRuleConfig.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\EventRuleConfig\\:\\:createRecipientForm\\(\\) has parameter \\$values with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: library/Notifications/Widget/EventRuleConfig.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\EventRuleConfig\\:\\:getConfig\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: library/Notifications/Widget/EventRuleConfig.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\EventRuleConfig\\:\\:getForms\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: library/Notifications/Widget/EventRuleConfig.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\EventRuleConfig\\:\\:setConfig\\(\\) has parameter \\$config with no type specified\\.$#"
-			count: 1
-			path: library/Notifications/Widget/EventRuleConfig.php
-
-		-
-			message: "#^Property Icinga\\\\Module\\\\Notifications\\\\Widget\\\\EventRuleConfig\\:\\:\\$config type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: library/Notifications/Widget/EventRuleConfig.php
-
-		-
-			message: "#^Property Icinga\\\\Module\\\\Notifications\\\\Widget\\\\EventRuleConfig\\:\\:\\$numEscalations is unused\\.$#"
-			count: 1
-			path: library/Notifications/Widget/EventRuleConfig.php
-
-		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\EventSourceBadge\\:\\:assemble\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: library/Notifications/Widget/EventSourceBadge.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\FlowLine\\:\\:getHorizontalLine\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Widget/FlowLine.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\FlowLine\\:\\:getRightArrow\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Widget/FlowLine.php
-
-		-
-			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\FlowLine\\:\\:getVerticalLine\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: library/Notifications/Widget/FlowLine.php
 
 		-
 			message: "#^Method Icinga\\\\Module\\\\Notifications\\\\Widget\\\\ItemList\\\\PageSeparatorItem\\:\\:assemble\\(\\) has no return type specified\\.$#"

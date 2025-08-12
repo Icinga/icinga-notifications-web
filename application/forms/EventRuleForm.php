@@ -4,7 +4,6 @@
 
 namespace Icinga\Module\Notifications\Forms;
 
-use Icinga\Web\Session;
 use ipl\I18n\Translation;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
@@ -16,7 +15,7 @@ class EventRuleForm extends CompatForm
 
     protected function assemble(): void
     {
-        $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
+        $this->addCsrfCounterMeasure();
 
         $this->addElement(
             'text',
