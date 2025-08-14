@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Notifications\Test;
 
+use DateTime;
 use GuzzleHttp\Client;
 use Icinga\Application\Config;
 use Icinga\Application\Icinga;
@@ -96,7 +97,7 @@ SQL
                 'db' => $driver,
                 'host' => $db->getConfig()->host,
                 'port' => $db->getConfig()->port,
-                'dbname' => $db->getConfig()->dbname . '.icinga_web',
+                'dbname' => $db->getConfig()->dbname,
                 'username' => $db->getConfig()->username,
                 'password' => $db->getConfig()->password
             ])->setSection('notifications_db', [
@@ -104,7 +105,7 @@ SQL
                 'db' => $driver,
                 'host' => $db->getConfig()->host,
                 'port' => $db->getConfig()->port,
-                'dbname' => $db->getConfig()->dbname . '.icinga_notifications',
+                'dbname' => $db->getConfig()->dbname,
                 'username' => $db->getConfig()->username,
                 'password' => $db->getConfig()->password
             ])->saveIni();
@@ -127,7 +128,8 @@ SQL
         $db->insert('channel', [
             'external_uuid' => self::CHANNEL_UUID,
             'name' => 'Test',
-            'type' => 'email'
+            'type' => 'email',
+            'changed_at' => (int) (new DateTime())->format("Uv"),
         ]);
     }
 
