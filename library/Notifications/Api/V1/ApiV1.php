@@ -5,9 +5,9 @@ namespace Icinga\Module\Notifications\Api\V1;
 use Exception;
 use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Module\Notifications\Api\ApiCore;
-use Icinga\Web\Response;
 use ipl\Sql\Compat\FilterProcessor;
 use ipl\Web\Filter\QueryString;
+use ipl\Web\Url;
 use Ramsey\Uuid\Uuid;
 use OpenApi\Attributes as OA;
 
@@ -58,50 +58,47 @@ use OpenApi\Attributes as OA;
 )]
 abstract class ApiV1 extends ApiCore
 {
-    public function __construct(
-        Response $response,
-        /**
-         * The filter string used to filter results.
-         * This is typically a query string parameter that specifies conditions for filtering.
-         *
-         * @var string|null
-         */
-        protected ?string $filterStr = null,
-        /**
-         * The identifier for the resource being accessed.
-         *
-         * @var string|null
-         */
-        protected ?string $identifier = null
-    ) {
-        parent::__construct($response);
-        $this->version = 'v1';
-//        var_dump($response, $params, $identifier);
-        $this->validateIdentifier();
-    }
-
+    protected string $identifier;
     /**
-     * Get the Response object
+     * Initialize the API
      *
-     * @return Response
+     * @return void
+     * @throws HttpBadRequestException
      */
-    public function getResponse(): Response
+    protected function init(): void
     {
-        return $this->response;
+        $this->version = 'v1';
+        $this->validateIdentifier();
+        $method = $this->getRequest()->getMethod();
+        $filterStr = Url::fromRequest()->getQueryString();
+
+        // Validate that Method with parameters or identifier is allowed
+        if ($method !== 'GET' && !empty($filterStr)) {
+            $this->httpBadRequest(
+                "Invalid request: $method with query parameters, only GET is allowed with query parameters."
+            );
+        } elseif ($method === 'GET' && !empty($this->identifier) && !empty($filterStr)) {
+            $this->httpBadRequest(
+                "Invalid request: $method with identifier and query parameters, it's not allowed to use both together."
+            );
+        }
     }
 
     /**
      * Validate the identifier to ensure it is a valid UUID.
-     *
      * If the identifier is not valid, it will throw a Bad Request HTTP exception.
+     * If a valid identifier is provided, it will be stored in the `identifier` property.
      *
      * @return void
      * @throws HttpBadRequestException
      */
     protected function validateIdentifier(): void
     {
-        if (($i = $this->identifier) && !Uuid::isValid($i)) {
-            $this->httpBadRequest('The given identifier is not a valid UUID');
+        if ($identifier = $this->getRequest()->getParams()['identifier'] ?? null) {
+            if (!Uuid::isValid($identifier)) {
+                $this->httpBadRequest('The given identifier is not a valid UUID');
+            }
+            $this->identifier = $identifier;
         }
     }
 
@@ -117,9 +114,9 @@ abstract class ApiV1 extends ApiCore
      */
     protected function createFilterFromFilterStr(callable $listener): array|bool
     {
-        if (!empty($this->filterStr)) {
+        if (!empty($filterStr = Url::fromRequest()->getQueryString())) {
             try {
-                $filterRule = QueryString::fromString($this->filterStr)
+                $filterRule = QueryString::fromString($filterStr)
                     ->on(
                         QueryString::ON_CONDITION,
                         $listener

@@ -8,11 +8,9 @@ use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Util\Environment;
+use Icinga\Web\Request;
 use Icinga\Web\Response;
 use ipl\Sql\Connection;
-use OpenApi\Attributes as OA;
-
-
 
 abstract class ApiCore
 {
@@ -31,12 +29,6 @@ abstract class ApiCore
      */
     protected array $results = [];
     /**
-     * The HTTP response code to be returned.
-     *
-     * @var int
-     */
-    protected int $responseCode = 200;
-    /**
      * The database connection used for API operations.
      *
      * @var Connection
@@ -51,46 +43,31 @@ abstract class ApiCore
 
     public function __construct(
         /**
+         * The HTTP request object containing the API request data.
+         *
+         * @var Request
+         */
+        readonly private Request $request,
+        /**
          * The HTTP response object used to send responses back to the client.
          *
          * @var Response
          */
-        protected Response $response,
-    )
-    {
+        readonly private Response $response,
+    ) {
         $this->db = Database::get();
+        $this->init();
     }
 
     /**
-     * Immediately respond w/ HTTP 400
+     * Initialize the API core.
      *
-     * @param string $message Exception message or exception format string
-     * @param mixed ...$arg Format string argument
+     * This method is called in the constructor and should be implemented by subclasses
+     * to perform any necessary initialization tasks.
      *
-     * @return never
-     *
-     * @throws  HttpBadRequestException
+     * @return void
      */
-    public function httpBadRequest(string $message, mixed ...$arg) :never
-    {
-        throw HttpBadRequestException::create(func_get_args());
-    }
-
-
-    /**
-     * Immediately respond w/ HTTP 404
-     *
-     * @param string $message Exception message or exception format string
-     * @param mixed ...$arg Format string argument
-     *
-     * @return never
-     *
-     * @throws  HttpNotFoundException
-     */
-    public function httpNotFound(string $message, mixed ...$arg): never
-    {
-        throw HttpNotFoundException::create(func_get_args());
-    }
+    abstract protected function init(): void;
 
     /**
      * Get the files including the ApiCore.php file and any other files matching the given filter.
@@ -128,17 +105,80 @@ abstract class ApiCore
         return $files;
     }
 
+    /**
+     * Get the Request object
+     *
+     * @return Request
+     */
+    protected function getRequest(): Request
+    {
+        return $this->request;
+    }
+
+    /**
+     * Get the Response object
+     *
+     * This method returns the response object that is used to send back the API response.
+     *
+     * @return Response
+     */
+    protected function getResponse(): Response
+    {
+        return $this->response;
+    }
+
+    /**
+     * Immediately respond w/ HTTP 400
+     *
+     * @param string $message Exception message or exception format string
+     * @param mixed ...$arg Format string argument
+     *
+     * @return never
+     *
+     * @throws  HttpBadRequestException
+     */
+    public function httpBadRequest(string $message, mixed ...$arg): never
+    {
+        throw HttpBadRequestException::create(func_get_args());
+    }
+
+
+    /**
+     * Immediately respond w/ HTTP 404
+     *
+     * @param string $message Exception message or exception format string
+     * @param mixed ...$arg Format string argument
+     *
+     * @return never
+     *
+     * @throws  HttpNotFoundException
+     */
+    public function httpNotFound(string $message, mixed ...$arg): never
+    {
+        throw HttpNotFoundException::create(func_get_args());
+    }
+
+    /**
+     * Send a JSON response with the given print function.
+     *
+     * This method clears the output buffer, raises the execution time,
+     * sets the appropriate headers for a JSON response, and then calls
+     * the provided print function to output the JSON data.
+     *
+     * @param callable $printFunc A function that prints the JSON data.
+     *
+     * @return void
+     */
     protected function sendJsonResponse(callable $printFunc): void
     {
         ob_end_clean();
         Environment::raiseExecutionTime();
 
         $this->getResponse()
-        ->setHeader('Content-Type', 'application/json')
-        ->setHeader('Cache-Control', 'no-store')
-        ->sendResponse();
+            ->setHeader('Content-Type', 'application/json')
+            ->setHeader('Cache-Control', 'no-store')
+            ->sendResponse();
 
         $printFunc();
     }
-
 }
