@@ -1,0 +1,135 @@
+<?php
+
+namespace Icinga\Module\Notifications\Controllers;
+
+use Exception;
+use Icinga\Exception\Http\HttpBadRequestException;
+use Icinga\Exception\Http\HttpException;
+use Icinga\Exception\Http\HttpNotFoundException;
+use Icinga\Module\Notifications\Api\ApiCore;
+use Icinga\Security\SecurityException;
+use Icinga\Util\StringHelper;
+use Icinga\Web\Request;
+use Icinga\Web\Response;
+use ipl\Web\Compat\CompatController;
+use ipl\Web\Url;
+use ReflectionClass;
+use Zend_Controller_Request_Exception;
+
+class ApiController extends CompatController
+{
+    /**
+     * Index action for the API controller.
+     *
+     * This method handles API requests, validates that the request has a valid format,
+     * and dispatches the appropriate endpoint based on the request method and parameters.
+     *
+     * @throws HttpBadRequestException If the request is not valid.
+     * @throws SecurityException
+     * @throws HttpException|HttpNotFoundException
+     * @throws Zend_Controller_Request_Exception
+     */
+    public function indexAction(): never
+    {
+        $this->assertPermission('notifications/api/v1');
+        $request = $this->getRequest();
+        if (!$request->isApiRequest() && strtolower($request->getParam('endpoint')) !== ApiCore::OPENAPI_ENDPOINT) {
+            $this->httpBadRequest('No API request');
+        }
+
+        $this->dispatchEndpoint($request, $this->getResponse());
+
+        exit();
+    }
+
+    /**
+     * Dispatch the API endpoint based on the request parameters.
+     *
+     * @param Request $request The request object containing parameters.
+     * @param Response $response The response object to send back.
+     * @throws HttpBadRequestException|HttpNotFoundException|HttpException|
+     * @throws Zend_Controller_Request_Exception
+     */
+    private function dispatchEndpoint(Request $request, Response $response): void
+    {
+        $params = $request->getParams();
+        $getParams = Url::fromRequest()->getQueryString();
+        $method = $request->getMethod();
+        $methodName = strtolower($method);
+        $moduleName = $request->getModuleName();
+
+        $version = StringHelper::cname($params['version'] ?? null, '-');
+        $endpoint = StringHelper::cname($params['endpoint'] ?? null, '-');
+        $identifier = $params['identifier'] ?? null;
+
+        if (empty($version) || empty($endpoint)) {
+            throw new HttpException(404, "Version and endpoint are required parameters.");
+        }
+
+        $module = ($moduleName !== null) ? 'Module\\' . StringHelper::cname($moduleName, '-') . '\\' : '';
+        $className = sprintf('Icinga\\%sApi\\%s\\%s', $module, $version, $endpoint);
+
+        // Check if the required class and method are available and valid
+        if (!class_exists($className) || (new ReflectionClass($className))->isAbstract()) {
+            $this->httpNotFound(404, "Endpoint $endpoint does not exist.");
+        }
+
+        $parsedMethodName = ($method === 'GET' && empty($identifier)) ? $methodName . 'Any' : $methodName;
+
+        if (!in_array($parsedMethodName, get_class_methods($className))) {
+            if ($method === 'GET' && in_array($methodName, get_class_methods($className))) {
+                $parsedMethodName = $methodName;
+            } else {
+                throw new HttpException(405, "Method $method does not exist.");
+            }
+        }
+
+        // Validate that Method with parameters or identifier is allowed
+        if ($method !== 'GET' && !empty($getParams)) {
+            $this->httpBadRequest(
+                "Invalid request: $method with query parameters, only GET is allowed with query parameters."
+            );
+        } elseif ($method === 'GET' && !empty($identifier) && !empty($getParams)) {
+            $this->httpBadRequest(
+                "Invalid request: $method with identifier and query parameters, it's not allowed to use both together."
+            );
+        }
+
+        // Choose the correct constructor call based on the endpoint
+        if (strtolower($endpoint) === ApiCore::OPENAPI_ENDPOINT) {
+            (new $className($moduleName, $response))->$parsedMethodName();
+        } elseif (in_array($method, ['POST', 'PUT'])) {
+            $data = $this->getValidatedJsonContent($request);
+            (new $className($response, $getParams, $identifier))->$parsedMethodName($data);
+        } else {
+            (new $className($response, $getParams, $identifier))->$parsedMethodName();
+        }
+    }
+
+    /**
+     * Validate that the request has a JSON content type and return the parsed JSON content.
+     *
+     * @param Request $request The request object to validate.
+     * @return array The validated JSON content as an associative array.
+     * @throws HttpBadRequestException|Zend_Controller_Request_Exception If the content type is not application/json.
+     */
+    private function getValidatedJsonContent(Request $request): array
+    {
+        $msgPrefix = 'Invalid request body: ';
+
+        if (
+            !preg_match('/([^;]*);?/', $request->getHeader('Content-Type'), $matches)
+            || $matches[1] !== 'application/json'
+        ) {
+            $this->httpBadRequest($msgPrefix . 'Content-Type must be application/json');
+        }
+
+        try {
+            $data = $request->getPost();
+        } catch (Exception $e) {
+            $this->httpBadRequest($msgPrefix . 'given content is not a valid JSON');
+        }
+
+        return $data;
+    }
+}
