@@ -34,7 +34,7 @@ YAML;
 
         $this->assertEquals(400, $response->getStatusCode(), $content);
         $this->assertSame(
-            '{"status":"error","message":"Invalid request body: invalid JSON"}',
+            '{"status":"error","message":"Invalid request body: given content is not a valid JSON"}',
             $content
         );
     }
@@ -321,7 +321,7 @@ YAML;
 
         $this->assertEquals(400, $response->getStatusCode(), $content);
         $this->assertSame(
-            '{"status":"error","message":"Invalid request body: invalid JSON"}',
+            '{"status":"error","message":"Invalid request body: given content is not a valid JSON"}',
             $content
         );
     }
@@ -450,7 +450,7 @@ YAML;
         ]);
         $content = $response->getBody()->getContents();
 
-        $this->assertEquals(422, $response->getStatusCode(), $content);
+        $this->assertEquals(400, $response->getStatusCode(), $content);
         $this->assertSame(
             '{"status":"error","message":"Identifier mismatch"}',
             $content
@@ -520,7 +520,7 @@ YAML;
 
         $this->assertSame(204, $response->getStatusCode(), $content);
         $this->assertSame(
-            '{"status":"success","data":null}',
+            '',
             $content
         );
 
@@ -573,7 +573,7 @@ YAML;
 
         $this->assertSame(204, $response->getStatusCode(), $content);
         $this->assertSame(
-            '{"status":"success","data":null}',
+            '',
             $content
         );
     }
@@ -605,7 +605,7 @@ YAML;
         ]);
 
         // Now there are two
-        $response = $this->sendRequest('GET', 'contactgroups?sort=changed_at%20asc');
+        $response = $this->sendRequest('GET', 'contactgroups');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
@@ -634,7 +634,7 @@ YAML;
 
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertSame(
-            '{"status":"success","data":{"id":"0817d973-398e-41d7-9ef2-61cdb7ef41a2","name":"Test","users":[]}}',
+            '{"status":"success","data":[{"id":"0817d973-398e-41d7-9ef2-61cdb7ef41a2","name":"Test","users":[]}]}',
             $content
         );
     }
@@ -755,6 +755,9 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(204, $response->getStatusCode(), $content);
-        $this->assertSame('{"status":"success","data":null}', $content);
+        $this->assertSame(
+            '',
+            $content
+        );
     }
 }

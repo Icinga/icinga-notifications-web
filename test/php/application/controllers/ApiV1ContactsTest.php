@@ -33,7 +33,7 @@ YAML;
 
         $this->assertEquals(400, $response->getStatusCode(), $content);
         $this->assertSame(
-            '{"status":"error","message":"Invalid request body: invalid JSON"}',
+            '{"status":"error","message":"Invalid request body: given content is not a valid JSON"}',
             $content
         );
     }
@@ -133,7 +133,12 @@ YAML;
             'id' => '0817d973-398e-41d7-9ef2-61cdb7ef41a2',
             'full_name' => 'Test',
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-            'groups' => ['0817d973-398e-41d7-9ef2-61cdb7ef41a1']
+            'groups' => ['0817d973-398e-41d7-9ef2-61cdb7ef41a1'],
+            'addresses' => [
+                'email' => 'test@example.com',
+                'webhook' => 'https://example.com/webhook',
+                'rocketchat' => 'https://chat.example.com/webhook',
+            ]
         ]);
         $content = $response->getBody()->getContents();
 
@@ -223,7 +228,7 @@ YAML;
         $this->assertEquals(201, $response->getStatusCode(), $content);
 
         // missing groups
-        $response = $this->sendRequest('POST', 'contactgroups', [
+        $response = $this->sendRequest('POST', 'contacts', [
             'id' => '0817d973-398e-41d7-9ef2-61cdb7ef41a2',
             'full_name' => 'Test',
             'username' => 'test',
@@ -233,7 +238,7 @@ YAML;
 
         $this->assertEquals(201, $response->getStatusCode(), $content);
 
-        // invalid username
+        // already existing username
         $response = $this->sendRequest('POST', 'contacts', [
             'id' => '0817d973-398e-41d7-9ef2-61cdb7ef41a3',
             'full_name' => 'Test',
@@ -242,7 +247,7 @@ YAML;
         ]);
         $content = $response->getBody()->getContents();
 
-        $this->assertEquals(400, $response->getStatusCode(), $content);
+        $this->assertEquals(422, $response->getStatusCode(), $content);
         $this->assertSame(
             '{"status":"error","message":"Username test already exists"}',
             $content
@@ -270,7 +275,7 @@ YAML;
 
         $this->assertEquals(400, $response->getStatusCode(), $content);
         $this->assertSame(
-            '{"status":"error","message":"Address type mail is not allowed"}',
+            '{"status":"error","message":"Invalid request body: undefined address type mail given"}',
             $content
         );
     }
@@ -376,7 +381,7 @@ YAML;
         $client = new Client();
         $response = $client->request(
             'PUT',
-            'http://127.0.0.1:1792/notifications/api/v1/contactgroups/0817d973-398e-41d7-9ef2-61cdb7ef41a2',
+            'http://127.0.0.1:1792/notifications/api/v1/contacts/0817d973-398e-41d7-9ef2-61cdb7ef41a2',
             [
                 'headers' => [
                     'Accept' => 'application/json',
@@ -391,7 +396,7 @@ YAML;
 
         $this->assertEquals(400, $response->getStatusCode(), $content);
         $this->assertSame(
-            '{"status":"error","message":"Invalid request body: invalid JSON"}',
+            '{"status":"error","message":"Invalid request body: given content is not a valid JSON"}',
             $content
         );
     }
@@ -409,7 +414,7 @@ YAML;
         $client = new Client();
         $response = $client->request(
             'PUT',
-            'http://127.0.0.1:1792/notifications/api/v1/contactgroups/0817d973-398e-41d7-9ef2-61cdb7ef41a2',
+            'http://127.0.0.1:1792/notifications/api/v1/contacts/0817d973-398e-41d7-9ef2-61cdb7ef41a2',
             [
                 'headers' => [
                     'Accept' => 'application/json',
@@ -436,11 +441,11 @@ YAML;
     {
         $response = $this->sendRequest(
             'PUT',
-            'contactgroups?id=0817d973-398e-41d7-9ef2-61cdb7ef41a2',
+            'contacts?id=0817d973-398e-41d7-9ef2-61cdb7ef41a2',
             [
                 'id' => '0817d973-398e-41d7-9ef2-61cdb7ef41a2',
-                'name' => 'Test',
-                'users' => []
+                'full-name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             ]
         );
         $content = $response->getBody()->getContents();
@@ -465,10 +470,16 @@ YAML;
 
         $this->assertSame(201, $response->getStatusCode(), $response->getBody()->getContents());
 
-        $response = $this->sendRequest('PUT', 'contactgroups/0817d973-398e-41d7-9ef2-61cdb7ef41a2', [
+        $response = $this->sendRequest('PUT', 'contacts/0817d973-398e-41d7-9ef2-61cdb7ef41a2', [
             'id' => '0817d973-398e-41d7-9ef2-61cdb7ef41a2',
-            'name' => 'Test',
-            'users' => ['0817d973-398e-41d7-9ef2-61cdb7ef41a1']
+            'full_name' => 'Test',
+            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+//            'groups' => ['0817d973-398e-41d7-9ef2-61cdb7ef41a1'],
+            'addresses' => [
+                'email' => 'test@example.com',
+                'webhook' => 'https://example.com/webhook',
+                'rocketchat' => 'https://chat.example.com/webhook',
+            ]
         ]);
         $content = $response->getBody()->getContents();
 
@@ -479,68 +490,70 @@ YAML;
         );
     }
 
+    // TODO: Go on from here
     /**
      * @dataProvider databases
      */
     public function testPutWithNonMatchingIdentifierAndInvalidData(): void
     {
         // missing name
-        $response = $this->sendRequest('PUT', 'contactgroups/0817d973-398e-41d7-9ef2-61cdb7ef41a2', [
+        $response = $this->sendRequest('PUT', 'contacts/0817d973-398e-41d7-9ef2-61cdb7ef41a2', [
             'id' => '0817d973-398e-41d7-9ef2-61cdb7ef41a2',
-            'users' => []
+            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
         ]);
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(400, $response->getStatusCode(), $content);
         $this->assertSame(
             '{"status":"error","message":"Invalid request body: '
-            . 'the fields id and name must be present and of type string"}',
+            . 'the fields id, full_name and default_channel must be present and of type string"}',
             $content
         );
 
         // missing id
-        $response = $this->sendRequest('PUT', 'contactgroups/0817d973-398e-41d7-9ef2-61cdb7ef41a2', [
-            'name' => 'Test',
-            'users' => []
+        $response = $this->sendRequest('PUT', 'contacts/0817d973-398e-41d7-9ef2-61cdb7ef41a2', [
+            'full_name' => 'Test',
+            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
         ]);
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(400, $response->getStatusCode(), $content);
         $this->assertSame(
             '{"status":"error","message":"Invalid request body: '
-            . 'the fields id and name must be present and of type string"}',
+            . 'the fields id, full_name and default_channel must be present and of type string"}',
             $content
         );
 
         // different id
-        $response = $this->sendRequest('PUT', 'contactgroups/0817d973-398e-41d7-9ef2-61cdb7ef41a2', [
+        $response = $this->sendRequest('PUT', 'contacts/0817d973-398e-41d7-9ef2-61cdb7ef41a2', [
             'id' => '0817d973-398e-41d7-9ef2-61cdb7ef41a3',
-            'name' => 'Test',
-            'users' => []
+            'full_name' => 'Test',
+            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
         ]);
         $content = $response->getBody()->getContents();
 
-        $this->assertEquals(422, $response->getStatusCode(), $content);
+        $this->assertEquals(400, $response->getStatusCode(), $content);
         $this->assertSame(
             '{"status":"error","message":"Identifier mismatch"}',
             $content
         );
 
-        // invalid users
-        $response = $this->sendRequest('PUT', 'contactgroups/0817d973-398e-41d7-9ef2-61cdb7ef41a2', [
+        // invalid groups
+        $response = $this->sendRequest('PUT', 'contacts/0817d973-398e-41d7-9ef2-61cdb7ef41a2', [
             'id' => '0817d973-398e-41d7-9ef2-61cdb7ef41a2',
-            'name' => 'Test',
-            'users' => ['0817d973-398e-41d7-9ef2-61cdb7ef41a1']
+            'full_name' => 'Test',
+            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+            'groups' => ['0817d973-398e-41d7-9ef2-61cdb7ef41a1']
         ]);
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(400, $response->getStatusCode(), $content);
         $this->assertSame(
-            '{"status":"error","message":"User with identifier 0817d973-398e-41d7-9ef2-61cdb7ef41a1 not found"}',
+            '{"status":"error","message":"Group with identifier 0817d973-398e-41d7-9ef2-61cdb7ef41a1 not found"}',
             $content
         );
 
-        // missing users
+        // missing
         $response = $this->sendRequest('PUT', 'contactgroups/0817d973-398e-41d7-9ef2-61cdb7ef41a2', [
             'id' => '0817d973-398e-41d7-9ef2-61cdb7ef41a2',
             'name' => 'Test'
@@ -590,7 +603,8 @@ YAML;
 
         $this->assertSame(204, $response->getStatusCode(), $content);
         $this->assertSame(
-            '{"status":"success","data":null}',
+//            '{"status":"success","data":null}',
+            '',
             $content
         );
 
@@ -643,7 +657,7 @@ YAML;
 
         $this->assertSame(204, $response->getStatusCode(), $content);
         $this->assertSame(
-            '{"status":"success","data":null}',
+            '',
             $content
         );
     }
@@ -656,26 +670,26 @@ YAML;
     public function testGetEverything(): void
     {
         // At first, there are none
-        $response = $this->sendRequest('GET', 'contactgroups');
+        $response = $this->sendRequest('GET', 'contacts');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertSame('[]', $content);
 
-        // Create new contact groups
-        $this->sendRequest('PUT', 'contactgroups/0817d973-398e-41d7-9ef2-61cdb7ef41a2', [
+        // Create new contact
+        $this->sendRequest('PUT', 'contacts/0817d973-398e-41d7-9ef2-61cdb7ef41a2', [
             'id' => '0817d973-398e-41d7-9ef2-61cdb7ef41a2',
-            'name' => 'Test',
-            'users' => []
+            'full_name' => 'Test',
+            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
         ]);
-        $this->sendRequest('PUT', 'contactgroups/0817d973-398e-41d7-9ef2-61cdb7ef41a3', [
+        $this->sendRequest('PUT', 'contacts/0817d973-398e-41d7-9ef2-61cdb7ef41a3', [
             'id' => '0817d973-398e-41d7-9ef2-61cdb7ef41a3',
-            'name' => 'Test (2)',
-            'users' => []
+            'full_name' => 'Test (2)',
+            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
         ]);
 
         // Now there are two
-        $response = $this->sendRequest('GET', 'contactgroups?sort=changed_at%20asc');
+        $response = $this->sendRequest('GET', 'contacts');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
@@ -704,7 +718,7 @@ YAML;
 
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertSame(
-            '{"status":"success","data":{"id":"0817d973-398e-41d7-9ef2-61cdb7ef41a2","name":"Test","users":[]}}',
+            '{"status":"success","data":[{"id":"0817d973-398e-41d7-9ef2-61cdb7ef41a2","name":"Test","users":[]}]}',
             $content
         );
     }
@@ -825,6 +839,10 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(204, $response->getStatusCode(), $content);
-        $this->assertSame('{"status":"success","data":null}', $content);
+        $this->assertSame(
+//            '{"status":"success","data":null}',
+            '',
+            $content
+        );
     }
 }

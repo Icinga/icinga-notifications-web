@@ -118,8 +118,22 @@ SQL
         ])->saveIni();
 
         $db->insert('available_channel_type', [
-            'type' => 'email',
-            'name' => 'Email',
+                'type' => 'email',
+                'name' => 'Email',
+                'version' => 1,
+                'author' => 'Test',
+                'config_attrs' => ''
+            ]);
+        $db->insert('available_channel_type', [
+                'type' => 'webhook',
+                'name' => 'Webhook',
+                'version' => 1,
+                'author' => 'Test',
+                'config_attrs' => ''
+        ]);
+        $db->insert('available_channel_type', [
+            'type' => 'rocketchat',
+            'name' => 'rocketchat',
             'version' => 1,
             'author' => 'Test',
             'config_attrs' => ''
