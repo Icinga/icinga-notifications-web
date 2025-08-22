@@ -67,19 +67,6 @@ use OpenApi\Attributes as OA;
 )]
 class OpenApi extends ApiV1
 {
-    public function __construct(
-        /**
-         * The name of the module for which the OpenAPI documentation is generated.
-         * This is used to identify the module in the API documentation.
-         *
-         * @var string
-         */
-        protected string $moduleName,
-        Response $response
-    ) {
-        parent::__construct($response);
-    }
-
     /**
      * Generate OpenAPI documentation for the Notifications API
      *
