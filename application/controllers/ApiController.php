@@ -53,7 +53,6 @@ class ApiController extends CompatController
     private function dispatchEndpoint(Request $request, Response $response): void
     {
         $params = $request->getParams();
-        $getParams = Url::fromRequest()->getQueryString();
         $method = $request->getMethod();
         $methodName = strtolower($method);
         $moduleName = $request->getModuleName();
@@ -74,6 +73,7 @@ class ApiController extends CompatController
             $this->httpNotFound(404, "Endpoint $endpoint does not exist.");
         }
 
+        // TODO: move this to an api core or version class?
         $parsedMethodName = ($method === 'GET' && empty($identifier)) ? $methodName . 'Any' : $methodName;
 
         if (!in_array($parsedMethodName, get_class_methods($className))) {
@@ -84,25 +84,12 @@ class ApiController extends CompatController
             }
         }
 
-        // Validate that Method with parameters or identifier is allowed
-        if ($method !== 'GET' && !empty($getParams)) {
-            $this->httpBadRequest(
-                "Invalid request: $method with query parameters, only GET is allowed with query parameters."
-            );
-        } elseif ($method === 'GET' && !empty($identifier) && !empty($getParams)) {
-            $this->httpBadRequest(
-                "Invalid request: $method with identifier and query parameters, it's not allowed to use both together."
-            );
-        }
-
         // Choose the correct constructor call based on the endpoint
-        if (strtolower($endpoint) === ApiCore::OPENAPI_ENDPOINT) {
-            (new $className($moduleName, $response))->$parsedMethodName();
-        } elseif (in_array($method, ['POST', 'PUT'])) {
+        if (in_array($method, ['POST', 'PUT'])) {
             $data = $this->getValidatedJsonContent($request);
-            (new $className($response, $getParams, $identifier))->$parsedMethodName($data);
+            (new $className($request, $response))->$parsedMethodName($data);
         } else {
-            (new $className($response, $getParams, $identifier))->$parsedMethodName();
+            (new $className($request, $response))->$parsedMethodName();
         }
     }
 
