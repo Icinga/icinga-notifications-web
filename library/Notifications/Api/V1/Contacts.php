@@ -179,10 +179,10 @@ class Contacts extends ApiV1
 
         $this->sendJsonResponse(
         /** @throws JsonEncodeException */
-        function () {
-            echo Json::sanitize($this->results[0]);
-        });
-
+            function () {
+                echo Json::sanitize($this->results[0]);
+            }
+        );
     }
 
     /**
@@ -251,7 +251,7 @@ class Contacts extends ApiV1
         $filter = $this->createFilterFromFilterStr(
             function (Condition $condition) {
                 $column = $condition->getColumn();
-                if (!in_array($column, ['id', 'full_name', 'username'])) {
+                if (! in_array($column, ['id', 'full_name', 'username'])) {
                     $this->httpBadRequest(
                         sprintf(
                             'Invalid filter column %s given, only id, full_name and username are allowed',
@@ -261,7 +261,7 @@ class Contacts extends ApiV1
                 }
 
                 if ($column === 'id') {
-                    if (!Uuid::isValid($condition->getValue())) {
+                    if (! Uuid::isValid($condition->getValue())) {
                         $this->httpBadRequest('The given filter id is not a valid UUID');
                     }
 
