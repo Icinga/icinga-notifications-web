@@ -6,13 +6,13 @@ use DateTime;
 use GuzzleHttp\Client;
 use Icinga\Application\Config;
 use Icinga\Application\Icinga;
-use Icinga\Test\BaseTestCase;
 use ipl\Sql\Connection;
 use ipl\Sql\Test\Databases;
 use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
+use PHPUnit\Framework\TestCase;
 
-class BaseApiV1TestCase extends BaseTestCase
+class BaseApiV1TestCase extends TestCase
 {
     use Databases;
 
