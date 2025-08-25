@@ -64,9 +64,7 @@ $this->addRoute('notifications/api-v1-channels', new Zend_Controller_Router_Rout
     ]
 ));
 
-$this->addRoute(
-    'notifications/api-v1-channels', new Zend_Controller_Router_Route_Regex(
-//    'notifications/api(?:\/([^\/\?]+))?(?:\/([^\/\?]+))?(?:[\/\?]([^\/\?]+))?',
+$this->addRoute('notifications/api-v1-channels', new Zend_Controller_Router_Route_Regex(
     'notifications/api(?:\/(v[0-9\.]+))(?:\/([^\/\?]+))?(?:[\/\?]([^\/\?]+))?',
     [
         'controller'    => 'api',

@@ -59,6 +59,7 @@ use OpenApi\Attributes as OA;
 abstract class ApiV1 extends ApiCore
 {
     protected string $identifier;
+
     /**
      * Initialize the API
      *
@@ -73,11 +74,11 @@ abstract class ApiV1 extends ApiCore
         $filterStr = Url::fromRequest()->getQueryString();
 
         // Validate that Method with parameters or identifier is allowed
-        if ($method !== 'GET' && !empty($filterStr)) {
+        if ($method !== 'GET' && ! empty($filterStr)) {
             $this->httpBadRequest(
                 "Invalid request: $method with query parameters, only GET is allowed with query parameters."
             );
-        } elseif ($method === 'GET' && !empty($this->identifier) && !empty($filterStr)) {
+        } elseif ($method === 'GET' && ! empty($this->identifier) && ! empty($filterStr)) {
             $this->httpBadRequest(
                 "Invalid request: $method with identifier and query parameters, it's not allowed to use both together."
             );
@@ -95,7 +96,7 @@ abstract class ApiV1 extends ApiCore
     protected function validateIdentifier(): void
     {
         if ($identifier = $this->getRequest()->getParams()['identifier'] ?? null) {
-            if (!Uuid::isValid($identifier)) {
+            if (! Uuid::isValid($identifier)) {
                 $this->httpBadRequest('The given identifier is not a valid UUID');
             }
             $this->identifier = $identifier;
@@ -114,7 +115,7 @@ abstract class ApiV1 extends ApiCore
      */
     protected function createFilterFromFilterStr(callable $listener): array|bool
     {
-        if (!empty($filterStr = Url::fromRequest()->getQueryString())) {
+        if (! empty($filterStr = Url::fromRequest()->getQueryString())) {
             try {
                 $filterRule = QueryString::fromString($filterStr)
                     ->on(

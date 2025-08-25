@@ -17,7 +17,6 @@ use Psr\Log\LogLevel;
  */
 class PsrLogger implements LoggerInterface
 {
-
     use LoggerTrait;
 
     /**

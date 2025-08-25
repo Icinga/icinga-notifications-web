@@ -33,7 +33,7 @@ class ApiController extends CompatController
     {
         $this->assertPermission('notifications/api/v1');
         $request = $this->getRequest();
-        if (!$request->isApiRequest() && strtolower($request->getParam('endpoint')) !== ApiCore::OPENAPI_ENDPOINT) {
+        if (! $request->isApiRequest() && strtolower($request->getParam('endpoint')) !== ApiCore::OPENAPI_ENDPOINT) {
             $this->httpBadRequest('No API request');
         }
 
@@ -69,14 +69,14 @@ class ApiController extends CompatController
         $className = sprintf('Icinga\\%sApi\\%s\\%s', $module, $version, $endpoint);
 
         // Check if the required class and method are available and valid
-        if (!class_exists($className) || (new ReflectionClass($className))->isAbstract()) {
+        if (! class_exists($className) || (new ReflectionClass($className))->isAbstract()) {
             $this->httpNotFound(404, "Endpoint $endpoint does not exist.");
         }
 
         // TODO: move this to an api core or version class?
         $parsedMethodName = ($method === 'GET' && empty($identifier)) ? $methodName . 'Any' : $methodName;
 
-        if (!in_array($parsedMethodName, get_class_methods($className))) {
+        if (! in_array($parsedMethodName, get_class_methods($className))) {
             if ($method === 'GET' && in_array($methodName, get_class_methods($className))) {
                 $parsedMethodName = $methodName;
             } else {
@@ -105,7 +105,7 @@ class ApiController extends CompatController
         $msgPrefix = 'Invalid request body: ';
 
         if (
-            !preg_match('/([^;]*);?/', $request->getHeader('Content-Type'), $matches)
+            ! preg_match('/([^;]*);?/', $request->getHeader('Content-Type'), $matches)
             || $matches[1] !== 'application/json'
         ) {
             $this->httpBadRequest($msgPrefix . 'Content-Type must be application/json');
