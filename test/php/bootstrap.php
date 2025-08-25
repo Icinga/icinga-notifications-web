@@ -22,7 +22,7 @@ if ($pid == -1) {
 }
 
 if ($pid) {
-    register_shutdown_function(function() use ($pid) {
+    register_shutdown_function(function () use ($pid) {
         posix_kill($pid, SIGTERM);
     });
 

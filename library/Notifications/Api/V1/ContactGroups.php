@@ -40,8 +40,6 @@ use OpenApi\Attributes as OA;
 )]
 class ContactGroups extends ApiV1
 {
-
-
     /**
      * Fetch the group identifiers of the contact with the given id
      *

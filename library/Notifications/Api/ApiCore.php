@@ -80,7 +80,7 @@ abstract class ApiCore
     {
         $apiCoreDir = __DIR__ . '/ApiCore.php';
         // check if the extended object of this class has a attribute 'moduleName'
-        $moduleName = property_exists($this, 'moduleName') ? $this->moduleName : 'default;';
+        $moduleName = $this->getRequest()->getModuleName() ?: 'default;';
         if ($moduleName === 'default' || $moduleName === '') {
             $dir = Icinga::app()->getLibraryDir('Icinga/Application/Api/' . ucfirst($this->version) . '/');
         } else {
@@ -89,10 +89,10 @@ abstract class ApiCore
         }
 
         $dir = rtrim($dir, '/') . '/';
-        if (!is_dir($dir)) {
+        if (! is_dir($dir)) {
             throw new \RuntimeException("Directory $dir does not exist");
         }
-        if (!is_readable($dir)) {
+        if (! is_readable($dir)) {
             throw new \RuntimeException("Directory $dir is not readable");
         }
 

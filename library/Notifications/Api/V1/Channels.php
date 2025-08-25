@@ -127,5 +127,4 @@ use OpenApi\Attributes as OA;
 )]
 class Channels extends ApiV1
 {
-
 }
