@@ -11,6 +11,7 @@ use Icinga\Security\SecurityException;
 use Icinga\Util\StringHelper;
 use Icinga\Web\Request;
 use Icinga\Web\Response;
+use ipl\Stdlib\Str;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Url;
 use ReflectionClass;
@@ -24,6 +25,7 @@ class ApiController extends CompatController
      * This method handles API requests, validates that the request has a valid format,
      * and dispatches the appropriate endpoint based on the request method and parameters.
      *
+     * @return never
      * @throws HttpBadRequestException If the request is not valid.
      * @throws SecurityException
      * @throws HttpException|HttpNotFoundException
@@ -31,7 +33,7 @@ class ApiController extends CompatController
      */
     public function indexAction(): never
     {
-        $this->assertPermission('notifications/api/v1');
+        $this->assertPermission('notifications/api');
         $request = $this->getRequest();
         if (! $request->isApiRequest() && strtolower($request->getParam('endpoint')) !== ApiCore::OPENAPI_ENDPOINT) {
             $this->httpBadRequest('No API request');
@@ -57,19 +59,15 @@ class ApiController extends CompatController
         $methodName = strtolower($method);
         $moduleName = $request->getModuleName();
 
-        $version = StringHelper::cname($params['version'] ?? null, '-');
-        $endpoint = StringHelper::cname($params['endpoint'] ?? null, '-');
+        $version = Str::camel($params['version']);
+        $endpoint = Str::camel($params['endpoint']);
         $identifier = $params['identifier'] ?? null;
 
-        if (empty($version) || empty($endpoint)) {
-            throw new HttpException(404, "Version and endpoint are required parameters.");
-        }
-
-        $module = ($moduleName !== null) ? 'Module\\' . StringHelper::cname($moduleName, '-') . '\\' : '';
+        $module = ($moduleName !== null) ? 'Module\\' . ucfirst($moduleName) . '\\' : '';
         $className = sprintf('Icinga\\%sApi\\%s\\%s', $module, $version, $endpoint);
 
         // Check if the required class and method are available and valid
-        if (! class_exists($className) || (new ReflectionClass($className))->isAbstract()) {
+        if (! class_exists($className) || ! is_subclass_of($className, ApiCore::class)) {
             $this->httpNotFound(404, "Endpoint $endpoint does not exist.");
         }
 
