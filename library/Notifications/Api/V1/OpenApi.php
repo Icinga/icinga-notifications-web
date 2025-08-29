@@ -4,8 +4,6 @@ namespace Icinga\Module\Notifications\Api\V1;
 
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Notifications\Common\PsrLogger;
-use Icinga\Util\Environment;
-use Icinga\Web\Response;
 use OpenApi\Generator;
 use OpenApi\Attributes as OA;
 
@@ -70,10 +68,10 @@ class OpenApi extends ApiV1
     /**
      * Generate OpenAPI documentation for the Notifications API
      *
-     * @return void
+     * @return array
      * @throws ProgrammingError
      */
-    public function get(): void
+    public function get(): array
     {
         $files = $this->getFilesIncludingDocs();
 
@@ -82,21 +80,16 @@ class OpenApi extends ApiV1
                 ->setVersion(\OpenApi\Annotations\OpenApi::VERSION_3_1_0)
                 ->generate($files);
         } catch (\RuntimeException $e) {
-            $this->getResponse()->setHeader('Status', '500 Internal Server Error');
-            echo json_encode([
+            $errorBody = json_encode([
                 'error' => 'Failed to generate OpenAPI documentation',
                 'message' => $e->getMessage(),
             ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE);
-            return;
+
+            return $this->createArrayOfResponseData(500, $errorBody);
         }
 
-        ob_end_clean();
-        Environment::raiseExecutionTime();
+        $body = $openapi->toJson(JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE);
 
-        $this->getResponse()
-            ->setHeader('Content-Type', 'application/json')
-            ->sendResponse();
-        echo $openapi->toJson(JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE);
-        exit;
+        return $this->createArrayOfResponseData(body: $body);
     }
 }
