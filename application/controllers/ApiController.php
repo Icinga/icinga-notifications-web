@@ -3,18 +3,17 @@
 namespace Icinga\Module\Notifications\Controllers;
 
 use Exception;
+use GuzzleHttp\Psr7\HttpFactory;
+use GuzzleHttp\Psr7\Utils;
 use Icinga\Exception\Http\HttpBadRequestException;
-use Icinga\Exception\Http\HttpException;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Api\ApiCore;
 use Icinga\Security\SecurityException;
-use Icinga\Util\StringHelper;
 use Icinga\Web\Request;
-use Icinga\Web\Response;
 use ipl\Stdlib\Str;
 use ipl\Web\Compat\CompatController;
-use ipl\Web\Url;
-use ReflectionClass;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\StreamInterface;
 use Zend_Controller_Request_Exception;
 
 class ApiController extends CompatController
@@ -28,7 +27,7 @@ class ApiController extends CompatController
      * @return never
      * @throws HttpBadRequestException If the request is not valid.
      * @throws SecurityException
-     * @throws HttpException|HttpNotFoundException
+     * @throws HttpNotFoundException
      * @throws Zend_Controller_Request_Exception
      */
     public function indexAction(): never
@@ -39,7 +38,7 @@ class ApiController extends CompatController
             $this->httpBadRequest('No API request');
         }
 
-        $this->dispatchEndpoint($request, $this->getResponse());
+        $this->dispatchEndpoint($request);
 
         exit();
     }
@@ -48,73 +47,111 @@ class ApiController extends CompatController
      * Dispatch the API endpoint based on the request parameters.
      *
      * @param Request $request The request object containing parameters.
-     * @param Response $response The response object to send back.
-     * @throws HttpBadRequestException|HttpNotFoundException|HttpException|
+     * @throws HttpBadRequestException
+     * @throws HttpNotFoundException
      * @throws Zend_Controller_Request_Exception
      */
-    private function dispatchEndpoint(Request $request, Response $response): void
+    private function dispatchEndpoint(Request $request): void
     {
         $params = $request->getParams();
-        $method = $request->getMethod();
-        $methodName = strtolower($method);
-        $moduleName = $request->getModuleName();
-
         $version = Str::camel($params['version']);
         $endpoint = Str::camel($params['endpoint']);
         $identifier = $params['identifier'] ?? null;
 
-        $module = ($moduleName !== null) ? 'Module\\' . ucfirst($moduleName) . '\\' : '';
+        $module = (($moduleName = $request->getModuleName()) !== null) ? 'Module\\' . ucfirst($moduleName) . '\\' : '';
         $className = sprintf('Icinga\\%sApi\\%s\\%s', $module, $version, $endpoint);
 
-        // Check if the required class and method are available and valid
+        $serverRequest = ((new HttpFactory())->createServerRequest(
+            $request->getMethod(),
+            $request->getRequestUri(),
+            $request->getServer()
+        ))
+            ->withParsedBody($this->getRequestBody($request))
+            ->withAttribute('identifier', $identifier)
+            ->withHeader('Content-Type', $request->getHeader('Content-Type'));
+
+//        $serverRequest = empty($stream = $this->getRequestBodyStream($request))
+//            ? $serverRequest
+//            : $serverRequest->withBody($stream);
+
         if (! class_exists($className) || ! is_subclass_of($className, ApiCore::class)) {
             $this->httpNotFound(404, "Endpoint $endpoint does not exist.");
         }
 
-        // TODO: move this to an api core or version class?
-        $parsedMethodName = ($method === 'GET' && empty($identifier)) ? $methodName . 'Any' : $methodName;
-
-        if (! in_array($parsedMethodName, get_class_methods($className))) {
-            if ($method === 'GET' && in_array($methodName, get_class_methods($className))) {
-                $parsedMethodName = $methodName;
-            } else {
-                throw new HttpException(405, "Method $method does not exist.");
-            }
-        }
-
-        // Choose the correct constructor call based on the endpoint
-        if (in_array($method, ['POST', 'PUT'])) {
-            $data = $this->getValidatedJsonContent($request);
-            (new $className($request, $response))->$parsedMethodName($data);
-        } else {
-            (new $className($request, $response))->$parsedMethodName();
-        }
+        $this->emitResponse((new $className())->handle($serverRequest));
     }
 
     /**
      * Validate that the request has a JSON content type and return the parsed JSON content.
      *
      * @param Request $request The request object to validate.
-     * @return array The validated JSON content as an associative array.
-     * @throws HttpBadRequestException|Zend_Controller_Request_Exception If the content type is not application/json.
+     * @return ?StreamInterface The parsed JSON content as a StreamInterface, or null if not applicable.
+     * @throws HttpBadRequestException If the request content is not valid JSON.
+     * @throws Zend_Controller_Request_Exception
      */
-    private function getValidatedJsonContent(Request $request): array
+    private function getRequestBodyStream(Request $request): ?StreamInterface
     {
-        $msgPrefix = 'Invalid request body: ';
-
         if (
             ! preg_match('/([^;]*);?/', $request->getHeader('Content-Type'), $matches)
             || $matches[1] !== 'application/json'
         ) {
-            $this->httpBadRequest($msgPrefix . 'Content-Type must be application/json');
+            return null;
         }
 
+        $msgPrefix = 'Invalid request body: ';
+        $phpInput = fopen('php://input', 'r');
+        $stream = Utils::streamFor($phpInput);
+        fclose($phpInput);
+        if ($stream->getSize() === 0) {
+            $this->httpBadRequest($msgPrefix . 'given content is empty');
+        }
+
+        return $stream;
+    }
+
+    /**
+     * Validate that the request has a JSON content type and return the parsed JSON content.
+     *
+     * @param Request $request The request object to validate.
+     * @return ?array The validated JSON content as an associative array, or null if not applicable.
+     * @throws HttpBadRequestException If the request content is not valid JSON.
+     * @throws Zend_Controller_Request_Exception
+     */
+    private function getRequestBody(Request $request): ?array
+    {
+        if (
+            ! preg_match('/([^;]*);?/', $request->getHeader('Content-Type'), $matches)
+            || $matches[1] !== 'application/json'
+        ) {
+            return null;
+        }
         try {
             $data = $request->getPost();
         } catch (Exception $e) {
-            $this->httpBadRequest($msgPrefix . 'given content is not a valid JSON');
+            $this->httpBadRequest('Invalid JSON content: ' . $e->getMessage());
         }
 
         return $data;
+    }
+
+    /**
+     * Emit the HTTP response to the client.
+     *
+     * Sends the status code, headers, and body of the response to the client.
+     *
+     * @param ResponseInterface $response The response object to emit.
+     * @return void
+     */
+    protected function emitResponse(ResponseInterface $response): void
+    {
+        http_response_code($response->getStatusCode());
+
+        foreach ($response->getHeaders() as $name => $values) {
+            foreach ($values as $value) {
+                header(sprintf('%s: %s', $name, $value), false);
+            }
+        }
+
+        echo $response->getBody();
     }
 }
