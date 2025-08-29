@@ -3,16 +3,26 @@
 namespace Icinga\Module\Notifications\Api\V1;
 
 use Icinga\Exception\Http\HttpBadRequestException;
+use Icinga\Exception\Http\HttpException;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Exception\Json\JsonEncodeException;
+use Icinga\Module\Notifications\Api\Elements\Uuid;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Util\Json;
 use ipl\Sql\Select;
-use ipl\Stdlib\Filter\Condition;
-use Ramsey\Uuid\Uuid;
 use stdClass;
 use OpenApi\Attributes as OA;
 
+/**
+ * @phpstan-type requestBody array{
+ *       id: string,
+ *       full_name: string,
+ *       default_channel: string,
+ *       username?: string,
+ *       groups?: string[],
+ *       addresses?: array<string,string>
+ *   }
+ */
 #[OA\Schema(
     schema: 'Contact',
     description: 'Schema that represents a contact in the Icinga Notifications API',
@@ -158,38 +168,31 @@ class Contacts extends ApiV1
             schema: "#/components/schemas/ErrorResponse",
         )
     )]
-    public function get(): void
+    public function get(Uuid $identifier): array
     {
         $stmt = $this->createSelectStmt();
 
-        $stmt->where(['co.external_uuid = ?' => $this->identifier]);
+        $stmt->where(['co.external_uuid = ?' => $identifier]);
 
         /** @var stdClass|false $result */
-        $result = $this->db->fetchOne($stmt);
+        $result = $this->getDB()->fetchOne($stmt);
 
         if (empty($result)) {
             $this->httpNotFound('Contact not found');
         }
 
-        $result->groups = ContactGroups::fetchGroupIdentifiers($result->contact_id);
-        $result->addresses = $this->fetchContactAddresses($result->contact_id);
+        $this->enrichRow($result, true);
 
         unset($result->contact_id);
-        $this->results[] = $result;
 
-        $this->sendJsonResponse(
-        /** @throws JsonEncodeException */
-            function () {
-                echo Json::sanitize($this->results[0]);
-            }
-        );
+        return $this->createArrayOfResponseData(body: Json::sanitize($result));
     }
 
     /**
      * List contacts or get specific contacts by UUID or filter parameters.
      *
-     * @throws JsonEncodeException
      * @throws HttpBadRequestException
+     * @throws JsonEncodeException
      */
     #[OA\Get(
         path: "/contacts",
@@ -245,63 +248,63 @@ class Contacts extends ApiV1
             schema: "#/components/schemas/ErrorResponse",
         )
     )]
-    public function getAny(): void
+    public function getPlural(): array
     {
         $stmt = $this->createSelectStmt();
+
         $filter = $this->createFilterFromFilterStr(
-            function (Condition $condition) {
-                $column = $condition->getColumn();
-                if (! in_array($column, ['id', 'full_name', 'username'])) {
-                    $this->httpBadRequest(
-                        sprintf(
-                            'Invalid filter column %s given, only id, full_name and username are allowed',
-                            $column
-                        )
-                    );
-                }
-
-                if ($column === 'id') {
-                    if (! Uuid::isValid($condition->getValue())) {
-                        $this->httpBadRequest('The given filter id is not a valid UUID');
-                    }
-
-                    $condition->setColumn('co.external_uuid');
-                }
-            }
+            $this->createFilterRuleListener(
+                ['id', 'full_name', 'username'],
+                'co.external_uuid'
+            )
         );
 
         if ($filter !== false) {
             $stmt->where($filter);
         }
 
-        $this->sendJsonResponse(function () use ($stmt) {
-            $stmt->limit(500);
-            $offset = 0;
+        return $this->createArrayOfResponseData(
+            body: $this->createContentGenerator($this->getDB(), $stmt, $this->enrichRow())
+        );
+    }
 
-            echo '[';
+    /**
+     * Enrich the given row with groups and addresses
+     *
+     * @param ?stdClass $row
+     * @param bool $exec
+     * @return ?callable Returns a callable that enriches the row, if $exec is false
+     */
+    private function enrichRow(?stdClass $row = null, bool $exec = false): ?callable
+    {
+        $enrich = function (stdClass $row) {
+            $row->groups = ContactGroups::fetchGroupIdentifiers($row->contact_id);
+            $row->addresses = self::fetchContactAddresses($row->contact_id);
+        };
+        $return = null;
+        $exec ? $enrich($row) ?? null : $return = $enrich;
 
-            $res = $this->db->select($stmt->offset($offset));
-            do {
-                /** @var stdClass $row */
-                foreach ($res as $i => $row) {
-                    $row->groups = ContactGroups::fetchGroupIdentifiers($row->contact_id);
-                    $row->addresses = Contacts::fetchContactAddresses($row->contact_id);
+        return $return;
+    }
 
-                    if ($i > 0 || $offset !== 0) {
-                        echo ",\n";
-                    }
+    /**
+     * Fetch the addresses of the contact with the given id
+     *
+     * @param int $contactId
+     *
+     * @return array
+     */
+    public static function fetchContactAddresses(int $contactId): array
+    {
+        /** @var array<string, string> $addresses */
+        $addresses = Database::get()->fetchPairs(
+            (new Select())
+                ->from('contact_address')
+                ->columns(['type', 'address'])
+                ->where(['contact_id = ?' => $contactId])
+        );
 
-                    unset($row->contact_id);
-
-                    echo Json::sanitize($row);
-                }
-
-                $offset += 500;
-                $res = $this->db->select($stmt->offset($offset));
-            } while ($res->rowCount());
-
-            echo ']';
-        });
+        return $addresses;
     }
 
     /**
@@ -324,25 +327,5 @@ class Contacts extends ApiV1
             ->joinLeft('contact_address ca', 'ca.contact_id = co.id')
             ->joinLeft('channel ch', 'ch.id = co.default_channel_id')
             ->where(['co.deleted = ?' => 'n']);
-    }
-
-    /**
-     * Fetch the addresses of the contact with the given id
-     *
-     * @param int $contactId
-     *
-     * @return array
-     */
-    public static function fetchContactAddresses(int $contactId): array
-    {
-        /** @var array<string, string> $addresses */
-        $addresses = Database::get()->fetchPairs(
-            (new Select())
-                ->from('contact_address')
-                ->columns(['type', 'address'])
-                ->where(['contact_id = ?' => $contactId])
-        );
-
-        return $addresses;
     }
 }

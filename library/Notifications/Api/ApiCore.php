@@ -2,18 +2,52 @@
 
 namespace Icinga\Module\Notifications\Api;
 
+use Generator;
+use GuzzleHttp\Psr7\HttpFactory;
 use Icinga\Application\Icinga;
 use Icinga\Exception\Http\HttpBadRequestException;
+use Icinga\Exception\Http\HttpException;
 use Icinga\Exception\Http\HttpNotFoundException;
+use Icinga\Exception\Json\JsonEncodeException;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Util\Environment;
+use Icinga\Util\Json;
 use Icinga\Web\Request;
-use Icinga\Web\Response;
 use ipl\Sql\Connection;
+use ipl\Sql\Select;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Server\RequestHandlerInterface;
+use stdClass;
 
-abstract class ApiCore
+use function Icinga\Module\Kubernetes\yield_iterable;
+
+abstract class ApiCore implements RequestHandlerInterface
 {
+    /**
+     * HTTP GET method
+     * This constant represents the HTTP GET method.
+     * @var string
+     */
+    public const GET = 'GET';
+    /**
+     * HTTP POST method
+     * This constant represents the HTTP POST method.
+     * @var string
+     */
+    public const POST = 'POST';
+    /**
+     * HTTP PUT method
+     * This constant represents the HTTP PUT method.
+     * @var string
+     */
+    public const PUT = 'PUT';
+    /**
+     * HTTP DELETE method
+     * This constant represents the HTTP DELETE method.
+     * @var string
+     */
+    public const DELETE = 'DELETE';
     /**
      * The endpoint for OpenAPI documentation
      * This is used to serve the OpenAPI specification.
@@ -23,39 +57,27 @@ abstract class ApiCore
     public const OPENAPI_ENDPOINT = 'openapi';
 
     /**
-     * The results of the API call, which will be returned as JSON.
+     * The version of the API being used.
      *
-     * @var array
+     * @var string
      */
-    protected array $results = [];
+    protected readonly string $version;
     /**
      * The database connection used for API operations.
      *
      * @var Connection
      */
-    protected Connection $db;
+    private Connection $db;
     /**
-     * The version of the API being used.
+     * The response object used to send back the API response.
      *
-     * @var string
+     * @var ResponseInterface
      */
-    protected string $version;
+    private ResponseInterface $response;
 
-    public function __construct(
-        /**
-         * The HTTP request object containing the API request data.
-         *
-         * @var Request
-         */
-        readonly private Request $request,
-        /**
-         * The HTTP response object used to send responses back to the client.
-         *
-         * @var Response
-         */
-        readonly private Response $response,
-    ) {
-        $this->db = Database::get();
+    public function __construct()
+    {
+        $this->setResponse((new HttpFactory())->createResponse());
         $this->init();
     }
 
@@ -64,10 +86,60 @@ abstract class ApiCore
      *
      * This method is called in the constructor and should be implemented by subclasses
      * to perform any necessary initialization tasks.
+     * E.g., establishing a database connection and adding Response data.
      *
      * @return void
      */
     abstract protected function init(): void;
+
+    /**
+     * Get the database connection
+     *
+     * This method returns the database connection that is used for API operations.
+     *
+     * @return Connection
+     */
+    protected function getDB(): Connection
+    {
+        return $this->db;
+    }
+
+    /**
+     * Set the database connection
+     *
+     * This method sets the database connection that will be used for API operations.
+     *
+     * @param Connection $db
+     * @return void
+     */
+    protected function setDB(Connection $db): void
+    {
+        $this->db = $db;
+    }
+    /**
+     * Get the Response object
+     *
+     * This method returns the response object that is used to send back the API response.
+     *
+     * @return ResponseInterface
+     */
+    protected function getResponse(): ResponseInterface
+    {
+        return $this->response;
+    }
+
+    /**
+     * Set the Response object
+     *
+     * This method sets the response object that is used to send back the API response.
+     *
+     * @param ResponseInterface $response
+     * @return void
+     */
+    protected function setResponse(ResponseInterface $response): void
+    {
+        $this->response = $response;
+    }
 
     /**
      * Get the files including the ApiCore.php file and any other files matching the given filter.
@@ -79,8 +151,9 @@ abstract class ApiCore
     protected function getFilesIncludingDocs(string $fileFilter = '*'): array
     {
         $apiCoreDir = __DIR__ . '/ApiCore.php';
-        // check if the extended object of this class has a attribute 'moduleName'
-        $moduleName = $this->getRequest()->getModuleName() ?: 'default;';
+        // TODO: find a way to get the module name from the request or class context
+//        $moduleName = $this->getRequest()->getModuleName() ?: 'default;';
+        $moduleName = 'notifications';
         if ($moduleName === 'default' || $moduleName === '') {
             $dir = Icinga::app()->getLibraryDir('Icinga/Application/Api/' . ucfirst($this->version) . '/');
         } else {
@@ -103,28 +176,6 @@ abstract class ApiCore
         }
 
         return $files;
-    }
-
-    /**
-     * Get the Request object
-     *
-     * @return Request
-     */
-    protected function getRequest(): Request
-    {
-        return $this->request;
-    }
-
-    /**
-     * Get the Response object
-     *
-     * This method returns the response object that is used to send back the API response.
-     *
-     * @return Response
-     */
-    protected function getResponse(): Response
-    {
-        return $this->response;
     }
 
     /**
@@ -159,26 +210,103 @@ abstract class ApiCore
     }
 
     /**
-     * Send a JSON response with the given print function.
+     * Immediately respond w/ HTTP 405
+     * This method throws an HttpException with a 405 status code (Method Not Allowed).
      *
-     * This method clears the output buffer, raises the execution time,
-     * sets the appropriate headers for a JSON response, and then calls
-     * the provided print function to output the JSON data.
-     *
-     * @param callable $printFunc A function that prints the JSON data.
-     *
-     * @return void
+     * @param string $message
+     * @param mixed ...$arg
+     * @return never
+     * @throws HttpException
      */
-    protected function sendJsonResponse(callable $printFunc): void
+    public function httpMethodNotAllowed(string $message, mixed ...$arg): never
     {
-        ob_end_clean();
-        Environment::raiseExecutionTime();
+        throw new HttpException(405, ...func_get_args());
+    }
 
-        $this->getResponse()
-            ->setHeader('Content-Type', 'application/json')
-            ->setHeader('Cache-Control', 'no-store')
-            ->sendResponse();
+    /**
+     *  Immediately respond w/ HTTP 409
+     * This method throws an HttpException with a 409 status code (Conflict).
+     *
+     * @param string $message
+     * @param mixed ...$arg
+     * @return never
+     * @throws HttpException
+     */
+    public function httpConflict(string $message, mixed ...$arg): never
+    {
+        throw new HttpException(409, ...func_get_args());
+    }
 
-        $printFunc();
+    /**
+     * Immediately respond w/ HTTP 415
+     * This method throws an HttpException with a 415 status code (Unsupported Media Type).
+     *
+     * @param string $message
+     * @param mixed ...$arg
+     * @return never
+     * @throws HttpException
+     */
+    public function httpUnsupportedMediaType(string $message, mixed ...$arg): never
+    {
+        throw new HttpException(415, ...func_get_args());
+    }
+    /**
+     * Immediately respond w/ HTTP 422
+     * This method throws an HttpException with a 422 status code (Unprocessable Entity).
+     *
+     * @param string $message
+     * @param mixed ...$arg
+     * @return never
+     * @throws HttpException
+     */
+    public function httpUnprocessableEntity(string $message, mixed ...$arg): never
+    {
+        throw new HttpException(422, ...func_get_args());
+    }
+
+
+    /**
+     * Create a content generator for streaming JSON responses.
+     *
+     * This method creates a generator that yields JSON-encoded content
+     * in batches, allowing for efficient streaming of large datasets.
+     *
+     * @param Connection $db The database connection to use for querying.
+     * @param Select $stmt The SQL select statement to execute.
+     * @param callable $enricher A function to enrich each row of data.
+     * @param int $batchSize The number of rows to fetch in each batch (default is 500).
+     *
+     * @return Generator Yields JSON-encoded strings representing the content.
+     * @throws JsonEncodeException
+     */
+    protected function createContentGenerator(
+        Connection $db,
+        Select $stmt,
+        callable $enricher,
+        int $batchSize = 500
+    ): Generator {
+        $stmt->limit($batchSize);
+        $offset = 0;
+
+        yield '{"contents":[';
+         $res = $db->select($stmt->offset($offset));
+        do {
+            /** @var stdClass $row */
+            foreach ($res as $i => $row) {
+                $enricher($row);
+
+                if ($i > 0 || $offset !== 0) {
+                    yield ",\n";
+                }
+
+                unset($row->contact_id);
+
+                yield Json::sanitize($row);
+            }
+
+            $offset += $batchSize;
+            $res = $db->select($stmt->offset($offset));
+        } while ($res->rowCount());
+        yield ']}';
     }
 }
