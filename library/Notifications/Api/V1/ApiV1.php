@@ -127,14 +127,14 @@ abstract class ApiV1 extends ApiCore
 
         // Validate that Method with parameters or identifier is allowed
         if ($httpMethod !== self::GET && ! empty($filterStr)) {
-            $this->httpBadRequest(
-                "Invalid request: Filter is only allowed for GET requests"
-            );
+            $this->httpBadRequest("Invalid request: Filter is only allowed for GET requests");
         } elseif ($httpMethod === self::GET && ! empty($identifier) && ! empty($filterStr)) {
             $this->httpBadRequest(
                 "Invalid request: $httpMethod with identifier and query parameters,"
                 . " it's not allowed to use both together."
             );
+        } elseif (in_array($httpMethod, [self::PUT, self::DELETE]) && empty($identifier)) {
+            $this->httpBadRequest("Invalid request: $httpMethod without identifier is not allowed.");
         }
         $uuid = $this->getValidatedIdentifier($identifier);
 
