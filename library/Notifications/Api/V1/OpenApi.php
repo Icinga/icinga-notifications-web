@@ -65,6 +65,7 @@ use OpenApi\Attributes as OA;
 )]
 class OpenApi extends ApiV1
 {
+    public const OPENAPI_PATH = __DIR__ . '/docs/openapi.json';
     /**
      * Generate OpenAPI documentation for the Notifications API
      *
@@ -73,23 +74,36 @@ class OpenApi extends ApiV1
      */
     public function get(): array
     {
-        $files = $this->getFilesIncludingDocs();
+        // TODO: Create the documentation during CI and not on request
+        if (file_exists(self::OPENAPI_PATH)) {
+            $oad = file_get_contents(self::OPENAPI_PATH);
+        } else {
+            $files = $this->getFilesIncludingDocs();
 
-        try {
-            $openapi = (new Generator(new PsrLogger()))
-                ->setVersion(\OpenApi\Annotations\OpenApi::VERSION_3_1_0)
-                ->generate($files);
-        } catch (\RuntimeException $e) {
-            $errorBody = json_encode([
-                'error' => 'Failed to generate OpenAPI documentation',
-                'message' => $e->getMessage(),
-            ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE);
+            try {
+                $openapi = (new Generator(new PsrLogger()))
+                    ->setVersion(\OpenApi\Annotations\OpenApi::VERSION_3_1_0)
+                    ->generate($files);
+            } catch (\RuntimeException $e) {
+                $errorBody = json_encode([
+                    'error' => 'Failed to generate OpenAPI documentation',
+                    'message' => $e->getMessage(),
+                ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE);
 
-            return $this->createArrayOfResponseData(500, $errorBody);
+                return $this->createArrayOfResponseData(500, $errorBody);
+            }
+
+            $oad = $openapi->toJson(
+                JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE | JSON_PRETTY_PRINT
+            );
+
+            if (! is_dir(dirname(self::OPENAPI_PATH))) {
+                mkdir(dirname(self::OPENAPI_PATH), 0755, true);
+            }
+
+            file_put_contents(self::OPENAPI_PATH, $oad);
         }
 
-        $body = $openapi->toJson(JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE);
-
-        return $this->createArrayOfResponseData(body: $body);
+        return $this->createArrayOfResponseData(body: $oad);
     }
 }
