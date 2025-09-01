@@ -313,7 +313,7 @@ abstract class ApiCore implements RequestHandlerInterface
         $stmt->limit($batchSize);
         $offset = 0;
 
-        yield '{"contents":[';
+        yield '{"content":[';
          $res = $db->select($stmt->offset($offset));
         do {
             /** @var stdClass $row */
