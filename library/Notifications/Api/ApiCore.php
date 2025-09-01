@@ -10,10 +10,7 @@ use Icinga\Exception\Http\HttpException;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Exception\Json\JsonEncodeException;
 use Icinga\Exception\ProgrammingError;
-use Icinga\Module\Notifications\Common\Database;
-use Icinga\Util\Environment;
 use Icinga\Util\Json;
-use Icinga\Web\Request;
 use ipl\Sql\Connection;
 use ipl\Sql\Select;
 use Psr\Http\Message\ResponseInterface;
@@ -61,7 +58,7 @@ abstract class ApiCore implements RequestHandlerInterface
      *
      * @var string
      */
-    protected readonly string $version;
+    private string $version;
     /**
      * The database connection used for API operations.
      *
@@ -142,6 +139,34 @@ abstract class ApiCore implements RequestHandlerInterface
     }
 
     /**
+     * Get the API version
+     *
+     * This method returns the version of the API being used.
+     *
+     * @return string
+     */
+    protected function getVersion(): string
+    {
+        return $this->version;
+    }
+
+    /**
+     * Set the API version
+     *
+     * This method sets the version of the API being used.
+     * It can only be set once and will not overwrite an existing version.
+     *
+     * @param string $version
+     * @return void
+     */
+    protected function setVersion(string $version): void
+    {
+        if (! isset($this->version)) {
+            $this->version = $version;
+        }
+    }
+
+    /**
      * Get the files including the ApiCore.php file and any other files matching the given filter.
      *
      * @param string $fileFilter
@@ -155,10 +180,10 @@ abstract class ApiCore implements RequestHandlerInterface
 //        $moduleName = $this->getRequest()->getModuleName() ?: 'default;';
         $moduleName = 'notifications';
         if ($moduleName === 'default' || $moduleName === '') {
-            $dir = Icinga::app()->getLibraryDir('Icinga/Application/Api/' . ucfirst($this->version) . '/');
+            $dir = Icinga::app()->getLibraryDir('Icinga/Application/Api/' . ucfirst($this->getVersion()) . '/');
         } else {
             $dir = Icinga::app()->getModuleManager()->getModuleDir($moduleName)
-                . '/library/' . ucfirst($moduleName) . '/Api/' . strtoupper($this->version) . '/';
+                . '/library/' . ucfirst($moduleName) . '/Api/' . strtoupper($this->getVersion()) . '/';
         }
 
         $dir = rtrim($dir, '/') . '/';

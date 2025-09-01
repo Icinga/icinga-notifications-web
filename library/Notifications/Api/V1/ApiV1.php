@@ -76,13 +76,9 @@ abstract class ApiV1 extends ApiCore
      */
     protected const PLURAL_SUFFIX = 'Plural';
 
-    public function __construct(readonly string $version = 'v1')
-    {
-        parent::__construct();
-    }
-
     protected function init(): void
     {
+        $this->setVersion('v1');
         $this->setDB(Database::get());
         $this->setResponse(
             $this->getResponse()
