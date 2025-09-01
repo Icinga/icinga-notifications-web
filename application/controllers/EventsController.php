@@ -83,8 +83,9 @@ class EventsController extends CompatController
         $this->addControl($limitControl);
         $this->addControl($searchBar);
 
-        $url = Url::fromRequest()->onlyWith($preserveParams);
-        $url->setQueryString(QueryString::render($filter) . '&' . $url->getParams()->toString());
+        $url = Url::fromRequest()
+            ->onlyWith($preserveParams)
+            ->setFilter($filter);
 
         $eventList = (new LoadMoreObjectList($events->execute()))
             ->setPageSize($limitControl->getLimit())
