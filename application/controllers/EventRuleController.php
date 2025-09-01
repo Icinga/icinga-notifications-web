@@ -4,14 +4,15 @@
 
 namespace Icinga\Module\Notifications\Controllers;
 
+use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
+use Icinga\Module\Notifications\Forms\EventRuleConfigElements\NotificationConfigProvider;
+use Icinga\Module\Notifications\Forms\EventRuleConfigForm;
 use Icinga\Module\Notifications\Forms\EventRuleForm;
-use Icinga\Module\Notifications\Forms\SaveEventRuleForm;
 use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ExtraTagSuggestions;
-use Icinga\Module\Notifications\Widget\EventRuleConfig;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\Form;
@@ -19,155 +20,134 @@ use ipl\Html\Html;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Control\SearchEditor;
+use ipl\Web\Filter\Renderer;
 use ipl\Web\Url;
 use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
+use Psr\Http\Message\ServerRequestInterface;
 
 class EventRuleController extends CompatController
 {
     use Auth;
 
     /** @var Session\SessionNamespace */
-    private $sessionNamespace;
+    private Session\SessionNamespace $session;
 
-    public function init()
+    public function init(): void
     {
-        $this->sessionNamespace = Session::getSession()->getNamespace('notifications');
+        $this->assertPermission('notifications/config/event-rule');
+        $this->session = Session::getSession()->getNamespace('notifications.event-rule');
     }
 
     public function indexAction(): void
     {
-        $this->assertPermission('notifications/config/event-rules');
-
-        $this->addTitleTab(t('Event Rule'));
-
+        $this->addTitleTab($this->translate('Event Rule'));
         $this->controls->addAttributes(['class' => 'event-rule-detail']);
+        $this->content->addAttributes(['class' => 'event-rule-detail']);
+        $this->getTabs()->disableLegacyExtensions();
 
-        $ruleId = $this->params->getRequired('id');
+        $ruleId = (int) $this->params->getRequired('id');
 
-        $cache = $this->sessionNamespace->get($ruleId);
-
-        if ($cache) {
-            $this->addContent(Html::tag('div', ['class' => 'cache-notice'], t('There are unsaved changes.')));
-            $eventRuleConfig = new EventRuleConfig(
-                Url::fromPath('notifications/event-rule/search-editor', ['id' => $ruleId]),
-                $cache
-            );
-        } else {
-            $eventRuleConfig = new EventRuleConfig(
-                Url::fromPath('notifications/event-rule/search-editor', ['id' => $ruleId]),
-                $this->fromDb($ruleId)
-            );
-        }
-
-        $saveForm = (new SaveEventRuleForm())
-            ->setShowRemoveButton()
-            ->setShowDismissChangesButton($cache !== null)
-            ->setSubmitButtonDisabled($cache === null)
-            ->setSubmitLabel($this->translate('Save Changes'))
-            ->on(SaveEventRuleForm::ON_SUCCESS, function ($form) use ($ruleId, $eventRuleConfig) {
-                if ($form->getPressedSubmitElement()->getName() === 'discard_changes') {
-                    $this->sessionNamespace->delete($ruleId);
-                    Notification::success($this->translate('Successfully discarded the pending changes.'));
-                    $this->redirectNow(Links::eventRule($ruleId));
-                }
-
-                if (! $eventRuleConfig->isValid()) {
-                    $eventRuleConfig->addAttributes(['class' => 'invalid']);
-                    return;
-                }
-
-                $form->editRule($ruleId, $this->sessionNamespace->get($ruleId));
-                $this->sessionNamespace->delete($ruleId);
-
-                Notification::success($this->translate('Successfully updated rule.'));
-                $this->sendExtraUpdates(['#col1']);
-                $this->redirectNow(Links::eventRule($ruleId));
-            })->on(SaveEventRuleForm::ON_REMOVE, function ($form) use ($ruleId) {
-                $form->removeRule($ruleId);
-                $this->sessionNamespace->delete($ruleId);
-
-                Notification::success($this->translate('Successfully removed rule.'));
-                $this->redirectNow('__CLOSE__');
-            })->handleRequest($this->getServerRequest());
-
-        $eventRuleForm = Html::tag('div', ['class' => 'event-rule-form'], [
-            Html::tag('h2', $eventRuleConfig->getConfig()['name'] ?? ''),
-            (new Link(
-                new Icon('edit'),
-                Url::fromPath('notifications/event-rule/edit', [
-                    'id' => $ruleId
-                ]),
-                ['class' => 'control-button']
-            ))->openInModal()
-        ]);
-
-        $eventRuleFormAndSave = Html::tag('div', ['class' => 'event-rule-and-save-forms']);
-        $eventRuleFormAndSave->add([
-            $eventRuleForm,
-            $saveForm
-        ]);
+        $multiPartUpdate = false;
+        $eventRuleConfig = (new EventRuleConfigForm(
+            new NotificationConfigProvider(),
+            Url::fromPath('notifications/event-rule/search-editor', ['id' => $ruleId])
+        ))->setCsrfCounterMeasureId(Session::getSession()->getId());
 
         $eventRuleConfig
-            ->on(EventRuleConfig::ON_CHANGE, function ($eventRuleConfig) use ($ruleId, $saveForm) {
-                $this->sessionNamespace->set($ruleId, $eventRuleConfig->getConfig());
-                $saveForm->setSubmitButtonDisabled(false);
+            ->on(Form::ON_SUCCESS, function (EventRuleConfigForm $form) use ($ruleId) {
+                if ($ruleId !== -1) {
+                    $rule = $this->fetchRule($ruleId);
+                } else {
+                    $rule = null;
+                }
+
+                $ruleId = $form->storeInDatabase(Database::get(), $rule);
+                Notification::success(sprintf(
+                    $this->translate('Successfully saved event rule %s'),
+                    $form->getValue('name')
+                ));
+                $this->sendExtraUpdates(['#col1']);
                 $this->redirectNow(Links::eventRule($ruleId));
-            });
+            })
+            ->on(Form::ON_SENT, function (EventRuleConfigForm $form) use ($ruleId) {
+                if ($form->hasBeenRemoved()) {
+                    $form->removeRule(Database::get(), $this->fetchRule($ruleId));
+                    Notification::success(sprintf(
+                        $this->translate('Successfully deleted event rule %s'),
+                        $form->getValue('name')
+                    ));
+                    $this->switchToSingleColumnLayout();
+                }
+            })
+            ->on(Form::ON_REQUEST, function (
+                ServerRequestInterface $request,
+                EventRuleConfigForm $form
+            ) use (
+                $ruleId,
+                &$multiPartUpdate
+            ) {
+                $nameOnly = (bool) $this->params->shift('_nameOnly');
+                $filterOnly = (bool) $this->params->shift('_filterOnly');
 
-        foreach ($eventRuleConfig->getForms() as $form) {
-            $form->handleRequest($this->getServerRequest());
+                if ($nameOnly || $filterOnly) {
+                    $multiPartUpdate = true;
 
-            if (! $form->hasBeenSent()) {
-                // Force validation of populated values in case we display an unsaved rule
-                $form->validatePartial();
-            }
+                    if ($nameOnly) {
+                        $this->addPart($form->prepareObjectFilterUpdate($this->session->get('object_filter')));
+                        $this->addPart($form->prepareNameUpdate($this->session->get('name')));
+                        $this->addPart(Html::tag('div', ['id' => 'event-rule-config-name'], [
+                            Html::tag('h2', $this->session->get('name')),
+                            (new Link(
+                                new Icon('edit'),
+                                Url::fromPath('notifications/event-rule/edit', ['id' => $ruleId]),
+                                ['class' => 'control-button']
+                            ))->openInModal()
+                        ]));
+                    } else {
+                        $this->addPart($form->prepareNameUpdate($this->session->get('name')));
+                        $this->addPart($form->prepareObjectFilterUpdate($this->session->get('object_filter')));
+                    }
+
+                    $this->getResponse()->setHeader('X-Icinga-Location-Query', $this->params->toString());
+                } elseif ($ruleId !== -1) {
+                    $rule = $this->fetchRule($ruleId);
+
+                    $form->load($rule);
+
+                    $this->session->set('name', $rule->name);
+                    $this->session->set('object_filter', $rule->object_filter ?? '');
+                } else {
+                    $name = $this->params->getRequired('name');
+                    $form->populate(['id' => $ruleId, 'name' => $name]);
+
+                    $this->session->set('name', $name);
+                    $this->session->set('object_filter', '');
+                }
+            })
+            ->handleRequest($this->getServerRequest());
+
+        if ($multiPartUpdate) {
+            return;
         }
 
-        $this->addControl($eventRuleFormAndSave);
+        $this->addControl(Html::tag('div', ['class' => 'event-rule-and-save-forms'], [
+            Html::tag('div', ['class' => 'event-rule-form', 'id' => 'event-rule-config-name'], [
+                Html::tag('h2', $eventRuleConfig->getValue('name')),
+                (new Link(
+                    new Icon('edit'),
+                    Url::fromPath('notifications/event-rule/edit', ['id' => $ruleId]),
+                    ['class' => 'control-button']
+                ))->openInModal()
+            ]),
+            Html::tag(
+                'div',
+                ['id' => 'save-config', 'class' => 'icinga-controls'],
+                $eventRuleConfig->createExternalSubmitButtons()
+            )
+        ]));
+
         $this->addContent($eventRuleConfig);
-    }
-
-    /**
-     * Create config from db
-     *
-     * @param int $ruleId
-     * @return array
-     */
-    public function fromDb(int $ruleId): array
-    {
-        $query = Rule::on(Database::get())
-            ->columns(['id', 'name', 'object_filter'])
-            ->filter(Filter::equal('id', $ruleId));
-
-        $rule = $query->first();
-        if ($rule === null) {
-            $this->httpNotFound(t('Rule not found'));
-        }
-
-        $config = iterator_to_array($rule);
-
-        $ruleEscalations = $rule
-            ->rule_escalation
-            ->withoutColumns(['changed_at', 'deleted']);
-
-        foreach ($ruleEscalations as $re) {
-            foreach ($re as $k => $v) {
-                $config[$re->getTableName()][$re->position][$k] = $v;
-            }
-
-            $escalationRecipients = $re
-                ->rule_escalation_recipient
-                ->withoutColumns(['changed_at', 'deleted']);
-
-            foreach ($escalationRecipients as $recipient) {
-                $config[$re->getTableName()][$re->position]['recipient'][] = iterator_to_array($recipient);
-            }
-        }
-
-        $config['showSearchbar'] = ! empty($config['object_filter']);
-
-        return $config;
     }
 
     /**
@@ -182,7 +162,6 @@ class EventRuleController extends CompatController
         $this->getDocument()->add($suggestions);
     }
 
-
     /**
      * searchEditorAction for Object Extra Tags
      *
@@ -192,84 +171,72 @@ class EventRuleController extends CompatController
      */
     public function searchEditorAction(): void
     {
-        $ruleId = $this->params->shiftRequired('id');
+        $ruleId = (int) $this->params->getRequired('id');
 
-        $eventRule = $this->sessionNamespace->get($ruleId) ?? $this->fromDb($ruleId);
+        $editor = new SearchEditor();
 
-        $editor = EventRuleConfig::createSearchEditor()
-            ->setQueryString($eventRule['object_filter'] ?? '');
+        $editor->setQueryString($this->session->get('object_filter'))
+            ->setAction(Url::fromRequest()->getAbsoluteUrl())
+            ->setSuggestionUrl(
+                Url::fromPath('notifications/event-rule/complete', [
+                    'id' => $ruleId,
+                    '_disableLayout' => true,
+                    'showCompact' => true
+                ])
+            );
 
-        $editor->on(SearchEditor::ON_SUCCESS, function (SearchEditor $form) use ($ruleId, $eventRule) {
-            $eventRule['object_filter'] = EventRuleConfig::createFilterString($form->getFilter());
+        $editor->on(Form::ON_SUCCESS, function (SearchEditor $form) use ($ruleId) {
+            $filter = (new Renderer($form->getFilter()))->render();
+            // TODO: Should not be needed for the new filter implementation
+            $filter = preg_replace('/(?:=|~|!|%3[EC])(?=[|&]|$)/', '', $filter);
 
-            $this->sessionNamespace->set($ruleId, $eventRule);
-            $this->getResponse()
-                ->setHeader('X-Icinga-Container', '_self')
-                ->redirectAndExit(
-                    Url::fromPath(
-                        'notifications/event-rule',
-                        ['id' => $ruleId]
-                    )
-                );
+            $this->session->set('object_filter', $filter);
+            $this->redirectNow(Links::eventRule($ruleId)->setParam('_filterOnly'));
         });
 
         $editor->handleRequest($this->getServerRequest());
 
-        $this->getDocument()->add($editor);
+        $this->getDocument()->addHtml($editor);
         $this->setTitle($this->translate('Adjust Filter'));
     }
 
     public function editAction(): void
     {
-        /** @var string $ruleId */
-        $ruleId = $this->params->getRequired('id');
-        /** @var ?array<string, mixed> $cache */
-        $cache = $this->sessionNamespace->get($ruleId);
-
-        if ($this->params->has('clearCache')) {
-            $this->sessionNamespace->delete($ruleId);
-            $cache = [];
-        }
-
-        if (isset($cache) || $ruleId === '-1') {
-            $config = $cache ?? [];
-        } else {
-            $config = $this->fromDb((int) $ruleId);
-        }
+        $ruleId = (int) $this->params->getRequired('id');
 
         $eventRuleForm = (new EventRuleForm())
-            ->populate($config)
+            ->setCsrfCounterMeasureId(Session::getSession()->getId())
+            ->populate(['name' => $this->session->get('name')])
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
-            ->on(Form::ON_SUCCESS, function ($form) use ($ruleId, $cache, $config) {
-                $config['name'] = $form->getValue('name');
-
-                if ($cache || $ruleId === '-1') {
-                    $this->sessionNamespace->set($ruleId, $config);
-                } else {
-                    (new SaveEventRuleForm())->editRule((int) $ruleId, $config);
-                }
-
-                if ($ruleId === '-1') {
-                    $redirectUrl = Url::fromPath('notifications/event-rules/add', [
-                        'use_cache' => true
-                    ]);
-                } else {
-                    $redirectUrl = Url::fromPath('notifications/event-rule', [
-                        'id' => $ruleId
-                    ]);
-                    $this->sendExtraUpdates(['#col1']);
-                }
-
-                $this->getResponse()->setHeader('X-Icinga-Container', 'col2');
-                $this->redirectNow($redirectUrl);
+            ->on(Form::ON_SUCCESS, function ($form) use ($ruleId) {
+                $this->session->set('name', $form->getValue('name'));
+                $this->redirectNow(Links::eventRule($ruleId)->setParam('_nameOnly'));
             })->handleRequest($this->getServerRequest());
 
-        if ($ruleId === '-1') {
-            $this->setTitle($this->translate('New Event Rule'));
-        } else {
-            $this->setTitle($this->translate('Edit Event Rule'));
-        }
+        $this->setTitle($this->translate('Edit Event Rule'));
 
         $this->addContent($eventRuleForm);
+    }
+
+    /**
+     * Fetch the rule with the given ID
+     *
+     * @param int $ruleId
+     *
+     * @return Rule
+     * @throws HttpNotFoundException
+     */
+    private function fetchRule(int $ruleId): Rule
+    {
+        $query = Rule::on(Database::get())
+            ->filter(Filter::equal('id', $ruleId));
+
+        /* @var ?Rule $rule */
+        $rule = $query->first();
+        if ($rule === null) {
+            $this->httpNotFound(t('Rule not found'));
+        }
+
+        return $rule;
     }
 }
