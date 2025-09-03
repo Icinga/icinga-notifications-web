@@ -47,20 +47,24 @@ class PsrLogger implements LoggerInterface
         $level = strtolower((string) $level);
         $icingaMethod = self::MAP[$level] ?? 'debug';
 
-        array_unshift($context, $message);
+        $parsedContext = [];
+        if (isset($context['exception']) && $context['exception'] instanceof \Throwable) {
+            $parsedContext[] = $context['exception']->getTraceAsString();
+        }
+        array_unshift($parsedContext, (string) $message);
 
         switch ($icingaMethod) {
             case 'error':
-                IcingaLogger::error(...$context);
+                IcingaLogger::error(...$parsedContext);
                 break;
             case 'warning':
-                IcingaLogger::warning(...$context);
+                IcingaLogger::warning(...$parsedContext);
                 break;
             case 'info':
-                IcingaLogger::info(...$context);
+                IcingaLogger::info(...$parsedContext);
                 break;
             default:
-                IcingaLogger::debug(...$context);
+                IcingaLogger::debug(...$parsedContext);
                 break;
         }
     }
