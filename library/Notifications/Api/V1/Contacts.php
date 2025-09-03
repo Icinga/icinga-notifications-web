@@ -204,6 +204,7 @@ class Contacts extends ApiV1
     /**
      * List contacts or get specific contacts by UUID or filter parameters.
      *
+     * @return array
      * @throws HttpBadRequestException
      * @throws JsonEncodeException
      */
@@ -297,6 +298,9 @@ class Contacts extends ApiV1
     /**
      * Update a contact by UUID.
      *
+     * @param Uuid $identifier
+     * @param requestBody $requestBody
+     * @return array
      * @throws HttpBadRequestException
      * @throws HttpException
      */
@@ -454,8 +458,11 @@ class Contacts extends ApiV1
     }
 
     /**
+     * Create a new contact.
+     *
+     * @param requestBody $requestBody
+     * @return array
      * @throws HttpException
-     * @throws HttpNotFoundException
      * @throws HttpBadRequestException
      */
     #[OA\Post(
