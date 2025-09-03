@@ -43,20 +43,80 @@ use OpenApi\Attributes as OA;
             property: 'status',
             description: 'Status of the response',
             type: 'string',
-            example: 'error'
         ),
         new OA\Property(
             property: 'message',
             description: 'Detailed error message',
             type: 'string',
-            example: 'An error occurred while processing your request.'
         )
     ],
     type: 'object',
 )]
 #[OA\Schema(
+    schema: 'SuccessResponse',
+    description: 'Success response format',
+    properties: [
+        new OA\Property(
+            property: 'status',
+            description: 'Status of the response',
+            type: 'string',
+        ),
+        new OA\Property(
+            property: 'message',
+            description: 'Detailed success message',
+            type: 'string',
+        )
+    ],
+    type: 'object',
+)]
+#[OA\Components(
+    examples: [
+        new OA\Examples(
+            example: 'IDParameterInvalidUUID',
+            summary: 'Invalid UUID format',
+            value: [
+                'status'  => 'error',
+                'message' => 'Provided id-parameter is not a valid UUID',
+            ],
+        ),
+        new OA\Examples(
+            example: 'IdentifierNotFound',
+            summary: 'Identifier not found',
+            value: ['status' => 'error', 'message' => 'Identifier not found']
+        ),
+        new OA\Examples(
+            example: 'InvalidIdentifier',
+            summary: 'Identifier is not valid',
+            value: ['status' => 'error', 'message' => 'Identifier is not valid']
+        ),
+        new OA\Examples(
+            example: 'MissingRequiredField',
+            summary: 'Missing required field',
+            value: [
+                'status'  => 'error',
+                'message' => 'Missing required field in request body: X',
+            ],
+        ),
+        new OA\Examples(
+            example: 'ContentTypeNotSupported',
+            summary: 'Content type not supported',
+            value: [
+                'status'  => 'error',
+                'message' => 'Content type is missing or not supported, please use application/json',
+            ],
+        ),
+        new OA\Examples(
+            example: 'InvalidRequestBody',
+            summary: 'Invalid request body',
+            value: [
+                'status'  => 'error',
+                'message' => 'Request body is not valid JSON',
+            ],
+        )
+    ]
+)]
+#[OA\Schema(
     schema: 'UUID',
-    title: 'UUID',
     description: 'An UUID representing',
     type: 'string',
     format: 'uuid',
