@@ -6,8 +6,10 @@ use Exception;
 use GuzzleHttp\Psr7\Utils;
 use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Http\HttpException;
+use Icinga\Exception\Json\JsonDecodeException;
 use Icinga\Module\Notifications\Api\ApiCore;
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Util\Json;
 use InvalidArgumentException;
 use ipl\Sql\Compat\FilterProcessor;
 use ipl\Stdlib\Filter\Condition;
@@ -155,6 +157,40 @@ abstract class ApiV1 extends ApiCore
         }
 
         return $this->createResponse($responseData);
+    }
+
+    /**
+     * Validate that the request has a JSON content type and return the parsed JSON content.
+     *
+     * @param ServerRequestInterface $request The request object to validate.
+     * @return array The validated JSON content as an associative array.
+     * @throws HttpBadRequestException If the content type is not application/json.
+     */
+    private function getValidRequestBody(ServerRequestInterface $request): array
+    {
+        if (! empty($parsedBody = $request->getParsedBody()) && is_array($parsedBody)) {
+            return $parsedBody;
+        }
+
+        $msgPrefix = 'Invalid request body: ';
+        if (
+            ! preg_match('/([^;]*);?/', $request->getHeaderLine('Content-Type'), $matches)
+            || $matches[1] !== 'application/json'
+        ) {
+            $this->httpBadRequest($msgPrefix . 'Content-Type must be application/json');
+        }
+        $body = $request->getBody()->getContents();
+        if (empty($body)) {
+            $this->httpBadRequest($msgPrefix . 'given content is empty');
+        }
+
+        try {
+            $validBody = Json::decode($body, true);
+        } catch (JsonDecodeException $e) {
+            $this->httpBadRequest($msgPrefix . 'given content is not a valid JSON');
+        }
+
+        return $validBody;
     }
 
     //TODO: decide if these following functions should be versioned or moved to ApiCore

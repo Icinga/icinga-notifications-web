@@ -5,6 +5,7 @@ namespace Icinga\Module\Notifications\Api\V1;
 use Icinga\Module\Notifications\Common\Database;
 use ipl\Sql\Select;
 use OpenApi\Attributes as OA;
+use stdClass;
 
 #[OA\Schema(
     schema: "Contactgroup",
@@ -57,5 +58,26 @@ class ContactGroups extends ApiV1
                 ->where(['cgm.contact_id = ?' => $contactId])
                 ->groupBy('cg.external_uuid')
         );
+    }
+
+    /**
+     * Get the group id with the given identifier
+     *
+     * @param string $identifier
+     *
+     * @return int|false
+     *
+     */
+    public static function getGroupId(string $identifier): int|false
+    {
+        /** @var stdClass|false $group */
+        $group = Database::get()->fetchOne(
+            (new Select())
+                ->from('contactgroup')
+                ->columns('id')
+                ->where(['external_uuid = ?' => $identifier])
+        );
+
+        return $group->id ?? false;
     }
 }

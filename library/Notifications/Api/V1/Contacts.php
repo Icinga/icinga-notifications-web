@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Notifications\Api\V1;
 
+use DateTime;
 use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Http\HttpException;
 use Icinga\Exception\Http\HttpNotFoundException;
@@ -10,6 +11,7 @@ use Icinga\Module\Notifications\Api\Elements\Uuid;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Util\Json;
 use ipl\Sql\Select;
+use ipl\Validator\EmailAddressValidator;
 use stdClass;
 use OpenApi\Attributes as OA;
 
@@ -269,6 +271,156 @@ class Contacts extends ApiV1
     }
 
     /**
+     * Update a contact by UUID.
+     *
+     * @throws HttpBadRequestException
+     * @throws HttpException
+     */
+    #[OA\Put(
+        path: '/contacts/{identifier}',
+        description: 'Update a contact by UUID',
+        summary: 'Update a contact by UUID',
+        tags: ["Contacts"],
+    )]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            ref: "#/components/schemas/Contact"
+        )
+    )]
+    #[OA\Parameter(
+        name: 'identifier',
+        description: 'The UUID of the contact to update',
+        in: 'path',
+        required: true,
+        schema: new OA\Schema(ref: "#/components/schemas/ContactUUID")
+    )]
+    #[OA\Response(
+        response: 201,
+        description: 'Contact created',
+        content: new OA\JsonContent(
+            examples: [
+                'ContactCreated' => new OA\Examples(
+                    example: 'ContactCreated',
+                    summary: 'Contact created successfully',
+                    value: [
+                        'status'  => 'success',
+                        'message' => 'Contact created successfully',
+                    ]
+                ),
+            ],
+            ref: "#/components/schemas/SuccessResponse"
+        )
+    )]
+    #[OA\Response(
+        response: 204,
+        description: 'Contact updated',
+    )]
+    #[OA\Response(
+        response: 400,
+        description: 'Bad request',
+        content: new OA\JsonContent(
+            examples: [
+                'InvalidRequestBody' => new OA\Examples(
+                    example: 'InvalidRequestBody',
+                    ref: '#/components/examples/InvalidRequestBody'
+                ),
+            ],
+            ref: "#/components/schemas/ErrorResponse"
+        )
+    )]
+    #[OA\Response(
+        response: 415,
+        description: "Unsupported Media Type",
+        content: new OA\JsonContent(
+            examples: [
+                'ContentTypeNotSupported' => new OA\Examples(
+                    example: 'ContentTypeNotSupported',
+                    ref: '#/components/examples/ContentTypeNotSupported'
+                ),
+            ],
+            ref: "#/components/schemas/ErrorResponse"
+        )
+    )]
+    #[OA\Response(
+        response: 422,
+        description: 'Unprocessable Entity',
+        content: new OA\JsonContent(
+            examples: [
+                'MissingRequiredField' => new OA\Examples(
+                    example: 'MissingRequiredField',
+                    ref: '#/components/examples/MissingRequiredField'
+                ),
+                'InvalidIdentifier' => new OA\Examples(
+                    example: 'InvalidIdentifier',
+                    ref: '#/components/examples/InvalidIdentifier'
+                ),
+            ],
+            ref: "#/components/schemas/ErrorResponse"
+        )
+    )]
+    public function put(Uuid $identifier, array $requestBody): array
+    {
+        if (empty((string) $identifier)) {
+            $this->httpBadRequest('Identifier is required');
+        }
+
+        $data = $this->getValidatedRequestBodyData($requestBody);
+
+        if ((string) $identifier !== $data['id']) {
+            $this->httpBadRequest('Identifier mismatch');
+        }
+
+        $this->getDB()->beginTransaction();
+
+        if (($contactId = self::getContactId($identifier)) !== null) {
+            if (! empty($data['username'])) {
+                $this->assertUniqueUsername($data['username'], $contactId);
+            }
+
+            if (! $channelID = Channels::getChannelId($data['default_channel'])) {
+                $this->httpUnprocessableEntity('Default channel mismatch');
+            }
+
+            $this->getDB()->update('contact', [
+                'full_name' => $data['full_name'],
+                'username' => $data['username'] ?? null,
+                'default_channel_id' => $channelID,
+                'changed_at' => (int)(new DateTime())->format("Uv"),
+            ], ['id = ?' => $contactId]);
+
+            $markAsDeleted = ['deleted' => 'y'];
+            $this->getDB()->update(
+                'contact_address',
+                $markAsDeleted,
+                ['contact_id = ?' => $contactId, 'deleted = ?' => 'n']
+            );
+            $this->getDB()->update(
+                'contactgroup_member',
+                $markAsDeleted,
+                ['contact_id = ?' => $contactId, 'deleted = ?' => 'n']
+            );
+
+            if (! empty($data['addresses'])) {
+                $this->addAddresses($contactId, $data['addresses']);
+            }
+
+            if (! empty($data['groups'])) {
+                $this->addGroups($contactId, $data['groups']);
+            }
+
+            $responseCode = 204;
+        } else {
+            $this->addContact($data);
+            $responseCode = 201;
+        }
+
+        $this->getDB()->commitTransaction();
+
+        return $this->createArrayOfResponseData(statusCode: $responseCode);
+    }
+
+    /**
      * Enrich the given row with groups and addresses
      *
      * @param ?stdClass $row
@@ -327,5 +479,220 @@ class Contacts extends ApiV1
             ->joinLeft('contact_address ca', 'ca.contact_id = co.id')
             ->joinLeft('channel ch', 'ch.id = co.default_channel_id')
             ->where(['co.deleted = ?' => 'n']);
+    }
+
+    /**
+     * Get the contact id with the given identifier
+     *
+     * @param string $identifier
+     *
+     * @return ?int Returns null, if contact does not exist
+     */
+    public static function getContactId(string $identifier): ?int
+    {
+        /** @var stdClass|false $contact */
+        $contact =  Database::get()->fetchOne(
+            (new Select())
+                ->from('contact')
+                ->columns('id')
+                ->where(['external_uuid = ?' => $identifier])
+        );
+
+        return $contact->id ?? null;
+    }
+
+    /**
+     * Add the groups to the given contact
+     *
+     * @param int $contactId
+     * @param string[] $groups
+     *
+     * @return void
+     * @throws HttpException
+     */
+    private function addGroups(int $contactId, array $groups): void
+    {
+        foreach ($groups as $groupIdentifier) {
+            $groupId = ContactGroups::getGroupId($groupIdentifier);
+            if (! $groupId) {
+                $this->httpUnprocessableEntity(
+                    sprintf('Group with identifier %s does not exist', $groupIdentifier)
+                );
+            }
+
+            Database::get()->insert('contactgroup_member', [
+                'contact_id'        => $contactId,
+                'contactgroup_id'   => $groupId,
+                'changed_at'        => (int) (new DateTime())->format("Uv"),
+            ]);
+        }
+    }
+
+    /**
+     * Add the addresses to the given contact
+     *
+     * @param int $contactId
+     * @param array<string, string> $addresses
+     *
+     * @return void
+     */
+    private function addAddresses(int $contactId, array $addresses): void
+    {
+        foreach ($addresses as $type => $address) {
+            Database::get()->insert('contact_address', [
+                'contact_id'    => $contactId,
+                'type'          => $type,
+                'address'       => $address,
+                'changed_at'            => (int) (new DateTime())->format("Uv"),
+            ]);
+        }
+    }
+
+    /**
+     * Add a new contact with the given data
+     *
+     * @param requestBody $data
+     *
+     * @return void
+     * @throws HttpException
+     */
+    private function addContact(array $data): void
+    {
+        if (! empty($data['username'])) {
+            $this->assertUniqueUsername($data['username']);
+        }
+        if (! $channelID = Channels::getChannelId($data['default_channel'])) {
+            $this->httpUnprocessableEntity('Default channel mismatch');
+        }
+
+        Database::get()->insert('contact', [
+            'full_name'             => $data['full_name'],
+            'username'              => $data['username'] ?? null,
+            'default_channel_id'    => $channelID,
+            'external_uuid'         => $data['id'],
+            'changed_at'            => (int) (new DateTime())->format("Uv"),
+        ]);
+
+        $contactId = Database::get()->lastInsertId();
+
+        if (! empty($data['addresses'])) {
+            $this->addAddresses($contactId, $data['addresses']);
+        }
+
+        if (! empty($data['groups'])) {
+            $this->addGroups($contactId, $data['groups']);
+        }
+    }
+
+    /**
+     * Assert that the username is unique
+     *
+     * @param string $username
+     * @param ?int $contactId The id of the contact to exclude
+     *
+     * @return void
+     *
+     * @throws HttpException if the username already exists
+     */
+    private function assertUniqueUsername(string $username, int $contactId = null): void
+    {
+        $stmt = (new Select())
+            ->from('contact')
+            ->columns('1')
+            ->where(['username = ?' => $username]);
+
+        if ($contactId) {
+            $stmt->where(['id != ?' => $contactId]);
+        }
+
+        $user = Database::get()->fetchOne($stmt);
+
+        if ($user) {
+            $this->httpConflict('Username already exists');
+        }
+    }
+
+    // TODO: validate via class attributes or openapi schema? Is it performant enough?
+    /**
+     * Get the validated POST|PUT request data
+     *
+     * @return requestBody
+     *
+     * @throws HttpBadRequestException if the request body is invalid
+     */
+    private function getValidatedRequestBodyData(array $data): array
+    {
+        $msgPrefix = 'Invalid request body: ';
+
+        if (
+            ! isset($data['id'], $data['full_name'], $data['default_channel'])
+            || ! is_string($data['id'])
+            || ! is_string($data['full_name'])
+            || ! is_string($data['default_channel'])
+        ) {
+            $this->httpBadRequest(
+                $msgPrefix . 'the fields id, full_name and default_channel must be present and of type string'
+            );
+        }
+
+        if (! Uuid::isValid($data['id'])) {
+            $this->httpBadRequest($msgPrefix . 'given id is not a valid UUID');
+        }
+
+        if (! Uuid::isValid($data['default_channel'])) {
+            $this->httpBadRequest($msgPrefix . 'given default_channel is not a valid UUID');
+        }
+
+        if (! empty($data['username']) && ! is_string($data['username'])) {
+            $this->httpBadRequest($msgPrefix . 'expects username to be a string');
+        }
+
+        if (! empty($data['groups'])) {
+            if (! is_array($data['groups'])) {
+                $this->httpBadRequest($msgPrefix . 'expects groups to be an array');
+            }
+
+            foreach ($data['groups'] as $group) {
+                if (! is_string($group) || ! Uuid::isValid($group)) {
+                    $this->httpBadRequest($msgPrefix . 'group identifiers must be valid UUIDs');
+                }
+            }
+        }
+
+        if (! empty($data['addresses'])) {
+            if (! is_array($data['addresses'])) {
+                $this->httpBadRequest($msgPrefix . 'expects addresses to be an array');
+            }
+
+            $addressTypes = array_keys($data['addresses']);
+
+            $types = Database::get()->fetchCol(
+                (new Select())
+                    ->from('available_channel_type')
+                    ->columns('type')
+                    ->where(['type IN (?)' => $addressTypes])
+            );
+
+            if (count($types) !== count($addressTypes)) {
+                $this->httpBadRequest(
+                    sprintf(
+                        $msgPrefix . 'undefined address type %s given',
+                        implode(', ', array_diff($addressTypes, $types))
+                    )
+                );
+            }
+            //TODO: is it a good idea to check valid channel types here?, if yes,
+            //default_channel and group identifiers must be checked here as well..404 OR 400?
+
+            if (
+                ! empty($data['addresses']['email'])
+                && ! (new EmailAddressValidator())->isValid($data['addresses']['email'])
+            ) {
+                $this->httpBadRequest($msgPrefix . 'an invalid email address given');
+            }
+        }
+
+        /** @var requestBody $data */
+        return $data;
     }
 }
