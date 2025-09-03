@@ -2,7 +2,10 @@
 
 namespace Icinga\Module\Notifications\Api\V1;
 
+use Icinga\Module\Notifications\Common\Database;
+use ipl\Sql\Select;
 use OpenApi\Attributes as OA;
+use stdClass;
 
 #[OA\Schema(
     schema: 'Channel',
@@ -127,4 +130,24 @@ use OpenApi\Attributes as OA;
 )]
 class Channels extends ApiV1
 {
+
+    /**
+     * Get the channel id with the given identifier
+     *
+     * @param string $channelIdentifier
+     *
+     * @return int|false
+     */
+    public static function getChannelId(string $channelIdentifier): int|false
+    {
+        /** @var stdClass|false $channel */
+        $channel = Database::get()->fetchOne(
+            (new Select())
+                ->from('channel')
+                ->columns('id')
+                ->where(['external_uuid = ?' => $channelIdentifier])
+        );
+
+        return $channel->id ?? false;
+    }
 }
