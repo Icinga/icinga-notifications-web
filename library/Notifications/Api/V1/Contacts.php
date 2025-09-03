@@ -33,7 +33,7 @@ use OpenApi\Attributes as OA;
         'full_name',
         'default_channel',
     ],
-    type: "object",
+    type: 'object',
 )]
 #[OA\Schema(
     schema: 'Addresses',
@@ -62,20 +62,34 @@ use OpenApi\Attributes as OA;
     additionalProperties: false,
     attachables: [
         new OA\Attachable(
-            properties: ["test" => "value", "test2" => "value2"]
+            properties: ['test' => 'value', 'test2' => 'value2']
         )
     ]
 )]
 #[OA\Schema(
-    schema: "ContactUUID",
+    schema: 'ContactUUID',
+    title: 'ContactUUID',
     description: 'An UUID representing a contact',
-    allOf: [
-        new OA\Schema(ref: "#/components/schemas/UUID"),
-        new OA\Schema(example: '9e868ad0-e774-465b-8075-c5a07e8f0726'),
-    ],
+    type: 'string',
+    format: 'uuid',
+    maxLength: 36,
+    minLength: 36,
+    example: '9e868ad0-e774-465b-8075-c5a07e8f0726',
 )]
 class Contacts extends ApiV1
 {
+    /**
+     * The route to handle a single contact
+     *
+     * @var string
+     */
+    public const ROUTE_SINGLE = '/contacts/{identifier}';
+    /**
+     * The route to handle multiple contacts
+     *
+     * @var string
+     */
+    public const ROUTE_PLURAL = '/contacts';
     #[OA\Property(
         ref: '#/components/schemas/ContactUUID',
     )]
@@ -101,59 +115,44 @@ class Contacts extends ApiV1
     #[OA\Property(
         description: 'List of group UUIDs the contact belongs to',
         type: 'array',
-        items: new OA\Items(ref: "#/components/schemas/ContactGroupUUID")
+        items: new OA\Items(
+            ref: '#/components/schemas/ContactGroupUUID',
+            description: 'Group UUIDs the contact belongs to',
+        )
     )]
     protected ?array $groups = null;
     #[OA\Property(
-        ref: "#/components/schemas/Addresses",
-        description: "Contact addresses by type",
+        ref: '#/components/schemas/Addresses',
+        description: 'Contact addresses by type',
     )]
     protected ?array $addresses = null;
 
     /**
      * Get a contact by UUID.
      *
-     * @return void
+     * @param Uuid $identifier
+     * @return array
      * @throws HttpNotFoundException
      * @throws JsonEncodeException
      */
     #[OA\Get(
-        path: '/contacts/{identifier}',
+        path: Contacts::ROUTE_SINGLE,
         description: 'Get a contact by UUID',
         summary: 'Get a contact by UUID',
-        tags: ["Contacts"],
+        tags: ['Contacts'],
     )]
     #[OA\Parameter(
         name: 'identifier',
         description: 'The UUID of the contact to retrieve',
         in: 'path',
         required: true,
-        schema: new OA\Schema(ref: "#/components/schemas/ContactUUID")
+        schema: new OA\Schema(ref: '#/components/schemas/ContactUUID')
     )]
     #[OA\Response(
         response: 200,
         description: 'Contact found',
         content: new OA\JsonContent(
-            ref: "#/components/schemas/Contact"
-        )
-    )]
-    #[OA\Response(
-        response: 400,
-        description: 'Bad request',
-        content: new OA\JsonContent(
-            examples: [
-                new OA\Examples(
-                    example: 'InvalidUUID',
-                    summary: 'Invalid identifier',
-                    value: ['status' => 'error', 'message' => 'The given identifier is not a valid UUID']
-                ),
-                new OA\Examples(
-                    example: 'IllegalFilter',
-                    summary: 'Filter parameter is not allowed',
-                    value: ['status' => 'error', 'message' => 'Filter parameter is not allowed']
-                )
-            ],
-            schema: "#/components/schemas/ErrorResponse",
+            ref: '#/components/schemas/Contact'
         )
     )]
     #[OA\Response(
@@ -161,13 +160,25 @@ class Contacts extends ApiV1
         description: 'Contact not found',
         content: new OA\JsonContent(
             examples: [
-                new OA\Examples(
-                    example: 'ContactNotFound',
-                    summary: 'Contact not found',
-                    value: ['status' => 'error', 'message' => 'Contact not found']
-                )
+                'IdentifierNotFound' => new OA\Examples(
+                    example: 'IdentifierNotFound',
+                    ref: '#/components/examples/IdentifierNotFound'
+                ),
             ],
-            schema: "#/components/schemas/ErrorResponse",
+            schema: '#/components/schemas/ErrorResponse',
+        )
+    )]
+    #[OA\Response(
+        response: 422,
+        description: 'Unprocessable Entity',
+        content: new OA\JsonContent(
+            examples: [
+                'InvalidIdentifier' => new OA\Examples(
+                    example: 'InvalidIdentifier',
+                    ref: '#/components/examples/InvalidIdentifier'
+                ),
+            ],
+            schema: '#/components/schemas/ErrorResponse',
         )
     )]
     public function get(Uuid $identifier): array
@@ -197,57 +208,70 @@ class Contacts extends ApiV1
      * @throws JsonEncodeException
      */
     #[OA\Get(
-        path: "/contacts",
-        summary: "List contacts or get specific contacts by UUID or filter parameters",
-        tags: ["Contacts"],
+        path: Contacts::ROUTE_PLURAL,
+        summary: 'List contacts or get specific contacts by UUID or filter parameters',
+        tags: ['Contacts'],
     )]
     #[OA\Parameter(
-        name: "id",
-        description: "Filter Contacts by UUID",
-        in: "query",
+        name: 'id',
+        description: 'Filter Contacts by UUID',
+        in: 'query',
         required: false,
-        schema: new OA\Schema(ref: "#/components/schemas/UUID")
+        schema: new OA\Schema(ref: '#/components/schemas/UUID')
     )]
     #[OA\Parameter(
-        name: "full_name",
-        description: "Filter Contacts by full name",
-        in: "query",
+        name: 'full_name',
+        description: 'Filter Contacts by full name',
+        in: 'query',
         required: false,
-        schema: new OA\Schema(type: "string")
+        schema: new OA\Schema(type: 'string')
     )]
     #[OA\Parameter(
-        name: "username",
-        description: "Filter Contacts by username",
-        in: "query",
+        name: 'username',
+        description: 'Filter Contacts by username',
+        in: 'query',
         required: false,
-        schema: new OA\Schema(type: "string", maxLength: 254)
+        schema: new OA\Schema(type: 'string', maxLength: 254)
     )]
     #[OA\Response(
         response: 200,
-        description: "Successful response",
+        description: 'Successful response',
         content: new OA\JsonContent(
-            type: "array",
+            type: 'array',
             items: new OA\Items(
-                ref: "#/components/schemas/Contact",
-                title: "ContactResponse",
+                ref: '#/components/schemas/Contact',
+                title: 'ContactResponse',
             )
         )
     )]
     #[OA\Response(
         response: 400,
-        description: "Bad request",
+        description: 'Bad request',
+        content: new OA\JsonContent(
+            examples: [
+            ],
+            ref: '#/components/schemas/ErrorResponse'
+        )
+    )]
+    #[OA\Response(
+        response: 422,
+        description: 'Unprocessable Entity',
         content: new OA\JsonContent(
             examples: [
                 new OA\Examples(
-                    example: "InvalidFilterParameter",
-                    summary: "Invalid filter parameter",
+                    example: 'InvalidFilterParameter',
+                    summary: 'Invalid filter parameter',
                     value: [
-                        "status" => "error",
-                        "message" => "Invalid filter column id given, only id, full_name and username are allowed"
-                    ]
+                        'status'  => 'error',
+                        'message' => 'Invalid filter column x given, only id, full_name and username are allowed',
+                    ],
+                ),
+                'IDParameterInvalidUUID' => new OA\Examples(
+                    example: 'IDParameterInvalidUUID',
+                    ref: '#/components/examples/IDParameterInvalidUUID'
                 ),
             ],
-            schema: "#/components/schemas/ErrorResponse",
+            ref: '#/components/schemas/ErrorResponse'
         )
     )]
     public function getPlural(): array
@@ -277,15 +301,15 @@ class Contacts extends ApiV1
      * @throws HttpException
      */
     #[OA\Put(
-        path: '/contacts/{identifier}',
+        path: Contacts::ROUTE_SINGLE,
         description: 'Update a contact by UUID',
         summary: 'Update a contact by UUID',
-        tags: ["Contacts"],
+        tags: ['Contacts'],
     )]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            ref: "#/components/schemas/Contact"
+            ref: '#/components/schemas/Contact'
         )
     )]
     #[OA\Parameter(
@@ -293,7 +317,7 @@ class Contacts extends ApiV1
         description: 'The UUID of the contact to update',
         in: 'path',
         required: true,
-        schema: new OA\Schema(ref: "#/components/schemas/ContactUUID")
+        schema: new OA\Schema(ref: '#/components/schemas/ContactUUID')
     )]
     #[OA\Response(
         response: 201,
@@ -309,7 +333,7 @@ class Contacts extends ApiV1
                     ]
                 ),
             ],
-            ref: "#/components/schemas/SuccessResponse"
+            ref: '#/components/schemas/SuccessResponse'
         )
     )]
     #[OA\Response(
@@ -326,12 +350,12 @@ class Contacts extends ApiV1
                     ref: '#/components/examples/InvalidRequestBody'
                 ),
             ],
-            ref: "#/components/schemas/ErrorResponse"
+            ref: '#/components/schemas/ErrorResponse'
         )
     )]
     #[OA\Response(
         response: 415,
-        description: "Unsupported Media Type",
+        description: 'Unsupported Media Type',
         content: new OA\JsonContent(
             examples: [
                 'ContentTypeNotSupported' => new OA\Examples(
@@ -339,7 +363,7 @@ class Contacts extends ApiV1
                     ref: '#/components/examples/ContentTypeNotSupported'
                 ),
             ],
-            ref: "#/components/schemas/ErrorResponse"
+            ref: '#/components/schemas/ErrorResponse'
         )
     )]
     #[OA\Response(
@@ -347,16 +371,28 @@ class Contacts extends ApiV1
         description: 'Unprocessable Entity',
         content: new OA\JsonContent(
             examples: [
-                'MissingRequiredField' => new OA\Examples(
-                    example: 'MissingRequiredField',
-                    ref: '#/components/examples/MissingRequiredField'
+                'GroupNotFound' => new OA\Examples(
+                    example: 'GroupNotFound',
+                    summary: 'Group not found',
+                    value: [
+                        'status'  => 'error',
+                        'message' => 'Group does not exist: X',
+                    ]
+                ),
+                'MissingRequiredRequestBodyField' => new OA\Examples(
+                    example: 'MissingRequiredRequestBodyField',
+                    ref: '#/components/examples/MissingRequiredRequestBodyField'
+                ),
+                'InvalidRequestBodyField' => new OA\Examples(
+                    example: 'InvalidRequestBodyField',
+                    ref: '#/components/examples/InvalidRequestBodyField'
                 ),
                 'InvalidIdentifier' => new OA\Examples(
                     example: 'InvalidIdentifier',
                     ref: '#/components/examples/InvalidIdentifier'
                 ),
             ],
-            ref: "#/components/schemas/ErrorResponse"
+            ref: '#/components/schemas/ErrorResponse'
         )
     )]
     public function put(Uuid $identifier, array $requestBody): array
