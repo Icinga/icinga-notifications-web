@@ -9,8 +9,12 @@ use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Exception\Json\JsonEncodeException;
 use Icinga\Module\Notifications\Api\Elements\Uuid;
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Model\Rotation;
+use Icinga\Module\Notifications\Model\RotationMember;
+use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use Icinga\Util\Json;
 use ipl\Sql\Select;
+use ipl\Stdlib\Filter;
 use ipl\Validator\EmailAddressValidator;
 use stdClass;
 use OpenApi\Attributes as OA;
@@ -585,6 +589,72 @@ class Contacts extends ApiV1
     }
 
     /**
+     * Remove the contact with the given id
+     *
+     * @param Uuid $identifier
+     * @return array
+     * @throws HttpBadRequestException
+     * @throws HttpNotFoundException
+     */
+    #[OA\Delete(
+        path: Contacts::ROUTE_WITH_IDENTIFIER,
+        description: 'Delete a contact by UUID',
+        summary: 'Delete a contact by UUID',
+        tags: ['Contacts'],
+    )]
+    #[OA\Parameter(
+        name: 'identifier',
+        description: 'The UUID of the contact to delete',
+        in: 'path',
+        required: true,
+        schema: new OA\Schema(ref: '#/components/schemas/ContactUUID')
+    )]
+    #[OA\Response(
+        response: 204,
+        description: 'Contact deleted',
+    )]
+    #[OA\Response(
+        response: 404,
+        description: 'Contact not found',
+        content: new OA\JsonContent(
+            examples: [
+                'IdentifierNotFound' => new OA\Examples(
+                    example: 'IdentifierNotFound',
+                    ref: '#/components/examples/IdentifierNotFound'
+                ),
+            ],
+            ref: '#/components/schemas/ErrorResponse'
+        )
+    )]
+    #[OA\Response(
+        response: 422,
+        description: 'Unprocessable Entity',
+        content: new OA\JsonContent(
+            examples: [
+                'InvalidIdentifier' => new OA\Examples(
+                    example: 'InvalidIdentifier',
+                    ref: '#/components/examples/InvalidIdentifier'
+                ),
+            ],
+            ref: '#/components/schemas/ErrorResponse'
+        )
+    )]
+    public function delete(Uuid $identifier): array
+    {
+        if (empty((string) $identifier)) {
+            $this->httpBadRequest('Identifier is required');
+        }
+
+        if (($contactId = self::getContactId($identifier)) === null) {
+            $this->httpNotFound('Contact not found');
+        }
+
+        $this->removeContact($contactId);
+
+        return $this->createArrayOfResponseData(statusCode: 204);
+    }
+
+    /**
      * Enrich the given row with groups and addresses
      *
      * @param ?stdClass $row
@@ -746,6 +816,105 @@ class Contacts extends ApiV1
         if (! empty($data['groups'])) {
             $this->addGroups($contactId, $data['groups']);
         }
+    }
+
+    /**
+     * Remove the contact with the given id
+     *
+     * @param int $id
+     *
+     * @return void
+     */
+    private function removeContact(int $id): void
+    {
+        //TODO: "remove rotations|escalations with no members" taken from form. Is it properly?
+        $this->getDB()->beginTransaction();
+
+        $markAsDeleted = ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'];
+        $updateCondition = ['contact_id = ?' => $id, 'deleted = ?' => 'n'];
+
+        $rotationAndMemberIds = $this->getDB()->fetchPairs(
+            RotationMember::on($this->getDB())
+                ->columns(['id', 'rotation_id'])
+                ->filter(Filter::equal('contact_id', $id))
+                ->assembleSelect()
+        );
+
+        $rotationMemberIds = array_keys($rotationAndMemberIds);
+        $rotationIds = array_values($rotationAndMemberIds);
+
+        $this->getDB()->update('rotation_member', $markAsDeleted + ['position' => null], $updateCondition);
+
+        if (! empty($rotationMemberIds)) {
+            $this->getDB()->update(
+                'timeperiod_entry',
+                $markAsDeleted,
+                ['rotation_member_id IN (?)' => $rotationMemberIds, 'deleted = ?' => 'n']
+            );
+        }
+
+        if (! empty($rotationIds)) {
+            $rotationIdsWithOtherMembers = $this->getDB()->fetchCol(
+                RotationMember::on($this->getDB())
+                    ->columns('rotation_id')
+                    ->filter(
+                        Filter::all(
+                            Filter::equal('rotation_id', $rotationIds),
+                            Filter::unequal('contact_id', $id)
+                        )
+                    )->assembleSelect()
+            );
+
+            $toRemoveRotations = array_diff($rotationIds, $rotationIdsWithOtherMembers);
+
+            if (! empty($toRemoveRotations)) {
+                $rotations = Rotation::on($this->getDB())
+                    ->columns(['id', 'schedule_id', 'priority', 'timeperiod.id'])
+                    ->filter(Filter::equal('id', $toRemoveRotations));
+
+                /** @var Rotation $rotation */
+                foreach ($rotations as $rotation) {
+                    $rotation->delete();
+                }
+            }
+        }
+
+        $escalationIds = $this->getDB()->fetchCol(
+            RuleEscalationRecipient::on($this->getDB())
+                ->columns('rule_escalation_id')
+                ->filter(Filter::equal('contact_id', $id))
+                ->assembleSelect()
+        );
+
+        $this->getDB()->update('rule_escalation_recipient', $markAsDeleted, $updateCondition);
+
+        if (! empty($escalationIds)) {
+            $escalationIdsWithOtherRecipients = $this->getDB()->fetchCol(
+                RuleEscalationRecipient::on($this->getDB())
+                    ->columns('rule_escalation_id')
+                    ->filter(Filter::all(
+                        Filter::equal('rule_escalation_id', $escalationIds),
+                        Filter::unequal('contact_id', $id)
+                    ))->assembleSelect()
+            );
+
+            $toRemoveEscalations = array_diff($escalationIds, $escalationIdsWithOtherRecipients);
+
+            if (! empty($toRemoveEscalations)) {
+                $this->getDB()->update(
+                    'rule_escalation',
+                    $markAsDeleted + ['position' => null],
+                    ['id IN (?)' => $toRemoveEscalations]
+                );
+            }
+        }
+
+        $this->getDB()->update('contactgroup_member', $markAsDeleted, $updateCondition);
+        $this->getDB()->update('contact_address', $markAsDeleted, $updateCondition);
+
+        $this->getDB()->update('contact', $markAsDeleted + ['username' => null], ['id = ?' => $id]);
+
+        $this->getDB()->commitTransaction();
     }
 
     /**
