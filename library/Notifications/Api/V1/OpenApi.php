@@ -72,6 +72,14 @@ use OpenApi\Attributes as OA;
 #[OA\Components(
     examples: [
         new OA\Examples(
+            example: 'ContactCreated',
+            summary: 'Contact created successfully',
+            value: [
+                'status'  => 'success',
+                'message' => 'Contact created successfully',
+            ]
+        ),
+        new OA\Examples(
             example: 'IDParameterInvalidUUID',
             summary: 'Invalid UUID format',
             value: [

@@ -83,13 +83,13 @@ class Contacts extends ApiV1
      *
      * @var string
      */
-    public const ROUTE_SINGLE = '/contacts/{identifier}';
+    public const ROUTE_WITH_IDENTIFIER = '/contacts/{identifier}';
     /**
      * The route to handle multiple contacts
      *
      * @var string
      */
-    public const ROUTE_PLURAL = '/contacts';
+    public const ROUTE_WITHOUT_IDENTIFIER = '/contacts';
     #[OA\Property(
         ref: '#/components/schemas/ContactUUID',
     )]
@@ -136,7 +136,7 @@ class Contacts extends ApiV1
      * @throws JsonEncodeException
      */
     #[OA\Get(
-        path: Contacts::ROUTE_SINGLE,
+        path: Contacts::ROUTE_WITH_IDENTIFIER,
         description: 'Get a contact by UUID',
         summary: 'Get a contact by UUID',
         tags: ['Contacts'],
@@ -208,7 +208,7 @@ class Contacts extends ApiV1
      * @throws JsonEncodeException
      */
     #[OA\Get(
-        path: Contacts::ROUTE_PLURAL,
+        path: Contacts::ROUTE_WITHOUT_IDENTIFIER,
         summary: 'List contacts or get specific contacts by UUID or filter parameters',
         tags: ['Contacts'],
     )]
@@ -301,7 +301,7 @@ class Contacts extends ApiV1
      * @throws HttpException
      */
     #[OA\Put(
-        path: Contacts::ROUTE_SINGLE,
+        path: Contacts::ROUTE_WITH_IDENTIFIER,
         description: 'Update a contact by UUID',
         summary: 'Update a contact by UUID',
         tags: ['Contacts'],
@@ -326,11 +326,7 @@ class Contacts extends ApiV1
             examples: [
                 'ContactCreated' => new OA\Examples(
                     example: 'ContactCreated',
-                    summary: 'Contact created successfully',
-                    value: [
-                        'status'  => 'success',
-                        'message' => 'Contact created successfully',
-                    ]
+                    ref: '#/components/examples/ContactCreated'
                 ),
             ],
             ref: '#/components/schemas/SuccessResponse'
@@ -449,11 +445,136 @@ class Contacts extends ApiV1
         } else {
             $this->addContact($data);
             $responseCode = 201;
+            $responseBody = '{"status": "success","message": "Contact created successfully"}';
         }
 
         $this->getDB()->commitTransaction();
 
-        return $this->createArrayOfResponseData(statusCode: $responseCode);
+        return $this->createArrayOfResponseData(statusCode: $responseCode, body: $responseBody ?? null);
+    }
+
+    /**
+     * @throws HttpException
+     * @throws HttpNotFoundException
+     * @throws HttpBadRequestException
+     */
+    #[OA\Post(
+        path: Contacts::ROUTE_WITHOUT_IDENTIFIER,
+        description: 'Create a new contact',
+        summary: 'Create a new contact',
+        tags: ['Contacts'],
+    )]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            ref: '#/components/schemas/Contact'
+        )
+    )]
+    #[OA\Response(
+        response: 201,
+        description: 'Contact created',
+        content: new OA\JsonContent(
+            examples: [
+                'ContactCreated' => new OA\Examples(
+                    example: 'ContactCreated',
+                    ref: '#/components/examples/ContactCreated'
+                ),
+            ],
+            ref: '#/components/schemas/SuccessResponse'
+        )
+    )]
+    #[OA\Response(
+        response: 400,
+        description: 'Bad request',
+        content: new OA\JsonContent(
+            examples: [
+                'InvalidRequestBody' => new OA\Examples(
+                    example: 'InvalidRequestBody',
+                    ref: '#/components/examples/InvalidRequestBody'
+                ),
+            ],
+            ref: '#/components/schemas/ErrorResponse'
+        )
+    )]
+    #[OA\Response(
+        response: 415,
+        description: 'Unsupported Media Type',
+        content: new OA\JsonContent(
+            examples: [
+                'ContentTypeNotSupported' => new OA\Examples(
+                    example: 'ContentTypeNotSupported',
+                    ref: '#/components/examples/ContentTypeNotSupported'
+                ),
+            ],
+            ref: '#/components/schemas/ErrorResponse'
+        )
+    )]
+    #[OA\Response(
+        response: 422,
+        description: 'Unprocessable Entity',
+        content: new OA\JsonContent(
+            examples: [
+                'ContactAlreadyExists' => new OA\Examples(
+                    example: 'ContactAlreadyExists',
+                    summary: 'Contact already exists',
+                    value: [
+                        'status'  => 'error',
+                        'message' => 'Contact already exists',
+                    ]
+                ),
+                'GroupNotFound' => new OA\Examples(
+                    example: 'GroupNotFound',
+                    summary: 'Group not found',
+                    value: [
+                        'status'  => 'error',
+                        'message' => 'Group does not exist: X',
+                    ]
+                ),
+                'MissingRequiredRequestBodyField' => new OA\Examples(
+                    example: 'MissingRequiredRequestBodyField',
+                    ref: '#/components/examples/MissingRequiredRequestBodyField'
+                ),
+                'InvalidRequestBodyField' => new OA\Examples(
+                    example: 'InvalidRequestBodyField',
+                    ref: '#/components/examples/InvalidRequestBodyField'
+                ),
+            ],
+            ref: '#/components/schemas/ErrorResponse'
+        )
+    )]
+    public function post(array $requestBody): array
+    {
+        $data = $this->getValidatedRequestBodyData($requestBody);
+
+        $this->getDB()->beginTransaction();
+
+        // TODO: re-enable update via POST?
+//        if (empty((string)$identifier)) {
+            if ($this->getContactId($data['id']) !== null) {
+                throw new HttpException(422, 'Contact already exists');
+            }
+//        } else {
+//            $contactId = $this->getContactId($identifier);
+//            if ($contactId === null) {
+//                $this->httpNotFound('Contact not found');
+//            }
+//
+//            if ($identifier === $data['id'] || $this->getContactId($data['id']) !== null) {
+//                throw new HttpException(422, 'Contact already exists');
+//            }
+//
+//            $this->removeContact($contactId);
+//        }
+        $this->addContact($data);
+
+        $this->getDB()->commitTransaction();
+
+//        $this->getResponse()->setHeader('Location', self::ENDPOINT . '/' . $data['id']);
+
+        return $this->createArrayOfResponseData(
+            statusCode: 201,
+            body: '{"status": "success","message": "Contact created successfully"}'
+        );
     }
 
     /**
