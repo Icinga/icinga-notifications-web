@@ -90,11 +90,19 @@ use OpenApi\Attributes as OA;
             value: ['status' => 'error', 'message' => 'Identifier is not valid']
         ),
         new OA\Examples(
-            example: 'MissingRequiredField',
-            summary: 'Missing required field',
+            example: 'MissingRequiredRequestBodyField',
+            summary: 'Missing required request body field',
             value: [
                 'status'  => 'error',
                 'message' => 'Missing required field in request body: X',
+            ],
+        ),
+        new OA\Examples(
+            example: 'InvalidRequestBodyField',
+            summary: 'Invalid request body field',
+            value: [
+                'status'  => 'error',
+                'message' => 'Invalid field in request body: X',
             ],
         ),
         new OA\Examples(

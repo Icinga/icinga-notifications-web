@@ -8,26 +8,26 @@ use OpenApi\Attributes as OA;
 use stdClass;
 
 #[OA\Schema(
-    schema: "Contactgroup",
+    schema: 'Contactgroup',
     properties: [
         new OA\Property(
-            property: "id",
-            ref: "#/components/schemas/ContactGroupUUID",
-            description: "The UUID of the contactgroup"
+            property: 'id',
+            ref: '#/components/schemas/ContactGroupUUID',
+            description: 'The UUID of the contactgroup'
         ),
         new OA\Property(
-            property: "name",
-            description: "The full name of the contactgroup",
-            type: "string"
+            property: 'name',
+            description: 'The full name of the contactgroup',
+            type: 'string'
         ),
         new OA\Property(
-            property: "users",
-            description: "List of user identifiers (UUIDs) that belong to this contactgroup",
-            type: "array",
-            items: new OA\Items(ref: "#/components/schemas/ContactUUID")
+            property: 'users',
+            description: 'List of user identifiers (UUIDs) that belong to this contactgroup',
+            type: 'array',
+            items: new OA\Items(ref: '#/components/schemas/ContactUUID')
         )
     ],
-    type: "object"
+    type: 'object'
 )]
 #[OA\Schema(
     schema: 'ContactGroupUUID',

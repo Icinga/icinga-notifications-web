@@ -32,39 +32,36 @@ use Psr\Http\Message\StreamInterface;
  */
 #[OA\OpenApi(
     info: new OA\Info(
-        version: "1.0.0",
-        description: "API for managing notification channels",
-        title: "Icinga Notifications API",
+        version: '1.0.0',
+        description: 'API for managing notification channels',
+        title: 'Icinga Notifications API',
     ),
     servers: [
         new OA\Server(
-            url: "http://localhost/icingaweb2/notifications/api/v1",
-            description: "Local server",
+            url: 'http://localhost/icingaweb2/notifications/api/v1',
+            description: 'Local server',
         )
     ],
     security: [
-        new OA\SecurityScheme(
-            ref: '#/components/securitySchemes/BasicAuth',
-        ),
+        ['BasicAuth' => []],
     ],
 )]
 #[OA\Tag(
-    name: "Contacts",
-    description: "Operations related to notification Contacts"
+    name: 'Contacts',
+    description: 'Operations related to notification Contacts'
 )]
 #[OA\Tag(
-    name: "Contactgroups",
-    description: "Operations related to notification contactgroups"
+    name: 'Contactgroups',
+    description: 'Operations related to notification contactgroups'
 )]
 #[OA\Tag(
-    name: "Channels",
-    description: "Operations related to notification channels"
+    name: 'Channels',
+    description: 'Operations related to notification channels'
 )]
 #[OA\SecurityScheme(
     securityScheme: 'BasicAuth',
     type: 'http',
     description: 'Basic authentication for API access',
-    name: 'BasicAuth',
     scheme: 'basic',
 )]
 abstract class ApiV1 extends ApiCore
@@ -123,13 +120,13 @@ abstract class ApiV1 extends ApiCore
         if (! method_exists($this, $methodName)) {
             $this->httpMethodNotAllowed(
                 "Method $httpMethod is not available in "
-                . (new \ReflectionClass($this))->getShortName() . "."
+                . (new \ReflectionClass($this))->getShortName() . '.'
             );
         }
 
         // Validate that Method with parameters or identifier is allowed
         if ($httpMethod !== self::GET && ! empty($filterStr)) {
-            $this->httpBadRequest("Invalid request: Filter is only allowed for GET requests");
+            $this->httpBadRequest('Invalid request: Filter is only allowed for GET requests');
         } elseif ($httpMethod === self::GET && ! empty($identifier) && ! empty($filterStr)) {
             $this->httpBadRequest(
                 "Invalid request: $httpMethod with identifier and query parameters,"
