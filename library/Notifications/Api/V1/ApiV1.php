@@ -134,17 +134,22 @@ abstract class ApiV1 extends ApiCore
             );
         } elseif (in_array($httpMethod, [self::PUT, self::DELETE]) && empty($identifier)) {
             $this->httpBadRequest("Invalid request: $httpMethod without identifier is not allowed.");
+        } elseif ($httpMethod === self::POST && ! empty($identifier)) {
+            $this->httpBadRequest("Invalid request: $httpMethod with identifier is not allowed.");
         }
         $uuid = $this->getValidatedIdentifier($identifier);
 
         switch ($httpMethod) {
             case self::POST:
+                $responseData = $this->$methodName($this->getValidRequestBody($request));
+                break;
             case self::PUT:
                 $responseData = $this->$methodName($uuid, $this->getValidRequestBody($request));
                 break;
             case self::GET:
-                $arg = str_contains($methodName, self::PLURAL_SUFFIX) ? $filterStr : $uuid;
-                $responseData = $this->$methodName($arg);
+                $responseData = str_contains($methodName, self::PLURAL_SUFFIX)
+                    ? $this->$methodName()
+                    : $this->$methodName($uuid);
                 break;
             case self::DELETE:
                 $responseData = $this->$methodName($uuid);
