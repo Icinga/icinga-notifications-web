@@ -8,6 +8,7 @@ use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Http\HttpException;
 use Icinga\Exception\Json\JsonDecodeException;
 use Icinga\Module\Notifications\Api\ApiCore;
+use Icinga\Module\Notifications\Api\Elements\HttpMethod;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Util\Json;
 use InvalidArgumentException;
@@ -21,6 +22,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use OpenApi\Attributes as OA;
 use Icinga\Module\Notifications\Api\Elements\Uuid;
 use Psr\Http\Message\StreamInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 
 /**
  * Base class for API version 1.
@@ -64,7 +66,7 @@ use Psr\Http\Message\StreamInterface;
     description: 'Basic authentication for API access',
     scheme: 'basic',
 )]
-abstract class ApiV1 extends ApiCore
+abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
 {
     /**
      * Suffix for plural method names.
@@ -102,57 +104,42 @@ abstract class ApiV1 extends ApiCore
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
         $httpMethod = $request->getMethod();
+        $identifier = $request->getAttribute('validIdentifier');
+
+
+        if (
+            $httpMethod === HttpMethod::get->value
+            && empty($identifier)
+            && method_exists($this, HttpMethod::get->name . self::PLURAL_SUFFIX)
+        ) {
+            $methodName = HttpMethod::get->name . self::PLURAL_SUFFIX;
+        } else {
+            $methodName = HttpMethod::from($httpMethod)->name;
+
+            if (! method_exists($this, $methodName)) {
+                $this->httpMethodNotAllowed(
+                    "Method $httpMethod is not available in "
+                    . (new \ReflectionClass($this))->getShortName() . '.'
+                );
+            }
+        }
+
         $filterStr = $request->getUri()->getQuery();
-        $identifier = $request->getAttribute('identifier');
-        $methodMap = [
-            self::GET => (empty($identifier) && method_exists($this, strtolower(self::GET) . self::PLURAL_SUFFIX))
-                ? strtolower(self::GET) . self::PLURAL_SUFFIX : strtolower(self::GET),
-            self::POST => strtolower(self::POST),
-            self::PUT => strtolower(self::PUT),
-            self::DELETE => strtolower(self::DELETE),
-        ];
-
-        if (! in_array($httpMethod, array_keys($methodMap))) {
-            $this->httpMethodNotAllowed("HTTP method $httpMethod is not supported.");
-        }
-        $methodName = $methodMap[$httpMethod];
-
-        if (! method_exists($this, $methodName)) {
-            $this->httpMethodNotAllowed(
-                "Method $httpMethod is not available in "
-                . (new \ReflectionClass($this))->getShortName() . '.'
-            );
-        }
-
-        // Validate that Method with parameters or identifier is allowed
-        if ($httpMethod !== self::GET && ! empty($filterStr)) {
-            $this->httpBadRequest('Invalid request: Filter is only allowed for GET requests');
-        } elseif ($httpMethod === self::GET && ! empty($identifier) && ! empty($filterStr)) {
-            $this->httpBadRequest(
-                "Invalid request: $httpMethod with identifier and query parameters,"
-                . " it's not allowed to use both together."
-            );
-        } elseif (in_array($httpMethod, [self::PUT, self::DELETE]) && empty($identifier)) {
-            $this->httpBadRequest("Invalid request: $httpMethod without identifier is not allowed.");
-        } elseif ($httpMethod === self::POST && ! empty($identifier)) {
-            $this->httpBadRequest("Invalid request: $httpMethod with identifier is not allowed.");
-        }
-        $uuid = $this->getValidatedIdentifier($identifier);
-
+        $parsedBody = $request->getParsedBody();
         switch ($httpMethod) {
             case self::POST:
-                $responseData = $this->$methodName($this->getValidRequestBody($request));
+                $responseData = $this->$methodName($parsedBody());
                 break;
             case self::PUT:
-                $responseData = $this->$methodName($uuid, $this->getValidRequestBody($request));
+                $responseData = $this->$methodName($identifier, $parsedBody);
                 break;
             case self::GET:
                 $responseData = str_contains($methodName, self::PLURAL_SUFFIX)
                     ? $this->$methodName()
-                    : $this->$methodName($uuid);
+                    : $this->$methodName($identifier);
                 break;
             case self::DELETE:
-                $responseData = $this->$methodName($uuid);
+                $responseData = $this->$methodName($identifier);
                 break;
             default:
                 $this->httpBadRequest("Invalid request: This case shouldn't be reachable.");
@@ -161,64 +148,8 @@ abstract class ApiV1 extends ApiCore
         return $this->createResponse($responseData);
     }
 
-    /**
-     * Validate that the request has a JSON content type and return the parsed JSON content.
-     *
-     * @param ServerRequestInterface $request The request object to validate.
-     * @return array The validated JSON content as an associative array.
-     * @throws HttpBadRequestException If the content type is not application/json.
-     */
-    private function getValidRequestBody(ServerRequestInterface $request): array
-    {
-        if (! empty($parsedBody = $request->getParsedBody()) && is_array($parsedBody)) {
-            return $parsedBody;
-        }
-
-        $msgPrefix = 'Invalid request body: ';
-        if (
-            ! preg_match('/([^;]*);?/', $request->getHeaderLine('Content-Type'), $matches)
-            || $matches[1] !== 'application/json'
-        ) {
-            $this->httpBadRequest($msgPrefix . 'Content-Type must be application/json');
-        }
-        $body = $request->getBody()->getContents();
-        if (empty($body)) {
-            $this->httpBadRequest($msgPrefix . 'given content is empty');
-        }
-
-        try {
-            $validBody = Json::decode($body, true);
-        } catch (JsonDecodeException $e) {
-            $this->httpBadRequest($msgPrefix . 'given content is not a valid JSON');
-        }
-
-        return $validBody;
-    }
 
     //TODO: decide if these following functions should be versioned or moved to ApiCore
-    /**
-     * Validate the identifier to ensure it is a valid UUID.
-     * If the identifier is not valid, it will throw a Bad Request HTTP exception.
-     * If a valid identifier is provided, it will be stored in the `identifier` property.
-     *
-     * @param ?string $identifier
-     * @return ?Uuid
-     * @throws HttpBadRequestException
-     */
-    protected function getValidatedIdentifier(?string $identifier): ?Uuid
-    {
-        if (! empty($identifier)) {
-            try {
-                $uuid = new Uuid($identifier);
-            } catch (InvalidArgumentException $e) {
-                $this->httpBadRequest('The given identifier is not a valid UUID');
-            }
-
-            return $uuid;
-        }
-
-        return null;
-    }
 
     /**
      * Create a filter from the filter string.

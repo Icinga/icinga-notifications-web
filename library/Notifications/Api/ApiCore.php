@@ -19,7 +19,7 @@ use stdClass;
 
 use function Icinga\Module\Kubernetes\yield_iterable;
 
-abstract class ApiCore implements RequestHandlerInterface
+abstract class ApiCore
 {
     /**
      * HTTP GET method
