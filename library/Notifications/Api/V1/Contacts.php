@@ -7,7 +7,8 @@ use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Http\HttpException;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Exception\Json\JsonEncodeException;
-use Icinga\Module\Notifications\Api\Elements\Uuid;
+use Icinga\Module\Notifications\Api\Elements\HttpMethod;
+use Ramsey\Uuid\Uuid;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Rotation;
 use Icinga\Module\Notifications\Model\RotationMember;
@@ -134,7 +135,7 @@ class Contacts extends ApiV1
     /**
      * Get a contact by UUID.
      *
-     * @param Uuid $identifier
+     * @param string $identifier
      * @return array
      * @throws HttpNotFoundException
      * @throws JsonEncodeException
@@ -185,7 +186,7 @@ class Contacts extends ApiV1
             schema: '#/components/schemas/ErrorResponse',
         )
     )]
-    public function get(Uuid $identifier): array
+    public function get(string $identifier): array
     {
         $stmt = $this->createSelectStmt();
 
@@ -302,7 +303,7 @@ class Contacts extends ApiV1
     /**
      * Update a contact by UUID.
      *
-     * @param Uuid $identifier
+     * @param string $identifier
      * @param requestBody $requestBody
      * @return array
      * @throws HttpBadRequestException
@@ -399,7 +400,7 @@ class Contacts extends ApiV1
             ref: '#/components/schemas/ErrorResponse'
         )
     )]
-    public function put(Uuid $identifier, array $requestBody): array
+    public function put(string $identifier, array $requestBody): array
     {
         if (empty((string) $identifier)) {
             $this->httpBadRequest('Identifier is required');
@@ -591,7 +592,7 @@ class Contacts extends ApiV1
     /**
      * Remove the contact with the given id
      *
-     * @param Uuid $identifier
+     * @param string $identifier
      * @return array
      * @throws HttpBadRequestException
      * @throws HttpNotFoundException
@@ -639,7 +640,7 @@ class Contacts extends ApiV1
             ref: '#/components/schemas/ErrorResponse'
         )
     )]
-    public function delete(Uuid $identifier): array
+    public function delete(string $identifier): array
     {
         if (empty((string) $identifier)) {
             $this->httpBadRequest('Identifier is required');
