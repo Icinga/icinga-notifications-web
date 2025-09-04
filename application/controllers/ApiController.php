@@ -3,11 +3,13 @@
 namespace Icinga\Module\Notifications\Controllers;
 
 use Exception;
-use GuzzleHttp\Psr7\HttpFactory;
+use GuzzleHttp\Psr7\ServerRequest;
 use GuzzleHttp\Psr7\Utils;
 use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Api\ApiCore;
+use Icinga\Module\Notifications\Api\Middlewares\GeneralValidatorMiddleware;
+use Icinga\Module\Notifications\Api\Middlewares\MiddlewarePipeline;
 use Icinga\Security\SecurityException;
 use Icinga\Web\Request;
 use ipl\Stdlib\Str;
@@ -47,9 +49,11 @@ class ApiController extends CompatController
      * Dispatch the API endpoint based on the request parameters.
      *
      * @param Request $request The request object containing parameters.
+     * @return void
      * @throws HttpBadRequestException
      * @throws HttpNotFoundException
      * @throws Zend_Controller_Request_Exception
+     * @throws Exception
      */
     private function dispatchEndpoint(Request $request): void
     {
@@ -61,15 +65,17 @@ class ApiController extends CompatController
         $module = (($moduleName = $request->getModuleName()) !== null) ? 'Module\\' . ucfirst($moduleName) . '\\' : '';
         $className = sprintf('Icinga\\%sApi\\%s\\%s', $module, $version, $endpoint);
 
-        $serverRequest = ((new HttpFactory())->createServerRequest(
-            $request->getMethod(),
-            $request->getRequestUri(),
-            $request->getServer()
+        $serverRequest = (new ServerRequest(
+            method: $request->getMethod(),
+            uri: $request->getRequestUri(),
+            serverParams: $request->getServer()
         ))
             ->withParsedBody($this->getRequestBody($request))
             ->withAttribute('identifier', $identifier)
             ->withHeader('Content-Type', $request->getHeader('Content-Type'));
 
+        // If you want to pass the body as a stream instead of parsed JSON,
+        // uncomment this block and comment the withParsedBody line above.
 //        $serverRequest = empty($stream = $this->getRequestBodyStream($request))
 //            ? $serverRequest
 //            : $serverRequest->withBody($stream);
@@ -78,7 +84,12 @@ class ApiController extends CompatController
             $this->httpNotFound(404, "Endpoint $endpoint does not exist.");
         }
 
-        $this->emitResponse((new $className())->handle($serverRequest));
+        $pipeline = new MiddlewarePipeline(
+            middlewares: [new GeneralValidatorMiddleware()],
+            finalHandler: new $className()
+        );
+
+        $this->emitResponse($pipeline->handle($serverRequest));
     }
 
     /**
@@ -98,12 +109,11 @@ class ApiController extends CompatController
             return null;
         }
 
-        $msgPrefix = 'Invalid request body: ';
         $phpInput = fopen('php://input', 'r');
         $stream = Utils::streamFor($phpInput);
         fclose($phpInput);
         if ($stream->getSize() === 0) {
-            $this->httpBadRequest($msgPrefix . 'given content is empty');
+            $this->httpBadRequest('Invalid request body: given content is empty');
         }
 
         return $stream;
@@ -128,7 +138,7 @@ class ApiController extends CompatController
         try {
             $data = $request->getPost();
         } catch (Exception $e) {
-            $this->httpBadRequest('Invalid JSON content: ' . $e->getMessage());
+            $this->httpBadRequest('Invalid request body: given content is not a valid JSON');
         }
 
         return $data;
