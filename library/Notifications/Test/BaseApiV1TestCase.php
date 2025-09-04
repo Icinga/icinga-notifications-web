@@ -147,17 +147,30 @@ SQL
         ]);
     }
 
-    protected function sendRequest(string $method, string $endpoint, ?array $json = null): ResponseInterface
-    {
+    protected function sendRequest(
+        string $method,
+        string $endpoint,
+        ?array $json = null,
+        ?string $body = null,
+        ?array $headers = null,
+        ?array $options = null,
+    ): ResponseInterface {
         $client = new Client();
 
-        $options = [
-            'headers' => ['Accept' => 'application/json'],
+        $options = $options ?? [
             'auth' => ['test', 'test'],
             'http_errors' => false
         ];
+        $headers = $headers ?? ['Accept' => 'application/json'];
+
+        if (! empty($headers)) {
+            $options['headers'] = $headers;
+        }
         if ($json !== null) {
             $options['json'] = $json;
+        }
+        if ($body !== null) {
+            $options['body'] = $body;
         }
 
         return $client->request($method, 'http://127.0.0.1:1792/notifications/api/v1/' . $endpoint, $options);

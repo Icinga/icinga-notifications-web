@@ -22,7 +22,7 @@ use Psr\Http\Server\RequestHandlerInterface;
  * This middleware performs the following validations:
  * - Ensures the HTTP method is one of GET, POST, PUT, or DELETE.
  * - Validates that filters are only used with GET requests.
- * - Ensures that identifiers are provided for PUT and DELETE requests, but not for POST requests.
+ * - Ensures that identifiers are provided for PUT and DELETE requests
  * - Validates that the Content-Type is application/json for POST and PUT requests.
  * - Validates that the identifier, if provided, is a valid UUID.
  * - Parses and validates the request body for POST and PUT requests.
@@ -49,24 +49,22 @@ class GeneralValidatorMiddleware implements MiddlewareInterface
         }
 
         if ($httpMethod !== HttpMethod::get->value && ! empty($filterStr)) {
-            HttpError::badRequest('Invalid request: Filter is only allowed for GET requests');
+            HttpError::badRequest('Invalid request parameter: Filter is only allowed for GET requests');
         } elseif ($httpMethod === HttpMethod::get->value && ! empty($identifier) && ! empty($filterStr)) {
             HttpError::badRequest(
                 "Invalid request: $httpMethod with identifier and query parameters,"
                 . " it's not allowed to use both together."
             );
         } elseif (in_array($httpMethod, [HttpMethod::put->value, HttpMethod::delete->value]) && empty($identifier)) {
-            HttpError::badRequest("Invalid request: $httpMethod without identifier is not allowed.");
-        } elseif ($httpMethod === HttpMethod::post->value && ! empty($identifier)) {
-            HttpError::badRequest("Invalid request: $httpMethod with identifier is not allowed.");
+            HttpError::badRequest("Invalid request: Identifier is required");
         } elseif (
             in_array($httpMethod, [HttpMethod::put->value, HttpMethod::post->value])
             && $request->getHeaderLine('Content-Type') !== 'application/json'
         ) {
-            HttpError::badRequest("Invalid request: $httpMethod requires Content-Type application/json.");
+            HttpError::badRequest('Invalid request header: Content-Type must be application/json');
         }
 
-        if (! Uuid::isValid($identifier)) {
+        if (! empty($identifier) && ! Uuid::isValid($identifier)) {
             HttpError::badRequest('The given identifier is not a valid UUID');
         }
         $requestBody = $this->getValidRequestBody($request);
@@ -87,7 +85,6 @@ class GeneralValidatorMiddleware implements MiddlewareInterface
      */
     private function getValidRequestBody(ServerRequestInterface $request): array
     {
-//        var_dump($request->getBody(), $request->getParsedBody());die;
         if (! empty($parsedBody = $request->getParsedBody()) && is_array($parsedBody)) {
             return $parsedBody;
         } elseif (empty($request->getBody()->getSize()) && empty($request->getParsedBody())) {
@@ -99,7 +96,7 @@ class GeneralValidatorMiddleware implements MiddlewareInterface
             ! preg_match('/([^;]*);?/', $request->getHeaderLine('Content-Type'), $matches)
             || $matches[1] !== 'application/json'
         ) {
-            HttpError::badRequest($msgPrefix . 'Content-Type must be application/json');
+            HttpError::badRequest('Invalid request header: Content-Type must be application/json');
         }
         $body = $request->getBody()->getContents();
         if (empty($body)) {

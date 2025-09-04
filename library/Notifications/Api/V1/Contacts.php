@@ -209,6 +209,7 @@ class Contacts extends ApiV1
     /**
      * List contacts or get specific contacts by UUID or filter parameters.
      *
+     * @param string $filterStr
      * @return array
      * @throws HttpBadRequestException
      * @throws JsonEncodeException
@@ -280,11 +281,12 @@ class Contacts extends ApiV1
             ref: '#/components/schemas/ErrorResponse'
         )
     )]
-    public function getPlural(): array
+    public function getPlural(string $filterStr): array
     {
         $stmt = $this->createSelectStmt();
 
         $filter = $this->createFilterFromFilterStr(
+            $filterStr,
             $this->createFilterRuleListener(
                 ['id', 'full_name', 'username'],
                 'co.external_uuid'
@@ -402,13 +404,13 @@ class Contacts extends ApiV1
     )]
     public function put(string $identifier, array $requestBody): array
     {
-        if (empty((string) $identifier)) {
+        if (empty($identifier)) {
             $this->httpBadRequest('Identifier is required');
         }
 
         $data = $this->getValidatedRequestBodyData($requestBody);
 
-        if ((string) $identifier !== $data['id']) {
+        if ($identifier !== $data['id']) {
             $this->httpBadRequest('Identifier mismatch');
         }
 
@@ -454,7 +456,7 @@ class Contacts extends ApiV1
         } else {
             $this->addContact($data);
             $responseCode = 201;
-            $responseBody = '{"status": "success","message": "Contact created successfully"}';
+            $responseBody = '{"status":"success","message":"Contact created successfully"}';
         }
 
         $this->getDB()->commitTransaction();
@@ -465,10 +467,12 @@ class Contacts extends ApiV1
     /**
      * Create a new contact.
      *
+     * @param string|null $identifier
      * @param requestBody $requestBody
      * @return array
-     * @throws HttpException
      * @throws HttpBadRequestException
+     * @throws HttpException
+     * @throws HttpNotFoundException
      */
     #[OA\Post(
         path: Contacts::ROUTE_WITHOUT_IDENTIFIER,
@@ -554,38 +558,40 @@ class Contacts extends ApiV1
             ref: '#/components/schemas/ErrorResponse'
         )
     )]
-    public function post(array $requestBody): array
+    public function post(?string $identifier, array $requestBody): array
     {
         $data = $this->getValidatedRequestBodyData($requestBody);
 
         $this->getDB()->beginTransaction();
 
-        // TODO: re-enable update via POST?
-//        if (empty((string)$identifier)) {
+        // TODO: keep replacing via POST or move to PUT?
+        if (empty($identifier)) {
             if ($this->getContactId($data['id']) !== null) {
                 throw new HttpException(422, 'Contact already exists');
             }
-//        } else {
-//            $contactId = $this->getContactId($identifier);
-//            if ($contactId === null) {
-//                $this->httpNotFound('Contact not found');
-//            }
-//
-//            if ($identifier === $data['id'] || $this->getContactId($data['id']) !== null) {
-//                throw new HttpException(422, 'Contact already exists');
-//            }
-//
-//            $this->removeContact($contactId);
-//        }
+        } else {
+            $contactId = $this->getContactId($identifier);
+            if ($contactId === null) {
+                $this->httpNotFound('Contact not found');
+            }
+
+            if ($identifier === $data['id'] || $this->getContactId($data['id']) !== null) {
+                throw new HttpException(422, 'Contact already exists');
+            }
+
+            $this->removeContact($contactId);
+        }
         $this->addContact($data);
 
         $this->getDB()->commitTransaction();
 
-//        $this->getResponse()->setHeader('Location', self::ENDPOINT . '/' . $data['id']);
 
         return $this->createArrayOfResponseData(
             statusCode: 201,
-            body: '{"status": "success","message": "Contact created successfully"}'
+            body: '{"status":"success","message":"Contact created successfully"}',
+            additionalHeaders: [
+                'Location' => 'notifications/api/v1' . self::ROUTE_WITHOUT_IDENTIFIER . '/' . $data['id']
+            ]
         );
     }
 
@@ -650,7 +656,9 @@ class Contacts extends ApiV1
             $this->httpNotFound('Contact not found');
         }
 
+        $this->getDB()->beginTransaction();
         $this->removeContact($contactId);
+        $this->getDB()->commitTransaction();
 
         return $this->createArrayOfResponseData(statusCode: 204);
     }
@@ -749,7 +757,7 @@ class Contacts extends ApiV1
     {
         foreach ($groups as $groupIdentifier) {
             $groupId = ContactGroups::getGroupId($groupIdentifier);
-            if (! $groupId) {
+            if ($groupId === null) {
                 $this->httpUnprocessableEntity(
                     sprintf('Group with identifier %s does not exist', $groupIdentifier)
                 );
@@ -829,7 +837,6 @@ class Contacts extends ApiV1
     private function removeContact(int $id): void
     {
         //TODO: "remove rotations|escalations with no members" taken from form. Is it properly?
-        $this->getDB()->beginTransaction();
 
         $markAsDeleted = ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'];
         $updateCondition = ['contact_id = ?' => $id, 'deleted = ?' => 'n'];
@@ -914,8 +921,6 @@ class Contacts extends ApiV1
         $this->getDB()->update('contact_address', $markAsDeleted, $updateCondition);
 
         $this->getDB()->update('contact', $markAsDeleted + ['username' => null], ['id = ?' => $id]);
-
-        $this->getDB()->commitTransaction();
     }
 
     /**
@@ -942,7 +947,7 @@ class Contacts extends ApiV1
         $user = Database::get()->fetchOne($stmt);
 
         if ($user) {
-            $this->httpConflict('Username already exists');
+            $this->httpConflict('Username ' . $username . ' already exists');
         }
     }
 
