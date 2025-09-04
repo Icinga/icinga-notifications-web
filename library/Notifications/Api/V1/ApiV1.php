@@ -127,15 +127,13 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
         $filterStr = $request->getUri()->getQuery();
         $parsedBody = $request->getParsedBody();
         switch ($httpMethod) {
-            case self::POST:
-                $responseData = $this->$methodName($parsedBody());
-                break;
             case self::PUT:
+            case self::POST:
                 $responseData = $this->$methodName($identifier, $parsedBody);
                 break;
             case self::GET:
                 $responseData = str_contains($methodName, self::PLURAL_SUFFIX)
-                    ? $this->$methodName()
+                    ? $this->$methodName($filterStr)
                     : $this->$methodName($identifier);
                 break;
             case self::DELETE:
@@ -161,7 +159,7 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
      * @return array|bool Returns an array of filter rules or false if no filter string is provided.
      * @throws HttpBadRequestException If the filter string cannot be parsed.
      */
-    protected function createFilterFromFilterStr(callable $listener): array|bool
+    protected function createFilterFromFilterStr(string $filterStr, callable $listener): array|bool
     {
         if (! empty($filterStr = Url::fromRequest()->getQueryString())) {
             try {
