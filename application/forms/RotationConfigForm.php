@@ -48,6 +48,8 @@ class RotationConfigForm extends CompatForm
      */
     public const EXPERIMENTAL_OVERRIDES = false;
 
+    protected const DAY_END = 'dayEnd';
+
     /** @var ?int The ID of the affected schedule */
     protected $scheduleId;
 
@@ -895,14 +897,15 @@ class RotationConfigForm extends CompatForm
             $toDays[$i] = sprintf('%s (%s)', $day, $this->translate('Next week'));
         }
 
-        $options->addElement('select', 'to_day', [
+        $options->addElement('select', 'to_day_ignored', [
             'class' => 'autosubmit',
             'required' => true,
+            'ignore' => true,
             'options' => $toDays,
-            'value' => 7,
+            'value' => $options->getPopulatedValue('to_day', 7),
             'label' => $this->translate('To', 'notifications.rotation')
         ]);
-        $to = $options->getElement('to_day');
+        $to = $options->getElement('to_day_ignored');
 
         $options->addElement('number', 'interval', [
             'required' => true,
@@ -920,18 +923,41 @@ class RotationConfigForm extends CompatForm
         ]);
         $options->registerElement($fromAt);
 
-        if ($selectedFromDay === (int) $to->getValue()) {
+        $timeOptionsFirstKey = array_key_first($timeOptions);
+        $selectedToDay = (int) $to->getValue();
+        if ($selectedFromDay === $selectedToDay) {
             $selectedFromAt = $fromAt->getValue();
             $keyIndex = array_search($selectedFromAt, array_keys($timeOptions));
             $timeOptions = array_slice($timeOptions, 0, $keyIndex + 1, true);
+        } else {
+            $timeOptions[self::DAY_END] = sprintf(
+                '%s (%s)',
+                $timeOptions[$timeOptionsFirstKey],
+                $this->translate('End of day')
+            );
         }
 
-        $toAt = $options->createElement('select', 'to_at', [
+        $toAt = $options->createElement('select', 'to_at_ignored', [
             'class' => 'autosubmit',
             'required' => true,
-            'options' => $timeOptions
+            'ignore' => true,
+            'options' => $timeOptions,
+            'value' => $options->getPopulatedValue('to_at'),
         ]);
         $options->registerElement($toAt);
+
+        $selectedToAt = $toAt->getValue();
+
+        if ($selectedToAt === self::DAY_END) {
+            $selectedToDay = $selectedToDay === 7 ? 1 : $selectedToDay + 1;
+            $selectedToAt = $timeOptionsFirstKey;
+        }
+
+        $options->clearPopulatedValue('to_day');
+        $options->clearPopulatedValue('to_at');
+
+        $options->addElement('hidden', 'to_day', ['value' => $selectedToDay]);
+        $options->addElement('hidden', 'to_at', ['value' => $selectedToAt]);
 
         $from->prependWrapper(
             (new HtmlDocument())->addHtml(
