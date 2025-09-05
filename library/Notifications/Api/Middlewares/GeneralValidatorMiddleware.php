@@ -33,7 +33,6 @@ use Psr\Http\Server\RequestHandlerInterface;
  */
 class GeneralValidatorMiddleware implements MiddlewareInterface
 {
-
     /**
      * @throws HttpException
      * @throws HttpBadRequestException
