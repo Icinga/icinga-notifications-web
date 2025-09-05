@@ -65,7 +65,7 @@ YAML;
 
         $this->assertEquals(400, $response->getStatusCode(), $content);
         $this->assertSame(
-            '{"status":"error","message":"Content-Type must be application/json"}',
+            '{"status":"error","message":"Invalid request header: Content-Type must be application/json"}',
             $content
         );
     }
@@ -90,7 +90,7 @@ YAML;
 
         $this->assertSame(400, $response->getStatusCode(), $content);
         $this->assertSame(
-            '{"status":"error","message":"Filter is only allowed for GET requests"}',
+            '{"status":"error","message":"Invalid request parameter: Filter is only allowed for GET requests"}',
             $content
         );
     }
@@ -144,7 +144,7 @@ YAML;
             'notifications/api/v1/contactgroups/0817d973-398e-41d7-9ef2-61cdb7ef41a2',
             $response->getHeader('Location')[0]
         );
-        $this->assertSame('{"status":"success","data":null}', $content);
+        $this->assertSame('{"status":"success","message":"Contactgroup created successfully"}', $content);
     }
 
     /**
@@ -190,7 +190,7 @@ YAML;
         ]);
         $content = $response->getBody()->getContents();
 
-        $this->assertEquals(400, $response->getStatusCode(), $content);
+        $this->assertEquals(422, $response->getStatusCode(), $content);
         $this->assertSame(
             '{"status":"error","message":"User with identifier 0817d973-398e-41d7-9ef2-61cdb7ef41a1 not found"}',
             $content
@@ -290,7 +290,7 @@ YAML;
             'notifications/api/v1/contactgroups/0817d973-398e-41d7-9ef2-61cdb7ef41a3',
             $response->getHeader('Location')[0]
         );
-        $this->assertSame('{"status":"success","data":null}', $content);
+        $this->assertSame('{"status":"success","message":"Contactgroup created successfully"}', $content);
     }
 
     /**
@@ -354,7 +354,7 @@ YAML;
 
         $this->assertEquals(400, $response->getStatusCode(), $content);
         $this->assertSame(
-            '{"status":"error","message":"Content-Type must be application/json"}',
+            '{"status":"error","message":"Invalid request header: Content-Type must be application/json"}',
             $content
         );
     }
@@ -377,7 +377,7 @@ YAML;
 
         $this->assertSame(400, $response->getStatusCode(), $content);
         $this->assertSame(
-            '{"status":"error","message":"Filter is only allowed for GET requests"}',
+            '{"status":"error","message":"Invalid request parameter: Filter is only allowed for GET requests"}',
             $content
         );
     }
@@ -404,7 +404,7 @@ YAML;
 
         $this->assertSame(201, $response->getStatusCode(), $content);
         $this->assertSame(
-            '{"status":"success","data":null}',
+            '{"status":"success","message":"Contactgroup created successfully"}',
             $content
         );
     }
@@ -464,7 +464,7 @@ YAML;
         ]);
         $content = $response->getBody()->getContents();
 
-        $this->assertEquals(400, $response->getStatusCode(), $content);
+        $this->assertEquals(422, $response->getStatusCode(), $content);
         $this->assertSame(
             '{"status":"error","message":"User with identifier 0817d973-398e-41d7-9ef2-61cdb7ef41a1 not found"}',
             $content
@@ -494,7 +494,7 @@ YAML;
 
         $this->assertSame(400, $response->getStatusCode(), $content);
         $this->assertSame(
-            '{"status":"error","message":"Identifier is required"}',
+            '{"status":"error","message":"Invalid request: Identifier is required"}',
             $content
         );
     }
@@ -590,7 +590,7 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
-        $this->assertSame('[]', $content);
+        $this->assertSame('{"content":[]}', $content);
 
         // Create new contact groups
         $this->sendRequest('PUT', 'contactgroups/0817d973-398e-41d7-9ef2-61cdb7ef41a2', [
@@ -610,8 +610,8 @@ YAML;
 
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertSame(
-            '[{"id":"0817d973-398e-41d7-9ef2-61cdb7ef41a2","name":"Test","users":[]},' . PHP_EOL
-            . '{"id":"0817d973-398e-41d7-9ef2-61cdb7ef41a3","name":"Test (2)","users":[]}]',
+            '{"content":[{"id":"0817d973-398e-41d7-9ef2-61cdb7ef41a2","name":"Test","users":[]},' . PHP_EOL
+            . '{"id":"0817d973-398e-41d7-9ef2-61cdb7ef41a3","name":"Test (2)","users":[]}]}',
             $content
         );
     }
@@ -634,7 +634,7 @@ YAML;
 
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertSame(
-            '{"status":"success","data":[{"id":"0817d973-398e-41d7-9ef2-61cdb7ef41a2","name":"Test","users":[]}]}',
+            '{"id":"0817d973-398e-41d7-9ef2-61cdb7ef41a2","name":"Test","users":[]}',
             $content
         );
     }
@@ -657,7 +657,7 @@ YAML;
 
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertSame(
-            '[{"id":"0817d973-398e-41d7-9ef2-61cdb7ef41a2","name":"Test","users":[]}]',
+            '{"content":[{"id":"0817d973-398e-41d7-9ef2-61cdb7ef41a2","name":"Test","users":[]}]}',
             $content
         );
     }
@@ -679,7 +679,7 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
-        $this->assertSame('[]', $content);
+        $this->assertSame('{"content":[]}', $content);
     }
 
     /**
@@ -707,7 +707,7 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
-        $this->assertSame('{"status":"error","message":"Filter is only allowed for GET requests"}', $content);
+        $this->assertSame('{"status":"error","message":"Invalid request parameter: Filter is only allowed for GET requests"}', $content);
     }
 
     /**
@@ -721,7 +721,7 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
-        $this->assertSame('{"status":"error","message":"Identifier is required"}', $content);
+        $this->assertSame('{"status":"error","message":"Invalid request: Identifier is required"}', $content);
     }
 
     /**
