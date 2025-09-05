@@ -2,7 +2,11 @@
 
 namespace Icinga\Module\Notifications\Api\V1;
 
+use Icinga\Exception\Http\HttpBadRequestException;
+use Icinga\Exception\Http\HttpNotFoundException;
+use Icinga\Exception\Json\JsonEncodeException;
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Util\Json;
 use ipl\Sql\Select;
 use OpenApi\Attributes as OA;
 use stdClass;
@@ -131,6 +135,62 @@ use stdClass;
 class Channels extends ApiV1
 {
     /**
+     * Get a channel by UUID.
+     *
+     * @param string $identifier
+     * @return array
+     * @throws HttpNotFoundException
+     * @throws JsonEncodeException
+     */
+    public function get(string $identifier): array
+    {
+
+        $stmt = $this->createSelectStmt();
+
+        $stmt->where(['external_uuid = ?' => $identifier]);
+
+        /** @var stdClass|false $result */
+        $result = $this->getDB()->fetchOne($stmt);
+
+        if (empty($result)) {
+            $this->httpNotFound('Channel not found');
+        }
+
+        $this->createGETRowFinalizer()($result);
+
+        return $this->createArrayOfResponseData(body: Json::sanitize($result));
+    }
+
+    /**
+     * List channels or get specific channels by filter parameters.
+     *
+     * @param string $filterStr
+     * @return array
+     * @throws HttpBadRequestException
+     * @throws JsonEncodeException
+     */
+    public function getPlural(string $filterStr): array
+    {
+        $stmt = $this->createSelectStmt();
+
+        $filter = $this->createFilterFromFilterStr(
+            $filterStr,
+            $this->createFilterRuleListener(
+                ['id', 'name'],
+                'external_uuid'
+            )
+        );
+
+        if ($filter !== false) {
+            $stmt->where($filter);
+        }
+
+        return $this->createArrayOfResponseData(
+            body: $this->createContentGenerator($this->getDB(), $stmt, $this->createGETRowFinalizer())
+        );
+    }
+
+    /**
      * Get the channel id with the given identifier
      *
      * @param string $channelIdentifier
@@ -148,5 +208,36 @@ class Channels extends ApiV1
         );
 
         return $channel->id ?? false;
+    }
+
+    /**
+     * Create a base Select query for channels
+     *
+     * @return Select
+     */
+    private function createSelectStmt(): Select
+    {
+        return (new Select())
+            ->distinct()
+            ->from('channel ch')
+            ->columns([
+                'channel_id'    => 'ch.id',
+                'id'            => 'ch.external_uuid',
+                'name',
+                'type',
+                'config'
+            ]);
+    }
+
+    /**
+     * Create a finalizer for GET row results
+     *
+     * @return callable Returns a callable that modifies the row
+     */
+    private function createGETRowFinalizer(): callable
+    {
+        return function (stdClass $row) {
+            unset($row->channel_id);
+        };
     }
 }
