@@ -707,7 +707,10 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
-        $this->assertSame('{"status":"error","message":"Invalid request parameter: Filter is only allowed for GET requests"}', $content);
+        $this->assertSame(
+            '{"status":"error","message":"Invalid request parameter: Filter is only allowed for GET requests"}',
+            $content
+        );
     }
 
     /**
