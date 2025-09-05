@@ -93,7 +93,4 @@ class HttpError
     {
         throw new HttpException(422, ...func_get_args());
     }
-
-
-
 }

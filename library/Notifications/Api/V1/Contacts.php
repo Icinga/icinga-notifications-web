@@ -429,7 +429,7 @@ class Contacts extends ApiV1
                 'full_name' => $data['full_name'],
                 'username' => $data['username'] ?? null,
                 'default_channel_id' => $channelID,
-                'changed_at' => (int)(new DateTime())->format("Uv"),
+                'changed_at' => (int) (new DateTime())->format("Uv"),
             ], ['id = ?' => $contactId]);
 
             $markAsDeleted = ['deleted' => 'y'];
