@@ -92,7 +92,7 @@ class ContactGroups extends ApiV1
             $this->httpNotFound('Contactgroup not found');
         }
 
-        $this->enrichRow($result, true);
+        $this->createGETRowFinalizer()($result);
 
         return $this->createArrayOfResponseData(body: Json::sanitize($result));
     }
@@ -122,7 +122,7 @@ class ContactGroups extends ApiV1
         }
 
         return $this->createArrayOfResponseData(
-            body: $this->createContentGenerator($this->getDB(), $stmt, $this->enrichRow())
+            body: $this->createContentGenerator($this->getDB(), $stmt, $this->createGETRowFinalizer())
         );
     }
 
@@ -493,23 +493,17 @@ class ContactGroups extends ApiV1
     }
 
     /**
-     * Enrich the given row with groups and addresses
+     * Create a finalizer for get rows that enriches the row with additional data or removes irrelevant data
      *
-     * @param ?stdClass $row
-     * @param bool $exec
-     * @return ?callable Returns a callable that enriches the row, if $exec is false
+     * @return callable Returns a callable that finalizes the row
      */
-    private function enrichRow(?stdClass $row = null, bool $exec = false): ?callable
+    private function createGETRowFinalizer(): callable
     {
-        $enrich = function (stdClass $row) {
+        return function (stdClass $row) {
             $row->users = Contacts::fetchUserIdentifiers($row->contactgroup_id);
 
             unset($row->contactgroup_id);
         };
-        $return = null;
-        $exec ? $enrich($row) ?? null : $return = $enrich;
-
-        return $return;
     }
 
     /**
