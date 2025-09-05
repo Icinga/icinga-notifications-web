@@ -6,10 +6,12 @@ use DateTime;
 use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Http\HttpException;
 use Icinga\Exception\Http\HttpNotFoundException;
+use Icinga\Exception\Json\JsonEncodeException;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Rotation;
 use Icinga\Module\Notifications\Model\RotationMember;
 use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
+use Icinga\Util\Json;
 use ipl\Sql\Select;
 use ipl\Stdlib\Filter;
 use OpenApi\Attributes as OA;
@@ -61,13 +63,124 @@ class ContactGroups extends ApiV1
      *
      * @var string
      */
-    public const ROUTE_WITH_IDENTIFIER = '/contacts/{identifier}';
+    public const ROUTE_WITH_IDENTIFIER = '/contactgroups/{identifier}';
     /**
      * The route to handle multiple contactgroup or create contactgroup
      *
      * @var string
      */
-    public const ROUTE_WITHOUT_IDENTIFIER = '/contacts';
+    public const ROUTE_WITHOUT_IDENTIFIER = '/contactgroups';
+
+    /**
+     * Get a contactgroup by UUID.
+     *
+     * @param string $identifier
+     * @return array
+     * @throws HttpNotFoundException
+     * @throws JsonEncodeException
+     */
+    public function get(string $identifier): array
+    {
+        $stmt = $this->createSelectStmt();
+
+        $stmt->where(['external_uuid = ?' => $identifier]);
+
+        /** @var stdClass|false $result */
+        $result = $this->getDB()->fetchOne($stmt);
+
+        if (empty($result)) {
+            $this->httpNotFound('Contactgroup not found');
+        }
+
+        $this->enrichRow($result, true);
+
+        return $this->createArrayOfResponseData(body: Json::sanitize($result));
+    }
+
+    /**
+     * List contactgroups or get specific contactgroups by filter parameters.
+     *
+     * @param string $filterStr
+     * @return array
+     * @throws HttpBadRequestException
+     * @throws JsonEncodeException
+     */
+    public function getPlural(string $filterStr): array
+    {
+        $stmt = $this->createSelectStmt();
+
+        $filter = $this->createFilterFromFilterStr(
+            $filterStr,
+            $this->createFilterRuleListener(
+                ['id', 'name'],
+                'external_uuid'
+            )
+        );
+
+        if ($filter !== false) {
+            $stmt->where($filter);
+        }
+
+        return $this->createArrayOfResponseData(
+            body: $this->createContentGenerator($this->getDB(), $stmt, $this->enrichRow())
+        );
+    }
+
+    /**
+     * Update a contactgroup by UUID.
+     *
+     * @param string $identifier
+     * @param requestBody $requestBody
+     * @return array
+     * @throws HttpBadRequestException
+     * @throws HttpException
+     * @throws HttpNotFoundException
+     */
+    public function put(string $identifier, array $requestBody): array
+    {
+        if (empty($identifier)) {
+            $this->httpBadRequest('Identifier is required');
+        }
+
+        $data = $this->getValidatedRequestBodyData($requestBody);
+
+        if ($identifier !== $data['id']) {
+            $this->httpBadRequest('Identifier mismatch');
+        }
+
+        $this->getDB()->beginTransaction();
+
+        if (($contactgroupId = self::getGroupId($identifier)) !== null) {
+            if (! empty($data['name'])) {
+                $this->assertUniqueName($data['name'], $contactgroupId);
+            }
+
+            $this->getDB()->update(
+                'contactgroup',
+                ['name' => $data['name']],
+                ['id = ?' => $contactgroupId]
+            );
+            $this->getDB()->update(
+                'contactgroup_member',
+                ['deleted' => 'y'],
+                ['contactgroup_id = ?' => $contactgroupId, 'deleted = ?' => 'n']
+            );
+
+            if (! empty($data['users'])) {
+                $this->addUsers($contactgroupId, $data['users']);
+            }
+
+            $responseCode = 204;
+        } else {
+            $this->addContactgroup($data);
+            $responseCode = 201;
+            $responseBody = '{"status":"success","message":"Contactgroup created successfully"}';
+        }
+
+        $this->getDB()->commitTransaction();
+
+        return $this->createArrayOfResponseData(statusCode: $responseCode, body: $responseBody ?? null);
+    }
 
     /**
      * Create or replace a contactgroup
@@ -83,7 +196,7 @@ class ContactGroups extends ApiV1
      */
     public function post(?string $identifier, array $requestBody): array
     {
-        $data = $this->getValidatedData($requestBody);
+        $data = $this->getValidatedRequestBodyData($requestBody);
 
         $this->getDB()->beginTransaction();
 
@@ -111,7 +224,7 @@ class ContactGroups extends ApiV1
 
         return $this->createArrayOfResponseData(
             statusCode: 201,
-            body: '{"status": "success","message": "Contactgroup created successfully"}',
+            body: '{"status":"success","message":"Contactgroup created successfully"}',
             additionalHeaders: [
                 'Location' => 'notifications/api/v1' . self::ROUTE_WITHOUT_IDENTIFIER . '/' . $data['id']
             ]
@@ -119,7 +232,32 @@ class ContactGroups extends ApiV1
     }
 
     /**
-     * Fetch the group identifiers of the contact with the given id
+     * Remove the contactgroup with the given id
+     *
+     * @param string $identifier
+     * @return array
+     * @throws HttpBadRequestException
+     * @throws HttpNotFoundException
+     */
+    public function delete(string $identifier): array
+    {
+        if (empty($identifier)) {
+            $this->httpBadRequest('Identifier is required');
+        }
+
+        if (($contactgroupId = self::getGroupId($identifier)) === null) {
+            $this->httpNotFound('Contactgroup not found');
+        }
+
+        $this->getDB()->beginTransaction();
+        $this->removeContactgroup($contactgroupId);
+        $this->getDB()->commitTransaction();
+
+        return $this->createArrayOfResponseData(statusCode: 204);
+    }
+
+    /**
+     * Fetch the group identifiers of the contact with the given id from the contactgroup_member table
      *
      * @param int $contactId
      *
@@ -160,8 +298,6 @@ class ContactGroups extends ApiV1
 
     private function removeContactgroup(int $id): void
     {
-        $this->getDB()->beginTransaction();
-
         $markAsDeleted = ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'];
         $updateCondition = ['contactgroup_id = ?' => $id, 'deleted = ?' => 'n'];
 
@@ -246,8 +382,6 @@ class ContactGroups extends ApiV1
             $markAsDeleted,
             ['id = ?' => $id, 'deleted = ?' => 'n']
         );
-
-        $this->getDB()->commitTransaction();
     }
 
     /**
@@ -257,7 +391,7 @@ class ContactGroups extends ApiV1
      *
      * @throws HttpBadRequestException if the request body is invalid
      */
-    private function getValidatedData(array $data): array
+    private function getValidatedRequestBodyData(array $data): array
     {
         $msgPrefix = 'Invalid request body: ';
 
@@ -299,6 +433,7 @@ class ContactGroups extends ApiV1
      * @param requestBody $data
      *
      * @return void
+     * @throws HttpNotFoundException
      */
     private function addContactgroup(array $data): void
     {
@@ -328,14 +463,80 @@ class ContactGroups extends ApiV1
     {
         foreach ($users as $identifier) {
             $contactId = Contacts::getContactId($identifier);
-            if ($contactId === false) {
+            if ($contactId === null) {
                 $this->httpUnprocessableEntity(sprintf('User with identifier %s not found', $identifier));
             }
 
             Database::get()->insert('contactgroup_member', [
                 'contactgroup_id'   => $contactgroupId,
-                'contact_id'        => $contactId
+                'contact_id'        => $contactId,
+                'changed_at'        => (int) (new DateTime())->format("Uv"),
             ]);
+        }
+    }
+
+    /**
+     * Create a base Select query for contactgroups
+     *
+     * @return Select
+     */
+    private function createSelectStmt(): Select
+    {
+        return (new Select())
+            ->distinct()
+            ->from('contactgroup cg')
+            ->columns([
+                'contactgroup_id'   => 'cg.id',
+                'id'                => 'cg.external_uuid',
+                'name'
+            ]);
+    }
+
+    /**
+     * Enrich the given row with groups and addresses
+     *
+     * @param ?stdClass $row
+     * @param bool $exec
+     * @return ?callable Returns a callable that enriches the row, if $exec is false
+     */
+    private function enrichRow(?stdClass $row = null, bool $exec = false): ?callable
+    {
+        $enrich = function (stdClass $row) {
+            $row->users = Contacts::fetchUserIdentifiers($row->contactgroup_id);
+
+            unset($row->contactgroup_id);
+        };
+        $return = null;
+        $exec ? $enrich($row) ?? null : $return = $enrich;
+
+        return $return;
+    }
+
+    /**
+     * Assert that the name is unique
+     *
+     * @param string $name
+     * @param ?int $contactgroupId The id of the contactgroup to exclude
+     *
+     * @return void
+     *
+     * @throws HttpException if the username already exists
+     */
+    private function assertUniqueName(string $name, int $contactgroupId = null): void
+    {
+        $stmt = (new Select())
+            ->from('contactgroup')
+            ->columns('1')
+            ->where(['name = ?' => $name]);
+
+        if ($contactgroupId) {
+            $stmt->where(['id != ?' => $contactgroupId]);
+        }
+
+        $user = Database::get()->fetchOne($stmt);
+
+        if ($user) {
+            $this->httpConflict('Username ' . $name . ' already exists');
         }
     }
 }
