@@ -201,13 +201,11 @@ class Contacts extends ApiV1
 
         $this->enrichRow($result, true);
 
-        unset($result->contact_id);
-
         return $this->createArrayOfResponseData(body: Json::sanitize($result));
     }
 
     /**
-     * List contacts or get specific contacts by UUID or filter parameters.
+     * List contacts or get specific contacts by filter parameters.
      *
      * @param string $filterStr
      * @return array
@@ -648,7 +646,7 @@ class Contacts extends ApiV1
     )]
     public function delete(string $identifier): array
     {
-        if (empty((string) $identifier)) {
+        if (empty($identifier)) {
             $this->httpBadRequest('Identifier is required');
         }
 
@@ -675,6 +673,8 @@ class Contacts extends ApiV1
         $enrich = function (stdClass $row) {
             $row->groups = ContactGroups::fetchGroupIdentifiers($row->contact_id);
             $row->addresses = self::fetchContactAddresses($row->contact_id);
+
+            unset($row->contact_id);
         };
         $return = null;
         $exec ? $enrich($row) ?? null : $return = $enrich;
@@ -1033,5 +1033,23 @@ class Contacts extends ApiV1
 
         /** @var requestBody $data */
         return $data;
+    }
+    /**
+     * Fetch the user(contact) identifiers of the contactgroup with the given id from the contactgroup_member table
+     *
+     * @param int $contactgroupId
+     *
+     * @return string[]
+     */
+    public static function fetchUserIdentifiers(int $contactgroupId): array
+    {
+        return Database::get()->fetchCol(
+            (new Select())
+                ->from('contactgroup_member cgm')
+                ->columns('co.external_uuid')
+                ->joinLeft('contact co', 'co.id = cgm.contact_id')
+                ->where(['cgm.contactgroup_id = ?' => $contactgroupId])
+                ->groupBy('co.external_uuid')
+        );
     }
 }
