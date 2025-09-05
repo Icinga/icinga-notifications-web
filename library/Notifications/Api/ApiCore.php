@@ -324,8 +324,6 @@ abstract class ApiCore
                     yield ",\n";
                 }
 
-                unset($row->contact_id);
-
                 yield Json::sanitize($row);
             }
 
