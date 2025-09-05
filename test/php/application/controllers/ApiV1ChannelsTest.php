@@ -6,7 +6,6 @@ use Icinga\Module\Notifications\Test\BaseApiV1TestCase;
 
 class ApiV1ChannelsTest extends BaseApiV1TestCase
 {
-
     /**
      * Get all channels currently stored at the endpoint.
      *
