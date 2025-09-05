@@ -65,7 +65,7 @@ YAML;
 
         $this->assertEquals(400, $response->getStatusCode(), $content);
         $this->assertSame(
-            '{"status":"error","message":"Invalid request header: Content-Type must be application/json"}',
+            '{"status":"error","message":"Invalid request header: Content-Type must be application\/json"}',
             $content
         );
     }
@@ -354,7 +354,7 @@ YAML;
 
         $this->assertEquals(400, $response->getStatusCode(), $content);
         $this->assertSame(
-            '{"status":"error","message":"Invalid request header: Content-Type must be application/json"}',
+            '{"status":"error","message":"Invalid request header: Content-Type must be application\/json"}',
             $content
         );
     }
