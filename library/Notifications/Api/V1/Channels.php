@@ -130,7 +130,6 @@ use stdClass;
 )]
 class Channels extends ApiV1
 {
-
     /**
      * Get the channel id with the given identifier
      *
