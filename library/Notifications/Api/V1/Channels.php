@@ -176,7 +176,7 @@ class Channels extends ApiV1
         $filter = $this->createFilterFromFilterStr(
             $filterStr,
             $this->createFilterRuleListener(
-                ['id', 'name'],
+                ['id', 'name', 'type'],
                 'external_uuid'
             )
         );
