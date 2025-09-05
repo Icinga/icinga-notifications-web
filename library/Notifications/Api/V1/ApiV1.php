@@ -6,21 +6,17 @@ use Exception;
 use GuzzleHttp\Psr7\Utils;
 use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Http\HttpException;
-use Icinga\Exception\Json\JsonDecodeException;
 use Icinga\Module\Notifications\Api\ApiCore;
 use Icinga\Module\Notifications\Api\Elements\HttpMethod;
 use Icinga\Module\Notifications\Common\Database;
-use Icinga\Util\Json;
-use InvalidArgumentException;
 use ipl\Sql\Compat\FilterProcessor;
 use ipl\Stdlib\Filter\Condition;
 use ipl\Web\Filter\QueryString;
-use ipl\Web\Url;
 use Iterator;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use OpenApi\Attributes as OA;
-use Icinga\Module\Notifications\Api\Elements\Uuid;
+use Ramsey\Uuid\Uuid;
 use Psr\Http\Message\StreamInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
@@ -161,7 +157,7 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
      */
     protected function createFilterFromFilterStr(string $filterStr, callable $listener): array|bool
     {
-        if (! empty($filterStr = Url::fromRequest()->getQueryString())) {
+        if (! empty($filterStr)) {
             try {
                 $filterRule = QueryString::fromString($filterStr)
                     ->on(
