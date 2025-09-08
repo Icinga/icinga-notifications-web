@@ -26,7 +26,8 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
 
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertSame(
-            '{"content":[{"id":"0817d973-398e-41d7-9cd2-61cdb7ef41a1","name":"Test","type":"email","config":null}]}',
+            '{"content":[{"id":"0817d973-398e-41d7-9cd2-61cdb7ef41a1","name":"Test","type":"email","config":null},'
+            . "\n" . '{"id":"0817d973-398e-41d7-9cd2-61cdb7ef41a2","name":"Test2","type":"email","config":null}]}',
             $content
         );
     }
