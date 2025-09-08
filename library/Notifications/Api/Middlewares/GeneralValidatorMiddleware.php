@@ -44,27 +44,29 @@ class GeneralValidatorMiddleware implements MiddlewareInterface
         $identifier = $request->getAttribute('identifier');
 
         if (HttpMethod::tryFrom($httpMethod) === null) {
-            HttpError::methodNotAllowed("HTTP method $httpMethod is not supported.");
+            throw new HttpException(405, "HTTP method $httpMethod is not supported.");
         }
 
         if ($httpMethod !== HttpMethod::get->value && ! empty($filterStr)) {
-            HttpError::badRequest('Invalid request parameter: Filter is only allowed for GET requests');
+            throw HttpBadRequestException::create(
+                ['Invalid request parameter: Filter is only allowed for GET requests']
+            );
         } elseif ($httpMethod === HttpMethod::get->value && ! empty($identifier) && ! empty($filterStr)) {
-            HttpError::badRequest(
+            throw HttpBadRequestException::create([
                 "Invalid request: $httpMethod with identifier and query parameters,"
                 . " it's not allowed to use both together."
-            );
+            ]);
         } elseif (in_array($httpMethod, [HttpMethod::put->value, HttpMethod::delete->value]) && empty($identifier)) {
-            HttpError::badRequest("Invalid request: Identifier is required");
+            throw HttpBadRequestException::create(["Invalid request: Identifier is required"]);
         } elseif (
             in_array($httpMethod, [HttpMethod::put->value, HttpMethod::post->value])
             && $request->getHeaderLine('Content-Type') !== 'application/json'
         ) {
-            HttpError::badRequest('Invalid request header: Content-Type must be application/json');
+            throw HttpBadRequestException::create(['Invalid request header: Content-Type must be application/json']);
         }
 
         if (! empty($identifier) && ! Uuid::isValid($identifier)) {
-            HttpError::badRequest('The given identifier is not a valid UUID');
+            throw HttpBadRequestException::create(['The given identifier is not a valid UUID']);
         }
         $requestBody = $this->getValidRequestBody($request);
 
@@ -95,17 +97,17 @@ class GeneralValidatorMiddleware implements MiddlewareInterface
             ! preg_match('/([^;]*);?/', $request->getHeaderLine('Content-Type'), $matches)
             || $matches[1] !== 'application/json'
         ) {
-            HttpError::badRequest('Invalid request header: Content-Type must be application/json');
+            throw HttpBadRequestException::create(['Invalid request header: Content-Type must be application/json']);
         }
         $body = $request->getBody()->getContents();
         if (empty($body)) {
-            HttpError::badRequest($msgPrefix . 'given content is empty');
+            throw HttpBadRequestException::create([$msgPrefix . 'given content is empty']);
         }
 
         try {
             $validBody = Json::decode($body, true);
         } catch (JsonDecodeException $e) {
-            HttpError::badRequest($msgPrefix . 'given content is not a valid JSON');
+            throw HttpBadRequestException::create([$msgPrefix . 'given content is not a valid JSON']);
         }
 
         return $validBody;
