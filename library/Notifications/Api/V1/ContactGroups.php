@@ -89,7 +89,7 @@ class ContactGroups extends ApiV1
         $result = $this->getDB()->fetchOne($stmt);
 
         if (empty($result)) {
-            $this->httpNotFound('Contactgroup not found');
+            throw HttpNotFoundException::create(['Contactgroup not found']);
         }
 
         $this->createGETRowFinalizer()($result);
@@ -139,13 +139,13 @@ class ContactGroups extends ApiV1
     public function put(string $identifier, array $requestBody): array
     {
         if (empty($identifier)) {
-            $this->httpBadRequest('Identifier is required');
+            throw HttpBadRequestException::create(['Identifier is required']);
         }
 
         $data = $this->getValidatedRequestBodyData($requestBody);
 
         if ($identifier !== $data['id']) {
-            $this->httpBadRequest('Identifier mismatch');
+            throw HttpBadRequestException::create(['Identifier mismatch']);
         }
 
         $this->getDB()->beginTransaction();
@@ -209,7 +209,7 @@ class ContactGroups extends ApiV1
         } else {
             $contactgroupId = self::getGroupId($identifier);
             if ($contactgroupId === null) {
-                $this->httpNotFound('Contactgroup not found');
+                throw HttpNotFoundException::create(['Contactgroup not found']);
             }
 
             if ($identifier === $data['id'] || self::getGroupId($data['id']) !== null) {
@@ -242,11 +242,11 @@ class ContactGroups extends ApiV1
     public function delete(string $identifier): array
     {
         if (empty($identifier)) {
-            $this->httpBadRequest('Identifier is required');
+            throw HttpBadRequestException::create(['Identifier is required']);
         }
 
         if (($contactgroupId = self::getGroupId($identifier)) === null) {
-            $this->httpNotFound('Contactgroup not found');
+            throw HttpNotFoundException::create(['Contactgroup not found']);
         }
 
         $this->getDB()->beginTransaction();
@@ -400,23 +400,23 @@ class ContactGroups extends ApiV1
             || ! is_string($data['id'])
             || ! is_string($data['name'])
         ) {
-            $this->httpBadRequest(
-                $msgPrefix . 'the fields id and name must be present and of type string'
+            throw HttpBadRequestException::create(
+                [$msgPrefix . 'the fields id and name must be present and of type string']
             );
         }
 
         if (! Uuid::isValid($data['id'])) {
-            $this->httpBadRequest($msgPrefix . 'given id is not a valid UUID');
+            throw HttpBadRequestException::create([$msgPrefix . 'given id is not a valid UUID']);
         }
 
         if (! empty($data['users'])) {
             if (! is_array($data['users'])) {
-                $this->httpBadRequest($msgPrefix .  'expects users to be an array');
+                throw HttpBadRequestException::create([$msgPrefix .  'expects users to be an array']);
             }
 
             foreach ($data['users'] as $user) {
                 if (! is_string($user) || ! Uuid::isValid($user)) {
-                    $this->httpBadRequest($msgPrefix . 'user identifiers must be valid UUIDs');
+                    throw HttpBadRequestException::create([$msgPrefix . 'user identifiers must be valid UUIDs']);
                 }
 
                 //TODO: check if users exist, here?
@@ -464,7 +464,7 @@ class ContactGroups extends ApiV1
         foreach ($users as $identifier) {
             $contactId = Contacts::getContactId($identifier);
             if ($contactId === null) {
-                $this->httpUnprocessableEntity(sprintf('User with identifier %s not found', $identifier));
+                throw new HttpException(422, sprintf('User with identifier %s not found', $identifier));
             }
 
             Database::get()->insert('contactgroup_member', [
@@ -530,7 +530,7 @@ class ContactGroups extends ApiV1
         $user = Database::get()->fetchOne($stmt);
 
         if ($user) {
-            $this->httpConflict('Username ' . $name . ' already exists');
+            throw new HttpException(409, 'Username ' . $name . ' already exists');
         }
     }
 }

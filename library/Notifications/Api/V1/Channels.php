@@ -153,7 +153,7 @@ class Channels extends ApiV1
         $result = $this->getDB()->fetchOne($stmt);
 
         if (empty($result)) {
-            $this->httpNotFound('Channel not found');
+            throw HttpNotFoundException::create(['Channel not found']);
         }
 
         $this->createGETRowFinalizer()($result);
