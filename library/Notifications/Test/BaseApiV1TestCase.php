@@ -17,6 +17,7 @@ class BaseApiV1TestCase extends TestCase
     use Databases;
 
     protected const CHANNEL_UUID = '0817d973-398e-41d7-9cd2-61cdb7ef41a1';
+    protected const CHANNEL_UUID_2 = '0817d973-398e-41d7-9cd2-61cdb7ef41a2';
 
     protected function createSchema(Connection $db, string $driver): void
     {
@@ -142,6 +143,13 @@ SQL
         $db->insert('channel', [
             'external_uuid' => self::CHANNEL_UUID,
             'name' => 'Test',
+            'type' => 'email',
+            'changed_at' => (int) (new DateTime())->format("Uv"),
+        ]);
+
+        $db->insert('channel', [
+            'external_uuid' => self::CHANNEL_UUID_2,
+            'name' => 'Test2',
             'type' => 'email',
             'changed_at' => (int) (new DateTime())->format("Uv"),
         ]);
