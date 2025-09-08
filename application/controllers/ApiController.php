@@ -84,12 +84,7 @@ class ApiController extends CompatController
             $this->httpNotFound(404, "Endpoint $endpoint does not exist.");
         }
 
-        $pipeline = new MiddlewarePipeline(
-            middlewares: [new GeneralValidatorMiddleware()],
-            finalHandler: new $className()
-        );
-
-        $this->emitResponse($pipeline->handle($serverRequest));
+        $this->emitResponse((new $className())->handle($serverRequest));
     }
 
     /**
