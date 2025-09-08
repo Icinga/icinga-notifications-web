@@ -196,7 +196,7 @@ class Contacts extends ApiV1
         $result = $this->getDB()->fetchOne($stmt);
 
         if (empty($result)) {
-            $this->httpNotFound('Contact not found');
+            throw HttpNotFoundException::create(['Contact not found']);
         }
 
         $this->createGETRowFinalizer()($result);
@@ -403,13 +403,13 @@ class Contacts extends ApiV1
     public function put(string $identifier, array $requestBody): array
     {
         if (empty($identifier)) {
-            $this->httpBadRequest('Identifier is required');
+            throw HttpBadRequestException::create(['Identifier is required']);
         }
 
         $data = $this->getValidatedRequestBodyData($requestBody);
 
         if ($identifier !== $data['id']) {
-            $this->httpBadRequest('Identifier mismatch');
+            throw HttpBadRequestException::create(['Identifier mismatch']);
         }
 
         $this->getDB()->beginTransaction();
@@ -420,7 +420,7 @@ class Contacts extends ApiV1
             }
 
             if (! $channelID = Channels::getChannelId($data['default_channel'])) {
-                $this->httpUnprocessableEntity('Default channel mismatch');
+                throw new HttpException(422, 'Default channel mismatch');
             }
 
             $this->getDB()->update('contact', [
@@ -570,7 +570,7 @@ class Contacts extends ApiV1
         } else {
             $contactId = $this->getContactId($identifier);
             if ($contactId === null) {
-                $this->httpNotFound('Contact not found');
+                throw HttpNotFoundException::create(['Contact not found']);
             }
 
             if ($identifier === $data['id'] || $this->getContactId($data['id']) !== null) {
@@ -647,11 +647,11 @@ class Contacts extends ApiV1
     public function delete(string $identifier): array
     {
         if (empty($identifier)) {
-            $this->httpBadRequest('Identifier is required');
+            throw HttpBadRequestException::create(['Identifier is required']);
         }
 
         if (($contactId = self::getContactId($identifier)) === null) {
-            $this->httpNotFound('Contact not found');
+            throw HttpNotFoundException::create(['Contact not found']);
         }
 
         $this->getDB()->beginTransaction();
@@ -752,7 +752,8 @@ class Contacts extends ApiV1
         foreach ($groups as $groupIdentifier) {
             $groupId = ContactGroups::getGroupId($groupIdentifier);
             if ($groupId === null) {
-                $this->httpUnprocessableEntity(
+                throw new HttpException(
+                    422,
                     sprintf('Group with identifier %s does not exist', $groupIdentifier)
                 );
             }
@@ -799,7 +800,7 @@ class Contacts extends ApiV1
             $this->assertUniqueUsername($data['username']);
         }
         if (! $channelID = Channels::getChannelId($data['default_channel'])) {
-            $this->httpUnprocessableEntity('Default channel mismatch');
+            throw new HttpException(422, 'Default channel mismatch');
         }
 
         Database::get()->insert('contact', [
@@ -941,7 +942,7 @@ class Contacts extends ApiV1
         $user = Database::get()->fetchOne($stmt);
 
         if ($user) {
-            $this->httpConflict('Username ' . $username . ' already exists');
+            throw new HttpException(409, 'Username ' . $username . ' already exists');
         }
     }
 
@@ -963,38 +964,38 @@ class Contacts extends ApiV1
             || ! is_string($data['full_name'])
             || ! is_string($data['default_channel'])
         ) {
-            $this->httpBadRequest(
-                $msgPrefix . 'the fields id, full_name and default_channel must be present and of type string'
+            throw HttpBadRequestException::create(
+                [$msgPrefix . 'the fields id, full_name and default_channel must be present and of type string']
             );
         }
 
         if (! Uuid::isValid($data['id'])) {
-            $this->httpBadRequest($msgPrefix . 'given id is not a valid UUID');
+            throw HttpBadRequestException::create([$msgPrefix . 'given id is not a valid UUID']);
         }
 
         if (! Uuid::isValid($data['default_channel'])) {
-            $this->httpBadRequest($msgPrefix . 'given default_channel is not a valid UUID');
+            throw HttpBadRequestException::create([$msgPrefix . 'given default_channel is not a valid UUID']);
         }
 
         if (! empty($data['username']) && ! is_string($data['username'])) {
-            $this->httpBadRequest($msgPrefix . 'expects username to be a string');
+            throw HttpBadRequestException::create([$msgPrefix . 'expects username to be a string']);
         }
 
         if (! empty($data['groups'])) {
             if (! is_array($data['groups'])) {
-                $this->httpBadRequest($msgPrefix . 'expects groups to be an array');
+                throw HttpBadRequestException::create([$msgPrefix . 'expects groups to be an array']);
             }
 
             foreach ($data['groups'] as $group) {
                 if (! is_string($group) || ! Uuid::isValid($group)) {
-                    $this->httpBadRequest($msgPrefix . 'group identifiers must be valid UUIDs');
+                    throw HttpBadRequestException::create([$msgPrefix . 'group identifiers must be valid UUIDs']);
                 }
             }
         }
 
         if (! empty($data['addresses'])) {
             if (! is_array($data['addresses'])) {
-                $this->httpBadRequest($msgPrefix . 'expects addresses to be an array');
+                throw HttpBadRequestException::create([$msgPrefix . 'expects addresses to be an array']);
             }
 
             $addressTypes = array_keys($data['addresses']);
@@ -1007,12 +1008,12 @@ class Contacts extends ApiV1
             );
 
             if (count($types) !== count($addressTypes)) {
-                $this->httpBadRequest(
+                throw HttpBadRequestException::create([
                     sprintf(
                         $msgPrefix . 'undefined address type %s given',
                         implode(', ', array_diff($addressTypes, $types))
                     )
-                );
+                ]);
             }
             //TODO: is it a good idea to check valid channel types here?, if yes,
             //default_channel and group identifiers must be checked here as well..404 OR 400?
@@ -1021,7 +1022,7 @@ class Contacts extends ApiV1
                 ! empty($data['addresses']['email'])
                 && ! (new EmailAddressValidator())->isValid($data['addresses']['email'])
             ) {
-                $this->httpBadRequest($msgPrefix . 'an invalid email address given');
+                throw HttpBadRequestException::create([$msgPrefix . 'an invalid email address given']);
             }
         }
 

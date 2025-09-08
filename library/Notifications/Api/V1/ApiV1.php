@@ -113,8 +113,9 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
             $methodName = HttpMethod::from($httpMethod)->name;
 
             if (! method_exists($this, $methodName)) {
-                $this->httpMethodNotAllowed(
-                    "Method $httpMethod is not available in "
+                throw new HttpException(
+                    405,
+                    "Method $httpMethod is not supported for endpoint "
                     . (new \ReflectionClass($this))->getShortName() . '.'
                 );
             }
@@ -136,7 +137,7 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
                 $responseData = $this->$methodName($identifier);
                 break;
             default:
-                $this->httpBadRequest("Invalid request: This case shouldn't be reachable.");
+                throw HttpBadRequestException::create(["Invalid request: This case shouldn't be reachable."]);
         }
 
         return $this->createResponse($responseData);
@@ -167,7 +168,7 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
 
                 return FilterProcessor::assembleFilter($filterRule);
             } catch (Exception $e) {
-                $this->httpBadRequest($e->getMessage());
+                throw HttpBadRequestException::create([$e->getMessage()]);
             }
         }
         return false;
@@ -189,18 +190,18 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
         return function (Condition $condition) use ($allowedColumns, $idColumnName) {
             $column = $condition->getColumn();
             if (! in_array($column, $allowedColumns)) {
-                $this->httpBadRequest(
+                throw HttpBadRequestException::create([
                     sprintf(
                         'Invalid filter column %s given, only %s are allowed',
                         $column,
                         preg_replace('/,([^,]*)$/', ' and$1', implode(', ', $allowedColumns))
                     )
-                );
+                ]);
             }
 
             if ($column === 'id') {
                 if (! Uuid::isValid($condition->getValue())) {
-                    $this->httpBadRequest('The given filter id is not a valid UUID');
+                    throw HttpBadRequestException::create(['The given filter id is not a valid UUID']);
                 }
 
                 $condition->setColumn($idColumnName);
