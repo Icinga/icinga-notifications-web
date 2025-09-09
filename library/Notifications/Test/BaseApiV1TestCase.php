@@ -150,7 +150,7 @@ SQL
         $db->insert('channel', [
             'external_uuid' => self::CHANNEL_UUID_2,
             'name' => 'Test2',
-            'type' => 'email',
+            'type' => 'webhook',
             'changed_at' => (int) (new DateTime())->format("Uv"),
         ]);
     }
