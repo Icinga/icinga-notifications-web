@@ -143,17 +143,21 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
             && $request->getHeaderLine('Content-Type') !== 'application/json'
         ) {
             throw HttpBadRequestException::create(['Invalid request header: Content-Type must be application/json']);
+        } elseif (
+            ! in_array($httpMethod, [HttpMethod::put->value, HttpMethod::post->value])
+            && (! empty($request->getBody()->getSize()) || ! empty($request->getParsedBody()))
+        ) {
+            throw HttpBadRequestException::create(['Invalid request: Body is only allowed for POST and PUT requests']);
         }
 
         if (! empty($identifier) && ! Uuid::isValid($identifier)) {
             throw HttpBadRequestException::create(['The given identifier is not a valid UUID']);
         }
-        $parsedBody = $this->getValidRequestBody($request);
 
         switch ($httpMethod) {
             case self::PUT:
             case self::POST:
-                $responseData = $this->$methodName($identifier, $parsedBody);
+                $responseData = $this->$methodName($identifier, $this->getValidRequestBody($request));
                 break;
             case self::GET:
                 $responseData = str_contains($methodName, self::PLURAL_SUFFIX)
@@ -287,17 +291,9 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
     {
         if (! empty($parsedBody = $request->getParsedBody()) && is_array($parsedBody)) {
             return $parsedBody;
-        } elseif (empty($request->getBody()->getSize()) && empty($request->getParsedBody())) {
-            return [];
         }
 
         $msgPrefix = 'Invalid request body: ';
-        if (
-            ! preg_match('/([^;]*);?/', $request->getHeaderLine('Content-Type'), $matches)
-            || $matches[1] !== 'application/json'
-        ) {
-            throw HttpBadRequestException::create(['Invalid request header: Content-Type must be application/json']);
-        }
         $body = $request->getBody()->getContents();
         if (empty($body)) {
             throw HttpBadRequestException::create([$msgPrefix . 'given content is empty']);
