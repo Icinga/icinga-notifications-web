@@ -3,19 +3,19 @@
 namespace Icinga\Module\Notifications\Controllers;
 
 use Exception;
+use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
 use GuzzleHttp\Psr7\Utils;
 use Icinga\Exception\Http\HttpBadRequestException;
+use Icinga\Exception\Http\HttpExceptionInterface;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Api\ApiCore;
-use Icinga\Module\Notifications\Api\Middlewares\GeneralValidatorMiddleware;
-use Icinga\Module\Notifications\Api\Middlewares\MiddlewarePipeline;
-use Icinga\Security\SecurityException;
 use Icinga\Web\Request;
 use ipl\Stdlib\Str;
 use ipl\Web\Compat\CompatController;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
+use Throwable;
 use Zend_Controller_Request_Exception;
 
 class ApiController extends CompatController
@@ -27,21 +27,45 @@ class ApiController extends CompatController
      * and dispatches the appropriate endpoint based on the request method and parameters.
      *
      * @return never
-     * @throws HttpBadRequestException If the request is not valid.
-     * @throws SecurityException
-     * @throws HttpNotFoundException
-     * @throws Zend_Controller_Request_Exception
      */
     public function indexAction(): never
     {
-        $this->assertPermission('notifications/api');
-        $request = $this->getRequest();
-        if (! $request->isApiRequest() && strtolower($request->getParam('endpoint')) !== ApiCore::OPENAPI_ENDPOINT) {
-            $this->httpBadRequest('No API request');
+        // TODO: temporary workaround until we have proper middleware support!!!
+        try {
+            $this->assertPermission('notifications/api');
+
+            $request = $this->getRequest();
+            if (
+                ! $request->isApiRequest()
+                && strtolower($request->getParam('endpoint')) !== ApiCore::OPENAPI_ENDPOINT
+            ) {
+                $this->httpBadRequest('No API request');
+            }
+
+            $this->dispatchEndpoint($request);
+        } catch (HttpExceptionInterface $e) {
+            $errorResponse = new Response(
+                status: $e->getStatusCode(),
+                headers: $e->getHeaders(),
+                body: json_encode([
+                    'status' => 'error',
+                    'message' => $e->getMessage(),
+                ])
+            );
+
+            $this->emitResponse($errorResponse);
+        } catch (Throwable $e) {
+            $errorResponse = new Response(
+                status: 500,
+                headers: ['Content-Type' => 'application/json'],
+                body: json_encode([
+                    'status' => 'error',
+                    'message' => $e->getMessage(),
+                ])
+            );
+
+            $this->emitResponse($errorResponse);
         }
-
-        $this->dispatchEndpoint($request);
-
         exit();
     }
 
