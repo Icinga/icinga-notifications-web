@@ -3,21 +3,15 @@
 namespace Icinga\Module\Notifications\Api;
 
 use Generator;
-use GuzzleHttp\Psr7\HttpFactory;
+use GuzzleHttp\Psr7\Response;
 use Icinga\Application\Icinga;
-use Icinga\Exception\Http\HttpBadRequestException;
-use Icinga\Exception\Http\HttpException;
-use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Exception\Json\JsonEncodeException;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Util\Json;
 use ipl\Sql\Connection;
 use ipl\Sql\Select;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Server\RequestHandlerInterface;
 use stdClass;
-
-use function Icinga\Module\Kubernetes\yield_iterable;
 
 abstract class ApiCore
 {
@@ -65,16 +59,9 @@ abstract class ApiCore
      * @var Connection
      */
     private Connection $db;
-    /**
-     * The response object used to send back the API response.
-     *
-     * @var ResponseInterface
-     */
-    private ResponseInterface $response;
 
     public function __construct()
     {
-        $this->setResponse((new HttpFactory())->createResponse());
         $this->init();
     }
 
@@ -112,30 +99,6 @@ abstract class ApiCore
     protected function setDB(Connection $db): void
     {
         $this->db = $db;
-    }
-    /**
-     * Get the Response object
-     *
-     * This method returns the response object that is used to send back the API response.
-     *
-     * @return ResponseInterface
-     */
-    protected function getResponse(): ResponseInterface
-    {
-        return $this->response;
-    }
-
-    /**
-     * Set the Response object
-     *
-     * This method sets the response object that is used to send back the API response.
-     *
-     * @param ResponseInterface $response
-     * @return void
-     */
-    protected function setResponse(ResponseInterface $response): void
-    {
-        $this->response = $response;
     }
 
     /**
@@ -244,5 +207,22 @@ abstract class ApiCore
             $res = $db->select($stmt->offset($offset));
         } while ($res->rowCount());
         yield ']}';
+    }
+
+    protected function createResponse(
+        int $code = 200,
+        array $headers = [],
+        $body = null,
+        string $version = '1.1',
+        ?string $reason = null
+    ): ResponseInterface {
+
+        return new Response(
+            $code,
+            $headers,
+            $body,
+            $version,
+            $reason
+        );
     }
 }

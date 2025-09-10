@@ -3,7 +3,6 @@
 namespace Icinga\Module\Notifications\Api\V1;
 
 use Exception;
-use GuzzleHttp\Psr7\Utils;
 use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Http\HttpException;
 use Icinga\Exception\Json\JsonDecodeException;
@@ -80,11 +79,6 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
     {
         $this->setVersion('v1');
         $this->setDB(Database::get());
-        $this->setResponse(
-            $this->getResponse()
-                ->withStatus(200)
-                ->withHeader('Content-Type', 'application/json')
-        );
     }
 
 
@@ -173,7 +167,7 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
                 throw HttpBadRequestException::create(["Invalid request: This case shouldn't be reachable."]);
         }
 
-        return $this->createResponse($responseData);
+        return $this->populateResponse($responseData);
     }
 
 
@@ -259,12 +253,14 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
     ): array {
 
         return array_filter([
-            'status' => $statusCode,
+            'code' => $statusCode,
             'body' => $body,
             'headers' => $additionalHeaders,
         ], static fn($v) => $v !== null);
     }
 
+    // TODO: merge this method with createArrayOfResponseData
+    // TODO: and return the response directly in the get|post|put|delete class-methods
     /**
      * Create a ResponseInterface object from the given response data.
      *
@@ -274,29 +270,9 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
      * @param array $responseData An associative array containing 'status', 'body', and 'headers' keys.
      * @return ResponseInterface The constructed ResponseInterface object.
      */
-    protected function createResponse(array $responseData): ResponseInterface
+    protected function populateResponse(array $responseData): ResponseInterface
     {
-        $response = $this->getResponse();
-
-        if (isset($responseData['status'])) {
-            $response = $response->withStatus($responseData['status']);
-        }
-        if (isset($responseData['headers']) && is_array($responseData['headers'])) {
-            foreach ($responseData['headers'] as $name => $values) {
-                if (is_array($values)) {
-                    foreach ($values as $value) {
-                        $response = $response->withHeader($name, $value);
-                    }
-                } else {
-                    $response = $response->withHeader($name, $values);
-                }
-            }
-        }
-        if (isset($responseData['body'])) {
-            $response = $response->withBody(Utils::streamFor($responseData['body']));
-        }
-
-        return $response;
+        return $this->createResponse(...$responseData);
     }
 
 
