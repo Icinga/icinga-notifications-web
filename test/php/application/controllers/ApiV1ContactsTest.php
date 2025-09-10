@@ -842,9 +842,17 @@ YAML;
      * Update a contact with a different identifier and payload id.
      *
      * @dataProvider databases
+     * @depends testPostWithValidData
      */
     public function testPutWithMatchingIdentifierAndDifferentPayloadId(): void
     {
+        $this->sendRequest('POST', 'contacts', [
+            'id' => '0817d973-398e-41d7-9ef2-61cdb7ef41a2',
+            'full_name' => 'Test',
+            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+
+        ]);
+
         $response = $this->sendRequest('PUT', 'contacts/0817d973-398e-41d7-9ef2-61cdb7ef41a2', [
             'id' => '0817d973-398e-41d7-9ef2-61cdb7ef41a3',
             'full_name' => 'Test',
