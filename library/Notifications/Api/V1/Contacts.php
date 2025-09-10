@@ -754,7 +754,7 @@ class Contacts extends ApiV1
             if ($groupId === null) {
                 throw new HttpException(
                     422,
-                    sprintf('Group with identifier %s does not exist', $groupIdentifier)
+                    sprintf('Contactgroup with identifier %s does not exist', $groupIdentifier)
                 );
             }
 
