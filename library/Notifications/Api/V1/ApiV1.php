@@ -21,6 +21,7 @@ use OpenApi\Attributes as OA;
 use Ramsey\Uuid\Uuid;
 use Psr\Http\Message\StreamInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use ValueError;
 
 /**
  * Base class for API version 1.
@@ -113,13 +114,17 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
         ) {
             $methodName = HttpMethod::get->name . self::PLURAL_SUFFIX;
         } else {
-            $methodName = HttpMethod::from($httpMethod)->name;
+            try {
+                $methodName = HttpMethod::from($httpMethod)->name;
+            } catch (ValueError $e) {
+                throw new HttpException(405, "HTTP method $httpMethod is not supported");
+            }
 
             if (! method_exists($this, $methodName)) {
                 throw new HttpException(
                     405,
                     "Method $httpMethod is not supported for endpoint "
-                    . (new \ReflectionClass($this))->getShortName() . '.'
+                    . (new \ReflectionClass($this))->getShortName()
                 );
             }
         }
@@ -220,7 +225,7 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
             if (! in_array($column, $allowedColumns)) {
                 throw HttpBadRequestException::create([
                     sprintf(
-                        'Invalid filter column %s given, only %s are allowed',
+                        'Invalid request parameter: Filter column %s given, only %s are allowed',
                         $column,
                         preg_replace('/,([^,]*)$/', ' and$1', implode(', ', $allowedColumns))
                     )
