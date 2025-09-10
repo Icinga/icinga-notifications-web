@@ -572,7 +572,8 @@ YAML;
     }
 
     /**
-     * Replace a contact group with the same identifier in the Request-URI and the JSON payload, while omitting required fields.
+     * Replace a contact group with the same identifier in the Request-URI
+     * and the JSON payload, while omitting required fields.
      *
      * @dataProvider databases
      * @depends testPostWithValidData
