@@ -196,7 +196,7 @@ class Contacts extends ApiV1
         $result = $this->getDB()->fetchOne($stmt);
 
         if (empty($result)) {
-            throw HttpNotFoundException::create(['Contact not found']);
+            throw new HttpNotFoundException('Contact not found');
         }
 
         $this->createGETRowFinalizer()($result);
@@ -403,29 +403,29 @@ class Contacts extends ApiV1
     public function put(string $identifier, array $requestBody): array
     {
         if (empty($identifier)) {
-            throw HttpBadRequestException::create(['Identifier is required']);
+            throw new HttpBadRequestException('Identifier is required');
         }
 
-        $data = $this->getValidatedRequestBodyData($requestBody);
+        $this->assertValidatedRequestBody($requestBody);
 
-        if ($identifier !== $data['id']) {
-            throw HttpBadRequestException::create(['Identifier mismatch']);
+        if ($identifier !== $requestBody['id']) {
+            throw new HttpBadRequestException('Identifier mismatch');
         }
 
         $this->getDB()->beginTransaction();
 
         if (($contactId = self::getContactId($identifier)) !== null) {
-            if (! empty($data['username'])) {
-                $this->assertUniqueUsername($data['username'], $contactId);
+            if (! empty($requestBody['username'])) {
+                $this->assertUniqueUsername($requestBody['username'], $contactId);
             }
 
-            if (! $channelID = Channels::getChannelId($data['default_channel'])) {
+            if (! $channelID = Channels::getChannelId($requestBody['default_channel'])) {
                 throw new HttpException(422, 'Default channel mismatch');
             }
 
             $this->getDB()->update('contact', [
-                'full_name' => $data['full_name'],
-                'username' => $data['username'] ?? null,
+                'full_name' => $requestBody['full_name'],
+                'username' => $requestBody['username'] ?? null,
                 'default_channel_id' => $channelID,
                 'changed_at' => (int) (new DateTime())->format("Uv"),
             ], ['id = ?' => $contactId]);
@@ -442,17 +442,17 @@ class Contacts extends ApiV1
                 ['contact_id = ?' => $contactId, 'deleted = ?' => 'n']
             );
 
-            if (! empty($data['addresses'])) {
-                $this->addAddresses($contactId, $data['addresses']);
+            if (! empty($requestBody['addresses'])) {
+                $this->addAddresses($contactId, $requestBody['addresses']);
             }
 
-            if (! empty($data['groups'])) {
-                $this->addGroups($contactId, $data['groups']);
+            if (! empty($requestBody['groups'])) {
+                $this->addGroups($contactId, $requestBody['groups']);
             }
 
             $responseCode = 204;
         } else {
-            $this->addContact($data);
+            $this->addContact($requestBody);
             $responseCode = 201;
             $responseBody = '{"status":"success","message":"Contact created successfully"}';
         }
@@ -558,28 +558,28 @@ class Contacts extends ApiV1
     )]
     public function post(?string $identifier, array $requestBody): array
     {
-        $data = $this->getValidatedRequestBodyData($requestBody);
+        $this->assertValidatedRequestBody($requestBody);
 
         $this->getDB()->beginTransaction();
 
         // TODO: keep replacing via POST or move to PUT?
         if (empty($identifier)) {
-            if ($this->getContactId($data['id']) !== null) {
+            if ($this->getContactId($requestBody['id']) !== null) {
                 throw new HttpException(422, 'Contact already exists');
             }
         } else {
             $contactId = $this->getContactId($identifier);
             if ($contactId === null) {
-                throw HttpNotFoundException::create(['Contact not found']);
+                throw new HttpNotFoundException('Contact not found');
             }
 
-            if ($identifier === $data['id'] || $this->getContactId($data['id']) !== null) {
+            if ($identifier === $requestBody['id'] || $this->getContactId($requestBody['id']) !== null) {
                 throw new HttpException(422, 'Contact already exists');
             }
 
             $this->removeContact($contactId);
         }
-        $this->addContact($data);
+        $this->addContact($requestBody);
 
         $this->getDB()->commitTransaction();
 
@@ -588,7 +588,7 @@ class Contacts extends ApiV1
             statusCode: 201,
             body: '{"status":"success","message":"Contact created successfully"}',
             additionalHeaders: [
-                'Location' => 'notifications/api/v1' . self::ROUTE_WITHOUT_IDENTIFIER . '/' . $data['id']
+                'Location' => 'notifications/api/v1' . self::ROUTE_WITHOUT_IDENTIFIER . '/' . $requestBody['id']
             ]
         );
     }
@@ -647,11 +647,11 @@ class Contacts extends ApiV1
     public function delete(string $identifier): array
     {
         if (empty($identifier)) {
-            throw HttpBadRequestException::create(['Identifier is required']);
+            throw new HttpBadRequestException('Identifier is required');
         }
 
         if (($contactId = self::getContactId($identifier)) === null) {
-            throw HttpNotFoundException::create(['Contact not found']);
+            throw new HttpNotFoundException('Contact not found');
         }
 
         $this->getDB()->beginTransaction();
@@ -789,36 +789,36 @@ class Contacts extends ApiV1
     /**
      * Add a new contact with the given data
      *
-     * @param requestBody $data
+     * @param requestBody $requestBody
      *
      * @return void
      * @throws HttpException
      */
-    private function addContact(array $data): void
+    private function addContact(array $requestBody): void
     {
-        if (! empty($data['username'])) {
-            $this->assertUniqueUsername($data['username']);
+        if (! empty($requestBody['username'])) {
+            $this->assertUniqueUsername($requestBody['username']);
         }
-        if (! $channelID = Channels::getChannelId($data['default_channel'])) {
+        if (! $channelID = Channels::getChannelId($requestBody['default_channel'])) {
             throw new HttpException(422, 'Default channel mismatch');
         }
 
         Database::get()->insert('contact', [
-            'full_name'             => $data['full_name'],
-            'username'              => $data['username'] ?? null,
+            'full_name'             => $requestBody['full_name'],
+            'username'              => $requestBody['username'] ?? null,
             'default_channel_id'    => $channelID,
-            'external_uuid'         => $data['id'],
+            'external_uuid'         => $requestBody['id'],
             'changed_at'            => (int) (new DateTime())->format("Uv"),
         ]);
 
         $contactId = Database::get()->lastInsertId();
 
-        if (! empty($data['addresses'])) {
-            $this->addAddresses($contactId, $data['addresses']);
+        if (! empty($requestBody['addresses'])) {
+            $this->addAddresses($contactId, $requestBody['addresses']);
         }
 
-        if (! empty($data['groups'])) {
-            $this->addGroups($contactId, $data['groups']);
+        if (! empty($requestBody['groups'])) {
+            $this->addGroups($contactId, $requestBody['groups']);
         }
     }
 
@@ -954,51 +954,51 @@ class Contacts extends ApiV1
      *
      * @throws HttpBadRequestException if the request body is invalid
      */
-    private function getValidatedRequestBodyData(array $data): array
+    private function assertValidatedRequestBody(array $requestBody): void
     {
         $msgPrefix = 'Invalid request body: ';
 
         if (
-            ! isset($data['id'], $data['full_name'], $data['default_channel'])
-            || ! is_string($data['id'])
-            || ! is_string($data['full_name'])
-            || ! is_string($data['default_channel'])
+            ! isset($requestBody['id'], $requestBody['full_name'], $requestBody['default_channel'])
+            || ! is_string($requestBody['id'])
+            || ! is_string($requestBody['full_name'])
+            || ! is_string($requestBody['default_channel'])
         ) {
-            throw HttpBadRequestException::create(
-                [$msgPrefix . 'the fields id, full_name and default_channel must be present and of type string']
+            throw new HttpBadRequestException(
+                $msgPrefix . 'the fields id, full_name and default_channel must be present and of type string'
             );
         }
 
-        if (! Uuid::isValid($data['id'])) {
-            throw HttpBadRequestException::create([$msgPrefix . 'given id is not a valid UUID']);
+        if (! Uuid::isValid($requestBody['id'])) {
+            throw new HttpBadRequestException($msgPrefix . 'given id is not a valid UUID');
         }
 
-        if (! Uuid::isValid($data['default_channel'])) {
-            throw HttpBadRequestException::create([$msgPrefix . 'given default_channel is not a valid UUID']);
+        if (! Uuid::isValid($requestBody['default_channel'])) {
+            throw new HttpBadRequestException($msgPrefix . 'given default_channel is not a valid UUID');
         }
 
-        if (! empty($data['username']) && ! is_string($data['username'])) {
-            throw HttpBadRequestException::create([$msgPrefix . 'expects username to be a string']);
+        if (! empty($requestBody['username']) && ! is_string($requestBody['username'])) {
+            throw new HttpBadRequestException($msgPrefix . 'expects username to be a string');
         }
 
-        if (! empty($data['groups'])) {
-            if (! is_array($data['groups'])) {
-                throw HttpBadRequestException::create([$msgPrefix . 'expects groups to be an array']);
+        if (! empty($requestBody['groups'])) {
+            if (! is_array($requestBody['groups'])) {
+                throw new HttpBadRequestException($msgPrefix . 'expects groups to be an array');
             }
 
-            foreach ($data['groups'] as $group) {
+            foreach ($requestBody['groups'] as $group) {
                 if (! is_string($group) || ! Uuid::isValid($group)) {
-                    throw HttpBadRequestException::create([$msgPrefix . 'group identifiers must be valid UUIDs']);
+                    throw new HttpBadRequestException($msgPrefix . 'group identifiers must be valid UUIDs');
                 }
             }
         }
 
-        if (! empty($data['addresses'])) {
-            if (! is_array($data['addresses'])) {
-                throw HttpBadRequestException::create([$msgPrefix . 'expects addresses to be an array']);
+        if (! empty($requestBody['addresses'])) {
+            if (! is_array($requestBody['addresses'])) {
+                throw new HttpBadRequestException($msgPrefix . 'expects addresses to be an array');
             }
 
-            $addressTypes = array_keys($data['addresses']);
+            $addressTypes = array_keys($requestBody['addresses']);
 
             $types = Database::get()->fetchCol(
                 (new Select())
@@ -1008,27 +1008,25 @@ class Contacts extends ApiV1
             );
 
             if (count($types) !== count($addressTypes)) {
-                throw HttpBadRequestException::create([
+                throw new HttpBadRequestException(
                     sprintf(
                         $msgPrefix . 'undefined address type %s given',
                         implode(', ', array_diff($addressTypes, $types))
                     )
-                ]);
+                );
             }
             //TODO: is it a good idea to check valid channel types here?, if yes,
             //default_channel and group identifiers must be checked here as well..404 OR 400?
 
             if (
-                ! empty($data['addresses']['email'])
-                && ! (new EmailAddressValidator())->isValid($data['addresses']['email'])
+                ! empty($requestBody['addresses']['email'])
+                && ! (new EmailAddressValidator())->isValid($requestBody['addresses']['email'])
             ) {
-                throw HttpBadRequestException::create([$msgPrefix . 'an invalid email address given']);
+                throw new HttpBadRequestException($msgPrefix . 'an invalid email address given');
             }
         }
-
-        /** @var requestBody $data */
-        return $data;
     }
+
     /**
      * Fetch the user(contact) identifiers of the contactgroup with the given id from the contactgroup_member table
      *
