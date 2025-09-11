@@ -3,6 +3,7 @@
 namespace Icinga\Module\Notifications\Api\V1;
 
 use Exception;
+use GuzzleHttp\Psr7\Response;
 use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Http\HttpException;
 use Icinga\Exception\Json\JsonDecodeException;
@@ -154,24 +155,16 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
             throw new HttpBadRequestException('The given identifier is not a valid UUID');
         }
 
-        switch ($httpMethod) {
-            case self::PUT:
-            case self::POST:
-                $responseData = $this->$methodName($identifier, $this->getValidRequestBody($request));
-                break;
-            case self::GET:
-                $responseData = str_contains($methodName, self::PLURAL_SUFFIX)
-                    ? $this->$methodName($filterStr)
-                    : $this->$methodName($identifier);
-                break;
-            case self::DELETE:
-                $responseData = $this->$methodName($identifier);
-                break;
-            default:
-                throw HttpBadRequestException::create(["Invalid request: This case shouldn't be reachable."]);
-        }
+        $responseData = match ($httpMethod) {
+            self::PUT, self::POST => $this->$methodName($identifier, $this->getValidRequestBody($request)),
+            self::GET => str_contains($methodName, self::PLURAL_SUFFIX)
+                ? $this->$methodName($filterStr)
+                : $this->$methodName($identifier),
+            self::DELETE => $this->$methodName($identifier),
+            default => throw new HttpBadRequestException("Invalid request: This case shouldn't be reachable."),
+        };
 
-        return $this->populateResponse($responseData);
+        return new Response(...$responseData);
     }
 
 
@@ -239,46 +232,6 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
             }
         };
     }
-
-    /**
-     * Create an array of response data.
-     *
-     * This method constructs an array containing the status code, body, and headers to create a response.
-     *
-     * @param ?int $statusCode The HTTP status code for the response.
-     * @param ?array $additionalHeaders An associative array of additional headers to include in the response.
-     * @param bool|callable|float|int|Iterator|null|StreamInterface|string $body The body of the response.
-     * @return array An associative array containing 'status', 'body', and 'headers' keys.
-     */
-    protected function createArrayOfResponseData(
-        int $statusCode = null,
-        bool|callable|float|int|Iterator|null|StreamInterface|string $body = null,
-        array $additionalHeaders = null,
-    ): array {
-
-        return array_filter([
-            'code' => $statusCode,
-            'body' => $body,
-            'headers' => $additionalHeaders,
-        ], static fn($v) => $v !== null);
-    }
-
-    // TODO: merge this method with createArrayOfResponseData
-    // TODO: and return the response directly in the get|post|put|delete class-methods
-    /**
-     * Create a ResponseInterface object from the given response data.
-     *
-     * This method constructs a ResponseInterface object using the provided response data array.
-     * It sets the status code, headers, and body of the response based on the data in the array.
-     *
-     * @param array $responseData An associative array containing 'status', 'body', and 'headers' keys.
-     * @return ResponseInterface The constructed ResponseInterface object.
-     */
-    protected function populateResponse(array $responseData): ResponseInterface
-    {
-        return $this->createResponse(...$responseData);
-    }
-
 
     /**
      * Validate that the request has a JSON content type and return the parsed JSON content.
