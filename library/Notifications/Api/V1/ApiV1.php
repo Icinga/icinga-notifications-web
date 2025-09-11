@@ -75,10 +75,10 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
      * @var string
      */
     protected const PLURAL_SUFFIX = 'Plural';
+    public const VERSION = 'v1';
 
     protected function init(): void
     {
-        $this->setVersion('v1');
         $this->setDB(Database::get());
     }
 

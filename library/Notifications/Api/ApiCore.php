@@ -48,12 +48,6 @@ abstract class ApiCore
     public const OPENAPI_ENDPOINT = 'openapi';
 
     /**
-     * The version of the API being used.
-     *
-     * @var string
-     */
-    private string $version;
-    /**
      * The database connection used for API operations.
      *
      * @var Connection
@@ -94,76 +88,13 @@ abstract class ApiCore
      * This method sets the database connection that will be used for API operations.
      *
      * @param Connection $db
-     * @return void
+     * @return static
      */
-    protected function setDB(Connection $db): void
+    protected function setDB(Connection $db): static
     {
         $this->db = $db;
-    }
 
-    /**
-     * Get the API version
-     *
-     * This method returns the version of the API being used.
-     *
-     * @return string
-     */
-    protected function getVersion(): string
-    {
-        return $this->version;
-    }
-
-    /**
-     * Set the API version
-     *
-     * This method sets the version of the API being used.
-     * It can only be set once and will not overwrite an existing version.
-     *
-     * @param string $version
-     * @return void
-     */
-    protected function setVersion(string $version): void
-    {
-        if (! isset($this->version)) {
-            $this->version = $version;
-        }
-    }
-
-    /**
-     * Get the files including the ApiCore.php file and any other files matching the given filter.
-     *
-     * @param string $fileFilter
-     * @return array
-     * @throws ProgrammingError
-     */
-    protected function getFilesIncludingDocs(string $fileFilter = '*'): array
-    {
-        $apiCoreDir = __DIR__ . '/ApiCore.php';
-        // TODO: find a way to get the module name from the request or class context
-//        $moduleName = $this->getRequest()->getModuleName() ?: 'default;';
-        $moduleName = 'notifications';
-        if ($moduleName === 'default' || $moduleName === '') {
-            $dir = Icinga::app()->getLibraryDir('Icinga/Application/Api/' . ucfirst($this->getVersion()) . '/');
-        } else {
-            $dir = Icinga::app()->getModuleManager()->getModuleDir($moduleName)
-                . '/library/' . ucfirst($moduleName) . '/Api/' . strtoupper($this->getVersion()) . '/';
-        }
-
-        $dir = rtrim($dir, '/') . '/';
-        if (! is_dir($dir)) {
-            throw new \RuntimeException("Directory $dir does not exist");
-        }
-        if (! is_readable($dir)) {
-            throw new \RuntimeException("Directory $dir is not readable");
-        }
-
-        $files = glob($dir . $fileFilter, GLOB_NOSORT | GLOB_BRACE | GLOB_MARK);
-        array_unshift($files, $apiCoreDir);
-        if ($files === false) {
-            throw new \RuntimeException("Failed to read files from directory: $dir");
-        }
-
-        return $files;
+        return $this;
     }
 
     /**
