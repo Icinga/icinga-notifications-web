@@ -94,7 +94,7 @@ class ContactGroups extends ApiV1
 
         $this->createGETRowFinalizer()($result);
 
-        return $this->createArrayOfResponseData(body: Json::sanitize($result));
+        return ['body' => Json::sanitize($result)];
     }
 
     /**
@@ -121,9 +121,7 @@ class ContactGroups extends ApiV1
             $stmt->where($filter);
         }
 
-        return $this->createArrayOfResponseData(
-            body: $this->createContentGenerator($this->getDB(), $stmt, $this->createGETRowFinalizer())
-        );
+        return ['body' => $this->createContentGenerator($this->getDB(), $stmt, $this->createGETRowFinalizer())];
     }
 
     /**
@@ -179,7 +177,7 @@ class ContactGroups extends ApiV1
 
         $this->getDB()->commitTransaction();
 
-        return $this->createArrayOfResponseData(statusCode: $responseCode, body: $responseBody ?? null);
+        return ['status' => $responseCode, 'body' => $responseBody ?? null];
     }
 
     /**
@@ -222,13 +220,13 @@ class ContactGroups extends ApiV1
 
         $this->getDB()->commitTransaction();
 
-        return $this->createArrayOfResponseData(
-            statusCode: 201,
-            body: '{"status":"success","message":"Contactgroup created successfully"}',
-            additionalHeaders: [
+        return [
+            'status' => 201,
+            'body' => '{"status":"success","message":"Contactgroup created successfully"}',
+            'headers' => [
                 'Location' => 'notifications/api/v1' . self::ROUTE_WITHOUT_IDENTIFIER . '/' . $requestBody['id']
             ]
-        );
+        ];
     }
 
     /**
@@ -253,7 +251,7 @@ class ContactGroups extends ApiV1
         $this->removeContactgroup($contactgroupId);
         $this->getDB()->commitTransaction();
 
-        return $this->createArrayOfResponseData(statusCode: 204);
+        return ['status' => 204];
     }
 
     /**
