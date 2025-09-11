@@ -89,7 +89,7 @@ class ContactGroups extends ApiV1
         $result = $this->getDB()->fetchOne($stmt);
 
         if (empty($result)) {
-            throw HttpNotFoundException::create(['Contactgroup not found']);
+            throw new HttpNotFoundException('Contactgroup not found');
         }
 
         $this->createGETRowFinalizer()($result);
@@ -139,25 +139,25 @@ class ContactGroups extends ApiV1
     public function put(string $identifier, array $requestBody): array
     {
         if (empty($identifier)) {
-            throw HttpBadRequestException::create(['Identifier is required']);
+            throw new HttpBadRequestException('Identifier is required');
         }
 
-        $data = $this->getValidatedRequestBodyData($requestBody);
+        $this->assertValidatedRequestBody($requestBody);
 
-        if ($identifier !== $data['id']) {
-            throw HttpBadRequestException::create(['Identifier mismatch']);
+        if ($identifier !== $requestBody['id']) {
+            throw new HttpBadRequestException('Identifier mismatch');
         }
 
         $this->getDB()->beginTransaction();
 
         if (($contactgroupId = self::getGroupId($identifier)) !== null) {
-            if (! empty($data['name'])) {
-                $this->assertUniqueName($data['name'], $contactgroupId);
+            if (! empty($requestBody['name'])) {
+                $this->assertUniqueName($requestBody['name'], $contactgroupId);
             }
 
             $this->getDB()->update(
                 'contactgroup',
-                ['name' => $data['name']],
+                ['name' => $requestBody['name']],
                 ['id = ?' => $contactgroupId]
             );
             $this->getDB()->update(
@@ -166,13 +166,13 @@ class ContactGroups extends ApiV1
                 ['contactgroup_id = ?' => $contactgroupId, 'deleted = ?' => 'n']
             );
 
-            if (! empty($data['users'])) {
-                $this->addUsers($contactgroupId, $data['users']);
+            if (! empty($requestBody['users'])) {
+                $this->addUsers($contactgroupId, $requestBody['users']);
             }
 
             $responseCode = 204;
         } else {
-            $this->addContactgroup($data);
+            $this->addContactgroup($requestBody);
             $responseCode = 201;
             $responseBody = '{"status":"success","message":"Contactgroup created successfully"}';
         }
@@ -196,28 +196,28 @@ class ContactGroups extends ApiV1
      */
     public function post(?string $identifier, array $requestBody): array
     {
-        $data = $this->getValidatedRequestBodyData($requestBody);
+        $this->assertValidatedRequestBody($requestBody);
 
         $this->getDB()->beginTransaction();
 
         if ($identifier === null) {
-            if (self::getGroupId($data['id'])) {
+            if (self::getGroupId($requestBody['id'])) {
                 throw new HttpException(422, 'Contactgroup already exists');
             }
 
-            $this->addContactgroup($data);
+            $this->addContactgroup($requestBody);
         } else {
             $contactgroupId = self::getGroupId($identifier);
             if ($contactgroupId === null) {
-                throw HttpNotFoundException::create(['Contactgroup not found']);
+                throw new HttpNotFoundException('Contactgroup not found');
             }
 
-            if ($identifier === $data['id'] || self::getGroupId($data['id']) !== null) {
+            if ($identifier === $requestBody['id'] || self::getGroupId($requestBody['id']) !== null) {
                 throw new HttpException(422, 'Contactgroup already exists');
             }
 
             $this->removeContactgroup($contactgroupId);
-            $this->addContactgroup($data);
+            $this->addContactgroup($requestBody);
         }
 
         $this->getDB()->commitTransaction();
@@ -226,7 +226,7 @@ class ContactGroups extends ApiV1
             statusCode: 201,
             body: '{"status":"success","message":"Contactgroup created successfully"}',
             additionalHeaders: [
-                'Location' => 'notifications/api/v1' . self::ROUTE_WITHOUT_IDENTIFIER . '/' . $data['id']
+                'Location' => 'notifications/api/v1' . self::ROUTE_WITHOUT_IDENTIFIER . '/' . $requestBody['id']
             ]
         );
     }
@@ -242,11 +242,11 @@ class ContactGroups extends ApiV1
     public function delete(string $identifier): array
     {
         if (empty($identifier)) {
-            throw HttpBadRequestException::create(['Identifier is required']);
+            throw new HttpBadRequestException('Identifier is required');
         }
 
         if (($contactgroupId = self::getGroupId($identifier)) === null) {
-            throw HttpNotFoundException::create(['Contactgroup not found']);
+            throw new HttpNotFoundException('Contactgroup not found');
         }
 
         $this->getDB()->beginTransaction();
@@ -387,66 +387,61 @@ class ContactGroups extends ApiV1
     /**
      * Get the validated POST|PUT request data
      *
-     * @return requestBody
-     *
      * @throws HttpBadRequestException if the request body is invalid
      */
-    private function getValidatedRequestBodyData(array $data): array
+    private function assertValidatedRequestBody(array $requestBody): void
     {
         $msgPrefix = 'Invalid request body: ';
 
         if (
-            ! isset($data['id'], $data['name'])
-            || ! is_string($data['id'])
-            || ! is_string($data['name'])
+            ! isset($requestBody['id'], $requestBody['name'])
+            || ! is_string($requestBody['id'])
+            || ! is_string($requestBody['name'])
         ) {
-            throw HttpBadRequestException::create(
-                [$msgPrefix . 'the fields id and name must be present and of type string']
+            throw new HttpBadRequestException(
+                $msgPrefix . 'the fields id and name must be present and of type string'
             );
         }
 
-        if (! Uuid::isValid($data['id'])) {
-            throw HttpBadRequestException::create([$msgPrefix . 'given id is not a valid UUID']);
+        if (! Uuid::isValid($requestBody['id'])) {
+            throw new HttpBadRequestException($msgPrefix . 'given id is not a valid UUID');
         }
 
-        if (! empty($data['users'])) {
-            if (! is_array($data['users'])) {
-                throw HttpBadRequestException::create([$msgPrefix .  'expects users to be an array']);
+        if (! empty($requestBody['users'])) {
+            if (! is_array($requestBody['users'])) {
+                throw new HttpBadRequestException($msgPrefix .  'expects users to be an array');
             }
 
-            foreach ($data['users'] as $user) {
+            foreach ($requestBody['users'] as $user) {
                 if (! is_string($user) || ! Uuid::isValid($user)) {
-                    throw HttpBadRequestException::create([$msgPrefix . 'user identifiers must be valid UUIDs']);
+                    throw new HttpBadRequestException($msgPrefix . 'user identifiers must be valid UUIDs');
                 }
 
                 //TODO: check if users exist, here?
             }
         }
-
-        /** @var requestBody $data */
-        return $data;
     }
 
     /**
      * Add a new contactgroup with the given data
      *
-     * @param requestBody $data
+     * @param requestBody $requestBody
      *
      * @return void
      * @throws HttpNotFoundException
      */
-    private function addContactgroup(array $data): void
+    private function addContactgroup(array $requestBody): void
     {
         Database::get()->insert('contactgroup', [
-            'name'              => $data['name'],
-            'external_uuid'     => $data['id'],
+            'name'              => $requestBody['name'],
+            'external_uuid'     => $requestBody['id'],
             'changed_at'            => (int) (new DateTime())->format("Uv"),
         ]);
 
         $id = Database::get()->lastInsertId();
 
-        if (! empty($data['users'])) {
-            $this->addUsers($id, $data['users']);
+        if (! empty($requestBody['users'])) {
+            $this->addUsers($id, $requestBody['users']);
         }
     }
 
