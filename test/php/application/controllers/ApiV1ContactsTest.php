@@ -26,7 +26,7 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
 
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertSame(
-            '{"content":[{"id":"0817d973-398e-41d7-9ef2-61cdb7ef41a2","full_name":"Test","username":null,'
+            '{"data":[{"id":"0817d973-398e-41d7-9ef2-61cdb7ef41a2","full_name":"Test","username":null,'
             . '"default_channel":"0817d973-398e-41d7-9cd2-61cdb7ef41a1","groups":[],"addresses":[]}]}',
             $content
         );
@@ -45,7 +45,7 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
-        $this->assertSame('{"content":[]}', $content);
+        $this->assertSame('{"data":[]}', $content);
 
         // Create new contact
         $this->sendRequest('POST', 'contacts', [
@@ -65,7 +65,7 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
 
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertSame(
-            '{"content":[{"id":"0817d973-398e-41d7-9ef2-61cdb7ef41a2","full_name":"Test","username":null,'
+            '{"data":[{"id":"0817d973-398e-41d7-9ef2-61cdb7ef41a2","full_name":"Test","username":null,'
             . '"default_channel":"0817d973-398e-41d7-9cd2-61cdb7ef41a1","groups":[],"addresses":[]},' . PHP_EOL
             . '{"id":"0817d973-398e-41d7-9ef2-61cdb7ef41a3","full_name":"Test (2)","username":null,'
             . '"default_channel":"0817d973-398e-41d7-9cd2-61cdb7ef41a1","groups":[],"addresses":[]}]}',
@@ -121,17 +121,11 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
      */
     public function testGetWithNonMatchingFilter(): void
     {
-        $this->sendRequest('POST', 'contacts', [
-            'id' => '0817d973-398e-41d7-9ef2-61cdb7ef41a2',
-            'name' => 'Test',
-            'users' => []
-        ]);
-
         $response = $this->sendRequest('GET', 'contacts?full_name=not_test');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
-        $this->assertSame('{"content":[]}', $content);
+        $this->assertSame('{"data":[]}', $content);
     }
 
     /**

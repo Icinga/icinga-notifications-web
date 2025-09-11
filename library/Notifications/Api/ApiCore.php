@@ -189,7 +189,7 @@ abstract class ApiCore
         $stmt->limit($batchSize);
         $offset = 0;
 
-        yield '{"content":[';
+        yield '{"data":[';
          $res = $db->select($stmt->offset($offset));
         do {
             /** @var stdClass $row */
@@ -217,12 +217,6 @@ abstract class ApiCore
         ?string $reason = null
     ): ResponseInterface {
 
-        return new Response(
-            $code,
-            $headers,
-            $body,
-            $version,
-            $reason
-        );
+        return new Response($code, $headers, $body, $version, $reason);
     }
 }

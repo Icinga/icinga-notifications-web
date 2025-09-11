@@ -66,7 +66,7 @@ class ApiController extends CompatController
 
             $this->emitResponse($errorResponse);
         }
-        exit();
+        exit;
     }
 
     /**

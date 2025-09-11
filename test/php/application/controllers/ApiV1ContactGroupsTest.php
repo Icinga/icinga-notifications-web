@@ -26,7 +26,7 @@ class ApiV1ContactGroupsTest extends BaseApiV1TestCase
 
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertSame(
-            '{"content":[{"id":"0817d973-398e-41d7-9ef2-61cdb7ef41a2","name":"Test","users":[]}]}',
+            '{"data":[{"id":"0817d973-398e-41d7-9ef2-61cdb7ef41a2","name":"Test","users":[]}]}',
             $content
         );
     }
@@ -43,7 +43,7 @@ class ApiV1ContactGroupsTest extends BaseApiV1TestCase
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
-        $this->assertSame('{"content":[]}', $content);
+        $this->assertSame('{"data":[]}', $content);
 
         // Create new contact groups
         $this->sendRequest('PUT', 'contactgroups/0817d973-398e-41d7-9ef2-61cdb7ef41a2', [
@@ -63,7 +63,7 @@ class ApiV1ContactGroupsTest extends BaseApiV1TestCase
 
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertSame(
-            '{"content":[{"id":"0817d973-398e-41d7-9ef2-61cdb7ef41a2","name":"Test","users":[]},' . PHP_EOL
+            '{"data":[{"id":"0817d973-398e-41d7-9ef2-61cdb7ef41a2","name":"Test","users":[]},' . PHP_EOL
             . '{"id":"0817d973-398e-41d7-9ef2-61cdb7ef41a3","name":"Test (2)","users":[]}]}',
             $content
         );
@@ -124,7 +124,7 @@ class ApiV1ContactGroupsTest extends BaseApiV1TestCase
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
-        $this->assertSame('{"content":[]}', $content);
+        $this->assertSame('{"data":[]}', $content);
     }
 
     /**
