@@ -128,30 +128,30 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
         }
 
         if ($httpMethod !== HttpMethod::get->value && ! empty($filterStr)) {
-            throw HttpBadRequestException::create(
-                ['Invalid request parameter: Filter is only allowed for GET requests']
+            throw new HttpBadRequestException(
+                'Invalid request parameter: Filter is only allowed for GET requests'
             );
         } elseif ($httpMethod === HttpMethod::get->value && ! empty($identifier) && ! empty($filterStr)) {
-            throw HttpBadRequestException::create([
+            throw new HttpBadRequestException(
                 "Invalid request: $httpMethod with identifier and query parameters,"
                 . " it's not allowed to use both together."
-            ]);
+            );
         } elseif (in_array($httpMethod, [HttpMethod::put->value, HttpMethod::delete->value]) && empty($identifier)) {
-            throw HttpBadRequestException::create(["Invalid request: Identifier is required"]);
+            throw new HttpBadRequestException("Invalid request: Identifier is required");
         } elseif (
             in_array($httpMethod, [HttpMethod::put->value, HttpMethod::post->value])
             && $request->getHeaderLine('Content-Type') !== 'application/json'
         ) {
-            throw HttpBadRequestException::create(['Invalid request header: Content-Type must be application/json']);
+            throw new HttpBadRequestException('Invalid request header: Content-Type must be application/json');
         } elseif (
             ! in_array($httpMethod, [HttpMethod::put->value, HttpMethod::post->value])
             && (! empty($request->getBody()->getSize()) || ! empty($request->getParsedBody()))
         ) {
-            throw HttpBadRequestException::create(['Invalid request: Body is only allowed for POST and PUT requests']);
+            throw new HttpBadRequestException('Invalid request: Body is only allowed for POST and PUT requests');
         }
 
         if (! empty($identifier) && ! Uuid::isValid($identifier)) {
-            throw HttpBadRequestException::create(['The given identifier is not a valid UUID']);
+            throw new HttpBadRequestException('The given identifier is not a valid UUID');
         }
 
         switch ($httpMethod) {
@@ -199,7 +199,7 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
 
                 return FilterProcessor::assembleFilter($filterRule);
             } catch (Exception $e) {
-                throw HttpBadRequestException::create([$e->getMessage()]);
+                throw new HttpBadRequestException($e->getMessage());
             }
         }
         return false;
@@ -221,18 +221,18 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
         return function (Condition $condition) use ($allowedColumns, $idColumnName) {
             $column = $condition->getColumn();
             if (! in_array($column, $allowedColumns)) {
-                throw HttpBadRequestException::create([
+                throw new HttpBadRequestException(
                     sprintf(
                         'Invalid request parameter: Filter column %s given, only %s are allowed',
                         $column,
                         preg_replace('/,([^,]*)$/', ' and$1', implode(', ', $allowedColumns))
                     )
-                ]);
+                );
             }
 
             if ($column === 'id') {
                 if (! Uuid::isValid($condition->getValue())) {
-                    throw HttpBadRequestException::create(['The given filter id is not a valid UUID']);
+                    throw new HttpBadRequestException('The given filter id is not a valid UUID');
                 }
 
                 $condition->setColumn($idColumnName);
@@ -296,13 +296,13 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
         $msgPrefix = 'Invalid request body: ';
         $body = $request->getBody()->getContents();
         if (empty($body)) {
-            throw HttpBadRequestException::create([$msgPrefix . 'given content is empty']);
+            throw new HttpBadRequestException($msgPrefix . 'given content is empty');
         }
 
         try {
             $validBody = Json::decode($body, true);
         } catch (JsonDecodeException $e) {
-            throw HttpBadRequestException::create([$msgPrefix . 'given content is not a valid JSON']);
+            throw new HttpBadRequestException($msgPrefix . 'given content is not a valid JSON');
         }
 
         return $validBody;
