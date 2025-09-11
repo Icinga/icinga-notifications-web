@@ -158,7 +158,7 @@ class Channels extends ApiV1
 
         $this->createGETRowFinalizer()($result);
 
-        return $this->createArrayOfResponseData(body: Json::sanitize($result));
+        return ['body' => Json::sanitize($result)];
     }
 
     /**
@@ -185,9 +185,7 @@ class Channels extends ApiV1
             $stmt->where($filter);
         }
 
-        return $this->createArrayOfResponseData(
-            body: $this->createContentGenerator($this->getDB(), $stmt, $this->createGETRowFinalizer())
-        );
+        return ['body' => $this->createContentGenerator($this->getDB(), $stmt, $this->createGETRowFinalizer())];
     }
 
     /**

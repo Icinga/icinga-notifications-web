@@ -208,15 +208,4 @@ abstract class ApiCore
         } while ($res->rowCount());
         yield ']}';
     }
-
-    protected function createResponse(
-        int $code = 200,
-        array $headers = [],
-        $body = null,
-        string $version = '1.1',
-        ?string $reason = null
-    ): ResponseInterface {
-
-        return new Response($code, $headers, $body, $version, $reason);
-    }
 }
