@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Notifications\Api\V1;
 
+use Icinga\Application\Icinga;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Notifications\Common\PsrLogger;
 use OpenApi\Generator;
@@ -180,6 +181,45 @@ class OpenApi extends ApiV1
             file_put_contents(self::OPENAPI_PATH, $oad);
         }
 
-        return $this->createArrayOfResponseData(body: $oad);
+        return ['body' => $oad];
     }
+
+
+    /**
+     * Get the files including the ApiCore.php file and any other files matching the given filter.
+     *
+     * @param string $fileFilter
+     * @return array
+     * @throws ProgrammingError
+     */
+    protected function getFilesIncludingDocs(string $fileFilter = '*'): array
+    {
+        $apiCoreDir = __DIR__ . '/ApiCore.php';
+        // TODO: find a way to get the module name from the request or class context
+//        $moduleName = $this->getRequest()->getModuleName() ?: 'default;';
+        $moduleName = 'notifications';
+        if ($moduleName === 'default' || $moduleName === '') {
+            $dir = Icinga::app()->getLibraryDir('Icinga/Application/Api/' . ucfirst(static::VERSION) . '/');
+        } else {
+            $dir = Icinga::app()->getModuleManager()->getModuleDir($moduleName)
+                . '/library/' . ucfirst($moduleName) . '/Api/' . strtoupper(static::VERSION) . '/';
+        }
+
+        $dir = rtrim($dir, '/') . '/';
+        if (! is_dir($dir)) {
+            throw new \RuntimeException("Directory $dir does not exist");
+        }
+        if (! is_readable($dir)) {
+            throw new \RuntimeException("Directory $dir is not readable");
+        }
+
+        $files = glob($dir . $fileFilter, GLOB_NOSORT | GLOB_BRACE | GLOB_MARK);
+        array_unshift($files, $apiCoreDir);
+        if ($files === false) {
+            throw new \RuntimeException("Failed to read files from directory: $dir");
+        }
+
+        return $files;
+    }
+
 }
