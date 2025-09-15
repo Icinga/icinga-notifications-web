@@ -201,7 +201,7 @@ class Contacts extends ApiV1
 
         $this->createGETRowFinalizer()($result);
 
-        return ['body' => Json::sanitize($result)];
+        return ['body' => Json::sanitize(['data' => [$result]])];
     }
 
     /**
@@ -407,7 +407,7 @@ class Contacts extends ApiV1
         $this->assertValidatedRequestBody($requestBody);
 
         if ($identifier !== $requestBody['id']) {
-            throw new HttpBadRequestException('Identifier mismatch');
+            throw new HttpException(422, 'Identifier mismatch');
         }
 
         $this->getDB()->beginTransaction();
@@ -448,16 +448,21 @@ class Contacts extends ApiV1
                 $this->addGroups($contactId, $requestBody['groups']);
             }
 
-            $responseCode = 204;
+            $result = ['status' => 204];
         } else {
             $this->addContact($requestBody);
-            $responseCode = 201;
-            $responseBody = '{"status":"success","message":"Contact created successfully"}';
+            $result = [
+                'status' => 201,
+                'body' => '{"message":"Contact created successfully"}',
+                'headers' => [
+                    'Location' => 'notifications/api/v1' . self::ROUTE_WITHOUT_IDENTIFIER . '/' . $requestBody['id']
+                ]
+            ];
         }
 
         $this->getDB()->commitTransaction();
 
-        return ['status' => $responseCode, 'body' => $responseBody ?? null];
+        return $result;
     }
 
     /**
@@ -561,20 +566,25 @@ class Contacts extends ApiV1
         $this->getDB()->beginTransaction();
 
         // TODO: keep replacing via POST or move to PUT?
-        if (empty($identifier)) {
-            if ($this->getContactId($requestBody['id']) !== null) {
-                throw new HttpException(422, 'Contact already exists');
+        $emptyIdentifier = empty($identifier);
+        if (! $emptyIdentifier) {
+            if ($identifier === $requestBody['id']) {
+                throw new HttpException(
+                    422,
+                    'Identifier mismatch: the Payload id must be different from the URL identifier'
+                );
             }
-        } else {
             $contactId = $this->getContactId($identifier);
             if ($contactId === null) {
                 throw new HttpNotFoundException('Contact not found');
             }
+        }
 
-            if ($identifier === $requestBody['id'] || $this->getContactId($requestBody['id']) !== null) {
-                throw new HttpException(422, 'Contact already exists');
-            }
+        if ($this->getContactId($requestBody['id']) !== null) {
+            throw new HttpException(409, 'Contact already exists');
+        }
 
+        if (! $emptyIdentifier) {
             $this->removeContact($contactId);
         }
         $this->addContact($requestBody);
@@ -584,7 +594,7 @@ class Contacts extends ApiV1
 
         return [
             'status' => 201,
-            'body' => '{"status":"success","message":"Contact created successfully"}',
+            'body' => '{"message":"Contact created successfully"}',
             'headers' => [
                 'Location' => 'notifications/api/v1' . self::ROUTE_WITHOUT_IDENTIFIER . '/' . $requestBody['id']
             ]
@@ -945,12 +955,15 @@ class Contacts extends ApiV1
     }
 
     // TODO: validate via class attributes or openapi schema? Is it performant enough?
+
     /**
      * Get the validated POST|PUT request data
      *
-     * @return requestBody
+     * @param array $requestBody
+     * @return void
      *
      * @throws HttpBadRequestException if the request body is invalid
+     * @throws HttpException if the request body is invalid
      */
     private function assertValidatedRequestBody(array $requestBody): void
     {
@@ -962,7 +975,8 @@ class Contacts extends ApiV1
             || ! is_string($requestBody['full_name'])
             || ! is_string($requestBody['default_channel'])
         ) {
-            throw new HttpBadRequestException(
+            throw new HttpException(
+                422,
                 $msgPrefix . 'the fields id, full_name and default_channel must be present and of type string'
             );
         }
@@ -986,7 +1000,10 @@ class Contacts extends ApiV1
 
             foreach ($requestBody['groups'] as $group) {
                 if (! is_string($group) || ! Uuid::isValid($group)) {
-                    throw new HttpBadRequestException($msgPrefix . 'group identifiers must be valid UUIDs');
+                    throw new HttpException(
+                        422,
+                        $msgPrefix . 'the group identifier ' . $group . ' is not a valid UUID'
+                    );
                 }
             }
         }
@@ -1006,7 +1023,8 @@ class Contacts extends ApiV1
             );
 
             if (count($types) !== count($addressTypes)) {
-                throw new HttpBadRequestException(
+                throw new HttpException(
+                    422,
                     sprintf(
                         $msgPrefix . 'undefined address type %s given',
                         implode(', ', array_diff($addressTypes, $types))

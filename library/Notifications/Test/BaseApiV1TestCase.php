@@ -6,6 +6,7 @@ use DateTime;
 use GuzzleHttp\Client;
 use Icinga\Application\Config;
 use Icinga\Application\Icinga;
+use Icinga\Util\Json;
 use ipl\Sql\Connection;
 use ipl\Sql\Test\Databases;
 use Psr\Http\Message\ResponseInterface;
@@ -18,6 +19,14 @@ class BaseApiV1TestCase extends TestCase
 
     protected const CHANNEL_UUID = '0817d973-398e-41d7-9cd2-61cdb7ef41a1';
     protected const CHANNEL_UUID_2 = '0817d973-398e-41d7-9cd2-61cdb7ef41a2';
+    protected const CONTACT_UUID = '1817d973-398e-41d7-9cd2-61cdb7ef41a1';
+    protected const CONTACT_UUID_2 = '1817d973-398e-41d7-9cd2-61cdb7ef41a2';
+    protected const GROUP_UUID = '2817d973-398e-41d7-9cd2-61cdb7ef41a1';
+    protected const GROUP_UUID_2 = '2817d973-398e-41d7-9cd2-61cdb7ef41a2';
+    /**
+     * @var string UUID template, add 2 chars [0-9|a-f] to create a valid UUID
+     */
+    protected const UUID_INCOMPLETE = '3817d973-398e-41d7-9cd2-61cdb7ef41';
 
     protected function createSchema(Connection $db, string $driver): void
     {
@@ -182,5 +191,26 @@ SQL
         }
 
         return $client->request($method, 'http://127.0.0.1:1792/notifications/api/v1/' . $endpoint, $options);
+    }
+    public function jsonEncode($data): string
+    {
+        if (! is_array($data) && ! is_string($data)) {
+            throw new \InvalidArgumentException('Data must be an array or string');
+        }
+
+        $result = is_array($data)
+            ? ['data' => (! empty($data) && ! isset($data[0])) ? [$data] : $data]
+            : ['message' => $data];
+
+//        if (is_array($data)) {
+//            if (! empty($data) && ! isset($data[0])) {
+//                $data = [$data];
+//            }
+//            $result = ['data' => $data];
+//        } else {
+//            $result = ['message' => $data];
+//        }
+
+         return Json::sanitize($result);
     }
 }

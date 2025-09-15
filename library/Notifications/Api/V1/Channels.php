@@ -158,7 +158,7 @@ class Channels extends ApiV1
 
         $this->createGETRowFinalizer()($result);
 
-        return ['body' => Json::sanitize($result)];
+        return ['body' => Json::sanitize(['data' => [$result]])];
     }
 
     /**
