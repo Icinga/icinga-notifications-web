@@ -39,13 +39,6 @@ abstract class ApiCore
      * @var string
      */
     public const DELETE = 'DELETE';
-    /**
-     * The endpoint for OpenAPI documentation
-     * This is used to serve the OpenAPI specification.
-     *
-     * @var string
-     */
-    public const OPENAPI_ENDPOINT = 'openapi';
 
     /**
      * The database connection used for API operations.
@@ -128,7 +121,7 @@ abstract class ApiCore
                 $enricher($row);
 
                 if ($i > 0 || $offset !== 0) {
-                    yield ",\n";
+                    yield ",";
                 }
 
                 yield Json::sanitize($row);

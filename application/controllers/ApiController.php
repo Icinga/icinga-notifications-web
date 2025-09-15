@@ -10,6 +10,7 @@ use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Http\HttpExceptionInterface;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Api\ApiCore;
+use Icinga\Module\Notifications\Api\V1\OpenApi;
 use Icinga\Web\Request;
 use ipl\Stdlib\Str;
 use ipl\Web\Compat\CompatController;
@@ -37,7 +38,7 @@ class ApiController extends CompatController
             $request = $this->getRequest();
             if (
                 ! $request->isApiRequest()
-                && strtolower($request->getParam('endpoint')) !== ApiCore::OPENAPI_ENDPOINT
+                && strtolower($request->getParam('endpoint')) !== OpenApi::OPENAPI_ENDPOINT
             ) {
                 $this->httpBadRequest('No API request');
             }
@@ -48,7 +49,6 @@ class ApiController extends CompatController
                 status: $e->getStatusCode(),
                 headers: $e->getHeaders(),
                 body: json_encode([
-                    'status' => 'error',
                     'message' => $e->getMessage(),
                 ])
             );
@@ -59,7 +59,6 @@ class ApiController extends CompatController
                 status: 500,
                 headers: ['Content-Type' => 'application/json'],
                 body: json_encode([
-                    'status' => 'error',
                     'message' => $e->getMessage(),
                 ])
             );
