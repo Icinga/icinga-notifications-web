@@ -94,7 +94,7 @@ class ContactGroups extends ApiV1
 
         $this->createGETRowFinalizer()($result);
 
-        return ['body' => Json::sanitize($result)];
+        return ['body' => Json::sanitize(['data' => [$result]])];
     }
 
     /**
@@ -143,7 +143,7 @@ class ContactGroups extends ApiV1
         $this->assertValidatedRequestBody($requestBody);
 
         if ($identifier !== $requestBody['id']) {
-            throw new HttpBadRequestException('Identifier mismatch');
+            throw new HttpException(422, 'Identifier mismatch');
         }
 
         $this->getDB()->beginTransaction();
@@ -168,16 +168,21 @@ class ContactGroups extends ApiV1
                 $this->addUsers($contactgroupId, $requestBody['users']);
             }
 
-            $responseCode = 204;
+            $result = ['status' => 204];
         } else {
             $this->addContactgroup($requestBody);
-            $responseCode = 201;
-            $responseBody = '{"status":"success","message":"Contactgroup created successfully"}';
+            $result = [
+                'status' => 201,
+                'body' => '{"message":"Contactgroup created successfully"}',
+                'headers' => [
+                    'Location' => 'notifications/api/v1' . self::ROUTE_WITHOUT_IDENTIFIER . '/' . $requestBody['id']
+                ]
+            ];
         }
 
         $this->getDB()->commitTransaction();
 
-        return ['status' => $responseCode, 'body' => $responseBody ?? null];
+        return $result;
     }
 
     /**
@@ -198,31 +203,35 @@ class ContactGroups extends ApiV1
 
         $this->getDB()->beginTransaction();
 
-        if ($identifier === null) {
-            if (self::getGroupId($requestBody['id'])) {
-                throw new HttpException(422, 'Contactgroup already exists');
+        // TODO: keep replacing via POST or move to PUT?
+        $emptyIdentifier = empty($identifier);
+        if (! $emptyIdentifier) {
+            if ($identifier === $requestBody['id']) {
+                throw new HttpException(
+                    422,
+                    'Identifier mismatch: the Payload id must be different from the URL identifier'
+                );
             }
-
-            $this->addContactgroup($requestBody);
-        } else {
-            $contactgroupId = self::getGroupId($identifier);
-            if ($contactgroupId === null) {
+            $contactId = $this->getGroupId($identifier);
+            if ($contactId === null) {
                 throw new HttpNotFoundException('Contactgroup not found');
             }
-
-            if ($identifier === $requestBody['id'] || self::getGroupId($requestBody['id']) !== null) {
-                throw new HttpException(422, 'Contactgroup already exists');
-            }
-
-            $this->removeContactgroup($contactgroupId);
-            $this->addContactgroup($requestBody);
         }
+
+        if ($this->getGroupId($requestBody['id']) !== null) {
+            throw new HttpException(409, 'Contactgroup already exists');
+        }
+
+        if (! $emptyIdentifier) {
+            $this->removeContactgroup($contactId);
+        }
+        $this->addContactgroup($requestBody);
 
         $this->getDB()->commitTransaction();
 
         return [
             'status' => 201,
-            'body' => '{"status":"success","message":"Contactgroup created successfully"}',
+            'body' => '{"message":"Contactgroup created successfully"}',
             'headers' => [
                 'Location' => 'notifications/api/v1' . self::ROUTE_WITHOUT_IDENTIFIER . '/' . $requestBody['id']
             ]
@@ -396,7 +405,8 @@ class ContactGroups extends ApiV1
             || ! is_string($requestBody['id'])
             || ! is_string($requestBody['name'])
         ) {
-            throw new HttpBadRequestException(
+            throw new HttpException(
+                422,
                 $msgPrefix . 'the fields id and name must be present and of type string'
             );
         }

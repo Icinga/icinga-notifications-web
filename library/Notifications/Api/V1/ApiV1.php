@@ -75,6 +75,13 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
      * @var string
      */
     protected const PLURAL_SUFFIX = 'Plural';
+    /**
+     * API version.
+     *
+     * This constant defines the version of the API.
+     *
+     * @var string
+     */
     public const VERSION = 'v1';
 
     protected function init(): void
@@ -112,15 +119,16 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
             try {
                 $methodName = HttpMethod::from($httpMethod)->name;
             } catch (ValueError $e) {
-                throw new HttpException(405, "HTTP method $httpMethod is not supported");
+                throw (new HttpException(405, "HTTP method $httpMethod is not supported"))
+                    ->setHeader('Allow', $this->getAllowedMethods());
             }
 
             if (! method_exists($this, $methodName)) {
-                throw new HttpException(
+                throw (new HttpException(
                     405,
                     "Method $httpMethod is not supported for endpoint "
                     . (new \ReflectionClass($this))->getShortName()
-                );
+                ))->setHeader('Allow', $this->getAllowedMethods());
             }
         }
 
@@ -130,7 +138,7 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
 
         if ($httpMethod !== HttpMethod::get->value && ! empty($filterStr)) {
             throw new HttpBadRequestException(
-                'Invalid request parameter: Filter is only allowed for GET requests'
+                'Unexpected query parameter: Filter is only allowed for GET requests'
             );
         } elseif ($httpMethod === HttpMethod::get->value && ! empty($identifier) && ! empty($filterStr)) {
             throw new HttpBadRequestException(
@@ -259,5 +267,17 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
         }
 
         return $validBody;
+    }
+
+    protected function getAllowedMethods(): string
+    {
+        $methods = [];
+        foreach (HttpMethod::cases() as $method) {
+            if (method_exists($this, $method->name)) {
+                $methods[] = $method->value;
+            }
+        }
+
+        return implode(', ', $methods);
     }
 }

@@ -13,45 +13,40 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
      */
     public function testGetWithMatchingFilter(): void
     {
+        $expected = $this->jsonEncode([
+            'id'     => '0817d973-398e-41d7-9cd2-61cdb7ef41a1',
+            'name'   => 'Test',
+            'type'   => 'email',
+            'config' => null,
+        ]);
+
         // filter by id
         $response = $this->sendRequest('GET', 'channels?id=0817d973-398e-41d7-9cd2-61cdb7ef41a1');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
-        $this->assertSame(
-            '{"data":[{"id":"0817d973-398e-41d7-9cd2-61cdb7ef41a1","name":"Test","type":"email","config":null}]}',
-            $content
-        );
+        $this->assertSame($expected, $content);
 
         // filter by name
         $response = $this->sendRequest('GET', 'channels?name=Test');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
-        $this->assertSame(
-            '{"data":[{"id":"0817d973-398e-41d7-9cd2-61cdb7ef41a1","name":"Test","type":"email","config":null}]}',
-            $content
-        );
+        $this->assertSame($expected, $content);
 
         // filter by type
         $response = $this->sendRequest('GET', 'channels?type=email');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
-        $this->assertSame(
-            '{"data":[{"id":"0817d973-398e-41d7-9cd2-61cdb7ef41a1","name":"Test","type":"email","config":null}]}',
-            $content
-        );
+        $this->assertSame($expected, $content);
 
         // filter by all available filters together
         $response = $this->sendRequest('GET', 'channels?id=0817d973-398e-41d7-9cd2-61cdb7ef41a1&name=Test&type=email');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
-        $this->assertSame(
-            '{"data":[{"id":"0817d973-398e-41d7-9cd2-61cdb7ef41a1","name":"Test","type":"email","config":null}]}',
-            $content
-        );
+        $this->assertSame($expected, $content);
     }
 
     /**
@@ -61,16 +56,27 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
      */
     public function testGetEverything(): void
     {
+        $expected = $this->jsonEncode([
+            [
+                'id'     => '0817d973-398e-41d7-9cd2-61cdb7ef41a1',
+                'name'   => 'Test',
+                'type'   => 'email',
+                'config' => null,
+            ],
+            [
+                'id'     => '0817d973-398e-41d7-9cd2-61cdb7ef41a2',
+                'name'   => 'Test2',
+                'type'   => 'webhook',
+                'config' => null,
+            ],
+        ]);
+
         // There are two
         $response = $this->sendRequest('GET', 'channels');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
-        $this->assertSame(
-            '{"data":[{"id":"0817d973-398e-41d7-9cd2-61cdb7ef41a1","name":"Test","type":"email","config":null},'
-            . "\n" . '{"id":"0817d973-398e-41d7-9cd2-61cdb7ef41a2","name":"Test2","type":"webhook","config":null}]}',
-            $content
-        );
+        $this->assertSame($expected, $content);
     }
 
     /**
@@ -80,14 +86,18 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
      */
     public function testGetWithMatchingIdentifier(): void
     {
+        $expected = $this->jsonEncode([
+            'id'     => '0817d973-398e-41d7-9cd2-61cdb7ef41a1',
+            'name'   => 'Test',
+            'type'   => 'email',
+            'config' => null,
+        ]);
+
         $response = $this->sendRequest('GET', 'channels/0817d973-398e-41d7-9cd2-61cdb7ef41a1');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
-        $this->assertSame(
-            '{"id":"0817d973-398e-41d7-9cd2-61cdb7ef41a1","name":"Test","type":"email","config":null}',
-            $content
-        );
+        $this->assertSame($expected, $content);
     }
 
     /**
@@ -97,12 +107,13 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
      */
     public function testGetWithNonMatchingFilter(): void
     {
+        $expected = $this->jsonEncode([]);
 
         $response = $this->sendRequest('GET', 'channels?name=not_test');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
-        $this->assertSame('{"data":[]}', $content);
+        $this->assertSame($expected, $content);
     }
 
     // TODO: Additional GET tests
@@ -113,15 +124,15 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
      */
     public function testGetWithInvalidFilter(): void
     {
+        $expected = $this->jsonEncode(
+            'Invalid request parameter: Filter column nonexistingfilter given, only id, name and type are allowed',
+        );
+
         $response = $this->sendRequest('GET', 'channels?nonexistingfilter=value');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
-        $this->assertSame(
-            '{"status":"error","message":"Invalid request parameter: '
-            . 'Filter column nonexistingfilter given, only id, name and type are allowed"}',
-            $content
-        );
+        $this->assertSame($expected, $content);
     }
 
     /**
@@ -131,11 +142,13 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
      */
     public function testGetWithNonMatchingIdentifier(): void
     {
+        $expected = $this->jsonEncode('Channel not found');
+
         $response = $this->sendRequest('GET', 'channels/0817d973-398e-41d7-9ef2-61cdb7ef41a2');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(404, $response->getStatusCode(), $content);
-        $this->assertSame('{"status":"error","message":"Channel not found"}', $content);
+        $this->assertSame($expected, $content);
     }
 
     /**
@@ -145,11 +158,13 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
      */
     public function testGetWithInvalidIdentifier(): void
     {
+        $expected = $this->jsonEncode('The given identifier is not a valid UUID');
+
         $response = $this->sendRequest('GET', 'channels/0817d973-398e-41d7-9ef2-61cdb7ef41a234534');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
-        $this->assertSame('{"status":"error","message":"The given identifier is not a valid UUID"}', $content);
+        $this->assertSame($expected, $content);
     }
 
     /**
@@ -159,22 +174,23 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
      */
     public function testGetWithIdentifierAndFilter(): void
     {
-        $expectedMessage = '{"status":"error","message":"Invalid request: '
-            . 'GET with identifier and query parameters, it\'s not allowed to use both together."}';
+        $expected = $this->jsonEncode(
+            'Invalid request: GET with identifier and query parameters, it\'s not allowed to use both together.',
+        );
 
         // Valid identifier and valid filter
         $response = $this->sendRequest('GET', 'channels/0817d973-398e-41d7-9cd2-61cdb7ef41a1?name=Test');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
-        $this->assertSame($expectedMessage, $content);
+        $this->assertSame($expected, $content);
 
         // Invalid identifier and invalid filter
         $response = $this->sendRequest('GET', 'channels/0817d973-398e-41d7-9cd2-61cdb7ef41aa?nonexistingfilter=value');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
-        $this->assertSame($expectedMessage, $content);
+        $this->assertSame($expected, $content);
     }
 
     // TODO: Additional general tests
@@ -185,75 +201,70 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
      */
     public function testRequestWithNonSupportedMethod(): void
     {
+        $expectedAllowHeader = 'GET';
         // General invalid method
+        $expected = $this->jsonEncode('HTTP method PATCH is not supported');
+
         $response = $this->sendRequest('PATCH', 'channels');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(405, $response->getStatusCode(), $content);
-        $this->assertSame(
-            '{"status":"error","message":"HTTP method PATCH is not supported"}',
-            $content
-        );
+        $this->assertSame([$expectedAllowHeader], $response->getHeader('Allow'));
+        $this->assertSame($expected, $content);
 
         // Endpoint specific invalid method
+        // Try to POST
+        $expected = $this->jsonEncode('Method POST is not supported for endpoint Channels');
         //Try to POST without identifier
         $response = $this->sendRequest('POST', 'channels');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(405, $response->getStatusCode(), $content);
-        $this->assertSame(
-            '{"status":"error","message":"Method POST is not supported for endpoint Channels"}',
-            $content
-        );
+        $this->assertSame([$expectedAllowHeader], $response->getHeader('Allow'));
+        $this->assertSame($expected, $content);
 
         // Try to POST with identifier
         $response = $this->sendRequest('POST', 'channels/0817d973-398e-41d7-9cd2-61cdb7ef41a1');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(405, $response->getStatusCode(), $content);
-        $this->assertSame(
-            '{"status":"error","message":"Method POST is not supported for endpoint Channels"}',
-            $content
-        );
+        $this->assertSame([$expectedAllowHeader], $response->getHeader('Allow'));
+        $this->assertSame($expected, $content);
 
         // Try to POST with filter
         $response = $this->sendRequest('POST', 'channels?name=Test');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(405, $response->getStatusCode(), $content);
-        $this->assertSame(
-            '{"status":"error","message":"Method POST is not supported for endpoint Channels"}',
-            $content
-        );
+        $this->assertSame([$expectedAllowHeader], $response->getHeader('Allow'));
+        $this->assertSame($expected, $content);
 
         // Try to POST with identifier and filter
         $response = $this->sendRequest('POST', 'channels/0817d973-398e-41d7-9cd2-61cdb7ef41a1?name=Test');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(405, $response->getStatusCode(), $content);
-        $this->assertSame(
-            '{"status":"error","message":"Method POST is not supported for endpoint Channels"}',
-            $content
-        );
+        $this->assertSame([$expectedAllowHeader], $response->getHeader('Allow'));
+        $this->assertSame($expected, $content);
 
         // Try to PUT
+        $expected = $this->jsonEncode('Method PUT is not supported for endpoint Channels');
+
         $response = $this->sendRequest('PUT', 'channels');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(405, $response->getStatusCode(), $content);
-        $this->assertSame(
-            '{"status":"error","message":"Method PUT is not supported for endpoint Channels"}',
-            $content
-        );
+        $this->assertSame([$expectedAllowHeader], $response->getHeader('Allow'));
+        $this->assertSame($expected, $content);
 
         // Try to DELETE
+        $expected = $this->jsonEncode('Method DELETE is not supported for endpoint Channels');
+
         $response = $this->sendRequest('DELETE', 'channels');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(405, $response->getStatusCode(), $content);
-        $this->assertSame(
-            '{"status":"error","message":"Method DELETE is not supported for endpoint Channels"}',
-            $content
-        );
+        $this->assertSame([$expectedAllowHeader], $response->getHeader('Allow'));
+        $this->assertSame($expected, $content);
     }
 }
