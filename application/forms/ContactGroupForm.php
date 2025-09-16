@@ -83,17 +83,17 @@ class ContactGroupForm extends CompatForm
         );
 
         if ($this->contactgroupId) {
-            $removeBtn = new SubmitElement(
-                'remove',
+            $deleteBtn = new SubmitElement(
+                'delete',
                 [
-                    'label'             => $this->translate('Remove'),
+                    'label'             => $this->translate('Delete'),
                     'class'             => 'btn-remove',
                     'formnovalidate'    => true
                 ]
             );
 
-            $this->registerElement($removeBtn);
-            $this->getElement('submit')->prependWrapper((new HtmlDocument())->setHtmlContent($removeBtn));
+            $this->registerElement($deleteBtn);
+            $this->getElement('submit')->prependWrapper((new HtmlDocument())->setHtmlContent($deleteBtn));
         }
     }
 
@@ -107,7 +107,7 @@ class ContactGroupForm extends CompatForm
         $btn = $this->getPressedSubmitElement();
         $csrf = $this->getElement('CSRFToken');
 
-        return $csrf !== null && $csrf->isValid() && $btn !== null && $btn->getName() === 'remove';
+        return $csrf !== null && $csrf->isValid() && $btn !== null && $btn->getName() === 'delete';
     }
 
     /**
