@@ -84,7 +84,7 @@ class ContactGroupController extends CompatController
                 if ($form->hasBeenRemoved()) {
                     $form->removeContactgroup();
                     Notification::success(sprintf(
-                        t('Successfully removed contact group %s'),
+                        t('Deleted contact group "%s" successfully'),
                         $form->getValue('group_name')
                     ));
                     $this->switchToSingleColumnLayout();

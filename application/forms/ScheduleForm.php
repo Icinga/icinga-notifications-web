@@ -65,7 +65,7 @@ class ScheduleForm extends CompatForm
         $btn = $this->getPressedSubmitElement();
         $csrf = $this->getElement('CSRFToken');
 
-        return $csrf !== null && $csrf->isValid() && $btn !== null && $btn->getName() === 'remove';
+        return $csrf !== null && $csrf->isValid() && $btn !== null && $btn->getName() === 'delete';
     }
 
     public function loadSchedule(int $id): void
@@ -181,8 +181,8 @@ class ScheduleForm extends CompatForm
         ]);
 
         if ($this->showRemoveButton) {
-            $removeBtn = $this->createElement('submit', 'remove', [
-                'label' => $this->translate('Remove'),
+            $removeBtn = $this->createElement('submit', 'delete', [
+                'label' => $this->translate('Delete'),
                 'class' => 'btn-remove',
                 'formnovalidate' => true
             ]);
