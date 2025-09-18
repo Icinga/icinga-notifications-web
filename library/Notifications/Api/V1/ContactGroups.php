@@ -212,8 +212,8 @@ class ContactGroups extends ApiV1
                     'Identifier mismatch: the Payload id must be different from the URL identifier'
                 );
             }
-            $contactId = $this->getGroupId($identifier);
-            if ($contactId === null) {
+            $groupId = $this->getGroupId($identifier);
+            if ($groupId === null) {
                 throw new HttpNotFoundException('Contactgroup not found');
             }
         }
@@ -223,7 +223,7 @@ class ContactGroups extends ApiV1
         }
 
         if (! $emptyIdentifier) {
-            $this->removeContactgroup($contactId);
+            $this->removeContactgroup($groupId);
         }
         $this->addContactgroup($requestBody);
 

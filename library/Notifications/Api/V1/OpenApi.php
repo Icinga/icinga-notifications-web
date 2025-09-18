@@ -7,6 +7,7 @@ use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Notifications\Common\PsrLogger;
 use OpenApi\Generator;
 use OpenApi\Attributes as OA;
+use RuntimeException;
 
 #[OA\Schema(
     schema: 'Url',
@@ -169,13 +170,8 @@ class OpenApi extends ApiV1
                 $openapi = (new Generator(new PsrLogger()))
                     ->setVersion(\OpenApi\Annotations\OpenApi::VERSION_3_1_0)
                     ->generate($files);
-            } catch (\RuntimeException $e) {
-                $errorBody = json_encode([
-                    'error' => 'Failed to generate OpenAPI documentation',
-                    'message' => $e->getMessage(),
-                ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE);
-
-                return $this->createArrayOfResponseData(500, $errorBody);
+            } catch (RuntimeException $e) {
+                throw new RuntimeException('Unable to generate OpenApi: ' . $e->getMessage());
             }
 
             $oad = $openapi->toJson(
@@ -215,19 +211,18 @@ class OpenApi extends ApiV1
 
         $dir = rtrim($dir, '/') . '/';
         if (! is_dir($dir)) {
-            throw new \RuntimeException("Directory $dir does not exist");
+            throw new RuntimeException("Directory $dir does not exist");
         }
         if (! is_readable($dir)) {
-            throw new \RuntimeException("Directory $dir is not readable");
+            throw new RuntimeException("Directory $dir is not readable");
         }
 
         $files = glob($dir . $fileFilter, GLOB_NOSORT | GLOB_BRACE | GLOB_MARK);
         array_unshift($files, $apiCoreDir);
         if ($files === false) {
-            throw new \RuntimeException("Failed to read files from directory: $dir");
+            throw new RuntimeException("Failed to read files from directory: $dir");
         }
 
         return $files;
     }
-
 }
