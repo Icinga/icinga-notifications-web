@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Notifications\Api;
 
+use GuzzleHttp\Psr7\Response;
 use Icinga\Module\Notifications\Api\Elements\HttpMethod;
 use ipl\Sql\Connection;
 
@@ -97,5 +98,25 @@ abstract class ApiCore
         }
 
         return implode(', ', $methods);
+    }
+
+    /**
+     * Create a Response object from the given data array.
+     *
+     * The data array can contain the following keys:
+     * - 'status': The HTTP status code (default: 200)
+     * - 'headers': An associative array of HTTP headers (default: empty array)
+     * - 'body': The response body as null|StreamInterface|resource|string (default: null)
+     *
+     * @param array $data
+     * @return Response
+     */
+    protected function createResponse(array $data): Response
+    {
+        $status = $data['status'] ?? 200;
+        $headers = $data['headers'] ?? [];
+        $body = $data['body'] ?? null;
+
+        return new Response($status, $headers, $body);
     }
 }

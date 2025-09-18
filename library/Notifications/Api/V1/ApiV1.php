@@ -175,7 +175,7 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
             default => throw new HttpBadRequestException("Invalid request: This case shouldn't be reachable."),
         };
 
-        return new Response(...$responseData);
+        return $this->createResponse($responseData);
     }
 
 
