@@ -52,6 +52,10 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
      */
     public function testGetEverything(): void
     {
+        // There are two
+        $response = $this->sendRequest('GET', 'channels');
+        $content = $response->getBody()->getContents();
+
         $expected = $this->jsonEncodeResults([
             [
                 'id'     => '0817d973-398e-41d7-9cd2-61cdb7ef41a1',
@@ -66,11 +70,6 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
                 'config' => null,
             ],
         ]);
-
-        // There are two
-        $response = $this->sendRequest('GET', 'channels');
-        $content = $response->getBody()->getContents();
-
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertSame($expected, $content);
     }
@@ -80,16 +79,15 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
      */
     public function testGetWithMatchingIdentifier(): void
     {
+        $response = $this->sendRequest('GET', 'channels/0817d973-398e-41d7-9cd2-61cdb7ef41a1');
+        $content = $response->getBody()->getContents();
+
         $expected = $this->jsonEncodeResult([
             'id'     => '0817d973-398e-41d7-9cd2-61cdb7ef41a1',
             'name'   => 'Test',
             'type'   => 'email',
             'config' => null,
         ]);
-
-        $response = $this->sendRequest('GET', 'channels/0817d973-398e-41d7-9cd2-61cdb7ef41a1');
-        $content = $response->getBody()->getContents();
-
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertSame($expected, $content);
     }
@@ -99,13 +97,11 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
      */
     public function testGetWithNonMatchingFilter(): void
     {
-        $expected = $this->jsonEncodeResults([]);
-
         $response = $this->sendRequest('GET', 'channels?name=not_test');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeResults([]), $content);
     }
 
     /**
@@ -113,13 +109,12 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
      */
     public function testGetWithInvalidFilter(): void
     {
-        $expected = $this->jsonEncodeError(
-            'Invalid request parameter: Filter column nonexistingfilter given, only id, name and type are allowed',
-        );
-
         $response = $this->sendRequest('GET', 'channels?nonexistingfilter=value');
         $content = $response->getBody()->getContents();
 
+        $expected = $this->jsonEncodeError(
+            'Invalid request parameter: Filter column nonexistingfilter given, only id, name and type are allowed',
+        );
         $this->assertSame(400, $response->getStatusCode(), $content);
         $this->assertSame($expected, $content);
     }
@@ -129,13 +124,11 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
      */
     public function testGetWithNewIdentifier(): void
     {
-        $expected = $this->jsonEncodeError('Channel not found');
-
         $response = $this->sendRequest('GET', 'channels/0817d973-398e-41d7-9ef2-61cdb7ef41a2');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(404, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeError('Channel not found'), $content);
     }
 
     /**
@@ -143,13 +136,11 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
      */
     public function testGetWithInvalidIdentifier(): void
     {
-        $expected = $this->jsonEncodeError('The given identifier is not a valid UUID');
-
         $response = $this->sendRequest('GET', 'channels/0817d973-398e-41d7-9ef2-61cdb7ef41a234534');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeError('The given identifier is not a valid UUID'), $content);
     }
 
     /**
@@ -183,14 +174,12 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
     {
         $expectedAllowHeader = 'GET';
         // General invalid method
-        $expected = $this->jsonEncodeError('HTTP method PATCH is not supported');
-
         $response = $this->sendRequest('PATCH', 'channels');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(405, $response->getStatusCode(), $content);
         $this->assertSame([$expectedAllowHeader], $response->getHeader('Allow'));
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeError('HTTP method PATCH is not supported'), $content);
 
         // Endpoint specific invalid method
         // Try to POST
@@ -228,23 +217,19 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $this->assertSame($expected, $content);
 
         // Try to PUT
-        $expected = $this->jsonEncodeError('Method PUT is not supported for endpoint Channels');
-
         $response = $this->sendRequest('PUT', 'channels');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(405, $response->getStatusCode(), $content);
         $this->assertSame([$expectedAllowHeader], $response->getHeader('Allow'));
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeError('Method PUT is not supported for endpoint Channels'), $content);
 
         // Try to DELETE
-        $expected = $this->jsonEncodeError('Method DELETE is not supported for endpoint Channels');
-
         $response = $this->sendRequest('DELETE', 'channels');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(405, $response->getStatusCode(), $content);
         $this->assertSame([$expectedAllowHeader], $response->getHeader('Allow'));
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeError('Method DELETE is not supported for endpoint Channels'), $content);
     }
 }
