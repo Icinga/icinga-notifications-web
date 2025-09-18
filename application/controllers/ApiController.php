@@ -8,7 +8,6 @@ use GuzzleHttp\Psr7\ServerRequest;
 use GuzzleHttp\Psr7\Utils;
 use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Http\HttpExceptionInterface;
-use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Api\ApiCore;
 use Icinga\Module\Notifications\Api\V1\OpenApi;
 use Icinga\Web\Request;
@@ -43,71 +42,57 @@ class ApiController extends CompatController
                 $this->httpBadRequest('No API request');
             }
 
-            $this->dispatchEndpoint($request);
+            $params = $request->getParams();
+            $version = Str::camel($params['version']);
+            $endpoint = Str::camel($params['endpoint']);
+            $identifier = $params['identifier'] ?? null;
+
+            $module = (($moduleName = $request->getModuleName()) !== null)
+                ? 'Module\\' . ucfirst($moduleName) . '\\'
+                : '';
+            $className = sprintf('Icinga\\%sApi\\%s\\%s', $module, $version, $endpoint);
+
+            if (! class_exists($className) || ! is_subclass_of($className, ApiCore::class)) {
+                $this->httpNotFound(404, "Endpoint $endpoint does not exist.");
+            }
+
+            $serverRequest = (new ServerRequest(
+                method: $request->getMethod(),
+                uri: $request->getRequestUri(),
+                serverParams: $request->getServer()
+            ))
+                ->withParsedBody($this->getRequestBody($request))
+                ->withAttribute('identifier', $identifier)
+                ->withHeader('Content-Type', $request->getHeader('Content-Type'));
+
+            // If you want to pass the body as a stream instead of parsed JSON,
+            // uncomment this block and comment the withParsedBody line above.
+//        $serverRequest = empty($stream = $this->getRequestBodyStream($request))
+//            ? $serverRequest
+//            : $serverRequest->withBody($stream);
+
+            $response = (new $className())->handle($serverRequest);
         } catch (HttpExceptionInterface $e) {
-            $errorResponse = new Response(
+            $response = new Response(
                 status: $e->getStatusCode(),
                 headers: $e->getHeaders(),
                 body: json_encode([
                     'message' => $e->getMessage(),
                 ])
             );
-
-            $this->emitResponse($errorResponse);
         } catch (Throwable $e) {
-            $errorResponse = new Response(
+            $response = new Response(
                 status: 500,
                 headers: ['Content-Type' => 'application/json'],
                 body: json_encode([
                     'message' => $e->getMessage(),
                 ])
             );
-
-            $this->emitResponse($errorResponse);
+        } finally {
+            $this->emitResponse($response);
         }
+
         exit;
-    }
-
-    /**
-     * Dispatch the API endpoint based on the request parameters.
-     *
-     * @param Request $request The request object containing parameters.
-     * @return void
-     * @throws HttpBadRequestException
-     * @throws HttpNotFoundException
-     * @throws Zend_Controller_Request_Exception
-     * @throws Exception
-     */
-    private function dispatchEndpoint(Request $request): void
-    {
-        $params = $request->getParams();
-        $version = Str::camel($params['version']);
-        $endpoint = Str::camel($params['endpoint']);
-        $identifier = $params['identifier'] ?? null;
-
-        $module = (($moduleName = $request->getModuleName()) !== null) ? 'Module\\' . ucfirst($moduleName) . '\\' : '';
-        $className = sprintf('Icinga\\%sApi\\%s\\%s', $module, $version, $endpoint);
-
-        $serverRequest = (new ServerRequest(
-            method: $request->getMethod(),
-            uri: $request->getRequestUri(),
-            serverParams: $request->getServer()
-        ))
-            ->withParsedBody($this->getRequestBody($request))
-            ->withAttribute('identifier', $identifier)
-            ->withHeader('Content-Type', $request->getHeader('Content-Type'));
-
-        // If you want to pass the body as a stream instead of parsed JSON,
-        // uncomment this block and comment the withParsedBody line above.
-//        $serverRequest = empty($stream = $this->getRequestBodyStream($request))
-//            ? $serverRequest
-//            : $serverRequest->withBody($stream);
-
-        if (! class_exists($className) || ! is_subclass_of($className, ApiCore::class)) {
-            $this->httpNotFound(404, "Endpoint $endpoint does not exist.");
-        }
-
-        $this->emitResponse((new $className())->handle($serverRequest));
     }
 
     /**
