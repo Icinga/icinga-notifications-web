@@ -3,24 +3,27 @@
 namespace Icinga\Module\Notifications\Api\V1;
 
 use Exception;
+use Generator;
 use GuzzleHttp\Psr7\Response;
 use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Http\HttpException;
 use Icinga\Exception\Json\JsonDecodeException;
+use Icinga\Exception\Json\JsonEncodeException;
 use Icinga\Module\Notifications\Api\ApiCore;
 use Icinga\Module\Notifications\Api\Elements\HttpMethod;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Util\Json;
 use ipl\Sql\Compat\FilterProcessor;
+use ipl\Sql\Connection;
+use ipl\Sql\Select;
 use ipl\Stdlib\Filter\Condition;
 use ipl\Web\Filter\QueryString;
-use Iterator;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use OpenApi\Attributes as OA;
 use Ramsey\Uuid\Uuid;
-use Psr\Http\Message\StreamInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use stdClass;
 use ValueError;
 
 /**
@@ -118,7 +121,7 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
         } else {
             try {
                 $methodName = HttpMethod::from($httpMethod)->name;
-            } catch (ValueError $e) {
+            } catch (ValueError) {
                 throw (new HttpException(405, "HTTP method $httpMethod is not supported"))
                     ->setHeader('Allow', $this->getAllowedMethods());
             }
@@ -269,15 +272,46 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
         return $validBody;
     }
 
-    protected function getAllowedMethods(): string
-    {
-        $methods = [];
-        foreach (HttpMethod::cases() as $method) {
-            if (method_exists($this, $method->name)) {
-                $methods[] = $method->value;
-            }
-        }
+    /**
+     * Create a content generator for streaming JSON responses.
+     *
+     * This method creates a generator that yields JSON-encoded content
+     * in batches, allowing for efficient streaming of large datasets.
+     *
+     * @param Connection $db The database connection to use for querying.
+     * @param Select $stmt The SQL select statement to execute.
+     * @param callable $enricher A function to enrich each row of data.
+     * @param int $batchSize The number of rows to fetch in each batch (default is 500).
+     *
+     * @return Generator Yields JSON-encoded strings representing the content.
+     * @throws JsonEncodeException
+     */
+    protected function createContentGenerator(
+        Connection $db,
+        Select $stmt,
+        callable $enricher,
+        int $batchSize = 500
+    ): Generator {
+        $stmt->limit($batchSize);
+        $offset = 0;
 
-        return implode(', ', $methods);
+        yield '{"data":[';
+        $res = $db->select($stmt->offset($offset));
+        do {
+            /** @var stdClass $row */
+            foreach ($res as $i => $row) {
+                $enricher($row);
+
+                if ($i > 0 || $offset !== 0) {
+                    yield ",";
+                }
+
+                yield Json::sanitize($row);
+            }
+
+            $offset += $batchSize;
+            $res = $db->select($stmt->offset($offset));
+        } while ($res->rowCount());
+        yield ']}';
     }
 }
