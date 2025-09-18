@@ -21,15 +21,14 @@ class ApiV1ContactGroupsTest extends BaseApiV1TestCase
             'users' => []
         ]);
 
+        $response = $this->sendRequest('GET', 'contactgroups?name=Test');
+        $content = $response->getBody()->getContents();
+
         $expected = $this->jsonEncodeResults([
             'id' => BaseApiV1TestCase::GROUP_UUID,
             'name' => 'Test',
             'users' => []
         ]);
-
-        $response = $this->sendRequest('GET', 'contactgroups?name=Test');
-        $content = $response->getBody()->getContents();
-
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertSame($expected, $content);
     }
@@ -41,13 +40,11 @@ class ApiV1ContactGroupsTest extends BaseApiV1TestCase
     public function testGetEverything(): void
     {
         // At first, there are none
-        $expected = $this->jsonEncodeResults([]);
-
         $response = $this->sendRequest('GET', 'contactgroups');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeResults([]), $content);
 
         // Create new contact groups
         $this->sendRequest('POST', 'contactgroups', [
@@ -62,6 +59,9 @@ class ApiV1ContactGroupsTest extends BaseApiV1TestCase
         ]);
 
         // Now there are two
+        $response = $this->sendRequest('GET', 'contactgroups');
+        $content = $response->getBody()->getContents();
+
         $expected = $this->jsonEncodeResults([
             [
                 'id' => BaseApiV1TestCase::GROUP_UUID,
@@ -74,10 +74,6 @@ class ApiV1ContactGroupsTest extends BaseApiV1TestCase
                 'users' => []
             ]
         ]);
-
-        $response = $this->sendRequest('GET', 'contactgroups');
-        $content = $response->getBody()->getContents();
-
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertSame($expected, $content);
     }
@@ -94,15 +90,14 @@ class ApiV1ContactGroupsTest extends BaseApiV1TestCase
             'users' => []
         ]);
 
+        $response = $this->sendRequest('GET', 'contactgroups/' . BaseApiV1TestCase::GROUP_UUID);
+        $content = $response->getBody()->getContents();
+
         $expected = $this->jsonEncodeResult([
             'id' => BaseApiV1TestCase::GROUP_UUID,
             'name' => 'Test',
             'users' => []
         ]);
-
-        $response = $this->sendRequest('GET', 'contactgroups/' . BaseApiV1TestCase::GROUP_UUID);
-        $content = $response->getBody()->getContents();
-
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertSame($expected, $content);
     }
@@ -112,13 +107,11 @@ class ApiV1ContactGroupsTest extends BaseApiV1TestCase
      */
     public function testGetWithNewIdentifier(): void
     {
-        $expected = $this->jsonEncodeError('Contactgroup not found');
-
         $response = $this->sendRequest('GET', 'contactgroups/' . BaseApiV1TestCase::GROUP_UUID);
         $content = $response->getBody()->getContents();
 
         $this->assertSame(404, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeError('Contactgroup not found'), $content);
     }
 
     /**
@@ -127,8 +120,6 @@ class ApiV1ContactGroupsTest extends BaseApiV1TestCase
      */
     public function testGetWithNonMatchingFilter(): void
     {
-        $expected = $this->jsonEncodeResults([]);
-
         $this->sendRequest('POST', 'contactgroups', [
             'id' => BaseApiV1TestCase::GROUP_UUID,
             'name' => 'Test',
@@ -139,7 +130,7 @@ class ApiV1ContactGroupsTest extends BaseApiV1TestCase
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeResults([]), $content);
     }
 
     /**
@@ -154,8 +145,6 @@ class ApiV1ContactGroupsTest extends BaseApiV1TestCase
 payload: invalid
 YAML;
 
-        $expected = $this->jsonEncodeError('Invalid request body: given content is not a valid JSON');
-
         $response = $this->sendRequest(
             method: 'POST',
             endpoint: 'contactgroups',
@@ -168,7 +157,7 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(400, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeError('Invalid request body: given content is not a valid JSON'), $content);
     }
 
     /**
@@ -183,8 +172,6 @@ YAML;
 payload: invalid
 YAML;
 
-        $expected = $this->jsonEncodeError('Invalid request header: Content-Type must be application/json');
-
         $response = $this->sendRequest(
             method: 'POST',
             endpoint: 'contactgroups',
@@ -197,7 +184,10 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(400, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame(
+            $this->jsonEncodeError('Invalid request header: Content-Type must be application/json'),
+            $content
+        );
     }
 
     /**
@@ -207,8 +197,6 @@ YAML;
      */
     public function testPostWithFilter(): void
     {
-        $expected = $this->jsonEncodeError('Unexpected query parameter: Filter is only allowed for GET requests');
-
         $response = $this->sendRequest(
             'POST',
             'contactgroups?id=' . BaseApiV1TestCase::GROUP_UUID,
@@ -221,7 +209,10 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame(
+            $this->jsonEncodeError('Unexpected query parameter: Filter is only allowed for GET requests'),
+            $content
+        );
     }
 
     /**
@@ -231,8 +222,6 @@ YAML;
      */
     public function testPostWithNewIdentifier(): void
     {
-        $expected = $this->jsonEncodeError('Contactgroup not found');
-
         $response = $this->sendRequest('POST', 'contactgroups/' . BaseApiV1TestCase::GROUP_UUID, [
             'id' => BaseApiV1TestCase::GROUP_UUID_2,
             'name' => 'Test',
@@ -241,7 +230,7 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(404, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeError('Contactgroup not found'), $content);
     }
 
     /**
@@ -258,10 +247,6 @@ YAML;
             'users' => []
         ]);
 
-        $expected = $this->jsonEncodeError(
-            'Identifier mismatch: the Payload id must be different from the URL identifier'
-        );
-
         $response = $this->sendRequest('POST', 'contactgroups/' . BaseApiV1TestCase::GROUP_UUID, [
             'id' => BaseApiV1TestCase::GROUP_UUID,
             'name' => 'Test',
@@ -270,7 +255,10 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame(
+            $this->jsonEncodeError('Identifier mismatch: the Payload id must be different from the URL identifier'),
+            $content
+        );
     }
 
     /**
@@ -293,8 +281,6 @@ YAML;
             'users' => []
         ]);
 
-        $expected = $this->jsonEncodeError('Contactgroup already exists');
-
         $response = $this->sendRequest('POST', 'contactgroups/' . BaseApiV1TestCase::GROUP_UUID, [
             'id' => BaseApiV1TestCase::GROUP_UUID_2,
             'name' => 'Test',
@@ -303,7 +289,7 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(409, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeError('Contactgroup already exists'), $content);
     }
 
     /**
@@ -320,9 +306,6 @@ YAML;
             'users' => []
         ]);
 
-        $expected = $this->jsonEncodeSuccessMessage('Contactgroup created successfully');
-        $expectedLocation = 'notifications/api/v1/contactgroups/' . BaseApiV1TestCase::GROUP_UUID_2;
-
         $response = $this->sendRequest('POST', 'contactgroups/' . BaseApiV1TestCase::GROUP_UUID, [
             'id' => BaseApiV1TestCase::GROUP_UUID_2,
             'name' => 'Test (replaced)',
@@ -331,8 +314,11 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(201, $response->getStatusCode(), $content);
-        $this->assertSame([$expectedLocation], $response->getHeader('Location'));
-        $this->assertSame($expected, $content);
+        $this->assertSame(
+            ['notifications/api/v1/contactgroups/' . BaseApiV1TestCase::GROUP_UUID_2],
+            $response->getHeader('Location')
+        );
+        $this->assertSame($this->jsonEncodeSuccessMessage('Contactgroup created successfully'), $content);
     }
 
     /**
@@ -349,8 +335,6 @@ YAML;
             'users' => []
         ]);
 
-        $expected = $this->jsonEncodeError('Contactgroup already exists');
-
         $response = $this->sendRequest('POST', 'contactgroups', [
             'id' => BaseApiV1TestCase::GROUP_UUID,
             'name' => 'Test (replaced)',
@@ -359,7 +343,7 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(409, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeError('Contactgroup already exists'), $content);
     }
 
     /**
@@ -376,9 +360,6 @@ YAML;
         ]);
         $this->assertSame(201, $response->getStatusCode(), $response->getBody()->getContents());
 
-        $expected = $this->jsonEncodeSuccessMessage('Contactgroup created successfully');
-        $expectedLocation = 'notifications/api/v1/contactgroups/' . BaseApiV1TestCase::GROUP_UUID;
-
         $response = $this->sendRequest('POST', 'contactgroups', [
             'id' => BaseApiV1TestCase::GROUP_UUID,
             'name' => 'Test',
@@ -387,12 +368,13 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(201, $response->getStatusCode(), $content);
-        $this->assertSame([$expectedLocation], $response->getHeader('Location'));
-        $this->assertSame($expected, $content);
+        $this->assertSame(
+            ['notifications/api/v1/contactgroups/' . BaseApiV1TestCase::GROUP_UUID],
+            $response->getHeader('Location')
+        );
+        $this->assertSame($this->jsonEncodeSuccessMessage('Contactgroup created successfully'), $content);
 
         // without optional field users
-        $expectedLocation = 'notifications/api/v1/contactgroups/' . BaseApiV1TestCase::GROUP_UUID_2;
-
         $response = $this->sendRequest('POST', 'contactgroups', [
             'id' => BaseApiV1TestCase::GROUP_UUID_2,
             'name' => 'Test'
@@ -400,7 +382,10 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(201, $response->getStatusCode(), $content);
-        $this->assertSame([$expectedLocation], $response->getHeader('Location'));
+        $this->assertSame(
+            ['notifications/api/v1/contactgroups/' . BaseApiV1TestCase::GROUP_UUID_2],
+            $response->getHeader('Location')
+        );
     }
 
     /**
@@ -435,10 +420,6 @@ YAML;
         $this->assertSame($expected, $content);
 
         // invalid users
-        $expected = $this->jsonEncodeError(
-            'User with identifier ' . BaseApiV1TestCase::CONTACT_UUID . ' not found'
-        );
-
         $response = $this->sendRequest('POST', 'contactgroups', [
             'id' => BaseApiV1TestCase::GROUP_UUID,
             'name' => 'Test',
@@ -447,7 +428,10 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(422, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame(
+            $this->jsonEncodeError('User with identifier ' . BaseApiV1TestCase::CONTACT_UUID . ' not found'),
+            $content
+        );
     }
 
     /**
@@ -501,8 +485,6 @@ YAML;
 payload: invalid
 YAML;
 
-        $expected = $this->jsonEncodeError('Invalid request body: given content is not a valid JSON');
-
         $response = $this->sendRequest(
             method: 'PUT',
             endpoint: 'contactgroups/' . BaseApiV1TestCase::GROUP_UUID,
@@ -515,7 +497,7 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(400, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeError('Invalid request body: given content is not a valid JSON'), $content);
     }
 
     /**
@@ -530,8 +512,6 @@ YAML;
 payload: invalid
 YAML;
 
-        $expected = $this->jsonEncodeError('Invalid request header: Content-Type must be application/json');
-
         $response = $this->sendRequest(
             method: 'PUT',
             endpoint: 'contactgroups/' . BaseApiV1TestCase::GROUP_UUID,
@@ -544,7 +524,10 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(400, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame(
+            $this->jsonEncodeError('Invalid request header: Content-Type must be application/json'),
+            $content
+        );
     }
 
     /**
@@ -554,8 +537,6 @@ YAML;
      */
     public function testPutWithFilter(): void
     {
-        $expected = $this->jsonEncodeError('Unexpected query parameter: Filter is only allowed for GET requests');
-
         $response = $this->sendRequest('PUT', 'contactgroups?id=' . BaseApiV1TestCase::GROUP_UUID, [
                 'id' => BaseApiV1TestCase::GROUP_UUID,
                 'name' => 'Test',
@@ -564,7 +545,10 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame(
+            $this->jsonEncodeError('Unexpected query parameter: Filter is only allowed for GET requests'),
+            $content
+        );
     }
 
     /**
@@ -574,8 +558,6 @@ YAML;
      */
     public function testPutWithoutIdentifier(): void
     {
-        $expected = $this->jsonEncodeError('Invalid request: Identifier is required');
-
         $response = $this->sendRequest('PUT', 'contactgroups', [
             'id' => BaseApiV1TestCase::GROUP_UUID,
             'name' => 'Test',
@@ -584,7 +566,7 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeError('Invalid request: Identifier is required'), $content);
     }
 
     /**
@@ -641,8 +623,6 @@ YAML;
             'users' => []
         ]);
 
-        $expected = $this->jsonEncodeError('Identifier mismatch');
-
         // indifferent id
         $response = $this->sendRequest('PUT', 'contactgroups/' . BaseApiV1TestCase::GROUP_UUID, [
             'id' => '0817d973-398e-41d7-9ef2-61cdb7ef41a3',
@@ -652,7 +632,7 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeError('Identifier mismatch'), $content);
     }
 
     /**
@@ -669,9 +649,6 @@ YAML;
         ]);
         $this->assertSame(201, $response->getStatusCode(), $response->getBody()->getContents());
 
-        $expected = $this->jsonEncodeSuccessMessage('Contactgroup created successfully');
-        $expectedLocation = 'notifications/api/v1/contactgroups/' . BaseApiV1TestCase::GROUP_UUID;
-
         $response = $this->sendRequest('PUT', 'contactgroups/' . BaseApiV1TestCase::GROUP_UUID, [
             'id' => BaseApiV1TestCase::GROUP_UUID,
             'name' => 'Test',
@@ -680,8 +657,11 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(201, $response->getStatusCode(), $content);
-        $this->assertSame([$expectedLocation], $response->getHeader('Location'));
-        $this->assertSame($expected, $content);
+        $this->assertSame(
+            ['notifications/api/v1/contactgroups/' . BaseApiV1TestCase::GROUP_UUID],
+            $response->getHeader('Location')
+        );
+        $this->assertSame($this->jsonEncodeSuccessMessage('Contactgroup created successfully'), $content);
     }
 
     /**
@@ -717,8 +697,6 @@ YAML;
     public function testPutWithNewIdentifierAndInvalidData(): void
     {
         // different id
-        $expected = $this->jsonEncodeError('Identifier mismatch');
-
         $response = $this->sendRequest('PUT', 'contactgroups/' . BaseApiV1TestCase::GROUP_UUID, [
             'id' => BaseApiV1TestCase::GROUP_UUID_2,
             'name' => 'Test',
@@ -727,12 +705,9 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(422, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeError('Identifier mismatch'), $content);
 
         // invalid users
-        $expected = $this->jsonEncodeError(
-            'User with identifier ' . BaseApiV1TestCase::CONTACT_UUID . ' not found'
-        );
         $response = $this->sendRequest('PUT', 'contactgroups/' . BaseApiV1TestCase::GROUP_UUID, [
             'id' => BaseApiV1TestCase::GROUP_UUID,
             'name' => 'Test',
@@ -741,7 +716,10 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(422, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame(
+            $this->jsonEncodeError('User with identifier ' . BaseApiV1TestCase::CONTACT_UUID . ' not found'),
+            $content
+        );
     }
 
     /**
@@ -751,9 +729,6 @@ YAML;
      */
     public function testPutWithNewIdentifierAndValidOptionalData(): void
     {
-        $expected = $this->jsonEncodeSuccessMessage('Contactgroup created successfully');
-        $expectedLocation = 'notifications/api/v1/contactgroups/' . BaseApiV1TestCase::GROUP_UUID;
-        // missing users
         $response = $this->sendRequest('PUT', 'contactgroups/' . BaseApiV1TestCase::GROUP_UUID, [
             'id' => BaseApiV1TestCase::GROUP_UUID,
             'name' => 'Test'
@@ -761,8 +736,11 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(201, $response->getStatusCode(), $content);
-        $this->assertSame([$expectedLocation], $response->getHeader('Location'));
-        $this->assertSame($expected, $content);
+        $this->assertSame(
+            ['notifications/api/v1/contactgroups/' . BaseApiV1TestCase::GROUP_UUID],
+            $response->getHeader('Location')
+        );
+        $this->assertSame($this->jsonEncodeSuccessMessage('Contactgroup created successfully'), $content);
     }
 
     /**
@@ -801,13 +779,11 @@ YAML;
      */
     public function testDeleteWithoutIdentifier(): void
     {
-        $expected = $this->jsonEncodeError('Invalid request: Identifier is required');
-
         $response = $this->sendRequest('DELETE', 'contactgroups');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeError('Invalid request: Identifier is required'), $content);
     }
 
     /**
@@ -815,13 +791,11 @@ YAML;
      */
     public function testDeleteWithNewIdentifier(): void
     {
-        $expected = $this->jsonEncodeError('Contactgroup not found');
-
         $response = $this->sendRequest('DELETE', 'contactgroups/' . BaseApiV1TestCase::GROUP_UUID);
         $content = $response->getBody()->getContents();
 
         $this->assertSame(404, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeError('Contactgroup not found'), $content);
     }
 
     /**
@@ -848,13 +822,14 @@ YAML;
      */
     public function testDeleteWithFilter(): void
     {
-        $expected = $this->jsonEncodeError('Unexpected query parameter: Filter is only allowed for GET requests');
-
         $response = $this->sendRequest('DELETE', 'contactgroups?name~*');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame(
+            $this->jsonEncodeError('Unexpected query parameter: Filter is only allowed for GET requests'),
+            $content
+        );
     }
 
     /**
@@ -862,14 +837,11 @@ YAML;
      */
     public function testRequestWithNonSupportedMethod(): void
     {
-        $expected = $this->jsonEncodeError('HTTP method PATCH is not supported');
-        $expectedAllowHeader = 'GET, POST, PUT, DELETE';
-
         $response = $this->sendRequest('PATCH', 'contactgroups');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(405, $response->getStatusCode(), $content);
-        $this->assertSame([$expectedAllowHeader], $response->getHeader('Allow'));
-        $this->assertSame($expected, $content);
+        $this->assertSame(['GET, POST, PUT, DELETE'], $response->getHeader('Allow'));
+        $this->assertSame($this->jsonEncodeError('HTTP method PATCH is not supported'), $content);
     }
 }

@@ -21,6 +21,9 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
         ]);
 
+        $response = $this->sendRequest('GET', 'contacts?full_name=Test');
+        $content = $response->getBody()->getContents();
+
         $expected = $this->jsonEncodeResults([
             'id' => BaseApiV1TestCase::CONTACT_UUID,
             'full_name' => 'Test',
@@ -29,10 +32,6 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
             'groups' => [],
             'addresses' => []
         ]);
-
-        $response = $this->sendRequest('GET', 'contacts?full_name=Test');
-        $content = $response->getBody()->getContents();
-
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertSame($expected, $content);
     }
@@ -44,13 +43,11 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
     public function testGetEverything(): void
     {
         // At first, there are none
-        $expected = $this->jsonEncodeResults([]);
-
         $response = $this->sendRequest('GET', 'contacts');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeResults([]), $content);
 
         // Create new contact
         $this->sendRequest('POST', 'contacts', [
@@ -65,6 +62,9 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
         ]);
 
         // Now there are two
+        $response = $this->sendRequest('GET', 'contacts');
+        $content = $response->getBody()->getContents();
+
         $expected = $this->jsonEncodeResults([
             [
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
@@ -83,10 +83,6 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
                 'addresses' => []
             ],
         ]);
-
-        $response = $this->sendRequest('GET', 'contacts');
-        $content = $response->getBody()->getContents();
-
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertSame($expected, $content);
     }
@@ -103,6 +99,9 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
         ]);
 
+        $response = $this->sendRequest('GET', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID);
+        $content = $response->getBody()->getContents();
+
         $expected = $this->jsonEncodeResult([
             'id' => BaseApiV1TestCase::CONTACT_UUID,
             'full_name' => 'Test',
@@ -111,10 +110,6 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
             'groups' => [],
             'addresses' => []
         ]);
-
-        $response = $this->sendRequest('GET', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID);
-        $content = $response->getBody()->getContents();
-
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertSame($expected, $content);
     }
@@ -124,13 +119,11 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
      */
     public function testGetWithNewIdentifier(): void
     {
-        $expected = $this->jsonEncodeError('Contact not found');
-
         $response = $this->sendRequest('GET', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID);
         $content = $response->getBody()->getContents();
 
         $this->assertSame(404, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeError('Contact not found'), $content);
     }
 
     /**
@@ -139,13 +132,11 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
      */
     public function testGetWithNonMatchingFilter(): void
     {
-        $expected = $this->jsonEncodeResults([]);
-
         $response = $this->sendRequest('GET', 'contacts?full_name=not_test');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeResults([]), $content);
     }
 
     /**
@@ -153,13 +144,12 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
      */
     public function testGetWithNonExistingFilter(): void
     {
-        $expected = $this->jsonEncodeError(
-            'Invalid request parameter: Filter column unknown given, only id, full_name and username are allowed'
-        );
-
         $response = $this->sendRequest('GET', 'contacts?unknown=filter');
         $content = $response->getBody()->getContents();
 
+        $expected = $this->jsonEncodeError(
+            'Invalid request parameter: Filter column unknown given, only id, full_name and username are allowed'
+        );
         $this->assertSame(400, $response->getStatusCode(), $content);
         $this->assertSame($expected, $content);
     }
@@ -200,8 +190,6 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
 payload: invalid
 YAML;
 
-        $expected = $this->jsonEncodeError('Invalid request body: given content is not a valid JSON');
-
         $response = $this->sendRequest(
             method: 'POST',
             endpoint: 'contacts',
@@ -214,7 +202,7 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(400, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeError('Invalid request body: given content is not a valid JSON'), $content);
     }
 
     /**
@@ -229,8 +217,6 @@ YAML;
 payload: invalid
 YAML;
 
-        $expected = $this->jsonEncodeError('Invalid request header: Content-Type must be application/json');
-
         $response = $this->sendRequest(
             method: 'POST',
             endpoint: 'contacts',
@@ -243,7 +229,10 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(400, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame(
+            $this->jsonEncodeError('Invalid request header: Content-Type must be application/json'),
+            $content
+        );
     }
 
     /**
@@ -253,8 +242,6 @@ YAML;
      */
     public function testPostWithFilter(): void
     {
-        $expected = $this->jsonEncodeError('Unexpected query parameter: Filter is only allowed for GET requests');
-
         $response = $this->sendRequest(
             'POST',
             'contacts?id=' . BaseApiV1TestCase::CONTACT_UUID,
@@ -267,7 +254,10 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame(
+            $this->jsonEncodeError('Unexpected query parameter: Filter is only allowed for GET requests'),
+            $content
+        );
     }
 
     /**
@@ -277,8 +267,6 @@ YAML;
      */
     public function testPostWithNewIdentifier(): void
     {
-        $expected = $this->jsonEncodeError('Contact not found');
-
         $response = $this->sendRequest('POST', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID, [
             'id' => BaseApiV1TestCase::CONTACT_UUID_2,
             'full_name' => 'Test',
@@ -287,7 +275,7 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(404, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeError('Contact not found'), $content);
     }
 
     /**
@@ -304,10 +292,6 @@ YAML;
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
         ]);
 
-        $expected = $this->jsonEncodeError(
-            'Identifier mismatch: the Payload id must be different from the URL identifier'
-        );
-
         $response = $this->sendRequest('POST', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID, [
             'id' => BaseApiV1TestCase::CONTACT_UUID,
             'full_name' => 'Test',
@@ -316,7 +300,10 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame(
+            $this->jsonEncodeError('Identifier mismatch: the Payload id must be different from the URL identifier'),
+            $content
+        );
     }
 
     /**
@@ -338,8 +325,6 @@ YAML;
             'full_name' => 'Test',
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
         ]);
-        $expected = $this->jsonEncodeError('Contact already exists');
-
         $response = $this->sendRequest('POST', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID, [
             'id' => BaseApiV1TestCase::CONTACT_UUID_2,
             'full_name' => 'Test',
@@ -348,7 +333,7 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(409, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeError('Contact already exists'), $content);
     }
 
     /**
@@ -365,9 +350,6 @@ YAML;
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
         ]);
 
-        $expected = $this->jsonEncodeSuccessMessage('Contact created successfully');
-        $expectedLocation = 'notifications/api/v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_2;
-
         $response = $this->sendRequest('POST', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID, [
             'id' => BaseApiV1TestCase::CONTACT_UUID_2,
             'full_name' => 'Test (replaced)',
@@ -376,8 +358,11 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(201, $response->getStatusCode(), $content);
-        $this->assertSame([$expectedLocation], $response->getHeader('Location'));
-        $this->assertSame($expected, $content);
+        $this->assertSame(
+            ['notifications/api/v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_2],
+            $response->getHeader('Location')
+        );
+        $this->assertSame($this->jsonEncodeSuccessMessage('Contact created successfully'), $content);
     }
 
     /**
@@ -394,8 +379,6 @@ YAML;
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
         ]);
 
-        $expected = $this->jsonEncodeError('Contact already exists');
-
         $response = $this->sendRequest('POST', 'contacts', [
             'id' => BaseApiV1TestCase::CONTACT_UUID,
             'full_name' => 'Test',
@@ -404,7 +387,7 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(409, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeError('Contact already exists'), $content);
     }
 
     /**
@@ -414,9 +397,6 @@ YAML;
      */
     public function testPostWithValidData(): void
     {
-        $expected = $this->jsonEncodeSuccessMessage('Contact created successfully');
-        $expectedLocation = 'notifications/api/v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID;
-
         $response = $this->sendRequest('POST', 'contacts', [
             'id' => BaseApiV1TestCase::CONTACT_UUID,
             'full_name' => 'Test',
@@ -425,8 +405,11 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(201, $response->getStatusCode(), $content);
-        $this->assertSame([$expectedLocation], $response->getHeader('Location'));
-        $this->assertSame($expected, $content);
+        $this->assertSame(
+            ['notifications/api/v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID],
+            $response->getHeader('Location')
+        );
+        $this->assertSame($this->jsonEncodeSuccessMessage('Contact created successfully'), $content);
     }
 
     /**
@@ -484,9 +467,6 @@ YAML;
         ]);
         $this->assertSame(201, $response->getStatusCode(), $response->getBody()->getContents());
 
-        $expected = $this->jsonEncodeSuccessMessage('Contact created successfully');
-        $expectedLocation = 'notifications/api/v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID;
-
         $response = $this->sendRequest('POST', 'contacts', [
             'id' => BaseApiV1TestCase::CONTACT_UUID,
             'full_name' => 'Test',
@@ -502,8 +482,11 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(201, $response->getStatusCode(), $content);
-        $this->assertSame([$expectedLocation], $response->getHeader('Location'));
-        $this->assertSame($expected, $content);
+        $this->assertSame(
+            ['notifications/api/v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID],
+            $response->getHeader('Location')
+        );
+        $this->assertSame($this->jsonEncodeSuccessMessage('Contact created successfully'), $content);
     }
 
     /**
@@ -515,8 +498,6 @@ YAML;
     public function testPostWithInvalidData(): void
     {
         // invalid default_channel uuid
-        $expected = $this->jsonEncodeError('Invalid request body: given default_channel is not a valid UUID');
-
         $response = $this->sendRequest('POST', 'contacts', [
             'id' => BaseApiV1TestCase::CONTACT_UUID_2,
             'full_name' => 'Test',
@@ -525,7 +506,10 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(400, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame(
+            $this->jsonEncodeError('Invalid request body: given default_channel is not a valid UUID'),
+            $content
+        );
     }
 
     /**
@@ -585,8 +569,6 @@ YAML;
         ]);
 
         // already existing username
-        $expected = $this->jsonEncodeError('Username test already exists');
-
         $response = $this->sendRequest('POST', 'contacts', [
             'id' => BaseApiV1TestCase::CONTACT_UUID,
             'full_name' => 'Test',
@@ -596,13 +578,9 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(409, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeError('Username test already exists'), $content);
 
         // with non-existing group
-        $expected = $this->jsonEncodeError(
-            'Contactgroup with identifier ' . BaseApiV1TestCase::GROUP_UUID . ' does not exist'
-        );
-
         $response = $this->sendRequest('POST', 'contacts', [
             'id' => BaseApiV1TestCase::CONTACT_UUID,
             'full_name' => 'Test',
@@ -612,11 +590,12 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame(
+            $this->jsonEncodeError('Contactgroup with identifier ' . BaseApiV1TestCase::GROUP_UUID . ' does not exist'),
+            $content
+        );
 
         // invalid group uuid
-        $expected = $this->jsonEncodeError('Invalid request body: the group identifier invalid_uuid is not a valid UUID');
-
         $response = $this->sendRequest('POST', 'contacts', [
             'id' => BaseApiV1TestCase::CONTACT_UUID,
             'full_name' => 'Test',
@@ -626,11 +605,12 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(422, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame(
+            $this->jsonEncodeError('Invalid request body: the group identifier invalid_uuid is not a valid UUID'),
+            $content
+        );
 
         // with invalid address type
-        $expected = $this->jsonEncodeError('Invalid request body: undefined address type invalid given');
-
         $response = $this->sendRequest('POST', 'contacts', [
             'id' => BaseApiV1TestCase::CONTACT_UUID,
             'full_name' => 'Test',
@@ -641,7 +621,10 @@ YAML;
         ]);
         $content = $response->getBody()->getContents();
         $this->assertSame(422, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame(
+            $this->jsonEncodeError('Invalid request body: undefined address type invalid given'),
+            $content
+        );
     }
 
     /**
@@ -656,8 +639,6 @@ YAML;
 payload: invalid
 YAML;
 
-        $expected = $this->jsonEncodeError('Invalid request body: given content is not a valid JSON');
-
         $response = $this->sendRequest(
             method: 'PUT',
             endpoint: 'contacts/' . BaseApiV1TestCase::CONTACT_UUID,
@@ -670,7 +651,7 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(400, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeError('Invalid request body: given content is not a valid JSON'), $content);
     }
 
     /**
@@ -685,8 +666,6 @@ YAML;
 payload: invalid
 YAML;
 
-        $expected = $this->jsonEncodeError('Invalid request header: Content-Type must be application/json');
-
         $response = $this->sendRequest(
             method: 'PUT',
             endpoint: 'contacts/' . BaseApiV1TestCase::CONTACT_UUID,
@@ -699,7 +678,10 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(400, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame(
+            $this->jsonEncodeError('Invalid request header: Content-Type must be application/json'),
+            $content
+        );
     }
 
     /**
@@ -709,8 +691,6 @@ YAML;
      */
     public function testPutWithFilter(): void
     {
-        $expected = $this->jsonEncodeError('Unexpected query parameter: Filter is only allowed for GET requests');
-
         $response = $this->sendRequest(
             'PUT',
             'contacts?id=' . BaseApiV1TestCase::CONTACT_UUID,
@@ -723,7 +703,10 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame(
+            $this->jsonEncodeError('Unexpected query parameter: Filter is only allowed for GET requests'),
+            $content
+        );
     }
 
     /**
@@ -733,8 +716,6 @@ YAML;
      */
     public function testPutWithoutIdentifier(): void
     {
-        $expected = $this->jsonEncodeError('Invalid request: Identifier is required');
-
         $response = $this->sendRequest('PUT', 'contacts', [
             'id' => BaseApiV1TestCase::CONTACT_UUID,
             'full_name' => 'Test',
@@ -743,7 +724,7 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeError('Invalid request: Identifier is required'), $content);
     }
 
     /**
@@ -812,8 +793,6 @@ YAML;
 
         ]);
 
-        $expected = $this->jsonEncodeError('Identifier mismatch');
-
         $response = $this->sendRequest('PUT', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID, [
             'id' => BaseApiV1TestCase::CONTACT_UUID_2,
             'full_name' => 'Test',
@@ -822,7 +801,7 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeError('Identifier mismatch'), $content);
     }
 
     /**
@@ -839,9 +818,6 @@ YAML;
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
         ]);
 
-        $expected = $this->jsonEncodeSuccessMessage('Contact created successfully');
-        $expectedLocation = 'notifications/api/v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_2;
-
         $response = $this->sendRequest('PUT', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID_2, [
             'id' => BaseApiV1TestCase::CONTACT_UUID_2,
             'full_name' => 'Test',
@@ -855,8 +831,11 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(201, $response->getStatusCode(), $content);
-        $this->assertSame([$expectedLocation], $response->getHeader('Location'));
-        $this->assertSame($expected, $content);
+        $this->assertSame(
+            ['notifications/api/v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_2],
+            $response->getHeader('Location')
+        );
+        $this->assertSame($this->jsonEncodeSuccessMessage('Contact created successfully'), $content);
     }
 
     /**
@@ -892,8 +871,6 @@ YAML;
     public function testPutWithNewIdentifierAndInvalidData(): void
     {
         // different id
-        $expected = $this->jsonEncodeError('Identifier mismatch');
-
         $response = $this->sendRequest('PUT', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID, [
             'id' => BaseApiV1TestCase::CONTACT_UUID_2,
             'full_name' => 'Test',
@@ -902,13 +879,9 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(422, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeError('Identifier mismatch'), $content);
 
         // invalid groups
-        $expected = $this->jsonEncodeError(
-            'Contactgroup with identifier ' . BaseApiV1TestCase::GROUP_UUID . ' does not exist'
-        );
-
         $response = $this->sendRequest('PUT', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID, [
             'id' => BaseApiV1TestCase::CONTACT_UUID,
             'full_name' => 'Test',
@@ -918,7 +891,10 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(422, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame(
+            $this->jsonEncodeError('Contactgroup with identifier ' . BaseApiV1TestCase::GROUP_UUID . ' does not exist'),
+            $content
+        );
     }
 
     /**
@@ -967,13 +943,11 @@ YAML;
      */
     public function testDeleteWithoutIdentifier(): void
     {
-        $expected = $this->jsonEncodeError('Invalid request: Identifier is required');
-
         $response = $this->sendRequest('DELETE', 'contacts');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeError('Invalid request: Identifier is required'), $content);
     }
 
     /**
@@ -981,13 +955,11 @@ YAML;
      */
     public function testDeleteWithNewIdentifier(): void
     {
-        $expected = $this->jsonEncodeError('Contact not found');
-
         $response = $this->sendRequest('DELETE', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID);
         $content = $response->getBody()->getContents();
 
         $this->assertSame(404, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame($this->jsonEncodeError('Contact not found'), $content);
     }
 
     /**
@@ -1014,13 +986,14 @@ YAML;
      */
     public function testDeleteWithFilter(): void
     {
-        $expected = $this->jsonEncodeError('Unexpected query parameter: Filter is only allowed for GET requests');
-
         $response = $this->sendRequest('DELETE', 'contacts?name~*');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertSame(
+            $this->jsonEncodeError('Unexpected query parameter: Filter is only allowed for GET requests'),
+            $content
+        );
     }
 
     /**
@@ -1029,14 +1002,11 @@ YAML;
     public function testRequestWithNonSupportedMethod(): void
     {
         // General invalid method
-        $expected = $this->jsonEncodeError('HTTP method PATCH is not supported');
-        $expectedAllowHeader = 'GET, POST, PUT, DELETE';
-
         $response = $this->sendRequest('PATCH', 'contacts');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(405, $response->getStatusCode(), $content);
-        $this->assertSame([$expectedAllowHeader], $response->getHeader('Allow'));
-        $this->assertSame($expected, $content);
+        $this->assertSame(['GET, POST, PUT, DELETE'], $response->getHeader('Allow'));
+        $this->assertSame($this->jsonEncodeError('HTTP method PATCH is not supported'), $content);
     }
 }
