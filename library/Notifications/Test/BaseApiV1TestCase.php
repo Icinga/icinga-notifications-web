@@ -192,25 +192,24 @@ SQL
 
         return $client->request($method, 'http://127.0.0.1:1792/notifications/api/v1/' . $endpoint, $options);
     }
-    public function jsonEncode($data): string
+
+    public function jsonEncodeError(string $message): string
     {
-        if (! is_array($data) && ! is_string($data)) {
-            throw new \InvalidArgumentException('Data must be an array or string');
-        }
+        return Json::sanitize(['message' => $message]);
+    }
 
-        $result = is_array($data)
-            ? ['data' => (! empty($data) && ! isset($data[0])) ? [$data] : $data]
-            : ['message' => $data];
+    public function jsonEncodeSuccessMessage(string $message): string
+    {
+        return Json::sanitize(['message' => $message]);
+    }
 
-//        if (is_array($data)) {
-//            if (! empty($data) && ! isset($data[0])) {
-//                $data = [$data];
-//            }
-//            $result = ['data' => $data];
-//        } else {
-//            $result = ['message' => $data];
-//        }
+    public function jsonEncodeResult(array $data): string
+    {
+        return Json::sanitize(['data' => [$data]]);
+    }
 
-         return Json::sanitize($result);
+    public function jsonEncodeResults(array $data): string
+    {
+        return Json::sanitize(['data' => (! empty($data) && ! isset($data[0])) ? [$data] : $data]);
     }
 }

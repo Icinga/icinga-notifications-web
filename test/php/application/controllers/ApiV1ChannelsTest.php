@@ -7,13 +7,11 @@ use Icinga\Module\Notifications\Test\BaseApiV1TestCase;
 class ApiV1ChannelsTest extends BaseApiV1TestCase
 {
     /**
-     * Get a specific channels by providing a filter.
-     *
      * @dataProvider databases
      */
     public function testGetWithMatchingFilter(): void
     {
-        $expected = $this->jsonEncode([
+        $expected = $this->jsonEncodeResults([
             'id'     => '0817d973-398e-41d7-9cd2-61cdb7ef41a1',
             'name'   => 'Test',
             'type'   => 'email',
@@ -50,13 +48,11 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
     }
 
     /**
-     * Get all channels currently stored at the endpoint.
-     *
      * @dataProvider databases
      */
     public function testGetEverything(): void
     {
-        $expected = $this->jsonEncode([
+        $expected = $this->jsonEncodeResults([
             [
                 'id'     => '0817d973-398e-41d7-9cd2-61cdb7ef41a1',
                 'name'   => 'Test',
@@ -80,13 +76,11 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
     }
 
     /**
-     * Get a specific channel by its identifier.
-     *
      * @dataProvider databases
      */
     public function testGetWithMatchingIdentifier(): void
     {
-        $expected = $this->jsonEncode([
+        $expected = $this->jsonEncodeResult([
             'id'     => '0817d973-398e-41d7-9cd2-61cdb7ef41a1',
             'name'   => 'Test',
             'type'   => 'email',
@@ -101,13 +95,11 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
     }
 
     /**
-     * Get channels, while providing a non-matching name filter.
-     *
      * @dataProvider databases
      */
     public function testGetWithNonMatchingFilter(): void
     {
-        $expected = $this->jsonEncode([]);
+        $expected = $this->jsonEncodeResults([]);
 
         $response = $this->sendRequest('GET', 'channels?name=not_test');
         $content = $response->getBody()->getContents();
@@ -116,15 +108,12 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $this->assertSame($expected, $content);
     }
 
-    // TODO: Additional GET tests
     /**
-     * Try to use a non-existing filter.
-     *
      * @dataProvider databases
      */
     public function testGetWithInvalidFilter(): void
     {
-        $expected = $this->jsonEncode(
+        $expected = $this->jsonEncodeError(
             'Invalid request parameter: Filter column nonexistingfilter given, only id, name and type are allowed',
         );
 
@@ -136,13 +125,11 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
     }
 
     /**
-     * Get a specific channel by providing a non-existent identifier in the Request-URI.
-     *
      * @dataProvider databases
      */
-    public function testGetWithNonMatchingIdentifier(): void
+    public function testGetWithNewIdentifier(): void
     {
-        $expected = $this->jsonEncode('Channel not found');
+        $expected = $this->jsonEncodeError('Channel not found');
 
         $response = $this->sendRequest('GET', 'channels/0817d973-398e-41d7-9ef2-61cdb7ef41a2');
         $content = $response->getBody()->getContents();
@@ -152,13 +139,11 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
     }
 
     /**
-     * Get a specific channel by providing an invalid identifier in the Request-URI.
-     *
      * @dataProvider databases
      */
     public function testGetWithInvalidIdentifier(): void
     {
-        $expected = $this->jsonEncode('The given identifier is not a valid UUID');
+        $expected = $this->jsonEncodeError('The given identifier is not a valid UUID');
 
         $response = $this->sendRequest('GET', 'channels/0817d973-398e-41d7-9ef2-61cdb7ef41a234534');
         $content = $response->getBody()->getContents();
@@ -168,13 +153,11 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
     }
 
     /**
-     * Try to use an identifier with a filter.
-     *
      * @dataProvider databases
      */
     public function testGetWithIdentifierAndFilter(): void
     {
-        $expected = $this->jsonEncode(
+        $expected = $this->jsonEncodeError(
             'Invalid request: GET with identifier and query parameters, it\'s not allowed to use both together.',
         );
 
@@ -193,17 +176,14 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $this->assertSame($expected, $content);
     }
 
-    // TODO: Additional general tests
     /**
-     * Try to use a non-supported HTTP method.
-     *
      * @dataProvider databases
      */
     public function testRequestWithNonSupportedMethod(): void
     {
         $expectedAllowHeader = 'GET';
         // General invalid method
-        $expected = $this->jsonEncode('HTTP method PATCH is not supported');
+        $expected = $this->jsonEncodeError('HTTP method PATCH is not supported');
 
         $response = $this->sendRequest('PATCH', 'channels');
         $content = $response->getBody()->getContents();
@@ -214,7 +194,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
 
         // Endpoint specific invalid method
         // Try to POST
-        $expected = $this->jsonEncode('Method POST is not supported for endpoint Channels');
+        $expected = $this->jsonEncodeError('Method POST is not supported for endpoint Channels');
         //Try to POST without identifier
         $response = $this->sendRequest('POST', 'channels');
         $content = $response->getBody()->getContents();
@@ -248,7 +228,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $this->assertSame($expected, $content);
 
         // Try to PUT
-        $expected = $this->jsonEncode('Method PUT is not supported for endpoint Channels');
+        $expected = $this->jsonEncodeError('Method PUT is not supported for endpoint Channels');
 
         $response = $this->sendRequest('PUT', 'channels');
         $content = $response->getBody()->getContents();
@@ -258,7 +238,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $this->assertSame($expected, $content);
 
         // Try to DELETE
-        $expected = $this->jsonEncode('Method DELETE is not supported for endpoint Channels');
+        $expected = $this->jsonEncodeError('Method DELETE is not supported for endpoint Channels');
 
         $response = $this->sendRequest('DELETE', 'channels');
         $content = $response->getBody()->getContents();
