@@ -2,16 +2,8 @@
 
 namespace Icinga\Module\Notifications\Api;
 
-use Generator;
-use GuzzleHttp\Psr7\Response;
-use Icinga\Application\Icinga;
-use Icinga\Exception\Json\JsonEncodeException;
-use Icinga\Exception\ProgrammingError;
-use Icinga\Util\Json;
+use Icinga\Module\Notifications\Api\Elements\HttpMethod;
 use ipl\Sql\Connection;
-use ipl\Sql\Select;
-use Psr\Http\Message\ResponseInterface;
-use stdClass;
 
 abstract class ApiCore
 {
@@ -91,45 +83,19 @@ abstract class ApiCore
     }
 
     /**
-     * Create a content generator for streaming JSON responses.
+     * Get allowed HTTP methods for the API.
      *
-     * This method creates a generator that yields JSON-encoded content
-     * in batches, allowing for efficient streaming of large datasets.
-     *
-     * @param Connection $db The database connection to use for querying.
-     * @param Select $stmt The SQL select statement to execute.
-     * @param callable $enricher A function to enrich each row of data.
-     * @param int $batchSize The number of rows to fetch in each batch (default is 500).
-     *
-     * @return Generator Yields JSON-encoded strings representing the content.
-     * @throws JsonEncodeException
+     * @return string
      */
-    protected function createContentGenerator(
-        Connection $db,
-        Select $stmt,
-        callable $enricher,
-        int $batchSize = 500
-    ): Generator {
-        $stmt->limit($batchSize);
-        $offset = 0;
-
-        yield '{"data":[';
-         $res = $db->select($stmt->offset($offset));
-        do {
-            /** @var stdClass $row */
-            foreach ($res as $i => $row) {
-                $enricher($row);
-
-                if ($i > 0 || $offset !== 0) {
-                    yield ",";
-                }
-
-                yield Json::sanitize($row);
+    protected function getAllowedMethods(): string
+    {
+        $methods = [];
+        foreach (HttpMethod::cases() as $method) {
+            if (method_exists($this, $method->name)) {
+                $methods[] = $method->value;
             }
+        }
 
-            $offset += $batchSize;
-            $res = $db->select($stmt->offset($offset));
-        } while ($res->rowCount());
-        yield ']}';
+        return implode(', ', $methods);
     }
 }
