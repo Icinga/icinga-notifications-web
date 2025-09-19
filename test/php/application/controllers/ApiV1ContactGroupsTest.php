@@ -82,7 +82,7 @@ class ApiV1ContactGroupsTest extends BaseApiV1TestCase
      * @dataProvider databases
      * @depends testPostWithValidData
      */
-    public function testGetWithMatchingIdentifier(): void
+    public function testGetWithAlreadyExistingIdentifier(): void
     {
         $this->sendRequest('POST', 'contactgroups', [
             'id' => BaseApiV1TestCase::GROUP_UUID,
@@ -239,7 +239,7 @@ YAML;
      * @dataProvider databases
      * @depends testPostWithValidData
      */
-    public function testPostWithMatchingIdentifierAndIndifferentPayloadId(): void
+    public function testPostWithAlreadyExistingIdentifierAndIndifferentPayloadId(): void
     {
         $this->sendRequest('POST', 'contactgroups', [
             'id' => BaseApiV1TestCase::GROUP_UUID,
@@ -267,7 +267,7 @@ YAML;
      * @dataProvider databases
      * @depends testPostWithValidData
      */
-    public function testPostWithMatchingIdentifierAndExistingPayloadId(): void
+    public function testPostWithAlreadyExistingIdentifierAndExistingPayloadId(): void
     {
         $this->sendRequest('POST', 'contactgroups', [
             'id' => BaseApiV1TestCase::GROUP_UUID,
@@ -298,7 +298,7 @@ YAML;
      * @dataProvider databases
      * @depends testPostWithValidData
      */
-    public function testPostWithMatchingIdentifierAndValidData(): void
+    public function testPostWithAlreadyExistingIdentifierAndValidData(): void
     {
         $this->sendRequest('POST', 'contactgroups', [
             'id' => BaseApiV1TestCase::GROUP_UUID,
@@ -440,7 +440,7 @@ YAML;
      * @dataProvider databases
      * @depends testPostWithValidData
      */
-    public function testPostWithMatchingIdentifierAndInvalidData(): void
+    public function testPostWithAlreadyExistingIdentifierAndInvalidData(): void
     {
         $this->sendRequest('POST', 'contactgroups', [
             'id' => BaseApiV1TestCase::GROUP_UUID,
@@ -576,7 +576,7 @@ YAML;
      * @dataProvider databases
      * @depends testPostWithValidData
      */
-    public function testPutWithMatchingIdentifierAndMissingRequiredFields(): void
+    public function testPutWithAlreadyExistingIdentifierAndMissingRequiredFields(): void
     {
         $this->sendRequest('POST', 'contactgroups', [
             'id' => BaseApiV1TestCase::GROUP_UUID,
@@ -615,7 +615,7 @@ YAML;
      * @dataProvider databases
      * @depends testPostWithValidData
      */
-    public function testPutWithMatchingIdentifierAndDifferentPayloadId(): void
+    public function testPutWithAlreadyExistingIdentifierAndDifferentPayloadId(): void
     {
         $this->sendRequest('POST', 'contactgroups', [
             'id' => BaseApiV1TestCase::GROUP_UUID,
@@ -670,7 +670,7 @@ YAML;
      * @dataProvider databases
      * @depends testPostWithValidData
      */
-    public function testPutWithMatchingIdentifierAndValidData(): void
+    public function testPutWithAlreadyExistingIdentifierAndValidData(): void
     {
         $this->sendRequest('POST', 'contactgroups', [
             'id' => BaseApiV1TestCase::GROUP_UUID,
@@ -802,7 +802,7 @@ YAML;
      * @dataProvider databases
      * @depends testPostWithValidData
      */
-    public function testDeleteWithMatchingIdentifier(): void
+    public function testDeleteWithAlreadyExistingIdentifier(): void
     {
         $this->sendRequest('POST', 'contactgroups', [
             'id' => BaseApiV1TestCase::GROUP_UUID,

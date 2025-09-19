@@ -77,7 +77,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
     /**
      * @dataProvider databases
      */
-    public function testGetWithMatchingIdentifier(): void
+    public function testGetWithAlreadyExistingIdentifier(): void
     {
         $response = $this->sendRequest('GET', 'channels/0817d973-398e-41d7-9cd2-61cdb7ef41a1');
         $content = $response->getBody()->getContents();
