@@ -2,10 +2,6 @@
 
 namespace Icinga\Module\Notifications\Api\Elements;
 
-use Icinga\Exception\Http\HttpException;
-use InvalidArgumentException;
-use ValueError;
-
 enum HttpMethod: string
 {
     case GET = 'get';
@@ -13,14 +9,6 @@ enum HttpMethod: string
     case PUT = 'put';
     case DELETE = 'delete';
 
-    public static function fromString(string $method): self
-    {
-        try {
-            return self::from(strtolower($method));
-        } catch (ValueError) {
-             throw (new HttpException(405, "HTTP method $method is not supported"));
-        }
-    }
 
     /**
      * Returns the current enum case as string in uppercase.
