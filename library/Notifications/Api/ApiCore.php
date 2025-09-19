@@ -16,11 +16,6 @@ use ReflectionClass;
 abstract class ApiCore implements RequestHandlerInterface
 {
     /**
-     * The endpoint name for each API endpoint class.
-     * This constant must be defined in each subclass to specify the endpoint name.
-     */
-    public const ENDPOINT = '__Abstract__';
-    /**
      * Suffix for plural method names.
      *
      * This constant is used to differentiate between singular and plural method names
@@ -49,17 +44,7 @@ abstract class ApiCore implements RequestHandlerInterface
      * @return string
      * @throws LogicException
      */
-    protected function getEndpoint(): string
-    {
-        if (static::ENDPOINT === '__Abstract__') {
-            throw new LogicException(
-                'The ENDPOINT constant must be defined in the endpoint class: '
-                . (new ReflectionClass($this))->getShortName()
-            );
-        }
-
-        return static::ENDPOINT;
-    }
+    abstract public function getEndpoint(): string;
 
     /**
      * Handle the incoming server request and return a response.
