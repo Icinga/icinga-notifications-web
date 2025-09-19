@@ -11,7 +11,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Ramsey\Uuid\Uuid;
-use ReflectionClass;
+use ValueError;
 
 abstract class ApiCore implements RequestHandlerInterface
 {
@@ -61,9 +61,10 @@ abstract class ApiCore implements RequestHandlerInterface
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
         try {
-            $httpMethod = HttpMethod::fromString($request->getMethod());
-        } catch (HttpException $e) {
-            throw $e->setHeader('Allow', $this->getAllowedMethods());
+            $httpMethod = HttpMethod::from(strtolower($request->getMethod()));
+        } catch (ValueError) {
+            throw (new HttpException(405, 'HTTP method ' . $request->getMethod() . ' is not supported'))
+                ->setHeader('Allow', $this->getAllowedMethods());
         }
         $request = $request->withAttribute('httpMethod', $httpMethod);
         $identifier = $request->getAttribute('identifier');
