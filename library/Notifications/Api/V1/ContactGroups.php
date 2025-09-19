@@ -222,7 +222,7 @@ class ContactGroups extends ApiV1
         }
 
         if ($this->getGroupId($requestBody['id']) !== null) {
-            throw new HttpException(409, 'Contactgroup already exists');
+            throw new HttpException(422, 'Contactgroup already exists');
         }
 
         if (! $emptyIdentifier) {
@@ -538,7 +538,7 @@ class ContactGroups extends ApiV1
         $user = Database::get()->fetchOne($stmt);
 
         if ($user) {
-            throw new HttpException(409, 'Username ' . $name . ' already exists');
+            throw new HttpException(422, 'Username ' . $name . ' already exists');
         }
     }
 }
