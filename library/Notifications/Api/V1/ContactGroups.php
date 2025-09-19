@@ -58,6 +58,7 @@ use stdClass;
 )]
 class ContactGroups extends ApiV1
 {
+    public const ENDPOINT = 'Contactgroups';
     /**
      * The route to handle a contactgroup with a specific identifier
      *
@@ -86,7 +87,7 @@ class ContactGroups extends ApiV1
         $stmt->where(['external_uuid = ?' => $identifier]);
 
         /** @var stdClass|false $result */
-        $result = $this->getDB()->fetchOne($stmt);
+        $result = Database::get()->fetchOne($stmt);
 
         if (empty($result)) {
             throw new HttpNotFoundException('Contactgroup not found');
@@ -121,7 +122,7 @@ class ContactGroups extends ApiV1
             $stmt->where($filter);
         }
 
-        return ['body' => $this->createContentGenerator($this->getDB(), $stmt, $this->createGETRowFinalizer())];
+        return ['body' => $this->createContentGenerator(Database::get(), $stmt, $this->createGETRowFinalizer())];
     }
 
     /**
@@ -146,19 +147,20 @@ class ContactGroups extends ApiV1
             throw new HttpException(422, 'Identifier mismatch');
         }
 
-        $this->getDB()->beginTransaction();
+        $db = Database::get();
+        $db->beginTransaction();
 
         if (($contactgroupId = self::getGroupId($identifier)) !== null) {
             if (! empty($requestBody['name'])) {
                 $this->assertUniqueName($requestBody['name'], $contactgroupId);
             }
 
-            $this->getDB()->update(
+            $db->update(
                 'contactgroup',
                 ['name' => $requestBody['name']],
                 ['id = ?' => $contactgroupId]
             );
-            $this->getDB()->update(
+            $db->update(
                 'contactgroup_member',
                 ['deleted' => 'y'],
                 ['contactgroup_id = ?' => $contactgroupId, 'deleted = ?' => 'n']
@@ -180,7 +182,7 @@ class ContactGroups extends ApiV1
             ];
         }
 
-        $this->getDB()->commitTransaction();
+        $db->commitTransaction();
 
         return $result;
     }
@@ -201,7 +203,8 @@ class ContactGroups extends ApiV1
     {
         $this->assertValidatedRequestBody($requestBody);
 
-        $this->getDB()->beginTransaction();
+        $db = Database::get();
+        $db->beginTransaction();
 
         // TODO: keep replacing via POST or move to PUT?
         $emptyIdentifier = empty($identifier);
@@ -227,7 +230,7 @@ class ContactGroups extends ApiV1
         }
         $this->addContactgroup($requestBody);
 
-        $this->getDB()->commitTransaction();
+        $db->commitTransaction();
 
         return [
             'status' => 201,
@@ -256,9 +259,10 @@ class ContactGroups extends ApiV1
             throw new HttpNotFoundException('Contactgroup not found');
         }
 
-        $this->getDB()->beginTransaction();
+        $db = Database::get();
+        $db->beginTransaction();
         $this->removeContactgroup($contactgroupId);
-        $this->getDB()->commitTransaction();
+        $db->commitTransaction();
 
         return ['status' => 204];
     }
@@ -307,9 +311,10 @@ class ContactGroups extends ApiV1
     {
         $markAsDeleted = ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'];
         $updateCondition = ['contactgroup_id = ?' => $id, 'deleted = ?' => 'n'];
+        $db = Database::get();
 
-        $rotationAndMemberIds = $this->getDB()->fetchPairs(
-            RotationMember::on($this->getDB())
+        $rotationAndMemberIds = $db->fetchPairs(
+            RotationMember::on($db)
                 ->columns(['id', 'rotation_id'])
                 ->filter(Filter::equal('contactgroup_id', $id))
                 ->assembleSelect()
@@ -318,10 +323,10 @@ class ContactGroups extends ApiV1
         $rotationMemberIds = array_keys($rotationAndMemberIds);
         $rotationIds = array_values($rotationAndMemberIds);
 
-        $this->getDB()->update('rotation_member', $markAsDeleted + ['position' => null], $updateCondition);
+        $db->update('rotation_member', $markAsDeleted + ['position' => null], $updateCondition);
 
         if (! empty($rotationMemberIds)) {
-            $this->getDB()->update(
+            $db->update(
                 'timeperiod_entry',
                 $markAsDeleted,
                 ['rotation_member_id IN (?)' => $rotationMemberIds, 'deleted = ?' => 'n']
@@ -329,8 +334,8 @@ class ContactGroups extends ApiV1
         }
 
         if (! empty($rotationIds)) {
-            $rotationIdsWithOtherMembers = $this->getDB()->fetchCol(
-                RotationMember::on($this->getDB())
+            $rotationIdsWithOtherMembers = $db->fetchCol(
+                RotationMember::on($db)
                     ->columns('rotation_id')
                     ->filter(Filter::all(
                         Filter::equal('rotation_id', $rotationIds),
@@ -341,7 +346,7 @@ class ContactGroups extends ApiV1
             $toRemoveRotations = array_diff($rotationIds, $rotationIdsWithOtherMembers);
 
             if (! empty($toRemoveRotations)) {
-                $rotations = Rotation::on($this->getDB())
+                $rotations = Rotation::on($db)
                     ->columns(['id', 'schedule_id', 'priority', 'timeperiod.id'])
                     ->filter(Filter::equal('id', $toRemoveRotations));
 
@@ -352,18 +357,18 @@ class ContactGroups extends ApiV1
             }
         }
 
-        $escalationIds = $this->getDB()->fetchCol(
-            RuleEscalationRecipient::on($this->getDB())
+        $escalationIds = $db->fetchCol(
+            RuleEscalationRecipient::on($db)
                 ->columns('rule_escalation_id')
                 ->filter(Filter::equal('contactgroup_id', $id))
                 ->assembleSelect()
         );
 
-        $this->getDB()->update('rule_escalation_recipient', $markAsDeleted, $updateCondition);
+        $db->update('rule_escalation_recipient', $markAsDeleted, $updateCondition);
 
         if (! empty($escalationIds)) {
-            $escalationIdsWithOtherRecipients = $this->getDB()->fetchCol(
-                RuleEscalationRecipient::on($this->getDB())
+            $escalationIdsWithOtherRecipients = $db->fetchCol(
+                RuleEscalationRecipient::on($db)
                     ->columns('rule_escalation_id')
                     ->filter(Filter::all(
                         Filter::equal('rule_escalation_id', $escalationIds),
@@ -374,7 +379,7 @@ class ContactGroups extends ApiV1
             $toRemoveEscalations = array_diff($escalationIds, $escalationIdsWithOtherRecipients);
 
             if (! empty($toRemoveEscalations)) {
-                $this->getDB()->update(
+                $db->update(
                     'rule_escalation',
                     $markAsDeleted + ['position' => null],
                     ['id IN (?)' => $toRemoveEscalations]
@@ -382,9 +387,9 @@ class ContactGroups extends ApiV1
             }
         }
 
-        $this->getDB()->update('contactgroup_member', $markAsDeleted, $updateCondition);
+        $db->update('contactgroup_member', $markAsDeleted, $updateCondition);
 
-        $this->getDB()->update(
+        $db->update(
             'contactgroup',
             $markAsDeleted,
             ['id = ?' => $id, 'deleted = ?' => 'n']

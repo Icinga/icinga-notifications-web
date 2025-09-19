@@ -68,16 +68,8 @@ use ValueError;
     description: 'Basic authentication for API access',
     scheme: 'basic',
 )]
-abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
+abstract class ApiV1 extends ApiCore
 {
-    /**
-     * Suffix for plural method names.
-     *
-     * This constant is used to differentiate between singular and plural method names
-     *
-     * @var string
-     */
-    protected const PLURAL_SUFFIX = 'Plural';
     /**
      * API version.
      *
@@ -86,12 +78,6 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
      * @var string
      */
     public const VERSION = 'v1';
-
-    protected function init(): void
-    {
-        $this->setDB(Database::get());
-    }
-
 
     /**
      * Handle the incoming server request and return a response.
@@ -105,77 +91,33 @@ abstract class ApiV1 extends ApiCore implements RequestHandlerInterface
      * @throws HttpBadRequestException If the request is not valid.
      * @throws HttpException If the requested method does not exist.
      */
-    public function handle(ServerRequestInterface $request): ResponseInterface
+    public function handleRequest(ServerRequestInterface $request): ResponseInterface
     {
-        $httpMethod = $request->getMethod();
         $identifier = $request->getAttribute('identifier');
         $filterStr = $request->getUri()->getQuery();
+        $isPlural = $request->getAttribute('isPlural', false);
 
-
-        if (
-            $httpMethod === HttpMethod::get->value
-            && empty($identifier)
-            && method_exists($this, HttpMethod::get->name . self::PLURAL_SUFFIX)
-        ) {
-            $methodName = HttpMethod::get->name . self::PLURAL_SUFFIX;
-        } else {
-            try {
-                $methodName = HttpMethod::from($httpMethod)->name;
-            } catch (ValueError) {
-                throw (new HttpException(405, "HTTP method $httpMethod is not supported"))
-                    ->setHeader('Allow', $this->getAllowedMethods());
-            }
-
-            if (! method_exists($this, $methodName)) {
-                throw (new HttpException(
-                    405,
-                    "Method $httpMethod is not supported for endpoint "
-                    . (new \ReflectionClass($this))->getShortName()
-                ))->setHeader('Allow', $this->getAllowedMethods());
-            }
-        }
-
-        if (HttpMethod::tryFrom($httpMethod) === null) {
-            throw new HttpException(405, "HTTP method $httpMethod is not supported.");
-        }
-
-        if ($httpMethod !== HttpMethod::get->value && ! empty($filterStr)) {
-            throw new HttpBadRequestException(
-                'Unexpected query parameter: Filter is only allowed for GET requests'
-            );
-        } elseif ($httpMethod === HttpMethod::get->value && ! empty($identifier) && ! empty($filterStr)) {
-            throw new HttpBadRequestException(
-                "Invalid request: $httpMethod with identifier and query parameters,"
-                . " it's not allowed to use both together."
-            );
-        } elseif (in_array($httpMethod, [HttpMethod::put->value, HttpMethod::delete->value]) && empty($identifier)) {
-            throw new HttpBadRequestException("Invalid request: Identifier is required");
-        } elseif (
-            in_array($httpMethod, [HttpMethod::put->value, HttpMethod::post->value])
-            && $request->getHeaderLine('Content-Type') !== 'application/json'
-        ) {
-            throw new HttpBadRequestException('Invalid request header: Content-Type must be application/json');
-        } elseif (
-            ! in_array($httpMethod, [HttpMethod::put->value, HttpMethod::post->value])
-            && (! empty($request->getBody()->getSize()) || ! empty($request->getParsedBody()))
-        ) {
-            throw new HttpBadRequestException('Invalid request: Body is only allowed for POST and PUT requests');
-        }
-
-        if (! empty($identifier) && ! Uuid::isValid($identifier)) {
-            throw new HttpBadRequestException('The given identifier is not a valid UUID');
-        }
-
-        $responseData = match ($httpMethod) {
-            self::PUT, self::POST => $this->$methodName($identifier, $this->getValidRequestBody($request)),
-            self::GET => str_contains($methodName, self::PLURAL_SUFFIX)
-                ? $this->$methodName($filterStr)
-                : $this->$methodName($identifier),
-            self::DELETE => $this->$methodName($identifier),
+        $responseData = match ($request->getAttribute('httpMethod')) {
+            HttpMethod::PUT => $this->put($identifier, $this->getValidRequestBody($request)),
+            HttpMethod::POST => $this->post($identifier, $this->getValidRequestBody($request)),
+            HttpMethod::GET => $isPlural ? $this->getPlural($filterStr) : $this->get($identifier),
+            HttpMethod::DELETE => $this->delete($identifier),
             default => throw new HttpBadRequestException("Invalid request: This case shouldn't be reachable."),
         };
 
-        return $this->createResponse($responseData);
+        return $this->createResponse(...$responseData);
+    }
+
+    protected function assertValidRequest(ServerRequestInterface $request): void
+    {
+        parent::assertValidRequest($request); // TODO: Change the autogenerated stub
+
+        $httpMethod = HttpMethod::fromString($request->getMethod());
+        if ($request->getAttribute('isPlural', false) && $httpMethod !== HttpMethod::GET) {
+            throw new HttpBadRequestException(
+                ' Invalid request: Plural requests are only allowed for GET method.'
+            );
+        }
     }
 
 
