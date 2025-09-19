@@ -67,9 +67,6 @@ abstract class ApiCore implements RequestHandlerInterface
                 ->setHeader('Allow', $this->getAllowedMethods());
         }
         $request = $request->withAttribute('httpMethod', $httpMethod);
-        $identifier = $request->getAttribute('identifier');
-        $filterStr = $request->getUri()->getQuery();
-
 
         if (! method_exists($this, $httpMethod->lowercase())) {
             throw (new HttpException(
@@ -77,33 +74,6 @@ abstract class ApiCore implements RequestHandlerInterface
                 'Method ' . $httpMethod->uppercase() . ' is not supported for endpoint ' . $this->getEndpoint()
             ))
                 ->setHeader('Allow', $this->getAllowedMethods());
-        }
-
-        if ($httpMethod !== HttpMethod::GET && ! empty($filterStr)) {
-            throw new HttpBadRequestException(
-                'Unexpected query parameter: Filter is only allowed for GET requests'
-            );
-        }
-        if ($httpMethod === HttpMethod::GET && ! empty($identifier) && ! empty($filterStr)) {
-            throw new HttpBadRequestException(
-                'Invalid request: ' . $httpMethod->uppercase() . ' with identifier and query parameters,'
-                . " it's not allowed to use both together."
-            );
-        }
-        if (
-            in_array($httpMethod, [HttpMethod::PUT, HttpMethod::POST])
-            && $request->getHeaderLine('Content-Type') !== 'application/json'
-        ) {
-            throw new HttpBadRequestException('Invalid request header: Content-Type must be application/json');
-        }
-        if (
-            ! in_array($httpMethod, [HttpMethod::PUT, HttpMethod::POST])
-            && (! empty($request->getBody()->getSize()) || ! empty($request->getParsedBody()))
-        ) {
-            throw new HttpBadRequestException('Invalid request: Body is only allowed for POST and PUT requests');
-        }
-        if (in_array($httpMethod, [HttpMethod::PUT, HttpMethod::DELETE]) && empty($identifier)) {
-            throw new HttpBadRequestException("Invalid request: Identifier is required");
         }
 
         $this->assertValidRequest($request);
