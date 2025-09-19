@@ -137,13 +137,18 @@ class Channels extends ApiV1
     /**
      * Get a channel by UUID.
      *
-     * @param string $identifier
+     * @param string|null $identifier
+     * @param string $filterStr
      * @return array
+     * @throws HttpBadRequestException
      * @throws HttpNotFoundException
      * @throws JsonEncodeException
      */
-    public function get(string $identifier): array
+    public function get(?string $identifier, string $filterStr): array
     {
+        if ($identifier === null) {
+            return $this->getPlural($filterStr);
+        }
 
         $stmt = $this->createSelectStmt();
 
