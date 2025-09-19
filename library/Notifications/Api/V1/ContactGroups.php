@@ -181,7 +181,7 @@ class ContactGroups extends ApiV1
             $this->addContactgroup($requestBody);
             $result = [
                 'status' => 201,
-                'body' => '{"message":"Contactgroup created successfully"}',
+                'body' => Json::sanitize(['message' => 'Contactgroup created successfully']),
                 'headers' => [
                     'Location' => 'notifications/api/v1' . self::ROUTE_WITHOUT_IDENTIFIER . '/' . $requestBody['id']
                 ]
@@ -240,7 +240,7 @@ class ContactGroups extends ApiV1
 
         return [
             'status' => 201,
-            'body' => '{"message":"Contactgroup created successfully"}',
+            'body' => Json::sanitize(['message' => 'Contactgroup created successfully']),
             'headers' => [
                 'Location' => 'notifications/api/v1' . self::ROUTE_WITHOUT_IDENTIFIER . '/' . $requestBody['id']
             ]
