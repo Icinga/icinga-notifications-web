@@ -11,7 +11,7 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
 {
     /**
      * @dataProvider databases
-     * @depends testPostWithValidData
+     * @depends testPostToCreateWithValidData
      */
     public function testGetWithMatchingFilter(): void
     {
@@ -38,7 +38,7 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
 
     /**
      * @dataProvider databases
-     * @depends testPostWithValidData
+     * @depends testPostToCreateWithValidData
      */
     public function testGetEverything(): void
     {
@@ -89,7 +89,7 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
 
     /**
      * @dataProvider databases
-     * @depends testPostWithValidData
+     * @depends testPostToCreateWithValidData
      */
     public function testGetWithAlreadyExistingIdentifier(): void
     {
@@ -128,7 +128,7 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
 
     /**
      * @dataProvider databases
-     * @depends testPostWithValidData
+     * @depends testPostToCreateWithValidData
      */
     public function testGetWithNonMatchingFilter(): void
     {
@@ -179,11 +179,9 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
     }
 
     /**
-     * Create a new contact with a YAML payload, while declaring the body type as application/json.
-     *
      * @dataProvider databases
      */
-    public function testPostWithInvalidContent(): void
+    public function testPostToCreateWithInvalidContent(): void
     {
         $body = <<<YAML
 ---
@@ -206,11 +204,9 @@ YAML;
     }
 
     /**
-     * Create a new contact with a YAML payload.
-     *
      * @dataProvider databases
      */
-    public function testPostWithInvalidContentType(): void
+    public function testPostToCreateWithInvalidContentType(): void
     {
         $body = <<<YAML
 ---
@@ -236,11 +232,9 @@ YAML;
     }
 
     /**
-     * Create a new contact with a valid JSON payload, while providing a filter.
-     *
      * @dataProvider databases
      */
-    public function testPostWithFilter(): void
+    public function testPostToCreateWithFilter(): void
     {
         $response = $this->sendRequest(
             'POST',
@@ -261,11 +255,9 @@ YAML;
     }
 
     /**
-     * Replace a contact, while providing an unknown identifier.
-     *
      * @dataProvider databases
      */
-    public function testPostWithNewIdentifier(): void
+    public function testPostToReplaceWithNewIdentifier(): void
     {
         $response = $this->sendRequest('POST', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID, [
             'id' => BaseApiV1TestCase::CONTACT_UUID_2,
@@ -279,12 +271,10 @@ YAML;
     }
 
     /**
-     * Replace a contact with an id which is the same as the identifier. (is not a replacement)
-     *
      * @dataProvider databases
-     * @depends testPostWithValidData
+     * @depends testPostToCreateWithValidData
      */
-    public function testPostWithAlreadyExistingIdentifierAndIndifferentPayloadId(): void
+    public function testPostToReplaceWithAlreadyExistingIdentifierAndIndifferentPayloadId(): void
     {
         $this->sendRequest('POST', 'contacts', [
             'id' => BaseApiV1TestCase::CONTACT_UUID,
@@ -307,12 +297,10 @@ YAML;
     }
 
     /**
-     * Replace a contact with an id which already exists
-     *
      * @dataProvider databases
-     * @depends testPostWithValidData
+     * @depends testPostToCreateWithValidData
      */
-    public function testPostWithAlreadyExistingIdentifierAndExistingPayloadId(): void
+    public function testPostToReplaceWithAlreadyExistingIdentifierAndExistingPayloadId(): void
     {
         $this->sendRequest('POST', 'contacts', [
             'id' => BaseApiV1TestCase::CONTACT_UUID,
@@ -337,12 +325,10 @@ YAML;
     }
 
     /**
-     * Replace a contact while providing a new identifier in the JSON payload.
-     *
      * @dataProvider databases
-     * @depends testPostWithValidData
+     * @depends testPostToCreateWithValidData
      */
-    public function testPostWithAlreadyExistingIdentifierAndValidData(): void
+    public function testPostToReplaceWithAlreadyExistingIdentifierAndValidData(): void
     {
         $this->sendRequest('POST', 'contacts', [
             'id' => BaseApiV1TestCase::CONTACT_UUID,
@@ -366,12 +352,10 @@ YAML;
     }
 
     /**
-     * Create a new contact with an already existing id in payload.
-     *
      * @dataProvider databases
-     * @depends testPostWithValidData
+     * @depends testPostToCreateWithValidData
      */
-    public function testPostWithExistingId(): void
+    public function testPostToCreateWithExistingPayloadId(): void
     {
         $this->sendRequest('POST', 'contacts', [
             'id' => BaseApiV1TestCase::CONTACT_UUID,
@@ -391,11 +375,9 @@ YAML;
     }
 
     /**
-     * Create a new contact with a valid JSON payload.
-     *
      * @dataProvider databases
      */
-    public function testPostWithValidData(): void
+    public function testPostToCreateWithValidData(): void
     {
         $response = $this->sendRequest('POST', 'contacts', [
             'id' => BaseApiV1TestCase::CONTACT_UUID,
@@ -413,11 +395,9 @@ YAML;
     }
 
     /**
-     * Replace a contact with a valid identifier and a missing required field.
-     *
      * @dataProvider databases
      */
-    public function testPostWithAlreadyExistingIdentifierAndMissingRequiredFields(): void
+    public function testPostToReplaceWithAlreadyExistingIdentifierAndMissingRequiredFields(): void
     {
         $expected = $this->jsonEncodeError(
             'Invalid request body: the fields id, full_name and default_channel must be present and of type string'
@@ -455,11 +435,9 @@ YAML;
     }
 
     /**
-     * Create a new contact with a valid JSON payload with valid optional data.
-     *
      * @dataProvider databases
      */
-    public function testPostWithValidOptionalData(): void
+    public function testPostToCreateWithValidOptionalData(): void
     {
         $response = $this->sendRequest('POST', 'contactgroups', [
             'id' => BaseApiV1TestCase::GROUP_UUID,
@@ -490,12 +468,10 @@ YAML;
     }
 
     /**
-     * Create a new contact with an incorrect JSON payload.
-     *
      * @dataProvider databases
-     * @depends testPostWithValidData
+     * @depends testPostToCreateWithValidData
      */
-    public function testPostWithInvalidData(): void
+    public function testPostToCreateWithInvalidData(): void
     {
         // invalid default_channel uuid
         $response = $this->sendRequest('POST', 'contacts', [
@@ -513,11 +489,9 @@ YAML;
     }
 
     /**
-     * Replace a contact with a missing required field.
-     *
      * @dataProvider databases
      */
-    public function testPostWithMissingRequiredFields(): void
+    public function testPostToReplaceWithMissingRequiredFields(): void
     {
         $expected = $this->jsonEncodeError(
             'Invalid request body: the fields id, full_name and default_channel must be present and of type string'
@@ -555,11 +529,9 @@ YAML;
     }
 
     /**
-     * Create a new contact with a valid JSON payload with invalid optional data.
-     *
      * @dataProvider databases
      */
-    public function testPostWithInvalidOptionalData(): void
+    public function testPostToCreateWithInvalidOptionalData(): void
     {
         $this->sendRequest('POST', 'contacts', [
             'id' => BaseApiV1TestCase::CONTACT_UUID_2,
@@ -628,11 +600,9 @@ YAML;
     }
 
     /**
-     * Update a contact with an invalid JSON payload, while declaring the body type as application/json.
-     *
      * @dataProvider databases
      */
-    public function testPutWithInvalidContent(): void
+    public function testPutToUpdateWithInvalidContent(): void
     {
         $body = <<<YAML
 ---
@@ -655,11 +625,9 @@ YAML;
     }
 
     /**
-     * Update a contact with a YAML payload.
-     *
      * @dataProvider databases
      */
-    public function testPutWithInvalidContentType(): void
+    public function testPutToUpdateWithInvalidContentType(): void
     {
         $body = <<<YAML
 ---
@@ -685,11 +653,9 @@ YAML;
     }
 
     /**
-     * Update a contact with a valid JSON payload, while providing a filter.
-     *
      * @dataProvider databases
      */
-    public function testPutWithFilter(): void
+    public function testPutToUpdateWithFilter(): void
     {
         $response = $this->sendRequest(
             'PUT',
@@ -710,11 +676,9 @@ YAML;
     }
 
     /**
-     * Update a contact with a missing identifier.
-     *
      * @dataProvider databases
      */
-    public function testPutWithoutIdentifier(): void
+    public function testPutToUpdateWithoutIdentifier(): void
     {
         $response = $this->sendRequest('PUT', 'contacts', [
             'id' => BaseApiV1TestCase::CONTACT_UUID,
@@ -728,12 +692,10 @@ YAML;
     }
 
     /**
-     * Update a contact with a valid identifier and a missing required field.
-     *
      * @dataProvider databases
-     * @depends testPostWithValidData
+     * @depends testPostToCreateWithValidData
      */
-    public function testPutWithAlreadyExistingIdentifierAndMissingRequiredFields(): void
+    public function testPutToUpdateWithAlreadyExistingIdentifierAndMissingRequiredFields(): void
     {
         // TODO: same results if the POST isn't done first
         $this->sendRequest('POST', 'contacts', [
@@ -779,12 +741,10 @@ YAML;
     }
 
     /**
-     * Update a contact with a different identifier and payload id.
-     *
      * @dataProvider databases
-     * @depends testPostWithValidData
+     * @depends testPostToCreateWithValidData
      */
-    public function testPutWithAlreadyExistingIdentifierAndDifferentPayloadId(): void
+    public function testPutToUpdateWithAlreadyExistingIdentifierAndDifferentPayloadId(): void
     {
         $this->sendRequest('POST', 'contacts', [
             'id' => BaseApiV1TestCase::CONTACT_UUID,
@@ -805,12 +765,10 @@ YAML;
     }
 
     /**
-     * Create a new contact with a valid JSON payload with a new identifier.
-     *
      * @dataProvider databases
-     * @depends testPostWithValidData
+     * @depends testPostToCreateWithValidData
      */
-    public function testPutWithNewIdentifierAndValidData(): void
+    public function testPutToCreateWithNewIdentifierAndValidData(): void
     {
         $this->sendRequest('POST', 'contacts', [
             'id' => BaseApiV1TestCase::CONTACT_UUID,
@@ -839,12 +797,10 @@ YAML;
     }
 
     /**
-     * Update a contact with a valid identifier and JSON payload.
-     *
      * @dataProvider databases
-     * @depends testPostWithValidData
+     * @depends testPostToCreateWithValidData
      */
-    public function testPutWithAlreadyExistingIdentifierAndValidData(): void
+    public function testPutToUpdateWithAlreadyExistingIdentifierAndValidData(): void
     {
         $this->sendRequest('POST', 'contacts', [
             'id' => BaseApiV1TestCase::CONTACT_UUID,
@@ -864,11 +820,9 @@ YAML;
     }
 
     /**
-     * Update a contact with a non-matching identifier and invalid payload.
-     *
      * @dataProvider databases
      */
-    public function testPutWithNewIdentifierAndInvalidData(): void
+    public function testPutToUpdateWithNewIdentifierAndInvalidData(): void
     {
         // different id
         $response = $this->sendRequest('PUT', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID, [
@@ -898,11 +852,9 @@ YAML;
     }
 
     /**
-     * Update a contact with a non-matching identifier and a missing required field.
-     *
      * @dataProvider databases
      */
-    public function testPutWithNewIdentifierAndMissingRequiredFields(): void
+    public function testPutToUpdateWithNewIdentifierAndMissingRequiredFields(): void
     {
         $expected = $this->jsonEncodeError(
             'Invalid request body: the fields id, full_name and default_channel must be present and of type string'
@@ -964,7 +916,7 @@ YAML;
 
     /**
      * @dataProvider databases
-     * @depends testPostWithValidData
+     * @depends testPostToCreateWithValidData
      */
     public function testDeleteWithAlreadyExistingIdentifier(): void
     {
