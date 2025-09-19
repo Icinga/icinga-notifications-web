@@ -460,7 +460,7 @@ class Contacts extends ApiV1
             $this->addContact($requestBody);
             $result = [
                 'status' => 201,
-                'body' => '{"message":"Contact created successfully"}',
+                'body' => Json::sanitize(['message' => 'Contact created successfully']),
                 'headers' => [
                     'Location' => 'notifications/api/v1' . self::ROUTE_WITHOUT_IDENTIFIER . '/' . $requestBody['id']
                 ]
@@ -602,7 +602,7 @@ class Contacts extends ApiV1
 
         return [
             'status' => 201,
-            'body' => '{"message":"Contact created successfully"}',
+            'body' => Json::sanitize(['message' => 'Contact created successfully']),
             'headers' => [
                 'Location' => 'notifications/api/v1' . self::ROUTE_WITHOUT_IDENTIFIER . '/' . $requestBody['id']
             ]
