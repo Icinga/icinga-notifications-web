@@ -83,7 +83,6 @@ use OpenApi\Attributes as OA;
 )]
 class Contacts extends ApiV1
 {
-    public const ENDPOINT = 'Contacts';
     /**
      * The route to handle a single contact
      *
@@ -671,6 +670,11 @@ class Contacts extends ApiV1
         $db->commitTransaction();
 
         return ['status' => 204];
+    }
+
+    public function getEndpoint(): string
+    {
+        return 'Contacts';
     }
 
     /**

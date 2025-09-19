@@ -134,7 +134,6 @@ use stdClass;
 )]
 class Channels extends ApiV1
 {
-    public const ENDPOINT = 'Channels';
     /**
      * Get a channel by UUID.
      *
@@ -187,6 +186,11 @@ class Channels extends ApiV1
         }
 
         return ['body' => $this->createContentGenerator(Database::get(), $stmt, $this->createGETRowFinalizer())];
+    }
+
+    public function getEndpoint(): string
+    {
+        return 'Channels';
     }
 
     /**
