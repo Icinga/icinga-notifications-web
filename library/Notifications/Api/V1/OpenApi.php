@@ -143,6 +143,7 @@ use RuntimeException;
 )]
 class OpenApi extends ApiV1
 {
+    public const ENDPOINT = 'Openapi';
     /**
      * The endpoint for OpenAPI documentation
      * This is used to serve the OpenAPI specification.

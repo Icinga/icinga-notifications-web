@@ -134,6 +134,7 @@ use stdClass;
 )]
 class Channels extends ApiV1
 {
+    public const ENDPOINT = 'Channels';
     /**
      * Get a channel by UUID.
      *
@@ -150,7 +151,7 @@ class Channels extends ApiV1
         $stmt->where(['external_uuid = ?' => $identifier]);
 
         /** @var stdClass|false $result */
-        $result = $this->getDB()->fetchOne($stmt);
+        $result = Database::get()->fetchOne($stmt);
 
         if (empty($result)) {
             throw new HttpNotFoundException('Channel not found');
@@ -185,7 +186,7 @@ class Channels extends ApiV1
             $stmt->where($filter);
         }
 
-        return ['body' => $this->createContentGenerator($this->getDB(), $stmt, $this->createGETRowFinalizer())];
+        return ['body' => $this->createContentGenerator(Database::get(), $stmt, $this->createGETRowFinalizer())];
     }
 
     /**
