@@ -713,6 +713,7 @@ YAML;
         );
         $content = $response->getBody()->getContents();
 
+        var_dump($content);
         $this->assertEquals(201, $response->getStatusCode(), $content);
         $this->assertSame(
             ['notifications/api/v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID_3],
