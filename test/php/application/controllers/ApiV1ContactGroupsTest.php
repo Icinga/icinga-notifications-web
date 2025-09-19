@@ -288,7 +288,7 @@ YAML;
         ]);
         $content = $response->getBody()->getContents();
 
-        $this->assertSame(409, $response->getStatusCode(), $content);
+        $this->assertSame(422, $response->getStatusCode(), $content);
         $this->assertSame($this->jsonEncodeError('Contactgroup already exists'), $content);
     }
 
@@ -342,7 +342,7 @@ YAML;
         ]);
         $content = $response->getBody()->getContents();
 
-        $this->assertSame(409, $response->getStatusCode(), $content);
+        $this->assertSame(422, $response->getStatusCode(), $content);
         $this->assertSame($this->jsonEncodeError('Contactgroup already exists'), $content);
     }
 
