@@ -71,13 +71,7 @@ abstract class ApiCore implements RequestHandlerInterface
         $filterStr = $request->getUri()->getQuery();
 
 
-        // check for plural or singular request
-        if (
-            empty($identifier)
-            && method_exists($this, $httpMethod->lowercase() . self::PLURAL_SUFFIX)
-        ) {
-            $request = $request->withAttribute('isPlural', true);
-        } elseif (! method_exists($this, $httpMethod->lowercase())) {
+        if (! method_exists($this, $httpMethod->lowercase())) {
             throw (new HttpException(
                 405,
                 'Method ' . $httpMethod->uppercase() . ' is not supported for endpoint ' . $this->getEndpoint()

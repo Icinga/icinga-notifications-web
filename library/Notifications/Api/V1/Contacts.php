@@ -135,8 +135,10 @@ class Contacts extends ApiV1
     /**
      * Get a contact by UUID.
      *
-     * @param string $identifier
+     * @param string|null $identifier
+     * @param string $filterStr
      * @return array
+     * @throws HttpBadRequestException
      * @throws HttpNotFoundException
      * @throws JsonEncodeException
      */
@@ -186,8 +188,12 @@ class Contacts extends ApiV1
             schema: '#/components/schemas/ErrorResponse',
         )
     )]
-    public function get(string $identifier): array
+    public function get(?string $identifier, string $filterStr): array
     {
+        if ($identifier === null) {
+            return $this->getPlural($filterStr);
+        }
+
         $stmt = $this->createSelectStmt();
 
         $stmt->where(['co.external_uuid = ?' => $identifier]);
