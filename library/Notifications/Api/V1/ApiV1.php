@@ -109,7 +109,32 @@ abstract class ApiV1 extends ApiCore
 
     protected function assertValidRequest(ServerRequestInterface $request): void
     {
-        if (! empty($identifier = $request->getAttribute('identifier')) && ! Uuid::isValid($identifier)) {
+        $httpMethod = $request->getAttribute('httpMethod');
+        $identifier = $request->getAttribute('identifier');
+        $filterStr = $request->getUri()->getQuery();
+
+        if ($httpMethod !== HttpMethod::GET && ! empty($filterStr)) {
+            throw new HttpBadRequestException(
+                'Unexpected query parameter: Filter is only allowed for GET requests'
+            );
+        }
+        if ($httpMethod === HttpMethod::GET && ! empty($identifier) && ! empty($filterStr)) {
+            throw new HttpBadRequestException(
+                'Invalid request: ' . $httpMethod->uppercase() . ' with identifier and query parameters,'
+                . " it's not allowed to use both together."
+            );
+        }
+        if (
+            ! in_array($httpMethod, [HttpMethod::PUT, HttpMethod::POST])
+            && (! empty($request->getBody()->getSize()) || ! empty($request->getParsedBody()))
+        ) {
+            throw new HttpBadRequestException('Invalid request: Body is only allowed for POST and PUT requests');
+        }
+        if (in_array($httpMethod, [HttpMethod::PUT, HttpMethod::DELETE]) && empty($identifier)) {
+            throw new HttpBadRequestException("Invalid request: Identifier is required");
+        }
+
+        if (! empty($identifier) && ! Uuid::isValid($identifier)) {
             throw new HttpBadRequestException('The given identifier is not a valid UUID');
         }
     }
@@ -173,6 +198,10 @@ abstract class ApiV1 extends ApiCore
      */
     private function getValidRequestBody(ServerRequestInterface $request): array
     {
+        if ($request->getHeaderLine('Content-Type') !== 'application/json') {
+            throw new HttpBadRequestException('Invalid request header: Content-Type must be application/json');
+        }
+
         if (! empty($parsedBody = $request->getParsedBody()) && is_array($parsedBody)) {
             return $parsedBody;
         }
