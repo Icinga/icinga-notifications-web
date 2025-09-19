@@ -584,7 +584,7 @@ class Contacts extends ApiV1
         }
 
         if ($this->getContactId($requestBody['id']) !== null) {
-            throw new HttpException(409, 'Contact already exists');
+            throw new HttpException(422, 'Contact already exists');
         }
 
         if (! $emptyIdentifier) {
@@ -955,7 +955,7 @@ class Contacts extends ApiV1
         $user = Database::get()->fetchOne($stmt);
 
         if ($user) {
-            throw new HttpException(409, 'Username ' . $username . ' already exists');
+            throw new HttpException(422, 'Username ' . $username . ' already exists');
         }
     }
 
