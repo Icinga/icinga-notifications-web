@@ -124,14 +124,7 @@ abstract class ApiCore implements RequestHandlerInterface
      */
     protected function assertValidRequest(ServerRequestInterface $request): void
     {
-        // API- / Module-specific request validation can be implemented in this method in the module-api-base-class
-
-        // a default functionality can be provided in here
-        // which should be able to be overridden in the specific API classes.
-
-        if (! empty($identifier = $request->getAttribute('identifier')) && ! Uuid::isValid($identifier)) {
-            throw new HttpBadRequestException('The given identifier is not a valid UUID');
-        }
+        // API- / Module-specific request validation can be implemented in this method in child-classes
     }
 
 
