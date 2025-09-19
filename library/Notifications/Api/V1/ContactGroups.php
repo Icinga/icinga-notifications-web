@@ -116,16 +116,16 @@ class ContactGroups extends ApiV1
     {
         $stmt = $this->createSelectStmt();
 
-        $filter = $this->createFilterFromFilterStr(
-            $filterStr,
-            $this->createFilterRuleListener(
+        if (! empty($filterStr)) {
+            $filter = $this->assembleFilter(
+                $filterStr,
                 ['id', 'name'],
                 'external_uuid'
-            )
-        );
+            );
 
-        if ($filter !== false) {
-            $stmt->where($filter);
+            if ($filter !== false) {
+                $stmt->where($filter);
+            }
         }
 
         return ['body' => $this->createContentGenerator(Database::get(), $stmt, $this->createGETRowFinalizer())];
