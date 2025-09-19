@@ -127,14 +127,33 @@ abstract class ApiV1 extends ApiCore
      * @return array|bool Returns an array of filter rules or false if no filter string is provided.
      * @throws HttpBadRequestException If the filter string cannot be parsed.
      */
-    protected function createFilterFromFilterStr(string $filterStr, callable $listener): array|bool
+    protected function assembleFilter(string $filterStr, array $allowedColumns, string $idColumnName): array|bool
     {
         if (! empty($filterStr)) {
             try {
                 $filterRule = QueryString::fromString($filterStr)
                     ->on(
                         QueryString::ON_CONDITION,
-                        $listener
+                        function (Condition $condition) use ($allowedColumns, $idColumnName) {
+                            $column = $condition->getColumn();
+                            if (! in_array($column, $allowedColumns)) {
+                                throw new HttpBadRequestException(
+                                    sprintf(
+                                        'Invalid request parameter: Filter column %s given, only %s are allowed',
+                                        $column,
+                                        preg_replace('/,([^,]*)$/', ' and$1', implode(', ', $allowedColumns))
+                                    )
+                                );
+                            }
+
+                            if ($column === 'id') {
+                                if (! Uuid::isValid($condition->getValue())) {
+                                    throw new HttpBadRequestException('The given filter id is not a valid UUID');
+                                }
+
+                                $condition->setColumn($idColumnName);
+                            }
+                        }
                     )->parse();
 
                 return FilterProcessor::assembleFilter($filterRule);
@@ -143,41 +162,6 @@ abstract class ApiV1 extends ApiCore
             }
         }
         return false;
-    }
-
-    /**
-     * Create a filter rule listener for validating allowed columns.
-     *
-     * This method returns a callable that can be used as a listener for filter conditions.
-     * The listener checks if the column in the condition is among the allowed columns.
-     * If the column is 'id', it also validates that the value is a valid UUID and
-     * changes the column to 'external_uuid'.
-     *
-     * @param array $allowedColumns An array of allowed column names.
-     * @return callable A listener function for filter conditions.
-     */
-    protected function createFilterRuleListener(array $allowedColumns, string $idColumnName): callable
-    {
-        return function (Condition $condition) use ($allowedColumns, $idColumnName) {
-            $column = $condition->getColumn();
-            if (! in_array($column, $allowedColumns)) {
-                throw new HttpBadRequestException(
-                    sprintf(
-                        'Invalid request parameter: Filter column %s given, only %s are allowed',
-                        $column,
-                        preg_replace('/,([^,]*)$/', ' and$1', implode(', ', $allowedColumns))
-                    )
-                );
-            }
-
-            if ($column === 'id') {
-                if (! Uuid::isValid($condition->getValue())) {
-                    throw new HttpBadRequestException('The given filter id is not a valid UUID');
-                }
-
-                $condition->setColumn($idColumnName);
-            }
-        };
     }
 
     /**
