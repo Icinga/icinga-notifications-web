@@ -143,7 +143,6 @@ use RuntimeException;
 )]
 class OpenApi extends ApiV1
 {
-    public const ENDPOINT = 'Openapi';
     /**
      * The endpoint for OpenAPI documentation
      * This is used to serve the OpenAPI specification.
@@ -189,6 +188,10 @@ class OpenApi extends ApiV1
         return ['body' => $oad];
     }
 
+    public function getEndpoint(): string
+    {
+        return 'Openapi';
+    }
 
     /**
      * Get the files including the ApiCore.php file and any other files matching the given filter.

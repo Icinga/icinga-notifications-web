@@ -58,7 +58,6 @@ use stdClass;
 )]
 class ContactGroups extends ApiV1
 {
-    public const ENDPOINT = 'Contactgroups';
     /**
      * The route to handle a contactgroup with a specific identifier
      *
@@ -265,6 +264,11 @@ class ContactGroups extends ApiV1
         $db->commitTransaction();
 
         return ['status' => 204];
+    }
+
+    public function getEndpoint(): string
+    {
+        return 'Contactgroups';
     }
 
     /**
