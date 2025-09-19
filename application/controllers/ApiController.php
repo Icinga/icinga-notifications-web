@@ -5,7 +5,6 @@ namespace Icinga\Module\Notifications\Controllers;
 use Exception;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
-use GuzzleHttp\Psr7\Utils;
 use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Http\HttpExceptionInterface;
 use Icinga\Module\Notifications\Api\ApiCore;
@@ -14,7 +13,6 @@ use Icinga\Web\Request;
 use ipl\Stdlib\Str;
 use ipl\Web\Compat\CompatController;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\StreamInterface;
 use Throwable;
 use Zend_Controller_Request_Exception;
 
@@ -65,12 +63,6 @@ class ApiController extends CompatController
                 ->withAttribute('identifier', $identifier)
                 ->withHeader('Content-Type', $request->getHeader('Content-Type'));
 
-            // If you want to pass the body as a stream instead of parsed JSON,
-            // uncomment this block and comment the withParsedBody line above.
-//        $serverRequest = empty($stream = $this->getRequestBodyStream($request))
-//            ? $serverRequest
-//            : $serverRequest->withBody($stream);
-
             $response = (new $className())->handle($serverRequest);
         } catch (HttpExceptionInterface $e) {
             $response = new Response(
@@ -99,33 +91,6 @@ class ApiController extends CompatController
      * Validate that the request has a JSON content type and return the parsed JSON content.
      *
      * @param Request $request The request object to validate.
-     * @return ?StreamInterface The parsed JSON content as a StreamInterface, or null if not applicable.
-     * @throws HttpBadRequestException If the request content is not valid JSON.
-     * @throws Zend_Controller_Request_Exception
-     */
-    private function getRequestBodyStream(Request $request): ?StreamInterface
-    {
-        if (
-            ! preg_match('/([^;]*);?/', $request->getHeader('Content-Type'), $matches)
-            || $matches[1] !== 'application/json'
-        ) {
-            return null;
-        }
-
-        $phpInput = fopen('php://input', 'r');
-        $stream = Utils::streamFor($phpInput);
-        fclose($phpInput);
-        if ($stream->getSize() === 0) {
-            $this->httpBadRequest('Invalid request body: given content is empty');
-        }
-
-        return $stream;
-    }
-
-    /**
-     * Validate that the request has a JSON content type and return the parsed JSON content.
-     *
-     * @param Request $request The request object to validate.
      * @return ?array The validated JSON content as an associative array, or null if not applicable.
      * @throws HttpBadRequestException If the request content is not valid JSON.
      * @throws Zend_Controller_Request_Exception
@@ -140,7 +105,7 @@ class ApiController extends CompatController
         }
         try {
             $data = $request->getPost();
-        } catch (Exception $e) {
+        } catch (Exception) {
             $this->httpBadRequest('Invalid request body: given content is not a valid JSON');
         }
 
