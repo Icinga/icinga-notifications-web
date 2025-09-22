@@ -336,7 +336,7 @@ YAML;
     public function testPostToCreateWithValidData(): void
     {
         $response = $this->sendRequest('POST', 'contacts', [
-            'id' => '0817d973-398e-41d7-9ef2-61cdb7ef41a1',
+            'id' => BaseApiV1TestCase::CONTACT_UUID,
             'full_name' => 'Test',
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
         ]);
@@ -345,7 +345,7 @@ YAML;
         $response = $this->sendRequest('POST', 'contactgroups', [
             'id' => BaseApiV1TestCase::GROUP_UUID,
             'name' => 'Test',
-            'users' => ['0817d973-398e-41d7-9ef2-61cdb7ef41a1']
+            'users' => [BaseApiV1TestCase::CONTACT_UUID]
         ]);
         $content = $response->getBody()->getContents();
 
@@ -590,7 +590,7 @@ YAML;
 
         // indifferent id
         $response = $this->sendRequest('PUT', 'contactgroups/' . BaseApiV1TestCase::GROUP_UUID, [
-            'id' => '0817d973-398e-41d7-9ef2-61cdb7ef41a3',
+            'id' => BaseApiV1TestCase::GROUP_UUID_2,
             'name' => 'Test',
             'users' => []
         ]);
