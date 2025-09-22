@@ -3,6 +3,7 @@
 namespace Tests\Icinga\Module\Notifications\Controllers;
 
 use Icinga\Module\Notifications\Test\BaseApiV1TestCase;
+use WebSocket\Base;
 
 class ApiV1ChannelsTest extends BaseApiV1TestCase
 {
@@ -12,14 +13,14 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
     public function testGetWithMatchingFilter(): void
     {
         $expected = $this->jsonEncodeResults([
-            'id'     => '0817d973-398e-41d7-9cd2-61cdb7ef41a1',
+            'id'     => BaseApiV1TestCase::CHANNEL_UUID,
             'name'   => 'Test',
             'type'   => 'email',
             'config' => null,
         ]);
 
         // filter by id
-        $response = $this->sendRequest('GET', 'channels?id=0817d973-398e-41d7-9cd2-61cdb7ef41a1');
+        $response = $this->sendRequest('GET', 'channels?id=' . BaseApiV1TestCase::CHANNEL_UUID);
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
@@ -40,7 +41,10 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $this->assertSame($expected, $content);
 
         // filter by all available filters together
-        $response = $this->sendRequest('GET', 'channels?id=0817d973-398e-41d7-9cd2-61cdb7ef41a1&name=Test&type=email');
+        $response = $this->sendRequest(
+            'GET',
+            'channels?id=' . BaseApiV1TestCase::CHANNEL_UUID . '&name=Test&type=email'
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
@@ -58,13 +62,13 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
 
         $expected = $this->jsonEncodeResults([
             [
-                'id'     => '0817d973-398e-41d7-9cd2-61cdb7ef41a1',
+                'id'     => BaseApiV1TestCase::CHANNEL_UUID,
                 'name'   => 'Test',
                 'type'   => 'email',
                 'config' => null,
             ],
             [
-                'id'     => '0817d973-398e-41d7-9cd2-61cdb7ef41a2',
+                'id'     => BaseApiV1TestCase::CHANNEL_UUID_2,
                 'name'   => 'Test2',
                 'type'   => 'webhook',
                 'config' => null,
@@ -79,11 +83,11 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
      */
     public function testGetWithAlreadyExistingIdentifier(): void
     {
-        $response = $this->sendRequest('GET', 'channels/0817d973-398e-41d7-9cd2-61cdb7ef41a1');
+        $response = $this->sendRequest('GET', 'channels/' . BaseApiV1TestCase::CHANNEL_UUID);
         $content = $response->getBody()->getContents();
 
         $expected = $this->jsonEncodeResult([
-            'id'     => '0817d973-398e-41d7-9cd2-61cdb7ef41a1',
+            'id'     => BaseApiV1TestCase::CHANNEL_UUID,
             'name'   => 'Test',
             'type'   => 'email',
             'config' => null,
@@ -124,7 +128,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
      */
     public function testGetWithNewIdentifier(): void
     {
-        $response = $this->sendRequest('GET', 'channels/0817d973-398e-41d7-9ef2-61cdb7ef41a2');
+        $response = $this->sendRequest('GET', 'channels/' . BaseApiV1TestCase::UUID_INCOMPLETE . '01');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(404, $response->getStatusCode(), $content);
@@ -136,7 +140,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
      */
     public function testGetWithInvalidIdentifier(): void
     {
-        $response = $this->sendRequest('GET', 'channels/0817d973-398e-41d7-9ef2-61cdb7ef41a234534');
+        $response = $this->sendRequest('GET', 'channels/' . BaseApiV1TestCase::UUID_INCOMPLETE);
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
@@ -153,14 +157,17 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         );
 
         // Valid identifier and valid filter
-        $response = $this->sendRequest('GET', 'channels/0817d973-398e-41d7-9cd2-61cdb7ef41a1?name=Test');
+        $response = $this->sendRequest('GET', 'channels/' . BaseApiV1TestCase::CHANNEL_UUID . '?name=Test');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
         $this->assertSame($expected, $content);
 
         // Invalid identifier and invalid filter
-        $response = $this->sendRequest('GET', 'channels/0817d973-398e-41d7-9cd2-61cdb7ef41aa?nonexistingfilter=value');
+        $response = $this->sendRequest(
+            'GET',
+            'channels/' . BaseApiV1TestCase::CHANNEL_UUID . '?nonexistingfilter=value'
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
@@ -193,7 +200,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $this->assertSame($expected, $content);
 
         // Try to POST with identifier
-        $response = $this->sendRequest('POST', 'channels/0817d973-398e-41d7-9cd2-61cdb7ef41a1');
+        $response = $this->sendRequest('POST', 'channels/' . BaseApiV1TestCase::CHANNEL_UUID);
         $content = $response->getBody()->getContents();
 
         $this->assertSame(405, $response->getStatusCode(), $content);
@@ -209,7 +216,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $this->assertSame($expected, $content);
 
         // Try to POST with identifier and filter
-        $response = $this->sendRequest('POST', 'channels/0817d973-398e-41d7-9cd2-61cdb7ef41a1?name=Test');
+        $response = $this->sendRequest('POST', 'channels/' . BaseApiV1TestCase::CHANNEL_UUID . '?name=Test');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(405, $response->getStatusCode(), $content);
