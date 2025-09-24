@@ -59,18 +59,6 @@ use RuntimeException;
 //    ],
 //    type: 'object',
 //)]
-#[OA\Schema(
-    schema: 'SuccessResponse',
-    description: 'Success response format',
-    properties: [
-        new OA\Property(
-            property: 'message',
-            description: 'Detailed success message',
-            type: 'string',
-        )
-    ],
-    type: 'object',
-)]
 #[OA\Components(
     examples: [
         new OA\Examples(
