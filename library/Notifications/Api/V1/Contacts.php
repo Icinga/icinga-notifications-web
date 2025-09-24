@@ -11,6 +11,11 @@ use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Exception\Json\JsonEncodeException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1Get;
+use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1GetPlural;
+use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Parameters\PathParameter;
+use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Parameters\QueryParameter;
+use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Schemas\SchemaUUID;
 use Ramsey\Uuid\Uuid;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Rotation;
@@ -74,14 +79,8 @@ use OpenApi\Attributes as OA;
         )
     ]
 )]
-#[OA\Schema(
-    schema: 'ContactUUID',
-    title: 'ContactUUID',
-    description: 'An UUID representing a contact',
-    type: 'string',
-    format: 'uuid',
-    maxLength: 36,
-    minLength: 36,
+#[SchemaUUID(
+    entityName: 'Contact',
     example: '9e868ad0-e774-465b-8075-c5a07e8f0726',
 )]
 class Contacts extends ApiV1 implements RequestHandlerInterface
@@ -112,7 +111,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
         description: 'List of group UUIDs the contact belongs to',
         type: 'array',
         items: new OA\Items(
-            ref: '#/components/schemas/ContactGroupUUID',
+            ref: '#/components/schemas/ContactgroupUUID',
             description: 'Group UUIDs the contact belongs to',
         )
     )]
@@ -140,51 +139,19 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
      * @throws HttpNotFoundException
      * @throws JsonEncodeException
      */
-    #[OA\Get(
+    #[OadV1Get(
+        entityName: 'Contact',
         path: '/contacts/{identifier}',
-        description: 'Get a contact by UUID',
-        summary: 'Get a contact by UUID',
+        description: 'Get a specific contact by its UUID',
+        summary: 'Get a specific contact by its UUID',
         tags: ['Contacts'],
-    )]
-    #[OA\Parameter(
-        name: 'identifier',
-        description: 'The UUID of the contact to retrieve',
-        in: 'path',
-        required: true,
-        schema: new OA\Schema(ref: '#/components/schemas/ContactUUID')
-    )]
-    #[OA\Response(
-        response: 200,
-        description: 'Contact found',
-        content: new OA\JsonContent(
-            ref: '#/components/schemas/Contact'
-        )
-    )]
-    #[OA\Response(
-        response: 404,
-        description: 'Contact not found',
-        content: new OA\JsonContent(
-            examples: [
-                'IdentifierNotFound' => new OA\Examples(
-                    example: 'IdentifierNotFound',
-                    ref: '#/components/examples/IdentifierNotFound'
-                ),
-            ],
-            schema: '#/components/schemas/ErrorResponse',
-        )
-    )]
-    #[OA\Response(
-        response: 422,
-        description: 'Unprocessable Entity',
-        content: new OA\JsonContent(
-            examples: [
-                'InvalidIdentifier' => new OA\Examples(
-                    example: 'InvalidIdentifier',
-                    ref: '#/components/examples/InvalidIdentifier'
-                ),
-            ],
-            schema: '#/components/schemas/ErrorResponse',
-        )
+        parameters: [
+            new PathParameter(
+                name: 'identifier',
+                description: 'The UUID of the contact to retrieve',
+                identifierSchema: 'ContactUUID'
+            ),
+        ],
     )]
     public function get(?string $identifier, string $queryFilter): ResponseInterface
     {
@@ -231,72 +198,30 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
      * @throws HttpBadRequestException
      * @throws JsonEncodeException
      */
-    #[OA\Get(
+    #[OadV1GetPlural(
+        entityName: 'Contact',
         path: '/contacts',
-        summary: 'List contacts or get specific contacts by UUID or filter parameters',
+        description: 'List all Contacts or filter by parameters',
+        summary: 'List all Contacts or filter by parameters',
         tags: ['Contacts'],
-    )]
-    #[OA\Parameter(
-        name: 'id',
-        description: 'Filter Contacts by UUID',
-        in: 'query',
-        required: false,
-        schema: new OA\Schema(ref: '#/components/schemas/UUID')
-    )]
-    #[OA\Parameter(
-        name: 'full_name',
-        description: 'Filter Contacts by full name',
-        in: 'query',
-        required: false,
-        schema: new OA\Schema(type: 'string')
-    )]
-    #[OA\Parameter(
-        name: 'username',
-        description: 'Filter Contacts by username',
-        in: 'query',
-        required: false,
-        schema: new OA\Schema(type: 'string', maxLength: 254)
-    )]
-    #[OA\Response(
-        response: 200,
-        description: 'Successful response',
-        content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(
-                ref: '#/components/schemas/Contact',
-                title: 'ContactResponse',
-            )
-        )
-    )]
-    #[OA\Response(
-        response: 400,
-        description: 'Bad request',
-        content: new OA\JsonContent(
-            examples: [
-            ],
-            ref: '#/components/schemas/ErrorResponse'
-        )
-    )]
-    #[OA\Response(
-        response: 422,
-        description: 'Unprocessable Entity',
-        content: new OA\JsonContent(
-            examples: [
-                new OA\Examples(
-                    example: 'InvalidFilterParameter',
-                    summary: 'Invalid filter parameter',
-                    value: [
-                        'status'  => 'error',
-                        'message' => 'Invalid filter column x given, only id, full_name and username are allowed',
-                    ],
-                ),
-                'IDParameterInvalidUUID' => new OA\Examples(
-                    example: 'IDParameterInvalidUUID',
-                    ref: '#/components/examples/IDParameterInvalidUUID'
-                ),
-            ],
-            ref: '#/components/schemas/ErrorResponse'
-        )
+        filter: ['id', 'full_name', 'username'],
+        parameters: [
+            new QueryParameter(
+                name: 'id',
+                description: 'Filter Contacts by UUID',
+                schema: new SchemaUUID(entityName: 'Contact'),
+            ),
+            new QueryParameter(
+                name: 'full_name',
+                description: 'Filter Contacts by full name',
+            ),
+            new QueryParameter(
+                name: 'username',
+                description: 'Filter Contacts by username',
+                schema: new OA\Schema(type: 'string', maxLength: 254)
+            ),
+        ],
+        responses: []
     )]
     private function getPlural(string $queryFilter, Select $stmt): ResponseInterface
     {

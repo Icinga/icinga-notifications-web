@@ -7,6 +7,11 @@ namespace Icinga\Module\Notifications\Api\V1;
 use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Exception\Json\JsonEncodeException;
+use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1GetPlural;
+use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Parameters\PathParameter;
+use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Parameters\QueryParameter;
+use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1Get;
+use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Schemas\SchemaUUID;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Util\Json;
 use ipl\Sql\Select;
@@ -18,21 +23,19 @@ use stdClass;
 #[OA\Schema(
     schema: 'Channel',
     description: 'A notification channel',
-    properties: [
-        new OA\Property(property: 'id', type: 'string', format: 'uuid'),
-        new OA\Property(property: 'name', type: 'string'),
-        new OA\Property(property: 'type', type: 'string', maxLength: 255),
-        new OA\Property(
-            property: 'config',
-            description: 'Configuration for the channel',
-            oneOf: [
-                new OA\Schema(ref: '#/components/schemas/EmailChannelConfig'),
-                new OA\Schema(ref: '#/components/schemas/WebhookChannelConfig'),
-                new OA\Schema(ref: '#/components/schemas/RocketChatChannelConfig'),
-            ]
-        )
-    ],
+    required: ['id', 'name', 'type', 'config'],
     type: 'object'
+)]
+#[OA\Schema(
+    schema: 'ChannelTypes',
+    description: 'Available channel types',
+    type: 'string',
+    enum: ['email', 'webhook', 'rocketchat'],
+    example: 'webhook',
+)]
+#[SchemaUUID(
+    entityName: 'Channel',
+    example: '3fa85f64-5717-4562-b3fc-2c963f66afa6'
 )]
 #[OA\Schema(
     schema: 'WebhookChannelConfig',
@@ -50,43 +53,46 @@ use stdClass;
     schema: 'EmailChannelConfig',
     title: 'Email Channel Config',
     required: [
-        'host',
-        'port',
-        'sender_email',
+        'smtp_host',
+        'smtp_port',
+        'sender_name',
+        'sender_address',
+        'smtp_user',
+        'smtp_password',
     ],
     properties: [
         new OA\Property(
-            property: 'SMTP Host',
+            property: 'smtp_host',
             description: 'SMTP host for sending emails',
             type: 'string'
         ),
         new OA\Property(
-            property: 'SMTP port',
+            property: 'smtp_port',
             ref: '#/components/schemas/Port',
             description: 'SMTP port for sending emails',
         ),
         new OA\Property(
-            property: 'Sender Name',
+            property: 'sender_name',
             description: 'Name of the sender for the email channel',
             type: 'string',
         ),
         new OA\Property(
-            property: 'Sender Email',
+            property: 'sender_address',
             ref: '#/components/schemas/Email',
             description: 'Email address of the sender',
         ),
         new OA\Property(
-            property: 'SMTP User',
+            property: 'smtp_user',
             description: 'Username for SMTP authentication',
             type: 'string'
         ),
         new OA\Property(
-            property: 'SMTP Password',
+            property: 'smtp_password',
             description: 'Password for SMTP authentication',
             type: 'string'
         ),
         new OA\Property(
-            property: 'SMTP Encryption',
+            property: 'smtp_encryption',
             description: 'Encryption method for SMTP',
             type: 'string',
             enum: ['none', 'ssl', 'tls']
@@ -120,28 +126,51 @@ use stdClass;
         )
     ],
 )]
-#[OA\Schema(
-    schema: 'ChannelTypes',
-    description: 'Available channel types',
-    type: 'string',
-    enum: ['email', 'webhook', 'rocketchat'],
-)]
-#[OA\Schema(
-    schema: 'ChannelUUID',
-    title: 'ChannelUUID',
-    description: 'An UUID representing a notification channel',
-    type: 'string',
-    format: 'uuid',
-    maxLength: 36,
-    minLength: 36,
-    example: 'f0d02dba-b7f9-40a4-bb21-74ce2bd8db70',
-)]
 class Channels extends ApiV1 implements RequestHandlerInterface
 {
     public function getEndpoint(): string
     {
         return 'channels';
     }
+
+    /**
+     * The route to handle a single channel
+     *
+     * @var string
+     */
+    public const ROUTE_WITH_IDENTIFIER = '/channels/{identifier}';
+    /**
+     * The route to handle multiple channels
+     *
+     * @var string
+     */
+    public const ROUTE_WITHOUT_IDENTIFIER = '/channels';
+    #[OA\Property(
+        ref: '#/components/schemas/ChannelUUID',
+    )]
+    protected string $id;
+    #[OA\Property(
+        description: 'The name of the channel',
+        type: 'string',
+        example: 'My Webhook Channel',
+    )]
+    protected string $name;
+    #[OA\Property(
+        ref: '#/components/schemas/ChannelTypes',
+    )]
+    protected string $type;
+    #[OA\Property(
+        description: 'The configuration for the channel, varies depending on the channel type',
+        example: [
+            'url_template' => 'https://example.com/webhook?token=abc123',
+        ],
+        oneOf: [
+            new OA\Schema(ref: '#/components/schemas/EmailChannelConfig'),
+            new OA\Schema(ref: '#/components/schemas/WebhookChannelConfig'),
+            new OA\Schema(ref: '#/components/schemas/RocketChatChannelConfig'),
+        ]
+    )]
+    protected array $config;
 
     /**
      * Get a channel by UUID.
@@ -153,6 +182,21 @@ class Channels extends ApiV1 implements RequestHandlerInterface
      * @throws HttpNotFoundException
      * @throws JsonEncodeException
      */
+    #[OadV1Get(
+        entityName: 'Channel',
+        path: Channels::ROUTE_WITH_IDENTIFIER,
+        description: 'Get a specific channel by its UUID',
+        summary: 'Get a specific channel by its UUID',
+        tags: ['Channels'],
+        parameters: [
+            new PathParameter(
+                name: 'identifier',
+                description: 'The UUID of the channel to retrieve',
+                identifierSchema: 'ChannelUUID'
+            ),
+        ],
+        responses: []
+    )]
     public function get(?string $identifier, string $queryFilter): ResponseInterface
     {
         $stmt = (new Select())
@@ -195,6 +239,31 @@ class Channels extends ApiV1 implements RequestHandlerInterface
      * @throws HttpBadRequestException
      * @throws JsonEncodeException
      */
+    #[OadV1GetPlural(
+        entityName: 'Channel',
+        path: Channels::ROUTE_WITHOUT_IDENTIFIER,
+        description: 'List all notification channels or filter by parameters',
+        summary: 'List all notification channels or filter by parameters',
+        tags: ['Channels'],
+        filter: ['id', 'name', 'type'],
+        parameters: [
+            new QueryParameter(
+                name: 'id',
+                description: 'Filter by channel UUID',
+                schema: new SchemaUUID(entityName: 'Channel'),
+            ),
+            new QueryParameter(
+                name: 'name',
+                description: 'Filter by channel name (supports partial matches)',
+            ),
+            new QueryParameter(
+                name: 'type',
+                description: 'Filter by channel type',
+                identifierSchema: 'ChannelTypes',
+            ),
+        ],
+        responses: []
+    )]
     private function getPlural(string $queryFilter, Select $stmt): ResponseInterface
     {
         $filter = $this->assembleFilter(
