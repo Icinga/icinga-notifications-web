@@ -9,6 +9,11 @@ use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Http\HttpException;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Exception\Json\JsonEncodeException;
+use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1Get;
+use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1GetPlural;
+use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Parameters\PathParameter;
+use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Parameters\QueryParameter;
+use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Schemas\SchemaUUID;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Rotation;
 use Icinga\Module\Notifications\Model\RotationMember;
@@ -30,35 +35,13 @@ use stdClass;
  */
 #[OA\Schema(
     schema: 'Contactgroup',
-    properties: [
-        new OA\Property(
-            property: 'id',
-            ref: '#/components/schemas/ContactGroupUUID',
-            description: 'The UUID of the contactgroup'
-        ),
-        new OA\Property(
-            property: 'name',
-            description: 'The full name of the contactgroup',
-            type: 'string'
-        ),
-        new OA\Property(
-            property: 'users',
-            description: 'List of user identifiers (UUIDs) that belong to this contactgroup',
-            type: 'array',
-            items: new OA\Items(ref: '#/components/schemas/ContactUUID')
-        )
-    ],
+    description: 'A contact group',
+    required: ['id', 'name'],
     type: 'object'
 )]
-#[OA\Schema(
-    schema: 'ContactGroupUUID',
-    title: 'ContactGroupUUID',
-    description: 'An UUID representing a contact group',
-    type: 'string',
-    format: 'uuid',
-    maxLength: 36,
-    minLength: 36,
-    example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+#[SchemaUUID(
+    entityName: 'Contactgroup',
+    example: '81fb569f-5669-4cd6-93bb-9259446b8b23',
 )]
 class ContactGroups extends ApiV1 implements RequestHandlerInterface
 {
@@ -66,6 +49,22 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
     {
         return 'contact-groups';
     }
+    #[OA\Property(
+        ref: '#/components/schemas/ContactGroupUUID',
+    )]
+    protected string $id;
+    #[OA\Property(
+        description: 'The name of the contactgroup',
+        type: 'string',
+        example: 'My Contactgroup',
+    )]
+    protected string $name;
+    #[OA\Property(
+        description: 'List of user identifiers (UUIDs) that belong to this contactgroup',
+        type: 'array',
+        items: new OA\Items(ref: '#/components/schemas/ContactUUID')
+    )]
+    protected ?array $users;
 
     /**
      * Get a contactgroup by UUID.
@@ -79,6 +78,21 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
      * @throws HttpNotFoundException
      * @throws JsonEncodeException
      */
+    #[OadV1Get(
+        entityName: 'Contactgroup',
+        path: Contactgroups::ROUTE_WITH_IDENTIFIER,
+        description: 'Get a specific contactgroup by its UUID',
+        summary: 'Get a specific contactgroup by its UUID',
+        tags: ['Contactgroups'],
+        parameters: [
+            new PathParameter(
+                name: 'identifier',
+                description: 'The UUID of the contactgroup to retrieve',
+                identifierSchema: 'ContactgroupUUID'
+            ),
+        ],
+        responses: []
+    )]
     public function get(?string $identifier, string $queryFilter): ResponseInterface
     {
         $stmt = (new Select())
@@ -119,6 +133,26 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
      * @throws HttpBadRequestException
      * @throws JsonEncodeException
      */
+    #[OadV1GetPlural(
+        entityName: 'Contactgroup',
+        path: Contactgroups::ROUTE_WITHOUT_IDENTIFIER,
+        description: 'List all contactgroups or filter by parameters',
+        summary: 'List all contactgroups or filter by parameters',
+        tags: ['Contactgroups'],
+        filter: ['id', 'name'],
+        parameters: [
+            new QueryParameter(
+                name: 'id',
+                description: 'Filter by contactgroup UUID',
+                schema: new SchemaUUID(entityName: 'Contactgroup'),
+            ),
+            new QueryParameter(
+                name: 'name',
+                description: 'Filter by contactgroup name',
+            ),
+        ],
+        responses: []
+    )]
     private function getPlural(string $queryFilter, Select $stmt): ResponseInterface
     {
         $filter = $this->assembleFilter(

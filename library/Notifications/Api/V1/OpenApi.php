@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Notifications\Api\V1;
 
+use FilesystemIterator;
 use Icinga\Application\Icinga;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Notifications\Common\PsrLogger;
@@ -9,6 +10,8 @@ use OpenApi\Generator;
 use OpenApi\Attributes as OA;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use RuntimeException;
 
 #[OA\Schema(
@@ -39,32 +42,27 @@ use RuntimeException;
     type: 'string',
     example: 'error',
 )]
-#[OA\Schema(
-    schema: 'ErrorResponse',
-    description: 'Error response format',
-    properties: [
-        new OA\Property(
-            property: 'status',
-            description: 'Status of the response',
-            type: 'string',
-        ),
-        new OA\Property(
-            property: 'message',
-            description: 'Detailed error message',
-            type: 'string',
-        )
-    ],
-    type: 'object',
-)]
+//#[OA\Schema(
+//    schema: 'ErrorResponse',
+//    description: 'Error response format',
+//    properties: [
+//        new OA\Property(
+//            property: 'status',
+//            description: 'Status of the response',
+//            type: 'string',
+//        ),
+//        new OA\Property(
+//            property: 'message',
+//            description: 'Detailed error message',
+//            type: 'string',
+//        )
+//    ],
+//    type: 'object',
+//)]
 #[OA\Schema(
     schema: 'SuccessResponse',
     description: 'Success response format',
     properties: [
-        new OA\Property(
-            property: 'status',
-            description: 'Status of the response',
-            type: 'string',
-        ),
         new OA\Property(
             property: 'message',
             description: 'Detailed success message',
@@ -83,23 +81,23 @@ use RuntimeException;
                 'message' => 'Contact created successfully',
             ]
         ),
-        new OA\Examples(
-            example: 'IDParameterInvalidUUID',
-            summary: 'Invalid UUID format',
-            value: [
-                'status'  => 'error',
-                'message' => 'Provided id-parameter is not a valid UUID',
-            ],
-        ),
-        new OA\Examples(
-            example: 'IdentifierNotFound',
-            summary: 'Identifier not found',
-            value: ['status' => 'error', 'message' => 'Identifier not found']
-        ),
+//        new OA\Examples(
+//            example: 'IDParameterInvalidUUID',
+//            summary: 'Invalid UUID format',
+//            value: [
+//                'status'  => 'error',
+//                'message' => 'Provided id-parameter is not a valid UUID',
+//            ],
+//        ),
+//        new OA\Examples(
+//            example: 'IdentifierNotFound',
+//            summary: 'Identifier not found',
+//            value: ['message' => 'Identifier not found']
+//        ),
         new OA\Examples(
             example: 'InvalidIdentifier',
             summary: 'Identifier is not valid',
-            value: ['status' => 'error', 'message' => 'Identifier is not valid']
+            value: ['message' => 'The given identifier is not a valid UUID']
         ),
         new OA\Examples(
             example: 'MissingRequiredRequestBodyField',
@@ -132,7 +130,7 @@ use RuntimeException;
                 'status'  => 'error',
                 'message' => 'Request body is not valid JSON',
             ],
-        )
+        ),
     ]
 )]
 #[OA\Schema(
@@ -162,9 +160,9 @@ class OpenApi extends ApiV1 implements RequestHandlerInterface
     public function get(): ResponseInterface
     {
         // TODO: Create the documentation during CI and not on request
-        if (file_exists(self::OPENAPI_PATH)) {
-            $oad = file_get_contents(self::OPENAPI_PATH);
-        } else {
+//        if (file_exists(self::OPENAPI_PATH)) {
+//            $oad = file_get_contents(self::OPENAPI_PATH);
+//        } else {
             $files = $this->getFilesIncludingDocs();
 
             try {
@@ -184,7 +182,7 @@ class OpenApi extends ApiV1 implements RequestHandlerInterface
             }
 
             file_put_contents(self::OPENAPI_PATH, $oad);
-        }
+//        }
 
         return $this->createResponse(body: $oad);
     }
@@ -200,37 +198,47 @@ class OpenApi extends ApiV1 implements RequestHandlerInterface
      */
     protected function getFilesIncludingDocs(string $fileFilter = '*'): array
     {
-        $apiCoreDir = __DIR__ . '/ApiCore.php';
+//        $apiCoreDir = __DIR__ . '/ApiCore.php';
         // TODO: find a way to get the module name from the request or class context
 //        $moduleName = $this->getRequest()->getModuleName() ?: 'default;';
         $moduleName = 'notifications';
 
         if ($moduleName === 'default' || $moduleName === '') {
-            $dir = Icinga::app()->getLibraryDir(sprintf('Icinga/Application/Api/%s/', ucfirst(static::VERSION)));
+            $baseDir = Icinga::app()->getLibraryDir('Icinga/Application/Api/');
         } else {
-            $dir = sprintf(
-                '%s/library/%s/Api/%s/',
-                Icinga::app()->getModuleManager()->getModuleDir($moduleName),
-                ucfirst($moduleName),
-                strtoupper(static::VERSION)
+            $baseDir = Icinga::app()->getModuleManager()->getModuleDir($moduleName)
+                . '/library/' . ucfirst($moduleName) . '/Api/';
+        }
+        $dirEndpoints = $baseDir . strtoupper(static::VERSION) . '/';
+        $dirElements = $baseDir . 'OpenApiDescriptionElements/';
+        $dirs = [$dirEndpoints, $dirElements];
+
+        $files = [];
+        foreach ($dirs as $dir) {
+            $dir = rtrim($dir, '/') . '/';
+            if (! is_dir($dir)) {
+                throw new RuntimeException("Directory $dir does not exist");
+            }
+            if (! is_readable($dir)) {
+                throw new RuntimeException("Directory $dir is not readable");
+            }
+
+//            $currentFiles = glob($dir . '*', GLOB_NOSORT | GLOB_BRACE | GLOB_MARK);
+            $iterator = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS)
             );
-        }
 
-        $dir = rtrim($dir, '/') . '/';
-
-        if (! is_dir($dir)) {
-            throw new RuntimeException("Directory $dir does not exist");
-        }
-
-        if (! is_readable($dir)) {
-            throw new RuntimeException("Directory $dir is not readable");
-        }
-
-        $files = glob($dir . $fileFilter, GLOB_NOSORT | GLOB_BRACE | GLOB_MARK);
-        array_unshift($files, $apiCoreDir);
-
-        if ($files === false) {
-            throw new RuntimeException("Failed to read files from directory: $dir");
+            $currentFiles = [];
+            foreach ($iterator as $file) {
+                if ($file->isFile() && $file->getExtension() === 'php') {
+                    $currentFiles[] = $file->getPathname();
+                }
+            }
+//            array_unshift($currentFiles, $apiCoreDir);
+            if ($currentFiles === []) {
+                throw new RuntimeException("Failed to read files from directory: $dir");
+            }
+            $files = array_merge($files, $currentFiles);
         }
 
         return $files;
