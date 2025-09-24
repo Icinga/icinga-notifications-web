@@ -8,6 +8,8 @@ use Icinga\Exception\Http\HttpException;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Exception\Json\JsonEncodeException;
 use Psr\Http\Message\ResponseInterface;
+use Icinga\Module\Notifications\Api\Elements\HttpMethod;
+use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1Delete;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1Get;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1GetPlural;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Parameters\PathParameter;
@@ -567,7 +569,8 @@ class Contacts extends ApiV1
      * @throws HttpBadRequestException
      * @throws HttpNotFoundException
      */
-    #[OA\Delete(
+    #[OadV1Delete(
+        entityName: 'Contact',
         path: '/contacts/{identifier}',
         description: 'Delete a contact by UUID',
         summary: 'Delete a contact by UUID',

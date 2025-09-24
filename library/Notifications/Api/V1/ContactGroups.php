@@ -7,6 +7,7 @@ use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Http\HttpException;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Exception\Json\JsonEncodeException;
+use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1Delete;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1Get;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1GetPlural;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Parameters\PathParameter;
@@ -304,6 +305,13 @@ class ContactGroups extends ApiV1
      * @throws HttpBadRequestException
      * @throws HttpNotFoundException
      */
+    #[OadV1Delete(
+        entityName: 'Contactgroup',
+        path: ContactGroups::ROUTE_WITH_IDENTIFIER,
+        description: 'Delete a contactgroup by UUID',
+        summary: 'Delete a contactgroup by UUID',
+        tags: ['Contactgroups'],
+    )]
     public function delete(string $identifier): ResponseInterface
     {
         if (empty($identifier)) {
