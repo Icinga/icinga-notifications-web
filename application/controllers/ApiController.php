@@ -41,8 +41,8 @@ class ApiController extends CompatController
             }
 
             $params = $request->getParams();
-            $version = Str::camel($params['version']);
-            $endpoint = Str::camel($params['endpoint']);
+            $version = ucfirst(Str::camel($params['version']));
+            $endpoint = ucfirst(Str::camel($params['endpoint']));
             $identifier = $params['identifier'] ?? null;
 
             $module = (($moduleName = $request->getModuleName()) !== null)
