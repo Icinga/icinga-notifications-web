@@ -19,7 +19,7 @@ CREATE TABLE channel (
     changed_at bigint NOT NULL,
     deleted enum('n', 'y') NOT NULL DEFAULT 'n',
 
-    external_uuid uuid NOT NULL UNIQUE,
+    external_uuid char(36) NOT NULL UNIQUE,
 
     CONSTRAINT pk_channel PRIMARY KEY (id),
     CONSTRAINT fk_channel_available_channel_type FOREIGN KEY (type) REFERENCES available_channel_type(type)
@@ -36,7 +36,7 @@ CREATE TABLE contact (
     changed_at bigint NOT NULL,
     deleted enum('n', 'y') NOT NULL DEFAULT 'n',
 
-    external_uuid uuid NOT NULL UNIQUE,
+    external_uuid char(36) NOT NULL UNIQUE,
 
     CONSTRAINT pk_contact PRIMARY KEY (id),
 
@@ -70,7 +70,7 @@ CREATE TABLE contactgroup (
     changed_at bigint NOT NULL,
     deleted enum('n', 'y') NOT NULL DEFAULT 'n',
 
-    external_uuid uuid NOT NULL UNIQUE,
+    external_uuid char(36) NOT NULL UNIQUE,
 
     CONSTRAINT pk_contactgroup PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
