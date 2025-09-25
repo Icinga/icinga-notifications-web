@@ -19,23 +19,23 @@ use Zend_Controller_Request_Exception;
 class ApiController extends CompatController
 {
     /**
-     * Index action for the API controller.
+     * Handle API requests and route them to the appropriate endpoint class.
      *
-     * This method handles API requests, validates that the request has a valid format,
-     * and dispatches the appropriate endpoint based on the request method and parameters.
+     * This method checks for the required permissions, validates the request,
+     * and routes the request to the appropriate API endpoint class based on the
+     * version and endpoint parameters. It handles exceptions and emits the response.
      *
      * @return never
      */
     public function indexAction(): never
     {
-        // TODO: temporary workaround until we have proper middleware support!!!
         try {
             $this->assertPermission('notifications/api');
 
             $request = $this->getRequest();
             if (
                 ! $request->isApiRequest()
-                && strtolower($request->getParam('endpoint')) !== OpenApi::OPENAPI_ENDPOINT
+                && strtolower($request->getParam('endpoint')) !== (new OpenApi())->getEndpoint()
             ) {
                 $this->httpBadRequest('No API request');
             }
@@ -57,11 +57,11 @@ class ApiController extends CompatController
             $serverRequest = (new ServerRequest(
                 method: $request->getMethod(),
                 uri: $request->getRequestUri(),
-                serverParams: $request->getServer()
+                headers: ['Content-Type' => $request->getHeader('Content-Type')],
+                serverParams: $request->getServer(),
             ))
                 ->withParsedBody($this->getRequestBody($request))
-                ->withAttribute('identifier', $identifier)
-                ->withHeader('Content-Type', $request->getHeader('Content-Type'));
+                ->withAttribute('identifier', $identifier);
 
             $response = (new $className())->handle($serverRequest);
         } catch (HttpExceptionInterface $e) {
@@ -91,8 +91,10 @@ class ApiController extends CompatController
      * Validate that the request has a JSON content type and return the parsed JSON content.
      *
      * @param Request $request The request object to validate.
-     * @return ?array The validated JSON content as an associative array, or null if not applicable.
-     * @throws HttpBadRequestException If the request content is not valid JSON.
+     *
+     * @return ?array The validated JSON content as an associative array.
+     *
+     * @throws HttpBadRequestException
      * @throws Zend_Controller_Request_Exception
      */
     private function getRequestBody(Request $request): ?array
@@ -118,6 +120,7 @@ class ApiController extends CompatController
      * Sends the status code, headers, and body of the response to the client.
      *
      * @param ResponseInterface $response The response object to emit.
+     *
      * @return void
      */
     protected function emitResponse(ResponseInterface $response): void

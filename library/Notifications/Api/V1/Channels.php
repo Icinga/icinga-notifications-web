@@ -134,6 +134,11 @@ use stdClass;
 )]
 class Channels extends ApiV1
 {
+    public function getEndpoint(): string
+    {
+        return 'channels';
+    }
+
     /**
      * Get a channel by UUID.
      *
@@ -146,11 +151,19 @@ class Channels extends ApiV1
      */
     public function get(?string $identifier, string $filterStr): array
     {
+        $stmt = (new Select())
+            ->distinct()
+            ->from('channel ch')
+            ->columns([
+                'channel_id' => 'ch.id',
+                'id' => 'ch.external_uuid',
+                'name',
+                'type',
+                'config'
+            ]);
         if ($identifier === null) {
-            return $this->getPlural($filterStr);
+            return $this->getPlural($filterStr, $stmt);
         }
-
-        $stmt = $this->createSelectStmt();
 
         $stmt->where(['external_uuid = ?' => $identifier]);
 
@@ -170,32 +183,26 @@ class Channels extends ApiV1
      * List channels or get specific channels by filter parameters.
      *
      * @param string $filterStr
+     * @param Select $stmt
+     *
      * @return array
+     *
      * @throws HttpBadRequestException
      * @throws JsonEncodeException
      */
-    public function getPlural(string $filterStr): array
+    private function getPlural(string $filterStr, Select $stmt): array
     {
-        $stmt = $this->createSelectStmt();
+        $filter = $this->assembleFilter(
+            $filterStr,
+            ['id', 'name', 'type'],
+            'external_uuid'
+        );
 
-        if (! empty($filterStr)) {
-            $filter = $this->assembleFilter(
-                $filterStr,
-                ['id', 'name', 'type'],
-                'external_uuid'
-            );
-
-            if ($filter !== false) {
-                $stmt->where($filter);
-            }
+        if ($filter !== false) {
+            $stmt->where($filter);
         }
 
         return ['body' => $this->createContentGenerator(Database::get(), $stmt, $this->createGETRowFinalizer())];
-    }
-
-    public function getEndpoint(): string
-    {
-        return 'Channels';
     }
 
     /**
@@ -219,26 +226,7 @@ class Channels extends ApiV1
     }
 
     /**
-     * Create a base Select query for channels
-     *
-     * @return Select
-     */
-    private function createSelectStmt(): Select
-    {
-        return (new Select())
-            ->distinct()
-            ->from('channel ch')
-            ->columns([
-                'channel_id'    => 'ch.id',
-                'id'            => 'ch.external_uuid',
-                'name',
-                'type',
-                'config'
-            ]);
-    }
-
-    /**
-     * Create a finalizer for GET row results
+     * Create a finalizer for get rows that enriches the row with additional data or removes irrelevant data
      *
      * @return callable Returns a callable that modifies the row
      */
