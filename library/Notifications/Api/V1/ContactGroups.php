@@ -60,7 +60,7 @@ class ContactGroups extends ApiV1
 {
     public function getEndpoint(): string
     {
-        return 'contactgroups';
+        return 'contact-groups';
     }
 
     /**
