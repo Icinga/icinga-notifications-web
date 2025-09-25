@@ -9,6 +9,7 @@ use ipl\Html\Attributes;
 use ipl\Html\FormElement\FieldsetElement;
 use ipl\Html\FormElement\SubmitButtonElement;
 use ipl\Html\HtmlElement;
+use ipl\Stdlib\Option;
 use ipl\Web\Widget\Icon;
 
 /**
@@ -27,9 +28,11 @@ use ipl\Web\Widget\Icon;
  */
 class EscalationRecipient extends FieldsetElement
 {
-    use ConfigProvider;
-
     protected $defaultAttributes = ['class' => 'escalation-recipient'];
+
+    /** @var ?ConfigProviderInterface The config provider */
+    #[Option(required: true)]
+    protected ?ConfigProviderInterface $provider = null;
 
     /** @var ?SubmitButtonElement The button to remove this recipient */
     protected ?SubmitButtonElement $removeButton = null;
