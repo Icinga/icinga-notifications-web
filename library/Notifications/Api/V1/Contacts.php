@@ -7,7 +7,6 @@ use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Http\HttpException;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Exception\Json\JsonEncodeException;
-use Icinga\Module\Notifications\Api\Elements\HttpMethod;
 use Ramsey\Uuid\Uuid;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Rotation;
@@ -83,18 +82,6 @@ use OpenApi\Attributes as OA;
 )]
 class Contacts extends ApiV1
 {
-    /**
-     * The route to handle a single contact
-     *
-     * @var string
-     */
-    public const ROUTE_WITH_IDENTIFIER = '/contacts/{identifier}';
-    /**
-     * The route to handle multiple contacts
-     *
-     * @var string
-     */
-    public const ROUTE_WITHOUT_IDENTIFIER = '/contacts';
     #[OA\Property(
         ref: '#/components/schemas/ContactUUID',
     )]
@@ -132,18 +119,25 @@ class Contacts extends ApiV1
     )]
     protected ?array $addresses = null;
 
+    public function getEndpoint(): string
+    {
+        return 'contacts';
+    }
+
     /**
      * Get a contact by UUID.
      *
      * @param string|null $identifier
      * @param string $filterStr
+     *
      * @return array
+     *
      * @throws HttpBadRequestException
      * @throws HttpNotFoundException
      * @throws JsonEncodeException
      */
     #[OA\Get(
-        path: Contacts::ROUTE_WITH_IDENTIFIER,
+        path: '/contacts/{identifier}',
         description: 'Get a contact by UUID',
         summary: 'Get a contact by UUID',
         tags: ['Contacts'],
@@ -190,11 +184,22 @@ class Contacts extends ApiV1
     )]
     public function get(?string $identifier, string $filterStr): array
     {
+        $stmt = (new Select())
+            ->distinct()
+            ->from('contact co')
+            ->columns([
+                'contact_id' => 'co.id',
+                'id' => 'co.external_uuid',
+                'full_name',
+                'username',
+                'default_channel' => 'ch.external_uuid',
+            ])
+            ->joinLeft('contact_address ca', 'ca.contact_id = co.id')
+            ->joinLeft('channel ch', 'ch.id = co.default_channel_id')
+            ->where(['co.deleted = ?' => 'n']);
         if ($identifier === null) {
-            return $this->getPlural($filterStr);
+            return $this->getPlural($filterStr, $stmt);
         }
-
-        $stmt = $this->createSelectStmt();
 
         $stmt->where(['co.external_uuid = ?' => $identifier]);
 
@@ -214,12 +219,15 @@ class Contacts extends ApiV1
      * List contacts or get specific contacts by filter parameters.
      *
      * @param string $filterStr
+     * @param Select $stmt
+     *
      * @return array
+     *
      * @throws HttpBadRequestException
      * @throws JsonEncodeException
      */
     #[OA\Get(
-        path: Contacts::ROUTE_WITHOUT_IDENTIFIER,
+        path: '/contacts',
         summary: 'List contacts or get specific contacts by UUID or filter parameters',
         tags: ['Contacts'],
     )]
@@ -285,20 +293,16 @@ class Contacts extends ApiV1
             ref: '#/components/schemas/ErrorResponse'
         )
     )]
-    public function getPlural(string $filterStr): array
+    private function getPlural(string $filterStr, Select $stmt): array
     {
-        $stmt = $this->createSelectStmt();
+        $filter = $this->assembleFilter(
+            $filterStr,
+            ['id', 'full_name', 'username'],
+            'co.external_uuid'
+        );
 
-        if (! empty($filterStr)) {
-            $filter = $this->assembleFilter(
-                $filterStr,
-                ['id', 'full_name', 'username'],
-                'co.external_uuid'
-            );
-
-            if ($filter !== false) {
-                $stmt->where($filter);
-            }
+        if ($filter !== false) {
+            $stmt->where($filter);
         }
 
         return ['body' => $this->createContentGenerator(Database::get(), $stmt, $this->createGETRowFinalizer())];
@@ -309,12 +313,15 @@ class Contacts extends ApiV1
      *
      * @param string $identifier
      * @param requestBody $requestBody
+     *
      * @return array
+     *
      * @throws HttpBadRequestException
      * @throws HttpException
+     * @throws JsonEncodeException
      */
     #[OA\Put(
-        path: Contacts::ROUTE_WITH_IDENTIFIER,
+        path: '/contacts/{identifier}',
         description: 'Update a contact by UUID',
         summary: 'Update a contact by UUID',
         tags: ['Contacts'],
@@ -462,7 +469,12 @@ class Contacts extends ApiV1
                 'status' => 201,
                 'body' => Json::sanitize(['message' => 'Contact created successfully']),
                 'headers' => [
-                    'Location' => 'notifications/api/v1' . self::ROUTE_WITHOUT_IDENTIFIER . '/' . $requestBody['id']
+                    'Location' => sprintf(
+                        'notifications/api/%s/%s/%s',
+                        self::VERSION,
+                        $this->getEndpoint(),
+                        $requestBody['id']
+                    )
                 ]
             ];
         }
@@ -477,13 +489,16 @@ class Contacts extends ApiV1
      *
      * @param string|null $identifier
      * @param requestBody $requestBody
+     *
      * @return array
+     *
      * @throws HttpBadRequestException
      * @throws HttpException
      * @throws HttpNotFoundException
+     * @throws JsonEncodeException
      */
     #[OA\Post(
-        path: Contacts::ROUTE_WITHOUT_IDENTIFIER,
+        path: '/contacts',
         description: 'Create a new contact',
         summary: 'Create a new contact',
         tags: ['Contacts'],
@@ -604,7 +619,12 @@ class Contacts extends ApiV1
             'status' => 201,
             'body' => Json::sanitize(['message' => 'Contact created successfully']),
             'headers' => [
-                'Location' => 'notifications/api/v1' . self::ROUTE_WITHOUT_IDENTIFIER . '/' . $requestBody['id']
+                'Location' => sprintf(
+                    'notifications/api/%s/%s/%s',
+                    self::VERSION,
+                    $this->getEndpoint(),
+                    $requestBody['id']
+                )
             ]
         ];
     }
@@ -613,12 +633,14 @@ class Contacts extends ApiV1
      * Remove the contact with the given id
      *
      * @param string $identifier
+     *
      * @return array
+     *
      * @throws HttpBadRequestException
      * @throws HttpNotFoundException
      */
     #[OA\Delete(
-        path: Contacts::ROUTE_WITH_IDENTIFIER,
+        path: '/contacts/{identifier}',
         description: 'Delete a contact by UUID',
         summary: 'Delete a contact by UUID',
         tags: ['Contacts'],
@@ -678,11 +700,6 @@ class Contacts extends ApiV1
         return ['status' => 204];
     }
 
-    public function getEndpoint(): string
-    {
-        return 'Contacts';
-    }
-
     /**
      * Create a finalizer for get rows that enriches the row with additional data or removes irrelevant data
      *
@@ -716,28 +733,6 @@ class Contacts extends ApiV1
         );
 
         return $addresses;
-    }
-
-    /**
-     * Create a base Select query for contacts
-     *
-     * @return Select
-     */
-    private function createSelectStmt(): Select
-    {
-        return (new Select())
-            ->distinct()
-            ->from('contact co')
-            ->columns([
-                'contact_id' => 'co.id',
-                'id' => 'co.external_uuid',
-                'full_name',
-                'username',
-                'default_channel' => 'ch.external_uuid',
-            ])
-            ->joinLeft('contact_address ca', 'ca.contact_id = co.id')
-            ->joinLeft('channel ch', 'ch.id = co.default_channel_id')
-            ->where(['co.deleted = ?' => 'n']);
     }
 
     /**
@@ -972,13 +967,14 @@ class Contacts extends ApiV1
     // TODO: validate via class attributes or openapi schema? Is it performant enough?
 
     /**
-     * Get the validated POST|PUT request data
+     * Validate the request body for required fields and types
      *
      * @param array $requestBody
+     *
      * @return void
      *
-     * @throws HttpBadRequestException if the request body is invalid
-     * @throws HttpException if the request body is invalid
+     * @throws HttpBadRequestException
+     * @throws HttpException
      */
     private function assertValidatedRequestBody(array $requestBody): void
     {

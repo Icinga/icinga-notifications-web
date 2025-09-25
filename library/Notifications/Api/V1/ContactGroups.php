@@ -58,37 +58,36 @@ use stdClass;
 )]
 class ContactGroups extends ApiV1
 {
-    /**
-     * The route to handle a contactgroup with a specific identifier
-     *
-     * @var string
-     */
-    public const ROUTE_WITH_IDENTIFIER = '/contactgroups/{identifier}';
-    /**
-     * The route to handle multiple contactgroup or create contactgroup
-     *
-     * @var string
-     */
-    public const ROUTE_WITHOUT_IDENTIFIER = '/contactgroups';
+    public function getEndpoint(): string
+    {
+        return 'contactgroups';
+    }
 
     /**
      * Get a contactgroup by UUID.
      *
      * @param string|null $identifier
      * @param string $filterStr
+     *
      * @return array
+     *
      * @throws HttpBadRequestException
      * @throws HttpNotFoundException
      * @throws JsonEncodeException
      */
     public function get(?string $identifier, string $filterStr): array
     {
+        $stmt = (new Select())
+            ->distinct()
+            ->from('contactgroup cg')
+            ->columns([
+                'contactgroup_id' => 'cg.id',
+                'id' => 'cg.external_uuid',
+                'name'
+            ]);
         if ($identifier === null) {
-            return $this->getPlural($filterStr);
+            return $this->getPlural($filterStr, $stmt);
         }
-
-
-        $stmt = $this->createSelectStmt();
 
         $stmt->where(['external_uuid = ?' => $identifier]);
 
@@ -108,24 +107,23 @@ class ContactGroups extends ApiV1
      * List contactgroups or get specific contactgroups by filter parameters.
      *
      * @param string $filterStr
+     * @param Select $stmt
+     *
      * @return array
+     *
      * @throws HttpBadRequestException
      * @throws JsonEncodeException
      */
-    public function getPlural(string $filterStr): array
+    private function getPlural(string $filterStr, Select $stmt): array
     {
-        $stmt = $this->createSelectStmt();
+        $filter = $this->assembleFilter(
+            $filterStr,
+            ['id', 'name'],
+            'external_uuid'
+        );
 
-        if (! empty($filterStr)) {
-            $filter = $this->assembleFilter(
-                $filterStr,
-                ['id', 'name'],
-                'external_uuid'
-            );
-
-            if ($filter !== false) {
-                $stmt->where($filter);
-            }
+        if ($filter !== false) {
+            $stmt->where($filter);
         }
 
         return ['body' => $this->createContentGenerator(Database::get(), $stmt, $this->createGETRowFinalizer())];
@@ -136,10 +134,13 @@ class ContactGroups extends ApiV1
      *
      * @param string $identifier
      * @param requestBody $requestBody
+     *
      * @return array
+     *
      * @throws HttpBadRequestException
      * @throws HttpException
      * @throws HttpNotFoundException
+     * @throws JsonEncodeException
      */
     public function put(string $identifier, array $requestBody): array
     {
@@ -183,7 +184,12 @@ class ContactGroups extends ApiV1
                 'status' => 201,
                 'body' => Json::sanitize(['message' => 'Contactgroup created successfully']),
                 'headers' => [
-                    'Location' => 'notifications/api/v1' . self::ROUTE_WITHOUT_IDENTIFIER . '/' . $requestBody['id']
+                    'Location' => sprintf(
+                        'notifications/api/%s/%s/%s',
+                        self::VERSION,
+                        $this->getEndpoint(),
+                        $requestBody['id']
+                    )
                 ]
             ];
         }
@@ -199,11 +205,12 @@ class ContactGroups extends ApiV1
      * @param string|null $identifier The identifier of the contactgroup to update, or null to create a new one
      * @param requestBody $requestBody The request body containing the contactgroup data
      *
-     * @return array The response data
+     * @return array
      *
-     * @throws HttpBadRequestException if the request body is invalid
-     * @throws HttpNotFoundException if the contactgroup to update does not exist
-     * @throws HttpException if a contactgroup with the given identifier already exists
+     * @throws HttpBadRequestException
+     * @throws HttpNotFoundException
+     * @throws HttpException
+     * @throws JsonEncodeException
      */
     public function post(?string $identifier, array $requestBody): array
     {
@@ -242,7 +249,12 @@ class ContactGroups extends ApiV1
             'status' => 201,
             'body' => Json::sanitize(['message' => 'Contactgroup created successfully']),
             'headers' => [
-                'Location' => 'notifications/api/v1' . self::ROUTE_WITHOUT_IDENTIFIER . '/' . $requestBody['id']
+                'Location' => sprintf(
+                    'notifications/api/%s/%s/%s',
+                    self::VERSION,
+                    $this->getEndpoint(),
+                    $requestBody['id']
+                )
             ]
         ];
     }
@@ -251,7 +263,9 @@ class ContactGroups extends ApiV1
      * Remove the contactgroup with the given id
      *
      * @param string $identifier
+     *
      * @return array
+     *
      * @throws HttpBadRequestException
      * @throws HttpNotFoundException
      */
@@ -271,11 +285,6 @@ class ContactGroups extends ApiV1
         $db->commitTransaction();
 
         return ['status' => 204];
-    }
-
-    public function getEndpoint(): string
-    {
-        return 'Contactgroups';
     }
 
     /**
@@ -303,7 +312,6 @@ class ContactGroups extends ApiV1
      * @param string $identifier
      *
      * @return ?int
-     *
      */
     public static function getGroupId(string $identifier): ?int
     {
@@ -318,9 +326,16 @@ class ContactGroups extends ApiV1
         return $group->id ?? null;
     }
 
+    /**
+     * Remove the contactgroup with the given id and all its references
+     *
+     * @param int $id
+     *
+     * @return void
+     */
     private function removeContactgroup(int $id): void
     {
-        $markAsDeleted = ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'];
+        $markAsDeleted = ['changed_at' => (int)(new DateTime())->format("Uv"), 'deleted' => 'y'];
         $updateCondition = ['contactgroup_id = ?' => $id, 'deleted = ?' => 'n'];
         $db = Database::get();
 
@@ -348,10 +363,12 @@ class ContactGroups extends ApiV1
             $rotationIdsWithOtherMembers = $db->fetchCol(
                 RotationMember::on($db)
                     ->columns('rotation_id')
-                    ->filter(Filter::all(
-                        Filter::equal('rotation_id', $rotationIds),
-                        Filter::unequal('contactgroup_id', $id)
-                    ))->assembleSelect()
+                    ->filter(
+                        Filter::all(
+                            Filter::equal('rotation_id', $rotationIds),
+                            Filter::unequal('contactgroup_id', $id)
+                        )
+                    )->assembleSelect()
             );
 
             $toRemoveRotations = array_diff($rotationIds, $rotationIdsWithOtherMembers);
@@ -381,10 +398,12 @@ class ContactGroups extends ApiV1
             $escalationIdsWithOtherRecipients = $db->fetchCol(
                 RuleEscalationRecipient::on($db)
                     ->columns('rule_escalation_id')
-                    ->filter(Filter::all(
-                        Filter::equal('rule_escalation_id', $escalationIds),
-                        Filter::unequal('contactgroup_id', $id)
-                    ))->assembleSelect()
+                    ->filter(
+                        Filter::all(
+                            Filter::equal('rule_escalation_id', $escalationIds),
+                            Filter::unequal('contactgroup_id', $id)
+                        )
+                    )->assembleSelect()
             );
 
             $toRemoveEscalations = array_diff($escalationIds, $escalationIdsWithOtherRecipients);
@@ -408,9 +427,14 @@ class ContactGroups extends ApiV1
     }
 
     /**
-     * Get the validated POST|PUT request data
+     * Validate the request body for required fields and types
      *
-     * @throws HttpBadRequestException if the request body is invalid
+     * @param requestBody $requestBody
+     *
+     * @return void
+     *
+     * @throws HttpBadRequestException
+     * @throws HttpException
      */
     private function assertValidatedRequestBody(array $requestBody): void
     {
@@ -433,14 +457,13 @@ class ContactGroups extends ApiV1
 
         if (! empty($requestBody['users'])) {
             if (! is_array($requestBody['users'])) {
-                throw new HttpBadRequestException($msgPrefix .  'expects users to be an array');
+                throw new HttpBadRequestException($msgPrefix . 'expects users to be an array');
             }
 
             foreach ($requestBody['users'] as $user) {
                 if (! is_string($user) || ! Uuid::isValid($user)) {
                     throw new HttpBadRequestException($msgPrefix . 'user identifiers must be valid UUIDs');
                 }
-
                 //TODO: check if users exist, here?
             }
         }
@@ -457,9 +480,9 @@ class ContactGroups extends ApiV1
     private function addContactgroup(array $requestBody): void
     {
         Database::get()->insert('contactgroup', [
-            'name'              => $requestBody['name'],
-            'external_uuid'     => $requestBody['id'],
-            'changed_at'            => (int) (new DateTime())->format("Uv"),
+            'name' => $requestBody['name'],
+            'external_uuid' => $requestBody['id'],
+            'changed_at' => (int)(new DateTime())->format("Uv"),
         ]);
 
         $id = Database::get()->lastInsertId();
@@ -476,7 +499,8 @@ class ContactGroups extends ApiV1
      * @param string[] $users
      *
      * @return void
-     * @throws HttpNotFoundException
+     *
+     * @throws HttpException
      */
     private function addUsers(int $contactgroupId, array $users): void
     {
@@ -487,28 +511,11 @@ class ContactGroups extends ApiV1
             }
 
             Database::get()->insert('contactgroup_member', [
-                'contactgroup_id'   => $contactgroupId,
-                'contact_id'        => $contactId,
-                'changed_at'        => (int) (new DateTime())->format("Uv"),
+                'contactgroup_id' => $contactgroupId,
+                'contact_id' => $contactId,
+                'changed_at' => (int)(new DateTime())->format("Uv"),
             ]);
         }
-    }
-
-    /**
-     * Create a base Select query for contactgroups
-     *
-     * @return Select
-     */
-    private function createSelectStmt(): Select
-    {
-        return (new Select())
-            ->distinct()
-            ->from('contactgroup cg')
-            ->columns([
-                'contactgroup_id'   => 'cg.id',
-                'id'                => 'cg.external_uuid',
-                'name'
-            ]);
     }
 
     /**
