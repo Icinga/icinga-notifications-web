@@ -190,7 +190,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
 
         // Endpoint specific invalid method
         // Try to POST
-        $expected = $this->jsonEncodeError('Method POST is not supported for endpoint Channels');
+        $expected = $this->jsonEncodeError('Method POST is not supported for endpoint channels');
         //Try to POST without identifier
         $response = $this->sendRequest('POST', 'channels');
         $content = $response->getBody()->getContents();
@@ -229,7 +229,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
 
         $this->assertSame(405, $response->getStatusCode(), $content);
         $this->assertSame([$expectedAllowHeader], $response->getHeader('Allow'));
-        $this->assertSame($this->jsonEncodeError('Method PUT is not supported for endpoint Channels'), $content);
+        $this->assertSame($this->jsonEncodeError('Method PUT is not supported for endpoint channels'), $content);
 
         // Try to DELETE
         $response = $this->sendRequest('DELETE', 'channels');
@@ -237,6 +237,6 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
 
         $this->assertSame(405, $response->getStatusCode(), $content);
         $this->assertSame([$expectedAllowHeader], $response->getHeader('Allow'));
-        $this->assertSame($this->jsonEncodeError('Method DELETE is not supported for endpoint Channels'), $content);
+        $this->assertSame($this->jsonEncodeError('Method DELETE is not supported for endpoint channels'), $content);
     }
 }
