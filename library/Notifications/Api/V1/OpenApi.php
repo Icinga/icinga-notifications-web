@@ -143,19 +143,18 @@ use RuntimeException;
 )]
 class OpenApi extends ApiV1
 {
-    /**
-     * The endpoint for OpenAPI documentation
-     * This is used to serve the OpenAPI specification.
-     *
-     * @var string
-     */
-    public const OPENAPI_ENDPOINT = 'openapi';
     public const OPENAPI_PATH = __DIR__ . '/docs/openapi.json';
-    public const OPENAPI_RESOLVED_REFS_PATH = __DIR__ . '/docs/openapi-resolved-refs.json';
+
+    public function getEndpoint(): string
+    {
+        return 'openapi';
+    }
+
     /**
      * Generate OpenAPI documentation for the Notifications API
      *
      * @return array
+     *
      * @throws ProgrammingError
      */
     public function get(): array
@@ -188,16 +187,13 @@ class OpenApi extends ApiV1
         return ['body' => $oad];
     }
 
-    public function getEndpoint(): string
-    {
-        return 'Openapi';
-    }
-
     /**
      * Get the files including the ApiCore.php file and any other files matching the given filter.
      *
      * @param string $fileFilter
+     *
      * @return array
+     *
      * @throws ProgrammingError
      */
     protected function getFilesIncludingDocs(string $fileFilter = '*'): array
