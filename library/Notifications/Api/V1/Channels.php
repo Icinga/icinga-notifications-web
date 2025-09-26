@@ -170,7 +170,7 @@ class Channels extends ApiV1
         /** @var stdClass|false $result */
         $result = Database::get()->fetchOne($stmt);
 
-        if (empty($result)) {
+        if ($result === false) {
             throw new HttpNotFoundException('Channel not found');
         }
 
