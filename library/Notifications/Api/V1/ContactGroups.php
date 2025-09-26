@@ -335,7 +335,7 @@ class ContactGroups extends ApiV1
      */
     private function removeContactgroup(int $id): void
     {
-        $markAsDeleted = ['changed_at' => (int)(new DateTime())->format("Uv"), 'deleted' => 'y'];
+        $markAsDeleted = ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'];
         $updateCondition = ['contactgroup_id = ?' => $id, 'deleted = ?' => 'n'];
         $db = Database::get();
 
@@ -482,7 +482,7 @@ class ContactGroups extends ApiV1
         Database::get()->insert('contactgroup', [
             'name' => $requestBody['name'],
             'external_uuid' => $requestBody['id'],
-            'changed_at' => (int)(new DateTime())->format("Uv"),
+            'changed_at' => (int) (new DateTime())->format("Uv"),
         ]);
 
         $id = Database::get()->lastInsertId();
@@ -513,7 +513,7 @@ class ContactGroups extends ApiV1
             Database::get()->insert('contactgroup_member', [
                 'contactgroup_id' => $contactgroupId,
                 'contact_id' => $contactId,
-                'changed_at' => (int)(new DateTime())->format("Uv"),
+                'changed_at' => (int) (new DateTime())->format("Uv"),
             ]);
         }
     }
