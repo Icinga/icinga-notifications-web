@@ -75,7 +75,6 @@ class ApiController extends CompatController
         } catch (Throwable $e) {
             $response = new Response(
                 status: 500,
-                headers: ['Content-Type' => 'application/json'],
                 body: json_encode([
                     'message' => $e->getMessage(),
                 ])
@@ -132,6 +131,7 @@ class ApiController extends CompatController
                 header(sprintf('%s: %s', $name, $value), false);
             }
         }
+        header('Content-Type: application/json');
 
         echo $response->getBody();
     }
