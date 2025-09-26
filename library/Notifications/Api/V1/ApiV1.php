@@ -147,6 +147,16 @@ abstract class ApiV1 extends ApiCore
     }
 
     /**
+     * Override this method to modify the row before it is returned in the response.
+     *
+     * @param stdClass $row
+     * @return void
+     */
+    public function prepareRow(stdClass $row): void
+    {
+    }
+
+    /**
      * Create a filter from the filter string.
      *
      * @param string $filterStr
@@ -246,7 +256,6 @@ abstract class ApiV1 extends ApiCore
     protected function createContentGenerator(
         Connection $db,
         Select $stmt,
-        callable $enricher,
         int $batchSize = 500
     ): Generator {
         $stmt->limit($batchSize);
@@ -257,7 +266,7 @@ abstract class ApiV1 extends ApiCore
         do {
             /** @var stdClass $row */
             foreach ($res as $i => $row) {
-                $enricher($row);
+                $this->prepareRow($row);
 
                 if ($i > 0 || $offset !== 0) {
                     yield ",";
