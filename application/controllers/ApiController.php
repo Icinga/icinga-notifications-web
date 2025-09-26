@@ -7,8 +7,10 @@ use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
 use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Http\HttpExceptionInterface;
-use Icinga\Module\Notifications\Api\ApiCore;
+use Icinga\Exception\Json\JsonEncodeException;
+use Icinga\Module\Notifications\Api\V1\ApiV1;
 use Icinga\Module\Notifications\Api\V1\OpenApi;
+use Icinga\Util\Json;
 use Icinga\Web\Request;
 use ipl\Stdlib\Str;
 use ipl\Web\Compat\CompatController;
@@ -24,6 +26,7 @@ class ApiController extends CompatController
      * Processes API requests for the Notifications module, serving as the main entry point for all API interactions.
      *
      * @return never
+     * @throws JsonEncodeException
      */
     public function indexAction(): never
     {
@@ -39,7 +42,7 @@ class ApiController extends CompatController
             }
 
             $params = $request->getParams();
-            $version = ucfirst(Str::camel($params['version']));
+            $version = ucfirst($params['version']);
             $endpoint = ucfirst(Str::camel($params['endpoint']));
             $identifier = $params['identifier'] ?? null;
 
@@ -48,14 +51,15 @@ class ApiController extends CompatController
                 : '';
             $className = sprintf('Icinga\\%sApi\\%s\\%s', $module, $version, $endpoint);
 
-            if (! class_exists($className) || ! is_subclass_of($className, ApiCore::class)) {
-                $this->httpNotFound(404, "Endpoint $endpoint does not exist.");
+            // TODO: works only for V1 right now
+            if (! class_exists($className) || ! is_subclass_of($className, ApiV1::class)) {
+                $this->httpNotFound("Endpoint $endpoint does not exist.");
             }
 
             $serverRequest = (new ServerRequest(
-                method: $request->getMethod(),
-                uri: $request->getRequestUri(),
-                headers: ['Content-Type' => $request->getHeader('Content-Type')],
+                $request->getMethod(),
+                $request->getRequestUri(),
+                ['Content-Type' => $request->getHeader('Content-Type')],
                 serverParams: $request->getServer(),
             ))
                 ->withParsedBody($this->getRequestBody($request))
@@ -64,19 +68,12 @@ class ApiController extends CompatController
             $response = (new $className())->handle($serverRequest);
         } catch (HttpExceptionInterface $e) {
             $response = new Response(
-                status: $e->getStatusCode(),
-                headers: $e->getHeaders(),
-                body: json_encode([
-                    'message' => $e->getMessage(),
-                ])
+                $e->getStatusCode(),
+                $e->getHeaders(),
+                Json::sanitize(['message' => $e->getMessage()])
             );
         } catch (Throwable $e) {
-            $response = new Response(
-                status: 500,
-                body: json_encode([
-                    'message' => $e->getMessage(),
-                ])
-            );
+            $response = new Response(500, body: Json::sanitize(['message' => $e->getMessage()]));
         } finally {
             $this->emitResponse($response);
         }
@@ -122,12 +119,14 @@ class ApiController extends CompatController
     {
         http_response_code($response->getStatusCode());
 
+        $contentTypeSet = false;
         foreach ($response->getHeaders() as $name => $values) {
+            if($name === 'Content-Type') $contentTypeSet = true;
             foreach ($values as $value) {
                 header(sprintf('%s: %s', $name, $value), false);
             }
         }
-        header('Content-Type: application/json');
+        if (! $contentTypeSet) header('Content-Type: application/json');
 
         echo $response->getBody();
     }
