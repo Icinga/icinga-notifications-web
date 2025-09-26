@@ -210,7 +210,7 @@ class Contacts extends ApiV1
             throw new HttpNotFoundException('Contact not found');
         }
 
-        $this->createGETRowFinalizer()($result);
+        $this->prepareRow($result);
 
         return ['body' => Json::sanitize(['data' => [$result]])];
     }
@@ -305,7 +305,7 @@ class Contacts extends ApiV1
             $stmt->where($filter);
         }
 
-        return ['body' => $this->createContentGenerator(Database::get(), $stmt, $this->createGETRowFinalizer())];
+        return ['body' => $this->createContentGenerator(Database::get(), $stmt)];
     }
 
     /**
@@ -701,18 +701,17 @@ class Contacts extends ApiV1
     }
 
     /**
-     * Create a finalizer for get rows that enriches the row with additional data or removes irrelevant data
+     * Prepare the rows fetched from the database for output
      *
-     * @return callable Returns a callable that finalizes the row
+     * @param stdClass $row
+     * @return void
      */
-    private function createGETRowFinalizer(): callable
+    public function prepareRow(stdClass $row): void
     {
-        return function (stdClass $row) {
             $row->groups = ContactGroups::fetchGroupIdentifiers($row->contact_id);
             $row->addresses = self::fetchContactAddresses($row->contact_id);
 
             unset($row->contact_id);
-        };
     }
 
     /**
