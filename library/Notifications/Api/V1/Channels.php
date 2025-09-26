@@ -225,12 +225,6 @@ class Channels extends ApiV1
         return $channel->id ?? false;
     }
 
-    /**
-     * Prepare a rows fetched from the database for output
-     *
-     * @param stdClass $row
-     * @return void
-     */
     public function prepareRow(stdClass $row): void
     {
             unset($row->channel_id);
