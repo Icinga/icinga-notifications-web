@@ -518,12 +518,6 @@ class ContactGroups extends ApiV1
         }
     }
 
-    /**
-     * Prepare a rows fetched from the database for output
-     *
-     * @param stdClass $row
-     * @return void
-     */
     public function prepareRow(stdClass $row): void
     {
         $row->users = Contacts::fetchUserIdentifiers($row->contactgroup_id);

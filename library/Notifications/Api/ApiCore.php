@@ -11,10 +11,15 @@ use Psr\Http\Message\StreamInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use ValueError;
 
+/**
+ * Abstract base class for API endpoints.
+ *
+ * This class provides the base functionality for handling API requests,
+ */
 abstract class ApiCore implements RequestHandlerInterface
 {
     /**
-     * Handle the API request and return a ResponseInterface object.
+     * Endpoint based request handling.
      *
      * @param ServerRequestInterface $request
      *
@@ -30,11 +35,7 @@ abstract class ApiCore implements RequestHandlerInterface
     abstract public function getEndpoint(): string;
 
     /**
-     * Handle the incoming server request and return a response.
-     *
-     * This method determines the HTTP method of the request and checks if the corresponding
-     * method exists in the subclass. If the method does not exist,
-     * it throws an HttpException with a 405 status code.
+     * The main entry point for processing API requests.
      *
      * @param ServerRequestInterface $request The incoming server request.
      *
@@ -68,8 +69,7 @@ abstract class ApiCore implements RequestHandlerInterface
     /**
      * Validate the incoming request.
      *
-     * This method can be overridden in subclasses to implement API- or module-specific
-     * request validation logic. By default, it does nothing.
+     * Override to implement specific request validation logic.
      *
      * @param ServerRequestInterface $request The incoming server request to validate.
      *
