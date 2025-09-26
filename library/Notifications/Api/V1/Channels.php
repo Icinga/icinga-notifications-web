@@ -174,7 +174,7 @@ class Channels extends ApiV1
             throw new HttpNotFoundException('Channel not found');
         }
 
-        $this->createGETRowFinalizer()($result);
+        $this->prepareRow($result);
 
         return ['body' => Json::sanitize(['data' => [$result]])];
     }
@@ -202,7 +202,7 @@ class Channels extends ApiV1
             $stmt->where($filter);
         }
 
-        return ['body' => $this->createContentGenerator(Database::get(), $stmt, $this->createGETRowFinalizer())];
+        return ['body' => $this->createContentGenerator(Database::get(), $stmt)];
     }
 
     /**
@@ -226,14 +226,13 @@ class Channels extends ApiV1
     }
 
     /**
-     * Create a finalizer for get rows that enriches the row with additional data or removes irrelevant data
+     * Prepare a rows fetched from the database for output
      *
-     * @return callable Returns a callable that modifies the row
+     * @param stdClass $row
+     * @return void
      */
-    private function createGETRowFinalizer(): callable
+    public function prepareRow(stdClass $row): void
     {
-        return function (stdClass $row) {
             unset($row->channel_id);
-        };
     }
 }
