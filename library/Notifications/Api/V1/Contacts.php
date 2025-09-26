@@ -700,12 +700,6 @@ class Contacts extends ApiV1
         return ['status' => 204];
     }
 
-    /**
-     * Prepare the rows fetched from the database for output
-     *
-     * @param stdClass $row
-     * @return void
-     */
     public function prepareRow(stdClass $row): void
     {
             $row->groups = ContactGroups::fetchGroupIdentifiers($row->contact_id);

@@ -21,9 +21,7 @@ class ApiController extends CompatController
     /**
      * Handle API requests and route them to the appropriate endpoint class.
      *
-     * This method checks for the required permissions, validates the request,
-     * and routes the request to the appropriate API endpoint class based on the
-     * version and endpoint parameters. It handles exceptions and emits the response.
+     * Processes API requests for the Notifications module, serving as the main entry point for all API interactions.
      *
      * @return never
      */
@@ -35,7 +33,7 @@ class ApiController extends CompatController
             $request = $this->getRequest();
             if (
                 ! $request->isApiRequest()
-                && strtolower($request->getParam('endpoint')) !== (new OpenApi())->getEndpoint()
+                && strtolower($request->getParam('endpoint')) !== (new OpenApi())->getEndpoint() // for browser query
             ) {
                 $this->httpBadRequest('No API request');
             }
@@ -87,7 +85,7 @@ class ApiController extends CompatController
     }
 
     /**
-     * Validate that the request has a JSON content type and return the parsed JSON content.
+     * Validate that the request has an appropriate body.
      *
      * @param Request $request The request object to validate.
      *
@@ -115,8 +113,6 @@ class ApiController extends CompatController
 
     /**
      * Emit the HTTP response to the client.
-     *
-     * Sends the status code, headers, and body of the response to the client.
      *
      * @param ResponseInterface $response The response object to emit.
      *
