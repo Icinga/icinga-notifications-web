@@ -198,6 +198,7 @@ class Contacts extends ApiV1
             ->joinLeft('contact_address ca', 'ca.contact_id = co.id')
             ->joinLeft('channel ch', 'ch.id = co.default_channel_id')
             ->where(['co.deleted = ?' => 'n']);
+
         if ($identifier === null) {
             return $this->getPlural($queryFilter, $stmt);
         }
@@ -434,7 +435,7 @@ class Contacts extends ApiV1
 
             $channelID = Channels::getChannelId($requestBody['default_channel']);
 
-            if ($channelID === false ) {
+            if ($channelID === false) {
                 throw new HttpException(422, 'Default channel mismatch');
             }
 
@@ -592,6 +593,7 @@ class Contacts extends ApiV1
         $db->beginTransaction();
 
         $emptyIdentifier = $identifier === null;
+
         if (! $emptyIdentifier) {
             if ($identifier === $requestBody['id']) {
                 throw new HttpException(
@@ -599,7 +601,9 @@ class Contacts extends ApiV1
                     'Identifier mismatch: the Payload id must be different from the URL identifier'
                 );
             }
+
             $contactId = $this->getContactId($identifier);
+
             if ($contactId === null) {
                 throw new HttpNotFoundException('Contact not found');
             }
@@ -612,10 +616,9 @@ class Contacts extends ApiV1
         if (! $emptyIdentifier) {
             $this->removeContact($contactId);
         }
+
         $this->addContact($requestBody);
-
         $db->commitTransaction();
-
 
         return $this->createResponse(
             201,
@@ -765,6 +768,7 @@ class Contacts extends ApiV1
     {
         foreach ($groups as $groupIdentifier) {
             $groupId = ContactGroups::getGroupId($groupIdentifier);
+
             if ($groupId === null) {
                 throw new HttpException(
                     422,
@@ -813,6 +817,7 @@ class Contacts extends ApiV1
         if (! empty($requestBody['username'])) {
             $this->assertUniqueUsername($requestBody['username']);
         }
+
         if (! $channelID = Channels::getChannelId($requestBody['default_channel'])) {
             throw new HttpException(422, 'Default channel mismatch');
         }

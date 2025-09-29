@@ -51,6 +51,7 @@ abstract class ApiCore implements RequestHandlerInterface
             throw (new HttpException(405, sprintf('HTTP method %s is not supported', $request->getMethod())))
                 ->setHeader('Allow', $this->getAllowedMethods());
         }
+
         $request = $request->withAttribute('httpMethod', $httpMethod);
 
         if (! method_exists($this, $httpMethod->lowercase())) {
@@ -87,6 +88,7 @@ abstract class ApiCore implements RequestHandlerInterface
     protected function getAllowedMethods(): string
     {
         $methods = [];
+
         foreach (HttpMethod::cases() as $method) {
             if (method_exists($this, $method->lowercase())) {
                 $methods[] = $method->uppercase();
@@ -115,6 +117,7 @@ abstract class ApiCore implements RequestHandlerInterface
         ?string $reason = null
     ): ResponseInterface {
         $headers['Content-Type'] = 'application/json';
+
         return new Response($status, $headers, $body, $version, $reason);
     }
 }
