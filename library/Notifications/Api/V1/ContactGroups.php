@@ -68,7 +68,7 @@ class ContactGroups extends ApiV1
      * Get a contactgroup by UUID.
      *
      * @param string|null $identifier
-     * @param string $filterStr
+     * @param string $queryFilter
      *
      * @return ResponseInterface
      *
@@ -76,7 +76,7 @@ class ContactGroups extends ApiV1
      * @throws HttpNotFoundException
      * @throws JsonEncodeException
      */
-    public function get(?string $identifier, string $filterStr): ResponseInterface
+    public function get(?string $identifier, string $queryFilter): ResponseInterface
     {
         $stmt = (new Select())
             ->distinct()
@@ -87,7 +87,7 @@ class ContactGroups extends ApiV1
                 'name'
             ]);
         if ($identifier === null) {
-            return $this->getPlural($filterStr, $stmt);
+            return $this->getPlural($queryFilter, $stmt);
         }
 
         $stmt->where(['external_uuid = ?' => $identifier]);
@@ -107,7 +107,7 @@ class ContactGroups extends ApiV1
     /**
      * List contactgroups or get specific contactgroups by filter parameters.
      *
-     * @param string $filterStr
+     * @param string $queryFilter
      * @param Select $stmt
      *
      * @return ResponseInterface
@@ -115,10 +115,10 @@ class ContactGroups extends ApiV1
      * @throws HttpBadRequestException
      * @throws JsonEncodeException
      */
-    private function getPlural(string $filterStr, Select $stmt): ResponseInterface
+    private function getPlural(string $queryFilter, Select $stmt): ResponseInterface
     {
         $filter = $this->assembleFilter(
-            $filterStr,
+            $queryFilter,
             ['id', 'name'],
             'external_uuid'
         );
@@ -149,7 +149,7 @@ class ContactGroups extends ApiV1
             throw new HttpBadRequestException('Identifier is required');
         }
 
-        $this->assertValidatedRequestBody($requestBody);
+        $this->assertValidRequestBody($requestBody);
 
         if ($identifier !== $requestBody['id']) {
             throw new HttpException(422, 'Identifier mismatch');
@@ -215,7 +215,7 @@ class ContactGroups extends ApiV1
      */
     public function post(?string $identifier, array $requestBody): ResponseInterface
     {
-        $this->assertValidatedRequestBody($requestBody);
+        $this->assertValidRequestBody($requestBody);
 
         $db = Database::get();
         $db->beginTransaction();
@@ -437,7 +437,7 @@ class ContactGroups extends ApiV1
      * @throws HttpBadRequestException
      * @throws HttpException
      */
-    private function assertValidatedRequestBody(array $requestBody): void
+    private function assertValidRequestBody(array $requestBody): void
     {
         $msgPrefix = 'Invalid request body: ';
 
