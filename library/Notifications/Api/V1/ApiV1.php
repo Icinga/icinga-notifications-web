@@ -5,7 +5,6 @@ namespace Icinga\Module\Notifications\Api\V1;
 use Exception;
 use Generator;
 use Icinga\Exception\Http\HttpBadRequestException;
-use Icinga\Exception\Http\HttpException;
 use Icinga\Exception\Json\JsonDecodeException;
 use Icinga\Exception\Json\JsonEncodeException;
 use Icinga\Module\Notifications\Api\ApiCore;
@@ -211,7 +210,7 @@ abstract class ApiV1 extends ApiCore
 
         try {
             $validBody = Json::decode($body, true);
-        } catch (JsonDecodeException $e) {
+        } catch (JsonDecodeException) {
             throw new HttpBadRequestException($msgPrefix . 'given content is not a valid JSON');
         }
 
