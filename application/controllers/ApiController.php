@@ -99,6 +99,7 @@ class ApiController extends CompatController
         ) {
             return null;
         }
+
         try {
             $data = $request->getPost();
         } catch (Exception) {

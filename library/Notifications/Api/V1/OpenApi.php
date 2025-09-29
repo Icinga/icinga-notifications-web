@@ -203,6 +203,7 @@ class OpenApi extends ApiV1
         // TODO: find a way to get the module name from the request or class context
 //        $moduleName = $this->getRequest()->getModuleName() ?: 'default;';
         $moduleName = 'notifications';
+
         if ($moduleName === 'default' || $moduleName === '') {
             $dir = Icinga::app()->getLibraryDir(sprintf('Icinga/Application/Api/%s/', ucfirst(static::VERSION)));
         } else {
@@ -211,20 +212,22 @@ class OpenApi extends ApiV1
                 Icinga::app()->getModuleManager()->getModuleDir($moduleName),
                 ucfirst($moduleName),
                 strtoupper(static::VERSION)
-
             );
         }
 
         $dir = rtrim($dir, '/') . '/';
+
         if (! is_dir($dir)) {
             throw new RuntimeException("Directory $dir does not exist");
         }
+
         if (! is_readable($dir)) {
             throw new RuntimeException("Directory $dir is not readable");
         }
 
         $files = glob($dir . $fileFilter, GLOB_NOSORT | GLOB_BRACE | GLOB_MARK);
         array_unshift($files, $apiCoreDir);
+
         if ($files === false) {
             throw new RuntimeException("Failed to read files from directory: $dir");
         }
