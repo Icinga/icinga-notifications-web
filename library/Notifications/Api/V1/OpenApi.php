@@ -204,10 +204,15 @@ class OpenApi extends ApiV1
 //        $moduleName = $this->getRequest()->getModuleName() ?: 'default;';
         $moduleName = 'notifications';
         if ($moduleName === 'default' || $moduleName === '') {
-            $dir = Icinga::app()->getLibraryDir('Icinga/Application/Api/' . ucfirst(static::VERSION) . '/');
+            $dir = Icinga::app()->getLibraryDir(sprintf('Icinga/Application/Api/%s/', ucfirst(static::VERSION)));
         } else {
-            $dir = Icinga::app()->getModuleManager()->getModuleDir($moduleName)
-                . '/library/' . ucfirst($moduleName) . '/Api/' . strtoupper(static::VERSION) . '/';
+            $dir = sprintf(
+                '%s/library/%s/Api/%s/',
+                Icinga::app()->getModuleManager()->getModuleDir($moduleName),
+                ucfirst($moduleName),
+                strtoupper(static::VERSION)
+
+            );
         }
 
         $dir = rtrim($dir, '/') . '/';

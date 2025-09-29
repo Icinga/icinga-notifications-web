@@ -954,7 +954,7 @@ class Contacts extends ApiV1
         $user = Database::get()->fetchOne($stmt);
 
         if ($user) {
-            throw new HttpException(422, 'Username ' . $username . ' already exists');
+            throw new HttpException(422, sprintf('Username %s already exists', $username));
         }
     }
 
@@ -1007,7 +1007,7 @@ class Contacts extends ApiV1
                 if (! is_string($group) || ! Uuid::isValid($group)) {
                     throw new HttpException(
                         422,
-                        $msgPrefix . 'the group identifier ' . $group . ' is not a valid UUID'
+                        sprintf($msgPrefix . 'the group identifier %s is not a valid UUID', $group)
                     );
                 }
             }
