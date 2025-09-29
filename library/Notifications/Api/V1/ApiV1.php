@@ -9,9 +9,9 @@ use Icinga\Exception\Json\JsonDecodeException;
 use Icinga\Exception\Json\JsonEncodeException;
 use Icinga\Module\Notifications\Api\ApiCore;
 use Icinga\Module\Notifications\Api\Elements\HttpMethod;
+use Icinga\Module\Notifications\Common\Database;
 use Icinga\Util\Json;
 use ipl\Sql\Compat\FilterProcessor;
-use ipl\Sql\Connection;
 use ipl\Sql\Select;
 use ipl\Stdlib\Filter\Condition;
 use ipl\Web\Filter\QueryString;
@@ -222,7 +222,6 @@ abstract class ApiV1 extends ApiCore
      *
      * Enables efficient delivery of data by yielding results in batches.
      *
-     * @param Connection $db The database connection to use for querying.
      * @param Select $stmt The SQL select statement to execute.
      * @param int $batchSize The number of rows to fetch in each batch (default is 500).
      *
@@ -231,7 +230,6 @@ abstract class ApiV1 extends ApiCore
      * @throws JsonEncodeException
      */
     protected function createContentGenerator(
-        Connection $db,
         Select $stmt,
         int $batchSize = 500
     ): Generator {
@@ -239,7 +237,7 @@ abstract class ApiV1 extends ApiCore
         $offset = 0;
 
         yield '{"data":[';
-        $res = $db->select($stmt->offset($offset));
+        $res = Database::get()->select($stmt->offset($offset));
         do {
             /** @var stdClass $row */
             foreach ($res as $i => $row) {
@@ -253,7 +251,7 @@ abstract class ApiV1 extends ApiCore
             }
 
             $offset += $batchSize;
-            $res = $db->select($stmt->offset($offset));
+            $res = Database::get()->select($stmt->offset($offset));
         } while ($res->rowCount());
 
         yield ']}';

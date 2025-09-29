@@ -204,7 +204,7 @@ class Channels extends ApiV1
             $stmt->where($filter);
         }
 
-        return $this->createResponse(body: $this->createContentGenerator(Database::get(), $stmt));
+        return $this->createResponse(body: $this->createContentGenerator($stmt));
     }
 
     /**
