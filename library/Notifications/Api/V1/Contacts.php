@@ -432,7 +432,9 @@ class Contacts extends ApiV1
                 $this->assertUniqueUsername($requestBody['username'], $contactId);
             }
 
-            if (! $channelID = Channels::getChannelId($requestBody['default_channel'])) {
+            $channelID = Channels::getChannelId($requestBody['default_channel']);
+
+            if ($channelID === false ) {
                 throw new HttpException(422, 'Default channel mismatch');
             }
 
@@ -688,7 +690,9 @@ class Contacts extends ApiV1
             throw new HttpBadRequestException('Identifier is required');
         }
 
-        if (($contactId = self::getContactId($identifier)) === null) {
+        $contactId = $this->getContactId($identifier);
+
+        if ($contactId === null) {
             throw new HttpNotFoundException('Contact not found');
         }
 

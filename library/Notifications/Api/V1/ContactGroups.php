@@ -275,7 +275,9 @@ class ContactGroups extends ApiV1
             throw new HttpBadRequestException('Identifier is required');
         }
 
-        if (($contactgroupId = self::getGroupId($identifier)) === null) {
+        $contactgroupId = self::getGroupId($identifier);
+
+        if ($contactgroupId === null) {
             throw new HttpNotFoundException('Contactgroup not found');
         }
 
