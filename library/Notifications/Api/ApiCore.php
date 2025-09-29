@@ -105,7 +105,7 @@ abstract class ApiCore implements RequestHandlerInterface
      * @param string $version The HTTP version.
      * @param ?string $reason The reason phrase (optional).
      *
-     * @return Response
+     * @return ResponseInterface
      */
     protected function createResponse(
         int $status = 200,
@@ -113,7 +113,8 @@ abstract class ApiCore implements RequestHandlerInterface
         $body = null,
         string $version = '1.1',
         ?string $reason = null
-    ): Response {
+    ): ResponseInterface {
+        $headers['Content-Type'] = 'application/json';
         return new Response($status, $headers, $body, $version, $reason);
     }
 }

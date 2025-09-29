@@ -78,15 +78,12 @@ abstract class ApiV1 extends ApiCore
         $identifier = $request->getAttribute('identifier');
         $filterStr = $request->getUri()->getQuery();
 
-        $responseData = match ($request->getAttribute('httpMethod')) {
+        return match ($request->getAttribute('httpMethod')) {
             HttpMethod::PUT => $this->put($identifier, $this->getValidRequestBody($request)),
             HttpMethod::POST => $this->post($identifier, $this->getValidRequestBody($request)),
             HttpMethod::GET => $this->get($identifier, $filterStr),
             HttpMethod::DELETE => $this->delete($identifier),
-            default => throw new HttpBadRequestException("Invalid request: This case shouldn't be reachable."),
         };
-
-        return $this->createResponse(...$responseData);
     }
 
     /**
