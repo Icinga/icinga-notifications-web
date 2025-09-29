@@ -40,18 +40,18 @@ class GeneralValidatorMiddleware implements MiddlewareInterface
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $httpMethod = $request->getMethod();
-        $filterStr = $request->getUri()->getQuery();
+        $queryFilter = $request->getUri()->getQuery();
         $identifier = $request->getAttribute('identifier');
 
         if (HttpMethod::tryFrom($httpMethod) === null) {
             throw new HttpException(405, "HTTP method $httpMethod is not supported.");
         }
 
-        if ($httpMethod !== HttpMethod::get->value && ! empty($filterStr)) {
+        if ($httpMethod !== HttpMethod::get->value && ! empty($queryFilter)) {
             throw HttpBadRequestException::create(
                 ['Invalid request parameter: Filter is only allowed for GET requests']
             );
-        } elseif ($httpMethod === HttpMethod::get->value && ! empty($identifier) && ! empty($filterStr)) {
+        } elseif ($httpMethod === HttpMethod::get->value && ! empty($identifier) && ! empty($queryFilter)) {
             throw HttpBadRequestException::create([
                 "Invalid request: $httpMethod with identifier and query parameters,"
                 . " it's not allowed to use both together."

@@ -144,13 +144,13 @@ class Channels extends ApiV1
      * Get a channel by UUID.
      *
      * @param string|null $identifier
-     * @param string $filterStr
+     * @param string $queryFilter
      * @return ResponseInterface
      * @throws HttpBadRequestException
      * @throws HttpNotFoundException
      * @throws JsonEncodeException
      */
-    public function get(?string $identifier, string $filterStr): ResponseInterface
+    public function get(?string $identifier, string $queryFilter): ResponseInterface
     {
         $stmt = (new Select())
             ->distinct()
@@ -163,7 +163,7 @@ class Channels extends ApiV1
                 'config'
             ]);
         if ($identifier === null) {
-            return $this->getPlural($filterStr, $stmt);
+            return $this->getPlural($queryFilter, $stmt);
         }
 
         $stmt->where(['external_uuid = ?' => $identifier]);
@@ -183,7 +183,7 @@ class Channels extends ApiV1
     /**
      * List channels or get specific channels by filter parameters.
      *
-     * @param string $filterStr
+     * @param string $queryFilter
      * @param Select $stmt
      *
      * @return ResponseInterface
@@ -191,10 +191,10 @@ class Channels extends ApiV1
      * @throws HttpBadRequestException
      * @throws JsonEncodeException
      */
-    private function getPlural(string $filterStr, Select $stmt): ResponseInterface
+    private function getPlural(string $queryFilter, Select $stmt): ResponseInterface
     {
         $filter = $this->assembleFilter(
-            $filterStr,
+            $queryFilter,
             ['id', 'name', 'type'],
             'external_uuid'
         );
