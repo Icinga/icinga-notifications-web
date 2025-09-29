@@ -162,6 +162,7 @@ class Channels extends ApiV1
                 'type',
                 'config'
             ]);
+
         if ($identifier === null) {
             return $this->getPlural($queryFilter, $stmt);
         }

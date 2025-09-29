@@ -100,18 +100,21 @@ abstract class ApiV1 extends ApiCore
                 'Unexpected query parameter: Filter is only allowed for GET requests'
             );
         }
+
         if ($httpMethod === HttpMethod::GET && ! empty($identifier) && ! empty($queryFilter)) {
             throw new HttpBadRequestException(sprintf(
                 'Invalid request: %s with identifier and query parameters, it\'s not allowed to use both together.',
                 $httpMethod->uppercase()
             ));
         }
+
         if (
             ! in_array($httpMethod, [HttpMethod::PUT, HttpMethod::POST])
             && (! empty($request->getBody()->getSize()) || ! empty($request->getParsedBody()))
         ) {
             throw new HttpBadRequestException('Invalid request: Body is only allowed for POST and PUT requests');
         }
+
         if (in_array($httpMethod, [HttpMethod::PUT, HttpMethod::DELETE]) && empty($identifier)) {
             throw new HttpBadRequestException("Invalid request: Identifier is required");
         }
@@ -147,6 +150,7 @@ abstract class ApiV1 extends ApiCore
         if (empty($queryFilter)) {
             return false;
         }
+
         try {
             $filterRule = QueryString::fromString($queryFilter)
                 ->on(
@@ -200,6 +204,7 @@ abstract class ApiV1 extends ApiCore
 
         $msgPrefix = 'Invalid request body: ';
         $body = $request->getBody()->getContents();
+
         if (empty($body)) {
             throw new HttpBadRequestException($msgPrefix . 'given content is empty');
         }
@@ -251,6 +256,7 @@ abstract class ApiV1 extends ApiCore
             $offset += $batchSize;
             $res = $db->select($stmt->offset($offset));
         } while ($res->rowCount());
+
         yield ']}';
     }
 }

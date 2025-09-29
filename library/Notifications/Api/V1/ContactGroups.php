@@ -86,6 +86,7 @@ class ContactGroups extends ApiV1
                 'id'              => 'cg.external_uuid',
                 'name'
             ]);
+
         if ($identifier === null) {
             return $this->getPlural($queryFilter, $stmt);
         }
@@ -221,6 +222,7 @@ class ContactGroups extends ApiV1
         $db->beginTransaction();
 
         $emptyIdentifier = $identifier === null;
+
         if (! $emptyIdentifier) {
             if ($identifier === $requestBody['id']) {
                 throw new HttpException(
@@ -228,7 +230,9 @@ class ContactGroups extends ApiV1
                     'Identifier mismatch: the Payload id must be different from the URL identifier'
                 );
             }
+
             $groupId = $this->getGroupId($identifier);
+
             if ($groupId === null) {
                 throw new HttpNotFoundException('Contactgroup not found');
             }
@@ -241,8 +245,8 @@ class ContactGroups extends ApiV1
         if (! $emptyIdentifier) {
             $this->removeContactgroup($groupId);
         }
-        $this->addContactgroup($requestBody);
 
+        $this->addContactgroup($requestBody);
         $db->commitTransaction();
 
         return $this->createResponse(
@@ -508,6 +512,7 @@ class ContactGroups extends ApiV1
     {
         foreach ($users as $identifier) {
             $contactId = Contacts::getContactId($identifier);
+
             if ($contactId === null) {
                 throw new HttpException(422, sprintf('User with identifier %s not found', $identifier));
             }
