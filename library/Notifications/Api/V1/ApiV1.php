@@ -76,7 +76,7 @@ abstract class ApiV1 extends ApiCore
     public function handleRequest(ServerRequestInterface $request): ResponseInterface
     {
         $identifier = $request->getAttribute('identifier');
-        $filterStr = $request->getUri()->getQuery();
+        $queryFilter = $request->getUri()->getQuery();
 
         return match ($request->getAttribute('httpMethod')) {
             HttpMethod::PUT => $this->put($identifier, $this->getValidRequestBody($request)),
@@ -93,14 +93,14 @@ abstract class ApiV1 extends ApiCore
     {
         $httpMethod = $request->getAttribute('httpMethod');
         $identifier = $request->getAttribute('identifier');
-        $filterStr = $request->getUri()->getQuery();
+        $queryFilter = $request->getUri()->getQuery();
 
-        if ($httpMethod !== HttpMethod::GET && ! empty($filterStr)) {
+        if ($httpMethod !== HttpMethod::GET && ! empty($queryFilter)) {
             throw new HttpBadRequestException(
                 'Unexpected query parameter: Filter is only allowed for GET requests'
             );
         }
-        if ($httpMethod === HttpMethod::GET && ! empty($identifier) && ! empty($filterStr)) {
+        if ($httpMethod === HttpMethod::GET && ! empty($identifier) && ! empty($queryFilter)) {
             throw new HttpBadRequestException(
                 'Invalid request: ' . $httpMethod->uppercase() . ' with identifier and query parameters,'
                 . " it's not allowed to use both together."
@@ -134,7 +134,7 @@ abstract class ApiV1 extends ApiCore
     /**
      * Create a filter from the filter string.
      *
-     * @param string $filterStr
+     * @param string $queryFilter
      * @param array $allowedColumns
      * @param string $idColumnName
      *
@@ -142,13 +142,13 @@ abstract class ApiV1 extends ApiCore
      *
      * @throws HttpBadRequestException If the filter string cannot be parsed.
      */
-    protected function assembleFilter(string $filterStr, array $allowedColumns, string $idColumnName): array|bool
+    protected function assembleFilter(string $queryFilter, array $allowedColumns, string $idColumnName): array|bool
     {
-        if (empty($filterStr)) {
+        if (empty($queryFilter)) {
             return false;
         }
         try {
-            $filterRule = QueryString::fromString($filterStr)
+            $filterRule = QueryString::fromString($queryFilter)
                 ->on(
                     QueryString::ON_CONDITION,
                     function (Condition $condition) use ($allowedColumns, $idColumnName) {

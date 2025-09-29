@@ -129,7 +129,7 @@ class Contacts extends ApiV1
      * Get a contact by UUID.
      *
      * @param string|null $identifier
-     * @param string $filterStr
+     * @param string $queryFilter
      *
      * @return ResponseInterface
      *
@@ -183,7 +183,7 @@ class Contacts extends ApiV1
             schema: '#/components/schemas/ErrorResponse',
         )
     )]
-    public function get(?string $identifier, string $filterStr): ResponseInterface
+    public function get(?string $identifier, string $queryFilter): ResponseInterface
     {
         $stmt = (new Select())
             ->distinct()
@@ -199,7 +199,7 @@ class Contacts extends ApiV1
             ->joinLeft('channel ch', 'ch.id = co.default_channel_id')
             ->where(['co.deleted = ?' => 'n']);
         if ($identifier === null) {
-            return $this->getPlural($filterStr, $stmt);
+            return $this->getPlural($queryFilter, $stmt);
         }
 
         $stmt->where(['co.external_uuid = ?' => $identifier]);
@@ -219,7 +219,7 @@ class Contacts extends ApiV1
     /**
      * List contacts or get specific contacts by filter parameters.
      *
-     * @param string $filterStr
+     * @param string $queryFilter
      * @param Select $stmt
      *
      * @return ResponseInterface
@@ -294,10 +294,10 @@ class Contacts extends ApiV1
             ref: '#/components/schemas/ErrorResponse'
         )
     )]
-    private function getPlural(string $filterStr, Select $stmt): ResponseInterface
+    private function getPlural(string $queryFilter, Select $stmt): ResponseInterface
     {
         $filter = $this->assembleFilter(
-            $filterStr,
+            $queryFilter,
             ['id', 'full_name', 'username'],
             'co.external_uuid'
         );
@@ -418,7 +418,7 @@ class Contacts extends ApiV1
             throw new HttpBadRequestException('Identifier is required');
         }
 
-        $this->assertValidatedRequestBody($requestBody);
+        $this->assertValidRequestBody($requestBody);
 
         if ($identifier !== $requestBody['id']) {
             throw new HttpException(422, 'Identifier mismatch');
@@ -584,7 +584,7 @@ class Contacts extends ApiV1
     )]
     public function post(?string $identifier, array $requestBody): ResponseInterface
     {
-        $this->assertValidatedRequestBody($requestBody);
+        $this->assertValidRequestBody($requestBody);
 
         $db = Database::get();
         $db->beginTransaction();
@@ -970,7 +970,7 @@ class Contacts extends ApiV1
      * @throws HttpBadRequestException
      * @throws HttpException
      */
-    private function assertValidatedRequestBody(array $requestBody): void
+    private function assertValidRequestBody(array $requestBody): void
     {
         $msgPrefix = 'Invalid request body: ';
 
