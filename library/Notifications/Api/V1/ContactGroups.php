@@ -128,7 +128,7 @@ class ContactGroups extends ApiV1
             $stmt->where($filter);
         }
 
-        return $this->createResponse(body: $this->createContentGenerator(Database::get(), $stmt));
+        return $this->createResponse(body: $this->createContentGenerator($stmt));
     }
 
     /**
@@ -155,20 +155,19 @@ class ContactGroups extends ApiV1
             throw new HttpException(422, 'Identifier mismatch');
         }
 
-        $db = Database::get();
-        $db->beginTransaction();
+        Database::get()->beginTransaction();
 
         if (($contactgroupId = self::getGroupId($identifier)) !== null) {
             if (! empty($requestBody['name'])) {
                 $this->assertUniqueName($requestBody['name'], $contactgroupId);
             }
 
-            $db->update(
+            Database::get()->update(
                 'contactgroup',
                 ['name' => $requestBody['name']],
                 ['id = ?' => $contactgroupId]
             );
-            $db->update(
+            Database::get()->update(
                 'contactgroup_member',
                 ['deleted' => 'y'],
                 ['contactgroup_id = ?' => $contactgroupId, 'deleted = ?' => 'n']
@@ -195,7 +194,7 @@ class ContactGroups extends ApiV1
             );
         }
 
-        $db->commitTransaction();
+        Database::get()->commitTransaction();
 
         return $result;
     }
@@ -217,8 +216,7 @@ class ContactGroups extends ApiV1
     {
         $this->assertValidRequestBody($requestBody);
 
-        $db = Database::get();
-        $db->beginTransaction();
+        Database::get()->beginTransaction();
 
         $emptyIdentifier = $identifier === null;
 
@@ -246,7 +244,7 @@ class ContactGroups extends ApiV1
         }
 
         $this->addContactgroup($requestBody);
-        $db->commitTransaction();
+        Database::get()->commitTransaction();
 
         return $this->createResponse(
             201,
@@ -284,10 +282,9 @@ class ContactGroups extends ApiV1
             throw new HttpNotFoundException('Contactgroup not found');
         }
 
-        $db = Database::get();
-        $db->beginTransaction();
+        Database::get()->beginTransaction();
         $this->removeContactgroup($contactgroupId);
-        $db->commitTransaction();
+        Database::get()->commitTransaction();
 
         return $this->createResponse(204);
     }
@@ -342,10 +339,9 @@ class ContactGroups extends ApiV1
     {
         $markAsDeleted = ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'];
         $updateCondition = ['contactgroup_id = ?' => $id, 'deleted = ?' => 'n'];
-        $db = Database::get();
 
-        $rotationAndMemberIds = $db->fetchPairs(
-            RotationMember::on($db)
+        $rotationAndMemberIds = Database::get()->fetchPairs(
+            RotationMember::on(Database::get())
                 ->columns(['id', 'rotation_id'])
                 ->filter(Filter::equal('contactgroup_id', $id))
                 ->assembleSelect()
@@ -354,10 +350,10 @@ class ContactGroups extends ApiV1
         $rotationMemberIds = array_keys($rotationAndMemberIds);
         $rotationIds = array_values($rotationAndMemberIds);
 
-        $db->update('rotation_member', $markAsDeleted + ['position' => null], $updateCondition);
+        Database::get()->update('rotation_member', $markAsDeleted + ['position' => null], $updateCondition);
 
         if (! empty($rotationMemberIds)) {
-            $db->update(
+            Database::get()->update(
                 'timeperiod_entry',
                 $markAsDeleted,
                 ['rotation_member_id IN (?)' => $rotationMemberIds, 'deleted = ?' => 'n']
@@ -365,8 +361,8 @@ class ContactGroups extends ApiV1
         }
 
         if (! empty($rotationIds)) {
-            $rotationIdsWithOtherMembers = $db->fetchCol(
-                RotationMember::on($db)
+            $rotationIdsWithOtherMembers = Database::get()->fetchCol(
+                RotationMember::on(Database::get())
                     ->columns('rotation_id')
                     ->filter(
                         Filter::all(
@@ -379,7 +375,7 @@ class ContactGroups extends ApiV1
             $toRemoveRotations = array_diff($rotationIds, $rotationIdsWithOtherMembers);
 
             if (! empty($toRemoveRotations)) {
-                $rotations = Rotation::on($db)
+                $rotations = Rotation::on(Database::get())
                     ->columns(['id', 'schedule_id', 'priority', 'timeperiod.id'])
                     ->filter(Filter::equal('id', $toRemoveRotations));
 
@@ -390,18 +386,18 @@ class ContactGroups extends ApiV1
             }
         }
 
-        $escalationIds = $db->fetchCol(
-            RuleEscalationRecipient::on($db)
+        $escalationIds = Database::get()->fetchCol(
+            RuleEscalationRecipient::on(Database::get())
                 ->columns('rule_escalation_id')
                 ->filter(Filter::equal('contactgroup_id', $id))
                 ->assembleSelect()
         );
 
-        $db->update('rule_escalation_recipient', $markAsDeleted, $updateCondition);
+        Database::get()->update('rule_escalation_recipient', $markAsDeleted, $updateCondition);
 
         if (! empty($escalationIds)) {
-            $escalationIdsWithOtherRecipients = $db->fetchCol(
-                RuleEscalationRecipient::on($db)
+            $escalationIdsWithOtherRecipients = Database::get()->fetchCol(
+                RuleEscalationRecipient::on(Database::get())
                     ->columns('rule_escalation_id')
                     ->filter(
                         Filter::all(
@@ -414,7 +410,7 @@ class ContactGroups extends ApiV1
             $toRemoveEscalations = array_diff($escalationIds, $escalationIdsWithOtherRecipients);
 
             if (! empty($toRemoveEscalations)) {
-                $db->update(
+                Database::get()->update(
                     'rule_escalation',
                     $markAsDeleted + ['position' => null],
                     ['id IN (?)' => $toRemoveEscalations]
@@ -422,9 +418,9 @@ class ContactGroups extends ApiV1
             }
         }
 
-        $db->update('contactgroup_member', $markAsDeleted, $updateCondition);
+        Database::get()->update('contactgroup_member', $markAsDeleted, $updateCondition);
 
-        $db->update(
+        Database::get()->update(
             'contactgroup',
             $markAsDeleted,
             ['id = ?' => $id, 'deleted = ?' => 'n']
