@@ -7,6 +7,7 @@ use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Notifications\Common\PsrLogger;
 use OpenApi\Generator;
 use OpenApi\Attributes as OA;
+use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
 
 #[OA\Schema(
@@ -153,11 +154,11 @@ class OpenApi extends ApiV1
     /**
      * Generate OpenAPI documentation for the Notifications API
      *
-     * @return array
+     * @return ResponseInterface
      *
      * @throws ProgrammingError
      */
-    public function get(): array
+    public function get(): ResponseInterface
     {
         // TODO: Create the documentation during CI and not on request
         if (file_exists(self::OPENAPI_PATH)) {
@@ -184,7 +185,7 @@ class OpenApi extends ApiV1
             file_put_contents(self::OPENAPI_PATH, $oad);
         }
 
-        return ['body' => $oad];
+        return $this->createResponse(body: $oad);
     }
 
     /**

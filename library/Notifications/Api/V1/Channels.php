@@ -9,6 +9,7 @@ use Icinga\Module\Notifications\Common\Database;
 use Icinga\Util\Json;
 use ipl\Sql\Select;
 use OpenApi\Attributes as OA;
+use Psr\Http\Message\ResponseInterface;
 use stdClass;
 
 #[OA\Schema(
@@ -144,12 +145,12 @@ class Channels extends ApiV1
      *
      * @param string|null $identifier
      * @param string $filterStr
-     * @return array
+     * @return ResponseInterface
      * @throws HttpBadRequestException
      * @throws HttpNotFoundException
      * @throws JsonEncodeException
      */
-    public function get(?string $identifier, string $filterStr): array
+    public function get(?string $identifier, string $filterStr): ResponseInterface
     {
         $stmt = (new Select())
             ->distinct()
@@ -176,7 +177,7 @@ class Channels extends ApiV1
 
         $this->prepareRow($result);
 
-        return ['body' => Json::sanitize(['data' => [$result]])];
+        return $this->createResponse(body: Json::sanitize(['data' => [$result]]));
     }
 
     /**
@@ -185,12 +186,12 @@ class Channels extends ApiV1
      * @param string $filterStr
      * @param Select $stmt
      *
-     * @return array
+     * @return ResponseInterface
      *
      * @throws HttpBadRequestException
      * @throws JsonEncodeException
      */
-    private function getPlural(string $filterStr, Select $stmt): array
+    private function getPlural(string $filterStr, Select $stmt): ResponseInterface
     {
         $filter = $this->assembleFilter(
             $filterStr,
@@ -202,7 +203,7 @@ class Channels extends ApiV1
             $stmt->where($filter);
         }
 
-        return ['body' => $this->createContentGenerator(Database::get(), $stmt)];
+        return $this->createResponse(body: $this->createContentGenerator(Database::get(), $stmt));
     }
 
     /**

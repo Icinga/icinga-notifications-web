@@ -15,6 +15,7 @@ use Icinga\Util\Json;
 use ipl\Sql\Select;
 use ipl\Stdlib\Filter;
 use OpenApi\Attributes as OA;
+use Psr\Http\Message\ResponseInterface;
 use Ramsey\Uuid\Uuid;
 use stdClass;
 
@@ -69,13 +70,13 @@ class ContactGroups extends ApiV1
      * @param string|null $identifier
      * @param string $filterStr
      *
-     * @return array
+     * @return ResponseInterface
      *
      * @throws HttpBadRequestException
      * @throws HttpNotFoundException
      * @throws JsonEncodeException
      */
-    public function get(?string $identifier, string $filterStr): array
+    public function get(?string $identifier, string $filterStr): ResponseInterface
     {
         $stmt = (new Select())
             ->distinct()
@@ -100,7 +101,7 @@ class ContactGroups extends ApiV1
 
         $this->prepareRow($result);
 
-        return ['body' => Json::sanitize(['data' => [$result]])];
+        return $this->createResponse(body: Json::sanitize(['data' => [$result]]));
     }
 
     /**
@@ -109,12 +110,12 @@ class ContactGroups extends ApiV1
      * @param string $filterStr
      * @param Select $stmt
      *
-     * @return array
+     * @return ResponseInterface
      *
      * @throws HttpBadRequestException
      * @throws JsonEncodeException
      */
-    private function getPlural(string $filterStr, Select $stmt): array
+    private function getPlural(string $filterStr, Select $stmt): ResponseInterface
     {
         $filter = $this->assembleFilter(
             $filterStr,
@@ -126,7 +127,7 @@ class ContactGroups extends ApiV1
             $stmt->where($filter);
         }
 
-        return ['body' => $this->createContentGenerator(Database::get(), $stmt)];
+        return $this->createResponse(body: $this->createContentGenerator(Database::get(), $stmt));
     }
 
     /**
@@ -135,14 +136,14 @@ class ContactGroups extends ApiV1
      * @param string $identifier
      * @param requestBody $requestBody
      *
-     * @return array
+     * @return ResponseInterface
      *
      * @throws HttpBadRequestException
      * @throws HttpException
      * @throws HttpNotFoundException
      * @throws JsonEncodeException
      */
-    public function put(string $identifier, array $requestBody): array
+    public function put(string $identifier, array $requestBody): ResponseInterface
     {
         if (empty($identifier)) {
             throw new HttpBadRequestException('Identifier is required');
@@ -177,21 +178,21 @@ class ContactGroups extends ApiV1
                 $this->addUsers($contactgroupId, $requestBody['users']);
             }
 
-            $result = ['status' => 204];
+            $result = $this->createResponse(204);
         } else {
             $this->addContactgroup($requestBody);
-            $result = [
-                'status' => 201,
-                'body' => Json::sanitize(['message' => 'Contactgroup created successfully']),
-                'headers' => [
+            $result = $this->createResponse(
+                201,
+                [
                     'Location' => sprintf(
                         'notifications/api/%s/%s/%s',
                         self::VERSION,
                         $this->getEndpoint(),
                         $requestBody['id']
                     )
-                ]
-            ];
+                ],
+                Json::sanitize(['message' => 'Contactgroup created successfully'])
+            );
         }
 
         $db->commitTransaction();
@@ -205,14 +206,14 @@ class ContactGroups extends ApiV1
      * @param string|null $identifier The identifier of the contactgroup to update, or null to create a new one
      * @param requestBody $requestBody The request body containing the contactgroup data
      *
-     * @return array
+     * @return ResponseInterface
      *
      * @throws HttpBadRequestException
      * @throws HttpNotFoundException
      * @throws HttpException
      * @throws JsonEncodeException
      */
-    public function post(?string $identifier, array $requestBody): array
+    public function post(?string $identifier, array $requestBody): ResponseInterface
     {
         $this->assertValidatedRequestBody($requestBody);
 
@@ -245,18 +246,18 @@ class ContactGroups extends ApiV1
 
         $db->commitTransaction();
 
-        return [
-            'status' => 201,
-            'body' => Json::sanitize(['message' => 'Contactgroup created successfully']),
-            'headers' => [
+        return $this->createResponse(
+            201,
+            [
                 'Location' => sprintf(
                     'notifications/api/%s/%s/%s',
                     self::VERSION,
                     $this->getEndpoint(),
                     $requestBody['id']
                 )
-            ]
-        ];
+            ],
+            Json::sanitize(['message' => 'Contactgroup created successfully'])
+        );
     }
 
     /**
@@ -264,12 +265,12 @@ class ContactGroups extends ApiV1
      *
      * @param string $identifier
      *
-     * @return array
+     * @return ResponseInterface
      *
      * @throws HttpBadRequestException
      * @throws HttpNotFoundException
      */
-    public function delete(string $identifier): array
+    public function delete(string $identifier): ResponseInterface
     {
         if (empty($identifier)) {
             throw new HttpBadRequestException('Identifier is required');
@@ -284,7 +285,7 @@ class ContactGroups extends ApiV1
         $this->removeContactgroup($contactgroupId);
         $db->commitTransaction();
 
-        return ['status' => 204];
+        return $this->createResponse(204);
     }
 
     /**
