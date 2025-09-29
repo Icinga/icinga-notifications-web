@@ -8,14 +8,14 @@ use Icinga\Application\Config;
 use Icinga\Application\Icinga;
 use Icinga\Util\Json;
 use ipl\Sql\Connection;
-use ipl\Sql\Test\Databases;
+use ipl\Sql\Test\SharedDatabases;
 use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
 use PHPUnit\Framework\TestCase;
 
 class BaseApiV1TestCase extends TestCase
 {
-    use Databases;
+    use SharedDatabases;
 
     protected const CHANNEL_UUID = '0817d973-398e-41d7-9cd2-61cdb7ef41a1';
     protected const CHANNEL_UUID_2 = '0817d973-398e-41d7-9cd2-61cdb7ef41a2';
@@ -28,7 +28,7 @@ class BaseApiV1TestCase extends TestCase
      */
     protected const UUID_INCOMPLETE = '3817d973-398e-41d7-9cd2-61cdb7ef41';
 
-    protected function createSchema(Connection $db, string $driver): void
+    protected static function setUpSchema(Connection $db, string $driver): void
     {
         $webSchema = Icinga::app()->getBaseDir('schema') . "/$driver.schema.sql";
 
@@ -47,7 +47,7 @@ class BaseApiV1TestCase extends TestCase
         }
 
         $db->exec(file_get_contents($webSchema));
-        $this->createWebRows($db, $driver);
+        self::createWebRows($db, $driver);
 
         if ($driver === 'pgsql') {
             $db->exec('CREATE SCHEMA icinga_notifications; SET search_path TO icinga_notifications');
@@ -55,35 +55,45 @@ class BaseApiV1TestCase extends TestCase
 
         $db->exec(file_get_contents($notificationSchema));
 
-        $this->createConfig($db, $driver);
+        self::createConfig($db, $driver);
     }
 
-    protected function dropSchema(Connection $db, string $driver): void
+    protected static function tearDownSchema(Connection $db, string $driver): void
     {
         if ($driver === 'mysql') {
             $db->exec(<<<SQL
-SET FOREIGN_KEY_CHECKS = 0; 
-SET @tables = NULL;
-SET GROUP_CONCAT_MAX_LEN=32768;
+DROP PROCEDURE IF EXISTS DropTables;
 
-SELECT GROUP_CONCAT('`', table_schema, '`.`', table_name, '`') INTO @tables
-FROM   information_schema.tables 
-WHERE  table_schema = (SELECT DATABASE());
-SELECT IFNULL(@tables, '') INTO @tables;
+CREATE PROCEDURE DropTables()
+BEGIN
+  DECLARE tlist TEXT;
 
-SET        @tables = CONCAT('DROP TABLE IF EXISTS ', @tables);
-PREPARE    stmt FROM @tables;
-EXECUTE    stmt;
-DEALLOCATE PREPARE stmt;
-SET        FOREIGN_KEY_CHECKS = 1;
+  SET SESSION group_concat_max_len = 32768;
+  SET FOREIGN_KEY_CHECKS = 0;
+
+  SELECT GROUP_CONCAT(CONCAT('`', table_schema, '`.`', table_name, '`') SEPARATOR ',')
+    INTO tlist
+  FROM information_schema.tables
+  WHERE table_schema = DATABASE();
+
+  IF tlist IS NOT NULL THEN
+    SET @tables = CONCAT('DROP TABLE IF EXISTS ', tlist);
+    PREPARE stmt FROM @tables;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+  END IF;
+
+  SET FOREIGN_KEY_CHECKS = 1;
+END;
 SQL
             );
+            $db->exec('CALL DropTables();');
         } elseif ($driver === 'pgsql') {
             $db->exec('DROP SCHEMA icinga_web CASCADE; DROP SCHEMA icinga_notifications CASCADE;');
         }
     }
 
-    protected function createWebRows(Connection $db, string $driver): void
+    protected static function createWebRows(Connection $db, string $driver): void
     {
         $db->insert('icingaweb_user', [
             'name' => 'test',
@@ -92,7 +102,7 @@ SQL
         ]);
     }
 
-    protected function createConfig(Connection $db, string $driver): void
+    protected static function createConfig(Connection $db, string $driver): void
     {
         Config::app()
             ->setSection('global', [

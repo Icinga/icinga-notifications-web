@@ -10,7 +10,7 @@ use WebSocket\Base;
 class ApiV1ContactGroupsTest extends BaseApiV1TestCase
 {
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      * @depends testPostToCreateWithValidData
      */
     public function testGetWithMatchingFilter(): void
@@ -34,7 +34,7 @@ class ApiV1ContactGroupsTest extends BaseApiV1TestCase
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      * @depends testPostToCreateWithValidData
      */
     public function testGetEverything(): void
@@ -79,7 +79,7 @@ class ApiV1ContactGroupsTest extends BaseApiV1TestCase
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      * @depends testPostToCreateWithValidData
      */
     public function testGetWithAlreadyExistingIdentifier(): void
@@ -103,7 +103,7 @@ class ApiV1ContactGroupsTest extends BaseApiV1TestCase
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      */
     public function testGetWithNewIdentifier(): void
     {
@@ -115,7 +115,7 @@ class ApiV1ContactGroupsTest extends BaseApiV1TestCase
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      * @depends testPostToCreateWithValidData
      */
     public function testGetWithNonMatchingFilter(): void
@@ -134,7 +134,7 @@ class ApiV1ContactGroupsTest extends BaseApiV1TestCase
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      */
     public function testPostToCreateWithInvalidContent(): void
     {
@@ -159,7 +159,7 @@ YAML;
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      */
     public function testPostToCreateWithInvalidContentType(): void
     {
@@ -187,7 +187,7 @@ YAML;
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      */
     public function testPostToCreateWithFilter(): void
     {
@@ -210,7 +210,7 @@ YAML;
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      */
     public function testPostToReplaceWithNonExistingIdentifier(): void
     {
@@ -226,7 +226,7 @@ YAML;
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      * @depends testPostToCreateWithValidData
      */
     public function testPostToReplaceWithAlreadyExistingIdentifierAndIndifferentPayloadId(): void
@@ -252,7 +252,7 @@ YAML;
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      * @depends testPostToCreateWithValidData
      */
     public function testPostToReplaceWithAlreadyExistingIdentifierAndExistingPayloadId(): void
@@ -281,7 +281,7 @@ YAML;
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      * @depends testPostToCreateWithValidData
      */
     public function testPostToReplaceWithAlreadyExistingIdentifierAndValidData(): void
@@ -308,7 +308,7 @@ YAML;
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      * @depends testPostToCreateWithValidData
      */
     public function testPostToCreateWithAlreadyExistingPayloadId(): void
@@ -331,7 +331,7 @@ YAML;
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      */
     public function testPostToCreateWithValidData(): void
     {
@@ -371,7 +371,7 @@ YAML;
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      */
     public function testPostToCreateWithInvalidData(): void
     {
@@ -415,7 +415,7 @@ YAML;
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      * @depends testPostToCreateWithValidData
      */
     public function testPostToReplaceWithAlreadyExistingIdentifierAndInvalidData(): void
@@ -452,7 +452,7 @@ YAML;
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      */
     public function testPutToUpdateWithInvalidContent(): void
     {
@@ -477,7 +477,7 @@ YAML;
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      */
     public function testPutToUpdateWithInvalidContentType(): void
     {
@@ -505,7 +505,7 @@ YAML;
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      */
     public function testPutToUpdateWithFilter(): void
     {
@@ -524,7 +524,7 @@ YAML;
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      */
     public function testPutToUpdateWithoutIdentifier(): void
     {
@@ -540,7 +540,7 @@ YAML;
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      * @depends testPostToCreateWithValidData
      */
     public function testPutToUpdateWithAlreadyExistingIdentifierAndMissingRequiredFields(): void
@@ -577,7 +577,7 @@ YAML;
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      * @depends testPostToCreateWithValidData
      */
     public function testPutToUpdateWithAlreadyExistingIdentifierAndDifferentPayloadId(): void
@@ -601,7 +601,7 @@ YAML;
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      */
     public function testPutToCreateWithNewIdentifierAndValidData(): void
     {
@@ -628,7 +628,7 @@ YAML;
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      * @depends testPostToCreateWithValidData
      */
     public function testPutToUpdateWithAlreadyExistingIdentifierAndValidData(): void
@@ -651,7 +651,7 @@ YAML;
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      */
     public function testPutToCreateWithNewIdentifierAndInvalidData(): void
     {
@@ -682,7 +682,7 @@ YAML;
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      */
     public function testPutToCreateWithNewIdentifierAndValidOptionalData(): void
     {
@@ -701,7 +701,7 @@ YAML;
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      */
     public function testPutToCreateWithNewIdentifierAndMissingRequiredFields(): void
     {
@@ -730,7 +730,7 @@ YAML;
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      */
     public function testDeleteWithoutIdentifier(): void
     {
@@ -742,7 +742,7 @@ YAML;
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      */
     public function testDeleteWithNewIdentifier(): void
     {
@@ -754,7 +754,7 @@ YAML;
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      * @depends testPostToCreateWithValidData
      */
     public function testDeleteWithAlreadyExistingIdentifier(): void
@@ -773,7 +773,7 @@ YAML;
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      */
     public function testDeleteWithFilter(): void
     {
@@ -788,7 +788,7 @@ YAML;
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      */
     public function testRequestWithNonSupportedMethod(): void
     {
@@ -798,5 +798,21 @@ YAML;
         $this->assertSame(405, $response->getStatusCode(), $content);
         $this->assertSame(['GET, POST, PUT, DELETE'], $response->getHeader('Allow'));
         $this->assertSame($this->jsonEncodeError('HTTP method PATCH is not supported'), $content);
+    }
+
+    public function tearDown(): void
+    {
+        foreach (self::sharedDatabases() as $driver => $connections) {
+            $db = $connections[0];
+
+            if ($driver === 'mysql' || $driver === 'pgsql') {
+                $db->exec(<<<SQL
+DELETE FROM contactgroup_member;
+DELETE FROM contactgroup;
+DELETE FROM contact;
+SQL
+                );
+            }
+        }
     }
 }
