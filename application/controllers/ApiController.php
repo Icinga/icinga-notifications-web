@@ -73,7 +73,11 @@ class ApiController extends CompatController
                 Json::sanitize(['message' => $e->getMessage()])
             );
         } catch (Throwable $e) {
-            $response = new Response(500, ['Content-Type' => 'application/json'], Json::sanitize(['message' => $e->getMessage()]));
+            $response = new Response(
+                500,
+                ['Content-Type' => 'application/json'],
+                Json::sanitize(['message' => $e->getMessage()])
+            );
         } finally {
             $this->emitResponse($response);
         }
@@ -125,6 +129,7 @@ class ApiController extends CompatController
                 header(sprintf('%s: %s', $name, $value), false);
             }
         }
+        header('Content-Type: application/json');
 
         echo $response->getBody();
     }
