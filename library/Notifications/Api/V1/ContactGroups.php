@@ -141,7 +141,6 @@ class ContactGroups extends ApiV1
      *
      * @throws HttpBadRequestException
      * @throws HttpException
-     * @throws HttpNotFoundException
      * @throws JsonEncodeException
      */
     public function put(string $identifier, array $requestBody): ResponseInterface
@@ -481,7 +480,7 @@ class ContactGroups extends ApiV1
      * @param requestBody $requestBody
      *
      * @return void
-     * @throws HttpNotFoundException
+     * @throws HttpException
      */
     private function addContactgroup(array $requestBody): void
     {
