@@ -48,7 +48,7 @@ abstract class ApiCore implements RequestHandlerInterface
         try {
             $httpMethod = HttpMethod::from(strtolower($request->getMethod()));
         } catch (ValueError) {
-            throw (new HttpException(405, 'HTTP method ' . $request->getMethod() . ' is not supported'))
+            throw (new HttpException(405, sprintf('HTTP method %s is not supported', $request->getMethod())))
                 ->setHeader('Allow', $this->getAllowedMethods());
         }
         $request = $request->withAttribute('httpMethod', $httpMethod);
@@ -56,7 +56,7 @@ abstract class ApiCore implements RequestHandlerInterface
         if (! method_exists($this, $httpMethod->lowercase())) {
             throw (new HttpException(
                 405,
-                'Method ' . $httpMethod->uppercase() . ' is not supported for endpoint ' . $this->getEndpoint()
+                sprintf('Method %s is not supported for endpoint %s', $httpMethod->uppercase(), $this->getEndpoint())
             ))
                 ->setHeader('Allow', $this->getAllowedMethods());
         }

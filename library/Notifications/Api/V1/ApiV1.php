@@ -101,10 +101,10 @@ abstract class ApiV1 extends ApiCore
             );
         }
         if ($httpMethod === HttpMethod::GET && ! empty($identifier) && ! empty($queryFilter)) {
-            throw new HttpBadRequestException(
-                'Invalid request: ' . $httpMethod->uppercase() . ' with identifier and query parameters,'
-                . " it's not allowed to use both together."
-            );
+            throw new HttpBadRequestException(sprintf(
+                'Invalid request: %s with identifier and query parameters, it\'s not allowed to use both together.',
+                $httpMethod->uppercase()
+            ));
         }
         if (
             ! in_array($httpMethod, [HttpMethod::PUT, HttpMethod::POST])
