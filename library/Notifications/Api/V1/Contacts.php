@@ -189,8 +189,8 @@ class Contacts extends ApiV1
             ->distinct()
             ->from('contact co')
             ->columns([
-                'contact_id' => 'co.id',
-                'id' => 'co.external_uuid',
+                'contact_id'      => 'co.id',
+                'id'              => 'co.external_uuid',
                 'full_name',
                 'username',
                 'default_channel' => 'ch.external_uuid',
@@ -437,10 +437,10 @@ class Contacts extends ApiV1
             }
 
             $db->update('contact', [
-                'full_name' => $requestBody['full_name'],
-                'username' => $requestBody['username'] ?? null,
+                'full_name'          => $requestBody['full_name'],
+                'username'           => $requestBody['username'] ?? null,
                 'default_channel_id' => $channelID,
-                'changed_at' => (int) (new DateTime())->format("Uv"),
+                'changed_at'         => (int) (new DateTime())->format("Uv"),
             ], ['id = ?' => $contactId]);
 
             $markAsDeleted = ['deleted' => 'y'];
@@ -770,9 +770,9 @@ class Contacts extends ApiV1
             }
 
             Database::get()->insert('contactgroup_member', [
-                'contact_id'        => $contactId,
-                'contactgroup_id'   => $groupId,
-                'changed_at'        => (int) (new DateTime())->format("Uv"),
+                'contact_id'      => $contactId,
+                'contactgroup_id' => $groupId,
+                'changed_at'      => (int) (new DateTime())->format("Uv"),
             ]);
         }
     }
@@ -789,10 +789,10 @@ class Contacts extends ApiV1
     {
         foreach ($addresses as $type => $address) {
             Database::get()->insert('contact_address', [
-                'contact_id'    => $contactId,
-                'type'          => $type,
-                'address'       => $address,
-                'changed_at'            => (int) (new DateTime())->format("Uv"),
+                'contact_id' => $contactId,
+                'type'       => $type,
+                'address'    => $address,
+                'changed_at' => (int) (new DateTime())->format("Uv"),
             ]);
         }
     }
@@ -815,11 +815,11 @@ class Contacts extends ApiV1
         }
 
         Database::get()->insert('contact', [
-            'full_name'             => $requestBody['full_name'],
-            'username'              => $requestBody['username'] ?? null,
-            'default_channel_id'    => $channelID,
-            'external_uuid'         => $requestBody['id'],
-            'changed_at'            => (int) (new DateTime())->format("Uv"),
+            'full_name'          => $requestBody['full_name'],
+            'username'           => $requestBody['username'] ?? null,
+            'default_channel_id' => $channelID,
+            'external_uuid'      => $requestBody['id'],
+            'changed_at'         => (int) (new DateTime())->format("Uv"),
         ]);
 
         $contactId = Database::get()->lastInsertId();

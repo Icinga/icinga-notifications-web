@@ -83,7 +83,7 @@ class ContactGroups extends ApiV1
             ->from('contactgroup cg')
             ->columns([
                 'contactgroup_id' => 'cg.id',
-                'id' => 'cg.external_uuid',
+                'id'              => 'cg.external_uuid',
                 'name'
             ]);
         if ($identifier === null) {
@@ -481,9 +481,9 @@ class ContactGroups extends ApiV1
     private function addContactgroup(array $requestBody): void
     {
         Database::get()->insert('contactgroup', [
-            'name' => $requestBody['name'],
+            'name'          => $requestBody['name'],
             'external_uuid' => $requestBody['id'],
-            'changed_at' => (int) (new DateTime())->format("Uv"),
+            'changed_at'    => (int) (new DateTime())->format("Uv"),
         ]);
 
         $id = Database::get()->lastInsertId();
@@ -513,8 +513,8 @@ class ContactGroups extends ApiV1
 
             Database::get()->insert('contactgroup_member', [
                 'contactgroup_id' => $contactgroupId,
-                'contact_id' => $contactId,
-                'changed_at' => (int) (new DateTime())->format("Uv"),
+                'contact_id'      => $contactId,
+                'changed_at'      => (int) (new DateTime())->format("Uv"),
             ]);
         }
     }

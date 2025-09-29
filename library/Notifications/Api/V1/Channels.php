@@ -157,7 +157,7 @@ class Channels extends ApiV1
             ->from('channel ch')
             ->columns([
                 'channel_id' => 'ch.id',
-                'id' => 'ch.external_uuid',
+                'id'         => 'ch.external_uuid',
                 'name',
                 'type',
                 'config'
