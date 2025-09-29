@@ -7,6 +7,7 @@ use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Http\HttpException;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Exception\Json\JsonEncodeException;
+use Psr\Http\Message\ResponseInterface;
 use Ramsey\Uuid\Uuid;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Rotation;
@@ -130,7 +131,7 @@ class Contacts extends ApiV1
      * @param string|null $identifier
      * @param string $filterStr
      *
-     * @return array
+     * @return ResponseInterface
      *
      * @throws HttpBadRequestException
      * @throws HttpNotFoundException
@@ -182,7 +183,7 @@ class Contacts extends ApiV1
             schema: '#/components/schemas/ErrorResponse',
         )
     )]
-    public function get(?string $identifier, string $filterStr): array
+    public function get(?string $identifier, string $filterStr): ResponseInterface
     {
         $stmt = (new Select())
             ->distinct()
@@ -212,7 +213,7 @@ class Contacts extends ApiV1
 
         $this->prepareRow($result);
 
-        return ['body' => Json::sanitize(['data' => [$result]])];
+        return $this->createResponse(body: Json::sanitize(['data' => [$result]]));
     }
 
     /**
@@ -221,7 +222,7 @@ class Contacts extends ApiV1
      * @param string $filterStr
      * @param Select $stmt
      *
-     * @return array
+     * @return ResponseInterface
      *
      * @throws HttpBadRequestException
      * @throws JsonEncodeException
@@ -293,7 +294,7 @@ class Contacts extends ApiV1
             ref: '#/components/schemas/ErrorResponse'
         )
     )]
-    private function getPlural(string $filterStr, Select $stmt): array
+    private function getPlural(string $filterStr, Select $stmt): ResponseInterface
     {
         $filter = $this->assembleFilter(
             $filterStr,
@@ -305,7 +306,7 @@ class Contacts extends ApiV1
             $stmt->where($filter);
         }
 
-        return ['body' => $this->createContentGenerator(Database::get(), $stmt)];
+        return $this->createResponse(body: $this->createContentGenerator(Database::get(), $stmt));
     }
 
     /**
@@ -314,7 +315,7 @@ class Contacts extends ApiV1
      * @param string $identifier
      * @param requestBody $requestBody
      *
-     * @return array
+     * @return ResponseInterface
      *
      * @throws HttpBadRequestException
      * @throws HttpException
@@ -411,7 +412,7 @@ class Contacts extends ApiV1
             ref: '#/components/schemas/ErrorResponse'
         )
     )]
-    public function put(string $identifier, array $requestBody): array
+    public function put(string $identifier, array $requestBody): ResponseInterface
     {
         if (empty($identifier)) {
             throw new HttpBadRequestException('Identifier is required');
@@ -462,21 +463,21 @@ class Contacts extends ApiV1
                 $this->addGroups($contactId, $requestBody['groups']);
             }
 
-            $result = ['status' => 204];
+            $result = $this->createResponse(204);
         } else {
             $this->addContact($requestBody);
-            $result = [
-                'status' => 201,
-                'body' => Json::sanitize(['message' => 'Contact created successfully']),
-                'headers' => [
+            $result = $this->createResponse(
+                201,
+                [
                     'Location' => sprintf(
                         'notifications/api/%s/%s/%s',
                         self::VERSION,
                         $this->getEndpoint(),
                         $requestBody['id']
                     )
-                ]
-            ];
+                ],
+                Json::sanitize(['message' => 'Contact created successfully'])
+            );
         }
 
         $db->commitTransaction();
@@ -490,7 +491,7 @@ class Contacts extends ApiV1
      * @param string|null $identifier
      * @param requestBody $requestBody
      *
-     * @return array
+     * @return ResponseInterface
      *
      * @throws HttpBadRequestException
      * @throws HttpException
@@ -581,7 +582,7 @@ class Contacts extends ApiV1
             ref: '#/components/schemas/ErrorResponse'
         )
     )]
-    public function post(?string $identifier, array $requestBody): array
+    public function post(?string $identifier, array $requestBody): ResponseInterface
     {
         $this->assertValidatedRequestBody($requestBody);
 
@@ -615,18 +616,18 @@ class Contacts extends ApiV1
         $db->commitTransaction();
 
 
-        return [
-            'status' => 201,
-            'body' => Json::sanitize(['message' => 'Contact created successfully']),
-            'headers' => [
+        return $this->createResponse(
+            201,
+            [
                 'Location' => sprintf(
                     'notifications/api/%s/%s/%s',
                     self::VERSION,
                     $this->getEndpoint(),
                     $requestBody['id']
                 )
-            ]
-        ];
+            ],
+            Json::sanitize(['message' => 'Contact created successfully'])
+        );
     }
 
     /**
@@ -634,7 +635,7 @@ class Contacts extends ApiV1
      *
      * @param string $identifier
      *
-     * @return array
+     * @return ResponseInterface
      *
      * @throws HttpBadRequestException
      * @throws HttpNotFoundException
@@ -682,7 +683,7 @@ class Contacts extends ApiV1
             ref: '#/components/schemas/ErrorResponse'
         )
     )]
-    public function delete(string $identifier): array
+    public function delete(string $identifier): ResponseInterface
     {
         if (empty($identifier)) {
             throw new HttpBadRequestException('Identifier is required');
@@ -697,7 +698,7 @@ class Contacts extends ApiV1
         $this->removeContact($contactId);
         $db->commitTransaction();
 
-        return ['status' => 204];
+        return $this->createResponse(204);
     }
 
     public function prepareRow(stdClass $row): void

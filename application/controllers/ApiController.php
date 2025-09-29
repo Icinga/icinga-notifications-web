@@ -69,11 +69,11 @@ class ApiController extends CompatController
         } catch (HttpExceptionInterface $e) {
             $response = new Response(
                 $e->getStatusCode(),
-                $e->getHeaders(),
+                array_merge($e->getHeaders(), ['Content-Type' => 'application/json']),
                 Json::sanitize(['message' => $e->getMessage()])
             );
         } catch (Throwable $e) {
-            $response = new Response(500, body: Json::sanitize(['message' => $e->getMessage()]));
+            $response = new Response(500, ['Content-Type' => 'application/json'], Json::sanitize(['message' => $e->getMessage()]));
         } finally {
             $this->emitResponse($response);
         }
@@ -119,14 +119,11 @@ class ApiController extends CompatController
     {
         http_response_code($response->getStatusCode());
 
-        $contentTypeSet = false;
         foreach ($response->getHeaders() as $name => $values) {
-            if($name === 'Content-Type') $contentTypeSet = true;
             foreach ($values as $value) {
                 header(sprintf('%s: %s', $name, $value), false);
             }
         }
-        if (! $contentTypeSet) header('Content-Type: application/json');
 
         echo $response->getBody();
     }
