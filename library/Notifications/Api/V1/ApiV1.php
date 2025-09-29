@@ -79,9 +79,9 @@ abstract class ApiV1 extends ApiCore
         $queryFilter = $request->getUri()->getQuery();
 
         return match ($request->getAttribute('httpMethod')) {
-            HttpMethod::PUT => $this->put($identifier, $this->getValidRequestBody($request)),
-            HttpMethod::POST => $this->post($identifier, $this->getValidRequestBody($request)),
-            HttpMethod::GET => $this->get($identifier, $filterStr),
+            HttpMethod::PUT    => $this->put($identifier, $this->getValidRequestBody($request)),
+            HttpMethod::POST   => $this->post($identifier, $this->getValidRequestBody($request)),
+            HttpMethod::GET    => $this->get($identifier, $queryFilter),
             HttpMethod::DELETE => $this->delete($identifier),
         };
     }
