@@ -550,7 +550,7 @@ class ContactGroups extends ApiV1
         $user = Database::get()->fetchOne($stmt);
 
         if ($user) {
-            throw new HttpException(422, 'Username ' . $name . ' already exists');
+            throw new HttpException(422, sprintf('Username %s already exists', $name));
         }
     }
 }
