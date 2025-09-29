@@ -589,7 +589,7 @@ class Contacts extends ApiV1
         $db = Database::get();
         $db->beginTransaction();
 
-        $emptyIdentifier = empty($identifier);
+        $emptyIdentifier = $identifier === null;
         if (! $emptyIdentifier) {
             if ($identifier === $requestBody['id']) {
                 throw new HttpException(
