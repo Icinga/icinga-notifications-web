@@ -8,7 +8,7 @@ use WebSocket\Base;
 class ApiV1ChannelsTest extends BaseApiV1TestCase
 {
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      */
     public function testGetWithMatchingFilter(): void
     {
@@ -52,7 +52,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      */
     public function testGetEverything(): void
     {
@@ -79,7 +79,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      */
     public function testGetWithAlreadyExistingIdentifier(): void
     {
@@ -97,7 +97,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      */
     public function testGetWithNonMatchingFilter(): void
     {
@@ -109,7 +109,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      */
     public function testGetWithInvalidFilter(): void
     {
@@ -124,7 +124,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      */
     public function testGetWithNewIdentifier(): void
     {
@@ -136,7 +136,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      */
     public function testGetWithInvalidIdentifier(): void
     {
@@ -148,7 +148,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      */
     public function testGetWithIdentifierAndFilter(): void
     {
@@ -175,7 +175,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
     }
 
     /**
-     * @dataProvider databases
+     * @dataProvider sharedDatabases
      */
     public function testRequestWithNonSupportedMethod(): void
     {
@@ -238,5 +238,22 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $this->assertSame(405, $response->getStatusCode(), $content);
         $this->assertSame([$expectedAllowHeader], $response->getHeader('Allow'));
         $this->assertSame($this->jsonEncodeError('Method DELETE is not supported for endpoint channels'), $content);
+    }
+
+    public function tearDown(): void
+    {
+        foreach (self::sharedDatabases() as $driver => $connections) {
+            if ($driver === 'mysql') {
+                $connections[0]->exec(
+                    'DELETE FROM channel WHERE external_uuid NOT IN ("'
+                    . self::CHANNEL_UUID . '", "' . self::CHANNEL_UUID_2 . '")'
+                );
+            } elseif ($driver === 'pgsql') {
+                $connections[0]->exec(
+                    "DELETE FROM channel WHERE external_uuid NOT IN ('"
+                    . self::CHANNEL_UUID . "', '" . self::CHANNEL_UUID_2 . "')"
+                );
+            }
+        }
     }
 }
