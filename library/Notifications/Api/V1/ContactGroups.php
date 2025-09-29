@@ -220,7 +220,6 @@ class ContactGroups extends ApiV1
         $db = Database::get();
         $db->beginTransaction();
 
-        // TODO: keep replacing via POST or move to PUT?
         $emptyIdentifier = empty($identifier);
         if (! $emptyIdentifier) {
             if ($identifier === $requestBody['id']) {

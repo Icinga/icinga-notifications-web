@@ -589,7 +589,6 @@ class Contacts extends ApiV1
         $db = Database::get();
         $db->beginTransaction();
 
-        // TODO: keep replacing via POST or move to PUT?
         $emptyIdentifier = empty($identifier);
         if (! $emptyIdentifier) {
             if ($identifier === $requestBody['id']) {
@@ -957,8 +956,6 @@ class Contacts extends ApiV1
             throw new HttpException(422, sprintf('Username %s already exists', $username));
         }
     }
-
-    // TODO: validate via class attributes or openapi schema? Is it performant enough?
 
     /**
      * Validate the request body for required fields and types
