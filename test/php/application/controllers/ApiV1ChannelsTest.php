@@ -254,21 +254,17 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
 
     protected function deleteDefaultEntities(): void
     {
-        foreach (self::sharedDatabases() as $connections) {
-            $db = $connections[0];
+        $db = $this->getConnection();
 
-            self::deleteContacts($db);
-            self::deleteChannels($db);
-        }
+        self::deleteContacts($db);
+        self::deleteChannels($db);
     }
 
     protected function createDefaultEntities(): void
     {
-        foreach (self::sharedDatabases() as $connections) {
-            $db = $connections[0];
+        $db = $this->getConnection();
 
-            self::createChannels($db);
-            self::createContacts($db);
-        }
+        self::createChannels($db);
+        self::createContacts($db);
     }
 }

@@ -35,9 +35,7 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
     public function testGetEverything(): void
     {
         // At first, there are none
-        foreach (self::sharedDatabases() as $connections) {
-            self::deleteContacts($connections[0]);
-        }
+        self::deleteContacts($this->getConnection());
 
         $response = $this->sendRequest('GET', 'contacts');
         $content = $response->getBody()->getContents();
@@ -46,9 +44,7 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
         $this->assertSame($this->jsonEncodeResults([]), $content);
 
         // Create new contact
-        foreach (self::sharedDatabases() as $connections) {
-            self::createContacts($connections[0]);
-        }
+        self::createContacts($this->getConnection());
 
         // Now there are two
         $response = $this->sendRequest('GET', 'contacts');
@@ -866,18 +862,16 @@ YAML;
 
     public function tearDown(): void
     {
-        foreach (self::sharedDatabases() as $connections) {
-            $db = $connections[0];
+        $db = $this->getConnection();
 
-            $db->delete('contact_address');
-            $db->delete('contactgroup_member');
-            $db->delete(
-                'contactgroup',
-                "external_uuid NOT IN ('" . self::GROUP_UUID . "', '" . self::GROUP_UUID_2 . "')"
-            );
-            $db->delete('contact');
+        $db->delete('contact_address');
+        $db->delete('contactgroup_member');
+        $db->delete(
+            'contactgroup',
+            "external_uuid NOT IN ('" . self::GROUP_UUID . "', '" . self::GROUP_UUID_2 . "')"
+        );
+        $db->delete('contact');
 
-            self::createContacts($db);
-        }
+        self::createContacts($db);
     }
 }
