@@ -815,7 +815,8 @@ class Contacts extends ApiV1
             $this->assertUniqueUsername($requestBody['username']);
         }
 
-        if (! $channelID = Channels::getChannelId($requestBody['default_channel'])) {
+        $channelID = Channels::getChannelId($requestBody['default_channel']);
+        if ($channelID === false) {
             throw new HttpException(422, 'Default channel mismatch');
         }
 
