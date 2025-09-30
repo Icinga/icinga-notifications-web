@@ -6,6 +6,7 @@ use DateTime;
 use GuzzleHttp\Client;
 use Icinga\Application\Config;
 use Icinga\Application\Icinga;
+use Icinga\Module\Notifications\Api\V1\Channels;
 use Icinga\Util\Json;
 use ipl\Sql\Connection;
 use ipl\Sql\Test\SharedDatabases;
@@ -21,8 +22,12 @@ class BaseApiV1TestCase extends TestCase
     protected const CHANNEL_UUID_2 = '0817d973-398e-41d7-9cd2-61cdb7ef41a2';
     protected const CONTACT_UUID = '1817d973-398e-41d7-9cd2-61cdb7ef41a1';
     protected const CONTACT_UUID_2 = '1817d973-398e-41d7-9cd2-61cdb7ef41a2';
+    protected const CONTACT_UUID_3 = '1817d973-398e-41d7-9cd2-61cdb7ef41a3';
+    protected const CONTACT_UUID_4 = '1817d973-398e-41d7-9cd2-61cdb7ef41a4';
     protected const GROUP_UUID = '2817d973-398e-41d7-9cd2-61cdb7ef41a1';
     protected const GROUP_UUID_2 = '2817d973-398e-41d7-9cd2-61cdb7ef41a2';
+    protected const GROUP_UUID_3 = '2817d973-398e-41d7-9cd2-61cdb7ef41a3';
+    protected const GROUP_UUID_4 = '2817d973-398e-41d7-9cd2-61cdb7ef41a4';
     /**
      * @var string UUID template, add 2 chars [0-9|a-f] to create a valid UUID
      */
@@ -159,6 +164,13 @@ SQL
             'config_attrs' => ''
         ]);
 
+        self::createChannels($db);
+        self::createContacts($db);
+        self::createContactGroups($db);
+    }
+
+    protected static function createChannels(Connection $db): void
+    {
         $db->insert('channel', [
             'external_uuid' => self::CHANNEL_UUID,
             'name' => 'Test',
@@ -172,6 +184,54 @@ SQL
             'type' => 'webhook',
             'changed_at' => (int) (new DateTime())->format("Uv"),
         ]);
+    }
+
+    protected static function deleteChannels(Connection $db): void
+    {
+        $db->delete('channel', 'external_uuid in ("' . self::CHANNEL_UUID . '", "' . self::CHANNEL_UUID_2 . '")');
+    }
+
+    protected static function createContacts(Connection $db): void
+    {
+        $channelId = Channels::getChannelId(self::CHANNEL_UUID);
+        $db->insert('contact', [
+            'full_name' => 'Test',
+            'username' => 'test',
+            'default_channel_id' => $channelId,
+            'external_uuid' => self::CONTACT_UUID,
+            'changed_at' => (int) (new DateTime())->format("Uv"),
+        ]);
+        $db->insert('contact', [
+            'full_name' => 'Test2',
+            'username' => 'test2',
+            'default_channel_id' => $channelId,
+            'external_uuid' => self::CONTACT_UUID_2,
+            'changed_at' => (int) (new DateTime())->format("Uv"),
+        ]);
+    }
+
+    protected static function deleteContacts(Connection $db): void
+    {
+        $db->delete('contact', 'external_uuid in ("' . self::CONTACT_UUID . '", "' . self::CONTACT_UUID_2 . '")');
+    }
+
+    protected static function createContactGroups(Connection $db): void
+    {
+        $db->insert('contactgroup', [
+            'name' => 'Test',
+            'external_uuid' => self::GROUP_UUID,
+            'changed_at' => (int) (new DateTime())->format("Uv"),
+        ]);
+        $db->insert('contactgroup', [
+            'name' => 'Test2',
+            'external_uuid' => self::GROUP_UUID_2,
+            'changed_at' => (int) (new DateTime())->format("Uv"),
+        ]);
+    }
+
+    protected static function deleteContactGroups(Connection $db): void
+    {
+        $db->delete('contactgroup', 'external_uuid in ("' . self::GROUP_UUID . '", "' . self::GROUP_UUID_2 . '")');
     }
 
     protected function sendRequest(

@@ -56,6 +56,18 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
      */
     public function testGetEverything(): void
     {
+        // At first, there are none
+        $this->deleteDefaultEntities();
+
+        $response = $this->sendRequest('GET', 'channels');
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(200, $response->getStatusCode(), $content);
+        $this->assertSame($this->jsonEncodeResults([]), $content);
+
+        // Create new contact groups
+        $this->createDefaultEntities();
+
         // There are two
         $response = $this->sendRequest('GET', 'channels');
         $content = $response->getBody()->getContents();
@@ -240,20 +252,23 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $this->assertSame($this->jsonEncodeError('Method DELETE is not supported for endpoint channels'), $content);
     }
 
-    public function tearDown(): void
+    protected function deleteDefaultEntities(): void
     {
-        foreach (self::sharedDatabases() as $driver => $connections) {
-            if ($driver === 'mysql') {
-                $connections[0]->exec(
-                    'DELETE FROM channel WHERE external_uuid NOT IN ("'
-                    . self::CHANNEL_UUID . '", "' . self::CHANNEL_UUID_2 . '")'
-                );
-            } elseif ($driver === 'pgsql') {
-                $connections[0]->exec(
-                    "DELETE FROM channel WHERE external_uuid NOT IN ('"
-                    . self::CHANNEL_UUID . "', '" . self::CHANNEL_UUID_2 . "')"
-                );
-            }
+        foreach (self::sharedDatabases() as $connections) {
+            $db = $connections[0];
+
+            self::deleteContacts($db);
+            self::deleteChannels($db);
+        }
+    }
+
+    protected function createDefaultEntities(): void
+    {
+        foreach (self::sharedDatabases() as $connections) {
+            $db = $connections[0];
+
+            self::createChannels($db);
+            self::createContacts($db);
         }
     }
 }
