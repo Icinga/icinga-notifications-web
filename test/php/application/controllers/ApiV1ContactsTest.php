@@ -11,23 +11,16 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
 {
     /**
      * @dataProvider sharedDatabases
-     * @depends testPostToCreateWithValidData
      */
     public function testGetWithMatchingFilter(): void
     {
-        $this->sendRequest('POST', 'contacts', [
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
-            'full_name' => 'Test',
-            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
-        ]);
-
         $response = $this->sendRequest('GET', 'contacts?full_name=Test');
         $content = $response->getBody()->getContents();
 
         $expected = $this->jsonEncodeResults([
             'id' => BaseApiV1TestCase::CONTACT_UUID,
             'full_name' => 'Test',
-            'username' => null,
+            'username' => 'test',
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             'groups' => [],
             'addresses' => []
@@ -38,11 +31,14 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
 
     /**
      * @dataProvider sharedDatabases
-     * @depends testPostToCreateWithValidData
      */
     public function testGetEverything(): void
     {
         // At first, there are none
+        foreach (self::sharedDatabases() as $connections) {
+            self::deleteContacts($connections[0]);
+        }
+
         $response = $this->sendRequest('GET', 'contacts');
         $content = $response->getBody()->getContents();
 
@@ -50,16 +46,9 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
         $this->assertSame($this->jsonEncodeResults([]), $content);
 
         // Create new contact
-        $this->sendRequest('POST', 'contacts', [
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
-            'full_name' => 'Test',
-            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
-        ]);
-        $this->sendRequest('POST', 'contacts', [
-            'id' => BaseApiV1TestCase::CONTACT_UUID_2,
-            'full_name' => 'Test (2)',
-            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
-        ]);
+        foreach (self::sharedDatabases() as $connections) {
+            self::createContacts($connections[0]);
+        }
 
         // Now there are two
         $response = $this->sendRequest('GET', 'contacts');
@@ -69,15 +58,15 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
             [
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
-                'username' => null,
+                'username' => 'test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
                 'groups' => [],
                 'addresses' => []
             ],
             [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_2,
-                'full_name' => 'Test (2)',
-                'username' => null,
+                'full_name' => 'Test2',
+                'username' => 'test2',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
                 'groups' => [],
                 'addresses' => []
@@ -89,23 +78,16 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
 
     /**
      * @dataProvider sharedDatabases
-     * @depends testPostToCreateWithValidData
      */
     public function testGetWithAlreadyExistingIdentifier(): void
     {
-        $this->sendRequest('POST', 'contacts', [
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
-            'full_name' => 'Test',
-            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
-        ]);
-
         $response = $this->sendRequest('GET', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID);
         $content = $response->getBody()->getContents();
 
         $expected = $this->jsonEncodeResult([
             'id' => BaseApiV1TestCase::CONTACT_UUID,
             'full_name' => 'Test',
-            'username' => null,
+            'username' => 'test',
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             'groups' => [],
             'addresses' => []
@@ -119,7 +101,7 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
      */
     public function testGetWithNewIdentifier(): void
     {
-        $response = $this->sendRequest('GET', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID);
+        $response = $this->sendRequest('GET', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID_3);
         $content = $response->getBody()->getContents();
 
         $this->assertSame(404, $response->getStatusCode(), $content);
@@ -259,8 +241,8 @@ YAML;
      */
     public function testPostToReplaceWithNewIdentifier(): void
     {
-        $response = $this->sendRequest('POST', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID, [
-            'id' => BaseApiV1TestCase::CONTACT_UUID_2,
+        $response = $this->sendRequest('POST', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID_3, [
+            'id' => BaseApiV1TestCase::CONTACT_UUID_4,
             'full_name' => 'Test',
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
         ]);
@@ -272,16 +254,9 @@ YAML;
 
     /**
      * @dataProvider sharedDatabases
-     * @depends testPostToCreateWithValidData
      */
     public function testPostToReplaceWithAlreadyExistingIdentifierAndIndifferentPayloadId(): void
     {
-        $this->sendRequest('POST', 'contacts', [
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
-            'full_name' => 'Test',
-            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
-        ]);
-
         $response = $this->sendRequest('POST', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID, [
             'id' => BaseApiV1TestCase::CONTACT_UUID,
             'full_name' => 'Test',
@@ -298,21 +273,9 @@ YAML;
 
     /**
      * @dataProvider sharedDatabases
-     * @depends testPostToCreateWithValidData
      */
     public function testPostToReplaceWithAlreadyExistingIdentifierAndExistingPayloadId(): void
     {
-        $this->sendRequest('POST', 'contacts', [
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
-            'full_name' => 'Test',
-            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
-        ]);
-
-        $this->sendRequest('POST', 'contacts', [
-            'id' => BaseApiV1TestCase::CONTACT_UUID_2,
-            'full_name' => 'Test',
-            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
-        ]);
         $response = $this->sendRequest('POST', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID, [
             'id' => BaseApiV1TestCase::CONTACT_UUID_2,
             'full_name' => 'Test',
@@ -326,18 +289,11 @@ YAML;
 
     /**
      * @dataProvider sharedDatabases
-     * @depends testPostToCreateWithValidData
      */
     public function testPostToReplaceWithAlreadyExistingIdentifierAndValidData(): void
     {
-        $this->sendRequest('POST', 'contacts', [
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
-            'full_name' => 'Test',
-            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
-        ]);
-
         $response = $this->sendRequest('POST', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID, [
-            'id' => BaseApiV1TestCase::CONTACT_UUID_2,
+            'id' => BaseApiV1TestCase::CONTACT_UUID_3,
             'full_name' => 'Test (replaced)',
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
         ]);
@@ -345,7 +301,7 @@ YAML;
 
         $this->assertSame(201, $response->getStatusCode(), $content);
         $this->assertSame(
-            ['notifications/api/v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_2],
+            ['notifications/api/v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3],
             $response->getHeader('Location')
         );
         $this->assertSame($this->jsonEncodeSuccessMessage('Contact created successfully'), $content);
@@ -353,16 +309,9 @@ YAML;
 
     /**
      * @dataProvider sharedDatabases
-     * @depends testPostToCreateWithValidData
      */
     public function testPostToCreateWithExistingPayloadId(): void
     {
-        $this->sendRequest('POST', 'contacts', [
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
-            'full_name' => 'Test',
-            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-        ]);
-
         $response = $this->sendRequest('POST', 'contacts', [
             'id' => BaseApiV1TestCase::CONTACT_UUID,
             'full_name' => 'Test',
@@ -380,7 +329,7 @@ YAML;
     public function testPostToCreateWithValidData(): void
     {
         $response = $this->sendRequest('POST', 'contacts', [
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
+            'id' => BaseApiV1TestCase::CONTACT_UUID_3,
             'full_name' => 'Test',
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
         ]);
@@ -388,7 +337,7 @@ YAML;
 
         $this->assertSame(201, $response->getStatusCode(), $content);
         $this->assertSame(
-            ['notifications/api/v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID],
+            ['notifications/api/v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3],
             $response->getHeader('Location')
         );
         $this->assertSame($this->jsonEncodeSuccessMessage('Contact created successfully'), $content);
@@ -439,16 +388,10 @@ YAML;
      */
     public function testPostToCreateWithValidOptionalData(): void
     {
-        $response = $this->sendRequest('POST', 'contactgroups', [
-            'id' => BaseApiV1TestCase::GROUP_UUID,
-            'name' => 'Test'
-        ]);
-        $this->assertSame(201, $response->getStatusCode(), $response->getBody()->getContents());
-
         $response = $this->sendRequest('POST', 'contacts', [
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
-            'full_name' => 'Test',
-            'username' => 'test',
+            'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+            'full_name' => 'Test3',
+            'username' => 'test3',
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             'groups' => [BaseApiV1TestCase::GROUP_UUID],
             'addresses' => [
@@ -461,7 +404,7 @@ YAML;
 
         $this->assertSame(201, $response->getStatusCode(), $content);
         $this->assertSame(
-            ['notifications/api/v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID],
+            ['notifications/api/v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3],
             $response->getHeader('Location')
         );
         $this->assertSame($this->jsonEncodeSuccessMessage('Contact created successfully'), $content);
@@ -469,13 +412,12 @@ YAML;
 
     /**
      * @dataProvider sharedDatabases
-     * @depends testPostToCreateWithValidData
      */
     public function testPostToCreateWithInvalidData(): void
     {
         // invalid default_channel uuid
         $response = $this->sendRequest('POST', 'contacts', [
-            'id' => BaseApiV1TestCase::CONTACT_UUID_2,
+            'id' => BaseApiV1TestCase::CONTACT_UUID_3,
             'full_name' => 'Test',
             'default_channel' => 'invalid_uuid',
         ]);
@@ -509,7 +451,7 @@ YAML;
 
         // missing name
         $response = $this->sendRequest('POST', 'contacts', [
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
+            'id' => BaseApiV1TestCase::CONTACT_UUID_3,
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
         ]);
         $content = $response->getBody()->getContents();
@@ -519,7 +461,7 @@ YAML;
 
         // missing default_channel
         $response = $this->sendRequest('POST', 'contacts', [
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
+            'id' => BaseApiV1TestCase::CONTACT_UUID_3,
             'full_name' => 'Test'
         ]);
         $content = $response->getBody()->getContents();
@@ -533,16 +475,9 @@ YAML;
      */
     public function testPostToCreateWithInvalidOptionalData(): void
     {
-        $this->sendRequest('POST', 'contacts', [
-            'id' => BaseApiV1TestCase::CONTACT_UUID_2,
-            'full_name' => 'Test',
-            'username' => 'test',
-            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
-        ]);
-
         // already existing username
         $response = $this->sendRequest('POST', 'contacts', [
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
+            'id' => BaseApiV1TestCase::CONTACT_UUID_3,
             'full_name' => 'Test',
             'username' => 'test',
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
@@ -554,22 +489,24 @@ YAML;
 
         // with non-existing group
         $response = $this->sendRequest('POST', 'contacts', [
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
+            'id' => BaseApiV1TestCase::CONTACT_UUID_3,
             'full_name' => 'Test',
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-            'groups' => [BaseApiV1TestCase::GROUP_UUID],
+            'groups' => [BaseApiV1TestCase::GROUP_UUID_3],
         ]);
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
         $this->assertSame(
-            $this->jsonEncodeError('Contactgroup with identifier ' . BaseApiV1TestCase::GROUP_UUID . ' does not exist'),
+            $this->jsonEncodeError(
+                'Contactgroup with identifier ' . BaseApiV1TestCase::GROUP_UUID_3 . ' does not exist'
+            ),
             $content
         );
 
         // invalid group uuid
         $response = $this->sendRequest('POST', 'contacts', [
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
+            'id' => BaseApiV1TestCase::CONTACT_UUID_3,
             'full_name' => 'Test',
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             'groups' => ['invalid_uuid']
@@ -584,7 +521,7 @@ YAML;
 
         // with invalid address type
         $response = $this->sendRequest('POST', 'contacts', [
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
+            'id' => BaseApiV1TestCase::CONTACT_UUID_3,
             'full_name' => 'Test',
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             'addresses' => [
@@ -611,7 +548,7 @@ YAML;
 
         $response = $this->sendRequest(
             method: 'PUT',
-            endpoint: 'contacts/' . BaseApiV1TestCase::CONTACT_UUID,
+            endpoint: 'contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
             body: $body,
             headers: [
                 'Accept' => 'application/json',
@@ -636,7 +573,7 @@ YAML;
 
         $response = $this->sendRequest(
             method: 'PUT',
-            endpoint: 'contacts/' . BaseApiV1TestCase::CONTACT_UUID,
+            endpoint: 'contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
             body: $body,
             headers: [
                 'Accept' => 'application/json',
@@ -659,9 +596,9 @@ YAML;
     {
         $response = $this->sendRequest(
             'PUT',
-            'contacts?id=' . BaseApiV1TestCase::CONTACT_UUID,
+            'contacts?id=' . BaseApiV1TestCase::CONTACT_UUID_3,
             [
-                'id' => BaseApiV1TestCase::CONTACT_UUID,
+                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full-name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             ]
@@ -681,7 +618,7 @@ YAML;
     public function testPutToUpdateWithoutIdentifier(): void
     {
         $response = $this->sendRequest('PUT', 'contacts', [
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
+            'id' => BaseApiV1TestCase::CONTACT_UUID_3,
             'full_name' => 'Test',
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
         ]);
@@ -693,24 +630,16 @@ YAML;
 
     /**
      * @dataProvider sharedDatabases
-     * @depends testPostToCreateWithValidData
      */
     public function testPutToUpdateWithAlreadyExistingIdentifierAndMissingRequiredFields(): void
     {
-        // TODO: same results if the POST isn't done first
-        $this->sendRequest('POST', 'contacts', [
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
-            'full_name' => 'Test',
-            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-
-        ]);
-
+        // TODO: same results if identifier exists
         $expected = $this->jsonEncodeError(
             'Invalid request body: the fields id, full_name and default_channel must be present and of type string'
         );
 
         // missing id
-        $response = $this->sendRequest('PUT', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID, [
+        $response = $this->sendRequest('PUT', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID_3, [
             'full_name' => 'Test',
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
         ]);
@@ -720,8 +649,8 @@ YAML;
         $this->assertSame($expected, $content);
 
         // missing name
-        $response = $this->sendRequest('PUT', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID, [
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
+        $response = $this->sendRequest('PUT', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID_3, [
+            'id' => BaseApiV1TestCase::CONTACT_UUID_3,
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
         ]);
         $content = $response->getBody()->getContents();
@@ -730,8 +659,8 @@ YAML;
         $this->assertSame($expected, $content);
 
         // missing default_channel
-        $response = $this->sendRequest('PUT', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID, [
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
+        $response = $this->sendRequest('PUT', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID_3, [
+            'id' => BaseApiV1TestCase::CONTACT_UUID_3,
             'full_name' => 'Test',
         ]);
         $content = $response->getBody()->getContents();
@@ -742,19 +671,11 @@ YAML;
 
     /**
      * @dataProvider sharedDatabases
-     * @depends testPostToCreateWithValidData
      */
     public function testPutToUpdateWithAlreadyExistingIdentifierAndDifferentPayloadId(): void
     {
-        $this->sendRequest('POST', 'contacts', [
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
-            'full_name' => 'Test',
-            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-
-        ]);
-
         $response = $this->sendRequest('PUT', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID, [
-            'id' => BaseApiV1TestCase::CONTACT_UUID_2,
+            'id' => BaseApiV1TestCase::CONTACT_UUID_3,
             'full_name' => 'Test',
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
         ]);
@@ -766,18 +687,11 @@ YAML;
 
     /**
      * @dataProvider sharedDatabases
-     * @depends testPostToCreateWithValidData
      */
     public function testPutToCreateWithNewIdentifierAndValidData(): void
     {
-        $this->sendRequest('POST', 'contacts', [
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
-            'full_name' => 'Test',
-            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-        ]);
-
-        $response = $this->sendRequest('PUT', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID_2, [
-            'id' => BaseApiV1TestCase::CONTACT_UUID_2,
+        $response = $this->sendRequest('PUT', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID_3, [
+            'id' => BaseApiV1TestCase::CONTACT_UUID_3,
             'full_name' => 'Test',
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             'addresses' => [
@@ -790,7 +704,7 @@ YAML;
 
         $this->assertSame(201, $response->getStatusCode(), $content);
         $this->assertSame(
-            ['notifications/api/v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_2],
+            ['notifications/api/v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3],
             $response->getHeader('Location')
         );
         $this->assertSame($this->jsonEncodeSuccessMessage('Contact created successfully'), $content);
@@ -798,16 +712,9 @@ YAML;
 
     /**
      * @dataProvider sharedDatabases
-     * @depends testPostToCreateWithValidData
      */
     public function testPutToUpdateWithAlreadyExistingIdentifierAndValidData(): void
     {
-        $this->sendRequest('POST', 'contacts', [
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
-            'full_name' => 'Test',
-            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-        ]);
-
         $response = $this->sendRequest('PUT', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID, [
             'id' => BaseApiV1TestCase::CONTACT_UUID,
             'full_name' => 'Test',
@@ -825,8 +732,8 @@ YAML;
     public function testPutToUpdateWithNewIdentifierAndInvalidData(): void
     {
         // different id
-        $response = $this->sendRequest('PUT', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID, [
-            'id' => BaseApiV1TestCase::CONTACT_UUID_2,
+        $response = $this->sendRequest('PUT', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID_3, [
+            'id' => BaseApiV1TestCase::CONTACT_UUID_4,
             'full_name' => 'Test',
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
         ]);
@@ -836,17 +743,19 @@ YAML;
         $this->assertSame($this->jsonEncodeError('Identifier mismatch'), $content);
 
         // invalid groups
-        $response = $this->sendRequest('PUT', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID, [
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
+        $response = $this->sendRequest('PUT', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID_3, [
+            'id' => BaseApiV1TestCase::CONTACT_UUID_3,
             'full_name' => 'Test',
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-            'groups' => [BaseApiV1TestCase::GROUP_UUID],
+            'groups' => [BaseApiV1TestCase::GROUP_UUID_3],
         ]);
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(422, $response->getStatusCode(), $content);
         $this->assertSame(
-            $this->jsonEncodeError('Contactgroup with identifier ' . BaseApiV1TestCase::GROUP_UUID . ' does not exist'),
+            $this->jsonEncodeError(
+                'Contactgroup with identifier ' . BaseApiV1TestCase::GROUP_UUID_3 . ' does not exist'
+            ),
             $content
         );
     }
@@ -861,8 +770,8 @@ YAML;
         );
 
         // missing full_name
-        $response = $this->sendRequest('PUT', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID, [
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
+        $response = $this->sendRequest('PUT', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID_3, [
+            'id' => BaseApiV1TestCase::CONTACT_UUID_3,
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
         ]);
         $content = $response->getBody()->getContents();
@@ -871,7 +780,7 @@ YAML;
         $this->assertSame($expected, $content);
 
         // missing id
-        $response = $this->sendRequest('PUT', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID, [
+        $response = $this->sendRequest('PUT', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID_3, [
             'full_name' => 'Test',
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
         ]);
@@ -881,8 +790,8 @@ YAML;
         $this->assertSame($expected, $content);
 
         // missing default_channel
-        $response = $this->sendRequest('PUT', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID, [
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
+        $response = $this->sendRequest('PUT', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID_3, [
+            'id' => BaseApiV1TestCase::CONTACT_UUID_3,
             'full_name' => 'Test',
         ]);
         $content = $response->getBody()->getContents();
@@ -907,7 +816,7 @@ YAML;
      */
     public function testDeleteWithNewIdentifier(): void
     {
-        $response = $this->sendRequest('DELETE', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID);
+        $response = $this->sendRequest('DELETE', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID_3);
         $content = $response->getBody()->getContents();
 
         $this->assertSame(404, $response->getStatusCode(), $content);
@@ -916,16 +825,9 @@ YAML;
 
     /**
      * @dataProvider sharedDatabases
-     * @depends testPostToCreateWithValidData
      */
     public function testDeleteWithAlreadyExistingIdentifier(): void
     {
-        $this->sendRequest('POST', 'contacts', [
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
-            'full_name' => 'Test',
-            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-        ]);
-
         $response = $this->sendRequest('DELETE', 'contacts/' . BaseApiV1TestCase::CONTACT_UUID);
         $content = $response->getBody()->getContents();
 
@@ -964,18 +866,18 @@ YAML;
 
     public function tearDown(): void
     {
-        foreach (self::sharedDatabases() as $driver => $connections) {
+        foreach (self::sharedDatabases() as $connections) {
             $db = $connections[0];
 
-            if ($driver === 'mysql' || $driver === 'pgsql') {
-                $db->exec(<<<SQL
-DELETE FROM contact_address;
-DELETE FROM contactgroup_member;
-DELETE FROM contactgroup;
-DELETE FROM contact;
-SQL
-                );
-            }
+            $db->delete('contact_address');
+            $db->delete('contactgroup_member');
+            $db->delete(
+                'contactgroup',
+                "external_uuid NOT IN ('" . self::GROUP_UUID . "', '" . self::GROUP_UUID_2 . "')"
+            );
+            $db->delete('contact');
+
+            self::createContacts($db);
         }
     }
 }
