@@ -43,6 +43,11 @@ use OpenApi\Attributes as OA;
     summary: 'Invalid request body id',
     value: ['message' => 'Invalid request body: given id is not a valid UUID'],
 )]
+#[OA\Examples(
+    example: 'IdentifierMismatch',
+    summary: 'Identifier mismatch',
+    value: ['message' => 'Identifier mismatch'],
+)]
 class ResponseExample extends Examples
 {
     public function __construct(string $name)

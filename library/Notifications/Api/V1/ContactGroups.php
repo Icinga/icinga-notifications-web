@@ -13,6 +13,7 @@ use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1Delete;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1Get;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1GetPlural;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1Post;
+use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1Put;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Parameters\PathParameter;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Parameters\QueryParameter;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Responses\Examples\ResponseExample;
@@ -49,6 +50,11 @@ use stdClass;
 class ContactGroups extends ApiV1 implements RequestHandlerInterface
 {
     #[OA\Examples(
+        example: 'NameAlreadyExists',
+        summary: 'Name already exists',
+        value: ['message' => 'Name x already exists']
+    )]
+    #[OA\Examples(
         example: 'UserNotExists',
         summary: 'User does not exist',
         value: ['message' => 'User with identifier x not found']
@@ -59,8 +65,8 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
         value: ['message' => 'Invalid request body: user identifiers must be valid UUIDs']
     )]
     #[OA\Examples(
-        example: 'InvalidUsersFormat',
-        summary: 'Invalid users format',
+        example: 'InvalidUserFormat',
+        summary: 'Invalid user format',
         value: ['message' => 'Invalid request body: expects users to be an array']
     )]
     protected array $specificResponses = [];
@@ -201,6 +207,33 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
      * @throws HttpException
      * @throws JsonEncodeException
      */
+    #[OadV1Put(
+        entityName: 'Contact',
+        path: '/contact-groups/{identifier}',
+        description: 'Update a contactgroup by UUID',
+        summary: 'Update a contactgroup by UUID',
+        requiredFields: ['id', 'full_name', 'default_channel'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                ref: '#/components/schemas/Contactgroup'
+            )
+        ),
+        tags: ['Contactgroups'],
+        parameters: [
+            new PathParameter(
+                name: 'identifier',
+                description: 'The UUID of the contact to create',
+                identifierSchema: 'ContactgroupUUID'
+            )
+        ],
+        examples422: [
+            new ResponseExample('NameAlreadyExists'),
+            new ResponseExample('UserNotExists'),
+            new ResponseExample('InvalidUserUUID'),
+            new ResponseExample('InvalidUserFormat'),
+        ]
+    )]
     public function put(string $identifier, array $requestBody): ResponseInterface
     {
         if (empty($identifier)) {
@@ -284,13 +317,14 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
         ),
         tags: ['Contactgroups'],
         examples422: [
+            new ResponseExample('NameAlreadyExists'),
             new ResponseExample('UserNotExists'),
             new ResponseExample('InvalidUserUUID'),
             new ResponseExample('InvalidUserFormat'),
         ]
     )]
     #[OadV1Post(
-        entityName: 'Contact',
+        entityName: 'Contactgroup',
         path: '/contact-groups/{identifier}',
         description: 'Replace a contactgroup by UUID',
         summary: 'Replace a contactgroup by UUID',
@@ -310,6 +344,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
             )
         ],
         examples422: [
+            new ResponseExample('NameAlreadyExists'),
             new ResponseExample('UserNotExists'),
             new ResponseExample('InvalidUserUUID'),
             new ResponseExample('InvalidUserFormat'),

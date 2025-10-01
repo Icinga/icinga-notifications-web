@@ -15,6 +15,7 @@ use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1Delete;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1Get;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1GetPlural;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1Post;
+use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1Put;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Parameters\PathParameter;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Parameters\QueryParameter;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Responses\Examples\ResponseExample;
@@ -294,96 +295,37 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
      * @throws HttpException
      * @throws JsonEncodeException
      */
-    #[OA\Put(
+    #[OadV1Put(
+        entityName: 'Contact',
         path: '/contacts/{identifier}',
         description: 'Update a contact by UUID',
         summary: 'Update a contact by UUID',
+        requiredFields: ['id', 'full_name', 'default_channel'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                ref: '#/components/schemas/Contact'
+            )
+        ),
         tags: ['Contacts'],
-    )]
-    #[OA\RequestBody(
-        required: true,
-        content: new OA\JsonContent(
-            ref: '#/components/schemas/Contact'
-        )
-    )]
-    #[OA\Parameter(
-        name: 'identifier',
-        description: 'The UUID of the contact to update',
-        in: 'path',
-        required: true,
-        schema: new OA\Schema(ref: '#/components/schemas/ContactUUID')
-    )]
-    #[OA\Response(
-        response: 201,
-        description: 'Contact created',
-        content: new OA\JsonContent(
-            examples: [
-                'ContactCreated' => new OA\Examples(
-                    example: 'ContactCreated',
-                    ref: '#/components/examples/ContactCreated'
-                ),
-            ],
-            ref: '#/components/schemas/SuccessResponse'
-        )
-    )]
-    #[OA\Response(
-        response: 204,
-        description: 'Contact updated',
-    )]
-    #[OA\Response(
-        response: 400,
-        description: 'Bad request',
-        content: new OA\JsonContent(
-            examples: [
-                'InvalidRequestBody' => new OA\Examples(
-                    example: 'InvalidRequestBody',
-                    ref: '#/components/examples/InvalidRequestBody'
-                ),
-            ],
-            ref: '#/components/schemas/ErrorResponse'
-        )
-    )]
-    #[OA\Response(
-        response: 415,
-        description: 'Unsupported Media Type',
-        content: new OA\JsonContent(
-            examples: [
-                'ContentTypeNotSupported' => new OA\Examples(
-                    example: 'ContentTypeNotSupported',
-                    ref: '#/components/examples/ContentTypeNotSupported'
-                ),
-            ],
-            ref: '#/components/schemas/ErrorResponse'
-        )
-    )]
-    #[OA\Response(
-        response: 422,
-        description: 'Unprocessable Entity',
-        content: new OA\JsonContent(
-            examples: [
-                'GroupNotFound' => new OA\Examples(
-                    example: 'GroupNotFound',
-                    summary: 'Group not found',
-                    value: [
-                        'status' => 'error',
-                        'message' => 'Group does not exist: X',
-                    ]
-                ),
-                'MissingRequiredRequestBodyField' => new OA\Examples(
-                    example: 'MissingRequiredRequestBodyField',
-                    ref: '#/components/examples/MissingRequiredRequestBodyField'
-                ),
-                'InvalidRequestBodyField' => new OA\Examples(
-                    example: 'InvalidRequestBodyField',
-                    ref: '#/components/examples/InvalidRequestBodyField'
-                ),
-                'InvalidIdentifier' => new OA\Examples(
-                    example: 'InvalidIdentifier',
-                    ref: '#/components/examples/InvalidIdentifier'
-                ),
-            ],
-            ref: '#/components/schemas/ErrorResponse'
-        )
+        parameters: [
+            new PathParameter(
+                name: 'identifier',
+                description: 'The UUID of the contact to Update',
+                identifierSchema: 'ContactUUID'
+            )
+        ],
+        examples400: [
+            new ResponseExample('InvalidDefaultChannelUUID'),
+        ],
+        examples422: [
+            new ResponseExample('UsernameAlreadyExists'),
+            new ResponseExample('ContactgroupNotExists'),
+            new ResponseExample('InvalidContactgroupUUID'),
+            new ResponseExample('InvalidAddressType'),
+            new ResponseExample('InvalidAddressFormat'),
+            new ResponseExample('InvalidEmailAddress'),
+        ]
     )]
     public function put(string $identifier, array $requestBody): ResponseInterface
     {
