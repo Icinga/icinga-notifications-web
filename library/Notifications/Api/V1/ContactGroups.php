@@ -12,8 +12,10 @@ use Icinga\Exception\Json\JsonEncodeException;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1Delete;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1Get;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1GetPlural;
+use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1Post;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Parameters\PathParameter;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Parameters\QueryParameter;
+use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Responses\Examples\ResponseExample;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Schemas\SchemaUUID;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Rotation;
@@ -46,12 +48,24 @@ use stdClass;
 )]
 class ContactGroups extends ApiV1 implements RequestHandlerInterface
 {
-    public function getEndpoint(): string
-    {
-        return 'contact-groups';
-    }
+    #[OA\Examples(
+        example: 'UserNotExists',
+        summary: 'User does not exist',
+        value: ['message' => 'User with identifier x not found']
+    )]
+    #[OA\Examples(
+        example: 'InvalidUserUUID',
+        summary: 'Invalid user UUID',
+        value: ['message' => 'Invalid request body: user identifiers must be valid UUIDs']
+    )]
+    #[OA\Examples(
+        example: 'InvalidUsersFormat',
+        summary: 'Invalid users format',
+        value: ['message' => 'Invalid request body: expects users to be an array']
+    )]
+    protected array $specificResponses = [];
     #[OA\Property(
-        ref: '#/components/schemas/ContactGroupUUID',
+        ref: '#/components/schemas/ContactgroupUUID',
     )]
     protected string $id;
     #[OA\Property(
@@ -67,6 +81,12 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
     )]
     protected ?array $users;
 
+
+    public function getEndpoint(): string
+    {
+        return 'contact-groups';
+    }
+
     /**
      * Get a contactgroup by UUID.
      *
@@ -81,7 +101,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
      */
     #[OadV1Get(
         entityName: 'Contactgroup',
-        path: Contactgroups::ROUTE_WITH_IDENTIFIER,
+        path: '/contact-groups/{identifier}',
         description: 'Get a specific contactgroup by its UUID',
         summary: 'Get a specific contactgroup by its UUID',
         tags: ['Contactgroups'],
@@ -136,7 +156,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
      */
     #[OadV1GetPlural(
         entityName: 'Contactgroup',
-        path: Contactgroups::ROUTE_WITHOUT_IDENTIFIER,
+        path: '/contact-groups',
         description: 'List all contactgroups or filter by parameters',
         summary: 'List all contactgroups or filter by parameters',
         tags: ['Contactgroups'],
@@ -250,6 +270,51 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
      * @throws HttpException
      * @throws JsonEncodeException
      */
+    #[OadV1Post(
+        entityName: 'Contactgroup',
+        path: '/contact-groups',
+        description: 'Create a new contactgroup',
+        summary: 'Create a new contactgroup',
+        requiredFields: ['id', 'full_name', 'default_channel'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                ref: '#/components/schemas/Contactgroup'
+            )
+        ),
+        tags: ['Contactgroups'],
+        examples422: [
+            new ResponseExample('UserNotExists'),
+            new ResponseExample('InvalidUserUUID'),
+            new ResponseExample('InvalidUserFormat'),
+        ]
+    )]
+    #[OadV1Post(
+        entityName: 'Contact',
+        path: '/contact-groups/{identifier}',
+        description: 'Replace a contactgroup by UUID',
+        summary: 'Replace a contactgroup by UUID',
+        requiredFields: ['id', 'full_name', 'default_channel'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                ref: '#/components/schemas/Contactgroup'
+            )
+        ),
+        tags: ['Contactgroups'],
+        parameters: [
+            new PathParameter(
+                name: 'identifier',
+                description: 'The UUID of the contact to create',
+                identifierSchema: 'ContactUUID'
+            )
+        ],
+        examples422: [
+            new ResponseExample('UserNotExists'),
+            new ResponseExample('InvalidUserUUID'),
+            new ResponseExample('InvalidUserFormat'),
+        ]
+    )]
     public function post(?string $identifier, array $requestBody): ResponseInterface
     {
         $this->assertValidRequestBody($requestBody);
@@ -310,7 +375,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
      */
     #[OadV1Delete(
         entityName: 'Contactgroup',
-        path: ContactGroups::ROUTE_WITH_IDENTIFIER,
+        path: '/contact-groups/{identifier}',
         description: 'Delete a contactgroup by UUID',
         summary: 'Delete a contactgroup by UUID',
         tags: ['Contactgroups'],

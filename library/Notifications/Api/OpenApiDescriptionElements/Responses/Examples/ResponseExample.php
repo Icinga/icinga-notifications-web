@@ -19,9 +19,29 @@ use OpenApi\Attributes as OA;
     ],
 )]
 #[OA\Examples(
-    example: 'PayloadIdInvalidUUID',
-    summary: 'Payload Id invalid UUID',
-    value: ['message' => 'Provided id-parameter is not a valid UUID'],
+    example: 'InvalidContentType',
+    summary: 'Invalid content type',
+    value: ['message' => 'Invalid request header: Content-Type must be application/json'],
+)]
+#[OA\Examples(
+    example: 'InvalidRequestBodyFormat',
+    summary: 'Invalid request body format',
+    value: ['message' => 'Invalid request body: given content is not a valid JSON'],
+)]
+#[OA\Examples(
+    example: 'UnexpectedQueryParameter',
+    summary: 'Unexpected query parameter',
+    value: ['message' => 'Unexpected query parameter: Filter is only allowed for GET requests']
+)]
+#[OA\Examples(
+    example: 'IdentifierPayloadIdMissmatch',
+    summary: 'Identifier and payload Id missmatch',
+    value: ['message' => 'Identifier mismatch: the Payload id must be different from the URL identifier'],
+)]
+#[OA\Examples(
+    example: 'InvalidRequestBodyId',
+    summary: 'Invalid request body id',
+    value: ['message' => 'Invalid request body: given id is not a valid UUID'],
 )]
 class ResponseExample extends Examples
 {
