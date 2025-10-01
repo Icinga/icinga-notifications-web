@@ -125,23 +125,6 @@ use stdClass;
 )]
 class Channels extends ApiV1
 {
-    public function getEndpoint(): string
-    {
-        return 'channels';
-    }
-
-    /**
-     * The route to handle a single channel
-     *
-     * @var string
-     */
-    public const ROUTE_WITH_IDENTIFIER = '/channels/{identifier}';
-    /**
-     * The route to handle multiple channels
-     *
-     * @var string
-     */
-    public const ROUTE_WITHOUT_IDENTIFIER = '/channels';
     #[OA\Property(
         ref: '#/components/schemas/ChannelUUID',
     )]
@@ -169,6 +152,11 @@ class Channels extends ApiV1
     )]
     protected array $config;
 
+    public function getEndpoint(): string
+    {
+        return 'channels';
+    }
+
     /**
      * Get a channel by UUID.
      *
@@ -181,7 +169,7 @@ class Channels extends ApiV1
      */
     #[OadV1Get(
         entityName: 'Channel',
-        path: Channels::ROUTE_WITH_IDENTIFIER,
+        path: 'channels',
         description: 'Get a specific channel by its UUID',
         summary: 'Get a specific channel by its UUID',
         tags: ['Channels'],
@@ -238,7 +226,7 @@ class Channels extends ApiV1
      */
     #[OadV1GetPlural(
         entityName: 'Channel',
-        path: Channels::ROUTE_WITHOUT_IDENTIFIER,
+        path: 'channels/{identifier}',
         description: 'List all notification channels or filter by parameters',
         summary: 'List all notification channels or filter by parameters',
         tags: ['Channels'],

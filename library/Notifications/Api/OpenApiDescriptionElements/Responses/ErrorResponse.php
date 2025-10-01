@@ -2,7 +2,6 @@
 
 namespace Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Responses;
 
-use OpenApi\Attributes\JsonContent;
 use OpenApi\Attributes\Response;
 use OpenApi\Attributes as OA;
 
@@ -50,7 +49,7 @@ class ErrorResponse extends Response
             response: $response,
             description: $description,
             headers: $headers,
-            content: new JsonContent(
+            content: new OA\JsonContent(
                 examples: $examples,
                 ref: '#/components/schemas/ErrorResponse',
             ),
