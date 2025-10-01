@@ -102,8 +102,7 @@ class EventRulesController extends CompatController
             ->populate(['id' => -1])
             ->setCsrfCounterMeasureId(Session::getSession()->getId())
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
-            ->on(Form::ON_SUCCESS, function ($form) {
-                $this->sendExtraUpdates(['#col1']);
+            ->on(Form::ON_SUBMIT, function ($form) {
                 $this->getResponse()->setHeader('X-Icinga-Container', 'col2');
                 $this->redirectNow(Links::eventRule(-1)->addParams(['name' => $form->getValue('name')]));
             })->handleRequest($this->getServerRequest());
