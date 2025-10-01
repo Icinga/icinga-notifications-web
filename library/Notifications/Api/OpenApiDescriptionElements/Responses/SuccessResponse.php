@@ -28,15 +28,25 @@ class SuccessResponse extends Response
     public function __construct(
         int|string|null $response = null,
         ?string $description = null,
+        ?array $examples = null,
         ?array $headers = null,
     ) {
         if (! isset(self::SUCCESS_RESPONSES[$response])) {
             throw new \InvalidArgumentException('Unexpected response type');
         }
+
+        $content = $response !== 204
+            ? new OA\JsonContent(
+                examples: $examples,
+                ref: '#/components/schemas/SuccessResponse',
+            )
+            : null;
+
         parent::__construct(
             response: $response,
             description: $description,
             headers: $headers,
+            content: $content
         );
     }
 }

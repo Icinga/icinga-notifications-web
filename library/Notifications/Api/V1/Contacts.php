@@ -14,8 +14,10 @@ use Psr\Http\Server\RequestHandlerInterface;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1Delete;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1Get;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1GetPlural;
+use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\OadV1Post;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Parameters\PathParameter;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Parameters\QueryParameter;
+use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Responses\Examples\ResponseExample;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Schemas\SchemaUUID;
 use Ramsey\Uuid\Uuid;
 use Icinga\Module\Notifications\Common\Database;
@@ -86,6 +88,47 @@ use OpenApi\Attributes as OA;
 )]
 class Contacts extends ApiV1 implements RequestHandlerInterface
 {
+    #[OA\Examples(
+        example: 'UsernameAlreadyExists',
+        summary: 'Username already exists',
+        value: ['message' => 'Username x already exists']
+    )]
+    #[OA\Examples(
+        example: 'InvalidAddressType',
+        summary: 'Invalid address type',
+        value: ['message' => 'Invalid request body: undefined address type x given']
+    )]
+    #[OA\Examples(
+        example: 'ContactgroupNotExists',
+        summary: 'Contactgroup does not exist',
+        value: ['message' => 'Contactgroup with identifier x does not exist']
+    )]
+    #[OA\Examples(
+        example: 'InvalidContactgroupUUID',
+        summary: 'Invalid contactgroup UUID',
+        value: ['message' => 'Invalid request body: the group identifier invalid_uuid is not a valid UUID']
+    )]
+    #[OA\Examples(
+        example: 'InvalidDefaultChannelUUID',
+        summary: 'Invalid default_channel UUID',
+        value: ['message' => 'Invalid request body: given default_channel is not a valid UUID']
+    )]
+    #[OA\Examples(
+        example: 'InvalidEmailAddress',
+        summary: 'Invalid email address',
+        value: ['message' => 'Invalid request body: an invalid email address given']
+    )]
+    #[OA\Examples(
+        example: 'InvalidAddressFormat',
+        summary: 'Invalid address format',
+        value: ['message' => 'Invalid request body: expects addresses to be an array']
+    )]
+    #[OA\Examples(
+        example: 'InvalidGroupsFormat',
+        summary: 'Invalid groups format',
+        value: ['message' => 'Invalid request body: expects groups to be an array']
+    )]
+    protected array $specificResponses = [];
     #[OA\Property(
         ref: '#/components/schemas/ContactUUID',
     )]
@@ -322,7 +365,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
                     example: 'GroupNotFound',
                     summary: 'Group not found',
                     value: [
-                        'status'  => 'error',
+                        'status' => 'error',
                         'message' => 'Group does not exist: X',
                     ]
                 ),
@@ -429,89 +472,63 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
      * @throws HttpNotFoundException
      * @throws JsonEncodeException
      */
-    #[OA\Post(
+    #[OadV1Post(
+        entityName: 'Contact',
         path: '/contacts',
         description: 'Create a new contact',
         summary: 'Create a new contact',
+        requiredFields: ['id', 'full_name', 'default_channel'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                ref: '#/components/schemas/Contact'
+            )
+        ),
         tags: ['Contacts'],
+        examples400: [
+            new ResponseExample('InvalidDefaultChannelUUID'),
+        ],
+        examples422: [
+            new ResponseExample('UsernameAlreadyExists'),
+            new ResponseExample('ContactgroupNotExists'),
+            new ResponseExample('InvalidContactgroupUUID'),
+            new ResponseExample('InvalidAddressType'),
+            new ResponseExample('InvalidAddressFormat'),
+            new ResponseExample('InvalidEmailAddress'),
+            new ResponseExample('InvalidGroupFormat'),
+        ]
     )]
-    #[OA\RequestBody(
-        required: true,
-        content: new OA\JsonContent(
-            ref: '#/components/schemas/Contact'
-        )
-    )]
-    #[OA\Response(
-        response: 201,
-        description: 'Contact created',
-        content: new OA\JsonContent(
-            examples: [
-                'ContactCreated' => new OA\Examples(
-                    example: 'ContactCreated',
-                    ref: '#/components/examples/ContactCreated'
-                ),
-            ],
-            ref: '#/components/schemas/SuccessResponse'
-        )
-    )]
-    #[OA\Response(
-        response: 400,
-        description: 'Bad request',
-        content: new OA\JsonContent(
-            examples: [
-                'InvalidRequestBody' => new OA\Examples(
-                    example: 'InvalidRequestBody',
-                    ref: '#/components/examples/InvalidRequestBody'
-                ),
-            ],
-            ref: '#/components/schemas/ErrorResponse'
-        )
-    )]
-    #[OA\Response(
-        response: 415,
-        description: 'Unsupported Media Type',
-        content: new OA\JsonContent(
-            examples: [
-                'ContentTypeNotSupported' => new OA\Examples(
-                    example: 'ContentTypeNotSupported',
-                    ref: '#/components/examples/ContentTypeNotSupported'
-                ),
-            ],
-            ref: '#/components/schemas/ErrorResponse'
-        )
-    )]
-    #[OA\Response(
-        response: 422,
-        description: 'Unprocessable Entity',
-        content: new OA\JsonContent(
-            examples: [
-                'ContactAlreadyExists' => new OA\Examples(
-                    example: 'ContactAlreadyExists',
-                    summary: 'Contact already exists',
-                    value: [
-                        'status'  => 'error',
-                        'message' => 'Contact already exists',
-                    ]
-                ),
-                'GroupNotFound' => new OA\Examples(
-                    example: 'GroupNotFound',
-                    summary: 'Group not found',
-                    value: [
-                        'status'  => 'error',
-                        'message' => 'Group does not exist: X',
-                    ]
-                ),
-                'MissingRequiredRequestBodyField' => new OA\Examples(
-                    example: 'MissingRequiredRequestBodyField',
-                    ref: '#/components/examples/MissingRequiredRequestBodyField'
-                ),
-                'InvalidRequestBodyField' => new OA\Examples(
-                    example: 'InvalidRequestBodyField',
-                    ref: '#/components/examples/InvalidRequestBodyField'
-                ),
-            ],
-            ref: '#/components/schemas/ErrorResponse'
-        )
+    #[OadV1Post(
+        entityName: 'Contact',
+        path: '/contacts/{identifier}',
+        description: 'Replace a contact by UUID',
+        summary: 'Replace a contact by UUID',
+        requiredFields: ['id', 'full_name', 'default_channel'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                ref: '#/components/schemas/Contact'
+            )
+        ),
+        tags: ['Contacts'],
+        parameters: [
+            new PathParameter(
+                name: 'identifier',
+                description: 'The UUID of the contact to create',
+                identifierSchema: 'ContactUUID'
+            )
+        ],
+        examples400: [
+            new ResponseExample('InvalidDefaultChannelUUID'),
+        ],
+        examples422: [
+            new ResponseExample('UsernameAlreadyExists'),
+            new ResponseExample('ContactgroupNotExists'),
+            new ResponseExample('InvalidContactgroupUUID'),
+            new ResponseExample('InvalidAddressType'),
+            new ResponseExample('InvalidAddressFormat'),
+            new ResponseExample('InvalidEmailAddress'),
+        ]
     )]
     public function post(?string $identifier, array $requestBody): ResponseInterface
     {
@@ -672,7 +689,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
     public static function getContactId(string $identifier): ?int
     {
         /** @var stdClass|false $contact */
-        $contact =  Database::get()->fetchOne(
+        $contact = Database::get()->fetchOne(
             (new Select())
                 ->from('contact')
                 ->columns('id')
@@ -846,10 +863,12 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
             $escalationIdsWithOtherRecipients = Database::get()->fetchCol(
                 RuleEscalationRecipient::on(Database::get())
                     ->columns('rule_escalation_id')
-                    ->filter(Filter::all(
-                        Filter::equal('rule_escalation_id', $escalationIds),
-                        Filter::unequal('contact_id', $id)
-                    ))->assembleSelect()
+                    ->filter(
+                        Filter::all(
+                            Filter::equal('rule_escalation_id', $escalationIds),
+                            Filter::unequal('contact_id', $id)
+                        )
+                    )->assembleSelect()
             );
 
             $toRemoveEscalations = array_diff($escalationIds, $escalationIdsWithOtherRecipients);

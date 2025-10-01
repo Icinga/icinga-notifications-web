@@ -14,7 +14,7 @@ use OpenApi\Attributes as OA;
 class OadV1Get extends Get
 {
     public function __construct(
-        ?string $entityName = null,
+        string $entityName,
         ?string $path = null,
         ?string $description = null,
         ?string $summary = null,
