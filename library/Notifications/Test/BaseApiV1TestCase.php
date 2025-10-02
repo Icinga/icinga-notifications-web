@@ -9,7 +9,6 @@ use Icinga\Application\Icinga;
 use Icinga\Module\Notifications\Api\V1\Channels;
 use Icinga\Util\Json;
 use ipl\Sql\Connection;
-use ipl\Sql\Select;
 use ipl\Sql\Test\SharedDatabases;
 use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
@@ -126,7 +125,7 @@ SQL
                 'dbname' => $db->getConfig()->dbname,
                 'username' => $db->getConfig()->username,
                 'password' => $db->getConfig()->password
-            ])->setSection('notifications_db_' . $driver, [
+            ])->setSection('notifications_db', [
                 'type' => 'db',
                 'db' => $driver,
                 'host' => $db->getConfig()->host,
@@ -138,6 +137,9 @@ SQL
         Config::app('authentication')->setSection('test', [
             'backend' => 'db',
             'resource' => 'web_db'
+        ])->saveIni();
+        Config::module('notifications')->setSection('database', [
+            'resource' => 'notifications_db'
         ])->saveIni();
 
         $db->insert('available_channel_type', [
@@ -191,14 +193,7 @@ SQL
 
     protected static function createContacts(Connection $db): void
     {
-        $channelId = $db->select(
-            (new Select())
-                ->from('channel')
-                ->columns(['id'])
-                ->where('external_uuid = ?', self::CHANNEL_UUID)
-                ->limit(1)
-        )->fetchColumn();
-
+        $channelId = Channels::getChannelId(self::CHANNEL_UUID);
         $db->insert('contact', [
             'full_name' => 'Test',
             'username' => 'test',

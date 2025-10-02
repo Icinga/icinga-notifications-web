@@ -3,7 +3,6 @@
 namespace Tests\Icinga\Module\Notifications\Controllers;
 
 use GuzzleHttp\Client;
-use Icinga\Application\Config;
 use Icinga\Exception\IcingaException;
 use Icinga\Module\Notifications\Test\BaseApiV1TestCase;
 use WebSocket\Base;
@@ -861,12 +860,9 @@ YAML;
         $this->assertSame($this->jsonEncodeError('HTTP method PATCH is not supported'), $content);
     }
 
-    public function setUp(): void
+    public function tearDown(): void
     {
         $db = $this->getConnection();
-        Config::module('notifications')->setSection('database', [
-            'resource' => 'notifications_db_' . $db->getConfig()->db,
-        ])->saveIni();
 
         $db->delete('contact_address');
         $db->delete('contactgroup_member');
