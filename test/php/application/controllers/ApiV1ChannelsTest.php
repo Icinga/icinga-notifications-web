@@ -3,14 +3,16 @@
 namespace Tests\Icinga\Module\Notifications\Controllers;
 
 use Icinga\Module\Notifications\Test\BaseApiV1TestCase;
+use Icinga\Web\Url;
+use ipl\Sql\Connection;
 use WebSocket\Base;
 
 class ApiV1ChannelsTest extends BaseApiV1TestCase
 {
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testGetWithMatchingFilter(): void
+    public function testGetWithMatchingFilter(Connection $db, Url $endpoint): void
     {
         $expected = $this->jsonEncodeResults([
             'id'     => BaseApiV1TestCase::CHANNEL_UUID,
@@ -20,21 +22,21 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         ]);
 
         // filter by id
-        $response = $this->sendRequest('GET', 'channels?id=' . BaseApiV1TestCase::CHANNEL_UUID);
+        $response = $this->sendRequest('GET', $endpoint->setPath('v1/channels')->setParams(['id' => BaseApiV1TestCase::CHANNEL_UUID])->getAbsoluteUrl());
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertSame($expected, $content);
 
         // filter by name
-        $response = $this->sendRequest('GET', 'channels?name=Test');
+        $response = $this->sendRequest('GET', $endpoint->setPath('v1/channels')->setParams(['name' => 'Test'])->getAbsoluteUrl());
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertSame($expected, $content);
 
         // filter by type
-        $response = $this->sendRequest('GET', 'channels?type=email');
+        $response = $this->sendRequest('GET', $endpoint->setPath('v1/channels')->setParams(['type' => 'email'])->getAbsoluteUrl());
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
@@ -43,7 +45,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         // filter by all available filters together
         $response = $this->sendRequest(
             'GET',
-            'channels?id=' . BaseApiV1TestCase::CHANNEL_UUID . '&name=Test&type=email'
+            $endpoint->setPath('v1/channels')->setParams(['id' => BaseApiV1TestCase::CHANNEL_UUID, 'name' => 'Test', 'type' => 'email'])->getAbsoluteUrl()
         );
         $content = $response->getBody()->getContents();
 
