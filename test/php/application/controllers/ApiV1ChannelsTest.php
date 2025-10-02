@@ -2,7 +2,6 @@
 
 namespace Tests\Icinga\Module\Notifications\Controllers;
 
-use Icinga\Application\Config;
 use Icinga\Module\Notifications\Test\BaseApiV1TestCase;
 use WebSocket\Base;
 
@@ -267,12 +266,5 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
 
         self::createChannels($db);
         self::createContacts($db);
-    }
-    protected function setUp(): void
-    {
-        $db = $this->getConnection();
-        Config::module('notifications')->setSection('database', [
-            'resource' => 'notifications_db_' . $db->getConfig()->db,
-        ])->saveIni();
     }
 }
