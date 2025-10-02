@@ -65,8 +65,12 @@
       .future-entry {
         display: flex;
         justify-content: end;
+        z-index: 2; // overlap the .clock .time-hand
+        pointer-events: all;
 
-        .entry {
+        > div {
+          margin-top: 1em;
+          margin-bottom: 1em;
           display: flex;
           align-items: center;
           justify-content: end;
