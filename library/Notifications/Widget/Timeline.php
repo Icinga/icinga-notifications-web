@@ -187,7 +187,10 @@ class Timeline extends BaseHtmlElement implements EntryProvider
             }
 
             if (! $entryFound && ! $this->minimalLayout) {
-                yield (new FutureEntry())->setPosition($maxPriority - $rotation->getPriority());
+                yield (new FutureEntry())
+                    ->setStart($this->getGrid()->getGridStart())
+                    ->setEnd($this->getGrid()->getGridEnd())
+                    ->setPosition($maxPriority - $rotation->getPriority());
             }
         }
 

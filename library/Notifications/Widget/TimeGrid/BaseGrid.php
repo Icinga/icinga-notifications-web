@@ -7,7 +7,6 @@ namespace Icinga\Module\Notifications\Widget\TimeGrid;
 use DateInterval;
 use DateTime;
 use Generator;
-use Icinga\Module\Notifications\Widget\Timeline\FutureEntry;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\HtmlElement;
@@ -422,20 +421,6 @@ abstract class BaseGrid extends BaseHtmlElement
             }
 
             $rowStart = $position + $rowStartModifier;
-
-            if ($entry instanceof FutureEntry) {
-                $gridArea = $this->getGridArea(
-                    $rowStart,
-                    $rowStart + 1,
-                    1,
-                    $gridBorderAt + 1
-                );
-
-                yield $gridArea => $entry;
-
-                continue;
-            }
-
             if ($rowStart > $lastRow) {
                 $lastRow = $rowStart;
             }
