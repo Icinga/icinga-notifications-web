@@ -129,7 +129,7 @@ class DynamicGrid extends BaseGrid
         ]);
 
         $overlay = $this->createGridOverlay();
-        if ($overlay->isEmpty()) {
+        if ($overlay->isEmpty() || count($overlay) < count($this->sideBar())) {
             $this->style->addFor($this, [
                 '--primaryRows' => count($this->sideBar())
             ]);
