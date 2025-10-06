@@ -236,6 +236,10 @@ abstract class ApiV1 extends ApiCore
         $stmt->limit($batchSize);
         $offset = 0;
 
+        if ($stmt->getOrderBy() === null) {
+            $stmt->orderBy('id');
+        }
+
         yield '{"data":[';
         $res = Database::get()->select($stmt->offset($offset));
         do {

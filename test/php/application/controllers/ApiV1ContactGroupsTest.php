@@ -4,16 +4,18 @@ namespace Tests\Icinga\Module\Notifications\Controllers;
 
 use GuzzleHttp\Client;
 use Icinga\Module\Notifications\Test\BaseApiV1TestCase;
+use Icinga\Web\Url;
+use ipl\Sql\Connection;
 use WebSocket\Base;
 
 class ApiV1ContactGroupsTest extends BaseApiV1TestCase
 {
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testGetWithMatchingFilter(): void
+    public function testGetWithMatchingFilter(Connection $db, Url $endpoint): void
     {
-        $response = $this->sendRequest('GET', 'contact-groups?name=Test');
+        $response = $this->sendRequest('GET', $endpoint, 'v1/contact-groups', ['name' => 'Test']);
         $content = $response->getBody()->getContents();
 
         $expected = $this->jsonEncodeResults([
@@ -26,14 +28,14 @@ class ApiV1ContactGroupsTest extends BaseApiV1TestCase
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testGetEverything(): void
+    public function testGetEverything(Connection $db, Url $endpoint): void
     {
         // At first, there are none
         self::deleteContactGroups($this->getConnection());
 
-        $response = $this->sendRequest('GET', 'contact-groups');
+        $response = $this->sendRequest('GET', $endpoint, 'v1/contact-groups');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
@@ -43,7 +45,7 @@ class ApiV1ContactGroupsTest extends BaseApiV1TestCase
         self::createContactGroups($this->getConnection());
 
         // Now there are two
-        $response = $this->sendRequest('GET', 'contact-groups');
+        $response = $this->sendRequest('GET', $endpoint, 'v1/contact-groups');
         $content = $response->getBody()->getContents();
 
         $expected = $this->jsonEncodeResults([
@@ -63,11 +65,11 @@ class ApiV1ContactGroupsTest extends BaseApiV1TestCase
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testGetWithAlreadyExistingIdentifier(): void
+    public function testGetWithAlreadyExistingIdentifier(Connection $db, Url $endpoint): void
     {
-        $response = $this->sendRequest('GET', 'contact-groups/' . BaseApiV1TestCase::GROUP_UUID);
+        $response = $this->sendRequest('GET', $endpoint, 'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID);
         $content = $response->getBody()->getContents();
 
         $expected = $this->jsonEncodeResult([
@@ -80,11 +82,11 @@ class ApiV1ContactGroupsTest extends BaseApiV1TestCase
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testGetWithNewIdentifier(): void
+    public function testGetWithNewIdentifier(Connection $db, Url $endpoint): void
     {
-        $response = $this->sendRequest('GET', 'contact-groups/' . BaseApiV1TestCase::GROUP_UUID_3);
+        $response = $this->sendRequest('GET', $endpoint, 'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID_3);
         $content = $response->getBody()->getContents();
 
         $this->assertSame(404, $response->getStatusCode(), $content);
@@ -92,11 +94,11 @@ class ApiV1ContactGroupsTest extends BaseApiV1TestCase
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testGetWithNonMatchingFilter(): void
+    public function testGetWithNonMatchingFilter(Connection $db, Url $endpoint): void
     {
-        $response = $this->sendRequest('GET', 'contact-groups?name=not_test');
+        $response = $this->sendRequest('GET', $endpoint, 'v1/contact-groups', ['name' => 'not_test']);
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
@@ -104,9 +106,9 @@ class ApiV1ContactGroupsTest extends BaseApiV1TestCase
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testPostToCreateWithInvalidContent(): void
+    public function testPostToCreateWithInvalidContent(Connection $db, Url $endpoint): void
     {
         $body = <<<YAML
 ---
@@ -115,7 +117,8 @@ YAML;
 
         $response = $this->sendRequest(
             method: 'POST',
-            endpoint: 'contact-groups',
+            endpoint: $endpoint,
+            path: 'v1/contact-groups',
             body: $body,
             headers: [
                 'Accept' => 'application/json',
@@ -129,9 +132,9 @@ YAML;
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testPostToCreateWithInvalidContentType(): void
+    public function testPostToCreateWithInvalidContentType(Connection $db, Url $endpoint): void
     {
         $body = <<<YAML
 ---
@@ -140,7 +143,8 @@ YAML;
 
         $response = $this->sendRequest(
             method: 'POST',
-            endpoint: 'contact-groups',
+            endpoint: $endpoint,
+            path: 'v1/contact-groups',
             body: $body,
             headers: [
                 'Accept' => 'application/json',
@@ -157,14 +161,15 @@ YAML;
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testPostToCreateWithFilter(): void
+    public function testPostToCreateWithFilter(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest(
             'POST',
-            'contact-groups?id=' . BaseApiV1TestCase::GROUP_UUID,
-            [
+            $endpoint,
+            'v1/contact-groups?id=' . BaseApiV1TestCase::GROUP_UUID,
+            json: [
                 'id' => BaseApiV1TestCase::GROUP_UUID,
                 'name' => 'Test',
                 'users' => []
@@ -180,15 +185,20 @@ YAML;
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testPostToReplaceWithNonExistingIdentifier(): void
+    public function testPostToReplaceWithNonExistingIdentifier(Connection $db, Url $endpoint): void
     {
-        $response = $this->sendRequest('POST', 'contact-groups/' . BaseApiV1TestCase::GROUP_UUID_3, [
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID_3,
+            json: [
             'id' => BaseApiV1TestCase::GROUP_UUID_4,
             'name' => 'Test',
             'users' => []
-        ]);
+            ]
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(404, $response->getStatusCode(), $content);
@@ -196,15 +206,22 @@ YAML;
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testPostToReplaceWithAlreadyExistingIdentifierAndIndifferentPayloadId(): void
-    {
-        $response = $this->sendRequest('POST', 'contact-groups/' . BaseApiV1TestCase::GROUP_UUID, [
+    public function testPostToReplaceWithAlreadyExistingIdentifierAndIndifferentPayloadId(
+        Connection $db,
+        Url $endpoint
+    ): void {
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
+            json: [
             'id' => BaseApiV1TestCase::GROUP_UUID,
             'name' => 'Test',
             'users' => []
-        ]);
+            ]
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
@@ -215,15 +232,22 @@ YAML;
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testPostToReplaceWithAlreadyExistingIdentifierAndExistingPayloadId(): void
-    {
-        $response = $this->sendRequest('POST', 'contact-groups/' . BaseApiV1TestCase::GROUP_UUID, [
+    public function testPostToReplaceWithAlreadyExistingIdentifierAndExistingPayloadId(
+        Connection $db,
+        Url $endpoint
+    ): void {
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
+            json: [
             'id' => BaseApiV1TestCase::GROUP_UUID_2,
             'name' => 'Test',
             'users' => []
-        ]);
+            ]
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
@@ -231,15 +255,20 @@ YAML;
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testPostToReplaceWithAlreadyExistingIdentifierAndValidData(): void
+    public function testPostToReplaceWithAlreadyExistingIdentifierAndValidData(Connection $db, Url $endpoint): void
     {
-        $response = $this->sendRequest('POST', 'contact-groups/' . BaseApiV1TestCase::GROUP_UUID, [
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
+            json: [
             'id' => BaseApiV1TestCase::GROUP_UUID_3,
             'name' => 'Test (replaced)',
             'users' => []
-        ]);
+            ]
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(201, $response->getStatusCode(), $content);
@@ -251,15 +280,20 @@ YAML;
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testPostToCreateWithAlreadyExistingPayloadId(): void
+    public function testPostToCreateWithAlreadyExistingPayloadId(Connection $db, Url $endpoint): void
     {
-        $response = $this->sendRequest('POST', 'contact-groups', [
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contact-groups',
+            json: [
             'id' => BaseApiV1TestCase::GROUP_UUID,
             'name' => 'Test (replaced)',
             'users' => []
-        ]);
+            ]
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
@@ -267,15 +301,20 @@ YAML;
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testPostToCreateWithValidData(): void
+    public function testPostToCreateWithValidData(Connection $db, Url $endpoint): void
     {
-        $response = $this->sendRequest('POST', 'contact-groups', [
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contact-groups',
+            json: [
             'id' => BaseApiV1TestCase::GROUP_UUID_3,
             'name' => 'Test',
             'users' => [BaseApiV1TestCase::CONTACT_UUID]
-        ]);
+            ]
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(201, $response->getStatusCode(), $content);
@@ -286,10 +325,15 @@ YAML;
         $this->assertSame($this->jsonEncodeSuccessMessage('Contactgroup created successfully'), $content);
 
         // without optional field users
-        $response = $this->sendRequest('POST', 'contact-groups', [
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contact-groups',
+            json: [
             'id' => BaseApiV1TestCase::GROUP_UUID_4,
             'name' => 'Test'
-        ]);
+            ]
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(201, $response->getStatusCode(), $content);
@@ -300,40 +344,55 @@ YAML;
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testPostToCreateWithInvalidData(): void
+    public function testPostToCreateWithInvalidData(Connection $db, Url $endpoint): void
     {
         $expected = $this->jsonEncodeError(
             'Invalid request body: the fields id and name must be present and of type string'
         );
 
         // missing name
-        $response = $this->sendRequest('POST', 'contact-groups', [
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contact-groups',
+            json:[
             'id' => BaseApiV1TestCase::GROUP_UUID_3,
             'users' => []
-        ]);
+            ]
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(422, $response->getStatusCode(), $content);
         $this->assertSame($expected, $content);
 
         // missing id
-        $response = $this->sendRequest('POST', 'contact-groups', [
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contact-groups',
+            json: [
             'name' => 'Test',
             'users' => []
-        ]);
+            ]
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(422, $response->getStatusCode(), $content);
         $this->assertSame($expected, $content);
 
         // invalid users
-        $response = $this->sendRequest('POST', 'contact-groups', [
-            'id' => BaseApiV1TestCase::GROUP_UUID_3,
-            'name' => 'Test',
-            'users' => [BaseApiV1TestCase::CONTACT_UUID_3]
-        ]);
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contact-groups',
+            json: [
+                'id' => BaseApiV1TestCase::GROUP_UUID_3,
+                'name' => 'Test',
+                'users' => [BaseApiV1TestCase::CONTACT_UUID_3]
+            ]
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(422, $response->getStatusCode(), $content);
@@ -344,29 +403,39 @@ YAML;
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testPostToReplaceWithAlreadyExistingIdentifierAndInvalidData(): void
+    public function testPostToReplaceWithAlreadyExistingIdentifierAndInvalidData(Connection $db, Url $endpoint): void
     {
         $expected = $this->jsonEncodeError(
             'Invalid request body: the fields id and name must be present and of type string'
         );
 
         // missing id
-        $response = $this->sendRequest('POST', 'contact-groups/' . BaseApiV1TestCase::GROUP_UUID, [
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
+            json: [
             'name' => 'Test',
             'users' => []
-        ]);
+            ]
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
         $this->assertSame($expected, $content);
 
         // missing name
-        $response = $this->sendRequest('POST', 'contact-groups/' . BaseApiV1TestCase::GROUP_UUID, [
-            'id' => BaseApiV1TestCase::GROUP_UUID,
-            'users' => []
-        ]);
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
+            json:  [
+                'id' => BaseApiV1TestCase::GROUP_UUID,
+                'users' => []
+            ]
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
@@ -374,9 +443,9 @@ YAML;
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testPutToUpdateWithInvalidContent(): void
+    public function testPutToUpdateWithInvalidContent(Connection $db, Url $endpoint): void
     {
         $body = <<<YAML
 ---
@@ -384,8 +453,9 @@ payload: invalid
 YAML;
 
         $response = $this->sendRequest(
-            method: 'PUT',
-            endpoint: 'contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
+            'PUT',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
             body: $body,
             headers: [
                 'Accept' => 'application/json',
@@ -399,9 +469,9 @@ YAML;
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testPutToUpdateWithInvalidContentType(): void
+    public function testPutToUpdateWithInvalidContentType(Connection $db, Url $endpoint): void
     {
         $body = <<<YAML
 ---
@@ -409,8 +479,9 @@ payload: invalid
 YAML;
 
         $response = $this->sendRequest(
-            method: 'PUT',
-            endpoint: 'contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
+            'PUT',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
             body: $body,
             headers: [
                 'Accept' => 'application/json',
@@ -427,15 +498,20 @@ YAML;
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testPutToUpdateWithFilter(): void
+    public function testPutToUpdateWithFilter(Connection $db, Url $endpoint): void
     {
-        $response = $this->sendRequest('PUT', 'contact-groups?id=' . BaseApiV1TestCase::GROUP_UUID, [
-                'id' => BaseApiV1TestCase::GROUP_UUID,
-                'name' => 'Test',
-                'users' => []
-        ]);
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contact-groups?id=' . BaseApiV1TestCase::GROUP_UUID,
+            json:  [
+                    'id' => BaseApiV1TestCase::GROUP_UUID,
+                    'name' => 'Test',
+                    'users' => []
+            ]
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
@@ -446,15 +522,20 @@ YAML;
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testPutToUpdateWithoutIdentifier(): void
+    public function testPutToUpdateWithoutIdentifier(Connection $db, Url $endpoint): void
     {
-        $response = $this->sendRequest('PUT', 'contact-groups', [
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contact-groups',
+            json: [
             'id' => BaseApiV1TestCase::GROUP_UUID,
             'name' => 'Test',
             'users' => []
-        ]);
+            ]
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
@@ -462,29 +543,41 @@ YAML;
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testPutToUpdateWithAlreadyExistingIdentifierAndMissingRequiredFields(): void
-    {
+    public function testPutToUpdateWithAlreadyExistingIdentifierAndMissingRequiredFields(
+        Connection $db,
+        Url $endpoint
+    ): void {
         $expected = $this->jsonEncodeError(
             'Invalid request body: the fields id and name must be present and of type string'
         );
 
         // missing id
-        $response = $this->sendRequest('PUT', 'contact-groups/' . BaseApiV1TestCase::GROUP_UUID, [
-            'name' => 'Test',
-            'users' => []
-        ]);
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
+            json: [
+                'name' => 'Test',
+                'users' => []
+            ]
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
         $this->assertSame($expected, $content);
 
         // missing name
-        $response = $this->sendRequest('PUT', 'contact-groups/' . BaseApiV1TestCase::GROUP_UUID, [
-            'id' => BaseApiV1TestCase::GROUP_UUID,
-            'users' => []
-        ]);
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
+            json:  [
+                'id' => BaseApiV1TestCase::GROUP_UUID,
+                'users' => []
+            ]
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
@@ -492,16 +585,23 @@ YAML;
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testPutToUpdateWithAlreadyExistingIdentifierAndDifferentPayloadId(): void
-    {
+    public function testPutToUpdateWithAlreadyExistingIdentifierAndDifferentPayloadId(
+        Connection $db,
+        Url $endpoint
+    ): void {
         // indifferent id
-        $response = $this->sendRequest('PUT', 'contact-groups/' . BaseApiV1TestCase::GROUP_UUID, [
-            'id' => BaseApiV1TestCase::GROUP_UUID_2,
-            'name' => 'Test',
-            'users' => []
-        ]);
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
+            json:  [
+                'id' => BaseApiV1TestCase::GROUP_UUID_2,
+                'name' => 'Test',
+                'users' => []
+            ]
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
@@ -509,15 +609,20 @@ YAML;
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testPutToCreateWithNewIdentifierAndValidData(): void
+    public function testPutToCreateWithNewIdentifierAndValidData(Connection $db, Url $endpoint): void
     {
-        $response = $this->sendRequest('PUT', 'contact-groups/' . BaseApiV1TestCase::GROUP_UUID_3, [
-            'id' => BaseApiV1TestCase::GROUP_UUID_3,
-            'name' => 'Test',
-            'users' => [BaseApiV1TestCase::CONTACT_UUID]
-        ]);
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID_3,
+            json:  [
+                'id' => BaseApiV1TestCase::GROUP_UUID_3,
+                'name' => 'Test',
+                'users' => [BaseApiV1TestCase::CONTACT_UUID]
+            ]
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(201, $response->getStatusCode(), $content);
@@ -529,15 +634,20 @@ YAML;
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testPutToUpdateWithAlreadyExistingIdentifierAndValidData(): void
+    public function testPutToUpdateWithAlreadyExistingIdentifierAndValidData(Connection $db, Url $endpoint): void
     {
-        $response = $this->sendRequest('PUT', 'contact-groups/' . BaseApiV1TestCase::GROUP_UUID, [
-            'id' => BaseApiV1TestCase::GROUP_UUID,
-            'name' => 'Test (replaced)',
-            'users' => []
-        ]);
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
+            json:  [
+                'id' => BaseApiV1TestCase::GROUP_UUID,
+                'name' => 'Test (replaced)',
+                'users' => []
+            ]
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(204, $response->getStatusCode(), $content);
@@ -545,27 +655,37 @@ YAML;
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testPutToCreateWithNewIdentifierAndInvalidData(): void
+    public function testPutToCreateWithNewIdentifierAndInvalidData(Connection $db, Url $endpoint): void
     {
         // different id
-        $response = $this->sendRequest('PUT', 'contact-groups/' . BaseApiV1TestCase::GROUP_UUID, [
-            'id' => BaseApiV1TestCase::GROUP_UUID_2,
-            'name' => 'Test',
-            'users' => []
-        ]);
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
+            json:  [
+                'id' => BaseApiV1TestCase::GROUP_UUID_2,
+                'name' => 'Test',
+                'users' => []
+            ]
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(422, $response->getStatusCode(), $content);
         $this->assertSame($this->jsonEncodeError('Identifier mismatch'), $content);
 
         // invalid users
-        $response = $this->sendRequest('PUT', 'contact-groups/' . BaseApiV1TestCase::GROUP_UUID, [
-            'id' => BaseApiV1TestCase::GROUP_UUID,
-            'name' => 'Test',
-            'users' => [BaseApiV1TestCase::CONTACT_UUID_3]
-        ]);
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
+            json:  [
+                'id' => BaseApiV1TestCase::GROUP_UUID,
+                'name' => 'Test',
+                'users' => [BaseApiV1TestCase::CONTACT_UUID_3]
+            ]
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(422, $response->getStatusCode(), $content);
@@ -576,14 +696,19 @@ YAML;
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testPutToCreateWithNewIdentifierAndValidOptionalData(): void
+    public function testPutToCreateWithNewIdentifierAndValidOptionalData(Connection $db, Url $endpoint): void
     {
-        $response = $this->sendRequest('PUT', 'contact-groups/' . BaseApiV1TestCase::GROUP_UUID_3, [
-            'id' => BaseApiV1TestCase::GROUP_UUID_3,
-            'name' => 'Test'
-        ]);
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID_3,
+            json:  [
+                'id' => BaseApiV1TestCase::GROUP_UUID_3,
+                'name' => 'Test'
+            ]
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(201, $response->getStatusCode(), $content);
@@ -595,28 +720,38 @@ YAML;
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testPutToCreateWithNewIdentifierAndMissingRequiredFields(): void
+    public function testPutToCreateWithNewIdentifierAndMissingRequiredFields(Connection $db, Url $endpoint): void
     {
         $expected = $this->jsonEncodeError(
             'Invalid request body: the fields id and name must be present and of type string'
         );
         // missing name
-        $response = $this->sendRequest('PUT', 'contact-groups/' . BaseApiV1TestCase::GROUP_UUID, [
-            'id' => BaseApiV1TestCase::GROUP_UUID,
-            'users' => []
-        ]);
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
+            json:  [
+                'id' => BaseApiV1TestCase::GROUP_UUID,
+                'users' => []
+            ]
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(422, $response->getStatusCode(), $content);
         $this->assertSame($expected, $content);
 
         // missing id
-        $response = $this->sendRequest('PUT', 'contact-groups/' . BaseApiV1TestCase::GROUP_UUID, [
-            'name' => 'Test',
-            'users' => []
-        ]);
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
+            json:  [
+                'name' => 'Test',
+                'users' => []
+            ]
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(422, $response->getStatusCode(), $content);
@@ -624,11 +759,11 @@ YAML;
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testDeleteWithoutIdentifier(): void
+    public function testDeleteWithoutIdentifier(Connection $db, Url $endpoint): void
     {
-        $response = $this->sendRequest('DELETE', 'contact-groups');
+        $response = $this->sendRequest('DELETE', $endpoint, 'v1/contact-groups');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
@@ -636,11 +771,11 @@ YAML;
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testDeleteWithNewIdentifier(): void
+    public function testDeleteWithNewIdentifier(Connection $db, Url $endpoint): void
     {
-        $response = $this->sendRequest('DELETE', 'contact-groups/' . BaseApiV1TestCase::GROUP_UUID_3);
+        $response = $this->sendRequest('DELETE', $endpoint, 'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID_3);
         $content = $response->getBody()->getContents();
 
         $this->assertSame(404, $response->getStatusCode(), $content);
@@ -648,11 +783,11 @@ YAML;
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testDeleteWithAlreadyExistingIdentifier(): void
+    public function testDeleteWithAlreadyExistingIdentifier(Connection $db, Url $endpoint): void
     {
-        $response = $this->sendRequest('DELETE', 'contact-groups/' . BaseApiV1TestCase::GROUP_UUID);
+        $response = $this->sendRequest('DELETE', $endpoint, 'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID);
         $content = $response->getBody()->getContents();
 
         $this->assertSame(204, $response->getStatusCode(), $content);
@@ -660,11 +795,11 @@ YAML;
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testDeleteWithFilter(): void
+    public function testDeleteWithFilter(Connection $db, Url $endpoint): void
     {
-        $response = $this->sendRequest('DELETE', 'contact-groups?name~*');
+        $response = $this->sendRequest('DELETE', $endpoint, 'v1/contact-groups', ['name~*']);
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
@@ -675,11 +810,11 @@ YAML;
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testRequestWithNonSupportedMethod(): void
+    public function testRequestWithNonSupportedMethod(Connection $db, Url $endpoint): void
     {
-        $response = $this->sendRequest('PATCH', 'contact-groups');
+        $response = $this->sendRequest('PATCH', $endpoint, 'v1/contact-groups');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(405, $response->getStatusCode(), $content);
@@ -687,7 +822,7 @@ YAML;
         $this->assertSame($this->jsonEncodeError('HTTP method PATCH is not supported'), $content);
     }
 
-    public function tearDown(): void
+    public function setUp(): void
     {
         $db = $this->getConnection();
 
