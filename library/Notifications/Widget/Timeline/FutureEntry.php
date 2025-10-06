@@ -28,8 +28,7 @@ class FutureEntry extends Entry
 
     public function getColor(int $transparency): string
     {
-        //  --base-disabled (#d0d3da) -> hsl(222, 12%, 84%) + transparency
-        return sprintf('~"hsl(222 12%% 84%% / %d%%)"', $transparency);
+        return ''; // No user, no color, CSS will handle it
     }
 
     protected function assembleContainer(BaseHtmlElement $container): void
