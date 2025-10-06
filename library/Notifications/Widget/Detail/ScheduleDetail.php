@@ -12,12 +12,16 @@ use Icinga\Util\Csp;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\HtmlElement;
+use ipl\Html\Text;
+use ipl\I18n\Translation;
 use ipl\Web\Common\BaseTarget;
 use ipl\Web\Style;
+use ipl\Web\Widget\Icon;
 
 class ScheduleDetail extends BaseHtmlElement
 {
     use BaseTarget;
+    use Translation;
 
     protected $tag = 'div';
 
@@ -28,6 +32,9 @@ class ScheduleDetail extends BaseHtmlElement
 
     /** @var Controls */
     protected $controls;
+
+    /** @var bool */
+    private bool $hasRotation = false;
 
     /**
      * Create a new Schedule
@@ -50,6 +57,7 @@ class ScheduleDetail extends BaseHtmlElement
     {
         foreach ($this->schedule->rotation->with('timeperiod')->orderBy('first_handoff', SORT_DESC) as $rotation) {
             $timeline->addRotation(new Rotation($rotation));
+            $this->hasRotation = true;
         }
     }
 
@@ -75,8 +83,28 @@ class ScheduleDetail extends BaseHtmlElement
     protected function assemble()
     {
         $this->addHtml(
-            new HtmlElement('div', Attributes::create(['class' => 'schedule-header']), $this->controls),
-            new HtmlElement('div', Attributes::create(['class' => 'schedule-container']), $this->createTimeline())
+            new HtmlElement('div', Attributes::create(['class' => 'schedule-header']), $this->controls)
+        );
+
+        $timeline = $this->createTimeline();
+        if (! $this->hasRotation) {
+            $this->addHtml(new HtmlElement(
+                'div',
+                Attributes::create(['class' => 'from-scratch-hint']),
+                new Icon('info-circle'),
+                new HtmlElement(
+                    'div',
+                    null,
+                    Text::create($this->translate(
+                        'With schedules contacts can rotate in recurring shifts. You can add'
+                        . ' multiple rotation layers to a schedule.'
+                    ))
+                )
+            ));
+        }
+
+        $this->addHtml(
+            new HtmlElement('div', Attributes::create(['class' => 'schedule-container']), $timeline)
         );
     }
 }
