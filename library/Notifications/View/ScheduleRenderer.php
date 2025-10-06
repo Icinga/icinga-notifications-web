@@ -43,7 +43,7 @@ class ScheduleRenderer implements ItemRenderer
     {
         // Number of days is set to 7, since default mode for schedule is week
         // and the start day should be the current day
-        $timeline = (new Timeline((new DateTime())->setTime(0, 0), 7))
+        $timeline = (new Timeline($item->id, (new DateTime())->setTime(0, 0), 7))
             ->minimalLayout()
             ->setStyle(
                 (new Style())

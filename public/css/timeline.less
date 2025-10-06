@@ -198,10 +198,31 @@
         }
       }
     }
+
+    .new-rotation-container {
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      grid-area: ~"3 / 1 / 4 / 3";
+      padding-bottom: var(--stepRowHeight);
+
+      .new-rotation-content {
+        pointer-events: all;
+        z-index: 2; // Grid gaps must not bleed through, in day mode the time-hand must be below the button
+        height: var(--stepRowHeight);
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        align-content: center;
+        flex-wrap: wrap;
+        gap: .417em;
+      }
+    }
   }
 }
 
-.timeline.minimal-layout{
+.timeline:has(.empty-notice) {
   position: relative;
 
   .empty-notice {
@@ -271,9 +292,24 @@
     color: red;
     .user-select(none);
   }
+
+  .new-rotation-content {
+    background: @gray-lighter;
+    color: @text-color-light;
+
+    a {
+      &:not(.btn-primary) {
+        .button(@gray-lighter, @text-color-light);
+      }
+
+      &.btn-primary {
+        .button(@gray-lighter);
+      }
+    }
+  }
 }
 
-.timeline.minimal-layout .empty-notice {
+.timeline .empty-notice {
   font-size: 1.25em;
 }
 

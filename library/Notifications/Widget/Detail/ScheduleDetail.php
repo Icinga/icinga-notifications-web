@@ -68,7 +68,11 @@ class ScheduleDetail extends BaseHtmlElement
      */
     protected function createTimeline(): Timeline
     {
-        $timeline = new Timeline($this->controls->getStartDate(), $this->controls->getNumberOfDays());
+        $timeline = new Timeline(
+            $this->schedule->id,
+            $this->controls->getStartDate(),
+            $this->controls->getNumberOfDays()
+        );
         $timeline->setStyle(
             (new Style())
                 ->setNonce(Csp::getStyleNonce())
