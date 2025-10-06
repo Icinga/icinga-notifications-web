@@ -38,7 +38,10 @@ class FutureEntry extends Entry
             new Attributes([
                 'title' => $this->translate('Rotation starts in the future')
             ]),
-            new Icon('angle-right')
+            new Icon('angle-right'),
+            new HtmlElement('span', new Attributes(['class' => 'outline'])),
+            new HtmlElement('span', new Attributes(['class' => 'outline'])),
+            new HtmlElement('span', new Attributes(['class' => 'outline']))
         ));
     }
 }
