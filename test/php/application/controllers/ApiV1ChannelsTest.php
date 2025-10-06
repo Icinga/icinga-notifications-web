@@ -22,21 +22,36 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         ]);
 
         // filter by id
-        $response = $this->sendRequest('GET', $endpoint->setPath('v1/channels')->setParams(['id' => BaseApiV1TestCase::CHANNEL_UUID])->getAbsoluteUrl());
+        $response = $this->sendRequest(
+            'GET',
+            $endpoint,
+            'v1/channels',
+            ['id' => BaseApiV1TestCase::CHANNEL_UUID]
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertSame($expected, $content);
 
         // filter by name
-        $response = $this->sendRequest('GET', $endpoint->setPath('v1/channels')->setParams(['name' => 'Test'])->getAbsoluteUrl());
+        $response = $this->sendRequest(
+            'GET',
+            $endpoint,
+            'v1/channels',
+            ['name' => 'Test']
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertSame($expected, $content);
 
         // filter by type
-        $response = $this->sendRequest('GET', $endpoint->setPath('v1/channels')->setParams(['type' => 'email'])->getAbsoluteUrl());
+        $response = $this->sendRequest(
+            'GET',
+            $endpoint,
+            'v1/channels',
+            ['type' => 'email']
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
@@ -45,7 +60,9 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         // filter by all available filters together
         $response = $this->sendRequest(
             'GET',
-            $endpoint->setPath('v1/channels')->setParams(['id' => BaseApiV1TestCase::CHANNEL_UUID, 'name' => 'Test', 'type' => 'email'])->getAbsoluteUrl()
+            $endpoint,
+            'v1/channels',
+            ['id' => BaseApiV1TestCase::CHANNEL_UUID, 'name' => 'Test', 'type' => 'email']
         );
         $content = $response->getBody()->getContents();
 
@@ -54,14 +71,18 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testGetEverything(): void
+    public function testGetEverything(Connection $db, Url $endpoint): void
     {
         // At first, there are none
         $this->deleteDefaultEntities();
 
-        $response = $this->sendRequest('GET', 'channels');
+        $response = $this->sendRequest(
+            'GET',
+            $endpoint,
+            'v1/channels'
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
@@ -71,7 +92,11 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $this->createDefaultEntities();
 
         // There are two
-        $response = $this->sendRequest('GET', 'channels');
+        $response = $this->sendRequest(
+            'GET',
+            $endpoint,
+            'v1/channels'
+        );
         $content = $response->getBody()->getContents();
 
         $expected = $this->jsonEncodeResults([
@@ -93,11 +118,11 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testGetWithAlreadyExistingIdentifier(): void
+    public function testGetWithAlreadyExistingIdentifier(Connection $db, Url $endpoint): void
     {
-        $response = $this->sendRequest('GET', 'channels/' . BaseApiV1TestCase::CHANNEL_UUID);
+        $response = $this->sendRequest('GET', $endpoint, 'v1/channels/' . BaseApiV1TestCase::CHANNEL_UUID);
         $content = $response->getBody()->getContents();
 
         $expected = $this->jsonEncodeResult([
@@ -111,11 +136,11 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testGetWithNonMatchingFilter(): void
+    public function testGetWithNonMatchingFilter(Connection $db, Url $endpoint): void
     {
-        $response = $this->sendRequest('GET', 'channels?name=not_test');
+        $response = $this->sendRequest('GET', $endpoint, 'v1/channels', ['name' => 'not_test']);
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
@@ -123,11 +148,11 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testGetWithInvalidFilter(): void
+    public function testGetWithInvalidFilter(Connection $db, Url $endpoint): void
     {
-        $response = $this->sendRequest('GET', 'channels?nonexistingfilter=value');
+        $response = $this->sendRequest('GET', $endpoint, 'v1/channels', ['nonexistingfilter' => 'value']);
         $content = $response->getBody()->getContents();
 
         $expected = $this->jsonEncodeError(
@@ -138,11 +163,11 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testGetWithNewIdentifier(): void
+    public function testGetWithNewIdentifier(Connection $db, Url $endpoint): void
     {
-        $response = $this->sendRequest('GET', 'channels/' . BaseApiV1TestCase::UUID_INCOMPLETE . '01');
+        $response = $this->sendRequest('GET', $endpoint, 'v1/channels/' . BaseApiV1TestCase::CHANNEL_UUID_3);
         $content = $response->getBody()->getContents();
 
         $this->assertSame(404, $response->getStatusCode(), $content);
@@ -150,11 +175,11 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testGetWithInvalidIdentifier(): void
+    public function testGetWithInvalidIdentifier(Connection $db, Url $endpoint): void
     {
-        $response = $this->sendRequest('GET', 'channels/' . BaseApiV1TestCase::UUID_INCOMPLETE);
+        $response = $this->sendRequest('GET', $endpoint, 'v1/channels/' . BaseApiV1TestCase::UUID_INCOMPLETE);
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
@@ -162,16 +187,21 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testGetWithIdentifierAndFilter(): void
+    public function testGetWithIdentifierAndFilter(Connection $db, Url $endpoint): void
     {
         $expected = $this->jsonEncodeError(
             'Invalid request: GET with identifier and query parameters, it\'s not allowed to use both together.',
         );
 
         // Valid identifier and valid filter
-        $response = $this->sendRequest('GET', 'channels/' . BaseApiV1TestCase::CHANNEL_UUID . '?name=Test');
+        $response = $this->sendRequest(
+            'GET',
+            $endpoint,
+            'v1/channels/' . BaseApiV1TestCase::CHANNEL_UUID,
+            ['name' => 'Test']
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
@@ -180,7 +210,9 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         // Invalid identifier and invalid filter
         $response = $this->sendRequest(
             'GET',
-            'channels/' . BaseApiV1TestCase::CHANNEL_UUID . '?nonexistingfilter=value'
+            $endpoint,
+            'v1/channels/' . BaseApiV1TestCase::CHANNEL_UUID,
+            ['nonexistingfilter' => 'value']
         );
         $content = $response->getBody()->getContents();
 
@@ -189,13 +221,13 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
     }
 
     /**
-     * @dataProvider sharedDatabases
+     * @dataProvider apiTestBackends
      */
-    public function testRequestWithNonSupportedMethod(): void
+    public function testRequestWithNonSupportedMethod(Connection $db, Url $endpoint): void
     {
         $expectedAllowHeader = 'GET';
         // General invalid method
-        $response = $this->sendRequest('PATCH', 'channels');
+        $response = $this->sendRequest('PATCH', $endpoint, 'v1/channels');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(405, $response->getStatusCode(), $content);
@@ -206,7 +238,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         // Try to POST
         $expected = $this->jsonEncodeError('Method POST is not supported for endpoint channels');
         //Try to POST without identifier
-        $response = $this->sendRequest('POST', 'channels');
+        $response = $this->sendRequest('POST', $endpoint, 'v1/channels');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(405, $response->getStatusCode(), $content);
@@ -214,7 +246,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $this->assertSame($expected, $content);
 
         // Try to POST with identifier
-        $response = $this->sendRequest('POST', 'channels/' . BaseApiV1TestCase::CHANNEL_UUID);
+        $response = $this->sendRequest('POST', $endpoint, 'v1/channels/' . BaseApiV1TestCase::CHANNEL_UUID);
         $content = $response->getBody()->getContents();
 
         $this->assertSame(405, $response->getStatusCode(), $content);
@@ -222,7 +254,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $this->assertSame($expected, $content);
 
         // Try to POST with filter
-        $response = $this->sendRequest('POST', 'channels?name=Test');
+        $response = $this->sendRequest('POST', $endpoint, 'v1/channels', ['name' => 'Test']);
         $content = $response->getBody()->getContents();
 
         $this->assertSame(405, $response->getStatusCode(), $content);
@@ -230,7 +262,12 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $this->assertSame($expected, $content);
 
         // Try to POST with identifier and filter
-        $response = $this->sendRequest('POST', 'channels/' . BaseApiV1TestCase::CHANNEL_UUID . '?name=Test');
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/channels/' . BaseApiV1TestCase::CHANNEL_UUID,
+            ['name' => 'Test']
+        );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(405, $response->getStatusCode(), $content);
@@ -238,7 +275,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $this->assertSame($expected, $content);
 
         // Try to PUT
-        $response = $this->sendRequest('PUT', 'channels');
+        $response = $this->sendRequest('PUT', $endpoint, 'v1/channels');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(405, $response->getStatusCode(), $content);
@@ -246,7 +283,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $this->assertSame($this->jsonEncodeError('Method PUT is not supported for endpoint channels'), $content);
 
         // Try to DELETE
-        $response = $this->sendRequest('DELETE', 'channels');
+        $response = $this->sendRequest('DELETE', $endpoint, 'v1/channels');
         $content = $response->getBody()->getContents();
 
         $this->assertSame(405, $response->getStatusCode(), $content);

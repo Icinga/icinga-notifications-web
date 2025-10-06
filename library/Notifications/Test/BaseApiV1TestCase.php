@@ -6,7 +6,9 @@ use DateTime;
 use GuzzleHttp\Client;
 use Icinga\Module\Notifications\Api\V1\Channels;
 use Icinga\Util\Json;
+use Icinga\Web\Url;
 use ipl\Sql\Connection;
+use ipl\Sql\Select;
 use Psr\Http\Message\ResponseInterface;
 use PHPUnit\Framework\TestCase;
 
@@ -16,6 +18,7 @@ class BaseApiV1TestCase extends TestCase
 
     protected const CHANNEL_UUID = '0817d973-398e-41d7-9cd2-61cdb7ef41a1';
     protected const CHANNEL_UUID_2 = '0817d973-398e-41d7-9cd2-61cdb7ef41a2';
+    protected const CHANNEL_UUID_3 = '0817d973-398e-41d7-9cd2-61cdb7ef41a3';
     protected const CONTACT_UUID = '1817d973-398e-41d7-9cd2-61cdb7ef41a1';
     protected const CONTACT_UUID_2 = '1817d973-398e-41d7-9cd2-61cdb7ef41a2';
     protected const CONTACT_UUID_3 = '1817d973-398e-41d7-9cd2-61cdb7ef41a3';
@@ -77,12 +80,19 @@ class BaseApiV1TestCase extends TestCase
 
     protected static function deleteChannels(Connection $db): void
     {
-        $db->delete('channel', 'external_uuid in ("' . self::CHANNEL_UUID . '", "' . self::CHANNEL_UUID_2 . '")');
+        $db->delete('channel', "external_uuid in ('" . self::CHANNEL_UUID . "', '" . self::CHANNEL_UUID_2 . "')");
     }
 
     protected static function createContacts(Connection $db): void
     {
-        $channelId = Channels::getChannelId(self::CHANNEL_UUID);
+        $channelId = $db->select(
+            (new Select())
+                ->from('channel')
+                ->columns(['id'])
+                ->where('external_uuid = ?', self::CHANNEL_UUID)
+                ->limit(1)
+        )->fetchColumn();
+
         $db->insert('contact', [
             'full_name' => 'Test',
             'username' => 'test',
@@ -101,7 +111,7 @@ class BaseApiV1TestCase extends TestCase
 
     protected static function deleteContacts(Connection $db): void
     {
-        $db->delete('contact', 'external_uuid in ("' . self::CONTACT_UUID . '", "' . self::CONTACT_UUID_2 . '")');
+        $db->delete('contact', "external_uuid in ('" . self::CONTACT_UUID . "', '" . self::CONTACT_UUID_2 . "')");
     }
 
     protected static function createContactGroups(Connection $db): void
@@ -120,18 +130,22 @@ class BaseApiV1TestCase extends TestCase
 
     protected static function deleteContactGroups(Connection $db): void
     {
-        $db->delete('contactgroup', 'external_uuid in ("' . self::GROUP_UUID . '", "' . self::GROUP_UUID_2 . '")');
+        $db->delete('contactgroup', "external_uuid in ('" . self::GROUP_UUID . "', '" . self::GROUP_UUID_2 . "')");
     }
 
     protected function sendRequest(
         string $method,
-        string $endpoint,
+        Url $endpoint,
+        string $path,
+        array $params = [],
         ?array $json = null,
         ?string $body = null,
         ?array $headers = null,
         ?array $options = null,
     ): ResponseInterface {
         $client = new Client();
+
+        $url = $endpoint->setPath($path)->setParams($params)->getAbsoluteUrl();
 
         $options = $options ?? [
             'http_errors' => false
@@ -148,7 +162,7 @@ class BaseApiV1TestCase extends TestCase
             $options['body'] = $body;
         }
 
-        return $client->request($method, $endpoint, $options);
+        return $client->request($method, $url, $options);
     }
 
     public function jsonEncodeError(string $message): string
