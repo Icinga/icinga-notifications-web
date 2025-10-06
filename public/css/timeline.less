@@ -44,19 +44,66 @@
       }
     }
 
-    .overlay .entry {
-      margin-top: 1em;
-      margin-bottom: 1em;
-      z-index: 2; // overlap the .clock .time-hand
+    .overlay {
+      .entry {
+        margin-top: 1em;
+        margin-bottom: 1em;
+        z-index: 2; // overlap the .clock .time-hand
 
-      .title {
-        height: 100%;
-        flex-wrap: nowrap;
-        align-items: baseline;
-        padding: .15em .5em;
+        .title {
+          height: 100%;
+          flex-wrap: nowrap;
+          align-items: baseline;
+          padding: .15em .5em;
 
-        .name {
-          .text-ellipsis();
+          .name {
+            .text-ellipsis();
+          }
+        }
+      }
+
+      .future-entry {
+        display: flex;
+        justify-content: end;
+        z-index: 2; // overlap the .clock .time-hand
+        pointer-events: all;
+
+        > div {
+          margin-top: 1em;
+          margin-bottom: 1em;
+          display: flex;
+          align-items: center;
+          justify-content: end;
+          position: relative;
+          width: 3em;
+
+          .outline {
+            content: '';
+            display: block;
+            position: absolute;
+            border: 1px solid @gray-light;
+            border-right-width: 0;
+            top: -1px;
+            bottom: -1px;
+            width: 100%;
+            .rounded-corners(0.25em 0 0 0.25em);
+          }
+
+          .icon {
+            color: @gray;
+          }
+
+          .outline:nth-of-type(1) {
+            left: -1px; // Dock at the grid border
+          }
+
+          .outline:nth-of-type(2) {
+            left: 3px; // 4px gap
+          }
+
+          .outline:nth-of-type(3) {
+            left: 7px; // Same gap
+          }
         }
       }
     }
