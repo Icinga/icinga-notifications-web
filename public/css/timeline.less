@@ -3,7 +3,7 @@
 .timeline {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-x: hidden;
 
   .time-grid {
     --sidebarWidth: 12em;
@@ -13,13 +13,13 @@
     position: relative;
 
     &:has(.timescale) {
-        margin-right: 1em; // make midnight timestamp visible
+      margin-right: 1em; // make midnight timestamp visible
     }
 
     .time-grid-header {
       box-sizing: border-box;
       position: sticky;
-      z-index: 2; // overlap the .clock .time-hand
+      z-index: 3; // overlap everything
       top: 0;
       height: var(--daysHeaderHeight);
     }
