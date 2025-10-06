@@ -746,8 +746,10 @@ YAML;
     /**
      * @dataProvider apiTestBackends
      */
-    public function testPutToUpdateWithAlreadyExistingIdentifierAndMissingRequiredFields(Connection $db, Url $endpoint): void
-    {
+    public function testPutToUpdateWithAlreadyExistingIdentifierAndMissingRequiredFields(
+        Connection $db,
+        Url $endpoint
+    ): void {
         // TODO: same results if identifier exists
         $expected = $this->jsonEncodeError(
             'Invalid request body: the fields id, full_name and default_channel must be present and of type string'
