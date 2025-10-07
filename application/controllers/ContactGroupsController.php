@@ -7,6 +7,8 @@ namespace Icinga\Module\Notifications\Controllers;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\ContactGroupForm;
+use Icinga\Module\Notifications\Model\Channel;
+use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Contactgroup;
 use Icinga\Module\Notifications\View\ContactgroupRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
@@ -14,7 +16,8 @@ use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Module\Notifications\Widget\MemberSuggestions;
 use Icinga\Web\Notification;
 use ipl\Html\Form;
-use ipl\Html\Text;
+use ipl\Html\HtmlString;
+use ipl\Html\TemplateString;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
@@ -22,6 +25,7 @@ use ipl\Web\Control\LimitControl;
 use ipl\Web\Control\SortControl;
 use ipl\Web\Filter\QueryString;
 use ipl\Web\Layout\MinimalItemLayout;
+use ipl\Web\Widget\ActionLink;
 use ipl\Web\Widget\ButtonLink;
 use ipl\Web\Widget\Tabs;
 
@@ -46,8 +50,8 @@ class ContactGroupsController extends CompatController
         $sortControl = $this->createSortControl(
             $groups,
             [
-                'name'          => t('Group Name'),
-                'changed_at'    => t('Changed At')
+                'name'          => $this->translate('Group Name'),
+                'changed_at'    => $this->translate('Changed At')
             ]
         );
 
@@ -78,25 +82,54 @@ class ContactGroupsController extends CompatController
         $this->addControl($sortControl);
         $this->addControl($limitControl);
         $this->addControl($searchBar);
-        $this->addContent(
-            (new ButtonLink(
-                Text::create(t('Add Contact Group')),
-                Links::contactGroupsAdd()->with(['showCompact' => true, '_disableLayout' => 1]),
-                'plus',
-                ['class' => 'add-new-component']
-            ))->openInModal()
+
+        $addButton = new ButtonLink(
+            $this->translate('Add Contact Group'),
+            Links::contactGroupsAdd()->with(['showCompact' => true, '_disableLayout' => 1]),
+            'plus',
+            ['class' => 'add-new-component']
         );
+
+        $emptyStateMessage = null;
+        if (Contact::on(Database::get())->columns('1')->limit(1)->first() === null) {
+            if (Channel::on(Database::get())->columns('1')->limit(1)->first() === null) {
+                $addButton->disable($this->translate('A channel is required to add a contact group'));
+
+                $emptyStateMessage = TemplateString::create(
+                    // translators: %1$s will be replaced by a line break
+                    'No contact groups found.%1$sTo add new contact group, please {{#link}}configure a Channel{{/link}}'
+                    . ' first.%1$sOnce done, you should proceed by creating your first contact.',
+                    ['link' => (new ActionLink(null, Links::channelAdd()))->setBaseTarget('_next')],
+                    [HtmlString::create('<br>')]
+                );
+            } else {
+                $emptyStateMessage = TemplateString::create(
+                    $this->translate(
+                        'No contact groups found. Do not forget to also'
+                        . ' {{#link}}create your first contact!{{/link}}'
+                    ),
+                    ['link' => (new ActionLink(null, Links::contactAdd()))->setBaseTarget('_next')]
+                );
+
+                $addButton->openInModal();
+            }
+        } else {
+            $addButton->openInModal();
+        }
+
+        $this->addContent($addButton);
 
         $this->addContent(
             (new ObjectList($groups, new ContactgroupRenderer()))
                 ->setItemLayoutClass(MinimalItemLayout::class)
+                ->setEmptyStateMessage($emptyStateMessage)
         );
 
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {
             $this->sendMultipartUpdate();
         }
 
-        $this->setTitle(t('Contact Groups'));
+        $this->setTitle($this->translate('Contact Groups'));
         $this->getTabs()->activate('contact-groups');
     }
 
@@ -118,7 +151,7 @@ class ContactGroupsController extends CompatController
             ->on(Form::ON_SUCCESS, function (ContactGroupForm $form) {
                 $groupIdentifier = $form->addGroup();
 
-                Notification::success(t('New contact group has been successfully added'));
+                Notification::success($this->translate('New contact group has been successfully added'));
                 $this->sendExtraUpdates(['#col1']);
                 $this->getResponse()->setHeader('X-Icinga-Container', 'col2');
                 $this->redirectNow(Links::contactGroup($groupIdentifier));
@@ -126,7 +159,7 @@ class ContactGroupsController extends CompatController
             ->handleRequest($this->getServerRequest());
 
         $this->addContent($form);
-        $this->setTitle(t('Add Contact Group'));
+        $this->setTitle($this->translate('Add Contact Group'));
     }
 
     public function completeAction(): void
@@ -163,19 +196,19 @@ class ContactGroupsController extends CompatController
     {
         return parent::getTabs()
             ->add('schedules', [
-                'label'      => t('Schedules'),
+                'label'      => $this->translate('Schedules'),
                 'url'        => Links::schedules(),
                 'baseTarget' => '_main'
             ])->add('event-rules', [
-                'label'      => t('Event Rules'),
+                'label'      => $this->translate('Event Rules'),
                 'url'        => Links::eventRules(),
                 'baseTarget' => '_main'
             ])->add('contacts', [
-                'label'      => t('Contacts'),
+                'label'      => $this->translate('Contacts'),
                 'url'        => Links::contacts(),
                 'baseTarget' => '_main'
             ])->add('contact-groups', [
-                'label'      => t('Contact Groups'),
+                'label'      => $this->translate('Contact Groups'),
                 'url'        => Links::contactGroups(),
                 'baseTarget' => '_main'
             ]);

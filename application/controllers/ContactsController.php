@@ -130,7 +130,7 @@ class ContactsController extends CompatController
             ->on(Form::ON_SUBMIT, function (ContactForm $form) {
                 $form->addContact();
                 Notification::success($this->translate('New contact has successfully been added'));
-                $this->redirectNow(Links::contacts());
+                $this->switchToSingleColumnLayout();
             })->handleRequest($this->getServerRequest());
 
         $this->addContent($form);
