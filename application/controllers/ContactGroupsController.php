@@ -50,8 +50,8 @@ class ContactGroupsController extends CompatController
         $sortControl = $this->createSortControl(
             $groups,
             [
-                'name'          => t('Group Name'),
-                'changed_at'    => t('Changed At')
+                'name'          => $this->translate('Group Name'),
+                'changed_at'    => $this->translate('Changed At')
             ]
         );
 
@@ -129,7 +129,7 @@ class ContactGroupsController extends CompatController
             $this->sendMultipartUpdate();
         }
 
-        $this->setTitle(t('Contact Groups'));
+        $this->setTitle($this->translate('Contact Groups'));
         $this->getTabs()->activate('contact-groups');
     }
 
@@ -151,7 +151,7 @@ class ContactGroupsController extends CompatController
             ->on(Form::ON_SUCCESS, function (ContactGroupForm $form) {
                 $groupIdentifier = $form->addGroup();
 
-                Notification::success(t('New contact group has been successfully added'));
+                Notification::success($this->translate('New contact group has been successfully added'));
                 $this->sendExtraUpdates(['#col1']);
                 $this->getResponse()->setHeader('X-Icinga-Container', 'col2');
                 $this->redirectNow(Links::contactGroup($groupIdentifier));
@@ -159,7 +159,7 @@ class ContactGroupsController extends CompatController
             ->handleRequest($this->getServerRequest());
 
         $this->addContent($form);
-        $this->setTitle(t('Add Contact Group'));
+        $this->setTitle($this->translate('Add Contact Group'));
     }
 
     public function completeAction(): void
@@ -196,19 +196,19 @@ class ContactGroupsController extends CompatController
     {
         return parent::getTabs()
             ->add('schedules', [
-                'label'      => t('Schedules'),
+                'label'      => $this->translate('Schedules'),
                 'url'        => Links::schedules(),
                 'baseTarget' => '_main'
             ])->add('event-rules', [
-                'label'      => t('Event Rules'),
+                'label'      => $this->translate('Event Rules'),
                 'url'        => Links::eventRules(),
                 'baseTarget' => '_main'
             ])->add('contacts', [
-                'label'      => t('Contacts'),
+                'label'      => $this->translate('Contacts'),
                 'url'        => Links::contacts(),
                 'baseTarget' => '_main'
             ])->add('contact-groups', [
-                'label'      => t('Contact Groups'),
+                'label'      => $this->translate('Contact Groups'),
                 'url'        => Links::contactGroups(),
                 'baseTarget' => '_main'
             ]);
