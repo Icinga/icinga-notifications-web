@@ -13,6 +13,7 @@ use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Web\Form\ContactForm;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Web\Notification;
+use ipl\Html\Contract\Form;
 use ipl\Html\TemplateString;
 use ipl\Sql\Connection;
 use ipl\Sql\Expression;
@@ -52,8 +53,8 @@ class ContactsController extends CompatController
         $sortControl = $this->createSortControl(
             $contacts,
             [
-                'full_name'     => t('Full Name'),
-                'changed_at'    => t('Changed At')
+                'full_name'     => $this->translate('Full Name'),
+                'changed_at'    => $this->translate('Changed At')
             ]
         );
 
@@ -85,7 +86,7 @@ class ContactsController extends CompatController
         $this->addControl($searchBar);
 
         $addButton = (new ButtonLink(
-            t('Add Contact'),
+            $this->translate('Add Contact'),
             Links::contactAdd(),
             'plus',
             ['class' => 'add-new-component']
@@ -123,12 +124,12 @@ class ContactsController extends CompatController
 
     public function addAction(): void
     {
-        $this->addTitleTab(t('Add Contact'));
+        $this->addTitleTab($this->translate('Add Contact'));
 
         $form = (new ContactForm($this->db))
-            ->on(ContactForm::ON_SUCCESS, function (ContactForm $form) {
+            ->on(Form::ON_SUBMIT, function (ContactForm $form) {
                 $form->addContact();
-                Notification::success(t('New contact has successfully been added'));
+                Notification::success($this->translate('New contact has successfully been added'));
                 $this->redirectNow(Links::contacts());
             })->handleRequest($this->getServerRequest());
 
