@@ -11,7 +11,6 @@ use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
-use ipl\Sql\Connection;
 use ipl\Web\Widget\Icon;
 
 /**
@@ -106,25 +105,5 @@ class Channel extends Model
         }
 
         return $icon;
-    }
-
-    /**
-     * Fetch and map all the configured channel names to a key => value array
-     *
-     * @param Connection $conn
-     *
-     * @return string[] All the channel names mapped as id => name
-     */
-    public static function fetchChannelNames(Connection $conn): array
-    {
-        $channels = [];
-        $query = Channel::on($conn);
-        /** @var Channel $channel */
-        foreach ($query as $channel) {
-            $name = $channel->name;
-            $channels[$channel->id] = $name;
-        }
-
-        return $channels;
     }
 }
