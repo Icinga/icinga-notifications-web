@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Controllers;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\ContactGroupForm;
+use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Contactgroup;
 use Icinga\Module\Notifications\View\ContactgroupRenderer;
@@ -15,6 +16,7 @@ use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Module\Notifications\Widget\MemberSuggestions;
 use Icinga\Web\Notification;
 use ipl\Html\Form;
+use ipl\Html\HtmlString;
 use ipl\Html\TemplateString;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
@@ -90,15 +92,27 @@ class ContactGroupsController extends CompatController
 
         $emptyStateMessage = null;
         if (Contact::on(Database::get())->columns('1')->limit(1)->first() === null) {
-            $addButton->disable($this->translate('A contact is required to add a contact group'));
+            if (Channel::on(Database::get())->columns('1')->limit(1)->first() === null) {
+                $addButton->disable($this->translate('A channel is required to add a contact group'));
 
-            $emptyStateMessage = TemplateString::create(
-                $this->translate(
-                    'No contact groups found. To add a new contact group,'
-                    . ' please {{#link}}add a contact{{/link}} first.'
-                ),
-                ['link' => (new ActionLink(null, Links::contactAdd()))->setBaseTarget('_next')]
-            );
+                $emptyStateMessage = TemplateString::create(
+                    // translators: %1$s will be replaced by a line break
+                    'No contact groups found.%1$sTo add new contact group, please {{#link}}configure a Channel{{/link}}'
+                    . ' first.%1$sOnce done, you should proceed by creating your first contact.',
+                    ['link' => (new ActionLink(null, Links::channelAdd()))->setBaseTarget('_next')],
+                    [HtmlString::create('<br>')]
+                );
+            } else {
+                $emptyStateMessage = TemplateString::create(
+                    $this->translate(
+                        'No contact groups found. Do not forget to also'
+                        . ' {{#link}}create your first contact!{{/link}}'
+                    ),
+                    ['link' => (new ActionLink(null, Links::contactAdd()))->setBaseTarget('_next')]
+                );
+
+                $addButton->openInModal();
+            }
         } else {
             $addButton->openInModal();
         }
