@@ -14,6 +14,7 @@ use Icinga\Module\Notifications\Widget\TimeGrid\GridStep;
 use Icinga\Module\Notifications\Widget\TimeGrid\Timescale;
 use Icinga\Module\Notifications\Widget\TimeGrid\Util;
 use Icinga\Module\Notifications\Widget\Timeline\Entry;
+use Icinga\Module\Notifications\Widget\Timeline\FakeEntry;
 use Icinga\Module\Notifications\Widget\Timeline\FutureEntry;
 use Icinga\Module\Notifications\Widget\Timeline\MinimalGrid;
 use Icinga\Module\Notifications\Widget\Timeline\Rotation;
@@ -21,6 +22,7 @@ use IntlDateFormatter;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\HtmlElement;
+use ipl\Html\TemplateString;
 use ipl\Html\Text;
 use ipl\I18n\Translation;
 use ipl\Web\Style;
@@ -41,6 +43,9 @@ class Timeline extends BaseHtmlElement implements EntryProvider
 
     /** @var array<int, Rotation> */
     protected $rotations = [];
+
+    /** @var int */
+    protected int $scheduleId;
 
     /** @var DateTime */
     protected $start;
@@ -88,11 +93,13 @@ class Timeline extends BaseHtmlElement implements EntryProvider
     /**
      * Create a new Timeline
      *
+     * @param int $scheduleId The schedule ID
      * @param DateTime $start The day the grid should start on
      * @param int $days Number of days to show on the grid
      */
-    public function __construct(DateTime $start, int $days)
+    public function __construct(int $scheduleId, DateTime $start, int $days)
     {
+        $this->scheduleId = $scheduleId;
         $this->start = $start;
         $this->days = $days;
     }
@@ -192,6 +199,14 @@ class Timeline extends BaseHtmlElement implements EntryProvider
                     ->setEnd($this->getGrid()->getGridEnd())
                     ->setPosition($maxPriority - $rotation->getPriority());
             }
+        }
+
+        if (! $this->minimalLayout) {
+            // Always yield a fake entry to reserve the position for the add-rotation button
+            yield (new FakeEntry())
+                ->setPosition($resultPosition++)
+                ->setStart($this->getGrid()->getGridStart())
+                ->setEnd($this->getGrid()->getGridEnd());
         }
 
         $entryToCellsMap = new SplObjectStorage();
@@ -313,22 +328,18 @@ class Timeline extends BaseHtmlElement implements EntryProvider
 
     protected function assemble()
     {
-        if (empty($this->rotations)) {
-            $emptyNotice = new HtmlElement(
+        if ($this->minimalLayout && empty($this->rotations)) {
+            $this->addHtml(new HtmlElement(
                 'div',
                 Attributes::create(['class' => 'empty-notice']),
                 Text::create($this->translate('No rotations configured'))
-            );
-
-            if ($this->minimalLayout) {
-                $this->getAttributes()->add(['class' => 'minimal-layout']);
-                $this->addHtml($emptyNotice);
-            } else {
-                $this->getGrid()->addToSideBar($emptyNotice);
-            }
+            ));
         }
 
         if (! $this->minimalLayout) {
+            // We yield a fake overlay entry, so we also have to fake a sidebar entry
+            $this->getGrid()->addToSideBar(new HtmlElement('div'));
+
             $this->getGrid()->addToSideBar(
                 new HtmlElement(
                     'div',
@@ -369,7 +380,35 @@ class Timeline extends BaseHtmlElement implements EntryProvider
                 new HtmlElement('div', new Attributes(['class' => 'current-day']), $currentTime)
             );
 
+            if (empty($this->rotations)) {
+                $newRotationMsg = $this->translate(
+                    'No rotations configured, yet. {{#button}}Add your first Rotation{{/button}}'
+                );
+            } else {
+                $newRotationMsg = $this->translate(
+                    '{{#button}}Add another Rotation{{/button}} to override rotations above'
+                );
+            }
+
             $this->getGrid()
+                ->addHtml(new HtmlElement(
+                    'div',
+                    new Attributes(['class' => 'new-rotation-container']),
+                    new HtmlElement(
+                        'div',
+                        Attributes::create(['class' => 'new-rotation-content']),
+                        TemplateString::create(
+                            $newRotationMsg,
+                            [
+                                'button' => (new Link(
+                                    new Icon('circle-plus'),
+                                    Links::rotationAdd($this->scheduleId),
+                                    ['class' => empty($this->rotations) ? 'btn-primary' : null]
+                                ))->openInModal()
+                            ]
+                        )
+                    )
+                ))
                 ->addHtml(new Timescale($this->days, $this->getStyle()))
                 ->addHtml($clock);
         }

@@ -8,10 +8,6 @@
   h2 {
     display: inline;
   }
-
-  > a:last-of-type {
-    float: right;
-  }
 }
 
 .schedule-detail {
@@ -31,6 +27,21 @@
         min-width: 6em;
         text-align: center;
       }
+    }
+  }
+
+  .from-scratch-hint {
+    display: flex;
+    align-items: center;
+    font-size: 14/12em;
+
+    i.icon {
+      float: left;
+      font-size: 1.5em;
+    }
+
+    div {
+      margin: 0 auto;
     }
   }
 }
@@ -66,4 +77,11 @@
 .schedule-detail .step.highlighted {
   background-color: @gray-lighter;
   border-color: @gray-light;
+}
+
+.schedule-detail .from-scratch-hint {
+  .rounded-corners();
+  border: 1px solid @gray-light;
+  padding: .5em;
+  color: @text-color-light;
 }
