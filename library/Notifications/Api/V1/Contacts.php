@@ -851,6 +851,10 @@ class Contacts extends ApiV1
         //TODO: "remove rotations|escalations with no members" taken from form. Is it properly?
 
         $markAsDeleted = ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'];
+        $markEntityAsDeleted = array_merge(
+            $markAsDeleted,
+            ['external_uuid' => substr_replace(Uuid::uuid4()->toString(), '0', 14, 1)]
+        );
         $updateCondition = ['contact_id = ?' => $id, 'deleted = ?' => 'n'];
 
         $rotationAndMemberIds = Database::get()->fetchPairs(
@@ -932,7 +936,7 @@ class Contacts extends ApiV1
         Database::get()->update('contactgroup_member', $markAsDeleted, $updateCondition);
         Database::get()->update('contact_address', $markAsDeleted, $updateCondition);
 
-        Database::get()->update('contact', $markAsDeleted + ['username' => null], ['id = ?' => $id]);
+        Database::get()->update('contact', $markEntityAsDeleted + ['username' => null], ['id = ?' => $id]);
     }
 
     /**

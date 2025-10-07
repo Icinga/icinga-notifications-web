@@ -338,6 +338,10 @@ class ContactGroups extends ApiV1
     private function removeContactgroup(int $id): void
     {
         $markAsDeleted = ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'];
+        $markEntityAsDeleted = array_merge(
+            $markAsDeleted,
+            ['external_uuid' => substr_replace(Uuid::uuid4()->toString(), '0', 14, 1)]
+        );
         $updateCondition = ['contactgroup_id = ?' => $id, 'deleted = ?' => 'n'];
 
         $rotationAndMemberIds = Database::get()->fetchPairs(
@@ -422,7 +426,7 @@ class ContactGroups extends ApiV1
 
         Database::get()->update(
             'contactgroup',
-            $markAsDeleted,
+            $markEntityAsDeleted,
             ['id = ?' => $id, 'deleted = ?' => 'n']
         );
     }
