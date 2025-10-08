@@ -111,8 +111,8 @@ jobs:
 
       - name: Initialize Icinga Web
         run: |
-          mysql --host="mysql" --user="icinga_unittest" --password="icinga_unittest" -c "CREATE DATABASE icingaweb;"
-          psql --host="pgsql" --username "icinga_unittest" -c "CREATE DATABASE icingaweb;"
+          mysql -P 3306 --user="icinga_unittest" --password="icinga_unittest" -c "CREATE DATABASE icingaweb;"
+          psql -p 5432 --username "icinga_unittest" -c "CREATE DATABASE icingaweb;"
 
       - name: PHPUnit
         env:
