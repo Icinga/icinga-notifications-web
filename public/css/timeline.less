@@ -245,13 +245,16 @@
     font-size: 1.25em;
     font-weight: bold;
 
-    [data-drag-initiator] {
+    > .icon[data-drag-initiator] {
       color: @gray-light;
 
       &:hover {
         cursor: grab;
         color: @list-item-title-hover-color;
       }
+    }
+    > .icon:not([data-drag-initiator]) {
+      display: none;
     }
 
     // :not(:empty) is only necessary to increase specificity

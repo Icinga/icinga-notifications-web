@@ -62,6 +62,9 @@ class Timeline extends BaseHtmlElement implements EntryProvider
     /** @var bool Whether to create the Timeline only with the Result using MinimalGrid */
     protected $minimalLayout = false;
 
+    /** @var int */
+    protected int $noOfRotations = 0;
+
     /**
      * Set the style object to register inline styles in
      *
@@ -289,6 +292,7 @@ class Timeline extends BaseHtmlElement implements EntryProvider
                     if (! isset($occupiedPriorities[$rotation->getPriority()])) {
                         $occupiedPriorities[$rotation->getPriority()] = true;
                         $this->grid->addToSideBar($this->assembleSidebarEntry($rotation));
+                        $this->noOfRotations++;
                     }
                 }
             }
@@ -308,15 +312,16 @@ class Timeline extends BaseHtmlElement implements EntryProvider
             'priority' => $rotation->getPriority()
         ]);
 
+        $dragInitiator = new Icon('bars', [
+            'title' => $this->translate('Drag to change the priority of the rotation')
+        ]);
+        $dragInitiator
+            ->getAttributes()
+            ->registerAttributeCallback('data-drag-initiator', fn () => $this->noOfRotations > 1);
+
         $entry->addHtml(
             $form,
-            new Icon(
-                'bars',
-                [
-                    'data-drag-initiator' => true,
-                    'title' => $this->translate('Drag to change the priority of the rotation')
-                ]
-            ),
+            $dragInitiator,
             (new Link(
                 [new HtmlElement('span', null, Text::create($rotation->getName())), new Icon('cog')],
                 Links::rotationSettings($rotation->getId(), $rotation->getScheduleId())
