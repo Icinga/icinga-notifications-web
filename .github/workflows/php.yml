@@ -109,7 +109,8 @@ jobs:
         run: |
           mysql --host="127.0.0.1" --port="${{ job.services.mysql.ports['3306'] }}" --user="root" --password="root" \
             -e "CREATE DATABASE icingaweb; CREATE USER icingaweb@'%' IDENTIFIED BY 'icingaweb'; GRANT ALL ON icingaweb.* TO icingaweb@'%';"
-          PGPASSWORD=icinga_unittest psql --host="127.0.0.1" --port="${{ job.services.pgsql.ports['5432'] }}" --username "icinga_unittest" -c "CREATE DATABASE icingaweb;"
+          PGPASSWORD=icinga_unittest psql --host="127.0.0.1" --port="${{ job.services.pgsql.ports['5432'] }}" \
+            --username "icinga_unittest" -c "CREATE DATABASE icingaweb;"
 
       - name: PHPUnit
         env:
@@ -122,8 +123,8 @@ jobs:
           MYSQL_TESTDB_USER: icinga_unittest
           MYSQL_TESTDB_PASSWORD: icinga_unittest
           MYSQL_ICINGAWEBDB: icingaweb
-          MYSQL_ICINGAWEBDB_PASSWORD: icinga_unittest
-          MYSQL_ICINGAWEBDB_USER: icinga_unittest
+          MYSQL_ICINGAWEBDB_PASSWORD: icingaweb
+          MYSQL_ICINGAWEBDB_USER: icingaweb
           PGSQL_TESTDB: icinga_unittest
           PGSQL_TESTDB_HOST: 127.0.0.1
           PGSQL_TESTDB_PORT: ${{ job.services.pgsql.ports['5432'] }}
