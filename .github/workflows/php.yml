@@ -111,8 +111,8 @@ jobs:
 
       - name: Initialize Icinga Web
         run: |
-          mysql --host="127.0.0.1" --port="3306" --user="icinga_unittest" --password="icinga_unittest" -c "CREATE DATABASE icingaweb;"
-          psql --host="127.0.0.1" --port="5432" --username "icinga_unittest" -c "CREATE DATABASE icingaweb;"
+          mariadb --host="127.0.0.1" --port="${{ job.services.mysql.ports['3306'] }}" --user="icinga_unittest" --password="icinga_unittest" -c "CREATE DATABASE icingaweb;"
+          psql --host="127.0.0.1" --port="${{ job.services.pgsql.ports['5432'] }}" --username "icinga_unittest" -c "CREATE DATABASE icingaweb;"
 
       - name: PHPUnit
         env:
