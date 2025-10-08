@@ -111,11 +111,8 @@ jobs:
 
       - name: Initialize Icinga Web
         run: |
-          apt update && apt install -y psql mysql-client
-          mysql --user="icinga_unittest" --password="icinga_unittest" -c "CREATE DATABASE icingaweb;"
-          mysql --user="icinga_unittest" --password="icinga_unittest" icingaweb < "_icingaweb2/schema/mysql.schema.sql"
-          psql --username "icinga_unittest" -c "CREATE DATABASE icingaweb;"
-          psql -v ON_ERROR_STOP=1 --username "icinga_unittest" --dbname "icingaweb" < "_icingaweb2/schema/pgsql.schema.sql"
+          mysql --host="mysql" --user="icinga_unittest" --password="icinga_unittest" -c "CREATE DATABASE icingaweb;"
+          psql --host="pgsql" --username "icinga_unittest" -c "CREATE DATABASE icingaweb;"
 
       - name: PHPUnit
         env:
