@@ -118,10 +118,17 @@ SQL;
             self::initializeIcingaWeb($name, $configDir);
 
             if (self::fork()) {
+                $env = ['ICINGAWEB_CONFIGDIR' => $configDir];
+
+                $libDir = getenv('ICINGAWEB_LIBDIR');
+                if ($libDir !== false) {
+                    $env['ICINGAWEB_LIBDIR'] = $libDir;
+                }
+
                 pcntl_exec(
                     readlink('/proc/self/exe'),
                     ['-q', '-S', $socket, '-t', "$webPath/public", "$webPath/public/index.php"],
-                    ['ICINGAWEB_CONFIGDIR' => $configDir]
+                    $env
                 );
             } else {
                 self::$backends[$name] = [
