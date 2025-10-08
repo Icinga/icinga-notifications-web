@@ -121,7 +121,10 @@ SQL;
                 pcntl_exec(
                     readlink('/proc/self/exe'),
                     ['-q', '-S', $socket, '-t', "$webPath/public", "$webPath/public/index.php"],
-                    ['ICINGAWEB_CONFIGDIR' => $configDir]
+                    [
+                        'ICINGAWEB_CONFIGDIR' => $configDir,
+                        'ICINGAWEB_LIBDIR' => self::getEnvironmentVariable('ICINGAWEB_LIBDIR')
+                    ]
                 );
             } else {
                 self::$backends[$name] = [
