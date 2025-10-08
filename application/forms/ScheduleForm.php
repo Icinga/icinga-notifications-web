@@ -10,7 +10,10 @@ use Icinga\Module\Notifications\Model\Rotation;
 use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use Icinga\Module\Notifications\Model\Schedule;
 use Icinga\Web\Session;
+use ipl\Html\Attributes;
 use ipl\Html\HtmlDocument;
+use ipl\Html\HtmlElement;
+use ipl\Html\Text;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
 use ipl\Web\Common\CsrfCounterMeasure;
@@ -154,9 +157,22 @@ class ScheduleForm extends CompatForm
 
     protected function assemble()
     {
+        if (! $this->showRemoveButton) {
+            $this->addHtml(new HtmlElement(
+                'p',
+                new Attributes(['class' => 'description']),
+                new Text($this->translate(
+                    'Organize contacts and contact groups in time-based schedules and let them rotate'
+                    . ' automatically. You can define multiple rotations with different patterns to set'
+                    . ' priorities. Schedules can also be used as recipients for event rules.'
+                ))
+            ));
+        }
+
         $this->addElement('text', 'name', [
-            'required' => true,
-            'label' => $this->translate('Name')
+            'required'      => true,
+            'label'         => $this->translate('Schedule Name'),
+            'placeholder'   => $this->translate('e.g. working hours, on call, etc ...')
         ]);
 
         $this->addElement('submit', 'submit', [
