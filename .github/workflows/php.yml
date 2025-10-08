@@ -103,7 +103,7 @@ jobs:
         run: |
           mkdir _libraries
           git clone --depth 1 -b snapshot/nightly https://github.com/Icinga/icinga-php-library.git _libraries/ipl
-          git clone --depth 1 -b snapshot/nightly https://github.com/Icinga/icinga-php-thirdparty.git _libraries/vendor
+          git clone --depth 1 -b stable/notifications-api https://github.com/Icinga/icinga-php-thirdparty.git _libraries/vendor
 
       - name: Initialize Icinga Web
         run: |
