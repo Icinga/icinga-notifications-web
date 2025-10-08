@@ -62,6 +62,8 @@ jobs:
           MYSQL_DATABASE: icinga_unittest
           MYSQL_USER: icinga_unittest
           MYSQL_PASSWORD: icinga_unittest
+        volumes:
+          - test/services/mysql:/docker-entrypoint-initdb.d
         options: >-
           --health-cmd "mariadb -s -uroot -proot -e'SHOW DATABASES;' 2> /dev/null | grep icinga_unittest > test"
           --health-interval 10s
@@ -76,6 +78,8 @@ jobs:
           POSTGRES_USER: icinga_unittest
           POSTGRES_PASSWORD: icinga_unittest
           POSTGRES_DB: icinga_unittest
+        volumes:
+          - test/services/pgsql:/docker-entrypoint-initdb.d
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -108,14 +112,22 @@ jobs:
       - name: PHPUnit
         env:
           ICINGAWEB_LIBDIR: _libraries
+          ICINGAWEB_PATH: _icingaweb2
+          ICINGA_NOTIFICATIONS_SCHEMA: test/schema
           MYSQL_TESTDB: icinga_unittest
           MYSQL_TESTDB_HOST: 127.0.0.1
           MYSQL_TESTDB_PORT: ${{ job.services.mysql.ports['3306'] }}
           MYSQL_TESTDB_USER: icinga_unittest
           MYSQL_TESTDB_PASSWORD: icinga_unittest
+          MYSQL_ICINGAWEBDB: icingaweb
+          MYSQL_ICINGAWEBDB_PASSWORD: icinga_unittest
+          MYSQL_ICINGAWEBDB_USER: icinga_unittest
           PGSQL_TESTDB: icinga_unittest
           PGSQL_TESTDB_HOST: 127.0.0.1
           PGSQL_TESTDB_PORT: ${{ job.services.pgsql.ports['5432'] }}
           PGSQL_TESTDB_USER: icinga_unittest
           PGSQL_TESTDB_PASSWORD: icinga_unittest
+          PGSQL_ICINGAWEBDB: icingaweb
+          PGSQL_ICINGAWEBDB_PASSWORD: icinga_unittest
+          PGSQL_ICINGAWEBDB_USER: icinga_unittest
         run: phpunit --bootstrap _icingaweb2/test/php/bootstrap.php
