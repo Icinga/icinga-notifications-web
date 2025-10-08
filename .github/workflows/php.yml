@@ -108,7 +108,7 @@ jobs:
       - name: Initialize Icinga Web
         run: |
           mysql --host="127.0.0.1" --port="${{ job.services.mysql.ports['3306'] }}" --user="root" --password="root" \
-            -c "CREATE DATABASE icingaweb; CREATE USER icingaweb@'%' IDENTIFIED BY 'icingaweb'; GRANT ALL ON icingaweb.* TO icingaweb@'%';"
+            -e "CREATE DATABASE icingaweb; CREATE USER icingaweb@'%' IDENTIFIED BY 'icingaweb'; GRANT ALL ON icingaweb.* TO icingaweb@'%';"
           psql --host="127.0.0.1" --port="${{ job.services.pgsql.ports['5432'] }}" --username "icinga_unittest" -c "CREATE DATABASE icingaweb;"
 
       - name: PHPUnit
