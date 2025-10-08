@@ -411,15 +411,19 @@ class Timeline extends BaseHtmlElement implements EntryProvider
                     new HtmlElement(
                         'div',
                         Attributes::create(['class' => 'new-rotation-content']),
-                        TemplateString::create(
-                            $newRotationMsg,
-                            [
-                                'button' => (new Link(
-                                    new Icon('circle-plus'),
-                                    Links::rotationAdd($this->scheduleId),
-                                    ['class' => empty($this->rotations) ? 'btn-primary' : null]
-                                ))->openInModal()
-                            ]
+                        new HtmlElement(
+                            'span',
+                            null,
+                            TemplateString::create(
+                                $newRotationMsg,
+                                [
+                                    'button' => (new Link(
+                                        new Icon('circle-plus'),
+                                        Links::rotationAdd($this->scheduleId),
+                                        ['class' => empty($this->rotations) ? 'btn-primary' : null]
+                                    ))->openInModal()
+                                ]
+                            )
                         )
                     )
                 ))
