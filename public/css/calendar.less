@@ -344,7 +344,6 @@
   .entry {
     border: 1px solid var(--entry-border-color);
     background-color: var(--entry-bg);
-    mix-blend-mode: screen;
     .rounded-corners();
 
     a:hover {
@@ -382,9 +381,3 @@
     color: @text-color-light;
   }
 }
-
-@light-mode: {
-  .time-grid .entry {
-    mix-blend-mode: revert;
-  }
-};
