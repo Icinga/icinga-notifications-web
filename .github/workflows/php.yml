@@ -62,8 +62,8 @@ jobs:
           MYSQL_DATABASE: icinga_unittest
           MYSQL_USER: icinga_unittest
           MYSQL_PASSWORD: icinga_unittest
-        volumes:
-          - ${{ github.workspace }}/test/services/mysql:/docker-entrypoint-initdb.d
+        #volumes:
+        #  - ${{ github.workspace }}/test/services/mysql:/docker-entrypoint-initdb.d
         options: >-
           --health-cmd "mariadb -s -uroot -proot -e'SHOW DATABASES;' 2> /dev/null | grep icinga_unittest > test"
           --health-interval 10s
@@ -78,8 +78,8 @@ jobs:
           POSTGRES_USER: icinga_unittest
           POSTGRES_PASSWORD: icinga_unittest
           POSTGRES_DB: icinga_unittest
-        volumes:
-          - ${{ github.workspace }}/test/services/pgsql:/docker-entrypoint-initdb.d
+        #volumes:
+        #  - ${{ github.workspace }}/test/services/pgsql:/docker-entrypoint-initdb.d
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -108,6 +108,14 @@ jobs:
           mkdir _libraries
           git clone --depth 1 -b snapshot/nightly https://github.com/Icinga/icinga-php-library.git _libraries/ipl
           git clone --depth 1 -b snapshot/nightly https://github.com/Icinga/icinga-php-thirdparty.git _libraries/vendor
+
+      - name: Initialize Icinga Web
+        run: |
+          apt update && apt install -y psql mysql-client
+          mysql --user="icinga_unittest" --password="icinga_unittest" -c "CREATE DATABASE icingaweb;"
+          mysql --user="icinga_unittest" --password="icinga_unittest" icingaweb < "_icingaweb2/schema/mysql.schema.sql"
+          psql --username "icinga_unittest" -c "CREATE DATABASE icingaweb;"
+          psql -v ON_ERROR_STOP=1 --username "icinga_unittest" --dbname "icingaweb" < "_icingaweb2/schema/pgsql.schema.sql"
 
       - name: PHPUnit
         env:
