@@ -63,7 +63,7 @@ jobs:
           MYSQL_USER: icinga_unittest
           MYSQL_PASSWORD: icinga_unittest
         volumes:
-          - test/services/mysql:/docker-entrypoint-initdb.d
+          - ${{ github.workspace }}/test/services/mysql:/docker-entrypoint-initdb.d
         options: >-
           --health-cmd "mariadb -s -uroot -proot -e'SHOW DATABASES;' 2> /dev/null | grep icinga_unittest > test"
           --health-interval 10s
@@ -79,7 +79,7 @@ jobs:
           POSTGRES_PASSWORD: icinga_unittest
           POSTGRES_DB: icinga_unittest
         volumes:
-          - test/services/pgsql:/docker-entrypoint-initdb.d
+          - ${{ github.workspace }}/test/services/pgsql:/docker-entrypoint-initdb.d
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
