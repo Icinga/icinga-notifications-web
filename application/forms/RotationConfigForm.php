@@ -30,6 +30,7 @@ use ipl\Validator\CallbackValidator;
 use ipl\Validator\GreaterThanValidator;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
+use ipl\Web\FormDecorator\IcingaFormDecorator;
 use ipl\Web\FormElement\TermInput;
 use ipl\Web\Url;
 use LogicException;
@@ -190,6 +191,8 @@ class RotationConfigForm extends CompatForm
     {
         $this->db = $db;
         $this->scheduleId = $scheduleId;
+
+        $this->applyDefaultElementDecorators();
     }
 
     /**
@@ -1058,8 +1061,9 @@ class RotationConfigForm extends CompatForm
             ]
         ]);
 
-        $options = new FieldsetElement('options');
-        $this->addElement($options);
+        $this->addElement('fieldset', 'options');
+        /** @var FieldsetElement $options */
+        $options = $this->getElement('options');
 
         if ($mode === '24-7') {
             $firstHandoff = $this->assembleTwentyFourSevenOptions($options);
@@ -1193,20 +1197,24 @@ class RotationConfigForm extends CompatForm
             }
         };
 
-        $this->addElement(
-            (new TermInput('members'))
-                ->setIgnored()
-                ->setRequired()
-                ->setOrdered()
-                ->setReadOnly()
-                ->setVerticalTermDirection()
-                ->setLabel($this->translate('Members'))
-                ->setSuggestionUrl($this->suggestionUrl->with(['showCompact' => true, '_disableLayout' => 1]))
-                ->on(TermInput::ON_ENRICH, $termValidator)
-                ->on(TermInput::ON_ADD, $termValidator)
-                ->on(TermInput::ON_SAVE, $termValidator)
-                ->on(TermInput::ON_PASTE, $termValidator)
-        );
+        $members = (new TermInput('members'))
+            ->setIgnored()
+            ->setRequired()
+            ->setOrdered()
+            ->setReadOnly()
+            ->setVerticalTermDirection()
+            ->setLabel($this->translate('Members'))
+            ->setSuggestionUrl($this->suggestionUrl->with(['showCompact' => true, '_disableLayout' => 1]))
+            ->on(TermInput::ON_ENRICH, $termValidator)
+            ->on(TermInput::ON_ADD, $termValidator)
+            ->on(TermInput::ON_SAVE, $termValidator)
+            ->on(TermInput::ON_PASTE, $termValidator);
+        $this->addElement($members);
+
+        // TODO: TermInput is not compatible with the new decorators yet: https://github.com/Icinga/ipl-web/pull/317
+        $legacyDecorator = new IcingaFormDecorator();
+        $members->setDefaultElementDecorator($legacyDecorator);
+        $legacyDecorator->decorate($members);
 
         $this->addElement('submit', 'submit', [
             'label' => $this->getSubmitLabel()
