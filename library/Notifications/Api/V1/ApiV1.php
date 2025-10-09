@@ -120,7 +120,7 @@ abstract class ApiV1 extends ApiCore
             throw new HttpBadRequestException("Invalid request: Identifier is required");
         }
 
-        if (! empty($identifier) && ! Uuid::isValid($identifier)) {
+        if ((! empty($identifier) || $identifier === '0') && ! Uuid::isValid($identifier)) {
             throw new HttpBadRequestException('The given identifier is not a valid UUID');
         }
     }

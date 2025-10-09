@@ -40,6 +40,7 @@ class OadV1GetPlural extends Get
 
         parent::__construct(
             path: $path,
+            operationId: 'list' . $entityName,
             description: $description,
             summary: $summary,
             tags: $tags,
@@ -55,7 +56,7 @@ class OadV1GetPlural extends Get
                 new ErrorResponse(
                     response: 422,
                     examples: [
-                        new ResponseExample('PayloadIdInvalidUUID'),
+                        new ResponseExample('InvalidRequestBodyId'),
                         new OA\Examples(
                             example: 'InvalidFilterParameter',
                             summary: 'Invalid filter parameter',

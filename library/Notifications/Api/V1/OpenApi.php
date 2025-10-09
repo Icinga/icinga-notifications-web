@@ -5,6 +5,7 @@ namespace Icinga\Module\Notifications\Api\V1;
 use FilesystemIterator;
 use Icinga\Application\Icinga;
 use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Notifications\Api\OpenApiPreprocessors\AddGlobal401Response;
 use Icinga\Module\Notifications\Common\PsrLogger;
 use OpenApi\Generator;
 use OpenApi\Attributes as OA;
@@ -24,10 +25,9 @@ use RuntimeException;
 #[OA\Schema(
     schema: 'Port',
     description: 'A port number',
-    type: 'integer',
-    format: 'int32',
-    maximum: 65535,
-    minimum: 1,
+    type: 'string',
+    maxLength: 5,
+    minLength: 1,
 )]
 #[OA\Schema(
     schema: 'Email',
@@ -148,15 +148,18 @@ class OpenApi extends ApiV1 implements RequestHandlerInterface
     public function get(): ResponseInterface
     {
         // TODO: Create the documentation during CI and not on request
-//        if (file_exists(self::OPENAPI_PATH)) {
-//            $oad = file_get_contents(self::OPENAPI_PATH);
-//        } else {
+        if (file_exists(self::OPENAPI_PATH)) {
+            $oad = file_get_contents(self::OPENAPI_PATH);
+        } else {
             $files = $this->getFilesIncludingDocs();
 
+            $generator = new Generator(new PsrLogger());
+            $generator->setVersion(\OpenApi\Annotations\OpenApi::VERSION_3_1_0);
+
+            $generator->getProcessorPipeline()->add(new AddGlobal401Response());
+
             try {
-                $openapi = (new Generator(new PsrLogger()))
-                    ->setVersion(\OpenApi\Annotations\OpenApi::VERSION_3_1_0)
-                    ->generate($files);
+                $openapi = $generator->generate($files);
             } catch (RuntimeException $e) {
                 throw new RuntimeException('Unable to generate OpenApi: ' . $e->getMessage());
             }
@@ -170,7 +173,7 @@ class OpenApi extends ApiV1 implements RequestHandlerInterface
             }
 
             file_put_contents(self::OPENAPI_PATH, $oad);
-//        }
+        }
 
         return $this->createResponse(body: $oad);
     }

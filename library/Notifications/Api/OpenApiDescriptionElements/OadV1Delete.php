@@ -26,6 +26,7 @@ class OadV1Delete extends Delete
     ) {
         parent::__construct(
             path: $path,
+            operationId: 'delete' . $entityName,
             description: $description,
             summary: $summary,
             tags: $tags,

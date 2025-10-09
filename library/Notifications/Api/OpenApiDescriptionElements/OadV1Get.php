@@ -24,6 +24,7 @@ class OadV1Get extends Get
     ) {
         parent::__construct(
             path: $path,
+            operationId: 'get' . $entityName,
             description: $description,
             summary: $summary,
             tags: $tags,

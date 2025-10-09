@@ -45,6 +45,7 @@ class OadV1Put extends Put
 
         parent::__construct(
             path: $path,
+            operationId: 'update' . $entityName,
             description: $description,
             summary: $summary,
             requestBody: $requestBody,

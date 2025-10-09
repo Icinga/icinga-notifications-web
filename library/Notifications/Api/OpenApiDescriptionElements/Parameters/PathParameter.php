@@ -3,6 +3,7 @@
 namespace Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Parameters;
 
 use OpenApi\Attributes\Parameter;
+use OpenApi\Attributes\Schema;
 use OpenApi\Generator;
 use OpenApi\Attributes as OA;
 
@@ -13,16 +14,21 @@ class PathParameter extends Parameter
         ?string $name = null,
         ?string $description = null,
         ?string $identifierSchema = null,
+        ?Schema $schema = null,
         ?bool $required = null,
         ?string $example = null,
     ) {
+        $schema = $identifierSchema !== null
+        ? new OA\Schema(ref: '#/components/schemas/' . $identifierSchema)
+        : ($schema !== null ? $schema : new OA\Schema(type: 'string'));
+
         $params = [
             'parameter' => $parameter ?? Generator::UNDEFINED,
                 'name' => $name ?? Generator::UNDEFINED,
                 'description' => $description ?? Generator::UNDEFINED,
                 'in' => 'path',
                 'required' => $required ?? true,
-                'schema' => new OA\Schema(ref: '#/components/schemas/' . $identifierSchema ?? 'UUID'),
+                'schema' => $schema,
         ];
 
         $params = $example !== null ? array_merge($params, ['example' => $example]) : $params;

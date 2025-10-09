@@ -109,6 +109,9 @@ class ApiController extends CompatController
     {
         try {
             $data = $request->getPost();
+            if ($data !== null && ! is_array($data)) {
+                $this->httpBadRequest('Invalid request body: given content is not a valid JSON');
+            }
         } catch (Exception) {
             $this->httpBadRequest('Invalid request body: given content is not a valid JSON');
         }
