@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Responses;
 
+use cebe\openapi\spec\Parameter;
 use OpenApi\Attributes\Response;
 use OpenApi\Attributes as OA;
 
@@ -36,7 +37,18 @@ class SuccessDataResponse extends Response
             response: 200,
             description: $description,
             content: $content,
+            links: [
+                new OA\Link(
+                    operationId: 'list' . $entityName,
+                    parameters: [
+                        new OA\Parameter(
+                            parameter: 'id',
+                            ref: '#/components/schema/' . $entityName,
+                        )
+                    ],
+                    description: 'Link to the endpoint to retrieve multiple ' . $entityName . ' objects'
+                )
+            ]
         );
     }
-
 }
