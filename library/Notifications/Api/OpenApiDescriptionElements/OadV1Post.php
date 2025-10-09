@@ -39,33 +39,55 @@ class OadV1Post extends Post
             ]);
         }
 
-        $successResponse = $hasIdentifier
-            ? new SuccessResponse(
-                response: 204,
-                description: $entityName . ' replaced successfully',
-            )
-            : new SuccessResponse(
-                response: 201,
-                description: $entityName . ' created successfully',
-                examples: [
-                    new OA\Examples(
-                        example: $entityName . 'Created',
-                        summary: $entityName . ' created successfully',
-                        value: [
-                            'message' => $entityName . ' created successfully',
-                        ]
-                    ),
-                ],
-                headers: [
-                    'Location' => sprintf(
-                        'notifications/api/v1/%s/{identifier}',
-                        strtolower($entityName) . 's'
-                    )
-                ]
-            );
+        $successResponse = new SuccessResponse(
+            response: 201,
+            description: $entityName . ' created successfully',
+            examples: [
+                new OA\Examples(
+                    example: $entityName . 'Created',
+                    summary: $entityName . ' created successfully',
+                    value: [
+                        'message' => $entityName . ' created successfully',
+                    ]
+                ),
+            ],
+            headers: [
+                'Location' => sprintf(
+                    'notifications/api/v1/%s/{identifier}',
+                    strtolower($entityName) . 's'
+                )
+            ],
+            links: [
+                new OA\Link(
+                    link: 'Get' . $entityName . 'ByLocation',
+                    operationId: 'get' . $entityName,
+                    parameters: [
+                        'identifier' => '$response.header.X-Resource-Identifier'
+                    ],
+                    description: 'Retrieve the created contact using the Location header'
+                ),
+                new OA\Link(
+                    link: 'Update' . $entityName . 'ByLocation',
+                    operationId: 'update' . $entityName,
+                    parameters: [
+                        'identifier' => '$response.header.X-Resource-Identifier'
+                    ],
+                    description: 'Update the created contact using the Location header'
+                ),
+                new OA\Link(
+                    link: 'Delete' . $entityName . 'ByLocation',
+                    operationId: 'delete' . $entityName,
+                    parameters: [
+                        'identifier' => '$response.header.X-Resource-Identifier'
+                    ],
+                    description: 'Delete the created contact using the Location header'
+                ),
+            ]
+        );
 
-        $missingRequestBodyFieldsMessage = 'Invalid request body: ';
         if (! empty($requiredFields)) {
+            $missingRequestBodyFieldsMessage = 'Invalid request body: ';
+
             if (count($requiredFields) == 1) {
                 $requiredFieldsStr = $requiredFields[0];
             } elseif (count($requiredFields) == 2) {
@@ -82,6 +104,7 @@ class OadV1Post extends Post
 
         parent::__construct(
             path: $path,
+            operationId: ($hasIdentifier ? 'replace' : 'create') . $entityName,
             description: $description,
             summary: $summary,
             requestBody: $requestBody,

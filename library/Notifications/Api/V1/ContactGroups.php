@@ -143,7 +143,7 @@ class ContactGroups extends ApiV1
 
         $this->prepareRow($result);
 
-        return $this->createResponse(body: Json::sanitize(['data' => [$result]]));
+        return $this->createResponse(body: Json::sanitize($result));
     }
 
     /**
@@ -205,7 +205,7 @@ class ContactGroups extends ApiV1
      * @throws JsonEncodeException
      */
     #[OadV1Put(
-        entityName: 'Contact',
+        entityName: 'Contactgroup',
         path: '/contact-groups/{identifier}',
         description: 'Update a contactgroup by UUID',
         summary: 'Update a contactgroup by UUID',
@@ -389,7 +389,8 @@ class ContactGroups extends ApiV1
                     self::VERSION,
                     $this->getEndpoint(),
                     $requestBody['id']
-                )
+                ),
+                'X-Resource-Identifier' => $requestBody['id']
             ],
             Json::sanitize(['message' => 'Contactgroup created successfully'])
         );
@@ -466,8 +467,21 @@ class ContactGroups extends ApiV1
                 ->columns('id')
                 ->where(['external_uuid = ?' => $identifier])
         );
+//
+//        if ($group === false) {
+//            $deletedGroup = Database::get()
+//                ->fetchCol('SELECT id FROM contactgroup WHERE external_uuid = ?', [$identifier]);
+//
+//            if (! empty($deletedGroup)) {
+//                throw new HttpException(422, 'Contactgroup id is not available: ' . $identifier);
+//            }
+//        }
 
         return $group->id ?? null;
+//        $group = Database::get()
+//            ->fetchCol('SELECT id FROM contactgroup WHERE external_uuid = ?', [$identifier]);
+//
+//        return $group[0] ?? null;
     }
 
     /**

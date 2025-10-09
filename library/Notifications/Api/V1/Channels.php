@@ -32,7 +32,7 @@ use stdClass;
 )]
 #[SchemaUUID(
     entityName: 'Channel',
-    example: '3fa85f64-5717-4562-b3fc-2c963f66afa6'
+    example: 'bb4af7bd-f0da-489c-ae31-23f714bde714'
 )]
 #[OA\Schema(
     schema: 'WebhookChannelConfig',
@@ -50,21 +50,21 @@ use stdClass;
     schema: 'EmailChannelConfig',
     title: 'Email Channel Config',
     required: [
-        'smtp_host',
-        'smtp_port',
-        'sender_name',
-        'sender_address',
-        'smtp_user',
-        'smtp_password',
+        'host',
+        'port',
+        'sender_mail',
+        'encryption',
+//        'smtp_user',
+//        'smtp_password',
     ],
     properties: [
         new OA\Property(
-            property: 'smtp_host',
+            property: 'host',
             description: 'SMTP host for sending emails',
             type: 'string'
         ),
         new OA\Property(
-            property: 'smtp_port',
+            property: 'port',
             ref: '#/components/schemas/Port',
             description: 'SMTP port for sending emails',
         ),
@@ -74,22 +74,22 @@ use stdClass;
             type: 'string',
         ),
         new OA\Property(
-            property: 'sender_address',
+            property: 'sender_mail',
             ref: '#/components/schemas/Email',
             description: 'Email address of the sender',
         ),
         new OA\Property(
-            property: 'smtp_user',
+            property: 'user',
             description: 'Username for SMTP authentication',
             type: 'string'
         ),
         new OA\Property(
-            property: 'smtp_password',
+            property: 'password',
             description: 'Password for SMTP authentication',
             type: 'string'
         ),
         new OA\Property(
-            property: 'smtp_encryption',
+            property: 'encryption',
             description: 'Encryption method for SMTP',
             type: 'string',
             enum: ['none', 'ssl', 'tls']
@@ -141,6 +141,7 @@ class Channels extends ApiV1
     protected string $type;
     #[OA\Property(
         description: 'The configuration for the channel, varies depending on the channel type',
+        type: 'object',
         example: [
             'url_template' => 'https://example.com/webhook?token=abc123',
         ],
@@ -148,7 +149,7 @@ class Channels extends ApiV1
             new OA\Schema(ref: '#/components/schemas/EmailChannelConfig'),
             new OA\Schema(ref: '#/components/schemas/WebhookChannelConfig'),
             new OA\Schema(ref: '#/components/schemas/RocketChatChannelConfig'),
-        ]
+        ],
     )]
     protected array $config;
 
@@ -169,7 +170,7 @@ class Channels extends ApiV1
      */
     #[OadV1Get(
         entityName: 'Channel',
-        path: 'channels',
+        path: '/channels/{identifier}',
         description: 'Get a specific channel by its UUID',
         summary: 'Get a specific channel by its UUID',
         tags: ['Channels'],
@@ -210,7 +211,7 @@ class Channels extends ApiV1
 
         $this->prepareRow($result);
 
-        return $this->createResponse(body: Json::sanitize(['data' => [$result]]));
+        return $this->createResponse(body: Json::sanitize($result));
     }
 
     /**
@@ -226,7 +227,7 @@ class Channels extends ApiV1
      */
     #[OadV1GetPlural(
         entityName: 'Channel',
-        path: 'channels/{identifier}',
+        path: '/channels',
         description: 'List all notification channels or filter by parameters',
         summary: 'List all notification channels or filter by parameters',
         tags: ['Channels'],
@@ -235,7 +236,7 @@ class Channels extends ApiV1
             new QueryParameter(
                 name: 'id',
                 description: 'Filter by channel UUID',
-                schema: new SchemaUUID(entityName: 'Channel'),
+                identifierSchema: 'ChannelUUID',
             ),
             new QueryParameter(
                 name: 'name',
@@ -286,6 +287,7 @@ class Channels extends ApiV1
 
     public function prepareRow(stdClass $row): void
     {
-            unset($row->channel_id);
+        $row->config = Json::decode($row->config, true);
+        unset($row->channel_id);
     }
 }

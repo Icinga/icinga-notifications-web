@@ -30,6 +30,7 @@ class SuccessResponse extends Response
         ?string $description = null,
         ?array $examples = null,
         ?array $headers = null,
+        ?array $links = null,
     ) {
         if (! isset(self::SUCCESS_RESPONSES[$response])) {
             throw new \InvalidArgumentException('Unexpected response type');
@@ -46,7 +47,8 @@ class SuccessResponse extends Response
             response: $response,
             description: $description,
             headers: $headers,
-            content: $content
+            content: $content,
+            links: $links
         );
     }
 }

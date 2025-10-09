@@ -58,32 +58,33 @@ use OpenApi\Attributes as OA;
             description: "User's email address",
             type: 'string',
             format: 'email',
-            nullable: true
+//            nullable: true
         ),
         new OA\Property(
             property: 'rocketchat',
             description: 'Rocket.Chat identifier or URL',
             type: 'string',
-            nullable: true
+            example: 'rocketchat.example.com',
+//            nullable: true
         ),
         new OA\Property(
             property: 'webhook',
             description: 'Comma-separated list of webhook URLs or identifiers',
             type: 'string',
-            nullable: true
+            example: 'https://example.com/webhook',
+//            nullable: true
         ),
     ],
     type: 'object',
     additionalProperties: false,
-    attachables: [
-        new OA\Attachable(
-            properties: ['test' => 'value', 'test2' => 'value2']
-        )
-    ]
 )]
 #[SchemaUUID(
     entityName: 'Contact',
     example: '9e868ad0-e774-465b-8075-c5a07e8f0726',
+)]
+#[SchemaUUID(
+    entityName: 'NewContact',
+    example: '52668ad0-e774-465b-8075-c5a07e8f0726',
 )]
 class Contacts extends ApiV1
 {
@@ -127,9 +128,20 @@ class Contacts extends ApiV1
         summary: 'Invalid groups format',
         value: ['message' => 'Invalid request body: expects groups to be an array']
     )]
+    #[OA\Examples(
+        example: 'InvalidEmailAddressFormat',
+        summary: 'Invalid email address format',
+        value: ['message' => 'Invalid request body: an invalid email address format given']
+    )]
+    #[OA\Examples(
+        example: 'InvalidContactgroupUUIDFormat',
+        summary: 'Invalid contactgroup UUID format',
+        value: ['message' => 'Invalid request body: an invalid group identifier format given']
+    )]
     protected array $specificResponses = [];
     #[OA\Property(
-        ref: '#/components/schemas/ContactUUID',
+        ref: '#/components/schemas/NewContactUUID',
+//        schema: new SchemaUUID(entityName: 'Contact', example: '9e868ad0-e774-465b-8075-c5a07e8f0726'),
     )]
     protected string $id;
     #[OA\Property(
@@ -142,7 +154,8 @@ class Contacts extends ApiV1
         description: 'The username of the contact',
         type: 'string',
         maxLength: 254,
-        example: 'icingauser'
+        example: 'icingauser',
+//        nullable: true
     )]
     protected ?string $username = null;
     #[OA\Property(
@@ -227,7 +240,7 @@ class Contacts extends ApiV1
 
         $this->prepareRow($result);
 
-        return $this->createResponse(body: Json::sanitize(['data' => [$result]]));
+        return $this->createResponse(body: Json::sanitize($result));
     }
 
     /**
@@ -310,7 +323,7 @@ class Contacts extends ApiV1
             new PathParameter(
                 name: 'identifier',
                 description: 'The UUID of the contact to Update',
-                identifierSchema: 'ContactUUID'
+                identifierSchema: 'NewContactUUID'
             )
         ],
         examples400: [
@@ -323,6 +336,9 @@ class Contacts extends ApiV1
             new ResponseExample('InvalidAddressType'),
             new ResponseExample('InvalidAddressFormat'),
             new ResponseExample('InvalidEmailAddress'),
+            new ResponseExample('InvalidEmailAddressFormat'),
+            new ResponseExample('InvalidGroupsFormat'),
+            new ResponseExample('InvalidContactgroupUUIDFormat'),
         ]
     )]
     public function put(string $identifier, array $requestBody): ResponseInterface
@@ -435,7 +451,9 @@ class Contacts extends ApiV1
             new ResponseExample('InvalidAddressType'),
             new ResponseExample('InvalidAddressFormat'),
             new ResponseExample('InvalidEmailAddress'),
-            new ResponseExample('InvalidGroupFormat'),
+            new ResponseExample('InvalidEmailAddressFormat'),
+            new ResponseExample('InvalidGroupsFormat'),
+            new ResponseExample('InvalidContactgroupUUIDFormat'),
         ]
     )]
     #[OadV1Post(
@@ -468,6 +486,9 @@ class Contacts extends ApiV1
             new ResponseExample('InvalidAddressType'),
             new ResponseExample('InvalidAddressFormat'),
             new ResponseExample('InvalidEmailAddress'),
+            new ResponseExample('InvalidEmailAddressFormat'),
+            new ResponseExample('InvalidGroupsFormat'),
+            new ResponseExample('InvalidContactgroupUUIDFormat'),
         ]
     )]
     public function post(?string $identifier, array $requestBody): ResponseInterface
@@ -535,43 +556,6 @@ class Contacts extends ApiV1
         summary: 'Delete a contact by UUID',
         tags: ['Contacts'],
     )]
-    #[OA\Parameter(
-        name: 'identifier',
-        description: 'The UUID of the contact to delete',
-        in: 'path',
-        required: true,
-        schema: new OA\Schema(ref: '#/components/schemas/ContactUUID')
-    )]
-    #[OA\Response(
-        response: 204,
-        description: 'Contact deleted',
-    )]
-    #[OA\Response(
-        response: 404,
-        description: 'Contact not found',
-        content: new OA\JsonContent(
-            examples: [
-                'IdentifierNotFound' => new OA\Examples(
-                    example: 'IdentifierNotFound',
-                    ref: '#/components/examples/IdentifierNotFound'
-                ),
-            ],
-            ref: '#/components/schemas/ErrorResponse'
-        )
-    )]
-    #[OA\Response(
-        response: 422,
-        description: 'Unprocessable Entity',
-        content: new OA\JsonContent(
-            examples: [
-                'InvalidIdentifier' => new OA\Examples(
-                    example: 'InvalidIdentifier',
-                    ref: '#/components/examples/InvalidIdentifier'
-                ),
-            ],
-            ref: '#/components/schemas/ErrorResponse'
-        )
-    )]
     public function delete(string $identifier): ResponseInterface
     {
         if (empty($identifier)) {
@@ -594,7 +578,7 @@ class Contacts extends ApiV1
     public function prepareRow(stdClass $row): void
     {
             $row->groups = ContactGroups::fetchGroupIdentifiers($row->contact_id);
-            $row->addresses = self::fetchContactAddresses($row->contact_id);
+            $row->addresses = self::fetchContactAddresses($row->contact_id) ?: new stdClass();
 
             unset($row->contact_id);
     }
@@ -636,7 +620,21 @@ class Contacts extends ApiV1
                 ->where(['external_uuid = ?' => $identifier])
         );
 
+//        if ($contact === false) {
+//            $deletedContact = Database::get()
+//                ->fetchCol('SELECT id FROM contact WHERE external_uuid = ?', [$identifier]);
+//
+//            if (! empty($deletedContact)) {
+//                throw new HttpException(422, 'Contact id is not available: ' . $identifier);
+//            }
+//        }
+
         return $contact->id ?? null;
+
+//        $contact = Database::get()
+//                ->fetchCol('SELECT id FROM contact WHERE external_uuid = ?', [$identifier]);
+//
+//        return $contact[0] ?? null;
     }
 
     /**
@@ -900,7 +898,9 @@ class Contacts extends ApiV1
             }
 
             foreach ($requestBody['groups'] as $group) {
-                if (! is_string($group) || ! Uuid::isValid($group)) {
+                if (! is_string($group)) {
+                    throw new HttpException(422, $msgPrefix . 'an invalid group identifier format given');
+                } elseif (! Uuid::isValid($group)) {
                     throw new HttpException(
                         422,
                         sprintf($msgPrefix . 'the group identifier %s is not a valid UUID', $group)
@@ -934,12 +934,17 @@ class Contacts extends ApiV1
             }
             //TODO: is it a good idea to check valid channel types here?, if yes,
             //default_channel and group identifiers must be checked here as well..404 OR 400?
+            if (isset($requestBody['addresses']['email'])) {
+                if (! is_string($requestBody['addresses']['email'])) {
+                    throw new HttpBadRequestException($msgPrefix . 'an invalid email address format given');
+                }
 
-            if (
-                ! empty($requestBody['addresses']['email'])
-                && ! (new EmailAddressValidator())->isValid($requestBody['addresses']['email'])
-            ) {
-                throw new HttpBadRequestException($msgPrefix . 'an invalid email address given');
+                if (
+                    ! empty($requestBody['addresses']['email'])
+                    && ! (new EmailAddressValidator())->isValid($requestBody['addresses']['email'])
+                ) {
+                    throw new HttpBadRequestException($msgPrefix . 'an invalid email address given');
+                }
             }
         }
     }
