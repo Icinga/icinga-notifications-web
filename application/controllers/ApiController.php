@@ -5,10 +5,11 @@ namespace Icinga\Module\Notifications\Controllers;
 use Exception;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
+use Icinga\Application\Logger;
 use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Http\HttpExceptionInterface;
+use Icinga\Exception\IcingaException;
 use Icinga\Exception\Json\JsonEncodeException;
-use Icinga\Module\Notifications\Api\V1\ApiV1;
 use Icinga\Module\Notifications\Api\V1\OpenApi;
 use Icinga\Util\Json;
 use Icinga\Web\Request;
@@ -74,10 +75,12 @@ class ApiController extends CompatController
                 Json::sanitize(['message' => $e->getMessage()])
             );
         } catch (Throwable $e) {
+            Logger::error($e);
+            Logger::debug(IcingaException::getConfidentialTraceAsString($e));
             $response = new Response(
                 500,
                 ['Content-Type' => 'application/json'],
-                Json::sanitize(['message' => $e->getMessage()])
+                Json::sanitize(['message' => 'An error occurred, please chack the log.'])
             );
         } finally {
             $this->emitResponse($response);
