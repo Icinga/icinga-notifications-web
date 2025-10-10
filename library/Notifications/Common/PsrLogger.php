@@ -8,6 +8,7 @@ use Icinga\Application\Logger as IcingaLogger;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LoggerTrait;
 use Psr\Log\LogLevel;
+use Stringable;
 
 /**
  * A PSR-3 compliant logger that uses Icinga's logging methods.
@@ -39,7 +40,7 @@ class PsrLogger implements LoggerInterface
      * Logs with an arbitrary level.
      *
      * @param string $level   The log level
-     * @param string $message The log message
+     * @param string|Stringable $message The log message
      * @param array  $context Additional context variables to interpolate in the message
      */
     public function log($level, $message, array $context = []): void
@@ -47,24 +48,20 @@ class PsrLogger implements LoggerInterface
         $level = strtolower((string) $level);
         $icingaMethod = self::MAP[$level] ?? 'debug';
 
-        $parsedContext = [];
-        if (isset($context['exception']) && $context['exception'] instanceof \Throwable) {
-            $parsedContext[] = $context['exception']->getTraceAsString();
-        }
-        array_unshift($parsedContext, (string) $message);
+        array_unshift($context, (string) $message);
 
         switch ($icingaMethod) {
             case 'error':
-                IcingaLogger::error(...$parsedContext);
+                IcingaLogger::error(...$context);
                 break;
             case 'warning':
-                IcingaLogger::warning(...$parsedContext);
+                IcingaLogger::warning(...$context);
                 break;
             case 'info':
-                IcingaLogger::info(...$parsedContext);
+                IcingaLogger::info(...$context);
                 break;
             default:
-                IcingaLogger::debug(...$parsedContext);
+                IcingaLogger::debug(...$context);
                 break;
         }
     }
