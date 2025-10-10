@@ -8,6 +8,7 @@ use Icinga\Module\Notifications\Common\PsrLogger;
 use OpenApi\Generator;
 use OpenApi\Attributes as OA;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 use RuntimeException;
 
 #[OA\Schema(
@@ -142,7 +143,7 @@ use RuntimeException;
     maxLength: 36,
     minLength: 36,
 )]
-class OpenApi extends ApiV1
+class OpenApi extends ApiV1 implements RequestHandlerInterface
 {
     public const OPENAPI_PATH = __DIR__ . '/docs/openapi.json';
 

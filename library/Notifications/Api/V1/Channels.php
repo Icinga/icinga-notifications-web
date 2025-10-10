@@ -10,6 +10,7 @@ use Icinga\Util\Json;
 use ipl\Sql\Select;
 use OpenApi\Attributes as OA;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 use stdClass;
 
 #[OA\Schema(
@@ -133,7 +134,7 @@ use stdClass;
     minLength: 36,
     example: 'f0d02dba-b7f9-40a4-bb21-74ce2bd8db70',
 )]
-class Channels extends ApiV1
+class Channels extends ApiV1 implements RequestHandlerInterface
 {
     public function getEndpoint(): string
     {

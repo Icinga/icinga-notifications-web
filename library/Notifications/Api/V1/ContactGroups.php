@@ -16,6 +16,7 @@ use ipl\Sql\Select;
 use ipl\Stdlib\Filter;
 use OpenApi\Attributes as OA;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 use Ramsey\Uuid\Uuid;
 use stdClass;
 
@@ -57,7 +58,7 @@ use stdClass;
     minLength: 36,
     example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
 )]
-class ContactGroups extends ApiV1
+class ContactGroups extends ApiV1 implements RequestHandlerInterface
 {
     public function getEndpoint(): string
     {

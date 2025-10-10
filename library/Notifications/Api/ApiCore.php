@@ -16,7 +16,7 @@ use ValueError;
  *
  * This class provides the base functionality for handling API requests,
  */
-abstract class ApiCore implements RequestHandlerInterface
+abstract class ApiCore
 {
     /**
      * Endpoint based request handling.
