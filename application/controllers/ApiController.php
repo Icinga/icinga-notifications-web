@@ -126,6 +126,10 @@ class ApiController extends CompatController
      */
     protected function emitResponse(ResponseInterface $response): void
     {
+        do {
+            ob_end_clean();
+        } while (ob_get_level() > 0);
+
         http_response_code($response->getStatusCode());
 
         foreach ($response->getHeaders() as $name => $values) {
@@ -135,6 +139,9 @@ class ApiController extends CompatController
         }
         header('Content-Type: application/json');
 
-        echo $response->getBody();
+        $body = $response->getBody();
+        while (!$body->eof()) {
+            echo $body->read(8192);
+        }
     }
 }
