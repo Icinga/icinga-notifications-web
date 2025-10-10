@@ -15,6 +15,7 @@ use Icinga\Web\Request;
 use ipl\Stdlib\Str;
 use ipl\Web\Compat\CompatController;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 use Throwable;
 use Zend_Controller_Request_Exception;
 
@@ -52,7 +53,7 @@ class ApiController extends CompatController
             $className = sprintf('Icinga\\%sApi\\%s\\%s', $module, $version, $endpoint);
 
             // TODO: works only for V1 right now
-            if (! class_exists($className) || ! is_subclass_of($className, ApiV1::class)) {
+            if (! class_exists($className) || ! is_subclass_of($className, RequestHandlerInterface::class)) {
                 $this->httpNotFound("Endpoint $endpoint does not exist.");
             }
 

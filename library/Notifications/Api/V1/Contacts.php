@@ -8,6 +8,7 @@ use Icinga\Exception\Http\HttpException;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Exception\Json\JsonEncodeException;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 use Ramsey\Uuid\Uuid;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Rotation;
@@ -81,7 +82,7 @@ use OpenApi\Attributes as OA;
     minLength: 36,
     example: '9e868ad0-e774-465b-8075-c5a07e8f0726',
 )]
-class Contacts extends ApiV1
+class Contacts extends ApiV1 implements RequestHandlerInterface
 {
     #[OA\Property(
         ref: '#/components/schemas/ContactUUID',
