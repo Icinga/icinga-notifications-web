@@ -13,9 +13,9 @@ class PathParameter extends Parameter
         ?string $parameter = null,
         ?string $name = null,
         ?string $description = null,
+        ?bool $required = null,
         ?string $identifierSchema = null,
         ?Schema $schema = null,
-        ?bool $required = null,
         ?string $example = null,
     ) {
         $schema = $identifierSchema !== null

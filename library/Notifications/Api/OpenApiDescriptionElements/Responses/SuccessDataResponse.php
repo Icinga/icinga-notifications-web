@@ -10,7 +10,7 @@ class SuccessDataResponse extends Response
 {
     public function __construct(
         string $entityName,
-        bool $multipleResults = false,
+        bool $multipleResults = true,
     ) {
         if ($multipleResults) {
             $content = new OA\JsonContent(
@@ -28,8 +28,14 @@ class SuccessDataResponse extends Response
             $description = sprintf('Successful response with multiple %s results', $entityName);
         } else {
             $content = new OA\JsonContent(
-                ref: '#/components/schemas/' . $entityName,
-                description: sprintf('Successfull response with the %s object', $entityName),
+                properties: [
+                    new OA\Property(
+                        property: 'data',
+                        ref: '#/components/schemas/' . $entityName,
+                        description: sprintf('Successfull response with the %s object', $entityName),
+                        type: 'object',
+                    ),
+                ]
             );
             $description = sprintf('Successful response with a single %s result', $entityName);
         }
@@ -37,18 +43,6 @@ class SuccessDataResponse extends Response
             response: 200,
             description: $description,
             content: $content,
-            links: [
-                new OA\Link(
-                    operationId: 'list' . $entityName,
-                    parameters: [
-                        new OA\Parameter(
-                            parameter: 'id',
-                            ref: '#/components/schema/' . $entityName,
-                        )
-                    ],
-                    description: 'Link to the endpoint to retrieve multiple ' . $entityName . ' objects'
-                )
-            ]
         );
     }
 }

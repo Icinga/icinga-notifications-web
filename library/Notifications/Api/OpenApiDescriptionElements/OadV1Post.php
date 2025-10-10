@@ -59,28 +59,28 @@ class OadV1Post extends Post
             ],
             links: [
                 new OA\Link(
-                    link: 'Get' . $entityName . 'ByLocation',
+                    link: 'Get' . $entityName . 'ByIdentifier',
                     operationId: 'get' . $entityName,
                     parameters: [
                         'identifier' => '$response.header.X-Resource-Identifier'
                     ],
-                    description: 'Retrieve the created contact using the Location header'
+                    description: 'Retrieve the created contact using the X-Resource-Identifier header'
                 ),
                 new OA\Link(
-                    link: 'Update' . $entityName . 'ByLocation',
+                    link: 'Update' . $entityName . 'ByIdentifier',
                     operationId: 'update' . $entityName,
                     parameters: [
                         'identifier' => '$response.header.X-Resource-Identifier'
                     ],
-                    description: 'Update the created contact using the Location header'
+                    description: 'Update the created contact using the X-Resource-Identifier header'
                 ),
                 new OA\Link(
-                    link: 'Delete' . $entityName . 'ByLocation',
+                    link: 'Delete' . $entityName . 'ByIdentifier',
                     operationId: 'delete' . $entityName,
                     parameters: [
                         'identifier' => '$response.header.X-Resource-Identifier'
                     ],
-                    description: 'Delete the created contact using the Location header'
+                    description: 'Delete the created contact using the X-Resource-Identifier header'
                 ),
             ]
         );

@@ -31,12 +31,12 @@ use stdClass;
 #[OA\OpenApi(
     info: new OA\Info(
         version: '1.0.0',
-        description: 'API for managing notification channels',
+        description: 'API for managing notification Channels, Contacts, and Contactgroups in Icinga.',
         title: 'Icinga Notifications API',
     ),
     servers: [
         new OA\Server(
-            url: 'http://localhost/icingaweb2/notifications/api/v1',
+            url: '/icingaweb2/notifications/api/v1',
             description: 'Local server',
         )
     ],
@@ -50,11 +50,11 @@ use stdClass;
 )]
 #[OA\Tag(
     name: 'Contactgroups',
-    description: 'Operations related to notification contactgroups'
+    description: 'Operations related to notification Contactgroups'
 )]
 #[OA\Tag(
     name: 'Channels',
-    description: 'Operations related to notification channels'
+    description: 'Operations related to notification Channels'
 )]
 #[OA\SecurityScheme(
     securityScheme: 'BasicAuth',
