@@ -51,30 +51,29 @@ use OpenApi\Attributes as OA;
         'default_channel',
     ],
     type: 'object',
+    additionalProperties: false,
 )]
 #[OA\Schema(
     schema: 'Addresses',
+    description: 'Schema that represents a contact\'s addresses',
     properties: [
         new OA\Property(
             property: 'email',
             description: "User's email address",
             type: 'string',
             format: 'email',
-//            nullable: true
         ),
         new OA\Property(
             property: 'rocketchat',
             description: 'Rocket.Chat identifier or URL',
             type: 'string',
             example: 'rocketchat.example.com',
-//            nullable: true
         ),
         new OA\Property(
             property: 'webhook',
             description: 'Comma-separated list of webhook URLs or identifiers',
             type: 'string',
             example: 'https://example.com/webhook',
-//            nullable: true
         ),
     ],
     type: 'object',
@@ -91,9 +90,9 @@ use OpenApi\Attributes as OA;
 class Contacts extends ApiV1 implements RequestHandlerInterface
 {
     #[OA\Examples(
-        example: 'UsernameAlreadyExists',
-        summary: 'Username already exists',
-        value: ['message' => 'Username x already exists']
+        example: 'ContactgroupNotExists',
+        summary: 'Contactgroup does not exist',
+        value: ['message' => 'Contactgroup with identifier x does not exist']
     )]
     #[OA\Examples(
         example: 'InvalidAddressType',
@@ -101,14 +100,19 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
         value: ['message' => 'Invalid request body: undefined address type x given']
     )]
     #[OA\Examples(
-        example: 'ContactgroupNotExists',
-        summary: 'Contactgroup does not exist',
-        value: ['message' => 'Contactgroup with identifier x does not exist']
+        example: 'InvalidAddressFormat',
+        summary: 'Invalid address format',
+        value: ['message' => 'Invalid request body: expects addresses to be an array']
     )]
     #[OA\Examples(
         example: 'InvalidContactgroupUUID',
         summary: 'Invalid contactgroup UUID',
         value: ['message' => 'Invalid request body: the group identifier invalid_uuid is not a valid UUID']
+    )]
+    #[OA\Examples(
+        example: 'InvalidContactgroupUUIDFormat',
+        summary: 'Invalid contactgroup UUID format',
+        value: ['message' => 'Invalid request body: an invalid group identifier format given']
     )]
     #[OA\Examples(
         example: 'InvalidDefaultChannelUUID',
@@ -121,9 +125,9 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
         value: ['message' => 'Invalid request body: an invalid email address given']
     )]
     #[OA\Examples(
-        example: 'InvalidAddressFormat',
-        summary: 'Invalid address format',
-        value: ['message' => 'Invalid request body: expects addresses to be an array']
+        example: 'InvalidEmailAddressFormat',
+        summary: 'Invalid email address format',
+        value: ['message' => 'Invalid request body: an invalid email address format given']
     )]
     #[OA\Examples(
         example: 'InvalidGroupsFormat',
@@ -131,14 +135,9 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
         value: ['message' => 'Invalid request body: expects groups to be an array']
     )]
     #[OA\Examples(
-        example: 'InvalidEmailAddressFormat',
-        summary: 'Invalid email address format',
-        value: ['message' => 'Invalid request body: an invalid email address format given']
-    )]
-    #[OA\Examples(
-        example: 'InvalidContactgroupUUIDFormat',
-        summary: 'Invalid contactgroup UUID format',
-        value: ['message' => 'Invalid request body: an invalid group identifier format given']
+        example: 'UsernameAlreadyExists',
+        summary: 'Username already exists',
+        value: ['message' => 'Username x already exists']
     )]
     protected array $specificResponses = [];
     #[OA\Property(
@@ -200,13 +199,13 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
     #[OadV1Get(
         entityName: 'Contact',
         path: '/contacts/{identifier}',
-        description: 'Get a specific contact by its UUID',
-        summary: 'Get a specific contact by its UUID',
+        description: 'Retrieve detailed information about a specific notification Contact using its UUID',
+        summary: 'Get a specific Contact by its UUID',
         tags: ['Contacts'],
         parameters: [
             new PathParameter(
                 name: 'identifier',
-                description: 'The UUID of the contact to retrieve',
+                description: 'The UUID of the Contact to retrieve',
                 identifierSchema: 'ContactUUID'
             ),
         ],
@@ -242,7 +241,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
 
         $this->prepareRow($result);
 
-        return $this->createResponse(body: Json::sanitize($result));
+        return $this->createResponse(body: Json::sanitize(['data' => $result]));
     }
 
     /**
@@ -259,7 +258,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
     #[OadV1GetPlural(
         entityName: 'Contact',
         path: '/contacts',
-        description: 'List all Contacts or filter by parameters',
+        description: 'Retrieve all Contacts or filter them by parameters.',
         summary: 'List all Contacts or filter by parameters',
         tags: ['Contacts'],
         filter: ['id', 'full_name', 'username'],
@@ -311,8 +310,9 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
     #[OadV1Put(
         entityName: 'Contact',
         path: '/contacts/{identifier}',
-        description: 'Update a contact by UUID',
-        summary: 'Update a contact by UUID',
+        description: 'Update a Contact by UUID, if it doesn\'t exist, it will be created. \
+        The identifier must be the same as the payload id',
+        summary: 'Update a Contact by UUID',
         requiredFields: ['id', 'full_name', 'default_channel'],
         requestBody: new OA\RequestBody(
             required: true,
@@ -324,7 +324,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
         parameters: [
             new PathParameter(
                 name: 'identifier',
-                description: 'The UUID of the contact to Update',
+                description: 'The UUID of the Contact to Update',
                 identifierSchema: 'NewContactUUID'
             )
         ],
@@ -332,15 +332,15 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
             new ResponseExample('InvalidDefaultChannelUUID'),
         ],
         examples422: [
-            new ResponseExample('UsernameAlreadyExists'),
             new ResponseExample('ContactgroupNotExists'),
-            new ResponseExample('InvalidContactgroupUUID'),
-            new ResponseExample('InvalidAddressType'),
             new ResponseExample('InvalidAddressFormat'),
+            new ResponseExample('InvalidAddressType'),
+            new ResponseExample('InvalidContactgroupUUID'),
+            new ResponseExample('InvalidContactgroupUUIDFormat'),
             new ResponseExample('InvalidEmailAddress'),
             new ResponseExample('InvalidEmailAddressFormat'),
             new ResponseExample('InvalidGroupsFormat'),
-            new ResponseExample('InvalidContactgroupUUIDFormat'),
+            new ResponseExample('UsernameAlreadyExists'),
         ]
     )]
     public function put(string $identifier, array $requestBody): ResponseInterface
@@ -406,7 +406,8 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
                         self::VERSION,
                         $this->getEndpoint(),
                         $requestBody['id']
-                    )
+                    ),
+                    'X-Resource-Identifier' => $requestBody['id']
                 ],
                 Json::sanitize(['message' => 'Contact created successfully'])
             );
@@ -433,8 +434,8 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
     #[OadV1Post(
         entityName: 'Contact',
         path: '/contacts',
-        description: 'Create a new contact',
-        summary: 'Create a new contact',
+        description: 'Create a new Contact',
+        summary: 'Create a new Contact',
         requiredFields: ['id', 'full_name', 'default_channel'],
         requestBody: new OA\RequestBody(
             required: true,
@@ -447,22 +448,22 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
             new ResponseExample('InvalidDefaultChannelUUID'),
         ],
         examples422: [
-            new ResponseExample('UsernameAlreadyExists'),
             new ResponseExample('ContactgroupNotExists'),
-            new ResponseExample('InvalidContactgroupUUID'),
             new ResponseExample('InvalidAddressType'),
             new ResponseExample('InvalidAddressFormat'),
+            new ResponseExample('InvalidContactgroupUUID'),
+            new ResponseExample('InvalidContactgroupUUIDFormat'),
             new ResponseExample('InvalidEmailAddress'),
             new ResponseExample('InvalidEmailAddressFormat'),
             new ResponseExample('InvalidGroupsFormat'),
-            new ResponseExample('InvalidContactgroupUUIDFormat'),
+            new ResponseExample('UsernameAlreadyExists'),
         ]
     )]
     #[OadV1Post(
         entityName: 'Contact',
         path: '/contacts/{identifier}',
-        description: 'Replace a contact by UUID',
-        summary: 'Replace a contact by UUID',
+        description: 'Replace a Contact by UUID, the identifier must be different from the payload id',
+        summary: 'Replace a Contact by UUID',
         requiredFields: ['id', 'full_name', 'default_channel'],
         requestBody: new OA\RequestBody(
             required: true,
@@ -482,15 +483,15 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
             new ResponseExample('InvalidDefaultChannelUUID'),
         ],
         examples422: [
-            new ResponseExample('UsernameAlreadyExists'),
             new ResponseExample('ContactgroupNotExists'),
-            new ResponseExample('InvalidContactgroupUUID'),
             new ResponseExample('InvalidAddressType'),
             new ResponseExample('InvalidAddressFormat'),
+            new ResponseExample('InvalidContactgroupUUID'),
+            new ResponseExample('InvalidContactgroupUUIDFormat'),
             new ResponseExample('InvalidEmailAddress'),
             new ResponseExample('InvalidEmailAddressFormat'),
             new ResponseExample('InvalidGroupsFormat'),
-            new ResponseExample('InvalidContactgroupUUIDFormat'),
+            new ResponseExample('UsernameAlreadyExists'),
         ]
     )]
     public function post(?string $identifier, array $requestBody): ResponseInterface
@@ -535,7 +536,8 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
                     self::VERSION,
                     $this->getEndpoint(),
                     $requestBody['id']
-                )
+                ),
+                'X-Resource-Identifier' => $requestBody['id']
             ],
             Json::sanitize(['message' => 'Contact created successfully'])
         );

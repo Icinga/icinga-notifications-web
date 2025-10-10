@@ -22,24 +22,28 @@ use stdClass;
 
 #[OA\Schema(
     schema: 'Channel',
-    description: 'A notification channel',
+    description: 'A notification channel represents a destination for notifications in Icinga. \
+    Channels can be of different types, such as email, webhook, or Rocket.Chat, 
+    each with its own configuration requirements. \
+    Channels are used to route notifications to users or external systems based on their type and configuration.',
     required: ['id', 'name', 'type', 'config'],
     type: 'object'
-)]
-#[OA\Schema(
-    schema: 'ChannelTypes',
-    description: 'Available channel types',
-    type: 'string',
-    enum: ['email', 'webhook', 'rocketchat'],
-    example: 'webhook',
 )]
 #[SchemaUUID(
     entityName: 'Channel',
     example: 'bb4af7bd-f0da-489c-ae31-23f714bde714'
 )]
 #[OA\Schema(
+    schema: 'ChannelTypes',
+    description: 'Available notification channel types',
+    type: 'string',
+    enum: ['email', 'webhook', 'rocketchat'],
+    example: 'webhook',
+)]
+#[OA\Schema(
     schema: 'WebhookChannelConfig',
     title: 'Webhook Channel Config',
+    description: 'The configuration for a webhook notification channel',
     required: ['url_template'],
     properties: [
         new OA\Property(
@@ -52,6 +56,7 @@ use stdClass;
 #[OA\Schema(
     schema: 'EmailChannelConfig',
     title: 'Email Channel Config',
+    description: 'The configuration for an email notification channel',
     required: [
         'host',
         'port',
@@ -174,13 +179,13 @@ class Channels extends ApiV1 implements RequestHandlerInterface
     #[OadV1Get(
         entityName: 'Channel',
         path: '/channels/{identifier}',
-        description: 'Get a specific channel by its UUID',
-        summary: 'Get a specific channel by its UUID',
+        description: 'Retrieve detailed information about a specific notification Channel using its UUID',
+        summary: 'Get a specific Channel by its UUID',
         tags: ['Channels'],
         parameters: [
             new PathParameter(
                 name: 'identifier',
-                description: 'The UUID of the channel to retrieve',
+                description: 'The UUID of the Channel to retrieve',
                 identifierSchema: 'ChannelUUID'
             ),
         ],

@@ -70,6 +70,32 @@ class OadV1Put extends Put
                                 'notifications/api/v1/%s/{identifier}',
                                 strtolower($entityName) . 's'
                             )
+                        ],
+                        links: [
+                            new OA\Link(
+                                link: 'Get' . $entityName . 'ByIdentifiere',
+                                operationId: 'get' . $entityName,
+                                parameters: [
+                                    'identifier' => '$response.header.X-Resource-Identifier'
+                                ],
+                                description: 'Retrieve the created contact using the X-Resource-Identifier header'
+                            ),
+                            new OA\Link(
+                                link: 'Update' . $entityName . 'ByIdentifier',
+                                operationId: 'update' . $entityName,
+                                parameters: [
+                                    'identifier' => '$response.header.X-Resource-Identifier'
+                                ],
+                                description: 'Update the created contact using the X-Resource-Identifier header'
+                            ),
+                            new OA\Link(
+                                link: 'Delete' . $entityName . 'ByIdentifier',
+                                operationId: 'delete' . $entityName,
+                                parameters: [
+                                    'identifier' => '$response.header.X-Resource-Identifier'
+                                ],
+                                description: 'Delete the created contact using the X-Resource-Identifier header'
+                            ),
                         ]
                     ),
                     new SuccessResponse(

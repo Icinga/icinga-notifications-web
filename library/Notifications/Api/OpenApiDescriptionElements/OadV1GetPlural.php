@@ -3,7 +3,6 @@
 namespace Icinga\Module\Notifications\Api\OpenApiDescriptionElements;
 
 use Attribute;
-use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Responses\DefaultError422Response;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Responses\ErrorResponse;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Responses\Examples\ResponseExample;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Responses\SuccessDataResponse;
@@ -46,7 +45,7 @@ class OadV1GetPlural extends Get
             tags: $tags,
             parameters: array_merge([], $parameters ?? []),
             responses: array_merge([
-                new SuccessDataResponse(entityName: $entityName, multipleResults: true),
+                new SuccessDataResponse(entityName: $entityName),
                 new ErrorResponse(
                     response: 400,
                     examples: [

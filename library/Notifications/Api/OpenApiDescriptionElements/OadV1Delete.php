@@ -4,6 +4,7 @@ namespace Icinga\Module\Notifications\Api\OpenApiDescriptionElements;
 
 use Attribute;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Parameters\PathParameter;
+use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Responses\Error404Response;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Responses\ErrorResponse;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Responses\Examples\ResponseExample;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Responses\SuccessResponse;
@@ -43,7 +44,7 @@ class OadV1Delete extends Delete
                     description: 'No Content - The ' . $entityName . ' has been deleted successfully',
                 ),
                 new ErrorResponse(response: 400, examples: [new ResponseExample('InvalidIdentifier'),]),
-                new Responses\Error404Response($entityName),
+                new Error404Response($entityName),
             ], $responses ?? []),
         );
     }
