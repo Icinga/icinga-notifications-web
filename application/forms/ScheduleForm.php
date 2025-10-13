@@ -5,6 +5,7 @@
 namespace Icinga\Module\Notifications\Forms;
 
 use DateTime;
+use DateTimeZone;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Model\Rotation;
 use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
@@ -28,6 +29,9 @@ class ScheduleForm extends CompatForm
 
     /** @var bool */
     protected bool $showRemoveButton = false;
+
+    /** @var bool */
+    protected bool $showTimezoneDropdown = false;
 
     /** @var Connection */
     private Connection $db;
@@ -60,6 +64,20 @@ class ScheduleForm extends CompatForm
         return $this;
     }
 
+    /**
+     * Set whether to show the timezone dropdown or not
+     *
+     * @param bool $state If true, the timezone dropdown will be shown (defaults to true)
+     *
+     * @return $this
+     */
+    public function setShowTimezoneDropdown(bool $state = true): self
+    {
+        $this->showTimezoneDropdown = $state;
+
+        return $this;
+    }
+
     public function hasBeenRemoved(): bool
     {
         $btn = $this->getPressedSubmitElement();
@@ -78,8 +96,9 @@ class ScheduleForm extends CompatForm
     {
         return $this->db->transaction(function (Connection $db) {
             $db->insert('schedule', [
-                'name' => $this->getValue('name'),
-                'changed_at' => (int) (new DateTime())->format("Uv")
+                'name'       => $this->getValue('name'),
+                'changed_at' => (int) (new DateTime())->format("Uv"),
+                'timezone'   => $this->getValue('timezone')
             ]);
 
             return $db->lastInsertId();
@@ -175,6 +194,16 @@ class ScheduleForm extends CompatForm
             'label'         => $this->translate('Schedule Name'),
             'placeholder'   => $this->translate('e.g. working hours, on call, etc ...')
         ]);
+
+        if ($this->showTimezoneDropdown) {
+            $this->addElement('select', 'timezone', [
+                'required'     => true,
+                'label'        => $this->translate('Schedule Timezone'),
+                'description'  => $this->translate('Select the time zone in which this schedule operates.'),
+                'multiOptions' => array_combine(DateTimeZone::listIdentifiers(), DateTimeZone::listIdentifiers()),
+                'value'        => date_default_timezone_get(),
+            ]);
+        }
 
         $this->addElement('submit', 'submit', [
             'label' => $this->getSubmitLabel()

@@ -92,6 +92,7 @@ class ScheduleController extends CompatController
     {
         $this->setTitle($this->translate('New Schedule'));
         $form = (new ScheduleForm(Database::get()))
+            ->setShowTimezoneDropdown()
             ->setAction($this->getRequest()->getUrl()->getAbsoluteUrl())
             ->on(Form::ON_SUCCESS, function (ScheduleForm $form) {
                 $scheduleId = $form->addSchedule();
