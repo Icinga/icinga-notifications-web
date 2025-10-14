@@ -58,14 +58,21 @@ class ApiController extends CompatController
                 $this->httpNotFound("Endpoint $endpoint does not exist.");
             }
 
+            $httpMethod = $request->getMethod();
             $serverRequest = (new ServerRequest(
-                $request->getMethod(),
+                $httpMethod,
                 $request->getRequestUri(),
-                ['Content-Type' => $request->getHeader('Content-Type')],
                 serverParams: $request->getServer(),
             ))
-                ->withParsedBody($this->getRequestBody($request))
                 ->withAttribute('identifier', $identifier);
+
+            if ($contentType = $request->getHeader('Content-Type')) {
+                $serverRequest = $serverRequest->withHeader('Content-Type', $contentType);
+            }
+
+            if ($httpMethod === 'POST' || $httpMethod === 'PUT') {
+                $serverRequest = $serverRequest->withParsedBody($this->getRequestBody($request));
+            }
 
             $response = (new $className())->handle($serverRequest);
         } catch (HttpExceptionInterface $e) {
@@ -97,17 +104,9 @@ class ApiController extends CompatController
      * @return ?array The validated JSON content as an associative array.
      *
      * @throws HttpBadRequestException
-     * @throws Zend_Controller_Request_Exception
      */
     private function getRequestBody(Request $request): ?array
     {
-        if (
-            ! preg_match('/([^;]*);?/', $request->getHeader('Content-Type'), $matches)
-            || $matches[1] !== 'application/json'
-        ) {
-            return null;
-        }
-
         try {
             $data = $request->getPost();
         } catch (Exception) {
