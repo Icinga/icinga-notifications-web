@@ -182,6 +182,7 @@ class BaseApiV1TestCase extends TestCase
 
     public function jsonEncodeResults(array $data): string
     {
-        return Json::sanitize(['data' => (! empty($data) && ! isset($data[0])) ? [$data] : $data]);
+        $needsWrapping = ! array_is_list($data) || count(array_filter($data, 'is_array')) !== count($data);
+        return Json::sanitize(['data' => $needsWrapping ? [$data] : $data]);
     }
 }
