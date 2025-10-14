@@ -6,18 +6,17 @@ namespace Icinga\Module\Notifications\Forms;
 
 use DateTime;
 use Icinga\Exception\Http\HttpNotFoundException;
-use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Model\Source;
-use Icinga\Web\Session;
-use ipl\Html\BaseHtmlElement;
-use ipl\Html\Contract\FormSubmitElement;
 use ipl\Html\FormElement\CheckboxElement;
+use ipl\Html\HtmlDocument;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
 use ipl\Validator\CallbackValidator;
 use ipl\Validator\X509CertValidator;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
+use ipl\Web\Url;
+use ipl\Web\Widget\ButtonLink;
 
 class SourceForm extends CompatForm
 {
@@ -40,7 +39,8 @@ class SourceForm extends CompatForm
     protected function assemble(): void
     {
         $this->addAttributes(['class' => 'source-form']);
-        $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
+        $this->applyDefaultElementDecorators();
+        $this->addCsrfCounterMeasure();
 
         $this->addElement(
             'text',
@@ -222,48 +222,16 @@ class SourceForm extends CompatForm
         );
 
         if ($this->sourceId !== null) {
-            /** @var FormSubmitElement $deleteButton */
-            $deleteButton = $this->createElement(
-                'submit',
-                'delete',
-                [
-                    'label'          => $this->translate('Delete'),
-                    'class'          => 'btn-remove',
-                    'formnovalidate' => true
-                ]
+            $this->getElement('save')->prependWrapper(
+                (new HtmlDocument())
+                    ->addHtml(
+                        (new ButtonLink(
+                            $this->translate('Delete'),
+                            Url::fromPath('notifications/source/delete/', ['id' => $this->sourceId])
+                        ))->openInModal()
+                    )
             );
-
-            $this->registerElement($deleteButton);
-
-            /** @var BaseHtmlElement $submitWrapper */
-            $submitWrapper = $this->getElement('save')->getWrapper();
-            $submitWrapper->prepend($deleteButton);
         }
-    }
-
-    public function isValid()
-    {
-        $pressedButton = $this->getPressedSubmitElement();
-        if ($pressedButton && $pressedButton->getName() === 'delete') {
-            $csrfElement = $this->getElement('CSRFToken');
-
-            if (! $csrfElement->isValid()) {
-                return false;
-            }
-
-            return true;
-        }
-
-        return parent::isValid();
-    }
-
-    public function hasBeenSubmitted()
-    {
-        if ($this->getPressedSubmitElement() !== null && $this->getPressedSubmitElement()->getName() === 'delete') {
-            return true;
-        }
-
-        return parent::hasBeenSubmitted();
     }
 
     /**
@@ -310,8 +278,6 @@ class SourceForm extends CompatForm
      */
     public function editSource(): void
     {
-        $this->db->beginTransaction();
-
         $source = $this->getValues();
 
         if (empty(array_diff_assoc($source, $this->fetchDbValues()))) {
@@ -328,27 +294,6 @@ class SourceForm extends CompatForm
 
         $source['changed_at'] = (int) (new DateTime())->format("Uv");
         $this->db->update('source', $source, ['id = ?' => $this->sourceId]);
-
-        $this->db->commitTransaction();
-    }
-
-    /**
-     * Remove the source
-     */
-    public function removeSource(): void
-    {
-        $this->db->transaction(function (Connection $db): void {
-            $rules = Rule::on($this->db)->columns('id')->filter(Filter::equal('source_id', $this->sourceId));
-            foreach ($rules as $rule) {
-                EventRuleConfigForm::removeRule($db, $rule);
-            }
-
-            $db->update(
-                'source',
-                ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'],
-                ['id = ?' => $this->sourceId]
-            );
-        });
     }
 
     /**

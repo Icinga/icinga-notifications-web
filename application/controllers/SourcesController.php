@@ -11,7 +11,9 @@ use Icinga\Module\Notifications\View\SourceRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Web\Notification;
+use Icinga\Web\Session;
 use Icinga\Web\Widget\Tabs;
+use ipl\Html\Contract\Form;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
 use ipl\Web\Control\LimitControl;
@@ -96,7 +98,8 @@ class SourcesController extends CompatController
     public function addAction(): void
     {
         $form = (new SourceForm(Database::get()))
-            ->on(SourceForm::ON_SUCCESS, function (SourceForm $form) {
+            ->setCsrfCounterMeasureId(Session::getSession()->getId())
+            ->on(Form::ON_SUBMIT, function (SourceForm $form) {
                 $form->addSource();
                 Notification::success(sprintf(t('Added new source %s successfully'), $form->getSourceName()));
                 $this->switchToSingleColumnLayout();
