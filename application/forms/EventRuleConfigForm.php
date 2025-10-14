@@ -106,10 +106,14 @@ class EventRuleConfigForm extends Form
 
         $name = $this->createElement('hidden', 'name', ['required' => true]);
         $this->registerElement($name);
+        $source = $this->createElement('hidden', 'source', ['required' => true]);
+        $this->registerElement($source);
+
         $this->addHtml(new HtmlElement(
             'div',
             Attributes::create(['id' => 'event-rule-config-form-name', 'hidden' => true]),
-            $name
+            $name,
+            $source
         ));
     }
 
@@ -174,18 +178,20 @@ class EventRuleConfigForm extends Form
     }
 
     /**
-     * Get the element to update in case the name of the rule is changed
+     * Get the element to update in case the config of the rule is changed
      *
      * @param string $newName
+     * @param int $newSource
      *
      * @return ValidHtml
      */
-    public function prepareNameUpdate(string $newName): ValidHtml
+    public function prepareConfigUpdate(string $newName, int $newSource): ValidHtml
     {
         return new HtmlElement(
             'div',
             Attributes::create(['id' => 'event-rule-config-form-name']),
-            $this->createElement('hidden', 'name', ['required' => true, 'value' => $newName])
+            $this->createElement('hidden', 'name', ['required' => true, 'value' => $newName]),
+            $this->createElement('hidden', 'source', ['required' => true, 'value' => $newSource])
         );
     }
 
@@ -247,6 +253,7 @@ class EventRuleConfigForm extends Form
         $fields = [
             'id'                => $rule->id,
             'name'              => $rule->name,
+            'source'            => $rule->source_id,
             'object_filter'     => $rule->object_filter
         ];
 
@@ -273,6 +280,10 @@ class EventRuleConfigForm extends Form
             return true;
         }
 
+        if ($previousRule->source_id !== (int) $this->getValue('source')) {
+            return true;
+        }
+
         if ($previousRule->object_filter !== $this->getValue('object_filter')) {
             return true;
         }
@@ -296,6 +307,7 @@ class EventRuleConfigForm extends Form
         if ($previousRule === null) {
             $db->insert('rule', [
                 'name'          => $this->getValue('name'),
+                'source_id'     => $this->getValue('source'),
                 'timeperiod_id' => null,
                 'object_filter' => $this->getValue('object_filter'),
                 'changed_at'    => (int) (new DateTime())->format("Uv"),
@@ -306,6 +318,7 @@ class EventRuleConfigForm extends Form
         } elseif ($this->hasChanged($previousRule)) {
             $db->update('rule', [
                 'name'          => $this->getValue('name'),
+                'source_id'     => $this->getValue('source'),
                 'object_filter' => $this->getValue('object_filter'),
                 'changed_at'    => (int) (new DateTime())->format("Uv")
             ], ['id = ?' => $ruleId]);
@@ -433,10 +446,8 @@ class EventRuleConfigForm extends Form
      *
      * @return void
      */
-    public function removeRule(Connection $db, Rule $rule): void
+    public static function removeRule(Connection $db, Rule $rule): void
     {
-        $db->beginTransaction();
-
         $escalationsToRemove = [];
         /** @var RuleEscalation $escalation */
         foreach ($rule->rule_escalation as $escalation) {
@@ -459,7 +470,5 @@ class EventRuleConfigForm extends Form
             'changed_at' => (int) (new DateTime())->format("Uv"),
             'deleted'    => 'y'
         ], ['id = ?' => $rule->id]);
-
-        $db->commitTransaction();
     }
 }

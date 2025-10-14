@@ -6,6 +6,7 @@ namespace Icinga\Module\Notifications\Forms;
 
 use DateTime;
 use Icinga\Exception\Http\HttpNotFoundException;
+use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Model\Source;
 use Icinga\Web\Session;
 use ipl\Html\BaseHtmlElement;
@@ -337,6 +338,11 @@ class SourceForm extends CompatForm
     public function removeSource(): void
     {
         $this->db->transaction(function (Connection $db): void {
+            $rules = Rule::on($this->db)->columns('id')->filter(Filter::equal('source_id', $this->sourceId));
+            foreach ($rules as $rule) {
+                EventRuleConfigForm::removeRule($db, $rule);
+            }
+
             $db->update(
                 'source',
                 ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'],

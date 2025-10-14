@@ -11,6 +11,11 @@ use ipl\Web\Url;
  */
 abstract class Links
 {
+    public static function sourceAdd(): Url
+    {
+        return Url::fromPath('notifications/sources/add');
+    }
+
     public static function event(int $id): Url
     {
         return Url::fromPath('notifications/event', ['id' => $id]);

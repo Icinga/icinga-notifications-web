@@ -29,6 +29,7 @@ use ipl\Web\Widget\Icon;
  * @property bool $deleted
  *
  * @property Query|Objects $object
+ * @property Query|Rule $rule
  */
 class Source extends Model
 {
@@ -90,6 +91,7 @@ class Source extends Model
     public function createRelations(Relations $relations): void
     {
         $relations->hasMany('object', Objects::class);
+        $relations->hasMany('rule', Rule::class);
     }
 
     /**

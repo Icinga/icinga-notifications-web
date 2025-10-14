@@ -20,8 +20,14 @@
     width: auto;
   }
 
-  fieldset p.description:last-child { // fieldset > .control-group:last-of-type unset the last element's bottom margin
+  fieldset > p.description:last-child {
     margin-top: 1em;
+  }
+
+  .control-group > p.description {
+    flex-basis: 100%;
+    margin: 0 1em 0 14em;
+    padding: 0.5625em 0.5625em 0.5625em 0;
   }
 }
 

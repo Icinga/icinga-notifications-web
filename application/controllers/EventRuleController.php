@@ -12,10 +12,11 @@ use Icinga\Module\Notifications\Forms\EventRuleConfigElements\NotificationConfig
 use Icinga\Module\Notifications\Forms\EventRuleConfigForm;
 use Icinga\Module\Notifications\Forms\EventRuleForm;
 use Icinga\Module\Notifications\Model\Rule;
+use Icinga\Module\Notifications\Model\Source;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ExtraTagSuggestions;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
-use ipl\Html\Form;
+use ipl\Html\Contract\Form;
 use ipl\Html\Html;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
@@ -55,7 +56,7 @@ class EventRuleController extends CompatController
         ))->setCsrfCounterMeasureId(Session::getSession()->getId());
 
         $eventRuleConfig
-            ->on(Form::ON_SUCCESS, function (EventRuleConfigForm $form) use ($ruleId) {
+            ->on(Form::ON_SUBMIT, function (EventRuleConfigForm $form) use ($ruleId) {
                 if ($ruleId !== -1) {
                     $rule = $this->fetchRule($ruleId);
                 } else {
@@ -72,7 +73,9 @@ class EventRuleController extends CompatController
             })
             ->on(Form::ON_SENT, function (EventRuleConfigForm $form) use ($ruleId) {
                 if ($form->hasBeenRemoved()) {
-                    $form->removeRule(Database::get(), $this->fetchRule($ruleId));
+                    Database::get()->transaction(
+                        fn() => $form::removeRule(Database::get(), $this->fetchRule($ruleId))
+                    );
                     Notification::success(sprintf(
                         $this->translate('Successfully deleted event rule %s'),
                         $form->getValue('name')
@@ -95,7 +98,10 @@ class EventRuleController extends CompatController
 
                     if ($nameOnly) {
                         $this->addPart($form->prepareObjectFilterUpdate($this->session->get('object_filter')));
-                        $this->addPart($form->prepareNameUpdate($this->session->get('name')));
+                        $this->addPart($form->prepareConfigUpdate(
+                            $this->session->get('name'),
+                            $this->session->get('source')
+                        ));
                         $this->addPart(Html::tag('div', ['id' => 'event-rule-config-name'], [
                             Html::tag('h2', $this->session->get('name')),
                             (new Link(
@@ -105,7 +111,10 @@ class EventRuleController extends CompatController
                             ))->openInModal()
                         ]));
                     } else {
-                        $this->addPart($form->prepareNameUpdate($this->session->get('name')));
+                        $this->addPart($form->prepareConfigUpdate(
+                            $this->session->get('name'),
+                            $this->session->get('source')
+                        ));
                         $this->addPart($form->prepareObjectFilterUpdate($this->session->get('object_filter')));
                     }
 
@@ -116,12 +125,15 @@ class EventRuleController extends CompatController
                     $form->load($rule);
 
                     $this->session->set('name', $rule->name);
+                    $this->session->set('source', $rule->source_id);
                     $this->session->set('object_filter', $rule->object_filter ?? '');
                 } else {
                     $name = $this->params->getRequired('name');
-                    $form->populate(['id' => $ruleId, 'name' => $name]);
+                    $source = $this->params->getRequired('source');
+                    $form->populate(['id' => $ruleId, 'name' => $name, 'source' => $source]);
 
                     $this->session->set('name', $name);
+                    $this->session->set('source', $source);
                     $this->session->set('object_filter', '');
                 }
             })
@@ -185,7 +197,7 @@ class EventRuleController extends CompatController
                 ])
             );
 
-        $editor->on(Form::ON_SUCCESS, function (SearchEditor $form) use ($ruleId) {
+        $editor->on(Form::ON_SUBMIT, function (SearchEditor $form) use ($ruleId) {
             $filter = (new Renderer($form->getFilter()))->render();
             // TODO: Should not be needed for the new filter implementation
             $filter = preg_replace('/(?:=|~|!|%3[EC])(?=[|&]|$)/', '', $filter);
@@ -206,10 +218,25 @@ class EventRuleController extends CompatController
 
         $eventRuleForm = (new EventRuleForm())
             ->setCsrfCounterMeasureId(Session::getSession()->getId())
-            ->populate(['name' => $this->session->get('name')])
+            ->setAvailableSources(
+                Database::get()->fetchPairs(
+                    Source::on(Database::get())->columns(['id', 'name'])->assembleSelect()
+                )
+            )
+            ->populate([
+                'name' => $this->session->get('name'),
+                'source' => $this->session->get('source')
+            ])
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
-            ->on(Form::ON_SUCCESS, function ($form) use ($ruleId) {
+            ->on(Form::ON_SUBMIT, function ($form) use ($ruleId) {
                 $this->session->set('name', $form->getValue('name'));
+
+                $newSource = $form->getValue('source');
+                if ($newSource !== $this->session->get('source')) {
+                    $this->session->set('source', $newSource);
+                    $this->session->set('object_filter', '');
+                }
+
                 $this->redirectNow(Links::eventRule($ruleId)->setParam('_nameOnly'));
             })->handleRequest($this->getServerRequest());
 
