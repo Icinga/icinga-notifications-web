@@ -192,8 +192,8 @@ class ContactGroupForm extends CompatForm
         $this->db->insert(
             'contactgroup',
             [
-                'name' => trim($data['group_name']),
-                'changed_at' => $changedAt,
+                'name'          => trim($data['group_name']),
+                'changed_at'    => $changedAt,
                 'external_uuid' => Uuid::uuid4()->toString()
             ]
         );
