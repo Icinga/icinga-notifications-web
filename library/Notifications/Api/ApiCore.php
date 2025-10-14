@@ -49,17 +49,17 @@ abstract class ApiCore
             $httpMethod = HttpMethod::fromRequest($request);
         } catch (ValueError) {
             throw (new HttpException(405, sprintf('HTTP method %s is not supported', $request->getMethod())))
-                ->setHeader('Allow', $this->getAllowedMethods());
+                ->setHeader('Allow', implode(', ', $this->getAllowedMethods()));
         }
 
         $request = $request->withAttribute('httpMethod', $httpMethod);
 
-        if (! method_exists($this, $httpMethod->lowercase())) {
+        if (! in_array($httpMethod->uppercase(), $this->getAllowedMethods())) {
             throw (new HttpException(
                 405,
                 sprintf('Method %s is not supported for endpoint %s', $httpMethod->uppercase(), $this->getEndpoint())
             ))
-                ->setHeader('Allow', $this->getAllowedMethods());
+                ->setHeader('Allow', implode(', ', $this->getAllowedMethods()));
         }
 
         $this->assertValidRequest($request);
@@ -83,9 +83,9 @@ abstract class ApiCore
     /**
      * Get allowed HTTP methods for the API.
      *
-     * @return string
+     * @return array
      */
-    protected function getAllowedMethods(): string
+    protected function getAllowedMethods(): array
     {
         $methods = [];
 
@@ -95,7 +95,7 @@ abstract class ApiCore
             }
         }
 
-        return implode(', ', $methods);
+        return $methods;
     }
 
     /**
