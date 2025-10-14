@@ -8,7 +8,7 @@ use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Json\JsonDecodeException;
 use Icinga\Exception\Json\JsonEncodeException;
 use Icinga\Module\Notifications\Api\ApiCore;
-use Icinga\Module\Notifications\Api\Elements\HttpMethod;
+use Icinga\Module\Notifications\Common\HttpMethod;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Util\Json;
 use ipl\Sql\Compat\FilterProcessor;

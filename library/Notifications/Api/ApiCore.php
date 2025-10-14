@@ -4,7 +4,7 @@ namespace Icinga\Module\Notifications\Api;
 
 use GuzzleHttp\Psr7\Response;
 use Icinga\Exception\Http\HttpException;
-use Icinga\Module\Notifications\Api\Elements\HttpMethod;
+use Icinga\Module\Notifications\Common\HttpMethod;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamInterface;
@@ -46,7 +46,7 @@ abstract class ApiCore
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
         try {
-            $httpMethod = HttpMethod::from(strtolower($request->getMethod()));
+            $httpMethod = HttpMethod::fromRequest($request);
         } catch (ValueError) {
             throw (new HttpException(405, sprintf('HTTP method %s is not supported', $request->getMethod())))
                 ->setHeader('Allow', $this->getAllowedMethods());

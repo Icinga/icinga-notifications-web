@@ -6,7 +6,7 @@ use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Http\HttpException;
 use Icinga\Exception\Json\JsonDecodeException;
 use Icinga\Module\Notifications\Api\Elements\HttpError;
-use Icinga\Module\Notifications\Api\Elements\HttpMethod;
+use Icinga\Module\Notifications\Common\HttpMethod;
 use Ramsey\Uuid\Uuid;
 use Icinga\Util\Json;
 use Psr\Http\Message\ResponseInterface;
