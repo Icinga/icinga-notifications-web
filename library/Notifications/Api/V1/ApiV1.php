@@ -31,7 +31,7 @@ use stdClass;
 #[OA\OpenApi(
     info: new OA\Info(
         version: '1.0.0',
-        description: 'API for managing notification Channels, Contacts, and Contactgroups in Icinga.',
+        description: 'API for managing notification Channels, Contacts, and Contact Groups in Icinga.',
         title: 'Icinga Notifications API',
     ),
     servers: [
@@ -49,8 +49,8 @@ use stdClass;
     description: 'Operations related to notification Contacts'
 )]
 #[OA\Tag(
-    name: 'Contactgroups',
-    description: 'Operations related to notification Contactgroups'
+    name: 'Contact Groups',
+    description: 'Operations related to notification Contact Groups'
 )]
 #[OA\Tag(
     name: 'Channels',
