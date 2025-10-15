@@ -141,8 +141,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
     )]
     protected array $specificResponses = [];
     #[OA\Property(
-        ref: '#/components/schemas/NewContactUUID',
-//        schema: new SchemaUUID(entityName: 'Contact', example: '9e868ad0-e774-465b-8075-c5a07e8f0726'),
+        ref: '#/components/schemas/ContactUUID',
     )]
     protected string $id;
     #[OA\Property(
@@ -156,7 +155,6 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
         type: 'string',
         maxLength: 254,
         example: 'icingauser',
-//        nullable: true
     )]
     protected ?string $username = null;
     #[OA\Property(
@@ -437,12 +435,6 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
         description: 'Create a new Contact',
         summary: 'Create a new Contact',
         requiredFields: ['id', 'full_name', 'default_channel'],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                ref: '#/components/schemas/Contact'
-            )
-        ),
         tags: ['Contacts'],
         examples400: [
             new ResponseExample('InvalidDefaultChannelUUID'),
@@ -465,12 +457,6 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
         description: 'Replace a Contact by UUID, the identifier must be different from the payload id',
         summary: 'Replace a Contact by UUID',
         requiredFields: ['id', 'full_name', 'default_channel'],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                ref: '#/components/schemas/Contact'
-            )
-        ),
         tags: ['Contacts'],
         parameters: [
             new PathParameter(
@@ -556,8 +542,8 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
     #[OadV1Delete(
         entityName: 'Contact',
         path: '/contacts/{identifier}',
-        description: 'Delete a contact by UUID',
-        summary: 'Delete a contact by UUID',
+        description: 'Delete a Contact by UUID',
+        summary: 'Delete a Contact by UUID',
         tags: ['Contacts'],
     )]
     public function delete(string $identifier): ResponseInterface
