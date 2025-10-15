@@ -91,8 +91,8 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
 {
     #[OA\Examples(
         example: 'ContactgroupNotExists',
-        summary: 'Contactgroup does not exist',
-        value: ['message' => 'Contactgroup with identifier x does not exist']
+        summary: 'Contact Group does not exist',
+        value: ['message' => 'Contact Group with identifier x does not exist']
     )]
     #[OA\Examples(
         example: 'InvalidAddressType',
@@ -106,12 +106,12 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
     )]
     #[OA\Examples(
         example: 'InvalidContactgroupUUID',
-        summary: 'Invalid contactgroup UUID',
+        summary: 'Invalid Contact Group UUID',
         value: ['message' => 'Invalid request body: the group identifier invalid_uuid is not a valid UUID']
     )]
     #[OA\Examples(
         example: 'InvalidContactgroupUUIDFormat',
-        summary: 'Invalid contactgroup UUID format',
+        summary: 'Invalid Contact Group UUID format',
         value: ['message' => 'Invalid request body: an invalid group identifier format given']
     )]
     #[OA\Examples(
@@ -644,7 +644,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
             if ($groupId === null) {
                 throw new HttpException(
                     422,
-                    sprintf('Contactgroup with identifier %s does not exist', $groupIdentifier)
+                    sprintf('Contact Group with identifier %s does not exist', $groupIdentifier)
                 );
             }
 
@@ -940,7 +940,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface
     }
 
     /**
-     * Fetch the user(contact) identifiers of the contactgroup with the given id from the contactgroup_member table
+     * Fetch the user(contact) identifiers of the Contact Group with the given id from the contactgroup_member table
      *
      * @param int $contactgroupId
      *

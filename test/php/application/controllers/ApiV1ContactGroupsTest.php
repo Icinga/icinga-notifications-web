@@ -92,7 +92,7 @@ class ApiV1ContactGroupsTest extends BaseApiV1TestCase
         $content = $response->getBody()->getContents();
 
         $this->assertSame(404, $response->getStatusCode(), $content);
-        $this->assertSame($this->jsonEncodeError('Contactgroup not found'), $content);
+        $this->assertSame($this->jsonEncodeError('Contact Group not found'), $content);
     }
 
     /**
@@ -204,7 +204,7 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(404, $response->getStatusCode(), $content);
-        $this->assertSame($this->jsonEncodeError('Contactgroup not found'), $content);
+        $this->assertSame($this->jsonEncodeError('Contact Group not found'), $content);
     }
 
     /**
@@ -253,7 +253,7 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
-        $this->assertSame($this->jsonEncodeError('Contactgroup already exists'), $content);
+        $this->assertSame($this->jsonEncodeError('Contact Group already exists'), $content);
     }
 
     /**
@@ -278,7 +278,7 @@ YAML;
             ['notifications/api/v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID_3],
             $response->getHeader('Location')
         );
-        $this->assertSame($this->jsonEncodeSuccessMessage('Contactgroup created successfully'), $content);
+        $this->assertSame($this->jsonEncodeSuccessMessage('Contact Group created successfully'), $content);
     }
 
     /**
@@ -299,7 +299,7 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
-        $this->assertSame($this->jsonEncodeError('Contactgroup already exists'), $content);
+        $this->assertSame($this->jsonEncodeError('Contact Group already exists'), $content);
     }
 
     /**
@@ -324,7 +324,7 @@ YAML;
             ['notifications/api/v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID_3],
             $response->getHeader('Location')
         );
-        $this->assertSame($this->jsonEncodeSuccessMessage('Contactgroup created successfully'), $content);
+        $this->assertSame($this->jsonEncodeSuccessMessage('Contact Group created successfully'), $content);
 
         // without optional field users
         $response = $this->sendRequest(
@@ -632,7 +632,7 @@ YAML;
             ['notifications/api/v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID_3],
             $response->getHeader('Location')
         );
-        $this->assertSame($this->jsonEncodeSuccessMessage('Contactgroup created successfully'), $content);
+        $this->assertSame($this->jsonEncodeSuccessMessage('Contact Group created successfully'), $content);
     }
 
     /**
@@ -719,7 +719,7 @@ YAML;
             ['notifications/api/v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID_3],
             $response->getHeader('Location')
         );
-        $this->assertSame($this->jsonEncodeSuccessMessage('Contactgroup created successfully'), $content);
+        $this->assertSame($this->jsonEncodeSuccessMessage('Contact Group created successfully'), $content);
     }
 
     /**
@@ -782,7 +782,7 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(404, $response->getStatusCode(), $content);
-        $this->assertSame($this->jsonEncodeError('Contactgroup not found'), $content);
+        $this->assertSame($this->jsonEncodeError('Contact Group not found'), $content);
     }
 
     /**

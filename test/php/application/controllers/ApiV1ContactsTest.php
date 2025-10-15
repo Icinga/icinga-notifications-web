@@ -598,7 +598,7 @@ YAML;
         $this->assertSame(422, $response->getStatusCode(), $content);
         $this->assertSame(
             $this->jsonEncodeError(
-                'Contactgroup with identifier ' . BaseApiV1TestCase::GROUP_UUID_3 . ' does not exist'
+                'Contact Group with identifier ' . BaseApiV1TestCase::GROUP_UUID_3 . ' does not exist'
             ),
             $content
         );
@@ -915,7 +915,7 @@ YAML;
         $this->assertEquals(422, $response->getStatusCode(), $content);
         $this->assertSame(
             $this->jsonEncodeError(
-                'Contactgroup with identifier ' . BaseApiV1TestCase::GROUP_UUID_3 . ' does not exist'
+                'Contact Group with identifier ' . BaseApiV1TestCase::GROUP_UUID_3 . ' does not exist'
             ),
             $content
         );

@@ -79,13 +79,13 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
     )]
     protected string $id;
     #[OA\Property(
-        description: 'The name of the contactgroup',
+        description: 'The name of the Contact Group',
         type: 'string',
-        example: 'My Contactgroup',
+        example: 'My Contact Group',
     )]
     protected string $name;
     #[OA\Property(
-        description: 'List of user identifiers (UUIDs) that belong to this contactgroup',
+        description: 'List of user identifiers (UUIDs) that belong to this Contact Group',
         type: 'array',
         items: new OA\Items(ref: '#/components/schemas/ContactUUID')
     )]
@@ -98,7 +98,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
     }
 
     /**
-     * Get a contactgroup by UUID.
+     * Get a Contact Group by UUID.
      *
      * @param string|null $identifier
      * @param string $queryFilter
@@ -112,13 +112,13 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
     #[OadV1Get(
         entityName: 'Contactgroup',
         path: '/contact-groups/{identifier}',
-        description: 'Retrieve detailed information about a specific notification Contactgroup using its UUID',
-        summary: 'Get a specific Contactgroup by its UUID',
-        tags: ['Contactgroups'],
+        description: 'Retrieve detailed information about a specific notification Contact Group using its UUID',
+        summary: 'Get a specific Contact Group by its UUID',
+        tags: ['Contact Groups'],
         parameters: [
             new PathParameter(
                 name: 'identifier',
-                description: 'The UUID of the Contactgroup to retrieve',
+                description: 'The UUID of the Contact Group to retrieve',
                 identifierSchema: 'ContactgroupUUID'
             ),
         ],
@@ -145,7 +145,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
         $result = Database::get()->fetchOne($stmt);
 
         if ($result === false) {
-            throw new HttpNotFoundException('Contactgroup not found');
+            throw new HttpNotFoundException('Contact Group not found');
         }
 
         $this->prepareRow($result);
@@ -154,7 +154,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
     }
 
     /**
-     * List contactgroups or get specific contactgroups by filter parameters.
+     * List Contact Groups or get specific Contact Groups by filter parameters.
      *
      * @param string $queryFilter
      * @param Select $stmt
@@ -167,19 +167,19 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
     #[OadV1GetPlural(
         entityName: 'Contactgroup',
         path: '/contact-groups',
-        description: 'Retrieve all Contactgroups or filter them by parameters.',
-        summary: 'List all Contactgroups or filter by parameters',
-        tags: ['Contactgroups'],
+        description: 'Retrieve all Contact Groups or filter them by parameters.',
+        summary: 'List all Contact Groups or filter by parameters',
+        tags: ['Contact Groups'],
         filter: ['id', 'name'],
         parameters: [
             new QueryParameter(
                 name: 'id',
-                description: 'Filter by Contactgroup UUID',
+                description: 'Filter by Contact Group UUID',
                 schema: new SchemaUUID(entityName: 'Contactgroup'),
             ),
             new QueryParameter(
                 name: 'name',
-                description: 'Filter by Contactgroup name',
+                description: 'Filter by Contact Group name',
             ),
         ],
         responses: []
@@ -200,7 +200,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
     }
 
     /**
-     * Update a contactgroup by UUID.
+     * Update a Contact Group by UUID.
      *
      * @param string $identifier
      * @param requestBody $requestBody
@@ -214,9 +214,9 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
     #[OadV1Put(
         entityName: 'Contactgroup',
         path: '/contact-groups/{identifier}',
-        description: 'Update a Contactgroup by UUID, if it doesn\'t exist, it will be created. \
+        description: 'Update a Contact Group by UUID, if it doesn\'t exist, it will be created. \
         The identifier must be the same as the payload id',
-        summary: 'Update a Contactgroup by UUID',
+        summary: 'Update a Contact Group by UUID',
         requiredFields: ['id', 'name'],
         requestBody: new OA\RequestBody(
             required: true,
@@ -224,11 +224,11 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
                 ref: '#/components/schemas/Contactgroup'
             )
         ),
-        tags: ['Contactgroups'],
+        tags: ['Contact Groups'],
         parameters: [
             new PathParameter(
                 name: 'identifier',
-                description: 'The UUID of the Contactgroup to update',
+                description: 'The UUID of the Contact Group to update',
                 identifierSchema: 'ContactgroupUUID'
             )
         ],
@@ -287,7 +287,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
                     ),
                     'X-Resource-Identifier' => $requestBody['id']
                 ],
-                Json::sanitize(['message' => 'Contactgroup created successfully'])
+                Json::sanitize(['message' => 'Contact Group created successfully'])
             );
         }
 
@@ -297,10 +297,10 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
     }
 
     /**
-     * Create or replace a contactgroup
+     * Create or replace a Contact Group
      *
-     * @param string|null $identifier The identifier of the contactgroup to update, or null to create a new one
-     * @param requestBody $requestBody The request body containing the contactgroup data
+     * @param string|null $identifier The identifier of the Contact Group to update, or null to create a new one
+     * @param requestBody $requestBody The request body containing the Contact Group data
      *
      * @return ResponseInterface
      *
@@ -312,10 +312,10 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
     #[OadV1Post(
         entityName: 'Contactgroup',
         path: '/contact-groups',
-        description: 'Create a new Contactgroup',
-        summary: 'Create a new Contactgroup',
+        description: 'Create a new Contact Group',
+        summary: 'Create a new Contact Group',
         requiredFields: ['id', 'name'],
-        tags: ['Contactgroups'],
+        tags: ['Contact Groups'],
         examples422: [
             new ResponseExample('InvalidUserFormat'),
             new ResponseExample('InvalidUserUUID'),
@@ -326,14 +326,14 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
     #[OadV1Post(
         entityName: 'Contactgroup',
         path: '/contact-groups/{identifier}',
-        description: 'Replace a Contactgroup by UUID, the identifier must be different from the payload id',
-        summary: 'Replace a Contactgroup by UUID',
+        description: 'Replace a Contact Group by UUID, the identifier must be different from the payload id',
+        summary: 'Replace a Contact Group by UUID',
         requiredFields: ['id', 'name'],
-        tags: ['Contactgroups'],
+        tags: ['Contact Groups'],
         parameters: [
             new PathParameter(
                 name: 'identifier',
-                description: 'The UUID of the Contactgroup to create',
+                description: 'The UUID of the Contact Group to create',
                 identifierSchema: 'ContactgroupUUID'
             )
         ],
@@ -363,12 +363,12 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
             $groupId = $this->getGroupId($identifier);
 
             if ($groupId === null) {
-                throw new HttpNotFoundException('Contactgroup not found');
+                throw new HttpNotFoundException('Contact Group not found');
             }
         }
 
         if ($this->getGroupId($requestBody['id']) !== null) {
-            throw new HttpException(422, 'Contactgroup already exists');
+            throw new HttpException(422, 'Contact Group already exists');
         }
 
         if (! $emptyIdentifier) {
@@ -389,12 +389,12 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
                 ),
                 'X-Resource-Identifier' => $requestBody['id']
             ],
-            Json::sanitize(['message' => 'Contactgroup created successfully'])
+            Json::sanitize(['message' => 'Contact Group created successfully'])
         );
     }
 
     /**
-     * Remove the contactgroup with the given id
+     * Remove the Contact Group with the given id
      *
      * @param string $identifier
      *
@@ -406,9 +406,9 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
     #[OadV1Delete(
         entityName: 'Contactgroup',
         path: '/contact-groups/{identifier}',
-        description: 'Delete a Contactgroup by UUID',
-        summary: 'Delete a Contactgroup by UUID',
-        tags: ['Contactgroups'],
+        description: 'Delete a Contact Group by UUID',
+        summary: 'Delete a Contact Group by UUID',
+        tags: ['Contact Groups'],
     )]
     public function delete(string $identifier): ResponseInterface
     {
@@ -419,7 +419,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
         $contactgroupId = self::getGroupId($identifier);
 
         if ($contactgroupId === null) {
-            throw new HttpNotFoundException('Contactgroup not found');
+            throw new HttpNotFoundException('Contact Group not found');
         }
 
         Database::get()->beginTransaction();
@@ -482,7 +482,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
     }
 
     /**
-     * Remove the contactgroup with the given id and all its references
+     * Remove the Contact Group with the given id and all its references
      *
      * @param int $id
      *
@@ -628,7 +628,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
     }
 
     /**
-     * Add a new contactgroup with the given data
+     * Add a new Contact Group with the given data
      *
      * @param requestBody $requestBody
      *
@@ -688,7 +688,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
      * Assert that the name is unique
      *
      * @param string $name
-     * @param ?int $contactgroupId The id of the contactgroup to exclude
+     * @param ?int $contactgroupId The id of the Contact Group to exclude
      *
      * @return void
      *
