@@ -9,6 +9,7 @@ use Icinga\Exception\IcingaException;
 use Icinga\Module\Notifications\Test\BaseApiV1TestCase;
 use Icinga\Web\Url;
 use ipl\Sql\Connection;
+use stdClass;
 use WebSocket\Base;
 
 class ApiV1ContactsTest extends BaseApiV1TestCase
@@ -27,7 +28,7 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
             'username' => 'test',
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             'groups' => [],
-            'addresses' => []
+            'addresses' => new stdClass()
         ]);
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertSame($expected, $content);
@@ -61,7 +62,7 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
                 'username' => 'test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
                 'groups' => [],
-                'addresses' => []
+                'addresses' => new stdClass()
             ],
             [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_2,
@@ -69,7 +70,7 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
                 'username' => 'test2',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
                 'groups' => [],
-                'addresses' => []
+                'addresses' => new stdClass()
             ],
         ]);
         $this->assertSame(200, $response->getStatusCode(), $content);
@@ -90,7 +91,7 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
             'username' => 'test',
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             'groups' => [],
-            'addresses' => []
+            'addresses' => new stdClass()
         ]);
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertSame($expected, $content);

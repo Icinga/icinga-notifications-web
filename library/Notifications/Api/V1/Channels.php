@@ -219,7 +219,7 @@ class Channels extends ApiV1 implements RequestHandlerInterface
 
         $this->prepareRow($result);
 
-        return $this->createResponse(body: Json::sanitize($result));
+        return $this->createResponse(body: Json::sanitize(['data' => $result]));
     }
 
     /**
