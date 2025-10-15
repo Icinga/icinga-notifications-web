@@ -179,7 +179,7 @@ class BaseApiV1TestCase extends TestCase
 
     public function jsonEncodeResult(array $data): string
     {
-        return Json::sanitize($data);
+        return Json::sanitize(['data' => $data]);
     }
 
     public function jsonEncodeResults(array $data): string
