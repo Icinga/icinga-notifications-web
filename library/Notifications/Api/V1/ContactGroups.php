@@ -47,6 +47,10 @@ use stdClass;
     entityName: 'Contactgroup',
     example: '81fb569f-5669-4cd6-93bb-9259446b8b23',
 )]
+#[SchemaUUID(
+    entityName: 'NewContactgroup',
+    example: '31fb569f-5669-4cd6-93bb-9259446b8b74',
+)]
 class ContactGroups extends ApiV1 implements RequestHandlerInterface
 {
     #[OA\Examples(
@@ -311,12 +315,6 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
         description: 'Create a new Contactgroup',
         summary: 'Create a new Contactgroup',
         requiredFields: ['id', 'name'],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                ref: '#/components/schemas/Contactgroup'
-            )
-        ),
         tags: ['Contactgroups'],
         examples422: [
             new ResponseExample('InvalidUserFormat'),
@@ -331,12 +329,6 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface
         description: 'Replace a Contactgroup by UUID, the identifier must be different from the payload id',
         summary: 'Replace a Contactgroup by UUID',
         requiredFields: ['id', 'name'],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                ref: '#/components/schemas/Contactgroup'
-            )
-        ),
         tags: ['Contactgroups'],
         parameters: [
             new PathParameter(

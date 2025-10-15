@@ -20,7 +20,6 @@ class OadV1Post extends Post
         ?string $description = null,
         ?string $summary = null,
         ?array $requiredFields = null,
-        ?RequestBody $requestBody = null,
         ?array $tags = null,
         ?array $parameters = null,
         ?array $responses = null,
@@ -38,6 +37,22 @@ class OadV1Post extends Post
                 new ResponseExample('IdentifierPayloadIdMissmatch')
             ]);
         }
+        $requestBody = new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                allOf: [
+                    new OA\Schema(ref: '#/components/schemas/' . $entityName),
+                    new OA\Schema(
+                        properties: [
+                            new OA\Property(
+                                property: 'id',
+                                ref: '#/components/schemas/New' . $entityName . 'UUID',
+                            )
+                        ]
+                    ),
+                ]
+            )
+        );
 
         $successResponse = new SuccessResponse(
             response: 201,
