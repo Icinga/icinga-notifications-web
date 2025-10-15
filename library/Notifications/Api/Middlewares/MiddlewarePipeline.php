@@ -1,5 +1,7 @@
 <?php
 
+/* Icinga Notifications Web | (c) 2025 Icinga GmbH | GPLv2 */
+
 namespace Icinga\Module\Notifications\Api\Middlewares;
 
 use Icinga\Exception\Http\HttpException;

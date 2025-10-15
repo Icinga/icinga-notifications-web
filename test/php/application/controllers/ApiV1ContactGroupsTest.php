@@ -1,5 +1,7 @@
 <?php
 
+/* Icinga Notifications Web | (c) 2025 Icinga GmbH | GPLv2 */
+
 namespace Tests\Icinga\Module\Notifications\Controllers;
 
 use GuzzleHttp\Client;
