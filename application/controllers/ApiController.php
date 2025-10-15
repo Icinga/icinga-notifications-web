@@ -142,7 +142,7 @@ class ApiController extends CompatController
         header('Content-Type: application/json');
 
         $body = $response->getBody();
-        while (!$body->eof()) {
+        while (! $body->eof()) {
             echo $body->read(8192);
         }
     }

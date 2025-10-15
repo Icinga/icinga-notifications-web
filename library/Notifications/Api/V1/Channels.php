@@ -62,8 +62,6 @@ use stdClass;
         'port',
         'sender_mail',
         'encryption',
-//        'smtp_user',
-//        'smtp_password',
     ],
     properties: [
         new OA\Property(
