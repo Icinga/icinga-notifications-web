@@ -10,6 +10,7 @@ use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Json\JsonDecodeException;
 use Icinga\Exception\Json\JsonEncodeException;
 use Icinga\Module\Notifications\Api\ApiCore;
+use Icinga\Module\Notifications\Api\Exception\InvalidFilterParameterException;
 use Icinga\Module\Notifications\Common\HttpMethod;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Util\Json;
@@ -88,44 +89,6 @@ abstract class ApiV1 extends ApiCore
     }
 
     /**
-     * @throws HttpBadRequestException If the request is not valid.
-     */
-    protected function assertValidRequest(ServerRequestInterface $request): void
-    {
-        $httpMethod = $request->getAttribute('httpMethod');
-        $identifier = $request->getAttribute('identifier');
-        $queryFilter = $request->getUri()->getQuery();
-
-        if ($httpMethod !== HttpMethod::GET && ! empty($queryFilter)) {
-            throw new HttpBadRequestException(
-                'Unexpected query parameter: Filter is only allowed for GET requests'
-            );
-        }
-
-        if ($httpMethod === HttpMethod::GET && ! empty($identifier) && ! empty($queryFilter)) {
-            throw new HttpBadRequestException(sprintf(
-                'Invalid request: %s with identifier and query parameters, it\'s not allowed to use both together.',
-                $httpMethod->uppercase()
-            ));
-        }
-
-        if (
-            ! in_array($httpMethod, [HttpMethod::PUT, HttpMethod::POST])
-            && (! empty($request->getBody()->getSize()) || ! empty($request->getParsedBody()))
-        ) {
-            throw new HttpBadRequestException('Invalid request: Body is only allowed for POST and PUT requests');
-        }
-
-        if (in_array($httpMethod, [HttpMethod::PUT, HttpMethod::DELETE]) && empty($identifier)) {
-            throw new HttpBadRequestException("Invalid request: Identifier is required");
-        }
-
-        if ((! empty($identifier) || $identifier === '0') && ! Uuid::isValid($identifier)) {
-            throw new HttpBadRequestException('The given identifier is not a valid UUID');
-        }
-    }
-
-    /**
      * Override this method to modify the row before it is returned in the response.
      *
      * @param stdClass $row
@@ -159,13 +122,7 @@ abstract class ApiV1 extends ApiCore
                     function (Condition $condition) use ($allowedColumns, $idColumnName) {
                         $column = $condition->getColumn();
                         if (! in_array($column, $allowedColumns)) {
-                            throw new HttpBadRequestException(
-                                sprintf(
-                                    'Invalid request parameter: Filter column %s given, only %s are allowed',
-                                    $column,
-                                    preg_replace('/,([^,]*)$/', ' and$1', implode(', ', $allowedColumns))
-                                )
-                            );
+                            throw new InvalidFilterParameterException($column);
                         }
 
                         if ($column === 'id') {
@@ -180,6 +137,10 @@ abstract class ApiV1 extends ApiCore
 
             return FilterProcessor::assembleFilter($filterRule);
         } catch (Exception $e) {
+            if ($e instanceof InvalidFilterParameterException) {
+                throw $e;
+            }
+
             throw new HttpBadRequestException($e->getMessage());
         }
     }
@@ -187,7 +148,7 @@ abstract class ApiV1 extends ApiCore
     /**
      * Validate that the request has a JSON content type and return the parsed JSON content.
      *
-     * @param ServerRequestInterface $request The request object to validate.
+     * @param ServerRequestInterface $request The request-object to validate.
      *
      * @return array The validated JSON content as an associative array.
      *

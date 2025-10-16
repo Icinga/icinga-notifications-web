@@ -130,7 +130,7 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
         $content = $response->getBody()->getContents();
 
         $expected = $this->jsonEncodeError(
-            'Invalid request parameter: Filter column unknown given, only id, full_name and username are allowed'
+            'Invalid request parameter: Filter column unknown is not allowed'
         );
         $this->assertSame(400, $response->getStatusCode(), $content);
         $this->assertSame($expected, $content);

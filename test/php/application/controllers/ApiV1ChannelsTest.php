@@ -158,7 +158,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $content = $response->getBody()->getContents();
 
         $expected = $this->jsonEncodeError(
-            'Invalid request parameter: Filter column nonexistingfilter given, only id, name and type are allowed',
+            'Invalid request parameter: Filter column nonexistingfilter is not allowed',
         );
         $this->assertSame(400, $response->getStatusCode(), $content);
         $this->assertSame($expected, $content);
