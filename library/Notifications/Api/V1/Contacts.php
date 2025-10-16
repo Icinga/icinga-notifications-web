@@ -9,6 +9,8 @@ use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Http\HttpException;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Exception\Json\JsonEncodeException;
+use Icinga\Module\Notifications\Api\EndpointInterface;
+use Icinga\Module\Notifications\Api\Exception\InvalidFilterParameterException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\OadV1Delete;
@@ -87,7 +89,7 @@ use OpenApi\Attributes as OA;
     entityName: 'NewContact',
     example: '52668ad0-e774-465b-8075-c5a07e8f0726',
 )]
-class Contacts extends ApiV1 implements RequestHandlerInterface
+class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterface
 {
     #[OA\Examples(
         example: 'ContactgroupNotExists',

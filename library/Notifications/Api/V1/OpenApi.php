@@ -5,6 +5,7 @@ namespace Icinga\Module\Notifications\Api\V1;
 use FilesystemIterator;
 use Icinga\Application\Icinga;
 use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Notifications\Api\EndpointInterface;
 use Icinga\Module\Notifications\Api\OpenApiPreprocessor\AddGlobal401Response;
 use Icinga\Module\Notifications\Common\PsrLogger;
 use OpenApi\Generator;
@@ -102,7 +103,7 @@ use RuntimeException;
 //                'message' => 'Invalid field in request body: X',
 //            ],
 //        ),
-class OpenApi extends ApiV1 implements RequestHandlerInterface
+class OpenApi extends ApiV1 implements RequestHandlerInterface, EndpointInterface
 {
     public const OPENAPI_PATH = __DIR__ . '/docs/openapi.json';
 

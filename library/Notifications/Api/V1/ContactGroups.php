@@ -9,6 +9,7 @@ use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Http\HttpException;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Exception\Json\JsonEncodeException;
+use Icinga\Module\Notifications\Api\EndpointInterface;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\OadV1Delete;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\OadV1Get;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\OadV1GetPlural;
@@ -51,7 +52,7 @@ use stdClass;
     entityName: 'NewContactgroup',
     example: '31fb569f-5669-4cd6-93bb-9259446b8b74',
 )]
-class ContactGroups extends ApiV1 implements RequestHandlerInterface
+class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointInterface
 {
     #[OA\Examples(
         example: 'InvalidUserFormat',

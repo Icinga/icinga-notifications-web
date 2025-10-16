@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Api\V1;
 use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Exception\Json\JsonEncodeException;
+use Icinga\Module\Notifications\Api\EndpointInterface;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\OadV1GetPlural;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Parameter\PathParameter;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Parameter\QueryParameter;
@@ -129,7 +130,7 @@ use stdClass;
         )
     ],
 )]
-class Channels extends ApiV1 implements RequestHandlerInterface
+class Channels extends ApiV1 implements RequestHandlerInterface, EndpointInterface
 {
     #[OA\Property(
         ref: '#/components/schemas/ChannelUUID',

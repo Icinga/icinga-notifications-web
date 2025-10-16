@@ -3,22 +3,18 @@
 namespace Icinga\Module\Notifications\Controllers;
 
 use Exception;
-use GuzzleHttp\Psr7\Response;
-use GuzzleHttp\Psr7\ServerRequest;
-use Icinga\Application\Logger;
 use Icinga\Exception\Http\HttpBadRequestException;
-use Icinga\Exception\Http\HttpExceptionInterface;
-use Icinga\Exception\IcingaException;
-use Icinga\Exception\Json\JsonEncodeException;
-use Icinga\Module\Notifications\Api\V1\OpenApi;
-use Icinga\Util\Json;
+use Icinga\Module\Notifications\Api\Middleware\DispatchMiddleware;
+use Icinga\Module\Notifications\Api\Middleware\EndpointExecutionMiddleware;
+use Icinga\Module\Notifications\Api\Middleware\ErrorHandlingMiddleware;
+use Icinga\Module\Notifications\Api\Middleware\LegacyRequestConversionMiddleware;
+use Icinga\Module\Notifications\Api\Middleware\MiddlewarePipeline;
+use Icinga\Module\Notifications\Api\Middleware\RoutingMiddleware;
+use Icinga\Module\Notifications\Api\Middleware\ValidationMiddleware;
+use Icinga\Security\SecurityException;
 use Icinga\Web\Request;
-use ipl\Stdlib\Str;
 use ipl\Web\Compat\CompatController;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Server\RequestHandlerInterface;
-use Throwable;
-use Zend_Controller_Request_Exception;
 
 class ApiController extends CompatController
 {
@@ -28,95 +24,24 @@ class ApiController extends CompatController
      * Processes API requests for the Notifications module, serving as the main entry point for all API interactions.
      *
      * @return never
-     * @throws JsonEncodeException
+     * @throws SecurityException
      */
     public function indexAction(): never
     {
-        try {
-            $this->assertPermission('notifications/api');
+        $this->assertPermission('notifications/api');
 
-            $request = $this->getRequest();
-            if (
-                ! $request->isApiRequest()
-                && strtolower($request->getParam('endpoint')) !== (new OpenApi())->getEndpoint() // for browser query
-            ) {
-                $this->httpBadRequest('No API request');
-            }
+        $pipeline = new MiddlewarePipeline([
+            new ErrorHandlingMiddleware(),
+            new LegacyRequestConversionMiddleware($this->getRequest()),
+            new RoutingMiddleware(),
+            new DispatchMiddleware(),
+            new ValidationMiddleware(),
+            new EndpointExecutionMiddleware(),
+        ]);
 
-            $params = $request->getParams();
-            $version = ucfirst($params['version']);
-            $endpoint = ucfirst(Str::camel($params['endpoint']));
-            $identifier = $params['identifier'] ?? null;
-
-            $module = (($moduleName = $request->getModuleName()) !== null)
-                ? 'Module\\' . ucfirst($moduleName) . '\\'
-                : '';
-            $className = sprintf('Icinga\\%sApi\\%s\\%s', $module, $version, $endpoint);
-
-            // TODO: works only for V1 right now
-            if (! class_exists($className) || ! is_subclass_of($className, RequestHandlerInterface::class)) {
-                $this->httpNotFound("Endpoint $endpoint does not exist.");
-            }
-
-            $httpMethod = $request->getMethod();
-            $serverRequest = (new ServerRequest(
-                $httpMethod,
-                $request->getRequestUri(),
-                serverParams: $request->getServer(),
-            ))
-                ->withAttribute('identifier', $identifier);
-
-            if ($contentType = $request->getHeader('Content-Type')) {
-                $serverRequest = $serverRequest->withHeader('Content-Type', $contentType);
-            }
-
-            if ($httpMethod === 'POST' || $httpMethod === 'PUT') {
-                $serverRequest = $serverRequest->withParsedBody($this->getRequestBody($request));
-            }
-
-            $response = (new $className())->handle($serverRequest);
-        } catch (HttpExceptionInterface $e) {
-            $response = new Response(
-                $e->getStatusCode(),
-                array_merge($e->getHeaders(), ['Content-Type' => 'application/json']),
-                Json::sanitize(['message' => $e->getMessage()])
-            );
-        } catch (Throwable $e) {
-            Logger::error($e);
-            Logger::debug(IcingaException::getConfidentialTraceAsString($e));
-            $response = new Response(
-                500,
-                ['Content-Type' => 'application/json'],
-                Json::sanitize(['message' => 'An error occurred, please chack the log.'])
-            );
-        } finally {
-            $this->emitResponse($response);
-        }
+        $this->emitResponse($pipeline->execute());
 
         exit;
-    }
-
-    /**
-     * Validate that the request has an appropriate body.
-     *
-     * @param Request $request The request object to validate.
-     *
-     * @return ?array The validated JSON content as an associative array.
-     *
-     * @throws HttpBadRequestException
-     */
-    private function getRequestBody(Request $request): ?array
-    {
-        try {
-            $data = $request->getPost();
-            if ($data !== null && ! is_array($data)) {
-                $this->httpBadRequest('Invalid request body: given content is not a valid JSON');
-            }
-        } catch (Exception) {
-            $this->httpBadRequest('Invalid request body: given content is not a valid JSON');
-        }
-
-        return $data;
     }
 
     /**
