@@ -370,7 +370,12 @@ class Timeline extends BaseHtmlElement implements EntryProvider
                 )
             );
 
+            $beforeHour = $now->format('H');
             $now = Util::roundToNearestThirtyMinute($now);
+
+            if ($beforeHour === '23' && $now->format('H') === '00') {
+                $now->sub(new DateInterval('PT30M'));
+            }
 
             $this->getStyle()->addFor($currentTime, [
                 '--timeStartColumn' =>
