@@ -17,6 +17,8 @@ use ValueError;
  * Abstract base class for API endpoints.
  *
  * This class provides the base functionality for handling API requests,
+ *
+ * @internal
  */
 abstract class ApiCore
 {

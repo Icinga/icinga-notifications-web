@@ -2,7 +2,7 @@
 
 /* Icinga Notifications Web | (c) 2025 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Notifications\Api\Middlewares;
+namespace Icinga\Module\Notifications\Api\Middleware;
 
 use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Http\HttpException;

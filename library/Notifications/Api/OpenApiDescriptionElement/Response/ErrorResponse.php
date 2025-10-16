@@ -2,7 +2,7 @@
 
 /* Icinga Notifications Web | (c) 2025 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Responses;
+namespace Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Response;
 
 use OpenApi\Attributes\Response;
 use OpenApi\Attributes as OA;
