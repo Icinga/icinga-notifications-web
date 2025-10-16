@@ -2,7 +2,7 @@
 
 /* Icinga Notifications Web | (c) 2025 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Notifications\Api\OpenApiPreprocessors;
+namespace Icinga\Module\Notifications\Api\OpenApiPreprocessor;
 
 use OpenApi\Analysis;
 use OpenApi\Annotations as OA;

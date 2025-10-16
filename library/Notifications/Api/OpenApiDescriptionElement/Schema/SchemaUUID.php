@@ -2,7 +2,7 @@
 
 /* Icinga Notifications Web | (c) 2025 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Schemas;
+namespace Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Schema;
 
 use Attribute;
 use OpenApi\Attributes\Schema;

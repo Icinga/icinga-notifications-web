@@ -2,13 +2,13 @@
 
 /* Icinga Notifications Web | (c) 2025 Icinga GmbH | GPLv2 */
 
-namespace Icinga\Module\Notifications\Api\OpenApiDescriptionElements;
+namespace Icinga\Module\Notifications\Api\OpenApiDescriptionElement;
 
 use Attribute;
-use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Responses\Error404Response;
-use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Responses\ErrorResponse;
-use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Responses\Examples\ResponseExample;
-use Icinga\Module\Notifications\Api\OpenApiDescriptionElements\Responses\SuccessDataResponse;
+use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Response\Error404Response;
+use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Response\ErrorResponse;
+use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Response\Example\ResponseExample;
+use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Response\SuccessDataResponse;
 use OpenApi\Attributes\Get;
 use OpenApi\Attributes as OA;
 
