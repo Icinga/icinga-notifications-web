@@ -20,6 +20,7 @@ use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Parameter\QueryPar
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Response\Example\ResponseExample;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Schema\SchemaUUID;
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Model\Contactgroup;
 use Icinga\Module\Notifications\Model\Rotation;
 use Icinga\Module\Notifications\Model\RotationMember;
 use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
@@ -255,25 +256,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
         Database::get()->beginTransaction();
 
         if (($contactgroupId = self::getGroupId($identifier)) !== null) {
-            if (! empty($requestBody['name'])) {
-                $this->assertUniqueName($requestBody['name'], $contactgroupId);
-            }
-
-            Database::get()->update(
-                'contactgroup',
-                ['name' => $requestBody['name']],
-                ['id = ?' => $contactgroupId]
-            );
-            Database::get()->update(
-                'contactgroup_member',
-                ['deleted' => 'y'],
-                ['contactgroup_id = ?' => $contactgroupId, 'deleted = ?' => 'n']
-            );
-
-            if (! empty($requestBody['users'])) {
-                $this->addUsers($contactgroupId, $requestBody['users']);
-            }
-
+            $this->updateContactgroup($requestBody, $contactgroupId);
             $result = $this->createResponse(204);
         } else {
             $this->addContactgroup($requestBody);
@@ -651,6 +634,89 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
         }
     }
 
+    private function updateContactgroup(array $requestBody, int $contactgroupId): void
+    {
+        $storedValues = $this->fetchDbValues($contactgroupId);
+
+        $changedAt = (int) (new DateTime())->format("Uv");
+
+        if ($requestBody['name'] !== $storedValues['group_name']) {
+            Database::get()->update(
+                'contactgroup',
+                ['name' => $requestBody['name'], 'changed_at' => $changedAt],
+                ['id = ?' => $contactgroupId]
+            );
+        }
+
+        $storedContacts = [];
+        if (! empty($storedValues['group_members'])) {
+            $storedContacts = explode(',', $storedValues['group_members']);
+        }
+
+        $newContacts = [];
+        if (! empty($requestBody['users'])) {
+            foreach ($requestBody['users'] as $identifier) {
+                $contactId = Contacts::getContactId($identifier);
+                if ($contactId === null) {
+                    throw new HttpException(422, sprintf('User with identifier %s not found', $identifier));
+                }
+                $newContacts[] = $contactId;
+            }
+        }
+        var_dump($newContacts);
+
+        $toDelete = array_diff($storedContacts, $newContacts);
+        $toAdd = array_diff($newContacts, $storedContacts);
+
+        if (! empty($toDelete)) {
+            Database::get()->update(
+                'contactgroup_member',
+                ['changed_at' => $changedAt, 'deleted' => 'y'],
+                [
+                    'contactgroup_id = ?'   => $contactgroupId,
+                    'contact_id IN (?)'     => $toDelete,
+                    'deleted = ?'           => 'n'
+                ]
+            );
+        }
+
+        if (! empty($toAdd)) {
+            $contactsMarkedAsDeleted = Database::get()->fetchCol(
+                (new Select())
+                    ->from('contactgroup_member')
+                    ->columns(['contact_id'])
+                    ->where([
+                        'contactgroup_id = ?'   => $contactgroupId,
+                        'deleted = ?'           => 'y',
+                        'contact_id IN (?)'     => $toAdd
+                    ])
+            );
+
+            $toAdd = array_diff($toAdd, $contactsMarkedAsDeleted);
+            foreach ($toAdd as $contactId) {
+                Database::get()->insert(
+                    'contactgroup_member',
+                    [
+                        'contactgroup_id'   => $contactgroupId,
+                        'contact_id'        => $contactId,
+                        'changed_at'        => $changedAt
+                    ]
+                );
+            }
+
+            if (! empty($contactsMarkedAsDeleted)) {
+                Database::get()->update(
+                    'contactgroup_member',
+                    ['changed_at' => $changedAt, 'deleted' => 'n'],
+                    [
+                        'contactgroup_id = ?'   => $contactgroupId,
+                        'contact_id IN (?)'     => $contactsMarkedAsDeleted
+                    ]
+                );
+            }
+        }
+    }
+
     /**
      * Add the given users as contactgroup_member with the given id
      *
@@ -711,5 +777,35 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
         if ($user) {
             throw new HttpException(422, sprintf('Username %s already exists', $name));
         }
+    }
+
+    /**
+     * Fetch the values from the database
+     *
+     * @param int $contactgroupId
+     * @return array
+     *
+     * @throws HttpNotFoundException
+     */
+    private function fetchDbValues(int $contactgroupId): array
+    {
+        $query = Contactgroup::on(Database::get())
+            ->columns(['id', 'name'])
+            ->filter(Filter::equal('id', $contactgroupId));
+
+        $group = $query->first();
+        if ($group === null) {
+            throw new HttpNotFoundException('Contact group not found');
+        }
+
+        $groupMembers = [];
+        foreach ($group->contactgroup_member as $contact) {
+            $groupMembers[] = $contact->contact_id;
+        }
+
+        return [
+            'group_name'        => $group->name,
+            'group_members'     => implode(',', $groupMembers)
+        ];
     }
 }
