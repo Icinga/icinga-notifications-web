@@ -6,6 +6,7 @@ namespace Icinga\Module\Notifications\Forms;
 
 use DateInterval;
 use DateTime;
+use DateTimeZone;
 use Generator;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\Http\HttpNotFoundException;
@@ -13,6 +14,7 @@ use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Contactgroup;
 use Icinga\Module\Notifications\Model\Rotation;
+use Icinga\Module\Notifications\Model\Schedule;
 use Icinga\Module\Notifications\Model\TimeperiodEntry;
 use Icinga\Util\Json;
 use Icinga\Web\Session;
@@ -1145,7 +1147,8 @@ class RotationConfigForm extends CompatForm
                             (new \IntlDateFormatter(
                                 \Locale::getDefault(),
                                 \IntlDateFormatter::MEDIUM,
-                                \IntlDateFormatter::SHORT
+                                \IntlDateFormatter::SHORT,
+                                $this->getScheduleTimezone()
                             ))->format($actualFirstHandoff)
                         );
                     }
@@ -1270,7 +1273,8 @@ class RotationConfigForm extends CompatForm
             return (new DateTime())->setTime(0, 0);
         }
 
-        $datetime = DateTime::createFromFormat($format, $expression);
+        $datetime = DateTime::createFromFormat($format, $expression, new DateTimeZone($this->getScheduleTimezone()));
+
         if ($datetime === false) {
             $datetime = (new DateTime())->setTime(0, 0);
         } elseif ($time === null) {
@@ -1664,5 +1668,18 @@ class RotationConfigForm extends CompatForm
         };
 
         return ! empty(array_udiff_assoc($values, $dbValuesToCompare, $checker));
+    }
+
+    /**
+     * Get the timezone of the schedule
+     *
+     * @return string The timezone identifier
+     */
+    protected function getScheduleTimezone(): string
+    {
+        return Schedule::on(Database::get())
+            ->filter(Filter::equal('id', $this->scheduleId))
+            ->first()
+            ->timezone;
     }
 }
