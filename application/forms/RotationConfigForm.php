@@ -821,9 +821,10 @@ class RotationConfigForm extends CompatForm
             ->replaceDecorator('Description', DescriptionDecorator::class, ['class' => 'description']);
 
         $selectedFromTime = $from->getValue();
+        $nextDayTimeOptions = [];
         foreach ($timeOptions as $key => $value) {
-            unset($timeOptions[$key]); // unset to re-add it at the end of array
-            $timeOptions[$key] = sprintf('%s (%s)', $value, $this->translate('Next Day'));
+            unset($timeOptions[$key]);
+            $nextDayTimeOptions[$key] = $value;
 
             if ($selectedFromTime === $key) {
                 break;
@@ -832,7 +833,9 @@ class RotationConfigForm extends CompatForm
 
         $to = $options->createElement('select', 'to', [
             'required' => true,
-            'options' => $timeOptions
+            'options' => empty($timeOptions)
+                ? [$this->translate('Next Day') => $nextDayTimeOptions]
+                : [$this->translate('Same Day') => $timeOptions, $this->translate('Next Day') => $nextDayTimeOptions]
         ]);
         $options->registerElement($to);
 
