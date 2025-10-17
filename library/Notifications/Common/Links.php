@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Common;
 
+use Icinga\Module\Notifications\Util\ScheduleDateTimeFactory;
 use ipl\Web\Url;
 
 /**
@@ -123,12 +124,19 @@ abstract class Links
 
     public static function rotationAdd(int $scheduleId): Url
     {
-        return Url::fromPath('notifications/schedule/add-rotation', ['schedule' => $scheduleId]);
+        return Url::fromPath('notifications/schedule/add-rotation', [
+            'schedule' => $scheduleId,
+            'display_timezone' => ScheduleDateTimeFactory::getDisplayTimezone()->getName()
+        ]);
     }
 
     public static function rotationSettings(int $id, int $scheduleId): Url
     {
-        return Url::fromPath('notifications/schedule/edit-rotation', ['id' => $id, 'schedule' => $scheduleId]);
+        return Url::fromPath('notifications/schedule/edit-rotation', [
+            'id' => $id,
+            'schedule' => $scheduleId,
+            'display_timezone' => ScheduleDateTimeFactory::getDisplayTimezone()->getName()
+        ]);
     }
 
     public static function moveRotation(): Url

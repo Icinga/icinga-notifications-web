@@ -14,6 +14,7 @@ use Icinga\Module\Notifications\Util\ScheduleDateTimeFactory;
 use Icinga\Module\Notifications\Web\Control\TimezonePicker;
 use Icinga\Module\Notifications\Widget\Detail\ScheduleDetail;
 use Icinga\Module\Notifications\Widget\RecipientSuggestions;
+use Icinga\Module\Notifications\Widget\TimezoneWarning;
 use ipl\Html\Form;
 use ipl\Html\Html;
 use ipl\Stdlib\Filter;
@@ -124,7 +125,14 @@ class ScheduleController extends CompatController
     public function addRotationAction(): void
     {
         $scheduleId = (int) $this->params->getRequired('schedule');
+        $displayTimezone = $this->params->get('display_timezone');
         $this->setTitle($this->translate('Add Rotation'));
+
+        $scheduleTimezone = $this->getScheduleTimezone($scheduleId);
+
+        if ($displayTimezone !== $scheduleTimezone) {
+            $this->addContent(new TimezoneWarning($scheduleTimezone));
+        }
 
         $form = new RotationConfigForm($scheduleId, Database::get());
         $form->setAction($this->getRequest()->getUrl()->setParam('showCompact')->getAbsoluteUrl());
@@ -156,8 +164,15 @@ class ScheduleController extends CompatController
     public function editRotationAction(): void
     {
         $id = (int) $this->params->getRequired('id');
+        $displayTimezone = $this->params->get('display_timezone');
         $scheduleId = (int) $this->params->getRequired('schedule');
         $this->setTitle($this->translate('Edit Rotation'));
+
+        $scheduleTimezone = $this->getScheduleTimezone($scheduleId);
+
+        if ($displayTimezone !== $scheduleTimezone) {
+            $this->addContent(new TimezoneWarning($scheduleTimezone));
+        }
 
         $form = new RotationConfigForm($scheduleId, Database::get());
         $form->disableModeSelection();
@@ -219,6 +234,21 @@ class ScheduleController extends CompatController
         $suggestions->forRequest($this->getServerRequest());
 
         $this->getDocument()->addHtml($suggestions);
+    }
+
+    /**
+     * Get the timezone of a schedule
+     *
+     * @param int $scheduleId The ID of the schedule
+     *
+     * @return string The timezone of the schedule
+     */
+    protected function getScheduleTimezone(int $scheduleId): string
+    {
+        return Schedule::on(Database::get())
+            ->filter(Filter::equal('schedule.id', $scheduleId))
+            ->first()
+            ->timezone;
     }
 
     /**
