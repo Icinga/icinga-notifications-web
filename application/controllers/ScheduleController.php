@@ -11,7 +11,10 @@ use Icinga\Module\Notifications\Forms\RotationConfigForm;
 use Icinga\Module\Notifications\Forms\ScheduleForm;
 use Icinga\Module\Notifications\Model\Schedule;
 use Icinga\Module\Notifications\Widget\RecipientSuggestions;
+use Icinga\Module\Notifications\Util\ScheduleDateTimeFactory;
+use Icinga\Module\Notifications\Web\Control\TimezonePicker;
 use Icinga\Module\Notifications\Widget\Detail\ScheduleDetail;
+use Icinga\Module\Notifications\Widget\TimezoneWarning;
 use ipl\Html\Form;
 use ipl\Html\Html;
 use ipl\Stdlib\Filter;
@@ -47,11 +50,24 @@ class ScheduleController extends CompatController
 
         $this->controls->addAttributes(['class' => 'schedule-detail-controls']);
 
+        $timezonePicker = $this->createTimezonePicker($schedule->timezone);
+        $this->controls->addHtml($timezonePicker);
+
         $scheduleControls = (new ScheduleDetail\Controls())
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->populate(['mode' => $this->params->get('mode')])
             ->on(Form::ON_SUCCESS, function (ScheduleDetail\Controls $controls) use ($id) {
-                $this->redirectNow(Links::schedule($id)->with(['mode' => $controls->getMode()]));
+                $redirectUrl = Links::schedule($id)->with(['mode' => $controls->getMode()]);
+                $requestUrl = Url::fromRequest();
+                if ($requestUrl->getParam('mode') !== $controls->getValue('mode')) {
+                    $defaultTimezoneParam = TimezonePicker::DEFAULT_TIMEZONE_PARAM;
+                    if ($requestUrl->hasParam($defaultTimezoneParam)) {
+                        $redirectUrl->addParams(
+                            [$defaultTimezoneParam => $requestUrl->getParam($defaultTimezoneParam)]
+                        );
+                    }
+                    $this->redirectNow($redirectUrl);
+                }
             })
             ->handleRequest($this->getServerRequest());
 
@@ -91,6 +107,7 @@ class ScheduleController extends CompatController
     {
         $this->setTitle($this->translate('New Schedule'));
         $form = (new ScheduleForm(Database::get()))
+            ->setShowTimezoneDropdown()
             ->setAction($this->getRequest()->getUrl()->getAbsoluteUrl())
             ->on(Form::ON_SUCCESS, function (ScheduleForm $form) {
                 $scheduleId = $form->addSchedule();
@@ -107,9 +124,16 @@ class ScheduleController extends CompatController
     public function addRotationAction(): void
     {
         $scheduleId = (int) $this->params->getRequired('schedule');
+        $displayTimezone = $this->params->get('display_timezone');
         $this->setTitle($this->translate('Add Rotation'));
 
-        $form = new RotationConfigForm($scheduleId, Database::get());
+        $scheduleTimezone = $this->getScheduleTimezone($scheduleId);
+
+        if ($displayTimezone !== $scheduleTimezone) {
+            $this->addContent(new TimezoneWarning($scheduleTimezone));
+        }
+
+        $form = new RotationConfigForm($scheduleId, Database::get(), $displayTimezone);
         $form->setAction($this->getRequest()->getUrl()->setParam('showCompact')->getAbsoluteUrl());
         $form->setSuggestionUrl(Url::fromPath('notifications/schedule/suggest-recipient'));
         $form->on(RotationConfigForm::ON_SENT, function ($form) {
@@ -139,10 +163,17 @@ class ScheduleController extends CompatController
     public function editRotationAction(): void
     {
         $id = (int) $this->params->getRequired('id');
+        $displayTimezone = $this->params->get('display_timezone');
         $scheduleId = (int) $this->params->getRequired('schedule');
         $this->setTitle($this->translate('Edit Rotation'));
 
-        $form = new RotationConfigForm($scheduleId, Database::get());
+        $scheduleTimezone = $this->getScheduleTimezone($scheduleId);
+
+        if ($displayTimezone !== $scheduleTimezone) {
+            $this->addContent(new TimezoneWarning($scheduleTimezone));
+        }
+
+        $form = new RotationConfigForm($scheduleId, Database::get(), $displayTimezone);
         $form->disableModeSelection();
         $form->setShowRemoveButton();
         $form->loadRotation($id);
@@ -202,5 +233,49 @@ class ScheduleController extends CompatController
         $suggestions->forRequest($this->getServerRequest());
 
         $this->getDocument()->addHtml($suggestions);
+    }
+
+    /**
+     * Get the timezone of a schedule
+     *
+     * @param int $scheduleId The ID of the schedule
+     *
+     * @return string The timezone of the schedule
+     */
+    protected function getScheduleTimezone(int $scheduleId): string
+    {
+        return Schedule::on(Database::get())
+            ->filter(Filter::equal('schedule.id', $scheduleId))
+            ->first()
+            ->timezone;
+    }
+
+    /**
+     * Create a timezone picker control
+     *
+     * @param string $defaultTimezone The default timezone to use if none is set in the request
+     *
+     * @return TimezonePicker The timezone picker control
+     */
+    protected function createTimezonePicker(string $defaultTimezone): TimezonePicker
+    {
+        $defaultTimezoneParam = TimezonePicker::DEFAULT_TIMEZONE_PARAM;
+        $timezoneParam = $this->params->shift($defaultTimezoneParam);
+
+        ScheduleDateTimeFactory::setDisplayTimezone($timezoneParam ?? $defaultTimezone);
+
+        return (new TimezonePicker())
+            ->populate([$defaultTimezoneParam => $timezoneParam ?? $defaultTimezone])
+            ->on(
+                TimezonePicker::ON_SUBMIT,
+                function (TimezonePicker $timezonePicker) use ($defaultTimezoneParam) {
+                    $requestUrl = Url::fromRequest();
+                    if ($requestUrl->getParam($defaultTimezoneParam) !== $timezonePicker->getValue($defaultTimezoneParam)) {
+                        $this->redirectNow($requestUrl->with([
+                            $defaultTimezoneParam => $timezonePicker->getValue($defaultTimezoneParam)
+                        ]));
+                    }
+                }
+            )->handleRequest($this->getServerRequest());
     }
 }

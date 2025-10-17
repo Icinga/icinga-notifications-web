@@ -6,9 +6,11 @@ namespace Icinga\Module\Notifications\Widget\Timeline;
 
 use DateInterval;
 use DateTime;
+use DateTimeZone;
 use Generator;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\RotationConfigForm;
+use Icinga\Module\Notifications\Util\ScheduleDateTimeFactory;
 use ipl\Scheduler\RRule;
 use ipl\Stdlib\Filter;
 use Recurr\Frequency;
@@ -115,10 +117,12 @@ class Rotation
                     }
                 } // TODO: Yearly? (Those unoptimized single occurrences)
 
-                $before = (clone $after)->setTime(
-                    (int) $timeperiodEntry->start_time->format('H'),
-                    (int) $timeperiodEntry->start_time->format('i')
-                );
+                $before = (clone $after)
+                    ->setTimezone(new DateTimeZone($this->model->schedule->execute()->current()->timezone))
+                    ->setTime(
+                        (int) $timeperiodEntry->start_time->format('H'),
+                        (int) $timeperiodEntry->start_time->format('i')
+                    );
 
                 if ($timeperiodEntry->start_time < $before) {
                     $daysSinceLatestHandoff = $timeperiodEntry->start_time->diff($before)->days % $interval;
@@ -133,6 +137,7 @@ class Rotation
                 $length = $timeperiodEntry->start_time->diff($timeperiodEntry->end_time);
                 $limit = (((int) ceil($after->diff($until)->days / $interval)) + 1) * $limitMultiplier;
                 foreach ($rrule->getNextRecurrences($firstHandoff, $limit) as $recurrence) {
+                    $recurrence = ScheduleDateTimeFactory::createDateTime('@' . $recurrence->getTimestamp());
                     $recurrenceEnd = (clone $recurrence)->add($length);
                     if ($recurrence < $actualHandoff && $recurrenceEnd > $actualHandoff) {
                         $recurrence = $actualHandoff;

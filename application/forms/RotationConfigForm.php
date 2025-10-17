@@ -6,6 +6,7 @@ namespace Icinga\Module\Notifications\Forms;
 
 use DateInterval;
 use DateTime;
+use DateTimeZone;
 use Generator;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\Http\HttpNotFoundException;
@@ -13,6 +14,7 @@ use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Contactgroup;
 use Icinga\Module\Notifications\Model\Rotation;
+use Icinga\Module\Notifications\Model\Schedule;
 use Icinga\Module\Notifications\Model\TimeperiodEntry;
 use Icinga\Util\Json;
 use Icinga\Web\Session;
@@ -77,6 +79,9 @@ class RotationConfigForm extends CompatForm
 
     /** @var int The rotation id */
     protected $rotationId;
+
+    /** @var string The timezone to display the timeline in */
+    protected $displayTimezone;
 
     /**
      * Set the label for the submit button
@@ -185,11 +190,13 @@ class RotationConfigForm extends CompatForm
      *
      * @param int $scheduleId
      * @param Connection $db
+     * @param string $displayTimezone
      */
-    public function __construct(int $scheduleId, Connection $db)
+    public function __construct(int $scheduleId, Connection $db, string $displayTimezone)
     {
         $this->db = $db;
         $this->scheduleId = $scheduleId;
+        $this->displayTimezone = $displayTimezone;
     }
 
     /**
@@ -800,9 +807,10 @@ class RotationConfigForm extends CompatForm
         ]);
 
         $selectedFromTime = $from->getValue();
+        $nextDayTimeOptions = [];
         foreach ($timeOptions as $key => $value) {
-            unset($timeOptions[$key]); // unset to re-add it at the end of array
-            $timeOptions[$key] = sprintf('%s (%s)', $value, $this->translate('Next Day'));
+            unset($timeOptions[$key]);
+            $nextDayTimeOptions[$key] = $value;
 
             if ($selectedFromTime === $key) {
                 break;
@@ -811,7 +819,9 @@ class RotationConfigForm extends CompatForm
 
         $to = $options->createElement('select', 'to', [
             'required' => true,
-            'options' => $timeOptions
+            'options' => empty($timeOptions)
+                ? ['Next Day' => $nextDayTimeOptions]
+                : ['Today' => $timeOptions, 'Next Day' => $nextDayTimeOptions]
         ]);
         $options->registerElement($to);
 
@@ -1145,7 +1155,8 @@ class RotationConfigForm extends CompatForm
                             (new \IntlDateFormatter(
                                 \Locale::getDefault(),
                                 \IntlDateFormatter::MEDIUM,
-                                \IntlDateFormatter::SHORT
+                                \IntlDateFormatter::SHORT,
+                                $this->getScheduleTimezone()
                             ))->format($actualFirstHandoff)
                         );
                     }
@@ -1270,7 +1281,8 @@ class RotationConfigForm extends CompatForm
             return (new DateTime())->setTime(0, 0);
         }
 
-        $datetime = DateTime::createFromFormat($format, $expression);
+        $datetime = DateTime::createFromFormat($format, $expression, new DateTimeZone($this->getScheduleTimezone()));
+
         if ($datetime === false) {
             $datetime = (new DateTime())->setTime(0, 0);
         } elseif ($time === null) {
@@ -1293,12 +1305,25 @@ class RotationConfigForm extends CompatForm
             \IntlDateFormatter::SHORT
         );
 
+        $dtzFormatter = new \IntlDateFormatter(
+            \Locale::getDefault(),
+            \IntlDateFormatter::NONE,
+            \IntlDateFormatter::SHORT,
+            $this->displayTimezone
+        );
+
         $options = [];
-        $dt = new DateTime();
+        $dt = new DateTime('now', new DateTimeZone($this->getScheduleTimezone()));
         for ($hour = 0; $hour < 24; $hour++) {
             for ($minute = 0; $minute < 60; $minute += 30) {
                 $dt->setTime($hour, $minute);
-                $options[$dt->format('H:i')] = $formatter->format($dt);
+                $dtzDt = (clone $dt)->setTimezone(new DateTimeZone($this->displayTimezone));
+
+                $options[$dt->format('H:i')] = sprintf(
+                    '%s (%s)',
+                    $formatter->format($dt),
+                    $dtzFormatter->format($dtzDt)
+                );
             }
         }
 
@@ -1664,5 +1689,18 @@ class RotationConfigForm extends CompatForm
         };
 
         return ! empty(array_udiff_assoc($values, $dbValuesToCompare, $checker));
+    }
+
+    /**
+     * Get the timezone of the schedule
+     *
+     * @return string The timezone identifier
+     */
+    protected function getScheduleTimezone(): string
+    {
+        return Schedule::on(Database::get())
+            ->filter(Filter::equal('id', $this->scheduleId))
+            ->first()
+            ->timezone;
     }
 }
