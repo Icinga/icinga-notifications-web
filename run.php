@@ -24,3 +24,20 @@ $this->addRoute(
         ]
     )
 );
+
+$this->addRoute('notifications/api-plural', new Zend_Controller_Router_Route(
+    'notifications/api/:version/:endpoint',
+    [
+        'module'        => 'notifications',
+        'controller'    => 'api',
+        'action'        => 'index'
+    ]
+));
+$this->addRoute('notifications/api-single', new Zend_Controller_Router_Route(
+    'notifications/api/:version/:endpoint/:identifier',
+    [
+        'module'        => 'notifications',
+        'controller'    => 'api',
+        'action'        => 'index'
+    ]
+));
