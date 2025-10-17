@@ -6,9 +6,11 @@ namespace Icinga\Module\Notifications\Widget\Timeline;
 
 use DateInterval;
 use DateTime;
+use DateTimeZone;
 use Generator;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\RotationConfigForm;
+use Icinga\Module\Notifications\Util\ScheduleDateTimeFactory;
 use ipl\I18n\Translation;
 use ipl\Scheduler\RRule;
 use ipl\Stdlib\Filter;
@@ -88,7 +90,8 @@ class Rotation
             ->setRotationMembers($rotationMembers)
             ->setRotationOptions($this->model->options)
             ->setRotationName($this->model->name)
-            ->setFirstHandoff($this->model->first_handoff);
+            ->setFirstHandoff($this->model->first_handoff)
+            ->setScheduleTimezone($this->model->schedule->execute()->current()->timezone);
 
         return $flyout;
     }
@@ -121,6 +124,10 @@ class Rotation
                 )
             ));
         foreach ($entries as $timeperiodEntry) {
+            $scheduleTimezone = new DateTimeZone($this->model->schedule->execute()->current()->timezone);
+            $timeperiodEntry->start_time->setTimezone($scheduleTimezone);
+            $timeperiodEntry->end_time->setTimezone($scheduleTimezone);
+
             if ($timeperiodEntry->member->contact->id !== null) {
                 $member = new Member($timeperiodEntry->member->contact->full_name);
             } else {
@@ -139,7 +146,7 @@ class Rotation
                     }
                 } // TODO: Yearly? (Those unoptimized single occurrences)
 
-                $before = (clone $after)->setTime(
+                $before = (clone $after)->setTimezone($scheduleTimezone)->setTime(
                     (int) $timeperiodEntry->start_time->format('H'),
                     (int) $timeperiodEntry->start_time->format('i')
                 );
@@ -157,6 +164,7 @@ class Rotation
                 $length = $timeperiodEntry->start_time->diff($timeperiodEntry->end_time);
                 $limit = (((int) ceil($after->diff($until)->days / $interval)) + 1) * $limitMultiplier;
                 foreach ($rrule->getNextRecurrences($firstHandoff, $limit) as $recurrence) {
+                    $recurrence = ScheduleDateTimeFactory::createDateTimeFromTimestamp($recurrence->getTimestamp());
                     $recurrenceEnd = (clone $recurrence)->add($length);
                     if ($recurrence < $actualHandoff && $recurrenceEnd > $actualHandoff) {
                         $recurrence = $actualHandoff;

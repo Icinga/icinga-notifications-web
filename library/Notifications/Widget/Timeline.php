@@ -8,6 +8,7 @@ use DateInterval;
 use DateTime;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\MoveRotationForm;
+use Icinga\Module\Notifications\Util\ScheduleDateTimeFactory;
 use Icinga\Module\Notifications\Widget\TimeGrid\DynamicGrid;
 use Icinga\Module\Notifications\Widget\TimeGrid\EntryProvider;
 use Icinga\Module\Notifications\Widget\TimeGrid\GridStep;
@@ -364,10 +365,11 @@ class Timeline extends BaseHtmlElement implements EntryProvider
             $dateFormatter = new IntlDateFormatter(
                 Locale::getDefault(),
                 IntlDateFormatter::NONE,
-                IntlDateFormatter::SHORT
+                IntlDateFormatter::SHORT,
+                ScheduleDateTimeFactory::getDisplayTimezone()
             );
 
-            $now = new DateTime();
+            $now = ScheduleDateTimeFactory::createDateTime();
             $currentTime = new HtmlElement(
                 'div',
                 new Attributes(['class' => 'time-hand']),
