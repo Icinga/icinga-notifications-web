@@ -11,6 +11,7 @@ use Icinga\Module\Notifications\Forms\RotationConfigForm;
 use Icinga\Module\Notifications\Forms\ScheduleForm;
 use Icinga\Module\Notifications\Model\Schedule;
 use Icinga\Module\Notifications\Widget\RecipientSuggestions;
+use Icinga\Module\Notifications\Web\Control\TimezonePicker;
 use Icinga\Module\Notifications\Widget\Detail\ScheduleDetail;
 use ipl\Html\Form;
 use ipl\Html\Html;
@@ -47,11 +48,24 @@ class ScheduleController extends CompatController
 
         $this->controls->addAttributes(['class' => 'schedule-detail-controls']);
 
+        $timezonePicker = $this->createTimezonePicker($schedule->timezone);
+        $this->controls->addHtml($timezonePicker);
+
         $scheduleControls = (new ScheduleDetail\Controls())
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->populate(['mode' => $this->params->get('mode')])
             ->on(Form::ON_SUCCESS, function (ScheduleDetail\Controls $controls) use ($id) {
-                $this->redirectNow(Links::schedule($id)->with(['mode' => $controls->getMode()]));
+                $redirectUrl = Links::schedule($id)->with(['mode' => $controls->getMode()]);
+                $requestUrl = Url::fromRequest();
+                if ($requestUrl->getParam('mode') !== $controls->getValue('mode')) {
+                    $defaultTimezoneParam = TimezonePicker::DEFAULT_TIMEZONE_PARAM;
+                    if ($requestUrl->hasParam($defaultTimezoneParam)) {
+                        $redirectUrl->addParams(
+                            [$defaultTimezoneParam => $requestUrl->getParam($defaultTimezoneParam)]
+                        );
+                    }
+                    $this->redirectNow($redirectUrl);
+                }
             })
             ->handleRequest($this->getServerRequest());
 
@@ -203,5 +217,32 @@ class ScheduleController extends CompatController
         $suggestions->forRequest($this->getServerRequest());
 
         $this->getDocument()->addHtml($suggestions);
+    }
+
+    /**
+     * Create a timezone picker control
+     *
+     * @param string $defaultTimezone The default timezone to use if none is set in the request
+     *
+     * @return TimezonePicker The timezone picker control
+     */
+    protected function createTimezonePicker(string $defaultTimezone): TimezonePicker
+    {
+        $defaultTimezoneParam = TimezonePicker::DEFAULT_TIMEZONE_PARAM;
+        $timezoneParam = $this->params->shift($defaultTimezoneParam);
+
+        return (new TimezonePicker())
+            ->populate([$defaultTimezoneParam => $timezoneParam ?? $defaultTimezone])
+            ->on(
+                TimezonePicker::ON_SUBMIT,
+                function (TimezonePicker $timezonePicker) use ($defaultTimezoneParam) {
+                    $requestUrl = Url::fromRequest();
+                    if ($requestUrl->getParam($defaultTimezoneParam) !== $timezonePicker->getValue($defaultTimezoneParam)) {
+                        $this->redirectNow($requestUrl->with([
+                            $defaultTimezoneParam => $timezonePicker->getValue($defaultTimezoneParam)
+                        ]));
+                    }
+                }
+            )->handleRequest($this->getServerRequest());
     }
 }
