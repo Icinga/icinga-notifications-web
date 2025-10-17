@@ -82,6 +82,9 @@ class RotationConfigForm extends CompatForm
     /** @var int The rotation id */
     protected $rotationId;
 
+    /** @var string The timezone to display the timeline in */
+    protected $displayTimezone;
+
     /**
      * Set the label for the submit button
      *
@@ -189,12 +192,13 @@ class RotationConfigForm extends CompatForm
      *
      * @param int $scheduleId
      * @param Connection $db
+     * @param string $displayTimezone
      */
-    public function __construct(int $scheduleId, Connection $db)
+    public function __construct(int $scheduleId, Connection $db, string $displayTimezone)
     {
         $this->db = $db;
         $this->scheduleId = $scheduleId;
-
+        $this->displayTimezone = $displayTimezone;
         $this->applyDefaultElementDecorators();
     }
 
@@ -1320,18 +1324,39 @@ class RotationConfigForm extends CompatForm
      */
     private function getTimeOptions(): array
     {
+        $scheduleTimezone = $this->getScheduleTimezone();
+
         $formatter = new \IntlDateFormatter(
             \Locale::getDefault(),
             \IntlDateFormatter::NONE,
-            \IntlDateFormatter::SHORT
+            \IntlDateFormatter::SHORT,
+            $scheduleTimezone->getName()
+        );
+
+        $dtzFormatter = new \IntlDateFormatter(
+            \Locale::getDefault(),
+            \IntlDateFormatter::NONE,
+            \IntlDateFormatter::SHORT,
+            $this->displayTimezone
         );
 
         $options = [];
-        $dt = new DateTime();
+        $dt = new DateTime('now', $scheduleTimezone);
         for ($hour = 0; $hour < 24; $hour++) {
             for ($minute = 0; $minute < 60; $minute += 30) {
                 $dt->setTime($hour, $minute);
-                $options[$dt->format('H:i')] = $formatter->format($dt);
+
+                if ($this->displayTimezone !== $scheduleTimezone->getName()) {
+                    $dtzDt = (clone $dt)->setTimezone(new DateTimeZone($this->displayTimezone));
+
+                    $options[$dt->format('H:i')] = sprintf(
+                        '%s (%s)',
+                        $formatter->format($dt),
+                        $dtzFormatter->format($dtzDt)
+                    );
+                } else {
+                    $options[$dt->format('H:i')] = $formatter->format($dt);
+                }
             }
         }
 
