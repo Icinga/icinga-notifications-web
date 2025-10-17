@@ -65,6 +65,24 @@
   }
 }
 
+.timezone-warning {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  column-gap: 1em;
+
+  width: fit-content;
+  margin: 0 auto 1em auto;
+
+  i.icon::before {
+    margin-right: 0;
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
 /* Design */
 
 .schedule-detail {
@@ -90,4 +108,15 @@
   border: 1px solid @gray-light;
   padding: .5em;
   color: @text-color-light;
+}
+
+.timezone-warning {
+  padding: .5em 1em;
+  border: 1px solid @color-warning;
+  border-radius: .25em;
+
+  i.icon {
+    color: @color-warning;
+    font-size: 1.5em;
+  }
 }
