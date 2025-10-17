@@ -10,6 +10,7 @@ use Icinga\Module\Notifications\Forms\MoveRotationForm;
 use Icinga\Module\Notifications\Forms\RotationConfigForm;
 use Icinga\Module\Notifications\Forms\ScheduleForm;
 use Icinga\Module\Notifications\Model\Schedule;
+use Icinga\Module\Notifications\Util\ScheduleDateTimeFactory;
 use Icinga\Module\Notifications\Web\Control\TimezonePicker;
 use Icinga\Module\Notifications\Widget\Detail\ScheduleDetail;
 use Icinga\Module\Notifications\Widget\RecipientSuggestions;
@@ -231,6 +232,8 @@ class ScheduleController extends CompatController
     {
         $defaultTimezoneParam = TimezonePicker::DEFAULT_TIMEZONE_PARAM;
         $timezoneParam = $this->params->shift($defaultTimezoneParam);
+
+        ScheduleDateTimeFactory::setDisplayTimezone($timezoneParam ?? $defaultTimezone);
 
         return (new TimezonePicker())
             ->populate([$defaultTimezoneParam => $timezoneParam ?? $defaultTimezone])
