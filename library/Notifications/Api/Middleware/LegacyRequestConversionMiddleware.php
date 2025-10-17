@@ -20,8 +20,11 @@ use Psr\Http\Server\RequestHandlerInterface;
  */
 class LegacyRequestConversionMiddleware implements MiddlewareInterface
 {
-    public function __construct(private readonly Request $legacyRequest)
+    private Request $legacyRequest;
+
+    public function __construct(Request $legacyRequest)
     {
+        $this->legacyRequest = $legacyRequest;
     }
 
     /**
