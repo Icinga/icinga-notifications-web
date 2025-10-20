@@ -184,7 +184,16 @@ class EventRuleConfigFormTest extends TestCase
         $ruleEscalationMock->expects($this->once())
             ->method('orderBy')
             ->with('position', 'asc')
-            ->willReturn([
+            ->willReturn($ruleEscalationMock);
+
+        $queryResultMock = $this->createMock(ResultSet::class);
+        $queryResultMock->expects($this->once())
+            ->method('hasResult')
+            ->willReturn(true);
+
+        $queryResultMock->expects($this->exactly(2))
+            ->method('current')
+            ->willReturnOnConsecutiveCalls(
                 (new RuleEscalation())->setProperties([
                     'id' => 1,
                     'condition' => null,
@@ -195,12 +204,14 @@ class EventRuleConfigFormTest extends TestCase
                     'condition' => 'incident_severity>=crit&incident_age>5m',
                     'rule_escalation_recipient' => $secondRuleEscalationRecipientMock
                 ])
-            ]);
+            );
 
-        $queryResultMock = $this->createMock(ResultSet::class);
-        $queryResultMock->expects($this->once())
-            ->method('hasResult')
-            ->willReturn(true);
+        $queryResultMock->expects($this->exactly(3))
+            ->method('valid')
+            ->willReturnOnConsecutiveCalls(true, true, false);
+
+        $queryResultMock->expects($this->exactly(2))
+            ->method('next');
 
         $ruleEscalationMock->expects($this->once())
             ->method('execute')
@@ -434,18 +445,27 @@ class EventRuleConfigFormTest extends TestCase
         $ruleEscalationMock->expects($this->once())
             ->method('orderBy')
             ->with('position', 'asc')
-            ->willReturn([
-                (new RuleEscalation())->setProperties([
-                    'id' => 1,
-                    'condition' => null,
-                    'rule_escalation_recipient' => $escalationRecipientMock
-                ])
-            ]);
+            ->willReturn($ruleEscalationMock);
 
         $queryResultMock = $this->createMock(ResultSet::class);
         $queryResultMock->expects($this->once())
             ->method('hasResult')
             ->willReturn(true);
+
+        $queryResultMock->expects($this->exactly(2))
+            ->method('valid')
+            ->willReturnOnConsecutiveCalls(true, false);
+
+        $queryResultMock->expects($this->once())
+            ->method('next');
+
+        $queryResultMock->expects($this->once())
+            ->method('current')
+            ->willReturnOnConsecutiveCalls((new RuleEscalation())->setProperties([
+                'id' => 1,
+                'condition' => null,
+                'rule_escalation_recipient' => $escalationRecipientMock
+            ]));
 
         $ruleEscalationMock->expects($this->once())
             ->method('execute')
@@ -546,18 +566,27 @@ class EventRuleConfigFormTest extends TestCase
         $ruleEscalationMock->expects($this->once())
             ->method('orderBy')
             ->with('position', 'asc')
-            ->willReturn([
-                (new RuleEscalation())->setProperties([
-                    'id' => 1,
-                    'condition' => null,
-                    'rule_escalation_recipient' => $escalationRecipientMock
-                ])
-            ]);
+            ->willReturn($ruleEscalationMock);
 
         $queryResultMock = $this->createMock(ResultSet::class);
         $queryResultMock->expects($this->once())
             ->method('hasResult')
             ->willReturn(true);
+
+        $queryResultMock->expects($this->exactly(2))
+            ->method('valid')
+            ->willReturnOnConsecutiveCalls(true, false);
+
+        $queryResultMock->expects($this->once())
+            ->method('next');
+
+        $queryResultMock->expects($this->once())
+            ->method('current')
+            ->willReturnOnConsecutiveCalls((new RuleEscalation())->setProperties([
+                'id' => 1,
+                'condition' => null,
+                'rule_escalation_recipient' => $escalationRecipientMock
+            ]));
 
         $ruleEscalationMock->expects($this->once())
             ->method('execute')
@@ -673,18 +702,27 @@ class EventRuleConfigFormTest extends TestCase
         $ruleEscalationMock->expects($this->once())
             ->method('orderBy')
             ->with('position', 'asc')
-            ->willReturn([
-                (new RuleEscalation())->setProperties([
-                    'id' => 1,
-                    'condition' => 'incident_severity>=crit&incident_age>5m',
-                    'rule_escalation_recipient' => $escalationRecipientMock
-                ])
-            ]);
+            ->willReturn($ruleEscalationMock);
 
         $queryResultMock = $this->createMock(ResultSet::class);
         $queryResultMock->expects($this->once())
             ->method('hasResult')
             ->willReturn(true);
+
+        $queryResultMock->expects($this->exactly(2))
+            ->method('valid')
+            ->willReturnOnConsecutiveCalls(true, false);
+
+        $queryResultMock->expects($this->once())
+            ->method('next');
+
+        $queryResultMock->expects($this->once())
+            ->method('current')
+            ->willReturnOnConsecutiveCalls((new RuleEscalation())->setProperties([
+                'id' => 1,
+                'condition' => 'incident_severity>=crit&incident_age>5m',
+                'rule_escalation_recipient' => $escalationRecipientMock
+            ]));
 
         $ruleEscalationMock->expects($this->once())
             ->method('execute')
@@ -806,18 +844,27 @@ class EventRuleConfigFormTest extends TestCase
         $ruleEscalationMock->expects($this->once())
             ->method('orderBy')
             ->with('position', 'asc')
-            ->willReturn([
-                (new RuleEscalation())->setProperties([
-                    'id' => 1,
-                    'condition' => null,
-                    'rule_escalation_recipient' => $escalationRecipientMock
-                ])
-            ]);
+            ->willReturn($ruleEscalationMock);
 
         $queryResultMock = $this->createMock(ResultSet::class);
         $queryResultMock->expects($this->once())
             ->method('hasResult')
             ->willReturn(true);
+
+        $queryResultMock->expects($this->exactly(2))
+            ->method('valid')
+            ->willReturnOnConsecutiveCalls(true, false);
+
+        $queryResultMock->expects($this->once())
+            ->method('next');
+
+        $queryResultMock->expects($this->once())
+            ->method('current')
+            ->willReturnOnConsecutiveCalls((new RuleEscalation())->setProperties([
+                'id' => 1,
+                'condition' => null,
+                'rule_escalation_recipient' => $escalationRecipientMock
+            ]));
 
         $ruleEscalationMock->expects($this->once())
             ->method('execute')
