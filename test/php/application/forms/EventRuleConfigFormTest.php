@@ -196,6 +196,10 @@ class EventRuleConfigFormTest extends TestCase
                 ])
             ]);
 
+        $ruleEscalationMock->expects($this->once())
+            ->method('count')
+            ->willReturn(1);
+
         $ruleModel = (new Rule())->setProperties([
             'id' => 1337,
             'name' => 'Test',
@@ -432,6 +436,10 @@ class EventRuleConfigFormTest extends TestCase
                 ])
             ]);
 
+        $ruleEscalationMock->expects($this->once())
+            ->method('count')
+            ->willReturn(1);
+
         $ruleModel = (new Rule())->setProperties([
             'id' => 1337,
             'name' => 'Test',
@@ -534,6 +542,10 @@ class EventRuleConfigFormTest extends TestCase
                     'rule_escalation_recipient' => $escalationRecipientMock
                 ])
             ]);
+
+        $ruleEscalationMock->expects($this->once())
+            ->method('count')
+            ->willReturn(1);
 
         $ruleModel = (new Rule())->setProperties([
             'id' => 1337,
@@ -652,6 +664,10 @@ class EventRuleConfigFormTest extends TestCase
                     'rule_escalation_recipient' => $escalationRecipientMock
                 ])
             ]);
+
+        $ruleEscalationMock->expects($this->once())
+            ->method('count')
+            ->willReturn(1);
 
         $ruleModel = (new Rule())->setProperties([
             'id' => 1337,
@@ -776,6 +792,10 @@ class EventRuleConfigFormTest extends TestCase
                     'rule_escalation_recipient' => $escalationRecipientMock
                 ])
             ]);
+
+        $ruleEscalationMock->expects($this->once())
+            ->method('count')
+            ->willReturn(1);
 
         $ruleModel = (new Rule())->setProperties([
             'id' => 1337,
