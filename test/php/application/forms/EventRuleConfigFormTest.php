@@ -15,6 +15,7 @@ use Icinga\Module\Notifications\Model\RuleEscalation;
 use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use Icinga\Module\Notifications\Model\Schedule;
 use ipl\Orm\Query;
+use ipl\Orm\ResultSet;
 use ipl\Sql\Connection;
 use ipl\Web\Url;
 use PHPUnit\Framework\TestCase;
@@ -183,7 +184,10 @@ class EventRuleConfigFormTest extends TestCase
         $ruleEscalationMock->expects($this->once())
             ->method('orderBy')
             ->with('position', 'asc')
-            ->willReturn([
+            ->willReturnSelf();
+
+        $queryResult = new ResultSet(
+            new \ArrayIterator([
                 (new RuleEscalation())->setProperties([
                     'id' => 1,
                     'condition' => null,
@@ -194,7 +198,12 @@ class EventRuleConfigFormTest extends TestCase
                     'condition' => 'incident_severity>=crit&incident_age>5m',
                     'rule_escalation_recipient' => $secondRuleEscalationRecipientMock
                 ])
-            ]);
+            ])
+        );
+
+        $ruleEscalationMock->expects($this->once())
+            ->method('execute')
+            ->willReturn($queryResult);
 
         $ruleModel = (new Rule())->setProperties([
             'id' => 1337,
@@ -424,13 +433,21 @@ class EventRuleConfigFormTest extends TestCase
         $ruleEscalationMock->expects($this->once())
             ->method('orderBy')
             ->with('position', 'asc')
-            ->willReturn([
+            ->willReturnSelf();
+
+        $queryResult = new ResultSet(
+            new \ArrayIterator([
                 (new RuleEscalation())->setProperties([
                     'id' => 1,
                     'condition' => null,
                     'rule_escalation_recipient' => $escalationRecipientMock
                 ])
-            ]);
+            ])
+        );
+
+        $ruleEscalationMock->expects($this->once())
+            ->method('execute')
+            ->willReturn($queryResult);
 
         $ruleModel = (new Rule())->setProperties([
             'id' => 1337,
@@ -527,13 +544,21 @@ class EventRuleConfigFormTest extends TestCase
         $ruleEscalationMock->expects($this->once())
             ->method('orderBy')
             ->with('position', 'asc')
-            ->willReturn([
+            ->willReturnSelf();
+
+        $queryResult = new ResultSet(
+            new \ArrayIterator([
                 (new RuleEscalation())->setProperties([
                     'id' => 1,
                     'condition' => null,
                     'rule_escalation_recipient' => $escalationRecipientMock
                 ])
-            ]);
+            ])
+        );
+
+        $ruleEscalationMock->expects($this->once())
+            ->method('execute')
+            ->willReturn($queryResult);
 
         $ruleModel = (new Rule())->setProperties([
             'id' => 1337,
@@ -645,13 +670,21 @@ class EventRuleConfigFormTest extends TestCase
         $ruleEscalationMock->expects($this->once())
             ->method('orderBy')
             ->with('position', 'asc')
-            ->willReturn([
+            ->willReturnSelf();
+
+        $queryResult = new ResultSet(
+            new \ArrayIterator([
                 (new RuleEscalation())->setProperties([
                     'id' => 1,
                     'condition' => 'incident_severity>=crit&incident_age>5m',
                     'rule_escalation_recipient' => $escalationRecipientMock
                 ])
-            ]);
+            ])
+        );
+
+        $ruleEscalationMock->expects($this->once())
+            ->method('execute')
+            ->willReturn($queryResult);
 
         $ruleModel = (new Rule())->setProperties([
             'id' => 1337,
@@ -769,13 +802,21 @@ class EventRuleConfigFormTest extends TestCase
         $ruleEscalationMock->expects($this->once())
             ->method('orderBy')
             ->with('position', 'asc')
-            ->willReturn([
+            ->willReturnSelf();
+
+        $queryResult = new ResultSet(
+            new \ArrayIterator([
                 (new RuleEscalation())->setProperties([
                     'id' => 1,
                     'condition' => null,
                     'rule_escalation_recipient' => $escalationRecipientMock
                 ])
-            ]);
+            ])
+        );
+
+        $ruleEscalationMock->expects($this->once())
+            ->method('execute')
+            ->willReturn($queryResult);
 
         $ruleModel = (new Rule())->setProperties([
             'id' => 1337,
