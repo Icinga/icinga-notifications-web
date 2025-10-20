@@ -250,7 +250,8 @@ class EventRuleConfigForm extends Form
             'object_filter'     => $rule->object_filter
         ];
 
-        if ($rule->rule_escalation->count() > 0) {
+        $escalations = $rule->rule_escalation->execute();
+        if ($escalations->hasResult()) {
             $fields['escalations'] = EventRuleConfigElements\Escalations::prepare(
                 $rule->rule_escalation->orderBy('position', 'asc')
             );

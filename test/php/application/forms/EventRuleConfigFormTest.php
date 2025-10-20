@@ -15,6 +15,7 @@ use Icinga\Module\Notifications\Model\RuleEscalation;
 use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use Icinga\Module\Notifications\Model\Schedule;
 use ipl\Orm\Query;
+use ipl\Orm\ResultSet;
 use ipl\Sql\Connection;
 use ipl\Web\Url;
 use PHPUnit\Framework\TestCase;
@@ -196,9 +197,14 @@ class EventRuleConfigFormTest extends TestCase
                 ])
             ]);
 
+        $queryResultMock = $this->createMock(ResultSet::class);
+        $queryResultMock->expects($this->once())
+            ->method('hasResult')
+            ->willReturn(true);
+
         $ruleEscalationMock->expects($this->once())
-            ->method('count')
-            ->willReturn(1);
+            ->method('execute')
+            ->willReturn($queryResultMock);
 
         $ruleModel = (new Rule())->setProperties([
             'id' => 1337,
@@ -436,9 +442,14 @@ class EventRuleConfigFormTest extends TestCase
                 ])
             ]);
 
+        $queryResultMock = $this->createMock(ResultSet::class);
+        $queryResultMock->expects($this->once())
+            ->method('hasResult')
+            ->willReturn(true);
+
         $ruleEscalationMock->expects($this->once())
-            ->method('count')
-            ->willReturn(1);
+            ->method('execute')
+            ->willReturn($queryResultMock);
 
         $ruleModel = (new Rule())->setProperties([
             'id' => 1337,
@@ -543,9 +554,14 @@ class EventRuleConfigFormTest extends TestCase
                 ])
             ]);
 
+        $queryResultMock = $this->createMock(ResultSet::class);
+        $queryResultMock->expects($this->once())
+            ->method('hasResult')
+            ->willReturn(true);
+
         $ruleEscalationMock->expects($this->once())
-            ->method('count')
-            ->willReturn(1);
+            ->method('execute')
+            ->willReturn($queryResultMock);
 
         $ruleModel = (new Rule())->setProperties([
             'id' => 1337,
@@ -665,9 +681,14 @@ class EventRuleConfigFormTest extends TestCase
                 ])
             ]);
 
+        $queryResultMock = $this->createMock(ResultSet::class);
+        $queryResultMock->expects($this->once())
+            ->method('hasResult')
+            ->willReturn(true);
+
         $ruleEscalationMock->expects($this->once())
-            ->method('count')
-            ->willReturn(1);
+            ->method('execute')
+            ->willReturn($queryResultMock);
 
         $ruleModel = (new Rule())->setProperties([
             'id' => 1337,
@@ -793,9 +814,14 @@ class EventRuleConfigFormTest extends TestCase
                 ])
             ]);
 
+        $queryResultMock = $this->createMock(ResultSet::class);
+        $queryResultMock->expects($this->once())
+            ->method('hasResult')
+            ->willReturn(true);
+
         $ruleEscalationMock->expects($this->once())
-            ->method('count')
-            ->willReturn(1);
+            ->method('execute')
+            ->willReturn($queryResultMock);
 
         $ruleModel = (new Rule())->setProperties([
             'id' => 1337,
