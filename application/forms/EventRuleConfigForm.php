@@ -244,14 +244,19 @@ class EventRuleConfigForm extends Form
      */
     public function load(Rule $rule): void
     {
-        $this->populate([
+        $fields = [
             'id'                => $rule->id,
             'name'              => $rule->name,
-            'object_filter'     => $rule->object_filter,
-            'escalations'       => EventRuleConfigElements\Escalations::prepare(
+            'object_filter'     => $rule->object_filter
+        ];
+
+        if ($rule->rule_escalation->count() > 0) {
+            $fields['escalations'] = EventRuleConfigElements\Escalations::prepare(
                 $rule->rule_escalation->orderBy('position', 'asc')
-            )
-        ]);
+            );
+        }
+
+        $this->populate($fields);
     }
 
     /**
