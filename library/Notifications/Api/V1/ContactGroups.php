@@ -63,7 +63,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
     #[OA\Examples(
         example: 'InvalidUserUUID',
         summary: 'Invalid user UUID',
-        value: ['message' => 'Invalid request body: user identifiers must be valid UUIDs']
+        value: ['message' => 'Invalid request body: the user identifier X is not a valid UUID']
     )]
     #[OA\Examples(
         example: 'NameAlreadyExists',
@@ -135,7 +135,8 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
                 'contactgroup_id' => 'cg.id',
                 'id'              => 'cg.external_uuid',
                 'name'
-            ]);
+            ])
+            ->where(['cg.deleted = ?' => 'n']);
 
         if ($identifier === null) {
             return $this->getPlural($queryFilter, $stmt);
@@ -427,7 +428,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
                 ->from('contactgroup_member cgm')
                 ->columns('cg.external_uuid')
                 ->joinLeft('contactgroup cg', 'cg.id = cgm.contactgroup_id')
-                ->where(['cgm.contact_id = ?' => $contactId])
+                ->where(['cgm.contact_id = ?' => $contactId, 'cgm.deleted = ?' => 'n'])
                 ->groupBy('cg.external_uuid')
         );
     }
@@ -604,7 +605,11 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
 
             foreach ($requestBody['users'] as $user) {
                 if (! is_string($user) || ! Uuid::isValid($user)) {
-                    throw new HttpBadRequestException($msgPrefix . 'user identifiers must be valid UUIDs');
+                    throw new HttpException(422, sprintf(
+                        '%sthe user identifier %s is not a valid UUID',
+                        $msgPrefix,
+                        $user
+                    ));
                 }
                 //TODO: check if users exist, here?
             }

@@ -11,6 +11,7 @@ use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Exception\Json\JsonEncodeException;
 use Icinga\Module\Notifications\Api\EndpointInterface;
 use Icinga\Module\Notifications\Api\Exception\InvalidFilterParameterException;
+use Icinga\Module\Notifications\Model\Contact;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\OadV1Delete;
@@ -659,7 +660,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
 
         $channelID = Channels::getChannelId($requestBody['default_channel']);
         if ($channelID === false) {
-            throw new HttpException(422, 'Default channel mismatch');
+            throw new HttpException(422, 'Channel with identifier 0817d973-398e-41d7-9cd2-61cdb7ef41a3 does not exist');
         }
 
         Database::get()->insert('contact', [
@@ -690,7 +691,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
         $channelID = Channels::getChannelId($requestBody['default_channel']);
 
         if ($channelID === false) {
-            throw new HttpException(422, 'Default channel mismatch');
+            throw new HttpException(422, 'Channel with identifier 0817d973-398e-41d7-9cd2-61cdb7ef41a3 does not exist');
         }
 
         $changedAt = (int) (new DateTime())->format("Uv");
@@ -712,22 +713,22 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
             $this->addAddresses($contactId, $requestBody['addresses']);
         }
 
+        $storedValues = $this->fetchDbValues($contactId);
         $storedContacts = [];
         if (! empty($storedValues['group_members'])) {
             $storedContacts = explode(',', $storedValues['group_members']);
         }
 
         $newContactgroups = [];
-        if (! empty($requestBody['users'])) {
-            foreach ($requestBody['users'] as $identifier) {
+        if (! empty($requestBody['groups'])) {
+            foreach ($requestBody['groups'] as $identifier) {
                 $contactgroupId = Contactgroups::getGroupId($identifier);
-                if ($contactId === null) {
-                    throw new HttpException(422, sprintf('Group with identifier %s not found', $identifier));
+                if ($contactgroupId === null) {
+                    throw new HttpException(422, sprintf('Contact Group with identifier %s does not exist', $identifier));
                 }
-                $newContactgroups[] = $contactId;
+                $newContactgroups[] = $contactgroupId;
             }
         }
-        var_dump($newContactgroups);
 
         $toDelete = array_diff($storedContacts, $newContactgroups);
         $toAdd = array_diff($newContactgroups, $storedContacts);
@@ -748,7 +749,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
             $contactgroupsMarkedAsDeleted = Database::get()->fetchCol(
                 (new Select())
                     ->from('contactgroup_member')
-                    ->columns(['contact_id'])
+                    ->columns(['contactgroup_id'])
                     ->where([
                         'contact_id = ?' => $contactId,
                         'deleted = ?' => 'y',
@@ -942,7 +943,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
         }
 
         if (! Uuid::isValid($requestBody['default_channel'])) {
-            throw new HttpBadRequestException($msgPrefix . 'given default_channel is not a valid UUID');
+            throw new HttpException(422, $msgPrefix . 'given default_channel is not a valid UUID');
         }
 
         if (! empty($requestBody['username']) && ! is_string($requestBody['username'])) {
@@ -1020,8 +1021,38 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
                 ->from('contactgroup_member cgm')
                 ->columns('co.external_uuid')
                 ->joinLeft('contact co', 'co.id = cgm.contact_id')
-                ->where(['cgm.contactgroup_id = ?' => $contactgroupId])
+                ->where(['cgm.contactgroup_id = ?' => $contactgroupId, 'cgm.deleted = ?' => 'n'])
                 ->groupBy('co.external_uuid')
         );
+    }
+
+    /**
+     * Fetch the values from the database
+     *
+     * @param int $contactId
+     * @return array
+     *
+     * @throws HttpNotFoundException
+     */
+    private function fetchDbValues(int $contactId): array
+    {
+        $query = Contact::on(Database::get())
+            ->columns(['id', 'full_name', 'default_channel_id'])
+            ->filter(Filter::equal('id', $contactId));
+
+        $contact = $query->first();
+        if ($contact === null) {
+            throw new HttpNotFoundException('Contact contact not found');
+        }
+
+        $groupMembers = [];
+        $member = $contact->contactgroup_member;
+        foreach ($contact->contactgroup_member as $group) {
+            $groupMembers[] = $group->contactgroup_id;
+        }
+
+        return [
+            'group_members' => implode(',', $groupMembers)
+        ];
     }
 }
