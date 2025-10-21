@@ -535,7 +535,7 @@ YAML;
         );
         $content = $response->getBody()->getContents();
 
-        $this->assertSame(200, $response->getStatusCode(), $content);;
+        $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
             'id' => BaseApiV1TestCase::CONTACT_UUID_3,
             'full_name' => 'Test3',
