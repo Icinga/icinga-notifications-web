@@ -68,9 +68,22 @@ class OadV1Put extends Put
                             ),
                         ],
                         headers: [
-                            'Location' => sprintf(
-                                'notifications/api/v1/%s/{identifier}',
-                                strtolower($entityName) . 's'
+                            new OA\Header(
+                                header: 'X-Resource-Identifier',
+                                description: 'The identifier of the created ' . $entityName,
+                                schema: new OA\Schema(
+                                    type: 'string',
+                                    format: 'uuid',
+                                )
+                            ),
+                            new OA\Header(
+                                header: 'Location',
+                                description: 'The URL of the created ' . $entityName,
+                                schema: new OA\Schema(
+                                    type: 'string',
+                                    format: 'url',
+                                    example: 'notifications/api/v1/' . strtolower($entityName) . 's/{identifier}',
+                                )
                             )
                         ],
                         links: [
