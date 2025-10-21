@@ -124,57 +124,32 @@ class EventRuleConfigForm extends Form
      */
     protected function createObjectFilterControls(): ValidHtml
     {
-        $hasFilter = true;
-        if (empty($this->getPopulatedValue('object_filter'))) {
-            $addFilterButton = $this->createElement('submitButton', 'add-filter', [
-                'class'          => ['add-button', 'control-button', 'spinner'],
-                'label'          => new Icon('plus'),
-                'formnovalidate' => true,
-                'title'          => $this->translate('Add filter')
-            ]);
-            $this->registerElement($addFilterButton);
+        $hiddenInput = $this->createElement('hidden', 'object_filter');
+        $this->registerElement($hiddenInput);
 
-            if ($addFilterButton->hasBeenPressed()) {
-                $this->remove($addFilterButton); // De-register the button
-            } else {
-                $hiddenInput = $this->createElement('hidden', 'object_filter');
-                $this->registerElement($hiddenInput);
-
-                $objectFilter = new HtmlElement(
-                    'div',
-                    Attributes::create(['class' => 'add-button-wrapper']),
-                    $addFilterButton,
-                    $hiddenInput
-                );
-
-                $hasFilter = false;
-            }
+        if ($hiddenInput->hasValue()) {
+            $label = new Icon('filter');
+            $title = $this->translate('Adjust Filter');
+        } else {
+            $label = new Icon('plus');
+            $title = $this->translate('Add filter');
         }
 
-        if ($hasFilter) {
-            $objectFilter = $this->createElement('text', 'object_filter', ['readonly' => true]);
-            $this->registerElement($objectFilter);
-
-            $editorOpener = new Link(
-                new Icon('cog'),
+        return new HtmlElement(
+            'div',
+            Attributes::create(['class' => 'button-wrapper']),
+            new Link(
+                $label,
                 $this->searchEditorUrl,
                 Attributes::create([
-                    'class'               => ['search-editor-opener', 'control-button'],
-                    'title'               => $this->translate('Adjust Filter'),
+                    'class'               => ['search-editor-opener', 'filter-button'],
+                    'title'               => $title,
                     'data-icinga-modal'   => true,
                     'data-no-icinga-ajax' => true
                 ])
-            );
-
-            $objectFilter = new HtmlElement(
-                'div',
-                Attributes::create(['class' => 'filter-controls']),
-                $objectFilter,
-                $editorOpener
-            );
-        }
-
-        return $objectFilter;
+            ),
+            $hiddenInput
+        );
     }
 
     /**
