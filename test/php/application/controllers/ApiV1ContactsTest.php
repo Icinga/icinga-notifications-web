@@ -100,7 +100,7 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
     /**
      * @dataProvider apiTestBackends
      */
-    public function testGetWithNewIdentifier(Connection $db, Url $endpoint): void
+    public function testGetWithUnknownIdentifier(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest('GET', $endpoint, 'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3);
         $content = $response->getBody()->getContents();
@@ -253,7 +253,7 @@ YAML;
     /**
      * @dataProvider apiTestBackends
      */
-    public function testPostToReplaceWithNewIdentifier(Connection $db, Url $endpoint): void
+    public function testPostToReplaceWithUnknownIdentifier(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest(
             'POST',
@@ -274,7 +274,7 @@ YAML;
     /**
      * @dataProvider apiTestBackends
      */
-    public function testPostToReplaceWithAlreadyExistingIdentifierAndIndifferentPayloadId(
+    public function testPostToReplaceWithIndifferentPayloadId(
         Connection $db,
         Url $endpoint
     ): void {
@@ -300,7 +300,7 @@ YAML;
     /**
      * @dataProvider apiTestBackends
      */
-    public function testPostToReplaceWithAlreadyExistingIdentifierAndExistingPayloadId(
+    public function testPostToReplaceWithAlreadyExistingPayloadId(
         Connection $db,
         Url $endpoint
     ): void {
@@ -323,7 +323,7 @@ YAML;
     /**
      * @dataProvider apiTestBackends
      */
-    public function testPostToReplaceWithAlreadyExistingIdentifierAndValidData(Connection $db, Url $endpoint): void
+    public function testPostToReplaceWithValidData(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest(
             'POST',
@@ -343,6 +343,24 @@ YAML;
             $response->getHeader('Location')
         );
         $this->assertSame($this->jsonEncodeSuccessMessage('Contact created successfully'), $content);
+
+        // Make sure the contact was replaced
+        $response = $this->sendRequest(
+            'GET',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(200, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
+            'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+            'full_name' => 'Test (replaced)',
+            'username' => null,
+            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+            'groups' => [],
+            'addresses' => new stdClass()
+        ]), $content);
     }
 
     /**
@@ -389,12 +407,30 @@ YAML;
             $response->getHeader('Location')
         );
         $this->assertSame($this->jsonEncodeSuccessMessage('Contact created successfully'), $content);
+
+        // Let's see the contact is available at that location
+        $response = $this->sendRequest(
+            'GET',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(200, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
+            'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+            'full_name' => 'Test',
+            'username' => null,
+            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+            'groups' => [],
+            'addresses' => new stdClass()
+        ]), $content);
     }
 
     /**
      * @dataProvider apiTestBackends
      */
-    public function testPostToReplaceWithAlreadyExistingIdentifierAndMissingRequiredFields(
+    public function testPostToReplaceWithMissingRequiredFields(
         Connection $db,
         Url $endpoint
     ): void {
@@ -423,7 +459,7 @@ YAML;
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
             json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID,
+                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
             ]
         );
@@ -438,7 +474,7 @@ YAML;
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
             json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID,
+                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test'
             ]
         );
@@ -478,12 +514,34 @@ YAML;
             $response->getHeader('Location')
         );
         $this->assertSame($this->jsonEncodeSuccessMessage('Contact created successfully'), $content);
+
+        // Oh really?
+        $response = $this->sendRequest(
+            'GET',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
+            'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+            'full_name' => 'Test3',
+            'username' => 'test3',
+            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+            'groups' => [BaseApiV1TestCase::GROUP_UUID],
+            'addresses' => [
+                'email' => 'test@example.com',
+                'webhook' => 'https://example.com/webhook',
+                'rocketchat' => 'https://chat.example.com/webhook',
+            ]
+        ]), $content);
     }
 
     /**
      * @dataProvider apiTestBackends
      */
-    public function testPostToCreateWithInvalidData(Connection $db, Url $endpoint): void
+    public function testPostToCreateWithInvalidDefaultChannel(Connection $db, Url $endpoint): void
     {
         // invalid default_channel uuid
         $response = $this->sendRequest(
@@ -498,7 +556,7 @@ YAML;
         );
         $content = $response->getBody()->getContents();
 
-        $this->assertEquals(400, $response->getStatusCode(), $content);
+        $this->assertEquals(422, $response->getStatusCode(), $content);
         $this->assertSame(
             $this->jsonEncodeError('Invalid request body: given default_channel is not a valid UUID'),
             $content
@@ -508,7 +566,7 @@ YAML;
     /**
      * @dataProvider apiTestBackends
      */
-    public function testPostToReplaceWithMissingRequiredFields(Connection $db, Url $endpoint): void
+    public function testPostToCreateWithMissingRequiredFields(Connection $db, Url $endpoint): void
     {
         $expected = $this->jsonEncodeError(
             'Invalid request body: the fields id, full_name and default_channel must be present and of type string'
@@ -749,11 +807,10 @@ YAML;
     /**
      * @dataProvider apiTestBackends
      */
-    public function testPutToUpdateWithAlreadyExistingIdentifierAndMissingRequiredFields(
+    public function testPutToUpdateWithMissingRequiredFields(
         Connection $db,
         Url $endpoint
     ): void {
-        // TODO: same results if identifier exists
         $expected = $this->jsonEncodeError(
             'Invalid request body: the fields id, full_name and default_channel must be present and of type string'
         );
@@ -762,7 +819,7 @@ YAML;
         $response = $this->sendRequest(
             'PUT',
             $endpoint,
-            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
             json:  [
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -777,9 +834,9 @@ YAML;
         $response = $this->sendRequest(
             'PUT',
             $endpoint,
-            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
             json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+                'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             ]
         );
@@ -792,9 +849,9 @@ YAML;
         $response = $this->sendRequest(
             'PUT',
             $endpoint,
-            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
             json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+                'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
             ]
         );
@@ -807,7 +864,7 @@ YAML;
     /**
      * @dataProvider apiTestBackends
      */
-    public function testPutToUpdateWithAlreadyExistingIdentifierAndDifferentPayloadId(
+    public function testPutToUpdateWithDifferentPayloadId(
         Connection $db,
         Url $endpoint
     ): void {
@@ -830,7 +887,7 @@ YAML;
     /**
      * @dataProvider apiTestBackends
      */
-    public function testPutToCreateWithNewIdentifierAndValidData(Connection $db, Url $endpoint): void
+    public function testPutToCreateWithValidData(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest(
             'PUT',
@@ -855,12 +912,33 @@ YAML;
             $response->getHeader('Location')
         );
         $this->assertSame($this->jsonEncodeSuccessMessage('Contact created successfully'), $content);
+
+        $response = $this->sendRequest(
+            'GET',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(200, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
+            'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+            'full_name' => 'Test',
+            'username' => null,
+            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+            'groups' => [],
+            'addresses' => [
+                'email' => 'test@example.com',
+                'webhook' => 'https://example.com/webhook',
+                'rocketchat' => 'https://chat.example.com/webhook',
+            ]
+        ]), $content);
     }
 
     /**
      * @dataProvider apiTestBackends
      */
-    public function testPutToUpdateWithAlreadyExistingIdentifierAndValidData(Connection $db, Url $endpoint): void
+    public function testPutToUpdateWithValidData(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest(
             'PUT',
@@ -876,36 +954,58 @@ YAML;
 
         $this->assertSame(204, $response->getStatusCode(), $content);
         $this->assertEmpty($content);
+
+        $response = $this->sendRequest(
+            'GET',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(200, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
+            'id' => BaseApiV1TestCase::CONTACT_UUID,
+            'full_name' => 'Test',
+            'username' => null,
+            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+            'groups' => [],
+            'addresses' => new stdClass()
+        ]), $content);
     }
 
     /**
      * @dataProvider apiTestBackends
      */
-    public function testPutToUpdateWithNewIdentifierAndInvalidData(Connection $db, Url $endpoint): void
+    public function testPutToUpdateWithInvalidData(Connection $db, Url $endpoint): void
     {
-        // different id
+        // invalid default_channel uuid
         $response = $this->sendRequest(
             'PUT',
             $endpoint,
-            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
             json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_4,
+                'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
-                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID_3,
             ]
         );
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(422, $response->getStatusCode(), $content);
-        $this->assertSame($this->jsonEncodeError('Identifier mismatch'), $content);
+        $this->assertSame(
+            $this->jsonEncodeError(
+                'Channel with identifier ' . BaseApiV1TestCase::CHANNEL_UUID_3 . ' does not exist'
+            ),
+            $content
+        );
 
         // invalid groups
         $response = $this->sendRequest(
             'PUT',
             $endpoint,
-            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
             json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+                'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
                 'groups' => [BaseApiV1TestCase::GROUP_UUID_3],
@@ -920,12 +1020,33 @@ YAML;
             ),
             $content
         );
+
+        // with invalid address type
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => [
+                    'invalid' => 'value'
+                ]
+            ]
+        );
+        $content = $response->getBody()->getContents();
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertSame(
+            $this->jsonEncodeError('Invalid request body: undefined address type invalid given'),
+            $content
+        );
     }
 
     /**
      * @dataProvider apiTestBackends
      */
-    public function testPutToUpdateWithNewIdentifierAndMissingRequiredFields(Connection $db, Url $endpoint): void
+    public function testPutToCreateWithMissingRequiredFields(Connection $db, Url $endpoint): void
     {
         $expected = $this->jsonEncodeError(
             'Invalid request body: the fields id, full_name and default_channel must be present and of type string'
@@ -991,7 +1112,7 @@ YAML;
     /**
      * @dataProvider apiTestBackends
      */
-    public function testDeleteWithNewIdentifier(Connection $db, Url $endpoint): void
+    public function testDeleteWithUnknownIdentifier(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest('DELETE', $endpoint, 'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3);
         $content = $response->getBody()->getContents();
@@ -1003,7 +1124,7 @@ YAML;
     /**
      * @dataProvider apiTestBackends
      */
-    public function testDeleteWithAlreadyExistingIdentifier(Connection $db, Url $endpoint): void
+    public function testDeleteWithKnownIdentifier(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest('DELETE', $endpoint, 'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID);
         $content = $response->getBody()->getContents();
