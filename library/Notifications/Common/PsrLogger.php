@@ -43,7 +43,7 @@ class PsrLogger implements LoggerInterface
      * @param string|Stringable $message The log message
      * @param array  $context Additional context variables to interpolate in the message
      */
-    public function log($level, $message, array $context = []): void
+    public function log($level, string|\Stringable $message, array $context = []): void
     {
         $level = strtolower((string) $level);
         $icingaMethod = self::MAP[$level] ?? 'debug';

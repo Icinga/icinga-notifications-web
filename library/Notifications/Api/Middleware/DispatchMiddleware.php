@@ -26,7 +26,7 @@ class DispatchMiddleware implements MiddlewareInterface
         $endpoint = $request->getAttribute('endpoint');
         $class = sprintf('Icinga\\Module\\Notifications\\Api\\%s\\%s', $version, $endpoint);
 
-        if (!class_exists($class) || !is_subclass_of($class, RequestHandlerInterface::class)) {
+        if (! class_exists($class) || ! is_subclass_of($class, RequestHandlerInterface::class)) {
             throw new HttpNotFoundException("Endpoint $endpoint not found");
         }
 
