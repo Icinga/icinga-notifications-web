@@ -11,7 +11,6 @@ use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
-use ipl\Web\Widget\IcingaIcon;
 use ipl\Web\Widget\Icon;
 
 /**
@@ -19,12 +18,6 @@ use ipl\Web\Widget\Icon;
  * @property string $type Type identifier
  * @property string $name The user-defined name
  * @property ?string $listener_password_hash
- * @property ?string $icinga2_base_url
- * @property ?string $icinga2_auth_user
- * @property ?string $icinga2_auth_pass
- * @property ?string $icinga2_ca_pem
- * @property ?string $icinga2_common_name
- * @property string $icinga2_insecure_tls
  * @property DateTime $changed_at
  * @property bool $deleted
  *
@@ -33,9 +26,6 @@ use ipl\Web\Widget\Icon;
  */
 class Source extends Model
 {
-    /** @var string The type name used by Icinga sources */
-    public const ICINGA_TYPE_NAME = 'icinga2';
-
     public function getTableName(): string
     {
         return 'source';
@@ -52,12 +42,6 @@ class Source extends Model
             'type',
             'name',
             'listener_password_hash',
-            'icinga2_base_url',
-            'icinga2_auth_user',
-            'icinga2_auth_pass',
-            'icinga2_ca_pem',
-            'icinga2_common_name',
-            'icinga2_insecure_tls',
             'changed_at',
             'deleted'
         ];
@@ -101,15 +85,7 @@ class Source extends Model
      */
     public function getIcon(): Icon
     {
-        switch ($this->type) {
-            //TODO(sd): Add icons for other known sources
-            case self::ICINGA_TYPE_NAME:
-                $icon = new IcingaIcon('icinga');
-                break;
-            default:
-                $icon = new Icon('share-nodes');
-        }
-
-        return $icon;
+        // TODO: Let the hook deliver the icon
+        return new Icon('share-nodes');
     }
 }
