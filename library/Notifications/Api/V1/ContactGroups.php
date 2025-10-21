@@ -663,7 +663,6 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
                 $newContacts[] = $contactId;
             }
         }
-        var_dump($newContacts);
 
         $toDelete = array_diff($storedContacts, $newContacts);
         $toAdd = array_diff($newContacts, $storedContacts);

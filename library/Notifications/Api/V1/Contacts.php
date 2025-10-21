@@ -358,42 +358,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
         Database::get()->beginTransaction();
 
         if (($contactId = self::getContactId($identifier)) !== null) {
-            if (! empty($requestBody['username'])) {
-                $this->assertUniqueUsername($requestBody['username'], $contactId);
-            }
-
-            $channelID = Channels::getChannelId($requestBody['default_channel']);
-
-            if ($channelID === false) {
-                throw new HttpException(422, 'Default channel mismatch');
-            }
-
-            Database::get()->update('contact', [
-                'full_name'          => $requestBody['full_name'],
-                'username'           => $requestBody['username'] ?? null,
-                'default_channel_id' => $channelID,
-                'changed_at'         => (int) (new DateTime())->format("Uv"),
-            ], ['id = ?' => $contactId]);
-
-            $markAsDeleted = ['deleted' => 'y'];
-            Database::get()->update(
-                'contact_address',
-                $markAsDeleted,
-                ['contact_id = ?' => $contactId, 'deleted = ?' => 'n']
-            );
-            Database::get()->update(
-                'contactgroup_member',
-                $markAsDeleted,
-                ['contact_id = ?' => $contactId, 'deleted = ?' => 'n']
-            );
-
-            if (! empty($requestBody['addresses'])) {
-                $this->addAddresses($contactId, $requestBody['addresses']);
-            }
-
-            if (! empty($requestBody['groups'])) {
-                $this->addGroups($contactId, $requestBody['groups']);
-            }
+            $this->updateContact($requestBody, $contactId);
 
             $result = $this->createResponse(204);
         } else {
@@ -713,6 +678,106 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
 
         if (! empty($requestBody['groups'])) {
             $this->addGroups($contactId, $requestBody['groups']);
+        }
+    }
+
+    private function updateContact(array $requestBody, int $contactId): void {
+
+        if (! empty($requestBody['username'])) {
+            $this->assertUniqueUsername($requestBody['username'], $contactId);
+        }
+
+        $channelID = Channels::getChannelId($requestBody['default_channel']);
+
+        if ($channelID === false) {
+            throw new HttpException(422, 'Default channel mismatch');
+        }
+
+        $changedAt = (int) (new DateTime())->format("Uv");
+        Database::get()->update('contact', [
+            'full_name'          => $requestBody['full_name'],
+            'username'           => $requestBody['username'] ?? null,
+            'default_channel_id' => $channelID,
+            'changed_at'         => $changedAt,
+        ], ['id = ?' => $contactId]);
+
+        $markAsDeleted = ['deleted' => 'y'];
+        Database::get()->update(
+            'contact_address',
+            $markAsDeleted,
+            ['contact_id = ?' => $contactId, 'deleted = ?' => 'n']
+        );
+
+        if (! empty($requestBody['addresses'])) {
+            $this->addAddresses($contactId, $requestBody['addresses']);
+        }
+
+        $storedContacts = [];
+        if (! empty($storedValues['group_members'])) {
+            $storedContacts = explode(',', $storedValues['group_members']);
+        }
+
+        $newContactgroups = [];
+        if (! empty($requestBody['users'])) {
+            foreach ($requestBody['users'] as $identifier) {
+                $contactgroupId = Contactgroups::getGroupId($identifier);
+                if ($contactId === null) {
+                    throw new HttpException(422, sprintf('Group with identifier %s not found', $identifier));
+                }
+                $newContactgroups[] = $contactId;
+            }
+        }
+        var_dump($newContactgroups);
+
+        $toDelete = array_diff($storedContacts, $newContactgroups);
+        $toAdd = array_diff($newContactgroups, $storedContacts);
+
+        if (! empty($toDelete)) {
+            Database::get()->update(
+                'contactgroup_member',
+                ['changed_at' => $changedAt, 'deleted' => 'y'],
+                [
+                    'contactgroup_id = ?'   => $toDelete,
+                    'contact_id IN (?)'     => $contactId,
+                    'deleted = ?'           => 'n'
+                ]
+            );
+        }
+
+        if (! empty($toAdd)) {
+            $contactgroupsMarkedAsDeleted = Database::get()->fetchCol(
+                (new Select())
+                    ->from('contactgroup_member')
+                    ->columns(['contact_id'])
+                    ->where([
+                        'contact_id = ?' => $contactId,
+                        'deleted = ?' => 'y',
+                        'contactgroup_id IN (?)' => $toAdd
+                    ])
+            );
+
+            $toAdd = array_diff($toAdd, $contactgroupsMarkedAsDeleted);
+            foreach ($toAdd as $contactgroupId) {
+                Database::get()->insert(
+                    'contactgroup_member',
+                    [
+                        'contactgroup_id' => $contactgroupId,
+                        'contact_id' => $contactId,
+                        'changed_at' => $changedAt
+                    ]
+                );
+            }
+
+            if (! empty($contactgroupsMarkedAsDeleted)) {
+                Database::get()->update(
+                    'contactgroup_member',
+                    ['changed_at' => $changedAt, 'deleted' => 'n'],
+                    [
+                        'contact_id = ?' => $contactId,
+                        'contactgroup_id IN (?)' => $contactgroupsMarkedAsDeleted
+                    ]
+                );
+            }
         }
     }
 
