@@ -871,6 +871,87 @@ YAML;
     /**
      * @dataProvider apiTestBackends
      */
+    public function testPutToChangeGroupMemberships(Connection $db, Url $endpoint): void
+    {
+        // First add a user to the group
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
+            json: [
+                'id' => BaseApiV1TestCase::GROUP_UUID,
+                'name' => 'Test',
+                'users' => [BaseApiV1TestCase::CONTACT_UUID]
+            ]
+        );
+
+        $this->assertSame(204, $response->getStatusCode());
+
+        // Check the result
+        $response = $this->sendRequest('GET', $endpoint, 'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID);
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(200, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
+            'id' => BaseApiV1TestCase::GROUP_UUID,
+            'name' => 'Test',
+            'users' => [BaseApiV1TestCase::CONTACT_UUID]
+        ]), $content);
+
+        // Then remove it
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
+            json: [
+                'id' => BaseApiV1TestCase::GROUP_UUID,
+                'name' => 'Test',
+                'users' => []
+            ]
+        );
+
+        $this->assertSame(204, $response->getStatusCode());
+
+        // Again, check the result
+        $response = $this->sendRequest('GET', $endpoint, 'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID);
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(200, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
+            'id' => BaseApiV1TestCase::GROUP_UUID,
+            'name' => 'Test',
+            'users' => []
+        ]), $content);
+
+        // And add it again
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
+            json: [
+                'id' => BaseApiV1TestCase::GROUP_UUID,
+                'name' => 'Test',
+                'users' => [BaseApiV1TestCase::CONTACT_UUID]
+            ]
+        );
+
+        $this->assertSame(204, $response->getStatusCode());
+
+        // Then verify the final result
+        $response = $this->sendRequest('GET', $endpoint, 'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID);
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(200, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
+            'id' => BaseApiV1TestCase::GROUP_UUID,
+            'name' => 'Test',
+            'users' => [BaseApiV1TestCase::CONTACT_UUID]
+        ]), $content);
+    }
+
+    /**
+     * @dataProvider apiTestBackends
+     */
     public function testDeleteWithoutIdentifier(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest('DELETE', $endpoint, 'v1/contact-groups');

@@ -1100,6 +1100,111 @@ YAML;
     /**
      * @dataProvider apiTestBackends
      */
+    public function testPutToChangeGroupMemberships(Connection $db, Url $endpoint): void
+    {
+        // First add a group to the user
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'groups' => [BaseApiV1TestCase::GROUP_UUID],
+            ]
+        );
+
+        $this->assertSame(204, $response->getStatusCode());
+
+        // Check the result
+        $response = $this->sendRequest(
+            'GET',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
+            'id' => BaseApiV1TestCase::CONTACT_UUID,
+            'full_name' => 'Test',
+            'username' => null,
+            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+            'groups' => [BaseApiV1TestCase::GROUP_UUID],
+            'addresses' => new stdClass()
+        ]), $content);
+
+        // Then remove it
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'groups' => []
+            ]
+        );
+
+        $this->assertSame(204, $response->getStatusCode());
+
+        // Again, check the result
+        $response = $this->sendRequest(
+            'GET',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
+            'id' => BaseApiV1TestCase::CONTACT_UUID,
+            'full_name' => 'Test',
+            'username' => null,
+            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+            'groups' => [],
+            'addresses' => new stdClass()
+        ]), $content);
+
+        // And add it again
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'groups' => [BaseApiV1TestCase::GROUP_UUID]
+            ]
+        );
+
+        $this->assertSame(204, $response->getStatusCode());
+
+        // Then verify the result
+        $response = $this->sendRequest(
+            'GET',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
+            'id' => BaseApiV1TestCase::CONTACT_UUID,
+            'full_name' => 'Test',
+            'username' => null,
+            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+            'groups' => [BaseApiV1TestCase::GROUP_UUID],
+            'addresses' => new stdClass()
+        ]), $content);
+    }
+
+    /**
+     * @dataProvider apiTestBackends
+     */
     public function testDeleteWithoutIdentifier(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest('DELETE', $endpoint, 'v1/contacts');
