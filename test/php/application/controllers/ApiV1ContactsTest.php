@@ -1205,6 +1205,133 @@ YAML;
     /**
      * @dataProvider apiTestBackends
      */
+    public function testPutToChangeAddresses(Connection $db, Url $endpoint): void
+    {
+        // First add addresses to the user
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => [
+                    'email' => 'test@example.com',
+                    'webhook' => 'https://example.com/webhook',
+                    'rocketchat' => 'https://chat.example.com/webhook',
+                ]
+            ]
+        );
+
+        $this->assertSame(204, $response->getStatusCode(), $response->getBody()->getContents());
+
+        // Check the result
+        $response = $this->sendRequest(
+            'GET',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(200, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
+            'id' => BaseApiV1TestCase::CONTACT_UUID,
+            'full_name' => 'Test',
+            'username' => null,
+            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+            'groups' => [],
+            'addresses' => [
+                'email' => 'test@example.com',
+                'webhook' => 'https://example.com/webhook',
+                'rocketchat' => 'https://chat.example.com/webhook',
+            ]
+        ]), $content);
+
+        // Then remove one of them
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => [
+                    'webhook' => 'https://example.com/webhook',
+                    'rocketchat' => 'https://chat.example.com/webhook'
+                ]
+            ]
+        );
+
+        $this->assertSame(204, $response->getStatusCode(), $response->getBody()->getContents());
+
+        // Again check the result
+        $response = $this->sendRequest(
+            'GET',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(200, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
+            'id' => BaseApiV1TestCase::CONTACT_UUID,
+            'full_name' => 'Test',
+            'username' => null,
+            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+            'groups' => [],
+            'addresses' => [
+                'webhook' => 'https://example.com/webhook',
+                'rocketchat' => 'https://chat.example.com/webhook'
+            ]
+        ]), $content);
+
+        // And add it again
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => [
+                    'email' => 'test@example.com',
+                    'webhook' => 'https://example.com/webhook',
+                    'rocketchat' => 'https://chat.example.com/webhook',
+                ]
+            ]
+        );
+
+        $this->assertSame(204, $response->getStatusCode(), $response->getBody()->getContents());
+
+        // Then verify the result
+        $response = $this->sendRequest(
+            'GET',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(200, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
+            'id' => BaseApiV1TestCase::CONTACT_UUID,
+            'full_name' => 'Test',
+            'username' => null,
+            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+            'groups' => [],
+            'addresses' => [
+                'email' => 'test@example.com',
+                'webhook' => 'https://example.com/webhook',
+                'rocketchat' => 'https://chat.example.com/webhook',
+            ]
+        ]), $content);
+    }
+
+    /**
+     * @dataProvider apiTestBackends
+     */
     public function testDeleteWithoutIdentifier(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest('DELETE', $endpoint, 'v1/contacts');
