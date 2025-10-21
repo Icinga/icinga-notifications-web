@@ -4,7 +4,6 @@
 
 namespace Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Response;
 
-use cebe\openapi\spec\Parameter;
 use OpenApi\Attributes\Response;
 use OpenApi\Attributes as OA;
 
