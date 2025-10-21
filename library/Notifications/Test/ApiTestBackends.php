@@ -170,7 +170,8 @@ SQL;
             ->setSection('global', [
                 'config_resource' => 'web_db'
             ])->setSection('logging', [
-                'log' => 'php',
+                'log' => 'file',
+                'file' => $configDir . '/icingaweb.log',
                 'level' => 'debug'
             ])->saveIni();
         Config::app('resources', true)
