@@ -33,7 +33,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertJsonStringEqualsJsonString($expected, $content);
 
         // filter by name
         $response = $this->sendRequest(
@@ -45,7 +45,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertJsonStringEqualsJsonString($expected, $content);
 
         // filter by type
         $response = $this->sendRequest(
@@ -57,7 +57,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertJsonStringEqualsJsonString($expected, $content);
 
         // filter by all available filters together
         $response = $this->sendRequest(
@@ -69,7 +69,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertJsonStringEqualsJsonString($expected, $content);
     }
 
     /**
@@ -88,7 +88,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
-        $this->assertSame($this->jsonEncodeResults([]), $content);
+        $this->assertJsonStringEqualsJsonString($this->jsonEncodeResults([]), $content);
 
         // Create new contact groups
         $this->createDefaultEntities();
@@ -116,7 +116,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
             ],
         ]);
         $this->assertSame(200, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertJsonStringEqualsJsonString($expected, $content);
     }
 
     /**
@@ -134,7 +134,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
             'config' => null,
         ]);
         $this->assertSame(200, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertJsonStringEqualsJsonString($expected, $content);
     }
 
     /**
@@ -146,7 +146,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $content = $response->getBody()->getContents();
 
         $this->assertSame(200, $response->getStatusCode(), $content);
-        $this->assertSame($this->jsonEncodeResults([]), $content);
+        $this->assertJsonStringEqualsJsonString($this->jsonEncodeResults([]), $content);
     }
 
     /**
@@ -161,7 +161,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
             'Invalid request parameter: Filter column nonexistingfilter is not allowed',
         );
         $this->assertSame(400, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertJsonStringEqualsJsonString($expected, $content);
     }
 
     /**
@@ -173,7 +173,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $content = $response->getBody()->getContents();
 
         $this->assertSame(404, $response->getStatusCode(), $content);
-        $this->assertSame($this->jsonEncodeError('Channel not found'), $content);
+        $this->assertJsonStringEqualsJsonString($this->jsonEncodeError('Channel not found'), $content);
     }
 
     /**
@@ -185,7 +185,10 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
-        $this->assertSame($this->jsonEncodeError('The given identifier is not a valid UUID'), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('The given identifier is not a valid UUID'),
+            $content
+        );
     }
 
     /**
@@ -207,7 +210,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertJsonStringEqualsJsonString($expected, $content);
 
         // Invalid identifier and invalid filter
         $response = $this->sendRequest(
@@ -219,7 +222,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $content = $response->getBody()->getContents();
 
         $this->assertSame(400, $response->getStatusCode(), $content);
-        $this->assertSame($expected, $content);
+        $this->assertJsonStringEqualsJsonString($expected, $content);
     }
 
     /**
@@ -234,7 +237,10 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
 
         $this->assertSame(405, $response->getStatusCode(), $content);
         $this->assertSame([$expectedAllowHeader], $response->getHeader('Allow'));
-        $this->assertSame($this->jsonEncodeError('HTTP method PATCH is not supported'), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('HTTP method PATCH is not supported'),
+            $content
+        );
 
         // Endpoint specific invalid method
         // Try to POST
@@ -245,7 +251,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
 
         $this->assertSame(405, $response->getStatusCode(), $content);
         $this->assertSame([$expectedAllowHeader], $response->getHeader('Allow'));
-        $this->assertSame($expected, $content);
+        $this->assertJsonStringEqualsJsonString($expected, $content);
 
         // Try to POST with identifier
         $response = $this->sendRequest('POST', $endpoint, 'v1/channels/' . BaseApiV1TestCase::CHANNEL_UUID);
@@ -253,7 +259,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
 
         $this->assertSame(405, $response->getStatusCode(), $content);
         $this->assertSame([$expectedAllowHeader], $response->getHeader('Allow'));
-        $this->assertSame($expected, $content);
+        $this->assertJsonStringEqualsJsonString($expected, $content);
 
         // Try to POST with filter
         $response = $this->sendRequest('POST', $endpoint, 'v1/channels', ['name' => 'Test']);
@@ -261,7 +267,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
 
         $this->assertSame(405, $response->getStatusCode(), $content);
         $this->assertSame([$expectedAllowHeader], $response->getHeader('Allow'));
-        $this->assertSame($expected, $content);
+        $this->assertJsonStringEqualsJsonString($expected, $content);
 
         // Try to POST with identifier and filter
         $response = $this->sendRequest(
@@ -274,7 +280,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
 
         $this->assertSame(405, $response->getStatusCode(), $content);
         $this->assertSame([$expectedAllowHeader], $response->getHeader('Allow'));
-        $this->assertSame($expected, $content);
+        $this->assertJsonStringEqualsJsonString($expected, $content);
 
         // Try to PUT
         $response = $this->sendRequest('PUT', $endpoint, 'v1/channels');
@@ -282,7 +288,10 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
 
         $this->assertSame(405, $response->getStatusCode(), $content);
         $this->assertSame([$expectedAllowHeader], $response->getHeader('Allow'));
-        $this->assertSame($this->jsonEncodeError('Method PUT is not supported for endpoint channels'), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Method PUT is not supported for endpoint channels'),
+            $content
+        );
 
         // Try to DELETE
         $response = $this->sendRequest('DELETE', $endpoint, 'v1/channels');
@@ -290,7 +299,10 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
 
         $this->assertSame(405, $response->getStatusCode(), $content);
         $this->assertSame([$expectedAllowHeader], $response->getHeader('Allow'));
-        $this->assertSame($this->jsonEncodeError('Method DELETE is not supported for endpoint channels'), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Method DELETE is not supported for endpoint channels'),
+            $content
+        );
     }
 
     protected function deleteDefaultEntities(): void
