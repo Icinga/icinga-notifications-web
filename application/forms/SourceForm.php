@@ -5,7 +5,10 @@
 namespace Icinga\Module\Notifications\Forms;
 
 use DateTime;
+use Icinga\Application\Hook;
+use Icinga\Application\Logger;
 use Icinga\Exception\Http\HttpNotFoundException;
+use Icinga\Module\Notifications\Hook\V1\SourceHook;
 use Icinga\Module\Notifications\Model\Source;
 use ipl\Html\HtmlDocument;
 use ipl\Sql\Connection;
@@ -15,6 +18,7 @@ use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
 use ipl\Web\Url;
 use ipl\Web\Widget\ButtonLink;
+use Throwable;
 
 class SourceForm extends CompatForm
 {
@@ -39,20 +43,32 @@ class SourceForm extends CompatForm
         $this->applyDefaultElementDecorators();
         $this->addCsrfCounterMeasure();
 
+        $types = ['' => ' - ' . $this->translate('Please choose') . ' - '];
+        foreach (Hook::all('Notifications/v1/Source') as $hook) {
+            /** @var SourceHook $hook */
+            try {
+                $types[$hook->getSourceType()] = $hook->getSourceLabel();
+            } catch (Throwable $e) {
+                Logger::error('Failed to load source integration %s: %s', $hook::class, $e);
+            }
+        }
+
         $this->addElement(
             'text',
             'name',
             [
-                'label'     => $this->translate('Name'),
+                'label'     => $this->translate('Source Name'),
                 'required'  => true
             ]
         );
         $this->addElement(
-            'text',
+            'select',
             'type',
             [
-                'required'  => true,
-                'label'     => $this->translate('Type Name')
+                'required'          => true,
+                'label'             => $this->translate('Source Type'),
+                'options'           => $types,
+                'disabledOptions'   => ['']
             ]
         );
         $this->addElement(
