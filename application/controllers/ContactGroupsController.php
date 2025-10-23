@@ -97,8 +97,10 @@ class ContactGroupsController extends CompatController
 
                 $emptyStateMessage = TemplateString::create(
                     // translators: %1$s will be replaced by a line break
-                    'No contact groups found.%1$sTo add new contact group, please {{#link}}configure a Channel{{/link}}'
-                    . ' first.%1$sOnce done, you should proceed by creating your first contact.',
+                    $this->translate(
+                        'No contact groups found.%1$sTo add new contact group, please {{#link}}configure a'
+                        . ' Channel{{/link}} first.%1$sOnce done, you should proceed by creating your first contact.'
+                    ),
                     ['link' => (new ActionLink(null, Links::channelAdd()))->setBaseTarget('_next')],
                     [HtmlString::create('<br>')]
                 );
