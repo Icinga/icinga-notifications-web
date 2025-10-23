@@ -6,11 +6,11 @@
 
     At the moment, we don't provide any support for this module.
 
-Icinga Notifications is a set of components that processes received events from miscellaneous sources, manages
-incidents and forwards notifications to predefined contacts, consisting of:
+Icinga Notifications is a set of components that processes received events from various sources, manages
+incidents and forwards notifications to predefined contacts. The components are:
 
 * [Icinga Notifications](https://github.com/Icinga/icinga-notifications), which receives events and sends notifications.
-* Icinga Notifications Web, which provides graphical configuration.
+* Icinga Notifications Web, which lets users configure Icinga Notifications and manage incidents.
 
 Icinga 2 itself and other sources propagate state updates and other events to [Icinga Notifications](https://github.com/Icinga/icinga-notifications).
 
@@ -18,26 +18,20 @@ Icinga 2 itself and other sources propagate state updates and other events to [I
 
 ![Icinga Notifications Architecture](res/notifications-architecture.png)
 
-Because Icinga Notifications consists of several components,
-this section tries to help understand how these components relate.
+All configuration of Icinga Notifications is done via Icinga Notifications Web. This includes the setup of sources
+Icinga Notifications will receive events from. To set up a source, an accompanying integration in Icinga Web is
+required. At the moment, compatible integrations are available for:
 
-First, the Icinga Notifications configuration resides in a SQL database.
-It can be conveniently tweaked via Icinga Notifications Web directly from a web browser.
-The Icinga Notifications daemon uses this database to read the current configuration.
+* Icinga 2, by using Icinga DB as backend
 
-As in any Icinga setup, all host and service checks are defined in Icinga 2.
-By querying the Icinga 2 API, the Icinga Notifications daemon retrieves state changes, acknowledgements and other events.
-These events are stored in the database and are available for further inspection in Icinga Notifications Web.
-Next to Icinga 2, other notification sources can be configured.
-
-Depending on its configuration, the daemon will take action on these events.
-This optionally includes escalations that are sent through a channel plugin.
-Each of those channel plugins implements a domain-specific transport, e.g., the `email` channel sends emails via SMTP.
-When configured, Icinga Notifications will use channel plugins to notify end users or talk to other APIs.
+Icinga Notifications receives events from the configured sources and decides whether to open an incident and when to
+forward them to which recipients. Icinga Notifications Web allows configuring these rules and managing incidents. To
+send notifications, Icinga Notifications is able to facilitate various types of channels, e.g., email, Rocket.Chat,
+webhook, etc.
 
 ## Available Channels
 
-Icinga Notifications comes with multiple channels out of the box:
+The following channels are currently available out of the box:
 
 * _email_: Email submission via SMTP
 * _rocketchat_: Rocket.Chat
@@ -48,7 +42,7 @@ following the [channel specification](https://icinga.com/docs/icinga-notificatio
 
 ## Installation
 
-To install Icinga Notifications Web see [Installation](02-Installation.md).
+To install Icinga Notifications Web, see [Installation](02-Installation.md).
 
 ## License
 
