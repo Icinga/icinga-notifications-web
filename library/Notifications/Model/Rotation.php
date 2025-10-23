@@ -145,7 +145,7 @@ class Rotation extends Model
         $requirePriorityUpdate = true;
         if (RotationConfigForm::EXPERIMENTAL_OVERRIDES) {
             $rotations = self::on($db)
-                ->columns('1')
+                ->columns([new Expression('1')])
                 ->filter(Filter::equal('schedule_id', $this->schedule_id))
                 ->filter(Filter::equal('priority', $this->priority))
                 ->first();
