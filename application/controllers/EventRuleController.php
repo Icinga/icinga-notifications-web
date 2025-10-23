@@ -4,6 +4,8 @@
 
 namespace Icinga\Module\Notifications\Controllers;
 
+use Icinga\Application\Hook;
+use Icinga\Application\Logger;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
@@ -11,6 +13,7 @@ use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\EventRuleConfigElements\NotificationConfigProvider;
 use Icinga\Module\Notifications\Forms\EventRuleConfigForm;
 use Icinga\Module\Notifications\Forms\EventRuleForm;
+use Icinga\Module\Notifications\Hook\V1\SourceHook;
 use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Model\Source;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ExtraTagSuggestions;
@@ -20,12 +23,12 @@ use ipl\Html\Contract\Form;
 use ipl\Html\Html;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
-use ipl\Web\Control\SearchEditor;
-use ipl\Web\Filter\Renderer;
+use ipl\Web\Compat\CompatForm;
 use ipl\Web\Url;
 use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
 use Psr\Http\Message\ServerRequestInterface;
+use Throwable;
 
 class EventRuleController extends CompatController
 {
@@ -184,31 +187,93 @@ class EventRuleController extends CompatController
     public function searchEditorAction(): void
     {
         $ruleId = (int) $this->params->getRequired('id');
+        $filter = $this->params->get('object_filter', $this->session->get('object_filter'));
 
-        $editor = new SearchEditor();
+        $source = null;
+        if ($ruleId !== -1) {
+            $source = Rule::on(Database::get())
+                ->columns(['id' => 'source.id', 'type' => 'source.type'])
+                ->filter(Filter::all(
+                    Filter::equal('id', $ruleId),
+                    Filter::equal('deleted', 'n')
+                ))
+                ->first();
+        } elseif (isset($this->session->source)) {
+            $source = Source::on(Database::get())
+                ->columns(['id', 'type'])
+                ->filter(Filter::equal('id', $this->session->source))
+                ->first();
+        }
 
-        $editor->setQueryString($this->session->get('object_filter'))
-            ->setAction(Url::fromRequest()->getAbsoluteUrl())
-            ->setSuggestionUrl(
-                Url::fromPath('notifications/event-rule/complete', [
-                    'id' => $ruleId,
-                    '_disableLayout' => true,
-                    'showCompact' => true
-                ])
-            );
+        if ($source === null) {
+            $this->httpNotFound($this->translate('Rule not found'));
+        }
 
-        $editor->on(Form::ON_SUBMIT, function (SearchEditor $form) use ($ruleId) {
-            $filter = (new Renderer($form->getFilter()))->render();
-            // TODO: Should not be needed for the new filter implementation
-            $filter = preg_replace('/(?:=|~|!|%3[EC])(?=[|&]|$)/', '', $filter);
+        $hook = null;
+        foreach (Hook::all('Notifications/v1/Source') as $h) {
+            /** @var SourceHook $h */
+            try {
+                if ($h->getSourceType() === $source->type) {
+                    $hook = $h;
 
-            $this->session->set('object_filter', $filter);
-            $this->redirectNow(Links::eventRule($ruleId)->setParam('_filterOnly'));
-        });
+                    break;
+                }
+            } catch (Throwable $e) {
+                Logger::error('Failed to load source integration %s: %s', $h::class, $e);
+            }
+        }
 
-        $editor->handleRequest($this->getServerRequest());
+        if ($hook === null) {
+            $this->httpNotFound(sprintf($this->translate(
+                'No source integration available. Either the module supporting sources of type "%s" is not'
+                . ' enabled or you have insufficient privileges. Please contact your system administrator.'
+            ), $source->type));
+        }
 
-        $this->getDocument()->addHtml($editor);
+        if (! $filter) {
+            $targets = $hook->getRuleFilterTargets($source->id);
+            if (count($targets) === 1 && ! is_array(reset($targets))) {
+                $filter = key($targets);
+            } else {
+                $target = null;
+                $form = (new CompatForm())
+                    ->applyDefaultElementDecorators()
+                    ->setAction(Url::fromRequest()->getAbsoluteUrl())
+                    ->addElement('select', 'target', [
+                        'required' => true,
+                        'label' => $this->translate('Filter Target'),
+                        'options' => ['' => ' - ' . $this->translate('Please choose') . ' - '] + $targets,
+                        'disabledOptions' => ['']
+                    ])
+                    ->addElement('submit', 'btn_submit', [
+                        // translators: shown on a submit button to proceed to the next step of a form wizard
+                        'label' => $this->translate('Next')
+                    ])
+                    ->on(Form::ON_SUBMIT, function (CompatForm $form) use (&$target) {
+                        $target = $form->getValue('target');
+                    })
+                    ->handleRequest($this->getServerRequest());
+
+                if ($target !== null) {
+                    $filter = $target;
+                } else {
+                    $this->addContent($form);
+                }
+            }
+        }
+
+        if ($filter) {
+            $form = $hook->getRuleFilterEditor($filter)
+                ->setAction(Url::fromRequest()->with('object_filter', $filter)->getAbsoluteUrl())
+                ->on(Form::ON_SUBMIT, function (Form $form) use ($ruleId, $hook) {
+                    $this->session->set('object_filter', $hook->serializeRuleFilter($form));
+                    $this->redirectNow(Links::eventRule($ruleId)->setParam('_filterOnly'));
+                })
+                ->handleRequest($this->getServerRequest());
+
+            $this->getDocument()->addHtml($form);
+        }
+
         $this->setTitle($this->translate('Adjust Filter'));
     }
 
