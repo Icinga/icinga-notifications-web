@@ -20,6 +20,7 @@ use ipl\Html\HtmlElement;
 use ipl\I18n\GettextTranslator;
 use ipl\I18n\StaticTranslator;
 use ipl\Sql\Connection;
+use ipl\Sql\Expression;
 use ipl\Stdlib\Filter;
 use ipl\Validator\EmailAddressValidator;
 use ipl\Web\Common\CsrfCounterMeasure;
@@ -128,13 +129,13 @@ class ChannelForm extends CompatForm
 
         if ($this->channelId !== null) {
             $isInUse = Contact::on($this->db)
-                ->columns('1')
+                ->columns([new Expression('1')])
                 ->filter(Filter::equal('default_channel_id', $this->channelId))
                 ->first();
 
             if ($isInUse === null) {
                 $isInUse = RuleEscalationRecipient::on($this->db)
-                    ->columns('1')
+                    ->columns([new Expression('1')])
                     ->filter(Filter::equal('channel_id', $this->channelId))
                     ->first();
             }

@@ -18,6 +18,7 @@ use Icinga\Web\Notification;
 use ipl\Html\Form;
 use ipl\Html\HtmlString;
 use ipl\Html\TemplateString;
+use ipl\Sql\Expression;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
@@ -91,8 +92,8 @@ class ContactGroupsController extends CompatController
         );
 
         $emptyStateMessage = null;
-        if (Contact::on(Database::get())->columns('1')->limit(1)->first() === null) {
-            if (Channel::on(Database::get())->columns('1')->limit(1)->first() === null) {
+        if (Contact::on(Database::get())->columns([new Expression('1')])->limit(1)->first() === null) {
+            if (Channel::on(Database::get())->columns([new Expression('1')])->limit(1)->first() === null) {
                 $addButton->disable($this->translate('A channel is required to add a contact group'));
 
                 $emptyStateMessage = TemplateString::create(
