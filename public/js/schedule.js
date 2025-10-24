@@ -94,6 +94,19 @@
             relatedElements.forEach((relatedElement) => {
                 relatedElement.classList.add('highlighted');
             });
+
+            let tooltip = entry.querySelector('.rotation-info')
+            if (tooltip) {
+                requestAnimationFrame(() => {
+                    const rect = tooltip.getBoundingClientRect();
+                    const padding = 10;
+
+                    if (rect.right > window.innerWidth - padding) {
+                        tooltip.classList.remove('rotation-info');
+                        tooltip.classList.add('rotation-info-left');
+                    }
+                });
+            }
         }
 
         onEntryLeave(event)
@@ -116,6 +129,12 @@
             relatedElements.forEach((relatedElement) => {
                 relatedElement.classList.remove('highlighted');
             });
+
+            let tooltip = entry.querySelector('.rotation-info-left')
+            if (tooltip) {
+                tooltip.classList.remove('rotation-info-left')
+                tooltip.classList.add('rotation-info');
+            }
         }
     }
 
