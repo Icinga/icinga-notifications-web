@@ -9,13 +9,20 @@ use DateTime;
 use Generator;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\RotationConfigForm;
+use ipl\Html\Attributes;
+use ipl\Html\HtmlElement;
+use ipl\Html\Text;
+use ipl\I18n\Translation;
 use ipl\Scheduler\RRule;
 use ipl\Stdlib\Filter;
+use ipl\Web\Widget\Icon;
 use Recurr\Frequency;
 use Recurr\Rule;
 
 class Rotation
 {
+    use Translation;
+
     /** @var \Icinga\Module\Notifications\Model\Rotation */
     protected $model;
 
@@ -70,6 +77,160 @@ class Rotation
     }
 
     /**
+     * Generate info that is to be shown when an Entry is hovered
+     *
+     * @return HtmlElement
+     */
+    public function generateEntryInfo(): HtmlElement
+    {
+        $members = [];
+        $rotationMembers = $this->model->member
+            ->with(['contact', 'contactgroup']);
+
+        foreach ($rotationMembers as $member) {
+            if ($member->contact_id !== null) {
+                $members[] = new Member($member->contact->full_name);
+            } else {
+                $memberGroup = new Member($member->contactgroup->name);
+                $memberGroup->setIcon('users');
+                $members[] = $memberGroup;
+            }
+        }
+
+        $maxLength = 30;
+        $currentLength = 0;
+        $memberText = '';
+        $memberCount = count($members);
+        for ($i = 0; $i < $memberCount; ++$i) {
+            $member = $members[$i];
+            $currentLength += strlen($member->getName()) + 1;
+            if ($currentLength > $maxLength) {
+                $remainingMemberCount = $memberCount - $i;
+                $remainingMembersText = $remainingMemberCount === $memberCount ?
+                    sprintf($this->translate('%s Members'), $remainingMemberCount) :
+                    sprintf($this->translate(' + %s more'), $remainingMemberCount);
+                $memberText .=
+                    '<span class="rotation-info-member-count">'
+                    . $remainingMembersText .
+                    '</span>';
+
+                break;
+            }
+
+            if ($memberText !== '') {
+                $memberText .= ', ';
+            }
+
+            $memberText .= new Icon($member->getIcon()) . $member->getName();
+        }
+
+        $modeLabels = [
+            'multi' => 'Multi Day',
+            'partial' => 'Partial Day',
+            '24-7' => '24/7'
+        ];
+
+        $mode = $modeLabels[$this->model->mode];
+        return new HtmlElement(
+            'div',
+            Attributes::create(['class' => 'rotation-info']),
+            Text::create(
+                sprintf(
+                    '<span class="rotation-info-name">%s</span> <span class="rotation-info-mode">(%s)</span>
+                            <br>%s
+                            <br>%s',
+                    $this->getName(),
+                    $this->translate($mode),
+                    $this->generateTimeInfo(),
+                    $memberText
+                )
+            )->setEscaped()
+        );
+    }
+
+    /**
+     * Generate info about start, handoff frequency and time interval
+     *
+     * @return string
+     */
+    public function generateTimeInfo(): string
+    {
+        $options = $this->model->options;
+        $mode = $this->model->mode;
+        $weekdayNames = [
+            1 => $this->translate("Mon"),
+            2 => $this->translate("Tue"),
+            3 => $this->translate("Wed"),
+            4 => $this->translate("Thu"),
+            5 => $this->translate("Fri"),
+            6 => $this->translate("Sat"),
+            7 => $this->translate("Sun")
+        ];
+
+        $noneType = \IntlDateFormatter::NONE;
+        $shortType = \IntlDateFormatter::SHORT;
+        $timeFormatter = new \IntlDateFormatter(\Locale::getDefault(), $noneType, $shortType);
+        $dateFormatter = new \IntlDateFormatter(\Locale::getDefault(), $shortType, $noneType);
+        $firstHandoff = $dateFormatter->format(DateTime::createFromFormat('Y-m-d', $this->model->first_handoff));
+
+        $isDaily = ($options['frequency'] ?? null) === 'd';
+        $unit = $isDaily ? 'day' : 'week';
+
+        $handoff = sprintf(
+            $this->translatePlural(
+                "Handoff every $unit",
+                "Handoff every %d {$unit}s",
+                (int) $options['interval']
+            ),
+            $options['interval']
+        );
+
+        if ($mode === "partial") {
+            $days = $options["days"];
+            $from = $timeFormatter->format(DateTime::createFromFormat('H:i', $options["from"]));
+            $to = $timeFormatter->format(DateTime::createFromFormat('H:i', $options["to"]));
+            if ($days[count($days) - 1] - $days[0] === (count($days) - 1) && count($days) > 1) {
+                $daysText = sprintf(
+                    $this->translate(
+                        '%s through %s ',
+                    ),
+                    $weekdayNames[reset($days)],
+                    $weekdayNames[end($days)],
+                );
+            } else {
+                $daysText = implode(', ', array_map(function ($day) use ($weekdayNames) {
+                    return $weekdayNames[$day];
+                }, $days));
+            }
+
+            return sprintf(
+                '%s %s - %s, %s<br>Starts on %s',
+                $daysText,
+                $from,
+                $to,
+                $handoff,
+                $firstHandoff
+            );
+        } elseif ($mode === "multi") {
+            $fromDay = $weekdayNames[$options["from_day"]];
+            $fromAt = $timeFormatter->format(DateTime::createFromFormat('H:i', $options["from_at"]));
+            $toDay = $weekdayNames[$options["to_day"]];
+            $toAt = $timeFormatter->format(DateTime::createFromFormat('H:i', $options["to_at"]));
+            return sprintf(
+                $this->translate("%s %s - %s %s, %s<br>Starts on %s"),
+                $fromDay,
+                $fromAt,
+                $toDay,
+                $toAt,
+                $handoff,
+                $firstHandoff
+            );
+        } else {
+            return "$handoff<br>Starts on $firstHandoff";
+        }
+    }
+
+    /**
      * Get the next occurrence of the rotation
      *
      * @param DateTime $after The date after which to yield occurrences
@@ -96,6 +257,8 @@ class Rotation
                     Filter::greaterThanOrEqual('until_time', $after) // Or one which isn't over yet
                 )
             ));
+
+        $flyoutContent = $this->generateEntryInfo();
         foreach ($entries as $timeperiodEntry) {
             if ($timeperiodEntry->member->contact->id !== null) {
                 $member = new Member($timeperiodEntry->member->contact->full_name);
@@ -147,6 +310,7 @@ class Rotation
                         ->setMember($member)
                         ->setStart($recurrence)
                         ->setEnd($recurrenceEnd)
+                        ->setFlyoutContent($flyoutContent)
                         ->setUrl(Links::rotationSettings($this->getId(), $this->getScheduleId()));
 
                     yield $occurrence;
