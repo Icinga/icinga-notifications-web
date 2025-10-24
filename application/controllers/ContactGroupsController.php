@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Controllers;
 
+use Icinga\Module\Notifications\Common\ConfigurationTabs;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\ContactGroupForm;
@@ -28,10 +29,10 @@ use ipl\Web\Filter\QueryString;
 use ipl\Web\Layout\MinimalItemLayout;
 use ipl\Web\Widget\ActionLink;
 use ipl\Web\Widget\ButtonLink;
-use ipl\Web\Widget\Tabs;
 
 class ContactGroupsController extends CompatController
 {
+    use ConfigurationTabs;
     use SearchControls;
 
     /** @var Filter\Rule Filter from query string parameters */
@@ -193,28 +194,6 @@ class ContactGroupsController extends CompatController
         $members->forRequest($this->getServerRequest());
 
         $this->getDocument()->addHtml($members);
-    }
-
-    public function getTabs(): Tabs
-    {
-        return parent::getTabs()
-            ->add('schedules', [
-                'label'      => $this->translate('Schedules'),
-                'url'        => Links::schedules(),
-                'baseTarget' => '_main'
-            ])->add('event-rules', [
-                'label'      => $this->translate('Event Rules'),
-                'url'        => Links::eventRules(),
-                'baseTarget' => '_main'
-            ])->add('contacts', [
-                'label'      => $this->translate('Contacts'),
-                'url'        => Links::contacts(),
-                'baseTarget' => '_main'
-            ])->add('contact-groups', [
-                'label'      => $this->translate('Contact Groups'),
-                'url'        => Links::contactGroups(),
-                'baseTarget' => '_main'
-            ]);
     }
 
     /**
