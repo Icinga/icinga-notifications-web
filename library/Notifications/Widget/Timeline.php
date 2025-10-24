@@ -249,6 +249,7 @@ class Timeline extends BaseHtmlElement implements EntryProvider
                     $resultEntry = (new Entry($entry->getId()))
                         ->setStart($start)
                         ->setEnd($end)
+                        ->setFlyoutContent($entry->getFlyoutContent())
                         ->setMember($entry->getMember());
 
                     if (! $this->minimalLayout) {
