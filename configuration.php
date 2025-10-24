@@ -38,8 +38,8 @@ $this->providePermission(
 );
 
 $this->providePermission(
-    'notifications/config/contact-groups',
-    $this->translate('Allow to configure contact groups')
+    'notifications/config/contacts',
+    $this->translate('Allow to configure contacts and contact groups')
 );
 
 $this->providePermission(
