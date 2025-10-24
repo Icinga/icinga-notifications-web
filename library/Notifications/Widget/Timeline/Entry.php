@@ -9,12 +9,14 @@ use ipl\Html\BaseHtmlElement;
 use Icinga\Module\Notifications\Widget\TimeGrid;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
+use ipl\Html\ValidHtml;
 use ipl\Web\Widget\Icon;
 
 class Entry extends TimeGrid\Entry
 {
     /** @var Member */
     protected $member;
+    protected $flyoutContent;
 
     public function setMember(Member $member): self
     {
@@ -33,6 +35,21 @@ class Entry extends TimeGrid\Entry
         return TimeGrid\Util::calculateEntryColor($this->getMember()->getName(), $transparency);
     }
 
+    /** Sets Content of a Flyout that is shown when the Entry is hovered
+     * @param ValidHtml $content
+     * @return $this
+     */
+    public function setFlyoutContent(ValidHtml $content): self
+    {
+        $this->flyoutContent = $content;
+        return $this;
+    }
+
+    public function getFlyoutContent(): ?ValidHtml
+    {
+        return $this->flyoutContent;
+    }
+
     protected function assembleContainer(BaseHtmlElement $container): void
     {
         $container->addHtml(
@@ -48,24 +65,6 @@ class Entry extends TimeGrid\Entry
             )
         );
 
-        $dateType = \IntlDateFormatter::NONE;
-        $timeType = \IntlDateFormatter::SHORT;
-        if (
-            $this->getStart()->diff($this->getEnd())->days > 0
-            || $this->getStart()->format('Y-m-d') !== $this->getEnd()->format('Y-m-d')
-        ) {
-            $dateType = \IntlDateFormatter::SHORT;
-        }
-
-        $formatter = new \IntlDateFormatter(\Locale::getDefault(), $dateType, $timeType);
-
-        $container->addAttributes([
-            'title' => sprintf(
-                $this->translate('%s is available from %s to %s'),
-                $this->getMember()->getName(),
-                $formatter->format($this->getStart()),
-                $formatter->format($this->getEnd())
-            )
-        ]);
+        $this->addHtml($this->flyoutContent);
     }
 }
