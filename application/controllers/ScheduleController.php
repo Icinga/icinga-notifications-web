@@ -30,6 +30,8 @@ class ScheduleController extends CompatController
 
     public function init(): void
     {
+        $this->assertPermission('notifications/config/schedules');
+
         parent::init();
 
         $this->session = Session::getSession()->getNamespace('notifications.schedule');

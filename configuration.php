@@ -33,6 +33,11 @@ $section->add(
 );
 
 $this->providePermission(
+    'notifications/config/schedules',
+    $this->translate('Allow to configure schedules')
+);
+
+$this->providePermission(
     'notifications/config/event-rules',
     $this->translate('Allow to configure event rules')
 );

@@ -26,6 +26,11 @@ class SchedulesController extends CompatController
     /** @var Filter\Rule Filter from query string parameters */
     private $filter;
 
+    public function init(): void
+    {
+        $this->assertPermission('notifications/config/schedules');
+    }
+
     public function indexAction(): void
     {
         $schedules = Schedule::on(Database::get());
