@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Widget\Detail;
 use ArrayIterator;
 use Icinga\Module\Icingadb\Model\CustomvarFlat;
 use Icinga\Module\Icingadb\Widget\Detail\CustomVarTable;
+use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Hook\ObjectsRendererHook;
 use Icinga\Module\Notifications\Model\Behavior\IcingaCustomVars;
 use Icinga\Module\Notifications\Model\Incident;
@@ -26,6 +27,7 @@ use ipl\Web\Layout\MinimalItemLayout;
 
 class IncidentDetail extends BaseHtmlElement
 {
+    use Auth;
     use Translation;
 
     /** @var Incident */
@@ -58,10 +60,14 @@ class IncidentDetail extends BaseHtmlElement
             $contacts[] = $contact;
         }
 
+        $disableContactLink = ! $this->getAuth()->hasPermission('notifications/view/contacts')
+            || ! $this->getAuth()->hasPermission('notifications/config/contacts');
+
         return [
             Html::tag('h2', t('Subscribers')),
-            (new ObjectList($contacts, new IncidentContactRenderer()))
+            (new ObjectList($contacts, (new IncidentContactRenderer())->disableContactLink($disableContactLink)))
                 ->setItemLayoutClass(MinimalItemLayout::class)
+                ->setDetailActionsDisabled($disableContactLink)
         ];
     }
 

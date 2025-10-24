@@ -65,6 +65,11 @@ $this->providePermission(
 );
 
 $this->providePermission(
+    'notifications/view/contacts',
+    $this->translate('Allow to view contacts')
+);
+
+$this->providePermission(
     'notifications/api',
     $this->translate('Allow to modify configuration via API')
 );
