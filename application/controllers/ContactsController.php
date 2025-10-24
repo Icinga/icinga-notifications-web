@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Controllers;
 
+use Icinga\Module\Notifications\Common\ConfigurationTabs;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\View\ContactRenderer;
@@ -29,6 +30,7 @@ use ipl\Web\Widget\ButtonLink;
 
 class ContactsController extends CompatController
 {
+    use ConfigurationTabs;
     use SearchControls;
 
     /** @var Connection */
@@ -170,31 +172,5 @@ class ContactsController extends CompatController
         }
 
         return $this->filter;
-    }
-
-    public function getTabs()
-    {
-        if ($this->getRequest()->getActionName() === 'index') {
-            return parent::getTabs()
-                ->add('schedules', [
-                    'label'      => $this->translate('Schedules'),
-                    'url'        => Links::schedules(),
-                    'baseTarget' => '_main'
-                ])->add('event-rules', [
-                    'label'      => $this->translate('Event Rules'),
-                    'url'        => Links::eventRules(),
-                    'baseTarget' => '_main'
-                ])->add('contacts', [
-                    'label'      => $this->translate('Contacts'),
-                    'url'        => Links::contacts(),
-                    'baseTarget' => '_main'
-                ])->add('contact-groups', [
-                    'label'      => $this->translate('Contact Groups'),
-                    'url'        => Links::contactGroups(),
-                    'baseTarget' => '_main'
-                ]);
-        }
-
-        return parent::getTabs();
     }
 }
