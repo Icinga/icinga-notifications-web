@@ -21,6 +21,11 @@ use ipl\Web\Widget\ButtonLink;
 
 class ScheduleController extends CompatController
 {
+    public function init()
+    {
+        $this->assertPermission('notifications/config/schedules');
+    }
+
     public function indexAction(): void
     {
         $id = (int) $this->params->getRequired('id');
