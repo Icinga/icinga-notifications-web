@@ -39,7 +39,7 @@ class ContactGroupsController extends CompatController
 
     public function init(): void
     {
-        $this->assertPermission('notifications/config/contact-groups');
+        $this->assertPermission('notifications/config/contacts');
     }
 
     public function indexAction(): void
