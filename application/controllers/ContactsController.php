@@ -98,12 +98,19 @@ class ContactsController extends CompatController
         if (Channel::on($this->db)->columns([new Expression('1')])->limit(1)->first() === null) {
             $addButton->disable($this->translate('A channel is required to add a contact'));
 
-            $emptyStateMessage = TemplateString::create(
-                $this->translate(
-                    'No contacts found. To add a new contact, please {{#link}}configure a Channel{{/link}} first.'
-                ),
-                ['link' => (new ActionLink(null, Links::channelAdd()))->setBaseTarget('_next')]
-            );
+            if ($this->Auth()->hasPermission('config/modules')) {
+                $emptyStateMessage = TemplateString::create(
+                    $this->translate(
+                        'No contacts found. To add a new contact, please {{#link}}configure a Channel{{/link}} first.'
+                    ),
+                    ['link' => (new ActionLink(null, Links::channelAdd()))->setBaseTarget('_next')]
+                );
+            } else {
+                $emptyStateMessage = $this->translate(
+                    'No contacts found. To add a new contact, a channel is required.'
+                    . ' Please contact your system administrator.'
+                );
+            }
         }
 
         $this->addContent($addButton);
