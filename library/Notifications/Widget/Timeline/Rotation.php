@@ -173,17 +173,25 @@ class Rotation
         $dateFormatter = new \IntlDateFormatter(\Locale::getDefault(), $shortType, $noneType);
         $firstHandoff = $dateFormatter->format(DateTime::createFromFormat('Y-m-d', $this->model->first_handoff));
 
-        $isDaily = ($options['frequency'] ?? null) === 'd';
-        $unit = $isDaily ? 'day' : 'week';
-
-        $handoff = sprintf(
-            $this->translatePlural(
-                "Handoff every $unit",
-                "Handoff every %d {$unit}s",
-                (int) $options['interval']
-            ),
-            $options['interval']
-        );
+        if (($options['frequency'] ?? null) === 'd') {
+            $handoff = sprintf(
+                $this->translatePlural(
+                    'Handoff every day',
+                    'Handoff every %d days',
+                    (int) $options['interval']
+                ),
+                $options['interval']
+            );
+        } else {
+            $handoff = sprintf(
+                $this->translatePlural(
+                    'Handoff every week',
+                    'Handoff every %d weeks',
+                    (int) $options['interval']
+                ),
+                $options['interval']
+            );
+        }
 
         if ($mode === "partial") {
             $days = $options["days"];
