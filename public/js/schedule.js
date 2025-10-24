@@ -95,15 +95,17 @@
                 relatedElement.classList.add('highlighted');
             });
 
-            let tooltip = entry.querySelector('.rotation-info')
+            const tooltip = entry.querySelector('.rotation-info');
             if (tooltip) {
                 requestAnimationFrame(() => {
-                    const rect = tooltip.getBoundingClientRect();
-                    const padding = 10;
+                    const tooltipRect = tooltip.getBoundingClientRect();
+                    const gridRect = grid.getBoundingClientRect();
+                    if (tooltipRect.right > gridRect.right) {
+                        tooltip.classList.add('is-left');
+                    }
 
-                    if (rect.right > window.innerWidth - padding) {
-                        tooltip.classList.remove('rotation-info');
-                        tooltip.classList.add('rotation-info-left');
+                    if (tooltipRect.top < gridRect.top) {
+                        tooltip.classList.add('is-bottom');
                     }
                 });
             }
@@ -130,10 +132,10 @@
                 relatedElement.classList.remove('highlighted');
             });
 
-            let tooltip = entry.querySelector('.rotation-info-left')
+            const tooltip = entry.querySelector('.rotation-info');
             if (tooltip) {
-                tooltip.classList.remove('rotation-info-left')
-                tooltip.classList.add('rotation-info');
+                tooltip.classList.remove('is-left');
+                tooltip.classList.remove('is-bottom');
             }
         }
     }
