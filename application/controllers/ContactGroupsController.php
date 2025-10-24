@@ -97,15 +97,23 @@ class ContactGroupsController extends CompatController
             if (Channel::on(Database::get())->columns([new Expression('1')])->limit(1)->first() === null) {
                 $addButton->disable($this->translate('A channel is required to add a contact group'));
 
-                $emptyStateMessage = TemplateString::create(
-                    // translators: %1$s will be replaced by a line break
-                    $this->translate(
-                        'No contact groups found.%1$sTo add new contact group, please {{#link}}configure a'
-                        . ' Channel{{/link}} first.%1$sOnce done, you should proceed by creating your first contact.'
-                    ),
-                    ['link' => (new ActionLink(null, Links::channelAdd()))->setBaseTarget('_next')],
-                    [HtmlString::create('<br>')]
-                );
+                if ($this->Auth()->hasPermission('config/modules')) {
+                    $emptyStateMessage = TemplateString::create(
+                        // translators: %1$s will be replaced by a line break
+                        $this->translate(
+                            'No contact groups found.%1$s'
+                            . 'To add new contact group, please {{#link}}configure a Channel{{/link}} first.%1$s'
+                            . 'Once done, you should proceed by creating your first contact.'
+                        ),
+                        ['link' => (new ActionLink(null, Links::channelAdd()))->setBaseTarget('_next')],
+                        [HtmlString::create('<br>')]
+                    );
+                } else {
+                    $emptyStateMessage = $this->translate(
+                        'No contact groups found. To add a new contact group, a channel is required.'
+                        . ' Please contact your system administrator.'
+                    );
+                }
             } else {
                 $emptyStateMessage = TemplateString::create(
                     $this->translate(
