@@ -3,6 +3,7 @@
 /* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
 
 use Icinga\Application\Modules\Module;
+use Icinga\Authentication\Auth;
 
 /** @var Module $this */
 
@@ -14,14 +15,30 @@ $section = $this->menuSection(
     ]
 );
 
-$section->add(
-    N_('Configuration'),
-    [
-        'icon'          => 'wrench',
-        'description'   => $this->translate('Configuration'),
-        'url'           => 'notifications/schedules'
-    ]
-);
+$auth = Auth::getInstance();
+$authenticated = $auth->getUser() !== null;
+
+$configLandingPage = null;
+if ($authenticated) {
+    if ($auth->hasPermission('notifications/config/schedules')) {
+        $configLandingPage = 'notifications/schedules';
+    } elseif ($auth->hasPermission('notifications/config/event-rules')) {
+        $configLandingPage = 'notifications/event-rules';
+    } elseif ($auth->hasPermission('notifications/config/contacts')) {
+        $configLandingPage = 'notifications/contacts';
+    }
+}
+
+if ($configLandingPage !== null) {
+    $section->add(
+        N_('Configuration'),
+        [
+            'icon'          => 'wrench',
+            'description'   => $this->translate('Configuration'),
+            'url'           => $configLandingPage
+        ]
+    );
+}
 
 $section->add(
     N_('Events'),
