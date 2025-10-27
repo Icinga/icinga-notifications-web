@@ -215,7 +215,7 @@ class Rotation
             }
 
             return sprintf(
-                $this->translate('%s %s - %s, %s<br>Starts on %s'),
+                $this->translate('%s %s - %s, %s<br><span class="rotation-info-start">Starts on </span>%s'),
                 $daysText,
                 $from,
                 $to,
@@ -228,7 +228,7 @@ class Rotation
             $toDay = $weekdayNames[$options["to_day"]];
             $toAt = $timeFormatter->format(DateTime::createFromFormat('H:i', $options["to_at"]));
             return sprintf(
-                $this->translate("%s %s - %s %s, %s<br>Starts on %s"),
+                $this->translate('%s %s - %s %s, %s<br><span class="rotation-info-start">Starts on </span>%s'),
                 $fromDay,
                 $fromAt,
                 $toDay,
@@ -238,7 +238,7 @@ class Rotation
             );
         } else {
             return sprintf(
-                $this->translate('%s<br>Starts on %s'),
+                $this->translate('%s<br><span class="rotation-info-start">Starts on </span>%s'),
                 $handoff,
                 $firstHandoff
             );
