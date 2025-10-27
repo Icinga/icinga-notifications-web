@@ -215,7 +215,7 @@ class Rotation
             }
 
             return sprintf(
-                '%s %s - %s, %s<br>Starts on %s',
+                $this->translate('%s %s - %s, %s<br>Starts on %s'),
                 $daysText,
                 $from,
                 $to,
