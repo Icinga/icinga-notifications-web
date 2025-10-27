@@ -107,7 +107,10 @@ class Rotation
             if ($currentLength > $maxLength) {
                 $remainingMemberCount = $memberCount - $i;
                 $remainingMembersText = $remainingMemberCount === $memberCount ?
-                    sprintf($this->translate('%s Members'), $remainingMemberCount) :
+                    sprintf(
+                        $this->translatePlural('%s Member', '%s Members', $remainingMemberCount),
+                        $remainingMemberCount
+                    ) :
                     sprintf($this->translate(' + %s more'), $remainingMemberCount);
                 $memberText .=
                     '<span class="rotation-info-member-count">'
