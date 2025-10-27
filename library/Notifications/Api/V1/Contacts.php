@@ -682,7 +682,8 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
         }
     }
 
-    private function updateContact(array $requestBody, int $contactId): void {
+    private function updateContact(array $requestBody, int $contactId): void
+    {
 
         if (! empty($requestBody['username'])) {
             $this->assertUniqueUsername($requestBody['username'], $contactId);
@@ -724,7 +725,10 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
             foreach ($requestBody['groups'] as $identifier) {
                 $contactgroupId = Contactgroups::getGroupId($identifier);
                 if ($contactgroupId === null) {
-                    throw new HttpException(422, sprintf('Contact Group with identifier %s does not exist', $identifier));
+                    throw new HttpException(
+                        422,
+                        sprintf('Contact Group with identifier %s does not exist', $identifier)
+                    );
                 }
                 $newContactgroups[] = $contactgroupId;
             }
