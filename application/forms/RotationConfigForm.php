@@ -1230,7 +1230,7 @@ class RotationConfigForm extends CompatForm
                     if ($actualFirstHandoff < new DateTime()) {
                         return $this->translate('The rotation will start immediately');
                     } else {
-                        return sprintf(
+                        $handoffHint = sprintf(
                             $this->translate('The rotation will start on %s'),
                             (new \IntlDateFormatter(
                                 \Locale::getDefault(),
@@ -1239,6 +1239,14 @@ class RotationConfigForm extends CompatForm
                                 $this->getScheduleTimezone()
                             ))->format($actualFirstHandoff)
                         );
+
+                        $scheduleTimezone = $this->getScheduleTimezone()->getName();
+
+                        if ($this->displayTimezone !== $scheduleTimezone) {
+                            $handoffHint .= sprintf($this->translate(' (in %s)'), $scheduleTimezone);
+                        }
+
+                        return $handoffHint;
                     }
                 })
             ));
