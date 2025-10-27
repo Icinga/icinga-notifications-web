@@ -371,11 +371,12 @@ class Timeline extends BaseHtmlElement implements EntryProvider
             );
 
             $now = Util::roundToNearestThirtyMinute($now);
+            $diff = $this->start->diff($now);
 
             $this->getStyle()->addFor($currentTime, [
                 '--timeStartColumn' =>
-                    $now->format('G') * 2 // 2 columns per hour
-                    + ($now->format('i') >= 30 ? 1 : 0) // 1 column for the half hour
+                    ($diff->d * 24 + $diff->h) * 2 // 2 columns per hour
+                    + ($diff->i >= 30 ? 1 : 0) // 1 column for the half hour
                     + 1 // CSS starts counting columns from 1, not zero
             ]);
 
