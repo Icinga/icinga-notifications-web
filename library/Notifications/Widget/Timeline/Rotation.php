@@ -128,9 +128,9 @@ class Rotation
         }
 
         $modeLabels = [
-            'multi' => 'Multi Day',
-            'partial' => 'Partial Day',
-            '24-7' => '24/7'
+            'multi' => $this->translate('Multi Day'),
+            'partial' => $this->translate('Partial Day'),
+            '24-7' => $this->translate('24/7')
         ];
 
         $mode = $modeLabels[$this->model->mode];
