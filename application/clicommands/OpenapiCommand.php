@@ -16,27 +16,37 @@ use Throwable;
 
 class OpenapiCommand extends Command
 {
-    public function runAction(): void
-    {
-        echo "\n\n\ntest\n\n\n";
-    }
-
+    /**
+     * Generate an OpenAPI JSON file from PHP attributes.
+     *
+     * This command scans a directory for PHP files and generates an OpenAPI JSON file using swagger-php.
+     * The paths are relative to the notifications module directory.
+     *
+     * USAGE:
+     *
+     *   icingacli notifications openapi generate [OPTIONS]
+     *
+     * OPTIONS
+     *
+     * --dir <path/>                            Set the path to the directory to scan for PHP files.
+*                                               Default: /library/Notifications/Api/
+     *
+     * --exclude <comma seperated strings>      Exclude files matching these strings. Wildcard is `*`
+     *
+     * --include <comma seperated strings>      Include files matching these strings. Wildcard is `*`
+     *
+     * --output <path/>                         Set the path to the output file.
+     *                                          Default: /doc/api/api-v1-public.json
+     *
+     * --api-version <version string>           Set the API version.
+     *                                          Default: v1
+     *                                          If the output path is set the --api-version option is ignored.
+     *
+     * --oad-version <version string>           Set the OpenAPI version.
+     *                                          Default: 3.1.0
+     */
     public function generateAction(): void
     {
-
-        /**
-         * CLI tool to generate an OpenAPI JSON file from PHP attributes using swagger-php.
-         *
-         * Usage:
-         *   icingacli openapi generate \
-         *       --dir ./src \
-         *       --exclude vendor,tests \
-         *       --include ApiController.php,UserController.php \
-         *       --output ./docs/openapi.json \
-         *       --api-version v1
-         *       --oad-version 3.1.0
-         */
-
         $directoryInNotifications = $this->params->get('dir', '/library/Notifications/Api/');
         $exclude = $this->params->get('exclude');
         $include = $this->params->get('include');
@@ -48,7 +58,7 @@ class OpenapiCommand extends Command
         $directory = $notificationsPath . $directoryInNotifications;
 
         $baseDirectory = realpath($directory);
-        if ($baseDirectory === false || !is_dir($baseDirectory)) {
+        if ($baseDirectory === false || ! is_dir($baseDirectory)) {
             throw new RuntimeException("Invalid directory: {$directory}");
         }
 
@@ -60,7 +70,6 @@ class OpenapiCommand extends Command
 
         echo "→ Scanning directory: $baseDirectory\n";
         echo "→ Found " . count($files) . " PHP files\n";
-//        die;
 
         $generator = new Generator(new PsrLogger());
         $generator->setVersion($oadVersion);
@@ -74,15 +83,15 @@ class OpenapiCommand extends Command
             );
 
             $dir = dirname($outputPath);
-            if (!is_dir($dir)) {
+            if (! is_dir($dir)) {
                 mkdir($dir, 0755, true);
             }
 
             file_put_contents($outputPath, $json);
 
-            echo "✅ OpenAPI documentation written to: $outputPath\n";
+            echo "OpenAPI documentation written to: $outputPath\n";
         } catch (Throwable $e) {
-            fwrite(STDERR, "❌ Error generating OpenAPI: " . $e->getMessage() . "\n");
+            fwrite(STDERR, "Error generating OpenAPI: " . $e->getMessage() . "\n");
             exit(1);
         }
     }
@@ -90,7 +99,7 @@ class OpenapiCommand extends Command
     /**
      * Recursively scan a directory for PHP files.
      */
-    function collectPhpFiles(string $baseDirectory, array $exclude, array $include): array
+    protected function collectPhpFiles(string $baseDirectory, array $exclude, array $include): array
     {
         $baseDirectory = rtrim($baseDirectory, '/') . '/';
         if (! is_dir($baseDirectory)) {
@@ -105,11 +114,6 @@ class OpenapiCommand extends Command
             new RecursiveDirectoryIterator($baseDirectory, FilesystemIterator::SKIP_DOTS)
         );
 
-//        echo PHP_EOL;
-//        var_dump($iterator);
-//        echo PHP_EOL . PHP_EOL;
-//        die();
-
         /** @var SplFileInfo $file */
         foreach ($iterator as $file) {
             if (! $file->isFile() || $file->getExtension() !== 'php') {
@@ -118,12 +122,10 @@ class OpenapiCommand extends Command
 
             $path = $file->getPathname();
 
-            // Exclude
             if ($exclude !== [] && $this->matchesAnyPattern($path, $exclude)) {
                 continue;
             }
 
-            // Include filter (if defined)
             if ($include !== [] && ! $this->matchesAnyPattern($path, $include)) {
                 continue;
             }
@@ -137,13 +139,12 @@ class OpenapiCommand extends Command
 
         return $files;
     }
-//
-    function matchesAnyPattern(string $string, array $patterns): bool
+
+    protected function matchesAnyPattern(string $string, array $patterns): bool
     {
         foreach ($patterns as $pattern) {
             // Escape regex special chars except for '*'
             $regex = '/^' . str_replace('\*', '.*', preg_quote($pattern, '/')) . '$/';
-//            echo PHP_EOL . $regex . PHP_EOL; die;
             if (preg_match($regex, $string)) {
                 return true;
             }
