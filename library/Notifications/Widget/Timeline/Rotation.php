@@ -237,7 +237,11 @@ class Rotation
                 $firstHandoff
             );
         } else {
-            return "$handoff<br>Starts on $firstHandoff";
+            return sprintf(
+                $this->translate('%s<br>Starts on %s'),
+                $handoff,
+                $firstHandoff
+            );
         }
     }
 
