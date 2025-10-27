@@ -134,8 +134,7 @@
 
             const tooltip = entry.querySelector('.rotation-info');
             if (tooltip) {
-                tooltip.classList.remove('is-left');
-                tooltip.classList.remove('is-bottom');
+                tooltip.classList.remove('is-left', 'is-bottom');
             }
         }
     }
