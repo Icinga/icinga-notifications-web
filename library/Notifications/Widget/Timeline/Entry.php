@@ -17,7 +17,7 @@ class Entry extends TimeGrid\Entry
     /** @var Member */
     protected $member;
 
-    /**@var ?ValidHtml Content of the flyoutmenu that is shown when the entry is hovered*/
+    /** @var ?ValidHtml Content of the flyoutmenu that is shown when the entry is hovered */
     protected ?ValidHtml $flyoutContent;
 
     public function setMember(Member $member): self
@@ -38,13 +38,13 @@ class Entry extends TimeGrid\Entry
     }
 
     /**
-     * Sets Content of a Tooltip that is shown when the Entry is hovered
+     * Set content of a tooltip that is shown when the entry is hovered
      *
      * @param ValidHtml $content
      *
-     * @return $this
+     * @return static
      */
-    public function setFlyoutContent(ValidHtml $content): self
+    public function setFlyoutContent(ValidHtml $content): static
     {
         $this->flyoutContent = $content;
 
@@ -52,7 +52,7 @@ class Entry extends TimeGrid\Entry
     }
 
     /**
-     * Returns the content of the entries tooltip
+     * Return the content of the entries tooltip
      *
      * @return ValidHtml|null
      */

@@ -77,7 +77,7 @@ class Rotation
     }
 
     /**
-     * Generate info that is to be shown when an Entry is hovered
+     * Generate info that is to be shown when an entry is hovered
      *
      * @return HtmlElement
      */
