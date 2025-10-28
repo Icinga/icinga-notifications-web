@@ -118,7 +118,7 @@ class ValidationMiddleware implements MiddlewareInterface
             throw new HttpBadRequestException("Invalid request: Identifier is required");
         }
 
-        if ((! empty($identifier) || $identifier === '0') && ! Uuid::isValid($identifier)) {
+        if (! empty($identifier) && (strlen($identifier) !== 36 || ! Uuid::isValid($identifier))) {
             throw new HttpBadRequestException('The given identifier is not a valid UUID');
         }
     }

@@ -34,11 +34,7 @@ final class MiddlewarePipeline implements RequestHandlerInterface
     ) {
         $this->pipeline = new SplQueue();
         foreach ($middlewares as $middleware) {
-            try {
-                $this->pipe($middleware);
-            } catch (\Exception $e) {
-                throw new \InvalidArgumentException('All middlewares must implement MiddlewareInterface');
-            }
+            $this->pipe($middleware);
         }
     }
 

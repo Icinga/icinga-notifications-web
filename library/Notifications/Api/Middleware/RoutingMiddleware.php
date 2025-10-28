@@ -27,7 +27,7 @@ class RoutingMiddleware implements MiddlewareInterface
             $request
                 ->withAttribute('version', ucfirst($version))
                 ->withAttribute('endpoint', ucfirst($endpoint))
-                ->withAttribute('identifier', $identifier)
+                ->withAttribute('identifier', $identifier !== null ? strtolower($identifier) : null)
         );
     }
 }
