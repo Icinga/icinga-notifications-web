@@ -220,7 +220,13 @@ class ScheduleController extends CompatController
         $form = new MoveRotationForm(Database::get());
         $form->on(MoveRotationForm::ON_SUCCESS, function (MoveRotationForm $form) {
             $this->sendExtraUpdates(['#col1']);
-            $this->redirectNow(Links::schedule($form->getScheduleId()));
+            $requestUrl = Url::fromRequest();
+            $redirectUrl = Links::schedule($form->getScheduleId());
+            $defaultTimezoneParam = TimezonePicker::DEFAULT_TIMEZONE_PARAM;
+            if ($requestUrl->hasParam($defaultTimezoneParam)) {
+                $redirectUrl->addParams([$defaultTimezoneParam => $requestUrl->getParam($defaultTimezoneParam)]);
+            }
+            $this->redirectNow($redirectUrl);
         });
 
         $form->handleRequest($this->getServerRequest());

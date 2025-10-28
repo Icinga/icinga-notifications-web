@@ -315,7 +315,11 @@ class Timeline extends BaseHtmlElement implements EntryProvider
         $entry = new HtmlElement('div', Attributes::create(['class' => 'rotation-name']));
 
         $form = new MoveRotationForm();
-        $form->setAction(Links::moveRotation()->getAbsoluteUrl());
+        $form->setAction(
+            Links::moveRotation()
+                ->with(['display_timezone' => ScheduleDateTimeFactory::getDisplayTimezone()->getName()])
+                ->getAbsoluteUrl()
+        );
         $form->populate([
             'rotation' => $rotation->getId(),
             'priority' => $rotation->getPriority()
