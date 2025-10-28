@@ -1,6 +1,6 @@
 # REST API
 
-The Icinga Notifications module provides a REST API that allows you to manage notification-related resources programmatically.
+Icinga Notifications Web provides a REST API that allows you to manage notification-related resources programmatically.
 
 With this API, you can:
 - Manage **contacts** and **contact groups**
@@ -8,17 +8,13 @@ With this API, you can:
 
 This API enables easy integration with external tools, automation workflows, and configuration management systems.
 
----
-
 ## API Versioning
 
-The Notifications API follows a **versioned** structure to ensure backward compatibility and predictable upgrades.
+The API follows a **versioned** structure to ensure backward compatibility and predictable upgrades.
 
 The current and first stable version is: /icingaweb2/notifications/api/v1
 
 Future versions will be accessible under corresponding paths (for example, `/api/v2`), allowing you to migrate at your own pace.
-
----
 
 ## API Description
 
