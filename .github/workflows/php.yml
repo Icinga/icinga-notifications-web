@@ -7,7 +7,6 @@ on:
       - release/*
   pull_request:
     branches:
-      - main
 
 jobs:
   lint:
@@ -101,14 +100,9 @@ jobs:
 
       - name: Configure Icinga Web logging
         run: |
-          # Ensure log directory exists and is writable
           sudo mkdir -p /var/log/icingaweb2
           sudo chmod 777 /var/log/icingaweb2
-
-          # Backup existing config
           cp _icingaweb2/etc/config.ini _icingaweb2/etc/config.ini.bak
-
-          # Remove existing [logging] section (if any) and append our own
           awk '
             BEGIN {in_logging=0}
             /^\[logging\]/ {in_logging=1; next}
