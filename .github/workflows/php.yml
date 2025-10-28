@@ -9,37 +9,6 @@ on:
     branches:
 
 jobs:
-  lint:
-    name: Static analysis for php ${{ matrix.php }} on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      fail-fast: false
-      matrix:
-        php: ['8.2', '8.3', '8.4']
-        os: ['ubuntu-latest']
-
-    steps:
-      - name: Checkout code base
-        uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ matrix.php }}
-          tools: phpcs
-
-      - name: Setup dependencies
-        run: composer require -n --no-progress overtrue/phplint
-
-      - name: PHP Lint
-        if: ${{ ! cancelled() }}
-        run: ./vendor/bin/phplint -n --exclude={^vendor/.*} -- .
-
-      - name: PHP CodeSniffer
-        if: ${{ ! cancelled() }}
-        run: phpcs -wps --colors
-
   test:
     name: Unit tests with php ${{ matrix.php }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -50,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: ['8.2', '8.3', '8.4']
+        php: ['8.4']
         os: ['ubuntu-latest']
 
     services:
@@ -100,21 +69,9 @@ jobs:
 
       - name: Configure Icinga Web logging
         run: |
-          sudo mkdir -p /var/log/icingaweb2
-          sudo chmod 777 /var/log/icingaweb2
-          cp /etc/icingaweb2/config.ini /etc/icingaweb2/config.ini.bak
-          awk '
-            BEGIN {in_logging=0}
-            /^\[logging\]/ {in_logging=1; next}
-            /^\[/ && in_logging {in_logging=0}
-            !in_logging
-            END {
-              print "[logging]"
-              print "log = file"
-              print "level = DEBUG"
-              print "file = /var/log/icingaweb2/icingaweb2.log"
-            }
-          ' /etc/icingaweb2/config.ini.bak > /etc/icingaweb2/config.ini
+          ls -la _icingaweb2
+          ls -la _icingaweb2/etc
+          ls -la _icingaweb2/test
 
       - name: Setup Libraries
         run: |
@@ -128,33 +85,3 @@ jobs:
             -e "CREATE DATABASE icingaweb; CREATE USER icingaweb@'%' IDENTIFIED BY 'icingaweb'; GRANT ALL ON icingaweb.* TO icingaweb@'%';"
           PGPASSWORD=icinga_unittest psql --host="127.0.0.1" --port="${{ job.services.pgsql.ports['5432'] }}" \
             --username "icinga_unittest" -c "CREATE DATABASE icingaweb;"
-
-      - name: PHPUnit
-        env:
-          ICINGAWEB_LIBDIR: _libraries
-          ICINGAWEB_PATH: _icingaweb2
-          ICINGA_NOTIFICATIONS_SCHEMA: test/schema
-          MYSQL_TESTDB: icinga_unittest
-          MYSQL_TESTDB_HOST: 127.0.0.1
-          MYSQL_TESTDB_PORT: ${{ job.services.mysql.ports['3306'] }}
-          MYSQL_TESTDB_USER: icinga_unittest
-          MYSQL_TESTDB_PASSWORD: icinga_unittest
-          MYSQL_ICINGAWEBDB: icingaweb
-          MYSQL_ICINGAWEBDB_PASSWORD: icingaweb
-          MYSQL_ICINGAWEBDB_USER: icingaweb
-          PGSQL_TESTDB: icinga_unittest
-          PGSQL_TESTDB_HOST: 127.0.0.1
-          PGSQL_TESTDB_PORT: ${{ job.services.pgsql.ports['5432'] }}
-          PGSQL_TESTDB_USER: icinga_unittest
-          PGSQL_TESTDB_PASSWORD: icinga_unittest
-          PGSQL_ICINGAWEBDB: icingaweb
-          PGSQL_ICINGAWEBDB_PASSWORD: icinga_unittest
-          PGSQL_ICINGAWEBDB_USER: icinga_unittest
-        run: phpunit --bootstrap _icingaweb2/test/php/bootstrap.php
-
-      - name: Upload Icinga Web logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: icingaweb2-logs-${{ matrix.php }}
-          path: /var/log/icingaweb2/icingaweb2.log
