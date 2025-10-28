@@ -102,7 +102,7 @@ jobs:
         run: |
           sudo mkdir -p /var/log/icingaweb2
           sudo chmod 777 /var/log/icingaweb2
-          cp _icingaweb2/etc/config.ini _icingaweb2/etc/config.ini.bak
+          cp /etc/icingaweb2/config.ini /etc/icingaweb2/config.ini.bak
           awk '
             BEGIN {in_logging=0}
             /^\[logging\]/ {in_logging=1; next}
@@ -114,7 +114,7 @@ jobs:
               print "level = DEBUG"
               print "file = /var/log/icingaweb2/icingaweb2.log"
             }
-          ' _icingaweb2/etc/config.ini.bak > _icingaweb2/etc/config.ini
+          ' /etc/icingaweb2/config.ini.bak > /etc/icingaweb2/config.ini
 
       - name: Setup Libraries
         run: |
