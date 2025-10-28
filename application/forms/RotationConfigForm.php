@@ -233,7 +233,11 @@ class RotationConfigForm extends CompatForm
                         throw new LogicException('Invalid mode');
                 }
 
-                $handoff = DateTime::createFromFormat('Y-m-d H:i', $rotation->first_handoff . ' ' . $time);
+                $handoff = DateTime::createFromFormat(
+                    'Y-m-d H:i',
+                    $rotation->first_handoff . ' ' . $time,
+                    new DateTimeZone($this->scheduleTimezone)
+                );
                 if ($handoff === false) {
                     throw new ConfigurationError('Invalid date format');
                 }
@@ -264,7 +268,9 @@ class RotationConfigForm extends CompatForm
                 ->orderBy('until_time', SORT_DESC)
                 ->first();
             if ($previousShift !== null) {
-                $this->previousShift = $previousShift->until_time;
+                $this->previousShift = $previousShift->until_time->setTimezone(
+                    new DateTimeZone($this->scheduleTimezone)
+                );
             }
 
             /** @var ?Rotation $newerRotation */
@@ -458,6 +464,9 @@ class RotationConfigForm extends CompatForm
                 ->filter(Filter::equal('timeperiod.owned_by_rotation_id', $rotationId));
 
             foreach ($timeperiodEntries as $timeperiodEntry) {
+                $timeperiodEntry->start_time->setTimezone($this->getScheduleTimezone());
+                $timeperiodEntry->end_time->setTimezone($this->getScheduleTimezone());
+
                 /** @var TimeperiodEntry $timeperiodEntry */
                 $rrule = $timeperiodEntry->toRecurrenceRule();
                 $shiftDuration = $timeperiodEntry->start_time->diff($timeperiodEntry->end_time);

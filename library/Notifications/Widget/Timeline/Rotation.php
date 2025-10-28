@@ -106,9 +106,11 @@ class Rotation
      */
     public function fetchTimeperiodEntries(DateTime $after, DateTime $until): Generator
     {
+        $scheduleTimezone = new DateTimeZone($this->model->schedule->execute()->current()->timezone);
+
         $actualHandoff = null;
         if (RotationConfigForm::EXPERIMENTAL_OVERRIDES) {
-            $actualHandoff = $this->model->actual_handoff;
+            $actualHandoff = $this->model->actual_handoff->setTimezone($scheduleTimezone);
         }
 
         $entries = $this->model->timeperiod->timeperiod_entry
@@ -124,7 +126,6 @@ class Rotation
                 )
             ));
         foreach ($entries as $timeperiodEntry) {
-            $scheduleTimezone = new DateTimeZone($this->model->schedule->execute()->current()->timezone);
             $timeperiodEntry->start_time->setTimezone($scheduleTimezone);
             $timeperiodEntry->end_time->setTimezone($scheduleTimezone);
 
