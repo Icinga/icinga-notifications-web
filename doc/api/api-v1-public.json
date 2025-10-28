@@ -2151,7 +2151,7 @@
             "InvalidUserUUID": {
                 "summary": "Invalid user UUID",
                 "value": {
-                    "message": "Invalid request body: user identifiers must be valid UUIDs"
+                    "message": "Invalid request body: the user identifier X is not a valid UUID"
                 }
             },
             "NameAlreadyExists": {
