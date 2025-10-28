@@ -99,6 +99,29 @@ jobs:
           git clone --depth 1 https://github.com/Icinga/icingaweb2.git _icingaweb2
           ln -s `pwd` _icingaweb2/modules/notifications
 
+      - name: Configure Icinga Web logging
+        run: |
+          # Ensure log directory exists and is writable
+          sudo mkdir -p /var/log/icingaweb2
+          sudo chmod 777 /var/log/icingaweb2
+
+          # Backup existing config
+          cp _icingaweb2/etc/config.ini _icingaweb2/etc/config.ini.bak
+
+          # Remove existing [logging] section (if any) and append our own
+          awk '
+            BEGIN {in_logging=0}
+            /^\[logging\]/ {in_logging=1; next}
+            /^\[/ && in_logging {in_logging=0}
+            !in_logging
+            END {
+              print "[logging]"
+              print "log = file"
+              print "level = DEBUG"
+              print "file = /var/log/icingaweb2/icingaweb2.log"
+            }
+          ' _icingaweb2/etc/config.ini.bak > _icingaweb2/etc/config.ini
+
       - name: Setup Libraries
         run: |
           mkdir _libraries
@@ -134,3 +157,10 @@ jobs:
           PGSQL_ICINGAWEBDB_PASSWORD: icinga_unittest
           PGSQL_ICINGAWEBDB_USER: icinga_unittest
         run: phpunit --bootstrap _icingaweb2/test/php/bootstrap.php
+
+      - name: Upload Icinga Web logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: icingaweb2-logs-${{ matrix.php }}
+          path: /var/log/icingaweb2/icingaweb2.log
