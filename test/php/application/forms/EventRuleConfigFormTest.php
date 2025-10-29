@@ -45,6 +45,7 @@ class EventRuleConfigFormTest extends TestCase
         $requestStub->method('getUploadedFiles')->willReturn([]);
         $requestStub->method('getParsedBody')->willReturn([
             'id' => 1337,
+            'source' => 1338,
             'name' => 'Test'
         ]);
 
@@ -120,6 +121,7 @@ class EventRuleConfigFormTest extends TestCase
 
         $dbRule = (new Rule())->setProperties([
             'id' => 1337,
+            'source_id' => 1338,
             'name' => 'Test',
             'object_filter' => 'servicegroup.name=Test%20Group',
             'timeperiod_id' => null,
@@ -207,6 +209,7 @@ class EventRuleConfigFormTest extends TestCase
 
         $ruleModel = (new Rule())->setProperties([
             'id' => 1337,
+            'source_id' => 1338,
             'name' => 'Test',
             'object_filter' => 'hostgroup.name=Test%20Group',
             'timeperiod_id' => null,
@@ -286,6 +289,7 @@ class EventRuleConfigFormTest extends TestCase
                     $this->assertEquals(
                         [
                             'name' => 'Test',
+                            'source_id' => 1338,
                             'object_filter' => 'hostgroup.name=Test%20Group'
                         ],
                         $data
@@ -394,6 +398,7 @@ class EventRuleConfigFormTest extends TestCase
 
         $dbRule = (new Rule())->setProperties([
             'id' => 1337,
+            'source_id' => 1338,
             'name' => 'Test',
             'object_filter' => null,
             'timeperiod_id' => null,
@@ -451,6 +456,7 @@ class EventRuleConfigFormTest extends TestCase
 
         $ruleModel = (new Rule())->setProperties([
             'id' => 1337,
+            'source_id' => 1338,
             'name' => 'Test',
             'object_filter' => null,
             'timeperiod_id' => null,
@@ -505,6 +511,7 @@ class EventRuleConfigFormTest extends TestCase
 
         $dbRule = (new Rule())->setProperties([
             'id' => 1337,
+            'source_id' => 1338,
             'name' => 'Test',
             'object_filter' => null,
             'timeperiod_id' => null,
@@ -562,6 +569,7 @@ class EventRuleConfigFormTest extends TestCase
 
         $ruleModel = (new Rule())->setProperties([
             'id' => 1337,
+            'source_id' => 1338,
             'name' => 'Test',
             'object_filter' => 'servicegroup.name=Test%20Group',
             'timeperiod_id' => null,
@@ -581,6 +589,7 @@ class EventRuleConfigFormTest extends TestCase
                 $this->assertEquals(
                     [
                         'name' => 'Test',
+                        'source_id' => 1338,
                         'object_filter' => 'servicegroup.name=Test%20Group'
                     ],
                     $data
@@ -631,6 +640,7 @@ class EventRuleConfigFormTest extends TestCase
 
         $dbRule = (new Rule())->setProperties([
             'id' => 1337,
+            'source_id' => 1338,
             'name' => 'Test',
             'object_filter' => null,
             'timeperiod_id' => null,
@@ -688,6 +698,7 @@ class EventRuleConfigFormTest extends TestCase
 
         $ruleModel = (new Rule())->setProperties([
             'id' => 1337,
+            'source_id' => 1338,
             'name' => 'Test',
             'object_filter' => null,
             'timeperiod_id' => null,
@@ -763,6 +774,7 @@ class EventRuleConfigFormTest extends TestCase
 
         $dbRule = (new Rule())->setProperties([
             'id' => 1337,
+            'source_id' => 1338,
             'name' => 'Test',
             'object_filter' => null,
             'timeperiod_id' => null,
@@ -820,6 +832,7 @@ class EventRuleConfigFormTest extends TestCase
 
         $ruleModel = (new Rule())->setProperties([
             'id' => 1337,
+            'source_id' => 1338,
             'name' => 'Test',
             'object_filter' => null,
             'timeperiod_id' => null,

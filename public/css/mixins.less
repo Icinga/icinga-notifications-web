@@ -4,6 +4,11 @@
   display: flex;
   align-items: center;
   padding: .5em 1em;
+  .rounded-corners(3px);
+
+  &:is(a) {
+    text-decoration: none;
+  }
 
   & when (@disabled = false) {
     border: none;

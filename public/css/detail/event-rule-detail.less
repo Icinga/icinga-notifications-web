@@ -8,7 +8,6 @@
     background-color: @connectorColor;
   }
 
-  .filter-controls,
   .dynamic-list:not(.empty, .escalations) {
     padding: .5em;
     border: 1px solid @connectorColor;
@@ -16,6 +15,7 @@
   }
 
   .add-button,
+  .filter-button,
   .remove-button {
     .event-rule-button();
 
@@ -75,45 +75,40 @@
   #object-filter-controls {
     width: 20em;
     height: fit-content;
+  }
 
-    .filter-controls {
-      margin-top: 1.25em;
-      display: flex;
-      gap: .5em;
-
-      input[type="text"] {
-        flex: 1 1 auto;
-        width: 0;
-      }
-    }
+  .set-wrapper:has(.dynamic-list.empty .add-button),
+  > #object-filter-controls {
+    padding: 1.25em 0;
   }
 
   .dynamic-list.empty .add-button,
-  > #object-filter-controls > .add-button-wrapper .add-button {
+  > #object-filter-controls > .button-wrapper .filter-button {
     align-self: flex-start;
     padding: 1.25em 2em;
-    margin-top: 1.25em;
   }
 
   .dynamic-list.empty > .add-button-wrapper,
-  > #object-filter-controls > .add-button-wrapper {
+  > #object-filter-controls > .button-wrapper {
     display: flex;
 
     &::before,
     &::after {
       content: "";
       flex: 1 1 auto;
+      min-width: 1.25em;
       height: @connectorHeight;
-      margin-top: 2.75em;
+      margin-top: 1.5em;
       background-color: @connectorColor;
     }
 
-    .add-button {
+    .add-button,
+    .filter-button {
       flex: 0;
     }
   }
 
-  > #object-filter-controls > .add-button-wrapper {
+  > #object-filter-controls > .button-wrapper {
     min-width: 12em;
   }
 
@@ -178,7 +173,6 @@
           grid-template-columns: minmax(8em, 1fr) minmax(8em, 1fr) min-content;
         }
 
-        input[type="text"],
         .remove-button,
         .remove-button-disabled {
           height: 100%;
@@ -222,19 +216,15 @@
   .event-rule-config {
     #object-filter-controls {
       width: fit-content;
-
-      input[type="text"] {
-        display: none;
-      }
     }
 
     .dynamic-list.empty .add-button,
-    > #object-filter-controls > .add-button-wrapper .add-button {
+    > #object-filter-controls > .button-wrapper .filter-button {
       padding: .5em 1em;
-      margin-top: 2em;
+      margin-top: .75em;
     }
 
-    > #object-filter-controls > .add-button-wrapper {
+    > #object-filter-controls > .button-wrapper {
       min-width: fit-content;
     }
   }

@@ -20,8 +20,14 @@
     width: auto;
   }
 
-  fieldset p.description:last-child { // fieldset > .control-group:last-of-type unset the last element's bottom margin
+  fieldset > p.description:last-child {
     margin-top: 1em;
+  }
+
+  .control-group > p.description {
+    flex-basis: 100%;
+    margin: 0 1em 0 14em;
+    padding: 0.5625em 0.5625em 0.5625em 0;
   }
 }
 
@@ -93,6 +99,11 @@
 .icinga-controls {
   p.description {
     color: @text-color-light;
+  }
+
+  .form-controls .button-link {
+    // Let a button-link in form controls look like a submit button
+    .button();
   }
 }
 
@@ -168,10 +179,6 @@
       outline: 1px solid @gray-light;
     }
   }
-}
-
-.source-form textarea {
-  .monospace-font();
 }
 
 .channel-form {

@@ -106,10 +106,14 @@ class EventRuleConfigForm extends Form
 
         $name = $this->createElement('hidden', 'name', ['required' => true]);
         $this->registerElement($name);
+        $source = $this->createElement('hidden', 'source', ['required' => true]);
+        $this->registerElement($source);
+
         $this->addHtml(new HtmlElement(
             'div',
             Attributes::create(['id' => 'event-rule-config-form-name', 'hidden' => true]),
-            $name
+            $name,
+            $source
         ));
     }
 
@@ -120,72 +124,49 @@ class EventRuleConfigForm extends Form
      */
     protected function createObjectFilterControls(): ValidHtml
     {
-        $hasFilter = true;
-        if (empty($this->getPopulatedValue('object_filter'))) {
-            $addFilterButton = $this->createElement('submitButton', 'add-filter', [
-                'class'          => ['add-button', 'control-button', 'spinner'],
-                'label'          => new Icon('plus'),
-                'formnovalidate' => true,
-                'title'          => $this->translate('Add filter')
-            ]);
-            $this->registerElement($addFilterButton);
+        $hiddenInput = $this->createElement('hidden', 'object_filter');
+        $this->registerElement($hiddenInput);
 
-            if ($addFilterButton->hasBeenPressed()) {
-                $this->remove($addFilterButton); // De-register the button
-            } else {
-                $hiddenInput = $this->createElement('hidden', 'object_filter');
-                $this->registerElement($hiddenInput);
-
-                $objectFilter = new HtmlElement(
-                    'div',
-                    Attributes::create(['class' => 'add-button-wrapper']),
-                    $addFilterButton,
-                    $hiddenInput
-                );
-
-                $hasFilter = false;
-            }
+        if ($hiddenInput->hasValue()) {
+            $label = new Icon('filter');
+            $title = $this->translate('Adjust Filter');
+        } else {
+            $label = new Icon('plus');
+            $title = $this->translate('Add filter');
         }
 
-        if ($hasFilter) {
-            $objectFilter = $this->createElement('text', 'object_filter', ['readonly' => true]);
-            $this->registerElement($objectFilter);
-
-            $editorOpener = new Link(
-                new Icon('cog'),
+        return new HtmlElement(
+            'div',
+            Attributes::create(['class' => 'button-wrapper']),
+            new Link(
+                $label,
                 $this->searchEditorUrl,
                 Attributes::create([
-                    'class'               => ['search-editor-opener', 'control-button'],
-                    'title'               => $this->translate('Adjust Filter'),
+                    'class'               => ['search-editor-opener', 'filter-button'],
+                    'title'               => $title,
                     'data-icinga-modal'   => true,
                     'data-no-icinga-ajax' => true
                 ])
-            );
-
-            $objectFilter = new HtmlElement(
-                'div',
-                Attributes::create(['class' => 'filter-controls']),
-                $objectFilter,
-                $editorOpener
-            );
-        }
-
-        return $objectFilter;
+            ),
+            $hiddenInput
+        );
     }
 
     /**
-     * Get the element to update in case the name of the rule is changed
+     * Get the element to update in case the config of the rule is changed
      *
      * @param string $newName
+     * @param int $newSource
      *
      * @return ValidHtml
      */
-    public function prepareNameUpdate(string $newName): ValidHtml
+    public function prepareConfigUpdate(string $newName, int $newSource): ValidHtml
     {
         return new HtmlElement(
             'div',
             Attributes::create(['id' => 'event-rule-config-form-name']),
-            $this->createElement('hidden', 'name', ['required' => true, 'value' => $newName])
+            $this->createElement('hidden', 'name', ['required' => true, 'value' => $newName]),
+            $this->createElement('hidden', 'source', ['required' => true, 'value' => $newSource])
         );
     }
 
@@ -247,6 +228,7 @@ class EventRuleConfigForm extends Form
         $fields = [
             'id'                => $rule->id,
             'name'              => $rule->name,
+            'source'            => $rule->source_id,
             'object_filter'     => $rule->object_filter
         ];
 
@@ -273,6 +255,10 @@ class EventRuleConfigForm extends Form
             return true;
         }
 
+        if ($previousRule->source_id !== (int) $this->getValue('source')) {
+            return true;
+        }
+
         if ($previousRule->object_filter !== $this->getValue('object_filter')) {
             return true;
         }
@@ -296,6 +282,7 @@ class EventRuleConfigForm extends Form
         if ($previousRule === null) {
             $db->insert('rule', [
                 'name'          => $this->getValue('name'),
+                'source_id'     => $this->getValue('source'),
                 'timeperiod_id' => null,
                 'object_filter' => $this->getValue('object_filter'),
                 'changed_at'    => (int) (new DateTime())->format("Uv"),
@@ -306,6 +293,7 @@ class EventRuleConfigForm extends Form
         } elseif ($this->hasChanged($previousRule)) {
             $db->update('rule', [
                 'name'          => $this->getValue('name'),
+                'source_id'     => $this->getValue('source'),
                 'object_filter' => $this->getValue('object_filter'),
                 'changed_at'    => (int) (new DateTime())->format("Uv")
             ], ['id = ?' => $ruleId]);
@@ -433,10 +421,8 @@ class EventRuleConfigForm extends Form
      *
      * @return void
      */
-    public function removeRule(Connection $db, Rule $rule): void
+    public static function removeRule(Connection $db, Rule $rule): void
     {
-        $db->beginTransaction();
-
         $escalationsToRemove = [];
         /** @var RuleEscalation $escalation */
         foreach ($rule->rule_escalation as $escalation) {
@@ -459,7 +445,5 @@ class EventRuleConfigForm extends Form
             'changed_at' => (int) (new DateTime())->format("Uv"),
             'deleted'    => 'y'
         ], ['id = ?' => $rule->id]);
-
-        $db->commitTransaction();
     }
 }

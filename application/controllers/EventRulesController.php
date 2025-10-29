@@ -8,11 +8,14 @@ use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\EventRuleForm;
 use Icinga\Module\Notifications\Model\Rule;
+use Icinga\Module\Notifications\Model\Source;
 use Icinga\Module\Notifications\View\EventRuleRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Web\Session;
 use ipl\Html\Form;
+use ipl\Html\TemplateString;
+use ipl\Sql\Expression;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
 use ipl\Web\Control\LimitControl;
@@ -20,6 +23,7 @@ use ipl\Web\Control\SortControl;
 use ipl\Web\Filter\QueryString;
 use ipl\Web\Layout\DetailedItemLayout;
 use ipl\Web\Url;
+use ipl\Web\Widget\ActionLink;
 use ipl\Web\Widget\ButtonLink;
 
 class EventRulesController extends CompatController
@@ -72,18 +76,34 @@ class EventRulesController extends CompatController
         $this->addControl($limitControl);
         $this->addControl($searchBar);
 
-        $this->addContent(
-            (new ButtonLink(
-                $this->translate('Add Event Rule'),
-                Url::fromPath('notifications/event-rules/add'),
-                'plus',
-                ['class' => 'add-new-component']
-            ))->openInModal()
+        $addButton = new ButtonLink(
+            $this->translate('Add Event Rule'),
+            Url::fromPath('notifications/event-rules/add'),
+            'plus',
+            ['class' => 'add-new-component']
         );
+        $this->addContent($addButton);
+
+        $emptyStateMessage = null;
+        if (Source::on(Database::get())->columns([new Expression('1')])->limit(1)->first() === null) {
+            $addButton->disable($this->translate('A source is required to add an event rule'));
+
+            $emptyStateMessage = TemplateString::create(
+                $this->translate(
+                    'No event rules found. To add a new event rule, please {{#link}}configure a Source{{/link}} first.'
+                ),
+                [
+                    'link' => (new ActionLink(null, Links::sourceAdd()))->setBaseTarget('_next')
+                ]
+            );
+        } else {
+            $addButton->openInModal();
+        }
 
         $this->addContent(
             (new ObjectList($eventRules, new EventRuleRenderer()))
-            ->setItemLayoutClass(DetailedItemLayout::class)
+                ->setItemLayoutClass(DetailedItemLayout::class)
+                ->setEmptyStateMessage($emptyStateMessage)
         );
 
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {
@@ -99,12 +119,20 @@ class EventRulesController extends CompatController
         $this->setTitle($this->translate('Add Event Rule'));
 
         $eventRuleForm = (new EventRuleForm())
-            ->populate(['id' => -1])
+            ->setIsNew()
             ->setCsrfCounterMeasureId(Session::getSession()->getId())
+            ->setAvailableSources(
+                Database::get()->fetchPairs(
+                    Source::on(Database::get())->columns(['id', 'name'])->assembleSelect()
+                )
+            )
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->on(Form::ON_SUBMIT, function ($form) {
                 $this->getResponse()->setHeader('X-Icinga-Container', 'col2');
-                $this->redirectNow(Links::eventRule(-1)->addParams(['name' => $form->getValue('name')]));
+                $this->redirectNow(Links::eventRule(-1)->addParams([
+                    'name' => $form->getValue('name'),
+                    'source' => $form->getValue('source')
+                ]));
             })->handleRequest($this->getServerRequest());
 
         $this->addContent($eventRuleForm);

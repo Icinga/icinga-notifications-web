@@ -10,11 +10,10 @@ configure Icinga Notifications Web:
 
 ## Module Activation
 
-If you just installed the module, do not forget to activate it on your Icinga Web instance(s) by using your
-preferred way:
+If you just installed Icinga Notifications Web, remember to activate it on your Icinga Web instance(s):
 
 - Use Icinga Web's command-line interface on the webserver(s) and execute `icingacli module enable notifications`.
-- Visit Icinga Web, log in as a privileged user and activate the module under `Configuration →
+- Visit Icinga Web, log in as a privileged user and enable the module under `Configuration →
   Modules → notifications` by switching the state from `disabled` to `enabled`.
 
 <!-- {% endif %} -->
@@ -26,10 +25,10 @@ Connection configuration for the database, which both,
 
 !!! tip
 
-    If not already done, initialize your database by following the [instructions](https://icinga.com/docs/icinga-notifications/latest/doc/02-Installation#setting-up-the-database).
+    If not already done, initialize your database by following these [instructions](https://icinga.com/docs/icinga-notifications/latest/doc/02-Installation#setting-up-the-database).
 
 1. Create a new resource for the Icinga Notifications database via the `Configuration → Application → Resources` menu.
-2. Configure the resource you just created as the database connection for the Icinga Notifications Web module using the
+2. Configure the resource you just created as the database connection for Icinga Notifications Web using the
    `Configuration → Modules → notifications → Database` menu.
 
 ## Channels Configuration
@@ -39,34 +38,34 @@ communication channels.
 
 The currently supported channels can be found [here](01-About.md#available-channels).
 
-They can be configured through `Configuration → Modules → notifications → Channels` and the credentials to be supplied 
-might differ depending on the channel type.
+They can be configured through `Configuration → Modules → notifications → Channels`.
 
-You need to configure at least one valid communication channel to be able to supply your contacts with notifications.
+You need to configure at least one valid communication channel to fully configure Icinga Notifications Web.
 
 ## Sources Configuration
 
-The notifications module operates on data fed by miscellaneous sources and is therefore not restricted to Icinga 2 only.
-Consult the source specific documentation on how to integrate such.
+Sources are the most vital part of Icinga Notifications. Without them, no events will be processed and no notifications
+will be sent. So the next thing to configure is your first source. To be able to configure sources, an integration in
+Icinga Web is required. Consult the source-specific documentation on how to integrate such.
 
-You need to provide at least one valid source for this module to function properly.
+How to integrate Icinga 2 is covered in the next section, for your convenience. :)
 
 ### Adding an Icinga 2 source
 
-!!! tip
-
-    If there is no API user with the required permissions yet, read through [Icinga's API documentation](https://icinga.com/docs/icinga-2/latest/doc/12-icinga2-api/#authentication).
-
-    The API user needs the following [permissions](https://icinga.com/docs/icinga-2/latest/doc/12-icinga2-api/#overview):
-
-    - `events/*`  
-    - `objects/query/*`  
-    - `status/query`
-
-If you want the notifications module to process Icinga 2 events, you will need to add it as a source:
+Ensure that you use Icinga DB as the database backend for Icinga 2. If that is the case, you should already have
+Icinga DB Web installed. This is the integration required to configure Icinga 2 as a source.
 
 1. Navigate to `Configuration → Module → notifications → Sources` and add a new source.
-2. Choose type `Icinga` and provide the Icinga 2 API credentials.
-3. (Optional) Disable `Verify API Certificate` if you want
-   [Icinga Notifications](https://icinga.com/docs/icinga-notifications/latest) to skip its check for the certificate
-   validity of the given REST API endpoint.
+2. Choose type `Icinga` and define a name as well as a set of credentials.
+3. Open `/etc/icingadb/config.yml` on the host where Icinga DB is running and add the following lines:  
+   The full documentation can be found [here](https://icinga.com/docs/icinga-db/latest/doc/03-Configuration/#notifications-source-configuration).
+    ```yaml
+    notifications-source:
+      # URL to the API root.
+      api-base-url: http://localhost:5680
+
+      # Use the username and password you just defined for the credentials.
+      username: icingadb
+      password: insecureinsecure
+    ```
+4. Restart Icinga DB.
