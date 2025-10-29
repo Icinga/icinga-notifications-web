@@ -1050,7 +1050,6 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
         }
 
         $groupMembers = [];
-        $member = $contact->contactgroup_member;
         foreach ($contact->contactgroup_member as $group) {
             $groupMembers[] = $group->contactgroup_id;
         }
