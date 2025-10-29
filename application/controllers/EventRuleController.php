@@ -39,7 +39,7 @@ class EventRuleController extends CompatController
 
     public function init(): void
     {
-        $this->assertPermission('notifications/config/event-rule');
+        $this->assertPermission('notifications/config/event-rules');
         $this->session = Session::getSession()->getNamespace('notifications.event-rule');
     }
 

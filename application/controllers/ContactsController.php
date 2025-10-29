@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Controllers;
 
+use Icinga\Module\Notifications\Common\ConfigurationTabs;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\View\ContactRenderer;
@@ -29,6 +30,7 @@ use ipl\Web\Widget\ButtonLink;
 
 class ContactsController extends CompatController
 {
+    use ConfigurationTabs;
     use SearchControls;
 
     /** @var Connection */
@@ -96,12 +98,19 @@ class ContactsController extends CompatController
         if (Channel::on($this->db)->columns([new Expression('1')])->limit(1)->first() === null) {
             $addButton->disable($this->translate('A channel is required to add a contact'));
 
-            $emptyStateMessage = TemplateString::create(
-                $this->translate(
-                    'No contacts found. To add a new contact, please {{#link}}configure a Channel{{/link}} first.'
-                ),
-                ['link' => (new ActionLink(null, Links::channelAdd()))->setBaseTarget('_next')]
-            );
+            if ($this->Auth()->hasPermission('config/modules')) {
+                $emptyStateMessage = TemplateString::create(
+                    $this->translate(
+                        'No contacts found. To add a new contact, please {{#link}}configure a Channel{{/link}} first.'
+                    ),
+                    ['link' => (new ActionLink(null, Links::channelAdd()))->setBaseTarget('_next')]
+                );
+            } else {
+                $emptyStateMessage = $this->translate(
+                    'No contacts found. To add a new contact, a channel is required.'
+                    . ' Please contact your system administrator.'
+                );
+            }
         }
 
         $this->addContent($addButton);
@@ -170,31 +179,5 @@ class ContactsController extends CompatController
         }
 
         return $this->filter;
-    }
-
-    public function getTabs()
-    {
-        if ($this->getRequest()->getActionName() === 'index') {
-            return parent::getTabs()
-                ->add('schedules', [
-                    'label'      => $this->translate('Schedules'),
-                    'url'        => Links::schedules(),
-                    'baseTarget' => '_main'
-                ])->add('event-rules', [
-                    'label'      => $this->translate('Event Rules'),
-                    'url'        => Links::eventRules(),
-                    'baseTarget' => '_main'
-                ])->add('contacts', [
-                    'label'      => $this->translate('Contacts'),
-                    'url'        => Links::contacts(),
-                    'baseTarget' => '_main'
-                ])->add('contact-groups', [
-                    'label'      => $this->translate('Contact Groups'),
-                    'url'        => Links::contactGroups(),
-                    'baseTarget' => '_main'
-                ]);
-        }
-
-        return parent::getTabs();
     }
 }
