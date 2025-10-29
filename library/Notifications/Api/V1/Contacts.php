@@ -718,7 +718,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
         $newContactgroups = [];
         if (! empty($requestBody['groups'])) {
             foreach ($requestBody['groups'] as $identifier) {
-                $contactgroupId = Contactgroups::getGroupId($identifier);
+                $contactgroupId = ContactGroups::getGroupId($identifier);
                 if ($contactgroupId === null) {
                     throw new HttpException(
                         422,
