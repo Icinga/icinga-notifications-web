@@ -24,7 +24,7 @@ class SchemaUUID extends Schema
             maxLength: 36,
             minLength: 36,
             pattern: '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
-            example: $example ?? "123e4567-e89b-42d3-a456-426614174000"
+            example: $example ?? null
         );
     }
 }

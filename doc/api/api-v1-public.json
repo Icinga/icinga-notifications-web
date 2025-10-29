@@ -105,7 +105,15 @@
                         "description": "Filter by channel UUID",
                         "required": false,
                         "schema": {
-                            "$ref": "#/components/schemas/ChannelUUID"
+                            "schema": "ChannelUUID",
+                            "title": "ChannelUUID",
+                            "description": "An UUID representing a notification Channel",
+                            "type": "string",
+                            "format": "uuid",
+                            "maxLength": 36,
+                            "minLength": 36,
+                            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                            "example": null
                         }
                     },
                     {
@@ -735,7 +743,7 @@
                             "maxLength": 36,
                             "minLength": 36,
                             "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
-                            "example": "123e4567-e89b-42d3-a456-426614174000"
+                            "example": null
                         }
                     },
                     {
@@ -1066,7 +1074,7 @@
                         "description": "The UUID of the Contact to Update",
                         "required": true,
                         "schema": {
-                            "$ref": "#/components/schemas/NewContactUUID"
+                            "$ref": "#/components/schemas/ContactUUID"
                         }
                     }
                 ],
@@ -1557,7 +1565,7 @@
                             "maxLength": 36,
                             "minLength": 36,
                             "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
-                            "example": "123e4567-e89b-42d3-a456-426614174000"
+                            "example": null
                         }
                     },
                     {
@@ -1886,8 +1894,7 @@
                     "email",
                     "webhook",
                     "rocketchat"
-                ],
-                "example": "webhook"
+                ]
             },
             "WebhookChannelConfig": {
                 "title": "Webhook Channel Config",

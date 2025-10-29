@@ -39,7 +39,6 @@ use stdClass;
     description: 'Available notification channel types',
     type: 'string',
     enum: ['email', 'webhook', 'rocketchat'],
-    example: 'webhook',
 )]
 #[OA\Schema(
     schema: 'WebhookChannelConfig',
@@ -243,7 +242,7 @@ class Channels extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
             new QueryParameter(
                 name: 'id',
                 description: 'Filter by channel UUID',
-                identifierSchema: 'ChannelUUID',
+                schema: new SchemaUUID(entityName: 'Channel'),
             ),
             new QueryParameter(
                 name: 'name',

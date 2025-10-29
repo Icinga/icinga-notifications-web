@@ -321,7 +321,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
             new PathParameter(
                 name: 'identifier',
                 description: 'The UUID of the Contact to Update',
-                identifierSchema: 'NewContactUUID'
+                identifierSchema: 'ContactUUID'
             )
         ],
         examples400: [
