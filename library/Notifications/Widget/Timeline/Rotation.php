@@ -7,11 +7,15 @@ namespace Icinga\Module\Notifications\Widget\Timeline;
 use DateInterval;
 use DateTime;
 use Generator;
+use Icinga\Module\Director\Web\Table\Dependency\Html;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\RotationConfigForm;
 use ipl\Html\Attributes;
+use ipl\Html\FormattedString;
 use ipl\Html\HtmlElement;
+use ipl\Html\HtmlString;
 use ipl\Html\Text;
+use ipl\Html\ValidHtml;
 use ipl\I18n\Translation;
 use ipl\Scheduler\RRule;
 use ipl\Stdlib\Filter;
@@ -83,80 +87,63 @@ class Rotation
      */
     public function generateEntryInfo(): HtmlElement
     {
-        $members = [];
-        $rotationMembers = $this->model->member
-            ->with(['contact', 'contactgroup']);
+        $rotationMembers = iterator_to_array($this->model->member
+            ->with(['contact', 'contactgroup']));
+
+        $hiddenMemberCount =  count(array_splice($rotationMembers, 2));
+        $visibleNames = [];
 
         foreach ($rotationMembers as $member) {
             if ($member->contact_id !== null) {
-                $members[] = new Member($member->contact->full_name);
+                $visibleNames[] = new Icon('user') . $member->contact->full_name;
             } else {
-                $memberGroup = new Member($member->contactgroup->name);
-                $memberGroup->setIcon('users');
-                $members[] = $memberGroup;
+                $visibleNames[] = new Icon('users') . $member->contactgroup->name;
             }
         }
 
-        $maxLength = 30;
-        $currentLength = 0;
-        $memberText = '';
-        $memberCount = count($members);
-        for ($i = 0; $i < $memberCount; ++$i) {
-            $member = $members[$i];
-            $currentLength += strlen($member->getName()) + 1;
-            if ($currentLength > $maxLength) {
-                $remainingMemberCount = $memberCount - $i;
-                $remainingMembersText = $remainingMemberCount === $memberCount ?
-                    sprintf(
-                        $this->translatePlural('%s Member', '%s Members', $remainingMemberCount),
-                        $remainingMemberCount
-                    ) :
-                    sprintf($this->translate(' + %s more'), $remainingMemberCount);
-                $memberText .=
-                    '<span class="rotation-info-member-count">'
-                    . $remainingMembersText .
-                    '</span>';
-
-                break;
-            }
-
-            if ($memberText !== '') {
-                $memberText .= ', ';
-            }
-
-            $memberText .= new Icon($member->getIcon()) . $member->getName();
+        $memberText = implode(', ', $visibleNames);
+        if ($hiddenMemberCount > 0) {
+            $memberText .= new HtmlElement(
+                'span',
+                Attributes::create(['class' => ['rotation-info-member-count']]),
+                Text::create(sprintf($this->translate(' + %s more'), $hiddenMemberCount))
+            );
         }
 
-        $modeLabels = [
+        $mode = match ($this->model->mode) {
             'multi' => $this->translate('Multi Day'),
             'partial' => $this->translate('Partial Day'),
             '24-7' => $this->translate('24/7')
-        ];
+        };
 
-        $mode = $modeLabels[$this->model->mode];
         return new HtmlElement(
             'div',
-            Attributes::create(['class' => 'rotation-info']),
-            Text::create(
-                sprintf(
-                    '<span class="rotation-info-name">%s</span> <span class="rotation-info-mode">(%s)</span>
-                            <br>%s
-                            <br>%s',
-                    $this->getName(),
-                    $this->translate($mode),
-                    $this->generateTimeInfo(),
-                    $memberText
+            Attributes::create(['class' => ['rotation-info']]),
+            new HtmlElement(
+                'span',
+                Attributes::create(['class' => 'rotation-info-name']),
+                Text::create($this->getName()),
+                new HtmlElement(
+                    'span',
+                    Attributes::create(['class' => 'rotation-info-mode']),
+                    Text::create(" ($mode)")
                 )
-            )->setEscaped()
+            ),
+            $this->generateTimeInfo(),
+            new HtmlElement(
+                'div',
+                Attributes::create(['class' => ['rotation-info-members']]),
+                HtmlString::create($memberText)
+            )
         );
     }
 
     /**
      * Generate info about start, handoff frequency and time interval
      *
-     * @return string
+     * @return ValidHtml
      */
-    public function generateTimeInfo(): string
+    public function generateTimeInfo(): ValidHtml
     {
         $options = $this->model->options;
         $mode = $this->model->mode;
@@ -196,6 +183,34 @@ class Rotation
             );
         }
 
+        if ($dateFormatter->format(new DateTime()) < $firstHandoff) {
+            $startText = $this->translate('Starts on');
+        } else {
+            $startText = $this->translate('Started on');
+        }
+
+        $firstHandoffInfo = new HtmlElement(
+            'span',
+            Attributes::create(['class' => 'rotation-info-start']),
+            FormattedString::create(
+                '%s %s',
+                $startText,
+                new HtmlElement('time', null, Text::create($firstHandoff))
+            )
+        );
+
+        $handoffInterval = new HtmlElement(
+            'span',
+            Attributes::create(['class' => ['rotation-info-interval']]),
+            Text::create($handoff)
+        );
+
+        $timeInfo = new HtmlElement(
+            'div',
+            Attributes::create(['class' => ['rotation-info-time']]),
+            Text::create('')
+        );
+
         if ($mode === "partial") {
             $days = $options["days"];
             $from = $timeFormatter->format(DateTime::createFromFormat('H:i', $options["from"]));
@@ -214,34 +229,38 @@ class Rotation
                 }, $days));
             }
 
-            return sprintf(
-                $this->translate('%s %s - %s, %s<br><span class="rotation-info-start">Starts on </span>%s'),
-                $daysText,
-                $from,
-                $to,
-                $handoff,
-                $firstHandoff
-            );
+            return $timeInfo->addHtml(
+                new HtmlElement(
+                    'div',
+                    Attributes::create(['class' => ['days-interval-wrapper']]),
+                    new HtmlElement(
+                        'span',
+                        Attributes::create(['class' => ['rotation-info-days']]),
+                        Text::create(sprintf('%s %s - %s, ', $daysText, $from, $to))
+                    ),
+                    $handoffInterval
+                )
+            )->addHtml($firstHandoffInfo);
         } elseif ($mode === "multi") {
             $fromDay = $weekdayNames[$options["from_day"]];
             $fromAt = $timeFormatter->format(DateTime::createFromFormat('H:i', $options["from_at"]));
             $toDay = $weekdayNames[$options["to_day"]];
             $toAt = $timeFormatter->format(DateTime::createFromFormat('H:i', $options["to_at"]));
-            return sprintf(
-                $this->translate('%s %s - %s %s, %s<br><span class="rotation-info-start">Starts on </span>%s'),
-                $fromDay,
-                $fromAt,
-                $toDay,
-                $toAt,
-                $handoff,
-                $firstHandoff
-            );
+
+            return $timeInfo->addHtml(
+                new HtmlElement(
+                    'div',
+                    Attributes::create(['class' => ['days-interval-wrapper']]),
+                    new HtmlElement(
+                        'span',
+                        Attributes::create(['class' => ['rotation-info-days']]),
+                        Text::create(sprintf('%s %s - %s %s, ', $fromDay, $fromAt, $toDay, $toAt))
+                    ),
+                    $handoffInterval
+                )
+            )->addHtml($firstHandoffInfo);
         } else {
-            return sprintf(
-                $this->translate('%s<br><span class="rotation-info-start">Starts on </span>%s'),
-                $handoff,
-                $firstHandoff
-            );
+            return $timeInfo->addHtml($handoffInterval)->addHtml($firstHandoffInfo);
         }
     }
 
