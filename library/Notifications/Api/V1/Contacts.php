@@ -718,7 +718,8 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
         $newContactgroups = [];
         if (! empty($requestBody['groups'])) {
             foreach ($requestBody['groups'] as $identifier) {
-                $contactgroupId = Contactgroups::getGroupId($identifier);
+//                $contactgroupId = Contactgroups::getGroupId($identifier);
+                $contactgroupId = $this->getGroupId($identifier);
                 if ($contactgroupId === null) {
                     throw new HttpException(
                         422,
@@ -1087,5 +1088,24 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
         return [
             'group_members' => implode(',', $groupMembers)
         ];
+    }
+    /**
+     * Get the group id with the given identifier
+     *
+     * @param string $identifier
+     *
+     * @return ?int
+     */
+    public static function getGroupId(string $identifier): ?int
+    {
+        /** @var stdClass|false $group */
+        $group = Database::get()->fetchOne(
+            (new Select())
+                ->from('contactgroup')
+                ->columns('id')
+                ->where(['external_uuid = ?' => $identifier])
+        );
+
+        return $group->id ?? null;
     }
 }
