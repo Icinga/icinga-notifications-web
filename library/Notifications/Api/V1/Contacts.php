@@ -10,7 +10,8 @@ use Icinga\Exception\Http\HttpException;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Exception\Json\JsonEncodeException;
 use Icinga\Module\Notifications\Api\EndpointInterface;
-use ipl\Sql\Expression;
+use Icinga\Module\Notifications\Api\Exception\InvalidFilterParameterException;
+use Icinga\Module\Notifications\Model\Contact;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\OadV1Delete;
@@ -24,8 +25,12 @@ use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Response\Example\R
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Schema\SchemaUUID;
 use Ramsey\Uuid\Uuid;
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Model\Rotation;
+use Icinga\Module\Notifications\Model\RotationMember;
+use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use Icinga\Util\Json;
 use ipl\Sql\Select;
+use ipl\Stdlib\Filter;
 use ipl\Validator\EmailAddressValidator;
 use stdClass;
 use OpenApi\Attributes as OA;
@@ -800,10 +805,10 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
         $updateCondition = ['contact_id = ?' => $id, 'deleted = ?' => 'n'];
 
         $rotationAndMemberIds = Database::get()->fetchPairs(
-            (new Select())
-                ->from('rotation_member')
+            RotationMember::on(Database::get())
                 ->columns(['id', 'rotation_id'])
-                ->where(['contact_id = ?' => $id])
+                ->filter(Filter::equal('contact_id', $id))
+                ->assembleSelect()
         );
 
         $rotationMemberIds = array_keys($rotationAndMemberIds);
@@ -821,86 +826,49 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
 
         if (! empty($rotationIds)) {
             $rotationIdsWithOtherMembers = Database::get()->fetchCol(
-                (new Select())
-                ->from('rotation_member')
-                ->columns('rotation_id')
-                ->where(['rotation_id IN (?)' => $rotationIds, 'contact_id != ?' => $id])
+                RotationMember::on(Database::get())
+                    ->columns('rotation_id')
+                    ->filter(
+                        Filter::all(
+                            Filter::equal('rotation_id', $rotationIds),
+                            Filter::unequal('contact_id', $id)
+                        )
+                    )->assembleSelect()
             );
 
             $toRemoveRotations = array_diff($rotationIds, $rotationIdsWithOtherMembers);
 
             if (! empty($toRemoveRotations)) {
-                $rotations = Database::get()->fetchAll(
-                    (new Select())
-                    ->from('rotation r')
-                    ->columns(['r.id', 'r.schedule_id', 'r.priority', 't.id timeperiod_id'])
-                    ->where(['r.id IN (?)' => $toRemoveRotations])
-                    ->join('timeperiod t', 'r.id = t.owned_by_rotation_id')
-                );
+                $rotations = Rotation::on(Database::get())
+                    ->columns(['id', 'schedule_id', 'priority', 'timeperiod.id'])
+                    ->filter(Filter::equal('id', $toRemoveRotations));
 
+                /** @var Rotation $rotation */
                 foreach ($rotations as $rotation) {
-                    $timeperiodId = $rotation->timeperiod_id;
-                    $rotationId = $rotation->id;
-                    $changedAt = (int) (new DateTime())->format("Uv");
-                    $markAsDeleted = ['changed_at' => $changedAt, 'deleted' => 'y'];
-
-                    Database::get()->update(
-                        'timeperiod_entry',
-                        $markAsDeleted,
-                        ['timeperiod_id = ?' => $timeperiodId,  'deleted = ?' => 'n']
-                    );
-                    Database::get()->update('timeperiod', $markAsDeleted, ['id = ?' => $timeperiodId]);
-
-                    Database::get()->update(
-                        'rotation_member',
-                        $markAsDeleted + ['position' => null],
-                        ['rotation_id = ?' => $rotationId, 'deleted = ?' => 'n']
-                    );
-
-                    Database::get()->update(
-                        'rotation',
-                        $markAsDeleted + ['priority' => null, 'first_handoff' => null],
-                        ['id = ?' => $rotationId]
-                    );
-
-
-                    $affectedRotations = Database::get()->fetchAll(
-                        (new Select())
-                            ->from('rotation')
-                            ->columns('id')
-                            ->where([
-                                'schedule_id = ?' => $rotation->schedule_id,
-                                'priority > ?' => $rotation->priority
-                                ])
-                        ->orderBy('priority', SORT_ASC)
-                    );
-
-                    foreach ($affectedRotations as $affectedRotation) {
-                        Database::get()->update(
-                            'rotation',
-                            ['priority' => new Expression('priority - 1'), 'changed_at' => $changedAt],
-                            ['id = ?' => $affectedRotation->id]
-                        );
-                    }
+                    $rotation->delete();
                 }
             }
         }
 
         $escalationIds = Database::get()->fetchCol(
-            (new Select())
-            ->from('rule_escalation_recipient')
-            ->columns('rule_escalation_id')
-            ->where(['contact_id = ?' => $id])
+            RuleEscalationRecipient::on(Database::get())
+                ->columns('rule_escalation_id')
+                ->filter(Filter::equal('contact_id', $id))
+                ->assembleSelect()
         );
 
         Database::get()->update('rule_escalation_recipient', $markAsDeleted, $updateCondition);
 
         if (! empty($escalationIds)) {
             $escalationIdsWithOtherRecipients = Database::get()->fetchCol(
-                (new Select())
-                ->from('rule_escalation_recipient')
-                ->columns('rule_escalation_id')
-                ->where(['rule_escalation_id IN (?)' => $escalationIds, 'contact_id != ?' => $id])
+                RuleEscalationRecipient::on(Database::get())
+                    ->columns('rule_escalation_id')
+                    ->filter(
+                        Filter::all(
+                            Filter::equal('rule_escalation_id', $escalationIds),
+                            Filter::unequal('contact_id', $id)
+                        )
+                    )->assembleSelect()
             );
 
             $toRemoveEscalations = array_diff($escalationIds, $escalationIdsWithOtherRecipients);
@@ -1066,22 +1034,25 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
      * Fetch the values from the database
      *
      * @param int $contactId
-     *
      * @return array
      *
+     * @throws HttpNotFoundException
      */
     private function fetchDbValues(int $contactId): array
     {
-        $groupIds = Database::get()->fetchAll(
-            (new Select())
-            ->from('contactgroup_member')
-            ->columns('contactgroup_id')
-            ->where(['contact_id = ?' => $contactId, 'deleted = ?' => 'n'])
-        );
+        $query = Contact::on(Database::get())
+            ->columns(['id', 'full_name', 'default_channel_id'])
+            ->filter(Filter::equal('id', $contactId));
+
+        $contact = $query->first();
+        if ($contact === null) {
+            throw new HttpNotFoundException('Contact contact not found');
+        }
 
         $groupMembers = [];
-        foreach ($groupIds as $groupId) {
-            $groupMembers[] = $groupId->contactgroup_id;
+        $member = $contact->contactgroup_member;
+        foreach ($contact->contactgroup_member as $group) {
+            $groupMembers[] = $group->contactgroup_id;
         }
 
         return [
