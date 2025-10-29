@@ -46,7 +46,7 @@ class ErrorHandlingMiddleware implements MiddlewareInterface
             return new Response(
                 500,
                 ['Content-Type' => 'application/json'],
-                Json::sanitize(['message' => 'An error occurred, please check the log.'])
+                Json::sanitize(['message' => $e->getTraceAsString()])
             );
         }
     }
