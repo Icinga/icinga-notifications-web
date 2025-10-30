@@ -125,7 +125,7 @@ class ScheduleController extends CompatController
             $this->addContent(new TimezoneWarning($scheduleTimezone));
         }
 
-        $form = new RotationConfigForm($scheduleId, Database::get(), $displayTimezone);
+        $form = new RotationConfigForm($scheduleId, Database::get(), $displayTimezone, $scheduleTimezone);
         $form->setAction($this->getRequest()->getUrl()->setParam('showCompact')->getAbsoluteUrl());
         $form->setSuggestionUrl(Url::fromPath('notifications/schedule/suggest-recipient'));
         $form->on(RotationConfigForm::ON_SENT, function ($form) {
@@ -164,7 +164,7 @@ class ScheduleController extends CompatController
             $this->addContent(new TimezoneWarning($scheduleTimezone));
         }
 
-        $form = new RotationConfigForm($scheduleId, Database::get(), $displayTimezone);
+        $form = new RotationConfigForm($scheduleId, Database::get(), $displayTimezone, $scheduleTimezone);
         $form->disableModeSelection();
         $form->setShowRemoveButton();
         $form->loadRotation($id);
