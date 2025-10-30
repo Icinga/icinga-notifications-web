@@ -132,7 +132,7 @@ class EventRuleController extends CompatController
                     $this->session->set('object_filter', $rule->object_filter ?? '');
                 } else {
                     $name = $this->params->getRequired('name');
-                    $source = $this->params->getRequired('source');
+                    $source = (int) $this->params->getRequired('source');
                     $form->populate(['id' => $ruleId, 'name' => $name, 'source' => $source]);
 
                     $this->session->set('name', $name);
@@ -296,7 +296,7 @@ class EventRuleController extends CompatController
             ->on(Form::ON_SUBMIT, function ($form) use ($ruleId) {
                 $this->session->set('name', $form->getValue('name'));
 
-                $newSource = $form->getValue('source');
+                $newSource = (int) $form->getValue('source');
                 if ($newSource !== $this->session->get('source')) {
                     $this->session->set('source', $newSource);
                     $this->session->set('object_filter', '');
