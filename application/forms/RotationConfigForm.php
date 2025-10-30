@@ -18,6 +18,7 @@ use Icinga\Util\Json;
 use Icinga\Web\Session;
 use ipl\Html\Attributes;
 use ipl\Html\DeferredText;
+use ipl\Html\FormDecoration\DescriptionDecorator;
 use ipl\Html\FormElement\FieldsetElement;
 use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
@@ -30,6 +31,7 @@ use ipl\Validator\CallbackValidator;
 use ipl\Validator\GreaterThanValidator;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
+use ipl\Web\FormDecorator\IcingaFormDecorator;
 use ipl\Web\FormElement\TermInput;
 use ipl\Web\Url;
 use LogicException;
@@ -190,6 +192,8 @@ class RotationConfigForm extends CompatForm
     {
         $this->db = $db;
         $this->scheduleId = $scheduleId;
+
+        $this->applyDefaultElementDecorators();
     }
 
     /**
@@ -599,7 +603,9 @@ class RotationConfigForm extends CompatForm
             '24-7' => $this->translate('24/7')
         ];
 
-        $modeList = new HtmlElement('ul');
+        $modeList = new HtmlElement('ul', Attributes::create([
+            'class' => ['rotation-mode', $this->disableModeSelection ? 'disabled' : '']
+        ]));
         foreach ($modes as $mode => $label) {
             $radio = $this->createElement('input', 'mode', [
                 'type' => 'radio',
@@ -681,8 +687,14 @@ class RotationConfigForm extends CompatForm
 
         $this->addHtml(new HtmlElement(
             'div',
-            Attributes::create(['class' => ['rotation-mode', $this->disableModeSelection ? 'disabled' : '']]),
-            new HtmlElement('h2', null, Text::create($this->translate('Mode'))),
+            Attributes::create([
+                'class' => ['control-group']
+            ]),
+            new HtmlElement(
+                'div',
+                Attributes::create(['class' => 'control-label-group']),
+                Text::create($this->translate('Rotation Mode'))
+            ),
             $modeList
         ));
 
@@ -701,12 +713,15 @@ class RotationConfigForm extends CompatForm
         $options->addElement('number', 'interval', [
             'required' => true,
             'label' => $this->translate('Handoff every'),
+            'description' => $this->translate('Have multiple rotation members take turns after this interval.'),
             'step' => 1,
             'min' => 1,
             'value' => 1,
             'validators' => [new GreaterThanValidator()]
         ]);
         $interval = $options->getElement('interval');
+        $interval->getDecorators()
+            ->replaceDecorator('Description', DescriptionDecorator::class, ['class' => 'description']);
 
         $frequency = $options->createElement('select', 'frequency', [
             'required' => true,
@@ -793,11 +808,15 @@ class RotationConfigForm extends CompatForm
         $options->addElement('number', 'interval', [
             'required' => true,
             'label' => $this->translate('Handoff every'),
+            'description' => $this->translate('Have multiple rotation members take turns after this interval.'),
             'step' => 1,
             'min' => 1,
             'value' => 1,
             'validators' => [new GreaterThanValidator()]
         ]);
+        $interval = $options->getElement('interval');
+        $interval->getDecorators()
+            ->replaceDecorator('Description', DescriptionDecorator::class, ['class' => 'description']);
 
         $selectedFromTime = $from->getValue();
         foreach ($timeOptions as $key => $value) {
@@ -827,7 +846,6 @@ class RotationConfigForm extends CompatForm
             )
         );
 
-        $interval = $options->getElement('interval');
         $interval->prependWrapper(
             (new HtmlDocument())->addHtml(
                 $interval,
@@ -909,8 +927,12 @@ class RotationConfigForm extends CompatForm
             'step' => 1,
             'min' => 1,
             'value' => 1,
-            'label' => $this->translate('Handoff every')
+            'label' => $this->translate('Handoff every'),
+            'description' => $this->translate('Have multiple rotation members take turns after this interval.')
         ]);
+        $interval = $options->getElement('interval');
+        $interval->getDecorators()
+            ->replaceDecorator('Description', DescriptionDecorator::class, ['class' => 'description']);
 
         $timeOptions = $this->getTimeOptions();
         $fromAt = $options->createElement('select', 'from_at', [
@@ -985,7 +1007,6 @@ class RotationConfigForm extends CompatForm
             )
         );
 
-        $interval = $options->getElement('interval');
         $interval->prependWrapper(
             (new HtmlDocument())->addHtml(
                 $interval,
@@ -1026,17 +1047,9 @@ class RotationConfigForm extends CompatForm
 
         $this->addElement('hidden', 'priority', ['ignore' => true]);
 
-        $mode = $this->assembleModeSelection();
-
-        $autoSubmittedBy = $this->getRequest()->getHeader('X-Icinga-Autosubmittedby')[0] ?? '';
-        if ($autoSubmittedBy === 'mode') {
-            $this->clearPopulatedValue('options');
-            $this->clearPopulatedValue('first_handoff');
-        }
-
         $this->addElement('text', 'name', [
             'required' => true,
-            'label' => $this->translate('Title'),
+            'label' => $this->translate('Rotation Name'),
             'validators' => [
                 new CallbackValidator(function ($value, $validator) {
                     $rotations = Rotation::on($this->db)
@@ -1048,7 +1061,7 @@ class RotationConfigForm extends CompatForm
                     }
 
                     if ($rotations->first() !== null) {
-                        $validator->addMessage($this->translate('A rotation with this title already exists'));
+                        $validator->addMessage($this->translate('A rotation with this name already exists'));
 
                         return false;
                     }
@@ -1057,101 +1070,6 @@ class RotationConfigForm extends CompatForm
                 })
             ]
         ]);
-
-        $options = new FieldsetElement('options');
-        $this->addElement($options);
-
-        if ($mode === '24-7') {
-            $firstHandoff = $this->assembleTwentyFourSevenOptions($options);
-        } elseif ($mode === 'partial') {
-            $firstHandoff = $this->assemblePartialDayOptions($options);
-        } else {
-            $firstHandoff = $this->assembleMultiDayOptions($options);
-        }
-
-        $now = new DateTime();
-        $earliestHandoff = null;
-        if ($this->previousHandoff !== null && $this->previousHandoff <= $now || $this->previousShift !== null) {
-            // If this rotation started already, someone is probably already on duty, so the next sensible
-            // handoff is what the rotation mode already identified as default first handoff
-            $earliestHandoff = $firstHandoff;
-        }
-
-        $latestHandoff = $this->nextHandoff
-            ? (clone $this->nextHandoff)->sub(new DateInterval('P1D'))
-            : (clone $now)->add(new DateInterval('P30D'));
-
-        $firstHandoffDefault = null;
-        if (self::EXPERIMENTAL_OVERRIDES) {
-            // TODO: May be incorrect if near the next handoff??
-            $firstHandoffDefault = $firstHandoff->format('Y-m-d');
-        }
-
-        $this->addElement('input', 'first_handoff', [
-            'class' => 'autosubmit',
-            'type' => 'date',
-            'required' => true,
-            'aria-describedby' => 'first-handoff-description',
-            'min' => $earliestHandoff !== null ? $earliestHandoff->format('Y-m-d') : null,
-            'max' => $latestHandoff->format('Y-m-d'),
-            'label' => $this->translate('First Handoff'),
-            'value' => $firstHandoffDefault,
-            'validators' => [
-                new CallbackValidator(
-                    function ($value, $validator) use ($earliestHandoff, $firstHandoff, $latestHandoff) {
-                        $chosenHandoff = $this->parseDateAndTime($value, $firstHandoff->format('H:i'));
-                        $latestHandoff = $this->parseDateAndTime(
-                            $latestHandoff->format('Y-m-d'),
-                            $firstHandoff->format('H:i')
-                        );
-                        if ($earliestHandoff !== null && $chosenHandoff < $earliestHandoff) {
-                            $validator->addMessage(sprintf(
-                                $this->translate('The first handoff can only happen after %s'),
-                                $earliestHandoff->format('Y-m-d') // TODO: Use intl here
-                            ));
-
-                            return false;
-                        } elseif ($chosenHandoff > $latestHandoff) {
-                            $validator->addMessage(sprintf(
-                                $this->translate('The first handoff can only happen before %s'),
-                                $latestHandoff->format('Y-m-d') // TODO: Use intl here
-                            ));
-
-                            return false;
-                        }
-
-                        return true;
-                    }
-                )
-            ]
-        ]);
-
-        if ($this->getElement('first_handoff')->hasValue()) {
-            $this->addHtml(new HtmlElement(
-                'p',
-                Attributes::create(['id' => 'first-handoff-description']),
-                DeferredText::create(function () {
-                    $ruleGenerator = $this->yieldRecurrenceRules(1);
-                    if (! $ruleGenerator->valid()) {
-                        return $this->translate('This rotation can no longer happen');
-                    }
-
-                    $actualFirstHandoff = $ruleGenerator->current()[0]->getStartDate();
-                    if ($actualFirstHandoff < new DateTime()) {
-                        return $this->translate('The first handoff will happen immediately');
-                    } else {
-                        return sprintf(
-                            $this->translate('The first handoff will happen on %s'),
-                            (new \IntlDateFormatter(
-                                \Locale::getDefault(),
-                                \IntlDateFormatter::MEDIUM,
-                                \IntlDateFormatter::SHORT
-                            ))->format($actualFirstHandoff)
-                        );
-                    }
-                })
-            ));
-        }
 
         $termValidator = function (array $terms) {
             $contactTerms = [];
@@ -1193,20 +1111,128 @@ class RotationConfigForm extends CompatForm
             }
         };
 
-        $this->addElement(
-            (new TermInput('members'))
-                ->setIgnored()
-                ->setRequired()
-                ->setOrdered()
-                ->setReadOnly()
-                ->setVerticalTermDirection()
-                ->setLabel($this->translate('Members'))
-                ->setSuggestionUrl($this->suggestionUrl->with(['showCompact' => true, '_disableLayout' => 1]))
-                ->on(TermInput::ON_ENRICH, $termValidator)
-                ->on(TermInput::ON_ADD, $termValidator)
-                ->on(TermInput::ON_SAVE, $termValidator)
-                ->on(TermInput::ON_PASTE, $termValidator)
-        );
+        $members = (new TermInput('members'))
+            ->setIgnored()
+            ->setRequired()
+            ->setOrdered()
+            ->setReadOnly()
+            ->setVerticalTermDirection()
+            ->setLabel($this->translate('Rotation Members'))
+            ->setSuggestionUrl($this->suggestionUrl->with(['showCompact' => true, '_disableLayout' => 1]))
+            ->on(TermInput::ON_ENRICH, $termValidator)
+            ->on(TermInput::ON_ADD, $termValidator)
+            ->on(TermInput::ON_SAVE, $termValidator)
+            ->on(TermInput::ON_PASTE, $termValidator);
+        $this->addElement($members);
+
+        // TODO: TermInput is not compatible with the new decorators yet: https://github.com/Icinga/ipl-web/pull/317
+        $legacyDecorator = new IcingaFormDecorator();
+        $members->setDefaultElementDecorator($legacyDecorator);
+        $legacyDecorator->decorate($members);
+
+        $mode = $this->assembleModeSelection();
+
+        $autoSubmittedBy = $this->getRequest()->getHeader('X-Icinga-Autosubmittedby')[0] ?? '';
+        if ($autoSubmittedBy === 'mode') {
+            $this->clearPopulatedValue('options');
+            $this->clearPopulatedValue('first_handoff');
+        }
+
+        $this->addElement('fieldset', 'options');
+        /** @var FieldsetElement $options */
+        $options = $this->getElement('options');
+
+        if ($mode === '24-7') {
+            $firstHandoff = $this->assembleTwentyFourSevenOptions($options);
+        } elseif ($mode === 'partial') {
+            $firstHandoff = $this->assemblePartialDayOptions($options);
+        } else {
+            $firstHandoff = $this->assembleMultiDayOptions($options);
+        }
+
+        $now = new DateTime();
+        $earliestHandoff = null;
+        if ($this->previousHandoff !== null && $this->previousHandoff <= $now || $this->previousShift !== null) {
+            // If this rotation started already, someone is probably already on duty, so the next sensible
+            // handoff is what the rotation mode already identified as default first handoff
+            $earliestHandoff = $firstHandoff;
+        }
+
+        $latestHandoff = $this->nextHandoff
+            ? (clone $this->nextHandoff)->sub(new DateInterval('P1D'))
+            : (clone $now)->add(new DateInterval('P30D'));
+
+        $firstHandoffDefault = null;
+        if (self::EXPERIMENTAL_OVERRIDES) {
+            // TODO: May be incorrect if near the next handoff??
+            $firstHandoffDefault = $firstHandoff->format('Y-m-d');
+        }
+
+        $this->addElement('input', 'first_handoff', [
+            'class' => 'autosubmit',
+            'type' => 'date',
+            'required' => true,
+            'aria-describedby' => 'first-handoff-description',
+            'min' => $earliestHandoff !== null ? $earliestHandoff->format('Y-m-d') : null,
+            'max' => $latestHandoff->format('Y-m-d'),
+            'label' => $this->translate('Rotation Start'),
+            'value' => $firstHandoffDefault,
+            'validators' => [
+                new CallbackValidator(
+                    function ($value, $validator) use ($earliestHandoff, $firstHandoff, $latestHandoff) {
+                        $chosenHandoff = $this->parseDateAndTime($value, $firstHandoff->format('H:i'));
+                        $latestHandoff = $this->parseDateAndTime(
+                            $latestHandoff->format('Y-m-d'),
+                            $firstHandoff->format('H:i')
+                        );
+                        if ($earliestHandoff !== null && $chosenHandoff < $earliestHandoff) {
+                            $validator->addMessage(sprintf(
+                                $this->translate('The rotation can only start after %s'),
+                                $earliestHandoff->format('Y-m-d') // TODO: Use intl here
+                            ));
+
+                            return false;
+                        } elseif ($chosenHandoff > $latestHandoff) {
+                            $validator->addMessage(sprintf(
+                                $this->translate('The rotation can only start before %s'),
+                                $latestHandoff->format('Y-m-d') // TODO: Use intl here
+                            ));
+
+                            return false;
+                        }
+
+                        return true;
+                    }
+                )
+            ]
+        ]);
+
+        if ($this->getElement('first_handoff')->hasValue()) {
+            $this->addHtml(new HtmlElement(
+                'p',
+                Attributes::create(['id' => 'first-handoff-description']),
+                DeferredText::create(function () {
+                    $ruleGenerator = $this->yieldRecurrenceRules(1);
+                    if (! $ruleGenerator->valid()) {
+                        return $this->translate('This rotation can no longer happen');
+                    }
+
+                    $actualFirstHandoff = $ruleGenerator->current()[0]->getStartDate();
+                    if ($actualFirstHandoff < new DateTime()) {
+                        return $this->translate('The rotation will start immediately');
+                    } else {
+                        return sprintf(
+                            $this->translate('The rotation will start on %s'),
+                            (new \IntlDateFormatter(
+                                \Locale::getDefault(),
+                                \IntlDateFormatter::MEDIUM,
+                                \IntlDateFormatter::SHORT
+                            ))->format($actualFirstHandoff)
+                        );
+                    }
+                })
+            ));
+        }
 
         $this->addElement('submit', 'submit', [
             'label' => $this->getSubmitLabel()
@@ -1235,7 +1261,7 @@ class RotationConfigForm extends CompatForm
             $this->getElement('submit')->prependWrapper((new HtmlDocument())->setHtmlContent(...$removeButtons));
         }
 
-        $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
+        $this->addCsrfCounterMeasure(Session::getSession()->getId());
     }
 
     /**
