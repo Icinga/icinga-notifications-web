@@ -65,6 +65,16 @@
           }
         }
 
+        &.narrow-entry {
+          .rotation-info {
+            left: ~"calc(50% - 1em)";
+
+            &.is-left {
+              right: ~"calc(50% - 1em)";
+            }
+          }
+        }
+
         .rotation-info {
           display: none;
           position: absolute;
@@ -73,17 +83,16 @@
           max-width: 30em;
           height: auto;
           padding: 0.5em;
-          left: 0;
-          transform: translate(~"calc(-1em + 2px)");
+          left: 1.5em;
           flex-direction: column;
           white-space: nowrap;
 
-          .rotation-info-time{
+          .rotation-info-time {
             flex-direction: column;
             display: flex;
           }
 
-          &:before {
+          &::before {
             content: '';
             position: absolute;
             display: inline-block;
@@ -97,10 +106,9 @@
 
           &.is-left {
             left: auto;
-            right: 100%;
-            transform: translate(~"calc(1em + 2px)");
+            right: ~"calc(100% - 3.5em)";
 
-            &:before {
+            &::before {
               left: auto;
               right: 0.5em;
               transform: rotate(45deg);
@@ -111,7 +119,7 @@
             top: 120%;
             bottom: auto;
 
-            &:before {
+            &::before {
               bottom: auto;
               top: ~"calc(-0.5em - 1px)";
               transform: rotate(225deg);
@@ -307,10 +315,21 @@
 #layout.minimal-layout,
 #layout.poor-layout,
 #layout.twocols:not(.wide-layout) {
-  .rotation-info{
-    .days-interval-wrapper{
+  .rotation-info {
+    .days-interval-wrapper {
       display: flex;
       flex-direction: column;
+    }
+  }
+
+  .medium-entry {
+    .rotation-info {
+      left: ~"calc(50% - 1em)";
+
+      &.is-left {
+        right: ~"calc(50% - 1em)";
+        left:auto;
+      }
     }
   }
 }
@@ -392,12 +411,12 @@
     }
   }
 
-  .rotation-info{
+  .rotation-info {
     background-color: @body-bg-color;
     border: 1px solid @gray-light;
-    border-radius: 4px;
+    .rounded-corners();
 
-    &:before{
+    &::before {
       border-right: 1px solid @gray-light;
       border-bottom: 1px solid @gray-light;
     }
@@ -406,13 +425,15 @@
   .rotation-info-name {
     font-weight: bold;
   }
+
   .rotation-info-member-count,
   .rotation-info-mode,
-  .rotation-info-start{
+  .rotation-info-start {
     color: @gray;
     font-weight: normal;
   }
-  .rotation-info-start time{
+
+  .rotation-info-start time {
     color: @default-text-color;
   }
 }
