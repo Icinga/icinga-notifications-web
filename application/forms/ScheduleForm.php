@@ -23,17 +23,17 @@ class ScheduleForm extends CompatForm
 {
     use CsrfCounterMeasure;
 
-    /** @var string */
-    protected $submitLabel;
+    /** @var ?string */
+    protected ?string $submitLabel;
 
     /** @var bool */
-    protected $showRemoveButton = false;
+    protected bool $showRemoveButton = false;
 
     /** @var Connection */
-    private $db;
+    private Connection $db;
 
     /** @var ?int */
-    private $scheduleId;
+    private ?int $scheduleId = null;
 
     public function __construct(Connection $db)
     {
@@ -156,7 +156,7 @@ class ScheduleForm extends CompatForm
         $this->db->commitTransaction();
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         if (! $this->showRemoveButton) {
             $this->addHtml(new HtmlElement(

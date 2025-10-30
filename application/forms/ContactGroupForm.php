@@ -29,10 +29,10 @@ class ContactGroupForm extends CompatForm
     use CsrfCounterMeasure;
 
     /** @var Connection */
-    private $db;
+    private Connection $db;
 
     /** @var ?int Contact group id */
-    private $contactgroupId;
+    private ?int $contactgroupId = null;
 
     public function __construct(Connection $db)
     {
