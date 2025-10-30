@@ -21,7 +21,6 @@ class OadV1Post extends Post
         ?string $path = null,
         ?string $description = null,
         ?string $summary = null,
-        ?array $requiredFields = null,
         ?array $tags = null,
         ?array $parameters = null,
         ?array $responses = null,
@@ -115,23 +114,6 @@ class OadV1Post extends Post
             ]
         );
 
-        if (! empty($requiredFields)) {
-            $missingRequestBodyFieldsMessage = 'Invalid request body: ';
-
-            if (count($requiredFields) == 1) {
-                $requiredFieldsStr = $requiredFields[0];
-            } elseif (count($requiredFields) == 2) {
-                $requiredFieldsStr = $requiredFields[0] . ' and ' . $requiredFields[1];
-            } else {
-                $last = array_pop($requiredFields);
-                $requiredFieldsStr = implode(', ', $requiredFields) . ' and ' . $last;
-            }
-            $missingRequestBodyFieldsMessage .= sprintf(
-                'the fields %s must be present and of type string',
-                $requiredFieldsStr
-            );
-        }
-
         parent::__construct(
             path: $path,
             operationId: ($hasIdentifier ? 'replace' : 'create') . $entityName,
@@ -164,16 +146,9 @@ class OadV1Post extends Post
                                 summary: $entityName . ' already exists',
                                 value: ['message' => $entityName . ' already exists'],
                             ),
+                            new ResponseExample('InvalidRequestBodyFieldFormat'),
                             new ResponseExample('InvalidRequestBodyId'),
-                        ],
-                        empty($requiredFields)
-                            ? []
-                            : [
-                            new OA\Examples(
-                                example: 'MissingRequiredRequestBodyField',
-                                summary: 'Missing required request body field',
-                                value: ['message' => $missingRequestBodyFieldsMessage],
-                            )
+                            new ResponseExample('MissingRequiredRequestBodyField')
                         ],
                         $examples422 ?? []
                     )

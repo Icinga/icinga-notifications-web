@@ -52,6 +52,7 @@ use OpenApi\Attributes as OA;
         'id',
         'full_name',
         'default_channel',
+        'addresses'
     ],
     type: 'object',
     additionalProperties: false,
@@ -92,6 +93,19 @@ use OpenApi\Attributes as OA;
 )]
 class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterface
 {
+    public const REQUIRED_FIELDS = [
+        'id',
+        'full_name',
+        'default_channel',
+        'addresses'
+    ];
+    public const REQUIRED_FIELD_TYPES = [
+        'id' => 'string',
+        'full_name' => 'string',
+        'default_channel' => 'string',
+        'addresses' => 'object',
+    ];
+
     #[OA\Examples(
         example: 'ContactgroupNotExists',
         summary: 'Contact Group does not exist',
@@ -136,6 +150,11 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
         example: 'InvalidGroupsFormat',
         summary: 'Invalid groups format',
         value: ['message' => 'Invalid request body: expects groups to be an array']
+    )]
+    #[OA\Examples(
+        example: 'MissingAddress',
+        summary: 'Missing address',
+        value: ['message' => 'Invalid request body: Address according to default_channel type x is required']
     )]
     #[OA\Examples(
         example: 'UsernameAlreadyExists',
@@ -262,7 +281,6 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
         description: 'Retrieve all Contacts or filter them by parameters.',
         summary: 'List all Contacts or filter by parameters',
         tags: ['Contacts'],
-        filter: ['id', 'full_name', 'username'],
         parameters: [
             new QueryParameter(
                 name: 'id',
@@ -314,7 +332,6 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
         description: 'Update a Contact by UUID, if it doesn\'t exist, it will be created. \
         The identifier must be the same as the payload id',
         summary: 'Update a Contact by UUID',
-        requiredFields: ['id', 'full_name', 'default_channel'],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
@@ -329,18 +346,17 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
                 identifierSchema: 'ContactUUID'
             )
         ],
-        examples400: [
-            new ResponseExample('InvalidDefaultChannelUUID'),
-        ],
         examples422: [
             new ResponseExample('ContactgroupNotExists'),
             new ResponseExample('InvalidAddressFormat'),
             new ResponseExample('InvalidAddressType'),
             new ResponseExample('InvalidContactgroupUUID'),
             new ResponseExample('InvalidContactgroupUUIDFormat'),
+            new ResponseExample('InvalidDefaultChannelUUID'),
             new ResponseExample('InvalidEmailAddress'),
             new ResponseExample('InvalidEmailAddressFormat'),
             new ResponseExample('InvalidGroupsFormat'),
+            new ResponseExample('MissingAddress'),
             new ResponseExample('UsernameAlreadyExists'),
         ]
     )]
@@ -350,13 +366,13 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
             throw new HttpBadRequestException('Identifier is required');
         }
 
+        Database::get()->beginTransaction();
+
         $this->assertValidRequestBody($requestBody);
 
         if ($identifier !== $requestBody['id']) {
             throw new HttpException(422, 'Identifier mismatch');
         }
-
-        Database::get()->beginTransaction();
 
         if (($contactId = self::getContactId($identifier)) !== null) {
             $this->updateContact($requestBody, $contactId);
@@ -402,20 +418,18 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
         path: '/contacts',
         description: 'Create a new Contact',
         summary: 'Create a new Contact',
-        requiredFields: ['id', 'full_name', 'default_channel'],
         tags: ['Contacts'],
-        examples400: [
-            new ResponseExample('InvalidDefaultChannelUUID'),
-        ],
         examples422: [
             new ResponseExample('ContactgroupNotExists'),
             new ResponseExample('InvalidAddressType'),
             new ResponseExample('InvalidAddressFormat'),
             new ResponseExample('InvalidContactgroupUUID'),
             new ResponseExample('InvalidContactgroupUUIDFormat'),
+            new ResponseExample('InvalidDefaultChannelUUID'),
             new ResponseExample('InvalidEmailAddress'),
             new ResponseExample('InvalidEmailAddressFormat'),
             new ResponseExample('InvalidGroupsFormat'),
+            new ResponseExample('MissingAddress'),
             new ResponseExample('UsernameAlreadyExists'),
         ]
     )]
@@ -424,7 +438,6 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
         path: '/contacts/{identifier}',
         description: 'Replace a Contact by UUID, the identifier must be different from the payload id',
         summary: 'Replace a Contact by UUID',
-        requiredFields: ['id', 'full_name', 'default_channel'],
         tags: ['Contacts'],
         parameters: [
             new PathParameter(
@@ -433,18 +446,17 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
                 identifierSchema: 'ContactUUID'
             )
         ],
-        examples400: [
-            new ResponseExample('InvalidDefaultChannelUUID'),
-        ],
         examples422: [
             new ResponseExample('ContactgroupNotExists'),
             new ResponseExample('InvalidAddressType'),
             new ResponseExample('InvalidAddressFormat'),
             new ResponseExample('InvalidContactgroupUUID'),
             new ResponseExample('InvalidContactgroupUUIDFormat'),
+            new ResponseExample('InvalidDefaultChannelUUID'),
             new ResponseExample('InvalidEmailAddress'),
             new ResponseExample('InvalidEmailAddressFormat'),
             new ResponseExample('InvalidGroupsFormat'),
+            new ResponseExample('MissingAddress'),
             new ResponseExample('UsernameAlreadyExists'),
         ]
     )]
@@ -658,15 +670,10 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
             $this->assertUniqueUsername($requestBody['username']);
         }
 
-        $channelID = Channels::getChannelId($requestBody['default_channel']);
-        if ($channelID === false) {
-            throw new HttpException(422, 'Channel with identifier 0817d973-398e-41d7-9cd2-61cdb7ef41a3 does not exist');
-        }
-
         Database::get()->insert('contact', [
             'full_name'          => $requestBody['full_name'],
             'username'           => $requestBody['username'] ?? null,
-            'default_channel_id' => $channelID,
+            'default_channel_id' => Channels::getChannelId($requestBody['default_channel']),
             'external_uuid'      => $requestBody['id'],
             'changed_at'         => (int) (new DateTime())->format("Uv"),
         ]);
@@ -684,22 +691,15 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
 
     private function updateContact(array $requestBody, int $contactId): void
     {
-
         if (! empty($requestBody['username'])) {
             $this->assertUniqueUsername($requestBody['username'], $contactId);
-        }
-
-        $channelID = Channels::getChannelId($requestBody['default_channel']);
-
-        if ($channelID === false) {
-            throw new HttpException(422, 'Channel with identifier 0817d973-398e-41d7-9cd2-61cdb7ef41a3 does not exist');
         }
 
         $changedAt = (int) (new DateTime())->format("Uv");
         Database::get()->update('contact', [
             'full_name'          => $requestBody['full_name'],
             'username'           => $requestBody['username'] ?? null,
-            'default_channel_id' => $channelID,
+            'default_channel_id' => Channels::getChannelId($requestBody['default_channel']),
             'changed_at'         => $changedAt,
         ], ['id = ?' => $contactId]);
 
@@ -930,16 +930,14 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
     {
         $msgPrefix = 'Invalid request body: ';
 
-        if (
-            ! isset($requestBody['id'], $requestBody['full_name'], $requestBody['default_channel'])
-            || ! is_string($requestBody['id'])
-            || ! is_string($requestBody['full_name'])
-            || ! is_string($requestBody['default_channel'])
-        ) {
-            throw new HttpException(
-                422,
-                $msgPrefix . 'the fields id, full_name and default_channel must be present and of type string'
-            );
+        foreach (self::REQUIRED_FIELD_TYPES as $field => $type) {
+            if (empty($requestBody[$field])) {
+                throw new HttpException(422, $msgPrefix . "the field $field must be present");
+            }
+
+            if ($type === 'string' && ! is_string($requestBody[$field])) {
+                throw new HttpException(422, $msgPrefix . "expects $field to be of type string");
+            }
         }
 
         if (! Uuid::isValid($requestBody['id'])) {
@@ -950,13 +948,62 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
             throw new HttpException(422, $msgPrefix . 'given default_channel is not a valid UUID');
         }
 
+        $channelId = Channels::getChannelId($requestBody['default_channel']);
+
+        if ($channelId === false) {
+            throw new HttpException(422, 'Channel with identifier 0817d973-398e-41d7-9cd2-61cdb7ef41a3 does not exist');
+        }
+
+        $channelType = Channels::getChannelType($channelId);
+
+        if (! is_array($requestBody['addresses']) || empty($requestBody['addresses'][$channelType])) {
+            throw new HttpException(
+                422,
+                $msgPrefix . "an address according to default_channel type $channelType is required"
+            );
+        }
+
+        $addressTypes = array_keys($requestBody['addresses']);
+
+        $types = Database::get()->fetchCol(
+            (new Select())
+                ->from('available_channel_type')
+                ->columns('type')
+                ->where(['type IN (?)' => $addressTypes])
+        );
+
+        if (count($types) !== count($addressTypes)) {
+            throw new HttpException(
+                422,
+                sprintf(
+                    $msgPrefix . 'undefined address type %s given',
+                    implode(', ', array_diff($addressTypes, $types))
+                )
+            );
+        }
+
+        //TODO: is it a good idea to check valid channel types here?, if yes,
+        //default_channel and group identifiers must be checked here as well..404 OR 400?
+        if (isset($requestBody['addresses']['email'])) {
+            if (! is_string($requestBody['addresses']['email'])) {
+                throw new HttpBadRequestException($msgPrefix . 'an invalid email address format given');
+            }
+
+            if (
+                ! empty($requestBody['addresses']['email'])
+                && ! (new EmailAddressValidator())->isValid($requestBody['addresses']['email'])
+            ) {
+                throw new HttpBadRequestException($msgPrefix . 'an invalid email address given');
+            }
+        }
+
         if (! empty($requestBody['username']) && ! is_string($requestBody['username'])) {
-            throw new HttpBadRequestException($msgPrefix . 'expects username to be a string');
+            throw new HttpException(422, $msgPrefix . 'expects username to be of type string');
         }
 
         if (! empty($requestBody['groups'])) {
             if (! is_array($requestBody['groups'])) {
-                throw new HttpBadRequestException($msgPrefix . 'expects groups to be an array');
+                throw new  HttpException(422, $msgPrefix . 'expects groups to be of type array');
             }
 
             foreach ($requestBody['groups'] as $group) {
@@ -967,45 +1014,6 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
                         422,
                         sprintf($msgPrefix . 'the group identifier %s is not a valid UUID', $group)
                     );
-                }
-            }
-        }
-
-        if (! empty($requestBody['addresses'])) {
-            if (! is_array($requestBody['addresses'])) {
-                throw new HttpBadRequestException($msgPrefix . 'expects addresses to be an array');
-            }
-
-            $addressTypes = array_keys($requestBody['addresses']);
-
-            $types = Database::get()->fetchCol(
-                (new Select())
-                    ->from('available_channel_type')
-                    ->columns('type')
-                    ->where(['type IN (?)' => $addressTypes])
-            );
-
-            if (count($types) !== count($addressTypes)) {
-                throw new HttpException(
-                    422,
-                    sprintf(
-                        $msgPrefix . 'undefined address type %s given',
-                        implode(', ', array_diff($addressTypes, $types))
-                    )
-                );
-            }
-            //TODO: is it a good idea to check valid channel types here?, if yes,
-            //default_channel and group identifiers must be checked here as well..404 OR 400?
-            if (isset($requestBody['addresses']['email'])) {
-                if (! is_string($requestBody['addresses']['email'])) {
-                    throw new HttpBadRequestException($msgPrefix . 'an invalid email address format given');
-                }
-
-                if (
-                    ! empty($requestBody['addresses']['email'])
-                    && ! (new EmailAddressValidator())->isValid($requestBody['addresses']['email'])
-                ) {
-                    throw new HttpBadRequestException($msgPrefix . 'an invalid email address given');
                 }
             }
         }

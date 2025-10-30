@@ -28,9 +28,19 @@ use OpenApi\Attributes as OA;
     value: ['message' => 'Invalid request header: Content-Type must be application/json'],
 )]
 #[OA\Examples(
+    example: 'InvalidFilterParameter',
+    summary: 'Invalid filter parameter',
+    value: ['message' => 'Invalid request parameter: Filter column x is not allowed']
+)]
+#[OA\Examples(
     example: 'InvalidIdentifier',
     summary: 'Identifier is not valid',
     value: ['message' => 'The given identifier is not a valid UUID']
+)]
+#[OA\Examples(
+    example: 'InvalidRequestBodyFieldFormat',
+    summary: 'Invalid request body field format',
+    value: ['message' => 'Invalid request body: expects x to be of type y'],
 )]
 #[OA\Examples(
     example: 'InvalidRequestBodyFormat',
@@ -41,6 +51,11 @@ use OpenApi\Attributes as OA;
     example: 'InvalidRequestBodyId',
     summary: 'Invalid request body id',
     value: ['message' => 'Invalid request body: given id is not a valid UUID'],
+)]
+#[OA\Examples(
+    example: 'MissingRequiredRequestBodyField',
+    summary: 'Missing required request body field',
+    value: ['message' => 'Invalid request body: the field x must be present'],
 )]
 #[OA\Examples(
     example: 'NoIdentifierWithFilter',

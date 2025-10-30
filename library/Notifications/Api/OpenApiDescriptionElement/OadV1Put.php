@@ -21,7 +21,6 @@ class OadV1Put extends Put
         ?string $path = null,
         ?string $description = null,
         ?string $summary = null,
-        ?array $requiredFields = null,
         ?RequestBody $requestBody = null,
         ?array $tags = null,
         ?array $parameters = null,
@@ -29,22 +28,6 @@ class OadV1Put extends Put
         ?array $examples400 = null,
         ?array $examples422 = null,
     ) {
-        $missingRequestBodyFieldsMessage = 'Invalid request body: ';
-        if (! empty($requiredFields)) {
-            if (count($requiredFields) == 1) {
-                $requiredFieldsStr = $requiredFields[0];
-            } elseif (count($requiredFields) == 2) {
-                $requiredFieldsStr = $requiredFields[0] . ' and ' . $requiredFields[1];
-            } else {
-                $last = array_pop($requiredFields);
-                $requiredFieldsStr = implode(', ', $requiredFields) . ' and ' . $last;
-            }
-            $missingRequestBodyFieldsMessage .= sprintf(
-                'the fields %s must be present and of type string',
-                $requiredFieldsStr
-            );
-        }
-
         parent::__construct(
             path: $path,
             operationId: 'update' . $entityName,
@@ -140,17 +123,10 @@ class OadV1Put extends Put
                                     summary: $entityName . ' already exists',
                                     value: ['message' => $entityName . ' already exists'],
                                 ),
+                                new ResponseExample('InvalidRequestBodyFieldFormat'),
                                 new ResponseExample('InvalidRequestBodyId'),
-                                new ResponseExample('IdentifierMismatch')
-                            ],
-                            empty($requiredFields)
-                                ? []
-                                : [
-                                new OA\Examples(
-                                    example: 'MissingRequiredRequestBodyField',
-                                    summary: 'Missing required request body field',
-                                    value: ['message' => $missingRequestBodyFieldsMessage],
-                                )
+                                new ResponseExample('IdentifierMismatch'),
+                                new ResponseExample('MissingRequiredRequestBodyField')
                             ],
                             $examples422 ?? []
                         )

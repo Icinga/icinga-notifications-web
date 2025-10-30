@@ -237,7 +237,6 @@ class Channels extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
         description: 'List all notification channels or filter by parameters',
         summary: 'List all notification channels or filter by parameters',
         tags: ['Channels'],
-        filter: ['id', 'name', 'type'],
         parameters: [
             new QueryParameter(
                 name: 'id',
@@ -289,6 +288,26 @@ class Channels extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
         );
 
         return $channel->id ?? false;
+    }
+
+    /**
+     * Get the type of the channel
+     *
+     * @param string $channelId
+     *
+     * @return string
+     */
+    public static function getChannelType(string $channelId): string
+    {
+        /** @var stdClass|false $channel */
+        $channel = Database::get()->fetchOne(
+            (new Select())
+                ->from('channel')
+                ->columns('type')
+                ->where(['id = ?' => $channelId])
+        );
+
+        return $channel->type;
     }
 
     public function prepareRow(stdClass $row): void

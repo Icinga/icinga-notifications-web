@@ -20,25 +20,9 @@ class OadV1GetPlural extends Get
         ?string $description = null,
         ?string $summary = null,
         ?array $tags = null,
-        ?array $filter = null,
         ?array $parameters = null,
         ?array $responses = null,
     ) {
-        $message = 'Invalid request parameter: Filter column x given, ';
-        if (empty($filter)) {
-            $message .= 'no filter allowed';
-        } else {
-            if (count($filter) == 1) {
-                $filterStr = $filter[0];
-            } elseif (count($filter) == 2) {
-                $filterStr = $filter[0] . ' and ' . $filter[1];
-            } else {
-                $last = array_pop($filter);
-                $filterStr = implode(', ', $filter) . ' and ' . $last;
-            }
-            $message .= sprintf('only %s are allowed', $filterStr);
-        }
-
         parent::__construct(
             path: $path,
             operationId: 'list' . $entityName,
@@ -58,13 +42,7 @@ class OadV1GetPlural extends Get
                     response: 422,
                     examples: [
                         new ResponseExample('InvalidRequestBodyId'),
-                        new OA\Examples(
-                            example: 'InvalidFilterParameter',
-                            summary: 'Invalid filter parameter',
-                            value: [
-                                'message' => $message
-                            ]
-                        ),
+                        new ResponseExample('InvalidFilterParameter'),
                     ]
                 ),
             ], $responses ?? []),

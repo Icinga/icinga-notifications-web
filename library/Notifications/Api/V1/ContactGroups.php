@@ -55,6 +55,9 @@ use stdClass;
 )]
 class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointInterface
 {
+    public const REQUIRED_FIELDS = ['id', 'name'];
+    public const REQUIRED_FIELD_TYPES = ['id' => 'string', 'name' => 'string'];
+
     #[OA\Examples(
         example: 'InvalidUserFormat',
         summary: 'Invalid user format',
@@ -173,7 +176,6 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
         description: 'Retrieve all Contact Groups or filter them by parameters.',
         summary: 'List all Contact Groups or filter by parameters',
         tags: ['Contact Groups'],
-        filter: ['id', 'name'],
         parameters: [
             new QueryParameter(
                 name: 'id',
@@ -220,7 +222,6 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
         description: 'Update a Contact Group by UUID, if it doesn\'t exist, it will be created. \
         The identifier must be the same as the payload id',
         summary: 'Update a Contact Group by UUID',
-        requiredFields: ['id', 'name'],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
@@ -299,7 +300,6 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
         path: '/contact-groups',
         description: 'Create a new Contact Group',
         summary: 'Create a new Contact Group',
-        requiredFields: ['id', 'name'],
         tags: ['Contact Groups'],
         examples422: [
             new ResponseExample('InvalidUserFormat'),
@@ -313,7 +313,6 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
         path: '/contact-groups/{identifier}',
         description: 'Replace a Contact Group by UUID, the identifier must be different from the payload id',
         summary: 'Replace a Contact Group by UUID',
-        requiredFields: ['id', 'name'],
         tags: ['Contact Groups'],
         parameters: [
             new PathParameter(
@@ -583,24 +582,23 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
     {
         $msgPrefix = 'Invalid request body: ';
 
-        if (
-            ! isset($requestBody['id'], $requestBody['name'])
-            || ! is_string($requestBody['id'])
-            || ! is_string($requestBody['name'])
-        ) {
-            throw new HttpException(
-                422,
-                $msgPrefix . 'the fields id and name must be present and of type string'
-            );
+        foreach (self::REQUIRED_FIELD_TYPES as $field => $type) {
+            if (empty($requestBody[$field])) {
+                throw new HttpException(422, $msgPrefix . "the field $field must be present");
+            }
+
+            if ($type === 'string' && ! is_string($requestBody[$field])) {
+                throw new HttpException(422, $msgPrefix . "expects $field to be of type string");
+            }
         }
 
         if (! Uuid::isValid($requestBody['id'])) {
-            throw new HttpBadRequestException($msgPrefix . 'given id is not a valid UUID');
+            throw new HttpException(422, $msgPrefix . 'given id is not a valid UUID');
         }
 
         if (! empty($requestBody['users'])) {
             if (! is_array($requestBody['users'])) {
-                throw new HttpBadRequestException($msgPrefix . 'expects users to be an array');
+                throw new HttpException(422, $msgPrefix . 'expects users to be an array');
             }
 
             foreach ($requestBody['users'] as $user) {

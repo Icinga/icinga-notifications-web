@@ -28,7 +28,7 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
             'username' => 'test',
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             'groups' => [],
-            'addresses' => new stdClass()
+            'addresses' => ['email' => 'test@example.com']
         ]);
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertJsonStringEqualsJsonString($expected, $content);
@@ -62,7 +62,7 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
                 'username' => 'test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
                 'groups' => [],
-                'addresses' => new stdClass()
+                'addresses' => ['email' => 'test@example.com']
             ],
             [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_2,
@@ -70,7 +70,7 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
                 'username' => 'test2',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
                 'groups' => [],
-                'addresses' => new stdClass()
+                'addresses' => ['email' => 'test@example.com']
             ],
         ]);
         $this->assertSame(200, $response->getStatusCode(), $content);
@@ -91,7 +91,7 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
             'username' => 'test',
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             'groups' => [],
-            'addresses' => new stdClass()
+            'addresses' => ['email' => 'test@example.com']
         ]);
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertJsonStringEqualsJsonString($expected, $content);
@@ -241,7 +241,8 @@ YAML;
             [
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
-                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -265,7 +266,8 @@ YAML;
             json:  [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_4,
                 'full_name' => 'Test',
-                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -288,7 +290,8 @@ YAML;
             json:  [
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
-                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -314,7 +317,8 @@ YAML;
             json:  [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_2,
                 'full_name' => 'Test',
-                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -335,7 +339,8 @@ YAML;
             json:  [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test (replaced)',
-                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -365,7 +370,7 @@ YAML;
             'username' => null,
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             'groups' => [],
-            'addresses' => new stdClass()
+            'addresses' => ['email' => 'test@example.com']
         ]), $content);
     }
 
@@ -382,6 +387,7 @@ YAML;
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -403,6 +409,7 @@ YAML;
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -432,7 +439,7 @@ YAML;
             'username' => null,
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             'groups' => [],
-            'addresses' => new stdClass()
+            'addresses' => ['email' => 'test@example.com']
         ]), $content);
     }
 
@@ -443,10 +450,6 @@ YAML;
         Connection $db,
         Url $endpoint
     ): void {
-        $expected = $this->jsonEncodeError(
-            'Invalid request body: the fields id, full_name and default_channel must be present and of type string'
-        );
-
         // missing id
         $response = $this->sendRequest(
             'POST',
@@ -454,13 +457,17 @@ YAML;
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
             json:  [
                 'full_name' => 'Test',
-                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
-        $this->assertJsonStringEqualsJsonString($expected, $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: the field id must be present'),
+            $content
+        );
 
         // missing name
         $response = $this->sendRequest(
@@ -469,13 +476,17 @@ YAML;
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
             json:  [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
-        $this->assertJsonStringEqualsJsonString($expected, $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: the field full_name must be present'),
+            $content
+        );
 
         // missing default_channel
         $response = $this->sendRequest(
@@ -484,13 +495,168 @@ YAML;
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
             json:  [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test'
+                'full_name' => 'Test',
+                'addresses' => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
-        $this->assertJsonStringEqualsJsonString($expected, $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: the field default_channel must be present'),
+            $content
+        );
+
+        // missing address type
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: the field addresses must be present'),
+            $content
+        );
+    }
+
+    /**
+     * @dataProvider apiTestBackends
+     */
+    public function testPostToReplaceWithInvalidFieldFormat(
+        Connection $db,
+        Url $endpoint
+    ): void {
+        // invalid id
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
+            json:  [
+                'id' => [BaseApiV1TestCase::CONTACT_UUID_3],
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com']
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects id to be of type string'),
+            $content
+        );
+
+        // invalid name
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name' => ['Test'],
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com']
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects full_name to be of type string'),
+            $content
+        );
+
+        // invalid default_channel
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name' => 'Test',
+                'default_channel' => [BaseApiV1TestCase::CHANNEL_UUID],
+                'addresses' => ['email' => 'test@example.com']
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects default_channel to be of type string'),
+            $content
+        );
+
+        // invalid addresses
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => 'test@example.com'
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError(
+                'Invalid request body: an address according to default_channel type email is required'
+            ),
+            $content
+        );
+
+        // invalid username
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com'],
+                'username' => ['test']
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects username to be of type string'),
+            $content
+        );
+
+        // invalid groups
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com'],
+                'groups' => BaseApiV1TestCase::GROUP_UUID
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects groups to be of type array'),
+            $content
+        );
     }
 
     /**
@@ -564,6 +730,7 @@ YAML;
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => 'invalid_uuid',
+                'addresses' => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -580,10 +747,6 @@ YAML;
      */
     public function testPostToCreateWithMissingRequiredFields(Connection $db, Url $endpoint): void
     {
-        $expected = $this->jsonEncodeError(
-            'Invalid request body: the fields id, full_name and default_channel must be present and of type string'
-        );
-
         // missing id
         $response = $this->sendRequest(
             'POST',
@@ -591,13 +754,17 @@ YAML;
             'v1/contacts',
             json:  [
                 'full_name' => 'Test',
-                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
-        $this->assertJsonStringEqualsJsonString($expected, $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: the field id must be present'),
+            $content
+        );
 
         // missing name
         $response = $this->sendRequest(
@@ -606,13 +773,17 @@ YAML;
             'v1/contacts',
             json:  [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
-        $this->assertJsonStringEqualsJsonString($expected, $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: the field full_name must be present'),
+            $content
+        );
 
         // missing default_channel
         $response = $this->sendRequest(
@@ -621,13 +792,241 @@ YAML;
             'v1/contacts',
             json:  [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test'
+                'full_name' => 'Test',
+                'addresses' => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
-        $this->assertJsonStringEqualsJsonString($expected, $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: the field default_channel must be present'),
+            $content
+        );
+
+        // missing address type
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contacts',
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+            ]
+        );
+        $content = $response->getBody()->getContents();
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: the field addresses must be present'),
+            $content
+        );
+    }
+
+    /**
+     * @dataProvider apiTestBackends
+     */
+    public function testPostToCreateWithInvalidFieldFormat(
+        Connection $db,
+        Url $endpoint
+    ): void {
+        // invalid id
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contacts/',
+            json:  [
+                'id' => [BaseApiV1TestCase::CONTACT_UUID_3],
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com']
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects id to be of type string'),
+            $content
+        );
+
+        // invalid name
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contacts/',
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name' => ['Test'],
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com']
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects full_name to be of type string'),
+            $content
+        );
+
+        // invalid default_channel
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contacts/',
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name' => 'Test',
+                'default_channel' => [BaseApiV1TestCase::CHANNEL_UUID],
+                'addresses' => ['email' => 'test@example.com']
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects default_channel to be of type string'),
+            $content
+        );
+
+        // invalid addresses
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contacts/',
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => 'test@example.com'
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError(
+                'Invalid request body: an address according to default_channel type email is required'
+            ),
+            $content
+        );
+
+        // invalid username
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contacts/',
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com'],
+                'username' => ['test']
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects username to be of type string'),
+            $content
+        );
+
+        // invalid groups
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contacts/',
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com'],
+                'groups' => BaseApiV1TestCase::GROUP_UUID
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects groups to be of type array'),
+            $content
+        );
+    }
+
+    /**
+     * @dataProvider apiTestBackends
+     */
+    public function testPostToCreateWithInvalidAddresses(Connection $db, Url $endpoint): void
+    {
+        // with invalid address type
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contacts',
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => [
+                    'invalid' => 'value'
+                ]
+            ]
+        );
+        $content = $response->getBody()->getContents();
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError(
+                "Invalid request body: an address according to default_channel type email is required"
+            ),
+            $content
+        );
+
+        // with invalid address type and matching address type
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contacts',
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => [
+                    'invalid' => 'value',
+                    'email' => 'test@example.com'
+                ]
+            ]
+        );
+        $content = $response->getBody()->getContents();
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: undefined address type invalid given'),
+            $content
+        );
+
+        // mismatch address type and default_channel type
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contacts',
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => [
+                    'webhook' => 'value'
+                ]
+            ]
+        );
+        $content = $response->getBody()->getContents();
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError(
+                "Invalid request body: an address according to default_channel type email is required"
+            ),
+            $content
+        );
     }
 
     /**
@@ -644,7 +1043,8 @@ YAML;
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'username' => 'test',
-                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -662,6 +1062,7 @@ YAML;
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
                 'groups' => [BaseApiV1TestCase::GROUP_UUID_3],
+                'addresses' => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -683,7 +1084,8 @@ YAML;
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'groups' => ['invalid_uuid']
+                'groups' => ['invalid_uuid'],
+                'addresses' => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -691,27 +1093,6 @@ YAML;
         $this->assertEquals(422, $response->getStatusCode(), $content);
         $this->assertJsonStringEqualsJsonString(
             $this->jsonEncodeError('Invalid request body: the group identifier invalid_uuid is not a valid UUID'),
-            $content
-        );
-
-        // with invalid address type
-        $response = $this->sendRequest(
-            'POST',
-            $endpoint,
-            'v1/contacts',
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test',
-                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => [
-                    'invalid' => 'value'
-                ]
-            ]
-        );
-        $content = $response->getBody()->getContents();
-        $this->assertSame(422, $response->getStatusCode(), $content);
-        $this->assertJsonStringEqualsJsonString(
-            $this->jsonEncodeError('Invalid request body: undefined address type invalid given'),
             $content
         );
     }
@@ -829,9 +1210,6 @@ YAML;
         Connection $db,
         Url $endpoint
     ): void {
-        $expected = $this->jsonEncodeError(
-            'Invalid request body: the fields id, full_name and default_channel must be present and of type string'
-        );
 
         // missing id
         $response = $this->sendRequest(
@@ -846,7 +1224,10 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
-        $this->assertJsonStringEqualsJsonString($expected, $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: the field id must be present'),
+            $content
+        );
 
         // missing name
         $response = $this->sendRequest(
@@ -861,7 +1242,10 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
-        $this->assertJsonStringEqualsJsonString($expected, $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: the field full_name must be present'),
+            $content
+        );
 
         // missing default_channel
         $response = $this->sendRequest(
@@ -876,7 +1260,161 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
-        $this->assertJsonStringEqualsJsonString($expected, $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: the field default_channel must be present'),
+            $content
+        );
+
+        // missing address type
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: the field addresses must be present'),
+            $content
+        );
+    }
+
+    /**
+     * @dataProvider apiTestBackends
+     */
+    public function testPutToUpdateWithInvalidFieldFormat(
+        Connection $db,
+        Url $endpoint
+    ): void {
+        // invalid id
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
+            json:  [
+                'id' => [BaseApiV1TestCase::CONTACT_UUID],
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com']
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects id to be of type string'),
+            $content
+        );
+
+        // invalid name
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name' => ['Test'],
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com']
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects full_name to be of type string'),
+            $content
+        );
+
+        // invalid default_channel
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name' => 'Test',
+                'default_channel' => [BaseApiV1TestCase::CHANNEL_UUID],
+                'addresses' => ['email' => 'test@example.com']
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects default_channel to be of type string'),
+            $content
+        );
+
+        // invalid addresses
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => 'test@example.com'
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError(
+                'Invalid request body: an address according to default_channel type email is required'
+            ),
+            $content
+        );
+
+        // invalid username
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com'],
+                'username' => ['test']
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects username to be of type string'),
+            $content
+        );
+
+        // invalid groups
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com'],
+                'groups' => BaseApiV1TestCase::GROUP_UUID
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects groups to be of type array'),
+            $content
+        );
     }
 
     /**
@@ -894,6 +1432,7 @@ YAML;
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -969,6 +1508,7 @@ YAML;
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -990,7 +1530,7 @@ YAML;
             'username' => null,
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             'groups' => [],
-            'addresses' => new stdClass()
+            'addresses' => ['email' => 'test@example.com']
         ]), $content);
     }
 
@@ -1008,6 +1548,7 @@ YAML;
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID_3,
+                'addresses' => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -1030,6 +1571,7 @@ YAML;
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
                 'groups' => [BaseApiV1TestCase::GROUP_UUID_3],
+                'addresses' => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -1059,7 +1601,9 @@ YAML;
         $content = $response->getBody()->getContents();
         $this->assertSame(422, $response->getStatusCode(), $content);
         $this->assertJsonStringEqualsJsonString(
-            $this->jsonEncodeError('Invalid request body: undefined address type invalid given'),
+            $this->jsonEncodeError(
+                'Invalid request body: an address according to default_channel type email is required'
+            ),
             $content
         );
     }
@@ -1069,10 +1613,6 @@ YAML;
      */
     public function testPutToCreateWithMissingRequiredFields(Connection $db, Url $endpoint): void
     {
-        $expected = $this->jsonEncodeError(
-            'Invalid request body: the fields id, full_name and default_channel must be present and of type string'
-        );
-
         // missing full_name
         $response = $this->sendRequest(
             'PUT',
@@ -1086,7 +1626,10 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(422, $response->getStatusCode(), $content);
-        $this->assertJsonStringEqualsJsonString($expected, $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: the field full_name must be present'),
+            $content
+        );
 
         // missing id
         $response = $this->sendRequest(
@@ -1101,7 +1644,10 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(422, $response->getStatusCode(), $content);
-        $this->assertJsonStringEqualsJsonString($expected, $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: the field id must be present'),
+            $content
+        );
 
         // missing default_channel
         $response = $this->sendRequest(
@@ -1115,7 +1661,160 @@ YAML;
         );
         $content = $response->getBody()->getContents();
         $this->assertEquals(422, $response->getStatusCode(), $content);
-        $this->assertJsonStringEqualsJsonString($expected, $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: the field default_channel must be present'),
+            $content
+        );
+
+        // missing addresses
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+            ]
+        );
+        $content = $response->getBody()->getContents();
+        $this->assertEquals(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: the field addresses must be present'),
+            $content
+        );
+    }
+
+    /**
+     * @dataProvider apiTestBackends
+     */
+    public function testPutToCreateWithInvalidFieldFormat(
+        Connection $db,
+        Url $endpoint
+    ): void {
+        // invalid id
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
+            json:  [
+                'id' => [BaseApiV1TestCase::CONTACT_UUID_3],
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com']
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects id to be of type string'),
+            $content
+        );
+
+        // invalid name
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name' => ['Test'],
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com']
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects full_name to be of type string'),
+            $content
+        );
+
+        // invalid default_channel
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name' => 'Test',
+                'default_channel' => [BaseApiV1TestCase::CHANNEL_UUID],
+                'addresses' => ['email' => 'test@example.com']
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects default_channel to be of type string'),
+            $content
+        );
+
+        // invalid addresses
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => 'test@example.com'
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError(
+                'Invalid request body: an address according to default_channel type email is required'
+            ),
+            $content
+        );
+
+        // invalid username
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com'],
+                'username' => ['test']
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects username to be of type string'),
+            $content
+        );
+
+        // invalid groups
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com'],
+                'groups' => BaseApiV1TestCase::GROUP_UUID
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects groups to be of type array'),
+            $content
+        );
     }
 
     /**
@@ -1133,6 +1832,7 @@ YAML;
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
                 'groups' => [BaseApiV1TestCase::GROUP_UUID],
+                'addresses' => ['email' => 'test@example.com']
             ]
         );
 
@@ -1153,7 +1853,7 @@ YAML;
             'username' => null,
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             'groups' => [BaseApiV1TestCase::GROUP_UUID],
-            'addresses' => new stdClass()
+            'addresses' => ['email' => 'test@example.com']
         ]), $content);
 
         // Then remove it
@@ -1165,7 +1865,8 @@ YAML;
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'groups' => []
+                'groups' => [],
+                'addresses' => ['email' => 'test@example.com']
             ]
         );
 
@@ -1186,7 +1887,7 @@ YAML;
             'username' => null,
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             'groups' => [],
-            'addresses' => new stdClass()
+            'addresses' => ['email' => 'test@example.com']
         ]), $content);
 
         // And add it again
@@ -1198,7 +1899,8 @@ YAML;
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'groups' => [BaseApiV1TestCase::GROUP_UUID]
+                'groups' => [BaseApiV1TestCase::GROUP_UUID],
+                'addresses' => ['email' => 'test@example.com']
             ]
         );
 
@@ -1219,7 +1921,7 @@ YAML;
             'username' => null,
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             'groups' => [BaseApiV1TestCase::GROUP_UUID],
-            'addresses' => new stdClass()
+            'addresses' => ['email' => 'test@example.com']
         ]), $content);
     }
 
@@ -1279,8 +1981,8 @@ YAML;
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
                 'addresses' => [
-                    'webhook' => 'https://example.com/webhook',
-                    'rocketchat' => 'https://chat.example.com/webhook'
+                    'email' => 'test@example.com',
+                    'webhook' => 'https://example.com/webhook'
                 ]
             ]
         );
@@ -1303,8 +2005,8 @@ YAML;
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             'groups' => [],
             'addresses' => [
-                'webhook' => 'https://example.com/webhook',
-                'rocketchat' => 'https://chat.example.com/webhook'
+                'email' => 'test@example.com',
+                'webhook' => 'https://example.com/webhook'
             ]
         ]), $content);
 

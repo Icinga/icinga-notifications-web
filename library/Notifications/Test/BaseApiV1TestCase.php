@@ -95,6 +95,14 @@ class BaseApiV1TestCase extends TestCase
                 ->limit(1)
         )->fetchColumn();
 
+        $channelType = $db->select(
+            (new Select())
+                ->from('channel')
+                ->columns(['type'])
+                ->where('external_uuid = ?', self::CHANNEL_UUID)
+                ->limit(1)
+        )->fetchColumn();
+
         $db->insert('contact', [
             'full_name' => 'Test',
             'username' => 'test',
@@ -109,10 +117,27 @@ class BaseApiV1TestCase extends TestCase
             'external_uuid' => self::CONTACT_UUID_2,
             'changed_at' => (int) (new DateTime())->format("Uv"),
         ]);
+
+        $contactIds = $db->select(
+            (new Select())
+            ->from('contact')
+            ->columns('id')
+            ->where(['external_uuid IN (?)' => [self::CONTACT_UUID, self::CONTACT_UUID_2]])
+        )->fetchAll(\PDO::FETCH_COLUMN);
+
+        foreach ($contactIds as $contactId) {
+            $db->insert('contact_address', [
+                'contact_id' => $contactId,
+                'type' => $channelType,
+                'address' => 'test@example.com',
+                'changed_at' => (int) (new DateTime())->format("Uv"),
+            ]);
+        }
     }
 
     protected static function deleteContacts(Connection $db): void
     {
+        $db->delete('contact_address');
         $db->delete('contact', "external_uuid in ('" . self::CONTACT_UUID . "', '" . self::CONTACT_UUID_2 . "')");
     }
 

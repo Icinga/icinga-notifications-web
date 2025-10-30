@@ -182,10 +182,7 @@
                                         "$ref": "#/components/examples/InvalidRequestBodyId"
                                     },
                                     "InvalidFilterParameter": {
-                                        "summary": "Invalid filter parameter",
-                                        "value": {
-                                            "message": "Invalid request parameter: Filter column x given, only id, name and type are allowed"
-                                        }
+                                        "$ref": "#/components/examples/InvalidFilterParameter"
                                     }
                                 }
                             }
@@ -429,6 +426,9 @@
                                             "message": "Contactgroup already exists"
                                         }
                                     },
+                                    "InvalidRequestBodyFieldFormat": {
+                                        "$ref": "#/components/examples/InvalidRequestBodyFieldFormat"
+                                    },
                                     "InvalidRequestBodyId": {
                                         "$ref": "#/components/examples/InvalidRequestBodyId"
                                     },
@@ -436,10 +436,7 @@
                                         "$ref": "#/components/examples/IdentifierMismatch"
                                     },
                                     "MissingRequiredRequestBodyField": {
-                                        "summary": "Missing required request body field",
-                                        "value": {
-                                            "message": "Invalid request body: the fields id and name must be present and of type string"
-                                        }
+                                        "$ref": "#/components/examples/MissingRequiredRequestBodyField"
                                     },
                                     "InvalidUserFormat": {
                                         "$ref": "#/components/examples/InvalidUserFormat"
@@ -608,14 +605,14 @@
                                             "message": "Contactgroup already exists"
                                         }
                                     },
+                                    "InvalidRequestBodyFieldFormat": {
+                                        "$ref": "#/components/examples/InvalidRequestBodyFieldFormat"
+                                    },
                                     "InvalidRequestBodyId": {
                                         "$ref": "#/components/examples/InvalidRequestBodyId"
                                     },
                                     "MissingRequiredRequestBodyField": {
-                                        "summary": "Missing required request body field",
-                                        "value": {
-                                            "message": "Invalid request body: the fields id and name must be present and of type string"
-                                        }
+                                        "$ref": "#/components/examples/MissingRequiredRequestBodyField"
                                     },
                                     "InvalidUserFormat": {
                                         "$ref": "#/components/examples/InvalidUserFormat"
@@ -803,10 +800,7 @@
                                         "$ref": "#/components/examples/InvalidRequestBodyId"
                                     },
                                     "InvalidFilterParameter": {
-                                        "summary": "Invalid filter parameter",
-                                        "value": {
-                                            "message": "Invalid request parameter: Filter column x given, only id and name are allowed"
-                                        }
+                                        "$ref": "#/components/examples/InvalidFilterParameter"
                                     }
                                 }
                             }
@@ -952,14 +946,14 @@
                                             "message": "Contactgroup already exists"
                                         }
                                     },
+                                    "InvalidRequestBodyFieldFormat": {
+                                        "$ref": "#/components/examples/InvalidRequestBodyFieldFormat"
+                                    },
                                     "InvalidRequestBodyId": {
                                         "$ref": "#/components/examples/InvalidRequestBodyId"
                                     },
                                     "MissingRequiredRequestBodyField": {
-                                        "summary": "Missing required request body field",
-                                        "value": {
-                                            "message": "Invalid request body: the fields id and name must be present and of type string"
-                                        }
+                                        "$ref": "#/components/examples/MissingRequiredRequestBodyField"
                                     },
                                     "InvalidUserFormat": {
                                         "$ref": "#/components/examples/InvalidUserFormat"
@@ -1163,9 +1157,6 @@
                                     },
                                     "UnexpectedQueryParameter": {
                                         "$ref": "#/components/examples/UnexpectedQueryParameter"
-                                    },
-                                    "InvalidDefaultChannelUUID": {
-                                        "$ref": "#/components/examples/InvalidDefaultChannelUUID"
                                     }
                                 }
                             }
@@ -1218,6 +1209,9 @@
                                             "message": "Contact already exists"
                                         }
                                     },
+                                    "InvalidRequestBodyFieldFormat": {
+                                        "$ref": "#/components/examples/InvalidRequestBodyFieldFormat"
+                                    },
                                     "InvalidRequestBodyId": {
                                         "$ref": "#/components/examples/InvalidRequestBodyId"
                                     },
@@ -1225,10 +1219,7 @@
                                         "$ref": "#/components/examples/IdentifierMismatch"
                                     },
                                     "MissingRequiredRequestBodyField": {
-                                        "summary": "Missing required request body field",
-                                        "value": {
-                                            "message": "Invalid request body: the fields id, full_name and default_channel must be present and of type string"
-                                        }
+                                        "$ref": "#/components/examples/MissingRequiredRequestBodyField"
                                     },
                                     "ContactgroupNotExists": {
                                         "$ref": "#/components/examples/ContactgroupNotExists"
@@ -1245,6 +1236,9 @@
                                     "InvalidContactgroupUUIDFormat": {
                                         "$ref": "#/components/examples/InvalidContactgroupUUIDFormat"
                                     },
+                                    "InvalidDefaultChannelUUID": {
+                                        "$ref": "#/components/examples/InvalidDefaultChannelUUID"
+                                    },
                                     "InvalidEmailAddress": {
                                         "$ref": "#/components/examples/InvalidEmailAddress"
                                     },
@@ -1253,6 +1247,9 @@
                                     },
                                     "InvalidGroupsFormat": {
                                         "$ref": "#/components/examples/InvalidGroupsFormat"
+                                    },
+                                    "MissingAddress": {
+                                        "$ref": "#/components/examples/MissingAddress"
                                     },
                                     "UsernameAlreadyExists": {
                                         "$ref": "#/components/examples/UsernameAlreadyExists"
@@ -1378,9 +1375,6 @@
                                     },
                                     "UnexpectedQueryParameter": {
                                         "$ref": "#/components/examples/UnexpectedQueryParameter"
-                                    },
-                                    "InvalidDefaultChannelUUID": {
-                                        "$ref": "#/components/examples/InvalidDefaultChannelUUID"
                                     }
                                 }
                             }
@@ -1415,14 +1409,14 @@
                                             "message": "Contact already exists"
                                         }
                                     },
+                                    "InvalidRequestBodyFieldFormat": {
+                                        "$ref": "#/components/examples/InvalidRequestBodyFieldFormat"
+                                    },
                                     "InvalidRequestBodyId": {
                                         "$ref": "#/components/examples/InvalidRequestBodyId"
                                     },
                                     "MissingRequiredRequestBodyField": {
-                                        "summary": "Missing required request body field",
-                                        "value": {
-                                            "message": "Invalid request body: the fields id, full_name and default_channel must be present and of type string"
-                                        }
+                                        "$ref": "#/components/examples/MissingRequiredRequestBodyField"
                                     },
                                     "ContactgroupNotExists": {
                                         "$ref": "#/components/examples/ContactgroupNotExists"
@@ -1439,6 +1433,9 @@
                                     "InvalidContactgroupUUIDFormat": {
                                         "$ref": "#/components/examples/InvalidContactgroupUUIDFormat"
                                     },
+                                    "InvalidDefaultChannelUUID": {
+                                        "$ref": "#/components/examples/InvalidDefaultChannelUUID"
+                                    },
                                     "InvalidEmailAddress": {
                                         "$ref": "#/components/examples/InvalidEmailAddress"
                                     },
@@ -1447,6 +1444,9 @@
                                     },
                                     "InvalidGroupsFormat": {
                                         "$ref": "#/components/examples/InvalidGroupsFormat"
+                                    },
+                                    "MissingAddress": {
+                                        "$ref": "#/components/examples/MissingAddress"
                                     },
                                     "UsernameAlreadyExists": {
                                         "$ref": "#/components/examples/UsernameAlreadyExists"
@@ -1635,10 +1635,7 @@
                                         "$ref": "#/components/examples/InvalidRequestBodyId"
                                     },
                                     "InvalidFilterParameter": {
-                                        "summary": "Invalid filter parameter",
-                                        "value": {
-                                            "message": "Invalid request parameter: Filter column x given, only id, full_name and username are allowed"
-                                        }
+                                        "$ref": "#/components/examples/InvalidFilterParameter"
                                     }
                                 }
                             }
@@ -1750,9 +1747,6 @@
                                     },
                                     "UnexpectedQueryParameter": {
                                         "$ref": "#/components/examples/UnexpectedQueryParameter"
-                                    },
-                                    "InvalidDefaultChannelUUID": {
-                                        "$ref": "#/components/examples/InvalidDefaultChannelUUID"
                                     }
                                 }
                             }
@@ -1787,14 +1781,14 @@
                                             "message": "Contact already exists"
                                         }
                                     },
+                                    "InvalidRequestBodyFieldFormat": {
+                                        "$ref": "#/components/examples/InvalidRequestBodyFieldFormat"
+                                    },
                                     "InvalidRequestBodyId": {
                                         "$ref": "#/components/examples/InvalidRequestBodyId"
                                     },
                                     "MissingRequiredRequestBodyField": {
-                                        "summary": "Missing required request body field",
-                                        "value": {
-                                            "message": "Invalid request body: the fields id, full_name and default_channel must be present and of type string"
-                                        }
+                                        "$ref": "#/components/examples/MissingRequiredRequestBodyField"
                                     },
                                     "ContactgroupNotExists": {
                                         "$ref": "#/components/examples/ContactgroupNotExists"
@@ -1811,6 +1805,9 @@
                                     "InvalidContactgroupUUIDFormat": {
                                         "$ref": "#/components/examples/InvalidContactgroupUUIDFormat"
                                     },
+                                    "InvalidDefaultChannelUUID": {
+                                        "$ref": "#/components/examples/InvalidDefaultChannelUUID"
+                                    },
                                     "InvalidEmailAddress": {
                                         "$ref": "#/components/examples/InvalidEmailAddress"
                                     },
@@ -1819,6 +1816,9 @@
                                     },
                                     "InvalidGroupsFormat": {
                                         "$ref": "#/components/examples/InvalidGroupsFormat"
+                                    },
+                                    "MissingAddress": {
+                                        "$ref": "#/components/examples/MissingAddress"
                                     },
                                     "UsernameAlreadyExists": {
                                         "$ref": "#/components/examples/UsernameAlreadyExists"
@@ -2030,7 +2030,8 @@
                 "required": [
                     "id",
                     "full_name",
-                    "default_channel"
+                    "default_channel",
+                    "addresses"
                 ],
                 "properties": {
                     "id": {
@@ -2227,6 +2228,12 @@
                     "message": "Invalid request body: expects groups to be an array"
                 }
             },
+            "MissingAddress": {
+                "summary": "Missing address",
+                "value": {
+                    "message": "Invalid request body: Address according to default_channel type x is required"
+                }
+            },
             "UsernameAlreadyExists": {
                 "summary": "Username already exists",
                 "value": {
@@ -2257,10 +2264,22 @@
                     "message": "Invalid request header: Content-Type must be application/json"
                 }
             },
+            "InvalidFilterParameter": {
+                "summary": "Invalid filter parameter",
+                "value": {
+                    "message": "Invalid request parameter: Filter column x is not allowed"
+                }
+            },
             "InvalidIdentifier": {
                 "summary": "Identifier is not valid",
                 "value": {
                     "message": "The given identifier is not a valid UUID"
+                }
+            },
+            "InvalidRequestBodyFieldFormat": {
+                "summary": "Invalid request body field format",
+                "value": {
+                    "message": "Invalid request body: expects x to be of type y"
                 }
             },
             "InvalidRequestBodyFormat": {
@@ -2273,6 +2292,12 @@
                 "summary": "Invalid request body id",
                 "value": {
                     "message": "Invalid request body: given id is not a valid UUID"
+                }
+            },
+            "MissingRequiredRequestBodyField": {
+                "summary": "Missing required request body field",
+                "value": {
+                    "message": "Invalid request body: the field x must be present"
                 }
             },
             "NoIdentifierWithFilter": {

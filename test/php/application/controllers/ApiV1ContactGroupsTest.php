@@ -372,10 +372,6 @@ YAML;
         Connection $db,
         Url $endpoint
     ): void {
-        $expected = $this->jsonEncodeError(
-            'Invalid request body: the fields id and name must be present and of type string'
-        );
-
         // missing id
         $response = $this->sendRequest(
             'POST',
@@ -389,7 +385,10 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
-        $this->assertJsonStringEqualsJsonString($expected, $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: the field id must be present'),
+            $content
+        );
 
         // missing name
         $response = $this->sendRequest(
@@ -404,7 +403,75 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
-        $this->assertJsonStringEqualsJsonString($expected, $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: the field name must be present'),
+            $content
+        );
+    }
+
+    /**
+     * @dataProvider apiTestBackends
+     */
+    public function testPostToReplaceWithInvalidFieldsFormat(
+        Connection $db,
+        Url $endpoint
+    ): void {
+        // invalid id
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
+            json: [
+                'id' => [BaseApiV1TestCase::GROUP_UUID_3],
+                'name' => 'Test',
+                'users' => []
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects id to be of type string'),
+            $content
+        );
+
+        // invalid name
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
+            json:  [
+                'id' => BaseApiV1TestCase::GROUP_UUID_3,
+                'name' => ['Test'],
+                'users' => []
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects name to be of type string'),
+            $content
+        );
+
+        // invalid users
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
+            json: [
+                'id' => BaseApiV1TestCase::GROUP_UUID_3,
+                'name' => 'Test',
+                'users' => BaseApiV1TestCase::CONTACT_UUID_3
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects users to be an array'),
+            $content
+        );
     }
 
     /**
@@ -455,10 +522,6 @@ YAML;
      */
     public function testPostToCreateWithMissingRequiredFields(Connection $db, Url $endpoint): void
     {
-        $expected = $this->jsonEncodeError(
-            'Invalid request body: the fields id and name must be present and of type string'
-        );
-
         // missing name
         $response = $this->sendRequest(
             'POST',
@@ -472,7 +535,10 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(422, $response->getStatusCode(), $content);
-        $this->assertJsonStringEqualsJsonString($expected, $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: the field name must be present'),
+            $content
+        );
 
         // missing id
         $response = $this->sendRequest(
@@ -487,7 +553,75 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(422, $response->getStatusCode(), $content);
-        $this->assertJsonStringEqualsJsonString($expected, $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: the field id must be present'),
+            $content
+        );
+    }
+
+    /**
+     * @dataProvider apiTestBackends
+     */
+    public function testPostToCreateWithInvalidFieldsFormat(
+        Connection $db,
+        Url $endpoint
+    ): void {
+        // invalid id
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contact-groups/',
+            json: [
+                'id' => [BaseApiV1TestCase::GROUP_UUID_3],
+                'name' => 'Test',
+                'users' => []
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects id to be of type string'),
+            $content
+        );
+
+        // invalid name
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contact-groups/',
+            json:  [
+                'id' => BaseApiV1TestCase::GROUP_UUID_3,
+                'name' => ['Test'],
+                'users' => []
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects name to be of type string'),
+            $content
+        );
+
+        // invalid users
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contact-groups/',
+            json: [
+                'id' => BaseApiV1TestCase::GROUP_UUID_3,
+                'name' => 'Test',
+                'users' => BaseApiV1TestCase::CONTACT_UUID_3
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects users to be an array'),
+            $content
+        );
     }
 
     /**
@@ -647,10 +781,6 @@ YAML;
         Connection $db,
         Url $endpoint
     ): void {
-        $expected = $this->jsonEncodeError(
-            'Invalid request body: the fields id and name must be present and of type string'
-        );
-
         // missing id
         $response = $this->sendRequest(
             'PUT',
@@ -664,7 +794,10 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
-        $this->assertJsonStringEqualsJsonString($expected, $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: the field id must be present'),
+            $content
+        );
 
         // missing name
         $response = $this->sendRequest(
@@ -679,7 +812,75 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertSame(422, $response->getStatusCode(), $content);
-        $this->assertJsonStringEqualsJsonString($expected, $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: the field name must be present'),
+            $content
+        );
+    }
+
+    /**
+     * @dataProvider apiTestBackends
+     */
+    public function testPutToUpdateWithInvalidFieldsFormat(
+        Connection $db,
+        Url $endpoint
+    ): void {
+        // invalid id
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
+            json: [
+                'id' => [BaseApiV1TestCase::GROUP_UUID],
+                'name' => 'Test',
+                'users' => []
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects id to be of type string'),
+            $content
+        );
+
+        // invalid name
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
+            json:  [
+                'id' => BaseApiV1TestCase::GROUP_UUID,
+                'name' => ['Test'],
+                'users' => []
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects name to be of type string'),
+            $content
+        );
+
+        // invalid users
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
+            json: [
+                'id' => BaseApiV1TestCase::GROUP_UUID,
+                'name' => 'Test',
+                'users' => BaseApiV1TestCase::CONTACT_UUID
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects users to be an array'),
+            $content
+        );
     }
 
     /**
@@ -857,30 +1058,29 @@ YAML;
      */
     public function testPutToCreateWithMissingRequiredFields(Connection $db, Url $endpoint): void
     {
-        $expected = $this->jsonEncodeError(
-            'Invalid request body: the fields id and name must be present and of type string'
-        );
-
         // missing name
         $response = $this->sendRequest(
             'PUT',
             $endpoint,
-            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID_3,
             json:  [
-                'id' => BaseApiV1TestCase::GROUP_UUID,
+                'id' => BaseApiV1TestCase::GROUP_UUID_3,
                 'users' => []
             ]
         );
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(422, $response->getStatusCode(), $content);
-        $this->assertJsonStringEqualsJsonString($expected, $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: the field name must be present'),
+            $content
+        );
 
         // missing id
         $response = $this->sendRequest(
             'PUT',
             $endpoint,
-            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID_3,
             json:  [
                 'name' => 'Test',
                 'users' => []
@@ -889,7 +1089,75 @@ YAML;
         $content = $response->getBody()->getContents();
 
         $this->assertEquals(422, $response->getStatusCode(), $content);
-        $this->assertJsonStringEqualsJsonString($expected, $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: the field id must be present'),
+            $content
+        );
+    }
+
+    /**
+     * @dataProvider apiTestBackends
+     */
+    public function testPutToCreateWithInvalidFieldsFormat(
+        Connection $db,
+        Url $endpoint
+    ): void {
+        // invalid id
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID_3,
+            json: [
+                'id' => [BaseApiV1TestCase::GROUP_UUID_3],
+                'name' => 'Test',
+                'users' => []
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects id to be of type string'),
+            $content
+        );
+
+        // invalid name
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID_3,
+            json:  [
+                'id' => BaseApiV1TestCase::GROUP_UUID_3,
+                'name' => ['Test'],
+                'users' => []
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects name to be of type string'),
+            $content
+        );
+
+        // invalid users
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID_3,
+            json: [
+                'id' => BaseApiV1TestCase::GROUP_UUID_3,
+                'name' => 'Test',
+                'users' => BaseApiV1TestCase::CONTACT_UUID
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(422, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeError('Invalid request body: expects users to be an array'),
+            $content
+        );
     }
 
     /**
