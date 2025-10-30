@@ -193,6 +193,7 @@ class Timeline extends BaseHtmlElement implements EntryProvider
                     yield $entry;
                 }
 
+                $entry->calculateAndSetWidthClass($this->getGrid());
                 $occupiedCells += $getDesiredCells($entry);
             }
 
@@ -250,6 +251,7 @@ class Timeline extends BaseHtmlElement implements EntryProvider
                         ->setStart($start)
                         ->setEnd($end)
                         ->setFlyoutContent($entry->getFlyoutContent())
+                        ->calculateAndSetWidthClass($this->getGrid())
                         ->setMember($entry->getMember());
 
                     if (! $this->minimalLayout) {
