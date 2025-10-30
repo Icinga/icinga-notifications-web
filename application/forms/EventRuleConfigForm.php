@@ -11,18 +11,18 @@ use Icinga\Module\Notifications\Forms\EventRuleConfigElements\EscalationRecipien
 use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Model\RuleEscalation;
 use ipl\Html\Attributes;
-use ipl\Html\Form;
 use ipl\Html\FormElement\SubmitButtonElement;
 use ipl\Html\HtmlElement;
 use ipl\Html\ValidHtml;
 use ipl\I18n\Translation;
 use ipl\Sql\Connection;
 use ipl\Web\Common\CsrfCounterMeasure;
+use ipl\Web\Compat\CompatForm;
 use ipl\Web\Url;
 use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
 
-class EventRuleConfigForm extends Form
+class EventRuleConfigForm extends CompatForm
 {
     use CsrfCounterMeasure;
     use Translation;
@@ -49,6 +49,9 @@ class EventRuleConfigForm extends Form
     {
         $this->configProvider = $configProvider;
         $this->searchEditorUrl = $searchEditorUrl;
+
+        $this->addElementLoader('Icinga\\Module\\Notifications\\Forms\\EventRuleConfigElements');
+        $this->applyDefaultElementDecorators();
     }
 
     public function hasBeenSubmitted(): bool
@@ -96,11 +99,11 @@ class EventRuleConfigForm extends Form
             new HtmlElement('div', Attributes::create(['class' => 'connector-line']))
         );
 
-        $escalations = new EventRuleConfigElements\Escalations('escalations', [
-            'provider' => $this->configProvider,
-            'required' => true
+        $this->addElement('escalations', 'escalations', [
+            'decorators'    => [],
+            'provider'      => $this->configProvider,
+            'required'      => true
         ]);
-        $this->addElement($escalations);
 
         $this->addElement('hidden', 'id', ['required' => true]);
 

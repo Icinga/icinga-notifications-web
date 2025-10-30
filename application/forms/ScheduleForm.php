@@ -38,6 +38,7 @@ class ScheduleForm extends CompatForm
     public function __construct(Connection $db)
     {
         $this->db = $db;
+        $this->applyDefaultElementDecorators();
     }
 
     public function setSubmitLabel(string $label): self
@@ -190,7 +191,7 @@ class ScheduleForm extends CompatForm
             $this->getElement('submit')->prependWrapper((new HtmlDocument())->setHtmlContent($removeBtn));
         }
 
-        $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
+        $this->addCsrfCounterMeasure(Session::getSession()->getId());
     }
 
     /**

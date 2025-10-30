@@ -11,7 +11,6 @@ use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Contactgroup;
 use Icinga\Module\Notifications\Model\Rotation;
 use Icinga\Module\Notifications\Model\RotationMember;
-use Icinga\Module\Notifications\Model\RuleEscalation;
 use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use Icinga\Web\Session;
 use ipl\Html\FormElement\SubmitElement;
@@ -21,6 +20,7 @@ use ipl\Sql\Select;
 use ipl\Stdlib\Filter;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
+use ipl\Web\FormDecorator\IcingaFormDecorator;
 use ipl\Web\FormElement\TermInput;
 use ipl\Web\FormElement\TermInput\Term;
 
@@ -37,11 +37,12 @@ class ContactGroupForm extends CompatForm
     public function __construct(Connection $db)
     {
         $this->db = $db;
+        $this->applyDefaultElementDecorators();
     }
 
     protected function assemble(): void
     {
-        $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
+        $this->addCsrfCounterMeasure(Session::getSession()->getId());
 
         $callValidation = function (array $terms) {
             $this->validateTerms($terms);
@@ -62,6 +63,11 @@ class ContactGroupForm extends CompatForm
             ->on(TermInput::ON_ADD, $callValidation)
             ->on(TermInput::ON_SAVE, $callValidation)
             ->on(TermInput::ON_PASTE, $callValidation);
+
+            // TODO: TermInput is not compatible with the new decorators yet: https://github.com/Icinga/ipl-web/pull/317
+            $legacyDecorator = new IcingaFormDecorator();
+            $termInput->setDefaultElementDecorator($legacyDecorator);
+            $legacyDecorator->decorate($termInput);
 
         $this->addElement(
             'text',

@@ -15,7 +15,8 @@ use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use Icinga\Web\Session;
 use ipl\Html\Attributes;
 use ipl\Html\Contract\FormSubmitElement;
-use ipl\Html\FormElement\FieldsetElement;
+use ipl\Html\FormDecoration\DescriptionDecorator;
+use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\Sql\Connection;
@@ -25,7 +26,6 @@ use ipl\Validator\EmailAddressValidator;
 use ipl\Validator\StringLengthValidator;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
-use ipl\Web\FormElement\SuggestionElement;
 use ipl\Web\Url;
 
 class ContactForm extends CompatForm
@@ -44,6 +44,7 @@ class ContactForm extends CompatForm
     public function __construct(Connection $db)
     {
         $this->db = $db;
+        $this->applyDefaultElementDecorators();
 
         $this->on(self::ON_SENT, function () {
             if ($this->hasBeenRemoved()) {
@@ -80,14 +81,8 @@ class ContactForm extends CompatForm
         $this->addCsrfCounterMeasure(Session::getSession()->getId());
 
         // Fieldset for contact full name and username
-        $contact = (new FieldsetElement(
-            'contact',
-            [
-                'label' => $this->translate('Contact'),
-            ]
-        ));
-
-        $this->addElement($contact);
+        $this->addElement('fieldset', 'contact', ['label' => $this->translate('Contact')]);
+        $contact = $this->getElement('contact');
 
         $contact->addElement(
             'text',
@@ -98,49 +93,48 @@ class ContactForm extends CompatForm
             ]
         );
 
+        // TODO: remove this once https://github.com/Icinga/ipl-html/issues/178 is fixed
+        $contact->addElementLoader('ipl\\Web\\FormElement', 'Element');
+
+        $contact->addElement(
+            'suggestion',
+            'username',
+            [
+                'label' => $this->translate('Icinga Web User'),
+                'description' => $this->translate(
+                    'Use this to associate actions in the UI, such as incident management, with this contact.'
+                    . ' To successfully receive desktop notifications, this is also required.'
+                ),
+                'suggestionsUrl' => Url::fromPath(
+                    'notifications/contact/suggest-icinga-web-user',
+                    ['showCompact' => true, '_disableLayout' => 1]
+                ),
+                'validators' => [
+                    new StringLengthValidator(['max' => 254]),
+                    new CallbackValidator(function ($value, $validator) {
+                        $contact = Contact::on($this->db)
+                            ->filter(Filter::equal('username', $value));
+                        if ($this->contactId) {
+                            $contact->filter(Filter::unequal('id', $this->contactId));
+                        }
+
+                        if ($contact->first() !== null) {
+                            $validator->addMessage($this->translate(
+                                'A contact with the same username already exists.'
+                            ));
+
+                            return false;
+                        }
+
+                        return true;
+                    })
+                ]
+            ]
+        );
         $contact
-            ->addElement(
-                new SuggestionElement(
-                    'username',
-                    Url::fromPath(
-                        'notifications/contact/suggest-icinga-web-user',
-                        ['showCompact' => true, '_disableLayout' => 1]
-                    ),
-                    [
-                        'label' => $this->translate('Icinga Web User'),
-                        'validators' => [
-                            new StringLengthValidator(['max' => 254]),
-                            new CallbackValidator(function ($value, $validator) {
-                                $contact = Contact::on($this->db)
-                                    ->filter(Filter::equal('username', $value));
-                                if ($this->contactId) {
-                                    $contact->filter(Filter::unequal('id', $this->contactId));
-                                }
-
-                                if ($contact->first() !== null) {
-                                    $validator->addMessage($this->translate(
-                                        'A contact with the same username already exists.'
-                                    ));
-
-                                    return false;
-                                }
-
-                                return true;
-                            })
-                        ]
-                    ]
-                )
-            )
-            ->addHtml(
-                new HtmlElement(
-                    'p',
-                    new Attributes(['class' => 'description']),
-                    new Text($this->translate(
-                        'Use this to associate actions in the UI, such as incident management, with this contact.'
-                        . ' To successfully receive desktop notifications, this is also required.'
-                    ))
-                )
-            );
+            ->getElement('username')
+            ->getDecorators()
+            ->replaceDecorator('Description', DescriptionDecorator::class, ['class' => 'description']);
 
         $channelQuery = Channel::on($this->db)
             ->columns(['id', 'name', 'type']);
@@ -157,6 +151,10 @@ class ContactForm extends CompatForm
             'default_channel_id',
             [
                 'label'             => $this->translate('Default Channel'),
+                'description'       => $this->translate(
+                    "Contact will be notified via the default channel, when no specific channel is configured"
+                    . " in an event rule."
+                ),
                 'required'          => true,
                 'class'             => 'autosubmit',
                 'disabledOptions'   => [''],
@@ -166,22 +164,18 @@ class ContactForm extends CompatForm
             ]
         );
 
+        $defaultChannel
+            ->getDecorators()
+            ->replaceDecorator('Description', DescriptionDecorator::class, ['class' => 'description']);
+        $this->decorate($defaultChannel);
+
         $contact->registerElement($defaultChannel);
 
         $this->addAddressElements($channelTypes[$defaultChannel->getValue()] ?? null);
 
         $this->addHtml(new HtmlElement('hr'));
 
-        $this->decorate($defaultChannel);
         $this->addHtml($defaultChannel);
-        $this->addHtml(new HtmlElement(
-            'p',
-            new Attributes(['class' => 'description']),
-            new Text($this->translate(
-                "Contact will be notified via the default channel, when no specific channel is configured"
-                . " in an event rule."
-            ))
-        ));
 
         $this->addElement(
             'submit',
@@ -205,9 +199,7 @@ class ContactForm extends CompatForm
             );
 
             $this->registerElement($deleteButton);
-            $this->getElement('submit')
-                ->getWrapper()
-                ->prepend($deleteButton);
+            $this->getElement('submit')->prependWrapper((new HtmlDocument())->addHtml($deleteButton));
         }
     }
 
@@ -466,14 +458,14 @@ class ContactForm extends CompatForm
             return;
         }
 
-        $address = new FieldsetElement('contact_address', ['label' => $this->translate('Channels')]);
+        $address = $this->createElement('fieldset', 'contact_address', ['label' => $this->translate('Channels')]);
+        $this->addElement($address);
+
         $address->addHtml(new HtmlElement(
             'p',
             new Attributes(['class' => 'description']),
             new Text($this->translate('Configure the channels available for this contact here.'))
         ));
-
-        $this->addElement($address);
 
         foreach ($plugins as $type => $name) {
             $element = $this->createElement('text', $type, [
