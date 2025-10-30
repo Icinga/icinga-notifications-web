@@ -6,7 +6,6 @@ namespace Icinga\Module\Notifications\Widget\Timeline;
 
 use DateInterval;
 use DateTime;
-use DateTimeZone;
 use Generator;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\RotationConfigForm;
@@ -80,11 +79,11 @@ class Rotation
      */
     public function fetchTimeperiodEntries(DateTime $after, DateTime $until): Generator
     {
-        $scheduleTimezone = new DateTimeZone($this->model->schedule->execute()->current()->timezone);
+        $displayTimezone = $after->getTimezone();
 
         $actualHandoff = null;
         if (RotationConfigForm::EXPERIMENTAL_OVERRIDES) {
-            $actualHandoff = $this->model->actual_handoff->setTimezone($scheduleTimezone);
+            $actualHandoff = $this->model->actual_handoff->setTimezone($displayTimezone);
         }
 
         $entries = $this->model->timeperiod->timeperiod_entry
@@ -100,8 +99,8 @@ class Rotation
                 )
             ));
         foreach ($entries as $timeperiodEntry) {
-            $timeperiodEntry->start_time->setTimezone($scheduleTimezone);
-            $timeperiodEntry->end_time->setTimezone($scheduleTimezone);
+            $timeperiodEntry->start_time->setTimezone($displayTimezone);
+            $timeperiodEntry->end_time->setTimezone($displayTimezone);
 
             if ($timeperiodEntry->member->contact->id !== null) {
                 $member = new Member($timeperiodEntry->member->contact->full_name);
@@ -121,7 +120,7 @@ class Rotation
                     }
                 } // TODO: Yearly? (Those unoptimized single occurrences)
 
-                $before = (clone $after)->setTimezone($scheduleTimezone)->setTime(
+                $before = (clone $after)->setTime(
                     (int) $timeperiodEntry->start_time->format('H'),
                     (int) $timeperiodEntry->start_time->format('i')
                 );
@@ -133,7 +132,7 @@ class Rotation
                     $firstHandoff = $timeperiodEntry->start_time;
                 }
 
-                $rrule = new RRule($timeperiodEntry->rrule);
+                $rrule = new RRule($timeperiodEntry->rrule, $displayTimezone->getName());
                 $rrule->startAt($firstHandoff);
 
                 $length = $timeperiodEntry->start_time->diff($timeperiodEntry->end_time);
