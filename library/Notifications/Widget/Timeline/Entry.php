@@ -101,6 +101,7 @@ class Entry extends TimeGrid\Entry
      * @param BaseGrid $grid
      * @param float $mediumThreshold Fraction of grid duration below which the entry is considered medium width
      * @param float $narrowThreshold Fraction of grid duration below which the entry is considered narrow
+     *
      * @return $this
      */
     public function calculateAndSetWidthClass(BaseGrid $grid, $mediumThreshold = 0.2, $narrowThreshold = 0.1): static
