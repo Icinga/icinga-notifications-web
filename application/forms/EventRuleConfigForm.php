@@ -195,7 +195,13 @@ class EventRuleConfigForm extends Form
      */
     public function createExternalSubmitButtons(): array
     {
-        $buttons = [];
+        $buttons = [
+            $this->createElement('submitButton', 'save', [
+                'data-progress-label' => $this->translate('Saving rule'),
+                'label' => $this->translate('Save'),
+                'form' => 'event-rule-config-form'
+            ])
+        ];
 
         if ((int) $this->getValue('id') !== -1) {
             $buttons[] = $this->createElement('submitButton', 'delete', [
@@ -206,12 +212,6 @@ class EventRuleConfigForm extends Form
                 'formnovalidate' => true
             ]);
         }
-
-        $buttons[] = $this->createElement('submitButton', 'save', [
-            'data-progress-label' => $this->translate('Saving rule'),
-            'label' => $this->translate('Save'),
-            'form' => 'event-rule-config-form'
-        ]);
 
         return $buttons;
     }
