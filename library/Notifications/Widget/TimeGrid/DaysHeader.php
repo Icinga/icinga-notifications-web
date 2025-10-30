@@ -6,7 +6,6 @@ namespace Icinga\Module\Notifications\Widget\TimeGrid;
 
 use DateInterval;
 use DateTime;
-use Icinga\Module\Notifications\Util\ScheduleDateTimeFactory;
 use IntlDateFormatter;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
@@ -53,14 +52,15 @@ class DaysHeader extends BaseHtmlElement
             $this->translate('Sun', 'sunday')
         ];
 
+        $displayTimezone = $this->startDay->getTimezone();
         $interval = new DateInterval('P1D');
-        $today = ScheduleDateTimeFactory::createDateTime()->setTime(0, 0);
+        $today = new DateTime('today', $displayTimezone);
         $time = clone $this->startDay;
         $dateFormatter = new IntlDateFormatter(
             Locale::getDefault(),
             IntlDateFormatter::MEDIUM,
             IntlDateFormatter::NONE,
-            ScheduleDateTimeFactory::getDisplayTimezone()
+            $displayTimezone
         );
 
         for ($i = 0; $i < $this->days; $i++) {

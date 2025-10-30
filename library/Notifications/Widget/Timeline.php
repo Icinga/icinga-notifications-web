@@ -8,7 +8,6 @@ use DateInterval;
 use DateTime;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\MoveRotationForm;
-use Icinga\Module\Notifications\Util\ScheduleDateTimeFactory;
 use Icinga\Module\Notifications\Widget\TimeGrid\DynamicGrid;
 use Icinga\Module\Notifications\Widget\TimeGrid\EntryProvider;
 use Icinga\Module\Notifications\Widget\TimeGrid\GridStep;
@@ -315,11 +314,7 @@ class Timeline extends BaseHtmlElement implements EntryProvider
         $entry = new HtmlElement('div', Attributes::create(['class' => 'rotation-name']));
 
         $form = new MoveRotationForm();
-        $form->setAction(
-            Links::moveRotation()
-                ->with(['display_timezone' => ScheduleDateTimeFactory::getDisplayTimezone()->getName()])
-                ->getAbsoluteUrl()
-        );
+        $form->setAction(Links::moveRotation()->getAbsoluteUrl());
         $form->populate([
             'rotation' => $rotation->getId(),
             'priority' => $rotation->getPriority()
@@ -366,14 +361,16 @@ class Timeline extends BaseHtmlElement implements EntryProvider
                 )
             );
 
+            $displayTimezone = $this->start->getTimezone();
+
             $dateFormatter = new IntlDateFormatter(
                 Locale::getDefault(),
                 IntlDateFormatter::NONE,
                 IntlDateFormatter::SHORT,
-                ScheduleDateTimeFactory::getDisplayTimezone()
+                $displayTimezone
             );
 
-            $now = ScheduleDateTimeFactory::createDateTime();
+            $now = new DateTime('now', $displayTimezone);
             $currentTime = new HtmlElement(
                 'div',
                 new Attributes(['class' => 'time-hand']),

@@ -10,7 +10,7 @@ use Icinga\Module\Notifications\Forms\MoveRotationForm;
 use Icinga\Module\Notifications\Forms\RotationConfigForm;
 use Icinga\Module\Notifications\Forms\ScheduleForm;
 use Icinga\Module\Notifications\Model\Schedule;
-use Icinga\Module\Notifications\Util\ScheduleDateTimeFactory;
+use Icinga\Module\Notifications\Util\ScheduleTimezoneStorage;
 use Icinga\Module\Notifications\Web\Control\TimezonePicker;
 use Icinga\Module\Notifications\Widget\Detail\ScheduleDetail;
 use Icinga\Module\Notifications\Widget\RecipientSuggestions;
@@ -37,6 +37,8 @@ class ScheduleController extends CompatController
             $this->httpNotFound(t('Schedule not found'));
         }
 
+        ScheduleTimezoneStorage::setScheduleTimezone($schedule->timezone);
+
         $this->addTitleTab(sprintf(t('Schedule: %s'), $schedule->name));
 
         $this->controls->addHtml(
@@ -54,15 +56,7 @@ class ScheduleController extends CompatController
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->populate(['mode' => $this->params->get('mode')])
             ->on(Form::ON_SUCCESS, function (ScheduleDetail\Controls $controls) use ($id) {
-                $redirectUrl = Links::schedule($id)->with(['mode' => $controls->getMode()]);
-                $requestUrl = Url::fromRequest();
-                $defaultTimezoneParam = TimezonePicker::DEFAULT_TIMEZONE_PARAM;
-                if ($requestUrl->hasParam($defaultTimezoneParam)) {
-                    $redirectUrl->addParams(
-                        [$defaultTimezoneParam => $requestUrl->getParam($defaultTimezoneParam)]
-                    );
-                }
-                $this->redirectNow($redirectUrl);
+                $this->redirectNow(Links::schedule($id)->with(['mode' => $controls->getMode()]));
             })
             ->handleRequest($this->getServerRequest());
 
@@ -123,10 +117,9 @@ class ScheduleController extends CompatController
     public function addRotationAction(): void
     {
         $scheduleId = (int) $this->params->getRequired('schedule');
-        $displayTimezone = $this->params->get('display_timezone');
-        $this->setTitle($this->translate('Add Rotation'));
-
         $scheduleTimezone = $this->getScheduleTimezone($scheduleId);
+        $displayTimezone = $this->params->get('display_timezone') ?? $scheduleTimezone;
+        $this->setTitle($this->translate('Add Rotation'));
 
         if ($displayTimezone !== $scheduleTimezone) {
             $this->addContent(new TimezoneWarning($scheduleTimezone));
@@ -162,11 +155,10 @@ class ScheduleController extends CompatController
     public function editRotationAction(): void
     {
         $id = (int) $this->params->getRequired('id');
-        $displayTimezone = $this->params->get('display_timezone');
         $scheduleId = (int) $this->params->getRequired('schedule');
-        $this->setTitle($this->translate('Edit Rotation'));
-
         $scheduleTimezone = $this->getScheduleTimezone($scheduleId);
+        $displayTimezone = $this->params->get('display_timezone') ?? $scheduleTimezone;
+        $this->setTitle($this->translate('Edit Rotation'));
 
         if ($displayTimezone !== $scheduleTimezone) {
             $this->addContent(new TimezoneWarning($scheduleTimezone));
@@ -267,7 +259,7 @@ class ScheduleController extends CompatController
         $defaultTimezoneParam = TimezonePicker::DEFAULT_TIMEZONE_PARAM;
         $timezoneParam = $this->params->shift($defaultTimezoneParam);
 
-        ScheduleDateTimeFactory::setDisplayTimezone($timezoneParam ?? $defaultTimezone);
+        ScheduleTimezoneStorage::setDisplayTimezone($timezoneParam ?? $defaultTimezone);
 
         return (new TimezonePicker())
             ->populate([$defaultTimezoneParam => $timezoneParam ?? $defaultTimezone])

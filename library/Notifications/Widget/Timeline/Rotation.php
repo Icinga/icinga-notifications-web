@@ -10,7 +10,6 @@ use DateTimeZone;
 use Generator;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\RotationConfigForm;
-use Icinga\Module\Notifications\Util\ScheduleDateTimeFactory;
 use ipl\I18n\Translation;
 use ipl\Scheduler\RRule;
 use ipl\Stdlib\Filter;
@@ -90,8 +89,7 @@ class Rotation
             ->setRotationMembers($rotationMembers)
             ->setRotationOptions($this->model->options)
             ->setRotationName($this->model->name)
-            ->setFirstHandoff($this->model->first_handoff)
-            ->setScheduleTimezone($this->model->schedule->execute()->current()->timezone);
+            ->setFirstHandoff($this->model->first_handoff);
 
         return $flyout;
     }
@@ -165,7 +163,6 @@ class Rotation
                 $length = $timeperiodEntry->start_time->diff($timeperiodEntry->end_time);
                 $limit = (((int) ceil($after->diff($until)->days / $interval)) + 1) * $limitMultiplier;
                 foreach ($rrule->getNextRecurrences($firstHandoff, $limit) as $recurrence) {
-                    $recurrence = ScheduleDateTimeFactory::createDateTimeFromTimestamp($recurrence->getTimestamp());
                     $recurrenceEnd = (clone $recurrence)->add($length);
                     if ($recurrence < $actualHandoff && $recurrenceEnd > $actualHandoff) {
                         $recurrence = $actualHandoff;

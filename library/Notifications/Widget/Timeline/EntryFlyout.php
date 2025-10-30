@@ -5,8 +5,7 @@
 namespace Icinga\Module\Notifications\Widget\Timeline;
 
 use DateTime;
-use DateTimeZone;
-use Icinga\Module\Notifications\Util\ScheduleDateTimeFactory;
+use Icinga\Module\Notifications\Util\ScheduleTimezoneStorage;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\FormattedString;
@@ -44,9 +43,6 @@ class EntryFlyout extends BaseHtmlElement
 
     /** @var ?ValidHtml Information about name and mode of the rotation */
     protected ?ValidHtml $nameInfo = null;
-
-    /** @var string The schedule timezone */
-    protected string $scheduleTimezone;
 
     /**
      * Set active member and return a new instance
@@ -133,20 +129,6 @@ class EntryFlyout extends BaseHtmlElement
     public function setRotationName(string $rotationName): static
     {
         $this->rotationName = $rotationName;
-
-        return $this;
-    }
-
-    /**
-     * Set the schedule timezone
-     *
-     * @param string $scheduleTimezone
-     *
-     * @return $this
-     */
-    public function setScheduleTimezone(string $scheduleTimezone): static
-    {
-        $this->scheduleTimezone = $scheduleTimezone;
 
         return $this;
     }
@@ -270,7 +252,8 @@ class EntryFlyout extends BaseHtmlElement
 
         $noneType = \IntlDateFormatter::NONE;
         $shortType = \IntlDateFormatter::SHORT;
-        $displayTimezone = ScheduleDateTimeFactory::getDisplayTimezone();
+        $displayTimezone = ScheduleTimezoneStorage::getDisplayTimezone();
+        $scheduleTimezone = ScheduleTimezoneStorage::getScheduleTimezone();
         $startTime = match ($this->mode) {
             '24-7'    => $this->rotationOptions['at'],
             'partial' => $this->rotationOptions['from'],
@@ -281,7 +264,7 @@ class EntryFlyout extends BaseHtmlElement
         $firstHandoff = $dateFormatter->format(DateTime::createFromFormat(
             'Y-m-d H:i',
             $this->firstHandoff . ' ' . $startTime,
-            new DateTimeZone($this->scheduleTimezone)
+            $scheduleTimezone
         ));
 
         if (($this->rotationOptions['frequency'] ?? null) === 'd') {
@@ -307,10 +290,10 @@ class EntryFlyout extends BaseHtmlElement
         $handoffStart = DateTime::createFromFormat(
             'Y-m-d H:i',
             $this->firstHandoff . ' ' . $startTime,
-            new DateTimeZone($this->scheduleTimezone)
+            $scheduleTimezone
         );
 
-        if (new DateTime('now', new DateTimeZone($this->scheduleTimezone)) < $handoffStart) {
+        if (new DateTime('now', $scheduleTimezone) < $handoffStart) {
             $startText = $this->translate('Starts on %s');
         } else {
             $startText = $this->translate('Started on %s');
@@ -319,7 +302,7 @@ class EntryFlyout extends BaseHtmlElement
         $startTime = $timeFormatter->format(DateTime::createFromFormat(
             'H:i',
             $startTime,
-            new DateTimeZone($this->scheduleTimezone)
+            $scheduleTimezone
         ));
         $firstHandoffInfo = new HtmlElement(
             'span',
@@ -352,7 +335,7 @@ class EntryFlyout extends BaseHtmlElement
             $to = $timeFormatter->format(DateTime::createFromFormat(
                 'H:i',
                 $this->rotationOptions["to"],
-                new DateTimeZone($this->scheduleTimezone)
+                $scheduleTimezone
             ));
             if ($days[count($days) - 1] - $days[0] === (count($days) - 1) && count($days) > 1) {
                 $daysText = sprintf(
@@ -386,7 +369,7 @@ class EntryFlyout extends BaseHtmlElement
             $toAt = $timeFormatter->format(DateTime::createFromFormat(
                 'H:i',
                 $this->rotationOptions["to_at"],
-                new DateTimeZone($this->scheduleTimezone)
+                $scheduleTimezone
             ));
 
             $this->timeInfo = $timeInfo->addHtml(
