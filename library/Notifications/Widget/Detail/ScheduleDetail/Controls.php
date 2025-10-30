@@ -5,7 +5,7 @@
 namespace Icinga\Module\Notifications\Widget\Detail\ScheduleDetail;
 
 use DateTime;
-use Icinga\Module\Notifications\Util\ScheduleDateTimeFactory;
+use Icinga\Module\Notifications\Util\ScheduleTimezoneStorage;
 use Icinga\Web\Session;
 use ipl\Html\Attributes;
 use ipl\Html\Form;
@@ -65,7 +65,7 @@ class Controls extends Form
      */
     public function getStartDate(): DateTime
     {
-        return ScheduleDateTimeFactory::createDateTime()->setTime(0, 0);
+        return (new DateTime('today', ScheduleTimezoneStorage::getDisplayTimezone()));
     }
 
     protected function onSuccess()

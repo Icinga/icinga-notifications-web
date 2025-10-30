@@ -4,7 +4,6 @@
 
 namespace Icinga\Module\Notifications\Widget\Timeline;
 
-use Icinga\Module\Notifications\Util\ScheduleDateTimeFactory;
 use Icinga\Module\Notifications\Widget\TimeGrid;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
@@ -62,7 +61,7 @@ class Entry extends TimeGrid\Entry
             \Locale::getDefault(),
             $dateType,
             $timeType,
-            ScheduleDateTimeFactory::getDisplayTimezone()
+            $this->getStart()->getTimezone()
         );
 
         $container->addAttributes([
