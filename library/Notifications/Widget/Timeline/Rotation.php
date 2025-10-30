@@ -95,7 +95,7 @@ class Rotation
         $visibleNames = (new HtmlDocument())->setSeparator(', ');
         foreach ($rotationMembers as $member) {
             if ($member->contact_id !== null) {
-                $visibleNames->add(
+                $visibleNames->addHtml(
                     new HtmlElement(
                         'span',
                         null,
@@ -104,7 +104,7 @@ class Rotation
                     )
                 );
             } else {
-                $visibleNames->add(
+                $visibleNames->addHtml(
                     new HtmlElement(
                         'span',
                         null,
@@ -115,13 +115,13 @@ class Rotation
             }
         }
 
-        $memberList->add($visibleNames);
+        $memberList->addHtml($visibleNames);
         if ($hiddenMemberCount > 0) {
-            $memberList->add(
+            $memberList->addHtml(
                 new HtmlElement(
                     'span',
                     Attributes::create(['class' => ['rotation-info-member-count']]),
-                    Text::create(sprintf($this->translate(' + %s more'), $hiddenMemberCount))
+                    Text::create(sprintf($this->translate(' + %d more'), $hiddenMemberCount))
                 )
             );
         }
