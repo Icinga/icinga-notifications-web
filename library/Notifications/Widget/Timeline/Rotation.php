@@ -7,13 +7,12 @@ namespace Icinga\Module\Notifications\Widget\Timeline;
 use DateInterval;
 use DateTime;
 use Generator;
-use Icinga\Module\Director\Web\Table\Dependency\Html;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\RotationConfigForm;
 use ipl\Html\Attributes;
 use ipl\Html\FormattedString;
+use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
-use ipl\Html\HtmlString;
 use ipl\Html\Text;
 use ipl\Html\ValidHtml;
 use ipl\I18n\Translation;
@@ -87,26 +86,43 @@ class Rotation
      */
     public function generateEntryInfo(): HtmlElement
     {
-        $rotationMembers = iterator_to_array($this->model->member
-            ->with(['contact', 'contactgroup']));
+        $rotationMembers = iterator_to_array(
+            $this->model->member->with(['contact', 'contactgroup'])
+        );
 
-        $hiddenMemberCount =  count(array_splice($rotationMembers, 2));
-        $visibleNames = [];
-
+        $hiddenMemberCount = count(array_splice($rotationMembers, 2));
+        $memberList = new HtmlElement('div');
+        $visibleNames = (new HtmlDocument())->setSeparator(', ');
         foreach ($rotationMembers as $member) {
             if ($member->contact_id !== null) {
-                $visibleNames[] = new Icon('user') . $member->contact->full_name;
+                $visibleNames->add(
+                    new HtmlElement(
+                        'span',
+                        null,
+                        new Icon('user'),
+                        Text::create($member->contact->full_name)
+                    )
+                );
             } else {
-                $visibleNames[] = new Icon('users') . $member->contactgroup->name;
+                $visibleNames->add(
+                    new HtmlElement(
+                        'span',
+                        null,
+                        new Icon('users'),
+                        Text::create($member->contactgroup->name)
+                    )
+                );
             }
         }
 
-        $memberText = implode(', ', $visibleNames);
+        $memberList->add($visibleNames);
         if ($hiddenMemberCount > 0) {
-            $memberText .= new HtmlElement(
-                'span',
-                Attributes::create(['class' => ['rotation-info-member-count']]),
-                Text::create(sprintf($this->translate(' + %s more'), $hiddenMemberCount))
+            $memberList->add(
+                new HtmlElement(
+                    'span',
+                    Attributes::create(['class' => ['rotation-info-member-count']]),
+                    Text::create(sprintf($this->translate(' + %s more'), $hiddenMemberCount))
+                )
             );
         }
 
@@ -130,11 +146,7 @@ class Rotation
                 )
             ),
             $this->generateTimeInfo(),
-            new HtmlElement(
-                'div',
-                Attributes::create(['class' => ['rotation-info-members']]),
-                HtmlString::create($memberText)
-            )
+            $memberList
         );
     }
 
@@ -184,16 +196,15 @@ class Rotation
         }
 
         if ($dateFormatter->format(new DateTime()) < $firstHandoff) {
-            $startText = $this->translate('Starts on');
+            $startText = $this->translate('Starts on %s');
         } else {
-            $startText = $this->translate('Started on');
+            $startText = $this->translate('Started on %s');
         }
 
         $firstHandoffInfo = new HtmlElement(
             'span',
             Attributes::create(['class' => 'rotation-info-start']),
             FormattedString::create(
-                '%s %s',
                 $startText,
                 new HtmlElement('time', null, Text::create($firstHandoff))
             )
@@ -207,8 +218,7 @@ class Rotation
 
         $timeInfo = new HtmlElement(
             'div',
-            Attributes::create(['class' => ['rotation-info-time']]),
-            Text::create('')
+            Attributes::create(['class' => ['rotation-info-time']])
         );
 
         if ($mode === "partial") {
