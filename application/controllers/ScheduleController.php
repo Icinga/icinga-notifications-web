@@ -10,10 +10,10 @@ use Icinga\Module\Notifications\Forms\MoveRotationForm;
 use Icinga\Module\Notifications\Forms\RotationConfigForm;
 use Icinga\Module\Notifications\Forms\ScheduleForm;
 use Icinga\Module\Notifications\Model\Schedule;
-use Icinga\Module\Notifications\Widget\RecipientSuggestions;
 use Icinga\Module\Notifications\Util\ScheduleTimezoneStorage;
 use Icinga\Module\Notifications\Web\Control\TimezonePicker;
 use Icinga\Module\Notifications\Widget\Detail\ScheduleDetail;
+use Icinga\Module\Notifications\Widget\RecipientSuggestions;
 use Icinga\Module\Notifications\Widget\TimezoneWarning;
 use ipl\Html\Form;
 use ipl\Html\Html;
@@ -124,7 +124,7 @@ class ScheduleController extends CompatController
             $this->addContent(new TimezoneWarning($scheduleTimezone));
         }
 
-        $form = new RotationConfigForm($scheduleId, Database::get(), $displayTimezone);
+        $form = new RotationConfigForm($scheduleId, Database::get(), $displayTimezone, $scheduleTimezone);
         $form->setAction($this->getRequest()->getUrl()->setParam('showCompact')->getAbsoluteUrl());
         $form->setSuggestionUrl(Url::fromPath('notifications/schedule/suggest-recipient'));
         $form->on(RotationConfigForm::ON_SENT, function ($form) {
@@ -163,7 +163,7 @@ class ScheduleController extends CompatController
             $this->addContent(new TimezoneWarning($scheduleTimezone));
         }
 
-        $form = new RotationConfigForm($scheduleId, Database::get(), $displayTimezone);
+        $form = new RotationConfigForm($scheduleId, Database::get(), $displayTimezone, $scheduleTimezone);
         $form->disableModeSelection();
         $form->setShowRemoveButton();
         $form->loadRotation($id);
