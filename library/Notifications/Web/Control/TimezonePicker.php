@@ -8,6 +8,7 @@ use DateTimeZone;
 use ipl\Html\Form;
 use ipl\Html\HtmlElement;
 use ipl\I18n\Translation;
+use ipl\Web\Common\FormUid;
 
 /**
  * A simple dropdown menu to pick a timezone.
@@ -15,14 +16,17 @@ use ipl\I18n\Translation;
 class TimezonePicker extends Form
 {
     use Translation;
+    use FormUid;
 
-    /** @var string Default timezone param  */
+    /** @var string Default timezone param */
     public const DEFAULT_TIMEZONE_PARAM = 'display_timezone';
 
-    protected $defaultAttributes = ['class' => 'timezone-picker'];
+    protected $defaultAttributes = ['class' => 'timezone-picker', 'name' => 'timezone-picker-form'];
 
     public function assemble(): void
     {
+        $this->addElement($this->createUidElement());
+
         $this->addElement(
             'select',
             static::DEFAULT_TIMEZONE_PARAM,

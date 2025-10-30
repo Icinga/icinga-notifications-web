@@ -56,15 +56,13 @@ class ScheduleController extends CompatController
             ->on(Form::ON_SUCCESS, function (ScheduleDetail\Controls $controls) use ($id) {
                 $redirectUrl = Links::schedule($id)->with(['mode' => $controls->getMode()]);
                 $requestUrl = Url::fromRequest();
-                if ($requestUrl->getParam('mode') !== $controls->getValue('mode')) {
-                    $defaultTimezoneParam = TimezonePicker::DEFAULT_TIMEZONE_PARAM;
-                    if ($requestUrl->hasParam($defaultTimezoneParam)) {
-                        $redirectUrl->addParams(
-                            [$defaultTimezoneParam => $requestUrl->getParam($defaultTimezoneParam)]
-                        );
-                    }
-                    $this->redirectNow($redirectUrl);
+                $defaultTimezoneParam = TimezonePicker::DEFAULT_TIMEZONE_PARAM;
+                if ($requestUrl->hasParam($defaultTimezoneParam)) {
+                    $redirectUrl->addParams(
+                        [$defaultTimezoneParam => $requestUrl->getParam($defaultTimezoneParam)]
+                    );
                 }
+                $this->redirectNow($redirectUrl);
             })
             ->handleRequest($this->getServerRequest());
 
