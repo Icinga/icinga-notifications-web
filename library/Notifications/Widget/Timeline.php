@@ -188,6 +188,7 @@ class Timeline extends BaseHtmlElement implements EntryProvider
             if (! $this->minimalLayout) {
                 $flyoutInfo = $rotation->generateEntryInfo();
             }
+
             foreach ($rotation->fetchTimeperiodEntries($this->start, $this->getGrid()->getGridEnd()) as $entry) {
                 $entryFound = true;
                 if (! $this->minimalLayout) {
