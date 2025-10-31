@@ -78,7 +78,7 @@
         .rotation-info {
           display: none;
           position: absolute;
-          bottom: 120%;
+          bottom: ~"calc(100% + 0.5em)";
           width: max-content;
           max-width: 30em;
           height: auto;
@@ -104,6 +104,16 @@
             transform: rotate(45deg);
           }
 
+          &::after {
+            content: '';
+            position: absolute;
+            bottom: -0.5em;
+            left: 0;
+            right: 0;
+            height: 0.5em;
+            background: transparent;
+          }
+
           &.is-left {
             left: auto;
             right: ~"calc(100% - 3.5em)";
@@ -116,13 +126,17 @@
           }
 
           &.is-bottom {
-            top: 120%;
+            top: ~"calc(100% + 0.5em)";
             bottom: auto;
 
             &::before {
               bottom: auto;
               top: ~"calc(-0.5em - 1px)";
               transform: rotate(225deg);
+            }
+
+            &::after {
+              top: -0.5em;
             }
 
             &.is-left:before {
