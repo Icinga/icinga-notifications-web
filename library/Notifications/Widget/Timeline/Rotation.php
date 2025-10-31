@@ -86,44 +86,46 @@ class Rotation
      */
     public function generateEntryInfo(): HtmlElement
     {
+        $memberList = new HtmlElement('div');
         $rotationMembers = iterator_to_array(
             $this->model->member->with(['contact', 'contactgroup'])
         );
 
-        $hiddenMemberCount = count(array_splice($rotationMembers, 2));
-        $memberList = new HtmlElement('div');
-        $visibleNames = (new HtmlDocument())->setSeparator(', ');
-        foreach ($rotationMembers as $member) {
-            if ($member->contact_id !== null) {
-                $visibleNames->addHtml(
+        if (count($rotationMembers) > 1) {
+            $hiddenMemberCount = count(array_splice($rotationMembers, 2));
+            $visibleNames = (new HtmlDocument())->setSeparator(', ');
+            foreach ($rotationMembers as $member) {
+                if ($member->contact_id !== null) {
+                    $visibleNames->addHtml(
+                        new HtmlElement(
+                            'span',
+                            null,
+                            new Icon('user'),
+                            Text::create($member->contact->full_name)
+                        )
+                    );
+                } else {
+                    $visibleNames->addHtml(
+                        new HtmlElement(
+                            'span',
+                            null,
+                            new Icon('users'),
+                            Text::create($member->contactgroup->name)
+                        )
+                    );
+                }
+            }
+
+            $memberList->addHtml($visibleNames);
+            if ($hiddenMemberCount > 0) {
+                $memberList->addHtml(
                     new HtmlElement(
                         'span',
-                        null,
-                        new Icon('user'),
-                        Text::create($member->contact->full_name)
-                    )
-                );
-            } else {
-                $visibleNames->addHtml(
-                    new HtmlElement(
-                        'span',
-                        null,
-                        new Icon('users'),
-                        Text::create($member->contactgroup->name)
+                        Attributes::create(['class' => ['rotation-info-member-count']]),
+                        Text::create(sprintf($this->translate(' + %d more'), $hiddenMemberCount))
                     )
                 );
             }
-        }
-
-        $memberList->addHtml($visibleNames);
-        if ($hiddenMemberCount > 0) {
-            $memberList->addHtml(
-                new HtmlElement(
-                    'span',
-                    Attributes::create(['class' => ['rotation-info-member-count']]),
-                    Text::create(sprintf($this->translate(' + %d more'), $hiddenMemberCount))
-                )
-            );
         }
 
         $mode = match ($this->model->mode) {
@@ -302,7 +304,6 @@ class Rotation
                 )
             ));
 
-        $flyoutContent = $this->generateEntryInfo();
         foreach ($entries as $timeperiodEntry) {
             if ($timeperiodEntry->member->contact->id !== null) {
                 $member = new Member($timeperiodEntry->member->contact->full_name);
@@ -354,7 +355,6 @@ class Rotation
                         ->setMember($member)
                         ->setStart($recurrence)
                         ->setEnd($recurrenceEnd)
-                        ->setFlyoutContent($flyoutContent)
                         ->setUrl(Links::rotationSettings($this->getId(), $this->getScheduleId()));
 
                     yield $occurrence;
