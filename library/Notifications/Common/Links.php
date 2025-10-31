@@ -4,6 +4,8 @@
 
 namespace Icinga\Module\Notifications\Common;
 
+use Icinga\Module\Notifications\Util\ScheduleTimezoneStorage;
+use Icinga\Module\Notifications\Web\Control\TimezonePicker;
 use ipl\Web\Url;
 
 /**
@@ -83,7 +85,15 @@ abstract class Links
 
     public static function schedule(int $id): Url
     {
-        return Url::fromPath('notifications/schedule', ['id' => $id]);
+        $redirectUrl = Url::fromPath('notifications/schedule', ['id' => $id]);
+
+        if (ScheduleTimezoneStorage::differ()) {
+            $redirectUrl->addParams([
+                TimezonePicker::DEFAULT_TIMEZONE_PARAM => ScheduleTimezoneStorage::getDisplayTimezone()->getName()
+            ]);
+        }
+
+        return $redirectUrl;
     }
 
     public static function scheduleAdd(): Url
@@ -123,16 +133,40 @@ abstract class Links
 
     public static function rotationAdd(int $scheduleId): Url
     {
-        return Url::fromPath('notifications/schedule/add-rotation', ['schedule' => $scheduleId]);
+        $redirectUrl = Url::fromPath('notifications/schedule/add-rotation', ['schedule' => $scheduleId]);
+
+        if (ScheduleTimezoneStorage::differ()) {
+            $redirectUrl->addParams([
+                TimezonePicker::DEFAULT_TIMEZONE_PARAM => ScheduleTimezoneStorage::getDisplayTimezone()->getName()
+            ]);
+        }
+
+        return $redirectUrl;
     }
 
     public static function rotationSettings(int $id, int $scheduleId): Url
     {
-        return Url::fromPath('notifications/schedule/edit-rotation', ['id' => $id, 'schedule' => $scheduleId]);
+        $redirectUrl = Url::fromPath('notifications/schedule/edit-rotation', ['id' => $id, 'schedule' => $scheduleId]);
+
+        if (ScheduleTimezoneStorage::differ()) {
+            $redirectUrl->addParams([
+                TimezonePicker::DEFAULT_TIMEZONE_PARAM => ScheduleTimezoneStorage::getDisplayTimezone()->getName()
+            ]);
+        }
+
+        return $redirectUrl;
     }
 
     public static function moveRotation(): Url
     {
-        return Url::fromPath('notifications/schedule/move-rotation');
+        $redirectUrl = Url::fromPath('notifications/schedule/move-rotation');
+
+        if (ScheduleTimezoneStorage::differ()) {
+            $redirectUrl->addParams([
+                TimezonePicker::DEFAULT_TIMEZONE_PARAM => ScheduleTimezoneStorage::getDisplayTimezone()->getName()
+            ]);
+        }
+
+        return $redirectUrl;
     }
 }

@@ -6,6 +6,7 @@ namespace Icinga\Module\Notifications\Forms;
 
 use DateInterval;
 use DateTime;
+use DateTimeZone;
 use Generator;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\Http\HttpNotFoundException;
@@ -79,6 +80,12 @@ class RotationConfigForm extends CompatForm
 
     /** @var int The rotation id */
     protected $rotationId;
+
+    /** @var string The timezone to display the timeline in */
+    protected $displayTimezone;
+
+    /** @var string The timezone the schedule is created in */
+    protected $scheduleTimezone;
 
     /**
      * Set the label for the submit button
@@ -187,12 +194,14 @@ class RotationConfigForm extends CompatForm
      *
      * @param int $scheduleId
      * @param Connection $db
+     * @param string $displayTimezone
      */
-    public function __construct(int $scheduleId, Connection $db)
+    public function __construct(int $scheduleId, Connection $db, string $displayTimezone, string $scheduleTimezone)
     {
         $this->db = $db;
         $this->scheduleId = $scheduleId;
-
+        $this->displayTimezone = $displayTimezone;
+        $this->scheduleTimezone = $scheduleTimezone;
         $this->applyDefaultElementDecorators();
     }
 
@@ -227,7 +236,11 @@ class RotationConfigForm extends CompatForm
                         throw new LogicException('Invalid mode');
                 }
 
-                $handoff = DateTime::createFromFormat('Y-m-d H:i', $rotation->first_handoff . ' ' . $time);
+                $handoff = DateTime::createFromFormat(
+                    'Y-m-d H:i',
+                    $rotation->first_handoff . ' ' . $time,
+                    new DateTimeZone($this->displayTimezone)
+                );
                 if ($handoff === false) {
                     throw new ConfigurationError('Invalid date format');
                 }
@@ -258,7 +271,9 @@ class RotationConfigForm extends CompatForm
                 ->orderBy('until_time', SORT_DESC)
                 ->first();
             if ($previousShift !== null) {
-                $this->previousShift = $previousShift->until_time;
+                $this->previousShift = $previousShift->until_time->setTimezone(
+                    new DateTimeZone($this->displayTimezone)
+                );
             }
 
             /** @var ?Rotation $newerRotation */
@@ -452,6 +467,9 @@ class RotationConfigForm extends CompatForm
                 ->filter(Filter::equal('timeperiod.owned_by_rotation_id', $rotationId));
 
             foreach ($timeperiodEntries as $timeperiodEntry) {
+                $timeperiodEntry->start_time->setTimezone(new DateTimeZone($this->scheduleTimezone));
+                $timeperiodEntry->end_time->setTimezone(new DateTimeZone($this->scheduleTimezone));
+
                 /** @var TimeperiodEntry $timeperiodEntry */
                 $rrule = $timeperiodEntry->toRecurrenceRule();
                 $shiftDuration = $timeperiodEntry->start_time->diff($timeperiodEntry->end_time);
@@ -819,9 +837,10 @@ class RotationConfigForm extends CompatForm
             ->replaceDecorator('Description', DescriptionDecorator::class, ['class' => 'description']);
 
         $selectedFromTime = $from->getValue();
+        $nextDayTimeOptions = [];
         foreach ($timeOptions as $key => $value) {
-            unset($timeOptions[$key]); // unset to re-add it at the end of array
-            $timeOptions[$key] = sprintf('%s (%s)', $value, $this->translate('Next Day'));
+            unset($timeOptions[$key]);
+            $nextDayTimeOptions[$key] = $value;
 
             if ($selectedFromTime === $key) {
                 break;
@@ -830,7 +849,9 @@ class RotationConfigForm extends CompatForm
 
         $to = $options->createElement('select', 'to', [
             'required' => true,
-            'options' => $timeOptions
+            'options' => empty($timeOptions)
+                ? ['Next Day' => $nextDayTimeOptions]
+                : ['Today' => $timeOptions, 'Next Day' => $nextDayTimeOptions]
         ]);
         $options->registerElement($to);
 
@@ -1221,14 +1242,21 @@ class RotationConfigForm extends CompatForm
                     if ($actualFirstHandoff < new DateTime()) {
                         return $this->translate('The rotation will start immediately');
                     } else {
-                        return sprintf(
+                        $handoffHint = sprintf(
                             $this->translate('The rotation will start on %s'),
                             (new \IntlDateFormatter(
                                 \Locale::getDefault(),
                                 \IntlDateFormatter::MEDIUM,
-                                \IntlDateFormatter::SHORT
+                                \IntlDateFormatter::SHORT,
+                                $this->scheduleTimezone
                             ))->format($actualFirstHandoff)
                         );
+
+                        if ($this->displayTimezone !== $this->scheduleTimezone) {
+                            $handoffHint .= sprintf($this->translate(' (in %s)'), $this->scheduleTimezone);
+                        }
+
+                        return $handoffHint;
                     }
                 })
             ));
@@ -1293,12 +1321,13 @@ class RotationConfigForm extends CompatForm
         }
 
         if (! $format) {
-            return (new DateTime())->setTime(0, 0);
+            return new DateTime('today', new DateTimeZone($this->scheduleTimezone));
         }
 
-        $datetime = DateTime::createFromFormat($format, $expression);
+        $datetime = DateTime::createFromFormat($format, $expression, new DateTimeZone($this->scheduleTimezone));
+
         if ($datetime === false) {
-            $datetime = (new DateTime())->setTime(0, 0);
+            $datetime = new DateTime('today', $this->scheduleTimezone);
         } elseif ($time === null) {
             $datetime->setTime(0, 0);
         }
@@ -1316,15 +1345,34 @@ class RotationConfigForm extends CompatForm
         $formatter = new \IntlDateFormatter(
             \Locale::getDefault(),
             \IntlDateFormatter::NONE,
-            \IntlDateFormatter::SHORT
+            \IntlDateFormatter::SHORT,
+            $this->scheduleTimezone
+        );
+
+        $dtzFormatter = new \IntlDateFormatter(
+            \Locale::getDefault(),
+            \IntlDateFormatter::NONE,
+            \IntlDateFormatter::SHORT,
+            $this->displayTimezone
         );
 
         $options = [];
-        $dt = new DateTime();
+        $dt = new DateTime('now', new DateTimeZone($this->scheduleTimezone));
         for ($hour = 0; $hour < 24; $hour++) {
             for ($minute = 0; $minute < 60; $minute += 30) {
                 $dt->setTime($hour, $minute);
-                $options[$dt->format('H:i')] = $formatter->format($dt);
+
+                if ($this->displayTimezone !== $this->scheduleTimezone) {
+                    $dtzDt = (clone $dt)->setTimezone(new DateTimeZone($this->displayTimezone));
+
+                    $options[$dt->format('H:i')] = sprintf(
+                        '%s (%s)',
+                        $formatter->format($dt),
+                        $dtzFormatter->format($dtzDt)
+                    );
+                } else {
+                    $options[$dt->format('H:i')] = $formatter->format($dt);
+                }
             }
         }
 

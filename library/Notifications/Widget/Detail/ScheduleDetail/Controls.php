@@ -5,23 +5,26 @@
 namespace Icinga\Module\Notifications\Widget\Detail\ScheduleDetail;
 
 use DateTime;
+use Icinga\Module\Notifications\Util\ScheduleTimezoneStorage;
 use Icinga\Web\Session;
 use ipl\Html\Attributes;
 use ipl\Html\Form;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\I18n\Translation;
+use ipl\Web\Common\FormUid;
 
 class Controls extends Form
 {
     use Translation;
+    use FormUid;
 
     /** @var string The default mode */
     public const DEFAULT_MODE = 'week';
 
     protected $method = 'POST';
 
-    protected $defaultAttributes = ['class' => 'schedule-controls'];
+    protected $defaultAttributes = ['class' => 'schedule-controls', 'name' => 'schedule-detail-controls-form'];
 
     /**
      * Get the chosen mode
@@ -62,7 +65,7 @@ class Controls extends Form
      */
     public function getStartDate(): DateTime
     {
-        return (new DateTime())->setTime(0, 0);
+        return (new DateTime('today', ScheduleTimezoneStorage::getDisplayTimezone()));
     }
 
     protected function onSuccess()
@@ -73,6 +76,8 @@ class Controls extends Form
 
     protected function assemble()
     {
+        $this->addElement($this->createUidElement());
+
         $param = 'mode';
         $options = [
             'day' => $this->translate('Day'),

@@ -353,13 +353,16 @@ class Timeline extends BaseHtmlElement implements EntryProvider
                 )
             );
 
+            $displayTimezone = $this->start->getTimezone();
+
             $dateFormatter = new IntlDateFormatter(
                 Locale::getDefault(),
                 IntlDateFormatter::NONE,
-                IntlDateFormatter::SHORT
+                IntlDateFormatter::SHORT,
+                $displayTimezone
             );
 
-            $now = new DateTime();
+            $now = new DateTime('now', $displayTimezone);
             $currentTime = new HtmlElement(
                 'div',
                 new Attributes(['class' => 'time-hand']),

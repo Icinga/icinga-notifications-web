@@ -4,9 +4,9 @@
 
 namespace Icinga\Module\Notifications\Widget\Timeline;
 
+use Icinga\Module\Notifications\Widget\TimeGrid;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
-use Icinga\Module\Notifications\Widget\TimeGrid;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\Web\Widget\Icon;
@@ -57,7 +57,12 @@ class Entry extends TimeGrid\Entry
             $dateType = \IntlDateFormatter::SHORT;
         }
 
-        $formatter = new \IntlDateFormatter(\Locale::getDefault(), $dateType, $timeType);
+        $formatter = new \IntlDateFormatter(
+            \Locale::getDefault(),
+            $dateType,
+            $timeType,
+            $this->getStart()->getTimezone()
+        );
 
         $container->addAttributes([
             'title' => sprintf(
