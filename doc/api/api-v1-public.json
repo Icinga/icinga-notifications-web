@@ -1,0 +1,2343 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Icinga Notifications API",
+        "description": "API for managing notification Channels, Contacts, and Contact Groups in Icinga.",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "/icingaweb2/notifications/api/v1",
+            "description": "Local server"
+        }
+    ],
+    "paths": {
+        "/channels/{identifier}": {
+            "get": {
+                "tags": [
+                    "Channels"
+                ],
+                "summary": "Get a specific Channel by its UUID",
+                "description": "Retrieve detailed information about a specific notification Channel using its UUID",
+                "operationId": "getChannel",
+                "parameters": [
+                    {
+                        "name": "identifier",
+                        "in": "path",
+                        "description": "The UUID of the Channel to retrieve",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/ChannelUUID"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response with a single Channel result",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Channel",
+                                            "description": "Successfull response with the Channel object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "InvalidIdentifier": {
+                                        "$ref": "#/components/examples/InvalidIdentifier"
+                                    },
+                                    "NoIdentifierWithFilter": {
+                                        "$ref": "#/components/examples/NoIdentifierWithFilter"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Channel Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "ResourceNotFound": {
+                                        "summary": "Resource not found",
+                                        "value": {
+                                            "message": "Channel not found"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                }
+            }
+        },
+        "/channels": {
+            "get": {
+                "tags": [
+                    "Channels"
+                ],
+                "summary": "List all notification channels or filter by parameters",
+                "description": "List all notification channels or filter by parameters",
+                "operationId": "listChannel",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "description": "Filter by channel UUID",
+                        "required": false,
+                        "schema": {
+                            "schema": "ChannelUUID",
+                            "title": "ChannelUUID",
+                            "description": "An UUID representing a notification Channel",
+                            "type": "string",
+                            "format": "uuid",
+                            "maxLength": 36,
+                            "minLength": 36,
+                            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                            "example": null
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "Filter by channel name (supports partial matches)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "Filter by channel type",
+                        "required": false,
+                        "schema": {
+                            "$ref": "#/components/schemas/ChannelTypes"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response with multiple Channel results",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "description": "Successful response with an array of Channel objects",
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Channel"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "NoIdentifierWithFilter": {
+                                        "$ref": "#/components/examples/NoIdentifierWithFilter"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "InvalidRequestBodyId": {
+                                        "$ref": "#/components/examples/InvalidRequestBodyId"
+                                    },
+                                    "InvalidFilterParameter": {
+                                        "$ref": "#/components/examples/InvalidFilterParameter"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                }
+            }
+        },
+        "/contact-groups/{identifier}": {
+            "get": {
+                "tags": [
+                    "Contact Groups"
+                ],
+                "summary": "Get a specific Contact Group by its UUID",
+                "description": "Retrieve detailed information about a specific notification Contact Group using its UUID",
+                "operationId": "getContactgroup",
+                "parameters": [
+                    {
+                        "name": "identifier",
+                        "in": "path",
+                        "description": "The UUID of the Contact Group to retrieve",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/ContactgroupUUID"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response with a single Contactgroup result",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Contactgroup",
+                                            "description": "Successfull response with the Contactgroup object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "InvalidIdentifier": {
+                                        "$ref": "#/components/examples/InvalidIdentifier"
+                                    },
+                                    "NoIdentifierWithFilter": {
+                                        "$ref": "#/components/examples/NoIdentifierWithFilter"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Contactgroup Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "ResourceNotFound": {
+                                        "summary": "Resource not found",
+                                        "value": {
+                                            "message": "Contactgroup not found"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Contact Groups"
+                ],
+                "summary": "Update a Contact Group by UUID",
+                "description": "Update a Contact Group by UUID, if it doesn't exist, it will be created. \\\n        The identifier must be the same as the payload id",
+                "operationId": "updateContactgroup",
+                "parameters": [
+                    {
+                        "name": "identifier",
+                        "in": "path",
+                        "description": "The UUID of the Contact Group to update",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/ContactgroupUUID"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Contactgroup"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Contactgroup created successfully",
+                        "headers": {
+                            "X-Resource-Identifier": {
+                                "description": "The identifier of the created Contactgroup",
+                                "schema": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                }
+                            },
+                            "Location": {
+                                "description": "The URL of the created Contactgroup",
+                                "schema": {
+                                    "type": "string",
+                                    "format": "url",
+                                    "example": "notifications/api/v1/contactgroups/{identifier}"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                },
+                                "examples": {
+                                    "ContactgroupCreated": {
+                                        "summary": "Contactgroup created successfully",
+                                        "value": {
+                                            "message": "Contactgroup created successfully"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "links": {
+                            "GetContactgroupByIdentifiere": {
+                                "operationId": "getContactgroup",
+                                "parameters": {
+                                    "identifier": "$response.header.X-Resource-Identifier"
+                                },
+                                "description": "Retrieve the created contact using the X-Resource-Identifier header"
+                            },
+                            "UpdateContactgroupByIdentifier": {
+                                "operationId": "updateContactgroup",
+                                "parameters": {
+                                    "identifier": "$response.header.X-Resource-Identifier"
+                                },
+                                "description": "Update the created contact using the X-Resource-Identifier header"
+                            },
+                            "DeleteContactgroupByIdentifier": {
+                                "operationId": "deleteContactgroup",
+                                "parameters": {
+                                    "identifier": "$response.header.X-Resource-Identifier"
+                                },
+                                "description": "Delete the created contact using the X-Resource-Identifier header"
+                            }
+                        }
+                    },
+                    "204": {
+                        "description": "Contactgroup updated successfully"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "InvalidRequestBodyFormat": {
+                                        "$ref": "#/components/examples/InvalidRequestBodyFormat"
+                                    },
+                                    "UnexpectedQueryParameter": {
+                                        "$ref": "#/components/examples/UnexpectedQueryParameter"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Contactgroup Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "ResourceNotFound": {
+                                        "summary": "Resource not found",
+                                        "value": {
+                                            "message": "Contactgroup not found"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "415": {
+                        "description": "Unsupported Media Type",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "InvalidContentType": {
+                                        "$ref": "#/components/examples/InvalidContentType"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "Contactgroup AlreadyExists": {
+                                        "summary": "Contactgroup already exists",
+                                        "value": {
+                                            "message": "Contactgroup already exists"
+                                        }
+                                    },
+                                    "InvalidRequestBodyFieldFormat": {
+                                        "$ref": "#/components/examples/InvalidRequestBodyFieldFormat"
+                                    },
+                                    "InvalidRequestBodyId": {
+                                        "$ref": "#/components/examples/InvalidRequestBodyId"
+                                    },
+                                    "IdentifierMismatch": {
+                                        "$ref": "#/components/examples/IdentifierMismatch"
+                                    },
+                                    "MissingRequiredRequestBodyField": {
+                                        "$ref": "#/components/examples/MissingRequiredRequestBodyField"
+                                    },
+                                    "InvalidUserFormat": {
+                                        "$ref": "#/components/examples/InvalidUserFormat"
+                                    },
+                                    "InvalidUserUUID": {
+                                        "$ref": "#/components/examples/InvalidUserUUID"
+                                    },
+                                    "NameAlreadyExists": {
+                                        "$ref": "#/components/examples/NameAlreadyExists"
+                                    },
+                                    "UserNotExists": {
+                                        "$ref": "#/components/examples/UserNotExists"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Contact Groups"
+                ],
+                "summary": "Replace a Contact Group by UUID",
+                "description": "Replace a Contact Group by UUID, the identifier must be different from the payload id",
+                "operationId": "replaceContactgroup",
+                "parameters": [
+                    {
+                        "name": "identifier",
+                        "in": "path",
+                        "description": "The UUID of the Contact Group to create",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/ContactgroupUUID"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "allOf": [
+                                    {
+                                        "$ref": "#/components/schemas/Contactgroup"
+                                    },
+                                    {
+                                        "properties": {
+                                            "id": {
+                                                "$ref": "#/components/schemas/NewContactgroupUUID"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Contactgroup created successfully",
+                        "headers": {
+                            "X-Resource-Identifier": {
+                                "description": "The identifier of the created Contactgroup",
+                                "schema": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                }
+                            },
+                            "Location": {
+                                "description": "The URL of the created Contactgroup",
+                                "schema": {
+                                    "type": "string",
+                                    "format": "url",
+                                    "example": "notifications/api/v1/contactgroups/{identifier}"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                },
+                                "examples": {
+                                    "ContactgroupCreated": {
+                                        "summary": "Contactgroup created successfully",
+                                        "value": {
+                                            "message": "Contactgroup created successfully"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "links": {
+                            "GetContactgroupByIdentifier": {
+                                "operationId": "getContactgroup",
+                                "parameters": {
+                                    "identifier": "$response.header.X-Resource-Identifier"
+                                },
+                                "description": "Retrieve the created contact using the X-Resource-Identifier header"
+                            },
+                            "UpdateContactgroupByIdentifier": {
+                                "operationId": "updateContactgroup",
+                                "parameters": {
+                                    "identifier": "$response.header.X-Resource-Identifier"
+                                },
+                                "description": "Update the created contact using the X-Resource-Identifier header"
+                            },
+                            "DeleteContactgroupByIdentifier": {
+                                "operationId": "deleteContactgroup",
+                                "parameters": {
+                                    "identifier": "$response.header.X-Resource-Identifier"
+                                },
+                                "description": "Delete the created contact using the X-Resource-Identifier header"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "InvalidRequestBodyFormat": {
+                                        "$ref": "#/components/examples/InvalidRequestBodyFormat"
+                                    },
+                                    "UnexpectedQueryParameter": {
+                                        "$ref": "#/components/examples/UnexpectedQueryParameter"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "415": {
+                        "description": "Unsupported Media Type",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "InvalidContentType": {
+                                        "$ref": "#/components/examples/InvalidContentType"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "Contactgroup AlreadyExists": {
+                                        "summary": "Contactgroup already exists",
+                                        "value": {
+                                            "message": "Contactgroup already exists"
+                                        }
+                                    },
+                                    "InvalidRequestBodyFieldFormat": {
+                                        "$ref": "#/components/examples/InvalidRequestBodyFieldFormat"
+                                    },
+                                    "InvalidRequestBodyId": {
+                                        "$ref": "#/components/examples/InvalidRequestBodyId"
+                                    },
+                                    "MissingRequiredRequestBodyField": {
+                                        "$ref": "#/components/examples/MissingRequiredRequestBodyField"
+                                    },
+                                    "InvalidUserFormat": {
+                                        "$ref": "#/components/examples/InvalidUserFormat"
+                                    },
+                                    "InvalidUserUUID": {
+                                        "$ref": "#/components/examples/InvalidUserUUID"
+                                    },
+                                    "NameAlreadyExists": {
+                                        "$ref": "#/components/examples/NameAlreadyExists"
+                                    },
+                                    "UserNotExists": {
+                                        "$ref": "#/components/examples/UserNotExists"
+                                    },
+                                    "IdentifierPayloadIdMissmatch": {
+                                        "$ref": "#/components/examples/IdentifierPayloadIdMissmatch"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Contactgroup Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "ResourceNotFound": {
+                                        "summary": "Resource not found",
+                                        "value": {
+                                            "message": "Contactgroup not found"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Contact Groups"
+                ],
+                "summary": "Delete a Contact Group by UUID",
+                "description": "Delete a Contact Group by UUID",
+                "operationId": "deleteContactgroup",
+                "parameters": [
+                    {
+                        "name": "identifier",
+                        "in": "path",
+                        "description": "The UUID of the Contactgroup to delete",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/ContactgroupUUID"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content - The Contactgroup has been deleted successfully"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "InvalidIdentifier": {
+                                        "$ref": "#/components/examples/InvalidIdentifier"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Contactgroup Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "ResourceNotFound": {
+                                        "summary": "Resource not found",
+                                        "value": {
+                                            "message": "Contactgroup not found"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                }
+            }
+        },
+        "/contact-groups": {
+            "get": {
+                "tags": [
+                    "Contact Groups"
+                ],
+                "summary": "List all Contact Groups or filter by parameters",
+                "description": "Retrieve all Contact Groups or filter them by parameters.",
+                "operationId": "listContactgroup",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "description": "Filter by Contact Group UUID",
+                        "required": false,
+                        "schema": {
+                            "schema": "ContactgroupUUID",
+                            "title": "ContactgroupUUID",
+                            "description": "An UUID representing a notification Contactgroup",
+                            "type": "string",
+                            "format": "uuid",
+                            "maxLength": 36,
+                            "minLength": 36,
+                            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                            "example": null
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "Filter by Contact Group name",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response with multiple Contactgroup results",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "description": "Successful response with an array of Contactgroup objects",
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Contactgroup"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "NoIdentifierWithFilter": {
+                                        "$ref": "#/components/examples/NoIdentifierWithFilter"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "InvalidRequestBodyId": {
+                                        "$ref": "#/components/examples/InvalidRequestBodyId"
+                                    },
+                                    "InvalidFilterParameter": {
+                                        "$ref": "#/components/examples/InvalidFilterParameter"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Contact Groups"
+                ],
+                "summary": "Create a new Contact Group",
+                "description": "Create a new Contact Group",
+                "operationId": "createContactgroup",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "allOf": [
+                                    {
+                                        "$ref": "#/components/schemas/Contactgroup"
+                                    },
+                                    {
+                                        "properties": {
+                                            "id": {
+                                                "$ref": "#/components/schemas/NewContactgroupUUID"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Contactgroup created successfully",
+                        "headers": {
+                            "X-Resource-Identifier": {
+                                "description": "The identifier of the created Contactgroup",
+                                "schema": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                }
+                            },
+                            "Location": {
+                                "description": "The URL of the created Contactgroup",
+                                "schema": {
+                                    "type": "string",
+                                    "format": "url",
+                                    "example": "notifications/api/v1/contactgroups/{identifier}"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                },
+                                "examples": {
+                                    "ContactgroupCreated": {
+                                        "summary": "Contactgroup created successfully",
+                                        "value": {
+                                            "message": "Contactgroup created successfully"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "links": {
+                            "GetContactgroupByIdentifier": {
+                                "operationId": "getContactgroup",
+                                "parameters": {
+                                    "identifier": "$response.header.X-Resource-Identifier"
+                                },
+                                "description": "Retrieve the created contact using the X-Resource-Identifier header"
+                            },
+                            "UpdateContactgroupByIdentifier": {
+                                "operationId": "updateContactgroup",
+                                "parameters": {
+                                    "identifier": "$response.header.X-Resource-Identifier"
+                                },
+                                "description": "Update the created contact using the X-Resource-Identifier header"
+                            },
+                            "DeleteContactgroupByIdentifier": {
+                                "operationId": "deleteContactgroup",
+                                "parameters": {
+                                    "identifier": "$response.header.X-Resource-Identifier"
+                                },
+                                "description": "Delete the created contact using the X-Resource-Identifier header"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "InvalidRequestBodyFormat": {
+                                        "$ref": "#/components/examples/InvalidRequestBodyFormat"
+                                    },
+                                    "UnexpectedQueryParameter": {
+                                        "$ref": "#/components/examples/UnexpectedQueryParameter"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "415": {
+                        "description": "Unsupported Media Type",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "InvalidContentType": {
+                                        "$ref": "#/components/examples/InvalidContentType"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "Contactgroup AlreadyExists": {
+                                        "summary": "Contactgroup already exists",
+                                        "value": {
+                                            "message": "Contactgroup already exists"
+                                        }
+                                    },
+                                    "InvalidRequestBodyFieldFormat": {
+                                        "$ref": "#/components/examples/InvalidRequestBodyFieldFormat"
+                                    },
+                                    "InvalidRequestBodyId": {
+                                        "$ref": "#/components/examples/InvalidRequestBodyId"
+                                    },
+                                    "MissingRequiredRequestBodyField": {
+                                        "$ref": "#/components/examples/MissingRequiredRequestBodyField"
+                                    },
+                                    "InvalidUserFormat": {
+                                        "$ref": "#/components/examples/InvalidUserFormat"
+                                    },
+                                    "InvalidUserUUID": {
+                                        "$ref": "#/components/examples/InvalidUserUUID"
+                                    },
+                                    "NameAlreadyExists": {
+                                        "$ref": "#/components/examples/NameAlreadyExists"
+                                    },
+                                    "UserNotExists": {
+                                        "$ref": "#/components/examples/UserNotExists"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                }
+            }
+        },
+        "/contacts/{identifier}": {
+            "get": {
+                "tags": [
+                    "Contacts"
+                ],
+                "summary": "Get a specific Contact by its UUID",
+                "description": "Retrieve detailed information about a specific notification Contact using its UUID",
+                "operationId": "getContact",
+                "parameters": [
+                    {
+                        "name": "identifier",
+                        "in": "path",
+                        "description": "The UUID of the Contact to retrieve",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/ContactUUID"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response with a single Contact result",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Contact",
+                                            "description": "Successfull response with the Contact object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "InvalidIdentifier": {
+                                        "$ref": "#/components/examples/InvalidIdentifier"
+                                    },
+                                    "NoIdentifierWithFilter": {
+                                        "$ref": "#/components/examples/NoIdentifierWithFilter"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Contact Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "ResourceNotFound": {
+                                        "summary": "Resource not found",
+                                        "value": {
+                                            "message": "Contact not found"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Contacts"
+                ],
+                "summary": "Update a Contact by UUID",
+                "description": "Update a Contact by UUID, if it doesn't exist, it will be created. \\\n        The identifier must be the same as the payload id",
+                "operationId": "updateContact",
+                "parameters": [
+                    {
+                        "name": "identifier",
+                        "in": "path",
+                        "description": "The UUID of the Contact to Update",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/ContactUUID"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Contact"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Contact created successfully",
+                        "headers": {
+                            "X-Resource-Identifier": {
+                                "description": "The identifier of the created Contact",
+                                "schema": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                }
+                            },
+                            "Location": {
+                                "description": "The URL of the created Contact",
+                                "schema": {
+                                    "type": "string",
+                                    "format": "url",
+                                    "example": "notifications/api/v1/contacts/{identifier}"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                },
+                                "examples": {
+                                    "ContactCreated": {
+                                        "summary": "Contact created successfully",
+                                        "value": {
+                                            "message": "Contact created successfully"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "links": {
+                            "GetContactByIdentifiere": {
+                                "operationId": "getContact",
+                                "parameters": {
+                                    "identifier": "$response.header.X-Resource-Identifier"
+                                },
+                                "description": "Retrieve the created contact using the X-Resource-Identifier header"
+                            },
+                            "UpdateContactByIdentifier": {
+                                "operationId": "updateContact",
+                                "parameters": {
+                                    "identifier": "$response.header.X-Resource-Identifier"
+                                },
+                                "description": "Update the created contact using the X-Resource-Identifier header"
+                            },
+                            "DeleteContactByIdentifier": {
+                                "operationId": "deleteContact",
+                                "parameters": {
+                                    "identifier": "$response.header.X-Resource-Identifier"
+                                },
+                                "description": "Delete the created contact using the X-Resource-Identifier header"
+                            }
+                        }
+                    },
+                    "204": {
+                        "description": "Contact updated successfully"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "InvalidRequestBodyFormat": {
+                                        "$ref": "#/components/examples/InvalidRequestBodyFormat"
+                                    },
+                                    "UnexpectedQueryParameter": {
+                                        "$ref": "#/components/examples/UnexpectedQueryParameter"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Contact Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "ResourceNotFound": {
+                                        "summary": "Resource not found",
+                                        "value": {
+                                            "message": "Contact not found"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "415": {
+                        "description": "Unsupported Media Type",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "InvalidContentType": {
+                                        "$ref": "#/components/examples/InvalidContentType"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "Contact AlreadyExists": {
+                                        "summary": "Contact already exists",
+                                        "value": {
+                                            "message": "Contact already exists"
+                                        }
+                                    },
+                                    "InvalidRequestBodyFieldFormat": {
+                                        "$ref": "#/components/examples/InvalidRequestBodyFieldFormat"
+                                    },
+                                    "InvalidRequestBodyId": {
+                                        "$ref": "#/components/examples/InvalidRequestBodyId"
+                                    },
+                                    "IdentifierMismatch": {
+                                        "$ref": "#/components/examples/IdentifierMismatch"
+                                    },
+                                    "MissingRequiredRequestBodyField": {
+                                        "$ref": "#/components/examples/MissingRequiredRequestBodyField"
+                                    },
+                                    "ContactgroupNotExists": {
+                                        "$ref": "#/components/examples/ContactgroupNotExists"
+                                    },
+                                    "InvalidAddressFormat": {
+                                        "$ref": "#/components/examples/InvalidAddressFormat"
+                                    },
+                                    "InvalidAddressType": {
+                                        "$ref": "#/components/examples/InvalidAddressType"
+                                    },
+                                    "InvalidContactgroupUUID": {
+                                        "$ref": "#/components/examples/InvalidContactgroupUUID"
+                                    },
+                                    "InvalidContactgroupUUIDFormat": {
+                                        "$ref": "#/components/examples/InvalidContactgroupUUIDFormat"
+                                    },
+                                    "InvalidDefaultChannelUUID": {
+                                        "$ref": "#/components/examples/InvalidDefaultChannelUUID"
+                                    },
+                                    "InvalidEmailAddress": {
+                                        "$ref": "#/components/examples/InvalidEmailAddress"
+                                    },
+                                    "InvalidEmailAddressFormat": {
+                                        "$ref": "#/components/examples/InvalidEmailAddressFormat"
+                                    },
+                                    "InvalidGroupsFormat": {
+                                        "$ref": "#/components/examples/InvalidGroupsFormat"
+                                    },
+                                    "MissingAddress": {
+                                        "$ref": "#/components/examples/MissingAddress"
+                                    },
+                                    "UsernameAlreadyExists": {
+                                        "$ref": "#/components/examples/UsernameAlreadyExists"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Contacts"
+                ],
+                "summary": "Replace a Contact by UUID",
+                "description": "Replace a Contact by UUID, the identifier must be different from the payload id",
+                "operationId": "replaceContact",
+                "parameters": [
+                    {
+                        "name": "identifier",
+                        "in": "path",
+                        "description": "The UUID of the contact to create",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/ContactUUID"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "allOf": [
+                                    {
+                                        "$ref": "#/components/schemas/Contact"
+                                    },
+                                    {
+                                        "properties": {
+                                            "id": {
+                                                "$ref": "#/components/schemas/NewContactUUID"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Contact created successfully",
+                        "headers": {
+                            "X-Resource-Identifier": {
+                                "description": "The identifier of the created Contact",
+                                "schema": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                }
+                            },
+                            "Location": {
+                                "description": "The URL of the created Contact",
+                                "schema": {
+                                    "type": "string",
+                                    "format": "url",
+                                    "example": "notifications/api/v1/contacts/{identifier}"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                },
+                                "examples": {
+                                    "ContactCreated": {
+                                        "summary": "Contact created successfully",
+                                        "value": {
+                                            "message": "Contact created successfully"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "links": {
+                            "GetContactByIdentifier": {
+                                "operationId": "getContact",
+                                "parameters": {
+                                    "identifier": "$response.header.X-Resource-Identifier"
+                                },
+                                "description": "Retrieve the created contact using the X-Resource-Identifier header"
+                            },
+                            "UpdateContactByIdentifier": {
+                                "operationId": "updateContact",
+                                "parameters": {
+                                    "identifier": "$response.header.X-Resource-Identifier"
+                                },
+                                "description": "Update the created contact using the X-Resource-Identifier header"
+                            },
+                            "DeleteContactByIdentifier": {
+                                "operationId": "deleteContact",
+                                "parameters": {
+                                    "identifier": "$response.header.X-Resource-Identifier"
+                                },
+                                "description": "Delete the created contact using the X-Resource-Identifier header"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "InvalidRequestBodyFormat": {
+                                        "$ref": "#/components/examples/InvalidRequestBodyFormat"
+                                    },
+                                    "UnexpectedQueryParameter": {
+                                        "$ref": "#/components/examples/UnexpectedQueryParameter"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "415": {
+                        "description": "Unsupported Media Type",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "InvalidContentType": {
+                                        "$ref": "#/components/examples/InvalidContentType"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "Contact AlreadyExists": {
+                                        "summary": "Contact already exists",
+                                        "value": {
+                                            "message": "Contact already exists"
+                                        }
+                                    },
+                                    "InvalidRequestBodyFieldFormat": {
+                                        "$ref": "#/components/examples/InvalidRequestBodyFieldFormat"
+                                    },
+                                    "InvalidRequestBodyId": {
+                                        "$ref": "#/components/examples/InvalidRequestBodyId"
+                                    },
+                                    "MissingRequiredRequestBodyField": {
+                                        "$ref": "#/components/examples/MissingRequiredRequestBodyField"
+                                    },
+                                    "ContactgroupNotExists": {
+                                        "$ref": "#/components/examples/ContactgroupNotExists"
+                                    },
+                                    "InvalidAddressType": {
+                                        "$ref": "#/components/examples/InvalidAddressType"
+                                    },
+                                    "InvalidAddressFormat": {
+                                        "$ref": "#/components/examples/InvalidAddressFormat"
+                                    },
+                                    "InvalidContactgroupUUID": {
+                                        "$ref": "#/components/examples/InvalidContactgroupUUID"
+                                    },
+                                    "InvalidContactgroupUUIDFormat": {
+                                        "$ref": "#/components/examples/InvalidContactgroupUUIDFormat"
+                                    },
+                                    "InvalidDefaultChannelUUID": {
+                                        "$ref": "#/components/examples/InvalidDefaultChannelUUID"
+                                    },
+                                    "InvalidEmailAddress": {
+                                        "$ref": "#/components/examples/InvalidEmailAddress"
+                                    },
+                                    "InvalidEmailAddressFormat": {
+                                        "$ref": "#/components/examples/InvalidEmailAddressFormat"
+                                    },
+                                    "InvalidGroupsFormat": {
+                                        "$ref": "#/components/examples/InvalidGroupsFormat"
+                                    },
+                                    "MissingAddress": {
+                                        "$ref": "#/components/examples/MissingAddress"
+                                    },
+                                    "UsernameAlreadyExists": {
+                                        "$ref": "#/components/examples/UsernameAlreadyExists"
+                                    },
+                                    "IdentifierPayloadIdMissmatch": {
+                                        "$ref": "#/components/examples/IdentifierPayloadIdMissmatch"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Contact Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "ResourceNotFound": {
+                                        "summary": "Resource not found",
+                                        "value": {
+                                            "message": "Contact not found"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Contacts"
+                ],
+                "summary": "Delete a Contact by UUID",
+                "description": "Delete a Contact by UUID",
+                "operationId": "deleteContact",
+                "parameters": [
+                    {
+                        "name": "identifier",
+                        "in": "path",
+                        "description": "The UUID of the Contact to delete",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/ContactUUID"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content - The Contact has been deleted successfully"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "InvalidIdentifier": {
+                                        "$ref": "#/components/examples/InvalidIdentifier"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Contact Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "ResourceNotFound": {
+                                        "summary": "Resource not found",
+                                        "value": {
+                                            "message": "Contact not found"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                }
+            }
+        },
+        "/contacts": {
+            "get": {
+                "tags": [
+                    "Contacts"
+                ],
+                "summary": "List all Contacts or filter by parameters",
+                "description": "Retrieve all Contacts or filter them by parameters.",
+                "operationId": "listContact",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "description": "Filter Contacts by UUID",
+                        "required": false,
+                        "schema": {
+                            "schema": "ContactUUID",
+                            "title": "ContactUUID",
+                            "description": "An UUID representing a notification Contact",
+                            "type": "string",
+                            "format": "uuid",
+                            "maxLength": 36,
+                            "minLength": 36,
+                            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                            "example": null
+                        }
+                    },
+                    {
+                        "name": "full_name",
+                        "in": "query",
+                        "description": "Filter Contacts by full name",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "username",
+                        "in": "query",
+                        "description": "Filter Contacts by username",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 254
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response with multiple Contact results",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "description": "Successful response with an array of Contact objects",
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Contact"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "NoIdentifierWithFilter": {
+                                        "$ref": "#/components/examples/NoIdentifierWithFilter"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "InvalidRequestBodyId": {
+                                        "$ref": "#/components/examples/InvalidRequestBodyId"
+                                    },
+                                    "InvalidFilterParameter": {
+                                        "$ref": "#/components/examples/InvalidFilterParameter"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Contacts"
+                ],
+                "summary": "Create a new Contact",
+                "description": "Create a new Contact",
+                "operationId": "createContact",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "allOf": [
+                                    {
+                                        "$ref": "#/components/schemas/Contact"
+                                    },
+                                    {
+                                        "properties": {
+                                            "id": {
+                                                "$ref": "#/components/schemas/NewContactUUID"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Contact created successfully",
+                        "headers": {
+                            "X-Resource-Identifier": {
+                                "description": "The identifier of the created Contact",
+                                "schema": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                }
+                            },
+                            "Location": {
+                                "description": "The URL of the created Contact",
+                                "schema": {
+                                    "type": "string",
+                                    "format": "url",
+                                    "example": "notifications/api/v1/contacts/{identifier}"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                },
+                                "examples": {
+                                    "ContactCreated": {
+                                        "summary": "Contact created successfully",
+                                        "value": {
+                                            "message": "Contact created successfully"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "links": {
+                            "GetContactByIdentifier": {
+                                "operationId": "getContact",
+                                "parameters": {
+                                    "identifier": "$response.header.X-Resource-Identifier"
+                                },
+                                "description": "Retrieve the created contact using the X-Resource-Identifier header"
+                            },
+                            "UpdateContactByIdentifier": {
+                                "operationId": "updateContact",
+                                "parameters": {
+                                    "identifier": "$response.header.X-Resource-Identifier"
+                                },
+                                "description": "Update the created contact using the X-Resource-Identifier header"
+                            },
+                            "DeleteContactByIdentifier": {
+                                "operationId": "deleteContact",
+                                "parameters": {
+                                    "identifier": "$response.header.X-Resource-Identifier"
+                                },
+                                "description": "Delete the created contact using the X-Resource-Identifier header"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "InvalidRequestBodyFormat": {
+                                        "$ref": "#/components/examples/InvalidRequestBodyFormat"
+                                    },
+                                    "UnexpectedQueryParameter": {
+                                        "$ref": "#/components/examples/UnexpectedQueryParameter"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "415": {
+                        "description": "Unsupported Media Type",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "InvalidContentType": {
+                                        "$ref": "#/components/examples/InvalidContentType"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "Contact AlreadyExists": {
+                                        "summary": "Contact already exists",
+                                        "value": {
+                                            "message": "Contact already exists"
+                                        }
+                                    },
+                                    "InvalidRequestBodyFieldFormat": {
+                                        "$ref": "#/components/examples/InvalidRequestBodyFieldFormat"
+                                    },
+                                    "InvalidRequestBodyId": {
+                                        "$ref": "#/components/examples/InvalidRequestBodyId"
+                                    },
+                                    "MissingRequiredRequestBodyField": {
+                                        "$ref": "#/components/examples/MissingRequiredRequestBodyField"
+                                    },
+                                    "ContactgroupNotExists": {
+                                        "$ref": "#/components/examples/ContactgroupNotExists"
+                                    },
+                                    "InvalidAddressType": {
+                                        "$ref": "#/components/examples/InvalidAddressType"
+                                    },
+                                    "InvalidAddressFormat": {
+                                        "$ref": "#/components/examples/InvalidAddressFormat"
+                                    },
+                                    "InvalidContactgroupUUID": {
+                                        "$ref": "#/components/examples/InvalidContactgroupUUID"
+                                    },
+                                    "InvalidContactgroupUUIDFormat": {
+                                        "$ref": "#/components/examples/InvalidContactgroupUUIDFormat"
+                                    },
+                                    "InvalidDefaultChannelUUID": {
+                                        "$ref": "#/components/examples/InvalidDefaultChannelUUID"
+                                    },
+                                    "InvalidEmailAddress": {
+                                        "$ref": "#/components/examples/InvalidEmailAddress"
+                                    },
+                                    "InvalidEmailAddressFormat": {
+                                        "$ref": "#/components/examples/InvalidEmailAddressFormat"
+                                    },
+                                    "InvalidGroupsFormat": {
+                                        "$ref": "#/components/examples/InvalidGroupsFormat"
+                                    },
+                                    "MissingAddress": {
+                                        "$ref": "#/components/examples/MissingAddress"
+                                    },
+                                    "UsernameAlreadyExists": {
+                                        "$ref": "#/components/examples/UsernameAlreadyExists"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Channel": {
+                "description": "A notification channel represents a destination for notifications in Icinga. \\\n    Channels can be of different types, such as email, webhook, or Rocket.Chat, \n    each with its own configuration requirements. \\\n    Channels are used to route notifications to users or external systems based on their type and configuration.",
+                "required": [
+                    "id",
+                    "name",
+                    "type",
+                    "config"
+                ],
+                "properties": {
+                    "id": {
+                        "$ref": "#/components/schemas/ChannelUUID"
+                    },
+                    "name": {
+                        "description": "The name of the channel",
+                        "type": "string",
+                        "example": "My Webhook Channel"
+                    },
+                    "type": {
+                        "$ref": "#/components/schemas/ChannelTypes"
+                    },
+                    "config": {
+                        "description": "The configuration for the channel, varies depending on the channel type",
+                        "type": "object",
+                        "example": {
+                            "url_template": "https://example.com/webhook?token=abc123"
+                        },
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/EmailChannelConfig"
+                            },
+                            {
+                                "$ref": "#/components/schemas/WebhookChannelConfig"
+                            },
+                            {
+                                "$ref": "#/components/schemas/RocketChatChannelConfig"
+                            }
+                        ]
+                    }
+                },
+                "type": "object"
+            },
+            "ChannelUUID": {
+                "title": "ChannelUUID",
+                "description": "An UUID representing a notification Channel",
+                "type": "string",
+                "format": "uuid",
+                "maxLength": 36,
+                "minLength": 36,
+                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                "example": "bb4af7bd-f0da-489c-ae31-23f714bde714"
+            },
+            "ChannelTypes": {
+                "description": "Available notification channel types",
+                "type": "string",
+                "enum": [
+                    "email",
+                    "webhook",
+                    "rocketchat"
+                ]
+            },
+            "WebhookChannelConfig": {
+                "title": "Webhook Channel Config",
+                "description": "The configuration for a webhook notification channel",
+                "required": [
+                    "url_template"
+                ],
+                "properties": {
+                    "url_template": {
+                        "$ref": "#/components/schemas/Url",
+                        "description": "URL template for the webhook"
+                    }
+                },
+                "type": "object"
+            },
+            "EmailChannelConfig": {
+                "title": "Email Channel Config",
+                "description": "The configuration for an email notification channel",
+                "required": [
+                    "host",
+                    "port",
+                    "sender_mail",
+                    "encryption"
+                ],
+                "properties": {
+                    "host": {
+                        "description": "SMTP host for sending emails",
+                        "type": "string"
+                    },
+                    "port": {
+                        "$ref": "#/components/schemas/Port",
+                        "description": "SMTP port for sending emails"
+                    },
+                    "sender_name": {
+                        "description": "Name of the sender for the email channel",
+                        "type": "string"
+                    },
+                    "sender_mail": {
+                        "$ref": "#/components/schemas/Email",
+                        "description": "Email address of the sender"
+                    },
+                    "user": {
+                        "description": "Username for SMTP authentication",
+                        "type": "string"
+                    },
+                    "password": {
+                        "description": "Password for SMTP authentication",
+                        "type": "string"
+                    },
+                    "encryption": {
+                        "description": "Encryption method for SMTP",
+                        "type": "string",
+                        "enum": [
+                            "none",
+                            "ssl",
+                            "tls"
+                        ]
+                    }
+                },
+                "type": "object"
+            },
+            "RocketChatChannelConfig": {
+                "title": "RocketChat Channel Config",
+                "description": "The configuration for a Rocket.Chat notification channel",
+                "required": [
+                    "url",
+                    "user_id",
+                    "token"
+                ],
+                "properties": {
+                    "url": {
+                        "$ref": "#/components/schemas/Url",
+                        "description": "URL of the Rocket.Chat server"
+                    },
+                    "user_id": {
+                        "description": "User ID for Rocket.Chat",
+                        "type": "string"
+                    },
+                    "token": {
+                        "description": "Authentication token for Rocket.Chat",
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "Contactgroup": {
+                "description": "A contact group",
+                "required": [
+                    "id",
+                    "name"
+                ],
+                "properties": {
+                    "id": {
+                        "$ref": "#/components/schemas/ContactgroupUUID"
+                    },
+                    "name": {
+                        "description": "The name of the Contact Group",
+                        "type": "string",
+                        "example": "My Contact Group"
+                    },
+                    "users": {
+                        "description": "List of user identifiers (UUIDs) that belong to this Contact Group",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ContactUUID"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "ContactgroupUUID": {
+                "title": "ContactgroupUUID",
+                "description": "An UUID representing a notification Contactgroup",
+                "type": "string",
+                "format": "uuid",
+                "maxLength": 36,
+                "minLength": 36,
+                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                "example": "81fb569f-5669-4cd6-93bb-9259446b8b23"
+            },
+            "NewContactgroupUUID": {
+                "title": "NewContactgroupUUID",
+                "description": "An UUID representing a notification NewContactgroup",
+                "type": "string",
+                "format": "uuid",
+                "maxLength": 36,
+                "minLength": 36,
+                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                "example": "31fb569f-5669-4cd6-93bb-9259446b8b74"
+            },
+            "Contact": {
+                "description": "Schema that represents a contact in the Icinga Notifications API",
+                "required": [
+                    "id",
+                    "full_name",
+                    "default_channel",
+                    "addresses"
+                ],
+                "properties": {
+                    "id": {
+                        "$ref": "#/components/schemas/ContactUUID"
+                    },
+                    "full_name": {
+                        "description": "The full name of the contact",
+                        "type": "string",
+                        "example": "Icinga User"
+                    },
+                    "username": {
+                        "description": "The username of the contact",
+                        "type": "string",
+                        "maxLength": 254,
+                        "example": "icingauser"
+                    },
+                    "default_channel": {
+                        "$ref": "#/components/schemas/ChannelUUID",
+                        "description": "The default channel UUID for the contact"
+                    },
+                    "groups": {
+                        "description": "List of group UUIDs the contact belongs to",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ContactgroupUUID",
+                            "description": "Group UUIDs the contact belongs to"
+                        }
+                    },
+                    "addresses": {
+                        "$ref": "#/components/schemas/Addresses",
+                        "description": "Contact addresses by type"
+                    }
+                },
+                "type": "object",
+                "additionalProperties": false
+            },
+            "Addresses": {
+                "description": "Schema that represents a contact's addresses",
+                "properties": {
+                    "email": {
+                        "description": "User's email address",
+                        "type": "string",
+                        "format": "email"
+                    },
+                    "rocketchat": {
+                        "description": "Rocket.Chat identifier or URL",
+                        "type": "string",
+                        "example": "rocketchat.example.com"
+                    },
+                    "webhook": {
+                        "description": "Comma-separated list of webhook URLs or identifiers",
+                        "type": "string",
+                        "example": "https://example.com/webhook"
+                    }
+                },
+                "type": "object",
+                "additionalProperties": false
+            },
+            "ContactUUID": {
+                "title": "ContactUUID",
+                "description": "An UUID representing a notification Contact",
+                "type": "string",
+                "format": "uuid",
+                "maxLength": 36,
+                "minLength": 36,
+                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                "example": "9e868ad0-e774-465b-8075-c5a07e8f0726"
+            },
+            "NewContactUUID": {
+                "title": "NewContactUUID",
+                "description": "An UUID representing a notification NewContact",
+                "type": "string",
+                "format": "uuid",
+                "maxLength": 36,
+                "minLength": 36,
+                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                "example": "52668ad0-e774-465b-8075-c5a07e8f0726"
+            },
+            "SuccessResponse": {
+                "description": "Success response format",
+                "properties": {
+                    "message": {
+                        "description": "Detailed success message",
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "ErrorResponse": {
+                "description": "Error response format",
+                "properties": {
+                    "message": {
+                        "description": "Detailed error message",
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "Email": {
+                "description": "An email address",
+                "type": "string",
+                "format": "email",
+                "maxLength": 320
+            },
+            "Port": {
+                "description": "A port number",
+                "type": "string",
+                "maxLength": 5,
+                "minLength": 1
+            },
+            "Url": {
+                "description": "A URL used in the API",
+                "type": "string",
+                "maxLength": 2048,
+                "example": "example.com"
+            }
+        },
+        "examples": {
+            "InvalidUserFormat": {
+                "summary": "Invalid user format",
+                "value": {
+                    "message": "Invalid request body: expects users to be an array"
+                }
+            },
+            "InvalidUserUUID": {
+                "summary": "Invalid user UUID",
+                "value": {
+                    "message": "Invalid request body: the user identifier X is not a valid UUID"
+                }
+            },
+            "NameAlreadyExists": {
+                "summary": "Name already exists",
+                "value": {
+                    "message": "Name x already exists"
+                }
+            },
+            "UserNotExists": {
+                "summary": "User does not exist",
+                "value": {
+                    "message": "User with identifier x not found"
+                }
+            },
+            "ContactgroupNotExists": {
+                "summary": "Contact Group does not exist",
+                "value": {
+                    "message": "Contact Group with identifier x does not exist"
+                }
+            },
+            "InvalidAddressType": {
+                "summary": "Invalid address type",
+                "value": {
+                    "message": "Invalid request body: undefined address type x given"
+                }
+            },
+            "InvalidAddressFormat": {
+                "summary": "Invalid address format",
+                "value": {
+                    "message": "Invalid request body: expects addresses to be an array"
+                }
+            },
+            "InvalidContactgroupUUID": {
+                "summary": "Invalid Contact Group UUID",
+                "value": {
+                    "message": "Invalid request body: the group identifier invalid_uuid is not a valid UUID"
+                }
+            },
+            "InvalidContactgroupUUIDFormat": {
+                "summary": "Invalid Contact Group UUID format",
+                "value": {
+                    "message": "Invalid request body: an invalid group identifier format given"
+                }
+            },
+            "InvalidDefaultChannelUUID": {
+                "summary": "Invalid default_channel UUID",
+                "value": {
+                    "message": "Invalid request body: given default_channel is not a valid UUID"
+                }
+            },
+            "InvalidEmailAddress": {
+                "summary": "Invalid email address",
+                "value": {
+                    "message": "Invalid request body: an invalid email address given"
+                }
+            },
+            "InvalidEmailAddressFormat": {
+                "summary": "Invalid email address format",
+                "value": {
+                    "message": "Invalid request body: an invalid email address format given"
+                }
+            },
+            "InvalidGroupsFormat": {
+                "summary": "Invalid groups format",
+                "value": {
+                    "message": "Invalid request body: expects groups to be an array"
+                }
+            },
+            "MissingAddress": {
+                "summary": "Missing address",
+                "value": {
+                    "message": "Invalid request body: Address according to default_channel type x is required"
+                }
+            },
+            "UsernameAlreadyExists": {
+                "summary": "Username already exists",
+                "value": {
+                    "message": "Username x already exists"
+                }
+            },
+            "IdentifierMismatch": {
+                "summary": "Identifier mismatch",
+                "value": {
+                    "message": "Identifier mismatch"
+                }
+            },
+            "IdentifierNotFound": {
+                "summary": "Identifier not found",
+                "value": {
+                    "message": "Identifier not found"
+                }
+            },
+            "IdentifierPayloadIdMissmatch": {
+                "summary": "Identifier and payload Id missmatch",
+                "value": {
+                    "message": "Identifier mismatch: the Payload id must be different from the URL identifier"
+                }
+            },
+            "InvalidContentType": {
+                "summary": "Invalid content type",
+                "value": {
+                    "message": "Invalid request header: Content-Type must be application/json"
+                }
+            },
+            "InvalidFilterParameter": {
+                "summary": "Invalid filter parameter",
+                "value": {
+                    "message": "Invalid request parameter: Filter column x is not allowed"
+                }
+            },
+            "InvalidIdentifier": {
+                "summary": "Identifier is not valid",
+                "value": {
+                    "message": "The given identifier is not a valid UUID"
+                }
+            },
+            "InvalidRequestBodyFieldFormat": {
+                "summary": "Invalid request body field format",
+                "value": {
+                    "message": "Invalid request body: expects x to be of type y"
+                }
+            },
+            "InvalidRequestBodyFormat": {
+                "summary": "Invalid request body format",
+                "value": {
+                    "message": "Invalid request body: given content is not a valid JSON"
+                }
+            },
+            "InvalidRequestBodyId": {
+                "summary": "Invalid request body id",
+                "value": {
+                    "message": "Invalid request body: given id is not a valid UUID"
+                }
+            },
+            "MissingRequiredRequestBodyField": {
+                "summary": "Missing required request body field",
+                "value": {
+                    "message": "Invalid request body: the field x must be present"
+                }
+            },
+            "NoIdentifierWithFilter": {
+                "summary": "No identifier with filter",
+                "value": {
+                    "message": "Invalid request: GET with identifier and query parameters, it's not allowed to use both together."
+                }
+            },
+            "UnexpectedQueryParameter": {
+                "summary": "Unexpected query parameter",
+                "value": {
+                    "message": "Unexpected query parameter: Filter is only allowed for GET requests"
+                }
+            }
+        },
+        "securitySchemes": {
+            "BasicAuth": {
+                "type": "http",
+                "description": "Basic authentication for API access",
+                "scheme": "basic"
+            }
+        }
+    },
+    "security": [
+        {
+            "BasicAuth": []
+        }
+    ],
+    "tags": [
+        {
+            "name": "Contacts",
+            "description": "Operations related to notification Contacts"
+        },
+        {
+            "name": "Contact Groups",
+            "description": "Operations related to notification Contact Groups"
+        },
+        {
+            "name": "Channels",
+            "description": "Operations related to notification Channels"
+        }
+    ]
+}

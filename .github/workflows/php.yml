@@ -54,6 +54,36 @@ jobs:
         php: ['8.2', '8.3', '8.4']
         os: ['ubuntu-latest']
 
+    services:
+      mysql:
+        image: mariadb
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: icinga_unittest
+          MYSQL_USER: icinga_unittest
+          MYSQL_PASSWORD: icinga_unittest
+        options: >-
+          --health-cmd "mariadb -s -uroot -proot -e'SHOW DATABASES;' 2> /dev/null | grep icinga_unittest > test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 3306/tcp
+
+      pgsql:
+        image: postgres
+        env:
+          POSTGRES_USER: icinga_unittest
+          POSTGRES_PASSWORD: icinga_unittest
+          POSTGRES_DB: icinga_unittest
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432/tcp
+
     steps:
       - name: Checkout code base
         uses: actions/checkout@v4
@@ -75,7 +105,36 @@ jobs:
           git clone --depth 1 -b snapshot/nightly https://github.com/Icinga/icinga-php-library.git _libraries/ipl
           git clone --depth 1 -b snapshot/nightly https://github.com/Icinga/icinga-php-thirdparty.git _libraries/vendor
 
+      - name: Checkout Icinga Notifications Daemon
+        run: |
+          git clone --depth 1 -b main https://github.com/Icinga/icinga-notifications.git _notifications_daemon
+
+      - name: Initialize Icinga Web
+        run: |
+          mysql --host="127.0.0.1" --port="${{ job.services.mysql.ports['3306'] }}" --user="root" --password="root" \
+            -e "CREATE DATABASE icingaweb; CREATE USER icingaweb@'%' IDENTIFIED BY 'icingaweb'; GRANT ALL ON icingaweb.* TO icingaweb@'%';"
+          PGPASSWORD=icinga_unittest psql --host="127.0.0.1" --port="${{ job.services.pgsql.ports['5432'] }}" \
+            --username "icinga_unittest" -c "CREATE DATABASE icingaweb;"
+
       - name: PHPUnit
         env:
           ICINGAWEB_LIBDIR: _libraries
+          ICINGAWEB_PATH: _icingaweb2
+          ICINGA_NOTIFICATIONS_SCHEMA: _notifications_daemon/schema
+          MYSQL_TESTDB: icinga_unittest
+          MYSQL_TESTDB_HOST: 127.0.0.1
+          MYSQL_TESTDB_PORT: ${{ job.services.mysql.ports['3306'] }}
+          MYSQL_TESTDB_USER: icinga_unittest
+          MYSQL_TESTDB_PASSWORD: icinga_unittest
+          MYSQL_ICINGAWEBDB: icingaweb
+          MYSQL_ICINGAWEBDB_PASSWORD: icingaweb
+          MYSQL_ICINGAWEBDB_USER: icingaweb
+          PGSQL_TESTDB: icinga_unittest
+          PGSQL_TESTDB_HOST: 127.0.0.1
+          PGSQL_TESTDB_PORT: ${{ job.services.pgsql.ports['5432'] }}
+          PGSQL_TESTDB_USER: icinga_unittest
+          PGSQL_TESTDB_PASSWORD: icinga_unittest
+          PGSQL_ICINGAWEBDB: icingaweb
+          PGSQL_ICINGAWEBDB_PASSWORD: icinga_unittest
+          PGSQL_ICINGAWEBDB_USER: icinga_unittest
         run: phpunit --bootstrap _icingaweb2/test/php/bootstrap.php

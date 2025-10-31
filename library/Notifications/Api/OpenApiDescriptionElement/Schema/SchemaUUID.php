@@ -1,0 +1,30 @@
+<?php
+
+/* Icinga Notifications Web | (c) 2025 Icinga GmbH | GPLv2 */
+
+namespace Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Schema;
+
+use Attribute;
+use OpenApi\Attributes\Schema;
+
+#[Attribute(Attribute::TARGET_CLASS | Attribute::TARGET_METHOD | Attribute::IS_REPEATABLE)]
+class SchemaUUID extends Schema
+{
+    public function __construct(
+        string $entityName,
+        ?string $example = null,
+    ) {
+        $name = $entityName . 'UUID';
+        parent::__construct(
+            schema: $name,
+            title: $name,
+            description: 'An UUID representing a notification ' . $entityName,
+            type: 'string',
+            format: 'uuid',
+            maxLength: 36,
+            minLength: 36,
+            pattern: '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+            example: $example ?? null
+        );
+    }
+}
