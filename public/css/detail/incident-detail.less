@@ -25,7 +25,13 @@
     }
   }
 
-  .list-item.notification-suppressed {
-    opacity: .75;
+  .list-item.incident-history.notification-state {
+    &.suppressed {
+      opacity: .75;
+    }
+
+    &.failed .state-text {
+      color: @color-critical;
+    }
   }
 }

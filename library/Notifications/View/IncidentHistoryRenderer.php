@@ -9,8 +9,11 @@ use Icinga\Module\Notifications\Model\Event;
 use Icinga\Module\Notifications\Model\IncidentHistory;
 use Icinga\Module\Notifications\Widget\IconBall;
 use ipl\Html\Attributes;
+use ipl\Html\FormattedString;
+use ipl\Html\Html;
 use ipl\Html\HtmlDocument;
 use ipl\Html\Text;
+use ipl\Html\ValidHtml;
 use ipl\I18n\Translation;
 use ipl\Web\Common\ItemRenderer;
 use ipl\Web\Widget\Icon;
@@ -24,8 +27,13 @@ class IncidentHistoryRenderer implements ItemRenderer
     public function assembleAttributes($item, Attributes $attributes, string $layout): void
     {
         $classes = ['incident-history'];
-        if ($item->type === 'notified' && $item->notification_state === 'suppressed') {
-            $classes[] = 'notification-suppressed';
+        if ($item->type === 'notified') {
+            $classes[] = 'notification-state';
+            if ($item->notification_state === 'suppressed') {
+                $classes[] = 'suppressed';
+            } elseif ($item->notification_state === 'failed') {
+                $classes[] = 'failed';
+            }
         }
 
         $attributes->get('class')->addValue($classes);
@@ -49,7 +57,7 @@ class IncidentHistoryRenderer implements ItemRenderer
 
     public function assembleCaption($item, HtmlDocument $caption, string $layout): void
     {
-        $caption->addHtml(new Text($this->buildMessage($item)));
+        $caption->addHtml($this->buildMessage($item));
     }
 
     public function assembleExtendedInfo($item, HtmlDocument $info, string $layout): void
@@ -154,9 +162,9 @@ class IncidentHistoryRenderer implements ItemRenderer
      *
      * @param IncidentHistory $item
      *
-     * @return string
+     * @return ValidHtml
      */
-    protected function buildMessage(IncidentHistory $item): string
+    protected function buildMessage(IncidentHistory $item): ValidHtml
     {
         switch ($item->type) {
             case 'opened':
@@ -212,11 +220,17 @@ class IncidentHistoryRenderer implements ItemRenderer
                         $item->channel->type
                     );
                 } else {
-                    $message = sprintf(
-                        $this->translate('Contact %s notified via %s (%s)'),
-                        $item->contact->full_name,
-                        $item->channel->type,
-                        IncidentHistory::translateNotificationState($item->notification_state)
+                    $message = new FormattedString(
+                        $this->translate('Contact %s notified via %s %s'),
+                        [
+                            $item->contact->full_name,
+                            $item->channel->type,
+                            Html::tag(
+                                'span',
+                                ['class' => 'state-text'],
+                                sprintf('(%s)', IncidentHistory::translateNotificationState($item->notification_state))
+                            )
+                        ]
                     );
                 }
 
@@ -304,8 +318,12 @@ class IncidentHistoryRenderer implements ItemRenderer
                 $message = '';
         }
 
-        if ($item->message) {
-            $message = $message === '' ? $item->message : $message . ': ' . $item->message;
+        $messageFromDb = $item->message ? ': ' . $item->message : '';
+
+        if (is_string($message)) {
+            $message = new Text($message . $messageFromDb);
+        } else {
+            $message = new FormattedString('%s %s', [$message, $messageFromDb]);
         }
 
         return $message;
