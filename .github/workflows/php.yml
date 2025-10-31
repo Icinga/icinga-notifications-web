@@ -105,6 +105,10 @@ jobs:
           git clone --depth 1 -b snapshot/nightly https://github.com/Icinga/icinga-php-library.git _libraries/ipl
           git clone --depth 1 -b snapshot/nightly https://github.com/Icinga/icinga-php-thirdparty.git _libraries/vendor
 
+      - name: Checkout Icinga Notifications Daemon
+        run: |
+          git clone --depth 1 -b add-column-external-uuid https://github.com/Icinga/icinga-notifications.git _notifications_daemon
+
       - name: Initialize Icinga Web
         run: |
           mysql --host="127.0.0.1" --port="${{ job.services.mysql.ports['3306'] }}" --user="root" --password="root" \
@@ -116,7 +120,7 @@ jobs:
         env:
           ICINGAWEB_LIBDIR: _libraries
           ICINGAWEB_PATH: _icingaweb2
-          ICINGA_NOTIFICATIONS_SCHEMA: test/schema
+          ICINGA_NOTIFICATIONS_SCHEMA: _notifications_daemon/schema
           MYSQL_TESTDB: icinga_unittest
           MYSQL_TESTDB_HOST: 127.0.0.1
           MYSQL_TESTDB_PORT: ${{ job.services.mysql.ports['3306'] }}
