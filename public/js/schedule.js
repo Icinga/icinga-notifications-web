@@ -94,6 +94,21 @@
             relatedElements.forEach((relatedElement) => {
                 relatedElement.classList.add('highlighted');
             });
+
+            const tooltip = entry.querySelector('.rotation-info');
+            if (tooltip) {
+                requestAnimationFrame(() => {
+                    const tooltipRect = tooltip.getBoundingClientRect();
+                    const gridRect = grid.getBoundingClientRect();
+                    if (tooltipRect.right > gridRect.right) {
+                        tooltip.classList.add('is-left');
+                    }
+
+                    if (tooltipRect.top < gridRect.top) {
+                        tooltip.classList.add('is-bottom');
+                    }
+                });
+            }
         }
 
         onEntryLeave(event)
@@ -116,6 +131,11 @@
             relatedElements.forEach((relatedElement) => {
                 relatedElement.classList.remove('highlighted');
             });
+
+            const tooltip = entry.querySelector('.rotation-info');
+            if (tooltip) {
+                tooltip.classList.remove('is-left', 'is-bottom');
+            }
         }
     }
 
