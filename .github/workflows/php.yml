@@ -107,7 +107,7 @@ jobs:
 
       - name: Checkout Icinga Notifications Daemon
         run: |
-          git clone --depth 1 -b add-column-external-uuid https://github.com/Icinga/icinga-notifications.git _notifications_daemon
+          git clone --depth 1 -b main https://github.com/Icinga/icinga-notifications.git _notifications_daemon
 
       - name: Initialize Icinga Web
         run: |
