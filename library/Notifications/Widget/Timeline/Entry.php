@@ -8,9 +8,10 @@ use Icinga\Module\Notifications\Widget\TimeGrid\BaseGrid;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use Icinga\Module\Notifications\Widget\TimeGrid;
+use ipl\Html\FormattedString;
+use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
-use ipl\Html\ValidHtml;
 use ipl\Web\Widget\Icon;
 
 class Entry extends TimeGrid\Entry
@@ -18,8 +19,8 @@ class Entry extends TimeGrid\Entry
     /** @var Member */
     protected $member;
 
-    /** @var ?ValidHtml Content of the flyoutmenu that is shown when the entry is hovered */
-    protected ?ValidHtml $flyoutContent;
+    /** @var ?HtmlDocument Content of the flyoutmenu that is shown when the entry is hovered */
+    protected ?HtmlDocument $flyoutContent;
 
     /**
      * @var string A CSS class that changes the placement of the flyout
@@ -50,13 +51,13 @@ class Entry extends TimeGrid\Entry
     /**
      * Set content of a tooltip that is shown when the entry is hovered
      *
-     * @param ValidHtml $content
+     * @param HtmlDocument $content
      *
      * @return static
      */
-    public function setFlyoutContent(ValidHtml $content): static
+    public function setFlyoutContent(HtmlDocument $content): static
     {
-        $this->flyoutContent = $content;
+        $this->flyoutContent = clone $content;
 
         return $this;
     }
@@ -64,9 +65,9 @@ class Entry extends TimeGrid\Entry
     /**
      * Return the content of the entries tooltip
      *
-     * @return ValidHtml|null
+     * @return HtmlDocument|null
      */
-    public function getFlyoutContent(): ?ValidHtml
+    public function getFlyoutContent(): ?HtmlDocument
     {
         return $this->flyoutContent;
     }
@@ -136,7 +137,26 @@ class Entry extends TimeGrid\Entry
             )
         );
 
-        $this->getAttributes()->add('class', $this->getWidthClass());
-        $this->addHtml($this->flyoutContent);
+        if (isset($this->flyoutContent)) {
+            $this->getAttributes()->add('class', $this->getWidthClass());
+            $this->addHtml(
+                $this->flyoutContent
+                    ->addHtml(
+                        new HtmlElement(
+                            'span',
+                            Attributes::create(['class' => 'rotation-info-on-duty']),
+                            FormattedString::create(
+                                $this->translate('On duty: %s'),
+                                new HtmlElement(
+                                    'span',
+                                    Attributes::create(['class' => 'rotation-info-active-member-name']),
+                                    new Icon($this->getMember()->getIcon()),
+                                    Text::create($this->getMember()->getName())
+                                )
+                            )
+                        )
+                    )
+            );
+        }
     }
 }
