@@ -11,14 +11,18 @@ use Icinga\Module\Notifications\Model\Rotation;
 use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use Icinga\Module\Notifications\Model\Schedule;
 use Icinga\Web\Session;
+use IntlTimeZone;
 use ipl\Html\Attributes;
 use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
+use ipl\Validator\CallbackValidator;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
+use ipl\Web\Url;
+use Throwable;
 
 class ScheduleForm extends CompatForm
 {
@@ -31,7 +35,7 @@ class ScheduleForm extends CompatForm
     protected bool $showRemoveButton = false;
 
     /** @var bool */
-    protected bool $showTimezoneDropdown = false;
+    protected bool $showTimezoneSuggestionInput = false;
 
     /** @var Connection */
     private Connection $db;
@@ -71,9 +75,9 @@ class ScheduleForm extends CompatForm
      *
      * @return $this
      */
-    public function setShowTimezoneDropdown(bool $state = true): self
+    public function setShowTimezoneSuggestionInput(bool $state = true): self
     {
-        $this->showTimezoneDropdown = $state;
+        $this->showTimezoneSuggestionInput = $state;
 
         return $this;
     }
@@ -195,14 +199,39 @@ class ScheduleForm extends CompatForm
             'placeholder'   => $this->translate('e.g. working hours, on call, etc ...')
         ]);
 
-        if ($this->showTimezoneDropdown) {
-            $this->addElement('select', 'timezone', [
-                'required'     => true,
-                'label'        => $this->translate('Schedule Timezone'),
-                'description'  => $this->translate('Select the time zone in which this schedule operates.'),
-                'multiOptions' => array_combine(DateTimeZone::listIdentifiers(), DateTimeZone::listIdentifiers()),
-                'value'        => date_default_timezone_get(),
-            ]);
+        if ($this->showTimezoneSuggestionInput) {
+            $this->addElement(
+                'suggestion',
+                'timezone',
+                [
+                    'suggestionsUrl' => Url::fromPath('notifications/suggest/timezone', [
+                        'showCompact'    => true,
+                        '_disableLayout' => 1
+                    ]),
+                    'label'          => $this->translate('Schedule Timezone'),
+                    'value'          => date_default_timezone_get(),
+                    'validators'     => [
+                        new CallbackValidator(function ($value, $validator) {
+                            foreach (IntlTimeZone::createEnumeration() as $tz) {
+                                try {
+                                    if (
+                                        (new DateTime('now', new DateTimeZone($tz)))->getTimezone()->getLocation()
+                                        && $value === $tz
+                                    ) {
+                                        return true;
+                                    }
+                                } catch (Throwable) {
+                                    continue;
+                                }
+                            }
+
+                            $validator->addMessage($this->translate('Invalid timezone'));
+
+                            return false;
+                        })
+                    ]
+                ]
+            );
         }
 
         $this->addElement('submit', 'submit', [
