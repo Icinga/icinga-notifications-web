@@ -18,7 +18,7 @@ class Entry extends TimeGrid\Entry
     protected $member;
 
     /** @var ?EntryFlyout Content of the flyoutmenu that is shown when the entry is hovered */
-    protected ?EntryFlyout $flyoutContent;
+    protected ?EntryFlyout $flyoutContent = null;
 
     /**
      * @var string A CSS class that changes the placement of the flyout

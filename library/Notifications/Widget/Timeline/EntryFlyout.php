@@ -1,5 +1,7 @@
 <?php
 
+/* Icinga Notifications Web | (c) 2025 Icinga GmbH | GPLv2 */
+
 namespace Icinga\Module\Notifications\Widget\Timeline;
 
 use DateTime;
@@ -17,29 +19,29 @@ class EntryFlyout extends BaseHtmlElement
 {
     use Translation;
 
-    /** @var Member Member who is on duty during the entries timespan */
-    protected Member $activeMember;
+    /** @var ?Member Member who is on duty during the entry's timespan */
+    protected ?Member $activeMember = null;
 
-    /** @var string Mode of the entry's rotation can be "partial", "multi" or "24-7"*/
-    protected string $mode;
+    /** @var ?string Mode of the entry's rotation can be "partial", "multi" or "24-7"*/
+    protected ?string $mode = null;
 
-    /** @var array All members of the entry's rotation */
-    protected array $rotationMembers;
+    /** @var ?array All members of the entry's rotation */
+    protected ?array $rotationMembers = null;
 
-    /** @var array Rotation start time, end time, and frequency */
-    protected array $rotationOptions;
+    /** @var ?array Rotation start time, end time, and frequency */
+    protected ?array $rotationOptions = null;
 
-    /** @var string First handoff of the rotation */
-    protected string $firstHandoff;
+    /** @var ?string First handoff of the rotation */
+    protected ?string $firstHandoff = null;
 
-    /** @var string Name of the entry's rotation */
-    protected string $rotationName;
+    /** @var ?string Name of the entry's rotation */
+    protected ?string $rotationName = null;
 
-    /** @var ValidHtml Information about timespan, frequency and the first handoff */
-    protected ValidHtml $timeInfo;
+    /** @var ?ValidHtml Information about timespan, frequency and the first handoff */
+    protected ?ValidHtml $timeInfo = null;
 
-    /** @var ValidHtml Information about name and mode of the rotation */
-    protected ValidHtml $nameInfo;
+    /** @var ?ValidHtml Information about name and mode of the rotation */
+    protected ?ValidHtml $nameInfo = null;
 
     /**
      * Set active member and return a new instance
@@ -50,6 +52,10 @@ class EntryFlyout extends BaseHtmlElement
      */
     public function withActiveMember(Member $member): self
     {
+        if (! isset($this->timeInfo)) {
+            $this->generateAndSetRotationInfo();
+        }
+
         $flyout = clone $this;
         $flyout->activeMember = $member;
 
@@ -128,10 +134,6 @@ class EntryFlyout extends BaseHtmlElement
 
     public function assemble(): void
     {
-        if (! isset($this->timeInfo)) {
-            $this->generateAndSetRotationInfo();
-        }
-
         if (count($this->rotationMembers) > 1) {
             $memberList = new HtmlElement('span', Attributes::create(['class' => 'rotation-info-member-list']));
             $activeMemberIndex = 0;

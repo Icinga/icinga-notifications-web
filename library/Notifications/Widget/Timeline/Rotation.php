@@ -88,8 +88,7 @@ class Rotation
             ->setRotationMembers($rotationMembers)
             ->setRotationOptions($this->model->options)
             ->setRotationName($this->model->name)
-            ->setFirstHandoff($this->model->first_handoff)
-            ->generateAndSetRotationInfo();
+            ->setFirstHandoff($this->model->first_handoff);
 
         return $flyout;
     }
