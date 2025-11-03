@@ -120,7 +120,6 @@ class Rotation
                     Filter::greaterThanOrEqual('until_time', $after) // Or one which isn't over yet
                 )
             ));
-
         foreach ($entries as $timeperiodEntry) {
             if ($timeperiodEntry->member->contact->id !== null) {
                 $member = new Member($timeperiodEntry->member->contact->full_name);

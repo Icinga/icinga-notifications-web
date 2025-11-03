@@ -48,9 +48,9 @@ class EntryFlyout extends BaseHtmlElement
      *
      * @param Member $member
      *
-     * @return self
+     * @return static
      */
-    public function withActiveMember(Member $member): self
+    public function withActiveMember(Member $member): static
     {
         if (! isset($this->timeInfo)) {
             $this->generateAndSetRotationInfo();
@@ -234,7 +234,7 @@ class EntryFlyout extends BaseHtmlElement
      *
      * @return $this
      */
-    public function generateAndSetRotationInfo(): static
+    protected function generateAndSetRotationInfo(): static
     {
         $this->setTag('div');
         $this->setAttribute('class', 'rotation-info');
