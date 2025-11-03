@@ -4,11 +4,14 @@
 
 namespace Icinga\Module\Notifications\Web\Control;
 
+use DateTime;
 use DateTimeZone;
+use IntlTimeZone;
 use ipl\Html\Form;
 use ipl\Html\HtmlElement;
 use ipl\I18n\Translation;
 use ipl\Web\Common\FormUid;
+use Throwable;
 
 /**
  * A simple dropdown menu to pick a timezone.
@@ -27,13 +30,24 @@ class TimezonePicker extends Form
     {
         $this->addElement($this->createUidElement());
 
+        $validTz = [];
+        foreach (IntlTimeZone::createEnumeration() as $tz) {
+            try {
+                if ((new DateTime('now', new DateTimeZone($tz)))->getTimezone()->getLocation()) {
+                    $validTz[$tz] = $tz;
+                }
+            } catch (Throwable) {
+                continue;
+            }
+        }
+
         $this->addElement(
             'select',
             static::DEFAULT_TIMEZONE_PARAM,
             [
                 'class'   => 'autosubmit',
                 'label'   => $this->translate('Display Timezone'),
-                'options' => array_combine(DateTimeZone::listIdentifiers(), DateTimeZone::listIdentifiers())
+                'options' => $validTz
             ]
         );
         $select = $this->getElement(static::DEFAULT_TIMEZONE_PARAM);
