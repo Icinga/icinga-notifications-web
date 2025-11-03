@@ -9,16 +9,9 @@ use DateTime;
 use Generator;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\RotationConfigForm;
-use ipl\Html\Attributes;
-use ipl\Html\FormattedString;
-use ipl\Html\HtmlDocument;
-use ipl\Html\HtmlElement;
-use ipl\Html\Text;
-use ipl\Html\ValidHtml;
 use ipl\I18n\Translation;
 use ipl\Scheduler\RRule;
 use ipl\Stdlib\Filter;
-use ipl\Web\Widget\Icon;
 use Recurr\Frequency;
 use Recurr\Rule;
 
@@ -80,200 +73,25 @@ class Rotation
     }
 
     /**
-     * Generate info that is to be shown when an entry is hovered
+     * Create the base version of the flyout for this rotation
      *
-     * @return HtmlElement
+     * @return EntryFlyout
      */
-    public function generateEntryInfo(): HtmlElement
+    public function generateEntryInfo(): EntryFlyout
     {
-        $memberList = new HtmlElement('div');
         $rotationMembers = iterator_to_array(
             $this->model->member->with(['contact', 'contactgroup'])
         );
 
-        if (count($rotationMembers) > 1) {
-            $hiddenMemberCount = count(array_splice($rotationMembers, 2));
-            $visibleNames = (new HtmlDocument())->setSeparator(', ');
-            foreach ($rotationMembers as $member) {
-                if ($member->contact_id !== null) {
-                    $visibleNames->addHtml(
-                        new HtmlElement(
-                            'span',
-                            null,
-                            new Icon('user'),
-                            Text::create($member->contact->full_name)
-                        )
-                    );
-                } else {
-                    $visibleNames->addHtml(
-                        new HtmlElement(
-                            'span',
-                            null,
-                            new Icon('users'),
-                            Text::create($member->contactgroup->name)
-                        )
-                    );
-                }
-            }
+        $flyout = new EntryFlyout();
+        $flyout->setMode($this->model->mode)
+            ->setRotationMembers($rotationMembers)
+            ->setRotationOptions($this->model->options)
+            ->setRotationName($this->model->name)
+            ->setFirstHandoff($this->model->first_handoff)
+            ->generateAndSetRotationInfo();
 
-            $memberList->addHtml($visibleNames);
-            if ($hiddenMemberCount > 0) {
-                $memberList->addHtml(
-                    new HtmlElement(
-                        'span',
-                        Attributes::create(['class' => ['rotation-info-member-count']]),
-                        Text::create(sprintf($this->translate(' + %d more'), $hiddenMemberCount))
-                    )
-                );
-            }
-        }
-
-        $mode = match ($this->model->mode) {
-            'multi' => $this->translate('Multi Day'),
-            'partial' => $this->translate('Partial Day'),
-            '24-7' => $this->translate('24/7')
-        };
-
-        return new HtmlElement(
-            'div',
-            Attributes::create(['class' => ['rotation-info']]),
-            new HtmlElement(
-                'span',
-                Attributes::create(['class' => 'rotation-info-name']),
-                Text::create($this->getName()),
-                new HtmlElement(
-                    'span',
-                    Attributes::create(['class' => 'rotation-info-mode']),
-                    Text::create(" ($mode)")
-                )
-            ),
-            $this->generateTimeInfo(),
-            $memberList
-        );
-    }
-
-    /**
-     * Generate info about start, handoff frequency and time interval
-     *
-     * @return ValidHtml
-     */
-    public function generateTimeInfo(): ValidHtml
-    {
-        $options = $this->model->options;
-        $mode = $this->model->mode;
-        $weekdayNames = [
-            1 => $this->translate("Mon"),
-            2 => $this->translate("Tue"),
-            3 => $this->translate("Wed"),
-            4 => $this->translate("Thu"),
-            5 => $this->translate("Fri"),
-            6 => $this->translate("Sat"),
-            7 => $this->translate("Sun")
-        ];
-
-        $noneType = \IntlDateFormatter::NONE;
-        $shortType = \IntlDateFormatter::SHORT;
-        $timeFormatter = new \IntlDateFormatter(\Locale::getDefault(), $noneType, $shortType);
-        $dateFormatter = new \IntlDateFormatter(\Locale::getDefault(), $shortType, $noneType);
-        $firstHandoff = $dateFormatter->format(DateTime::createFromFormat('Y-m-d', $this->model->first_handoff));
-
-        if (($options['frequency'] ?? null) === 'd') {
-            $handoff = sprintf(
-                $this->translatePlural(
-                    'Handoff every day',
-                    'Handoff every %d days',
-                    (int) $options['interval']
-                ),
-                $options['interval']
-            );
-        } else {
-            $handoff = sprintf(
-                $this->translatePlural(
-                    'Handoff every week',
-                    'Handoff every %d weeks',
-                    (int) $options['interval']
-                ),
-                $options['interval']
-            );
-        }
-
-        if ($dateFormatter->format(new DateTime()) < $firstHandoff) {
-            $startText = $this->translate('Starts on %s');
-        } else {
-            $startText = $this->translate('Started on %s');
-        }
-
-        $firstHandoffInfo = new HtmlElement(
-            'span',
-            Attributes::create(['class' => 'rotation-info-start']),
-            FormattedString::create(
-                $startText,
-                new HtmlElement('time', null, Text::create($firstHandoff))
-            )
-        );
-
-        $handoffInterval = new HtmlElement(
-            'span',
-            Attributes::create(['class' => ['rotation-info-interval']]),
-            Text::create($handoff)
-        );
-
-        $timeInfo = new HtmlElement(
-            'div',
-            Attributes::create(['class' => ['rotation-info-time']])
-        );
-
-        if ($mode === "partial") {
-            $days = $options["days"];
-            $from = $timeFormatter->format(DateTime::createFromFormat('H:i', $options["from"]));
-            $to = $timeFormatter->format(DateTime::createFromFormat('H:i', $options["to"]));
-            if ($days[count($days) - 1] - $days[0] === (count($days) - 1) && count($days) > 1) {
-                $daysText = sprintf(
-                    $this->translate(
-                        '%s through %s ',
-                    ),
-                    $weekdayNames[reset($days)],
-                    $weekdayNames[end($days)],
-                );
-            } else {
-                $daysText = implode(', ', array_map(function ($day) use ($weekdayNames) {
-                    return $weekdayNames[$day];
-                }, $days));
-            }
-
-            return $timeInfo->addHtml(
-                new HtmlElement(
-                    'div',
-                    Attributes::create(['class' => ['days-interval-wrapper']]),
-                    new HtmlElement(
-                        'span',
-                        Attributes::create(['class' => ['rotation-info-days']]),
-                        Text::create(sprintf('%s %s - %s, ', $daysText, $from, $to))
-                    ),
-                    $handoffInterval
-                )
-            )->addHtml($firstHandoffInfo);
-        } elseif ($mode === "multi") {
-            $fromDay = $weekdayNames[$options["from_day"]];
-            $fromAt = $timeFormatter->format(DateTime::createFromFormat('H:i', $options["from_at"]));
-            $toDay = $weekdayNames[$options["to_day"]];
-            $toAt = $timeFormatter->format(DateTime::createFromFormat('H:i', $options["to_at"]));
-
-            return $timeInfo->addHtml(
-                new HtmlElement(
-                    'div',
-                    Attributes::create(['class' => ['days-interval-wrapper']]),
-                    new HtmlElement(
-                        'span',
-                        Attributes::create(['class' => ['rotation-info-days']]),
-                        Text::create(sprintf('%s %s - %s %s, ', $fromDay, $fromAt, $toDay, $toAt))
-                    ),
-                    $handoffInterval
-                )
-            )->addHtml($firstHandoffInfo);
-        } else {
-            return $timeInfo->addHtml($handoffInterval)->addHtml($firstHandoffInfo);
-        }
+        return $flyout;
     }
 
     /**
