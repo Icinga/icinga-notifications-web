@@ -185,10 +185,16 @@ class Timeline extends BaseHtmlElement implements EntryProvider
         $occupiedCells = [];
         foreach ($rotations as $rotation) {
             $entryFound = false;
+            if (! $this->minimalLayout) {
+                $flyoutInfo = $rotation->generateEntryInfo();
+            }
+
             foreach ($rotation->fetchTimeperiodEntries($this->start, $this->getGrid()->getGridEnd()) as $entry) {
                 $entryFound = true;
                 if (! $this->minimalLayout) {
                     $entry->setPosition($maxPriority - $rotation->getPriority());
+                    $entry->setFlyoutContent($flyoutInfo);
+                    $entry->calculateAndSetWidthClass($this->getGrid());
 
                     yield $entry;
                 }
@@ -256,6 +262,8 @@ class Timeline extends BaseHtmlElement implements EntryProvider
                         $resultEntry->setUrl($entry->getUrl());
                         $resultEntry->getAttributes()
                             ->add('data-rotation-position', $entry->getPosition());
+                        $resultEntry->setFlyoutContent($entry->getFlyoutContent())
+                            ->calculateAndSetWidthClass($this->getGrid());
                     }
 
                     yield $resultEntry;

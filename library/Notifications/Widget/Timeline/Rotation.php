@@ -9,6 +9,7 @@ use DateTime;
 use Generator;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\RotationConfigForm;
+use ipl\I18n\Translation;
 use ipl\Scheduler\RRule;
 use ipl\Stdlib\Filter;
 use Recurr\Frequency;
@@ -16,6 +17,8 @@ use Recurr\Rule;
 
 class Rotation
 {
+    use Translation;
+
     /** @var \Icinga\Module\Notifications\Model\Rotation */
     protected $model;
 
@@ -67,6 +70,27 @@ class Rotation
     public function getPriority(): int
     {
         return $this->model->priority;
+    }
+
+    /**
+     * Create the base version of the flyout for this rotation
+     *
+     * @return EntryFlyout
+     */
+    public function generateEntryInfo(): EntryFlyout
+    {
+        $rotationMembers = iterator_to_array(
+            $this->model->member->with(['contact', 'contactgroup'])
+        );
+
+        $flyout = new EntryFlyout();
+        $flyout->setMode($this->model->mode)
+            ->setRotationMembers($rotationMembers)
+            ->setRotationOptions($this->model->options)
+            ->setRotationName($this->model->name)
+            ->setFirstHandoff($this->model->first_handoff);
+
+        return $flyout;
     }
 
     /**

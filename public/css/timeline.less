@@ -45,10 +45,14 @@
     }
 
     .overlay {
+      overflow: visible;
+      z-index: 3;
+
       .entry {
         margin-top: 1em;
         margin-bottom: 1em;
-        z-index: 2; // overlap the .clock .time-hand
+        overflow: visible;
+        position: relative;
 
         .title {
           height: 100%;
@@ -58,6 +62,94 @@
 
           .name {
             .text-ellipsis();
+          }
+        }
+
+        &.narrow-entry {
+          .rotation-info {
+            left: ~"calc(50% - 1em)";
+
+            &.is-left {
+              right: ~"calc(50% - 1em)";
+            }
+          }
+        }
+
+        .rotation-info {
+          display: none;
+          position: absolute;
+          bottom: ~"calc(100% + 0.5em)";
+          width: max-content;
+          max-width: 30em;
+          height: auto;
+          padding: 0.5em;
+          left: 1.5em;
+          flex-direction: column;
+          white-space: nowrap;
+
+          .rotation-info-time {
+            flex-direction: column;
+            display: flex;
+          }
+
+          &::before {
+            content: '';
+            position: absolute;
+            display: inline-block;
+            width: 1em;
+            height: 1em;
+            left: 0.5em;
+            bottom: ~"calc(-0.5em - 1px)";
+            background-color: @body-bg-color;
+            transform: rotate(45deg);
+          }
+
+          &::after {
+            content: '';
+            position: absolute;
+            bottom: -0.5em;
+            left: 0;
+            right: 0;
+            height: 0.5em;
+            background: transparent;
+          }
+
+          &.is-left {
+            left: auto;
+            right: ~"calc(100% - 3.5em)";
+
+            &::before {
+              left: auto;
+              right: 0.5em;
+              transform: rotate(45deg);
+            }
+          }
+
+          &.is-bottom {
+            top: ~"calc(100% + 0.5em)";
+            bottom: auto;
+
+            &::before {
+              bottom: auto;
+              top: ~"calc(-0.5em - 1px)";
+              transform: rotate(225deg);
+            }
+
+            &::after {
+              top: -0.5em;
+            }
+
+            &.is-left:before {
+              transform: rotate(225deg);
+            }
+          }
+        }
+
+        &:hover {
+          mix-blend-mode: normal;
+          .rotation-info {
+            z-index: 1;
+            display: flex;
           }
         }
       }
@@ -234,6 +326,28 @@
   }
 }
 
+#layout.minimal-layout,
+#layout.poor-layout,
+#layout.twocols:not(.wide-layout) {
+  .rotation-info {
+    .days-interval-wrapper {
+      display: flex;
+      flex-direction: column;
+    }
+  }
+
+  .medium-entry {
+    .rotation-info {
+      left: ~"calc(50% - 1em)";
+
+      &.is-left {
+        right: ~"calc(50% - 1em)";
+        left:auto;
+      }
+    }
+  }
+}
+
 /* Design */
 
 .timeline {
@@ -309,6 +423,36 @@
         .button(@gray-lighter);
       }
     }
+  }
+
+  .rotation-info {
+    background-color: @body-bg-color;
+    border: 1px solid @gray-light;
+    .rounded-corners();
+
+    &::before {
+      border-right: 1px solid @gray-light;
+      border-bottom: 1px solid @gray-light;
+    }
+  }
+
+  .rotation-info-name {
+    font-weight: bold;
+  }
+
+  .rotation-info-member-count,
+  .rotation-info-mode,
+  .rotation-info-start,
+  .rotation-info-on-duty,
+  .rotation-info-members {
+    color: @text-color-light;
+    font-weight: normal;
+  }
+
+  .rotation-info-start time,
+  .rotation-info-active-member-name,
+  .rotation-info-member-list {
+    color: @default-text-color;
   }
 }
 
