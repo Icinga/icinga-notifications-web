@@ -173,16 +173,14 @@ class SourceForm extends CompatForm
     {
         $source = $this->getValues();
 
-        if (empty(array_diff_assoc($source, $this->fetchDbValues()))) {
-            return;
-        }
-
         /** @var ?string $listenerPassword */
         $listenerPassword = $this->getValue('listener_password');
         if ($listenerPassword) {
             // Not using PASSWORD_DEFAULT, as the used algorithm should
             // be kept in sync with what the daemon understands
             $source['listener_password_hash'] = password_hash($listenerPassword, self::HASH_ALGORITHM);
+        } elseif (empty(array_diff_assoc($source, $this->fetchDbValues()))) {
+            return;
         }
 
         $source['changed_at'] = (int) (new DateTime())->format("Uv");
