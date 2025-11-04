@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Model;
 use DateTime;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Icons;
+use Icinga\Module\Notifications\Model\Behavior\IcingaCustomVars;
 use ipl\Orm\Behavior\Binary;
 use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
@@ -103,6 +104,7 @@ class Event extends Model
         $behaviors->add(new MillisecondTimestamp(['time']));
         $behaviors->add(new Binary(['object_id']));
         $behaviors->add(new BoolCast(['mute']));
+        $behaviors->add(new IcingaCustomVars());
     }
 
     public function createRelations(Relations $relations): void

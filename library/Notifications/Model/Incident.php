@@ -6,6 +6,7 @@ namespace Icinga\Module\Notifications\Model;
 
 use DateTime;
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Model\Behavior\IcingaCustomVars;
 use ipl\Orm\Behavior\Binary;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
@@ -94,6 +95,7 @@ class Incident extends Model
             'started_at',
             'recovered_at'
         ]));
+        $behaviors->add(new IcingaCustomVars());
     }
 
     public function createRelations(Relations $relations): void
