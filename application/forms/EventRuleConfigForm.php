@@ -308,8 +308,29 @@ class EventRuleConfigForm extends CompatForm
             $escalationsFromDb[$escalationFromDb->id] = $escalationFromDb;
         }
 
+        $escalations = $this->getElement('escalations')->getEscalations();
+        $currentEscalationIDs = array_map(
+            function ($escalation) {
+                return $escalation->getEscalation()['id'];
+            },
+            $escalations
+        );
+
+        $escalationsToRemove = array_diff(array_keys($escalationsFromDb), $currentEscalationIDs);
+        if (! empty($escalationsToRemove)) {
+            $db->update('rule_escalation_recipient', [
+                'changed_at' => (int) (new DateTime())->format("Uv"),
+                'deleted'    => 'y'
+            ], ['rule_escalation_id IN (?)' => $escalationsToRemove, 'deleted = ?' => 'n']);
+            $db->update('rule_escalation', [
+                'changed_at' => (int) (new DateTime())->format("Uv"),
+                'position'   => null,
+                'deleted'    => 'y'
+            ], ['id IN (?)' => $escalationsToRemove]);
+        }
+
         $recipients = [];
-        foreach ($this->getElement('escalations')->getEscalations() as $escalation) {
+        foreach ($escalations as $escalation) {
             /** @var Escalation $escalation */
             $config = $escalation->getEscalation();
             if ($config['id'] === null) {
@@ -341,23 +362,7 @@ class EventRuleConfigForm extends CompatForm
                         'changed_at' => (int) (new DateTime())->format("Uv")
                     ], ['id = ?' => $config['id'], 'rule_id = ?' => $ruleId]);
                 }
-
-                unset($escalationsFromDb[$config['id']]);
             }
-        }
-
-        // What's left must be removed
-        $escalationsToRemove = array_keys($escalationsFromDb);
-        if (! empty($escalationsToRemove)) {
-            $db->update('rule_escalation_recipient', [
-                'changed_at' => (int) (new DateTime())->format("Uv"),
-                'deleted'    => 'y'
-            ], ['rule_escalation_id IN (?)' => $escalationsToRemove, 'deleted = ?' => 'n']);
-            $db->update('rule_escalation', [
-                'changed_at' => (int) (new DateTime())->format("Uv"),
-                'position'   => null,
-                'deleted'    => 'y'
-            ], ['id IN (?)' => $escalationsToRemove]);
         }
 
         foreach ($recipients as $escalationId => [$escalationRecipients, $recipientsFromDb]) {
