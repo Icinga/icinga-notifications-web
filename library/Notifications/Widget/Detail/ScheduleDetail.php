@@ -86,10 +86,6 @@ class ScheduleDetail extends BaseHtmlElement
 
     protected function assemble()
     {
-        $this->addHtml(
-            new HtmlElement('div', Attributes::create(['class' => 'schedule-header']), $this->controls)
-        );
-
         $timeline = $this->createTimeline();
         if (! $this->hasRotation) {
             $this->addHtml(new HtmlElement(
