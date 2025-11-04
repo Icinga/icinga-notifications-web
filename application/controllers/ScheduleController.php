@@ -55,6 +55,7 @@ class ScheduleController extends CompatController
             })
             ->handleRequest($this->getServerRequest());
 
+        $this->addControl($scheduleControls);
         $this->addContent(new ScheduleDetail($schedule, $scheduleControls));
     }
 
