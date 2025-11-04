@@ -6,10 +6,12 @@ namespace Icinga\Module\Notifications\Web\Control\SearchBar;
 
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Model\Behavior\IcingaCustomVars;
 use Icinga\Module\Notifications\Model\ObjectExtraTag;
 use Icinga\Module\Notifications\Model\ObjectIdTag;
 use Icinga\Module\Notifications\Util\ObjectSuggestionsCursor;
 use ipl\Html\HtmlElement;
+use ipl\I18n\Translation;
 use ipl\Orm\Exception\InvalidColumnException;
 use ipl\Orm\Exception\InvalidRelationException;
 use ipl\Orm\Model;
@@ -27,6 +29,7 @@ use Traversable;
 class ObjectSuggestions extends Suggestions
 {
     use Auth;
+    use Translation;
 
     /** @var Model */
     protected $model;
@@ -67,7 +70,12 @@ class ObjectSuggestions extends Suggestions
 
     protected function shouldShowRelationFor(string $column): bool
     {
-        if (strpos($column, '.tag.') !== false || strpos($column, '.extra_tag.') !== false) {
+        if (
+            str_contains($column, '.tag.')
+            || str_contains($column, '.extra_tag.')
+            || str_starts_with($column, IcingaCustomVars::HOST_PREFIX)
+            || str_starts_with($column, IcingaCustomVars::SERVICE_PREFIX)
+        ) {
             return false;
         }
 
@@ -128,6 +136,16 @@ class ObjectSuggestions extends Suggestions
         } elseif (substr($targetPath, -10) === '.extra_tag') {
             $isTag = true;
             $targetPath = substr($targetPath, 0, -9) . 'object_extra_tag';
+        } elseif (
+            str_starts_with($column, IcingaCustomVars::HOST_PREFIX)
+            || str_starts_with($column, IcingaCustomVars::SERVICE_PREFIX)
+        ) {
+            $isTag = true;
+            $columnName = $column;
+            $targetPath = $query->getResolver()->qualifyPath(
+                'object.object_extra_tag',
+                $model->getTableName()
+            );
         }
 
         if (strpos($targetPath, '.') !== false) {
@@ -183,6 +201,8 @@ class ObjectSuggestions extends Suggestions
             yield $columnName => $columnMeta;
         }
 
+        $parsedArrayVars = [];
+
         // Custom variables only after the columns are exhausted and there's actually a chance the user sees them
         foreach ([new ObjectIdTag(), new ObjectExtraTag()] as $model) {
             $titleAdded = false;
@@ -199,9 +219,34 @@ class ObjectSuggestions extends Suggestions
                     ));
                 }
 
-                $relation = $isIdTag ? 'object.tag' : 'object.extra_tag';
+                if (
+                    str_starts_with($tag->tag, IcingaCustomVars::HOST_PREFIX)
+                    || str_starts_with($tag->tag, IcingaCustomVars::SERVICE_PREFIX)
+                ) {
+                    $search = $name = $tag->tag;
+                    if (preg_match('/\w+(?:\[(\d*)])+$/', $name, $matches)) {
+                        $name = substr($name, 0, -(strlen($matches[1]) + 2));
+                        if (isset($parsedArrayVars[$name])) {
+                            continue;
+                        }
 
-                yield $relation . '.' . $tag->tag => ucfirst($tag->tag);
+                        $parsedArrayVars[$name] = true;
+                        $search = $name . '[*]';
+                    }
+
+                    yield $search => sprintf($this->translate(
+                        ucfirst(substr($name, 0, strpos($name, '.'))) . ' %s',
+                        '..<customvar-name>'
+                    ), substr($name, strlen(
+                        str_starts_with($name, IcingaCustomVars::HOST_PREFIX)
+                            ? IcingaCustomVars::HOST_PREFIX
+                            : IcingaCustomVars::SERVICE_PREFIX
+                    )));
+                } else {
+                    $relation = $isIdTag ? 'object.tag' : 'object.extra_tag';
+
+                    yield $relation . '.' . $tag->tag => ucfirst($tag->tag);
+                }
             }
         }
     }
