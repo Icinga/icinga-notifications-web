@@ -1244,7 +1244,7 @@ class RotationConfigForm extends CompatForm
                     if ($actualFirstHandoff < new DateTime()) {
                         return $this->translate('The rotation will start immediately');
                     } else {
-                        $handoffHint = sprintf(
+                        return sprintf(
                             $this->translate('The rotation will start on %s'),
                             (new \IntlDateFormatter(
                                 \Locale::getDefault(),
@@ -1253,14 +1253,31 @@ class RotationConfigForm extends CompatForm
                                 $this->scheduleTimezone
                             ))->format($actualFirstHandoff)
                         );
-
-                        if ($this->displayTimezone !== $this->scheduleTimezone) {
-                            $handoffHint .= sprintf($this->translate(' (in %s)'), $this->scheduleTimezone);
-                        }
-
-                        return $handoffHint;
                     }
-                })
+                }),
+                new HtmlElement('br'),
+                $this->displayTimezone !== $this->scheduleTimezone ? DeferredText::create(function () {
+                    $ruleGenerator = $this->yieldRecurrenceRules(1);
+                    if (! $ruleGenerator->valid()) {
+                        return '';
+                    }
+
+                    $actualFirstHandoff = $ruleGenerator->current()[0]->getStartDate();
+                    if ($actualFirstHandoff < new DateTime()) {
+                        return '';
+                    } else {
+                        return sprintf(
+                            $this->translate('In your chosen display timezone (%s) this is the %s'),
+                            $this->displayTimezone,
+                            (new \IntlDateFormatter(
+                                \Locale::getDefault(),
+                                \IntlDateFormatter::MEDIUM,
+                                \IntlDateFormatter::SHORT,
+                                $this->displayTimezone
+                            ))->format($actualFirstHandoff)
+                        );
+                    }
+                }) : new HtmlDocument()
             ));
         }
 
