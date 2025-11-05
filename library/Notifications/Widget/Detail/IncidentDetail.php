@@ -88,7 +88,7 @@ class IncidentDetail extends BaseHtmlElement
             Html::tag('h2', t('Incident History')),
             (new ObjectList($query, new IncidentHistoryRenderer()))
                 ->setItemLayoutClass(MinimalItemLayout::class)
-                ->disableActionList()
+                ->setDetailActionsDisabled()
         ];
     }
 
