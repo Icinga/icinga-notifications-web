@@ -1368,30 +1368,12 @@ class RotationConfigForm extends CompatForm
             $this->scheduleTimezone
         );
 
-        $dtzFormatter = new \IntlDateFormatter(
-            \Locale::getDefault(),
-            \IntlDateFormatter::NONE,
-            \IntlDateFormatter::SHORT,
-            $this->displayTimezone
-        );
-
         $options = [];
         $dt = new DateTime('now', new DateTimeZone($this->scheduleTimezone));
         for ($hour = 0; $hour < 24; $hour++) {
             for ($minute = 0; $minute < 60; $minute += 30) {
                 $dt->setTime($hour, $minute);
-
-                if ($this->displayTimezone !== $this->scheduleTimezone) {
-                    $dtzDt = (clone $dt)->setTimezone(new DateTimeZone($this->displayTimezone));
-
-                    $options[$dt->format('H:i')] = sprintf(
-                        '%s (%s)',
-                        $formatter->format($dt),
-                        $dtzFormatter->format($dtzDt)
-                    );
-                } else {
-                    $options[$dt->format('H:i')] = $formatter->format($dt);
-                }
+                $options[$dt->format('H:i')] = $formatter->format($dt);
             }
         }
 
