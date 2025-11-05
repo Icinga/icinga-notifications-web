@@ -6,6 +6,7 @@ namespace Icinga\Module\Notifications\Web\Control;
 
 use DateTime;
 use DateTimeZone;
+use Icinga\Web\Session;
 use IntlTimeZone;
 use ipl\Html\Form;
 use ipl\Html\HtmlElement;
@@ -25,6 +26,36 @@ class TimezonePicker extends Form
     public const DEFAULT_TIMEZONE_PARAM = 'display_timezone';
 
     protected $defaultAttributes = ['class' => 'timezone-picker', 'name' => 'timezone-picker-form'];
+
+    protected string $defaultTimezone;
+
+    public function __construct(string $defaultTimezone)
+    {
+        $this->defaultTimezone = $defaultTimezone;
+    }
+
+    /**
+     * Get the chosen display timezone
+     *
+     * @return string
+     */
+    public function getDisplayTimezone(): string
+    {
+        return $this->getPopulatedValue(static::DEFAULT_TIMEZONE_PARAM)
+            ?? Session::getSession()->getNamespace('notifications')
+                ->get('schedule.display_timezone', $this->defaultTimezone);
+    }
+
+    /**
+     * On success store the display timezone in the session
+     *
+     * @return void
+     */
+    protected function onSuccess(): void
+    {
+        Session::getSession()->getNamespace('notifications')
+            ->set('schedule.display_timezone', $this->getValue(static::DEFAULT_TIMEZONE_PARAM));
+    }
 
     public function assemble(): void
     {
@@ -52,5 +83,6 @@ class TimezonePicker extends Form
         );
         $select = $this->getElement(static::DEFAULT_TIMEZONE_PARAM);
         $select->prependWrapper(HtmlElement::create('div', ['class' => 'icinga-controls']));
+        $select->setValue($this->getDisplayTimezone());
     }
 }

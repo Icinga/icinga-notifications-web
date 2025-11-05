@@ -5,7 +5,9 @@
 namespace Icinga\Module\Notifications\Widget\Timeline;
 
 use DateTime;
+use DateTimeZone;
 use Icinga\Module\Notifications\Util\ScheduleTimezoneStorage;
+use Icinga\Module\Notifications\Web\Control\TimezonePicker;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\FormattedString;
@@ -252,8 +254,9 @@ class EntryFlyout extends BaseHtmlElement
 
         $noneType = \IntlDateFormatter::NONE;
         $shortType = \IntlDateFormatter::SHORT;
-        $displayTimezone = ScheduleTimezoneStorage::getDisplayTimezone();
-        $scheduleTimezone = ScheduleTimezoneStorage::getScheduleTimezone();
+
+        $scheduleTimezone = new DateTimeZone(ScheduleTimezoneStorage::getScheduleTimezone());
+        $displayTimezone = new DateTimeZone((new TimezonePicker($scheduleTimezone->getName()))->getDisplayTimezone());
         $startTime = match ($this->mode) {
             '24-7'    => $this->rotationOptions['at'],
             'partial' => $this->rotationOptions['from'],

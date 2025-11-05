@@ -4,8 +4,6 @@
 
 namespace Icinga\Module\Notifications\Widget\Detail\ScheduleDetail;
 
-use DateTime;
-use Icinga\Module\Notifications\Util\ScheduleTimezoneStorage;
 use Icinga\Web\Session;
 use ipl\Html\Attributes;
 use ipl\Html\Form;
@@ -56,16 +54,6 @@ class Controls extends Form
             default:
                 return 7;
         }
-    }
-
-    /**
-     * Get the start date where the user wants the schedule to begin
-     *
-     * @return DateTime
-     */
-    public function getStartDate(): DateTime
-    {
-        return (new DateTime('today', ScheduleTimezoneStorage::getDisplayTimezone()));
     }
 
     protected function onSuccess()
