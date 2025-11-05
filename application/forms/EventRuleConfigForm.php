@@ -308,10 +308,35 @@ class EventRuleConfigForm extends CompatForm
             $escalationsFromDb[$escalationFromDb->id] = $escalationFromDb;
         }
 
-        $recipients = [];
-        foreach ($this->getElement('escalations')->getEscalations() as $escalation) {
-            /** @var Escalation $escalation */
+        $escalations = $this->getElement('escalations')->getEscalations();
+        $remainingDbEscalations = [];
+        $escalationConfigs = [];
+        foreach ($escalations as $index => $escalation) {
             $config = $escalation->getEscalation();
+            $escalationConfigs[$index] = $config;
+            if ($config['id'] !== null) {
+                $remainingDbEscalations[$config['id']] = $escalationsFromDb[$config['id']];
+                unset($escalationsFromDb[$config['id']]);
+            }
+        }
+
+        $escalationsToRemove = array_keys($escalationsFromDb);
+        if (! empty($escalationsToRemove)) {
+            $db->update('rule_escalation_recipient', [
+                'changed_at' => (int) (new DateTime())->format("Uv"),
+                'deleted'    => 'y'
+            ], ['rule_escalation_id IN (?)' => $escalationsToRemove, 'deleted = ?' => 'n']);
+            $db->update('rule_escalation', [
+                'changed_at' => (int) (new DateTime())->format("Uv"),
+                'position'   => null,
+                'deleted'    => 'y'
+            ], ['id IN (?)' => $escalationsToRemove]);
+        }
+
+        $recipients = [];
+        foreach ($escalations as $index => $escalation) {
+            /** @var Escalation $escalation */
+            $config = $escalationConfigs[$index];
             if ($config['id'] === null) {
                 $db->insert('rule_escalation', [
                     'rule_id' => $ruleId,
@@ -325,7 +350,7 @@ class EventRuleConfigForm extends CompatForm
 
                 $recipients[(int) $db->lastInsertId()] = [$escalation->getRecipients(), []];
             } else {
-                $escalationFromDb = $escalationsFromDb[$config['id']];
+                $escalationFromDb = $remainingDbEscalations[$config['id']];
 
                 $recipientsFromDb = [];
                 foreach ($escalationFromDb->rule_escalation_recipient as $recipientFromDb) {
@@ -341,23 +366,7 @@ class EventRuleConfigForm extends CompatForm
                         'changed_at' => (int) (new DateTime())->format("Uv")
                     ], ['id = ?' => $config['id'], 'rule_id = ?' => $ruleId]);
                 }
-
-                unset($escalationsFromDb[$config['id']]);
             }
-        }
-
-        // What's left must be removed
-        $escalationsToRemove = array_keys($escalationsFromDb);
-        if (! empty($escalationsToRemove)) {
-            $db->update('rule_escalation_recipient', [
-                'changed_at' => (int) (new DateTime())->format("Uv"),
-                'deleted'    => 'y'
-            ], ['rule_escalation_id IN (?)' => $escalationsToRemove, 'deleted = ?' => 'n']);
-            $db->update('rule_escalation', [
-                'changed_at' => (int) (new DateTime())->format("Uv"),
-                'position'   => null,
-                'deleted'    => 'y'
-            ], ['id IN (?)' => $escalationsToRemove]);
         }
 
         foreach ($recipients as $escalationId => [$escalationRecipients, $recipientsFromDb]) {
