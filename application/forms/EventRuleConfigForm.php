@@ -311,9 +311,9 @@ class EventRuleConfigForm extends CompatForm
         $escalations = $this->getElement('escalations')->getEscalations();
         $remainingDbEscalations = [];
         $escalationConfigs = [];
-        foreach ($escalations as $escalation) {
+        foreach ($escalations as $index => $escalation) {
             $config = $escalation->getEscalation();
-            $escalationConfigs[] = $config;
+            $escalationConfigs[$index] = $config;
             if ($config['id'] !== null) {
                 $remainingDbEscalations[$config['id']] = $escalationsFromDb[$config['id']];
                 unset($escalationsFromDb[$config['id']]);
