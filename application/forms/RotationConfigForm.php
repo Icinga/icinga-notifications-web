@@ -1416,6 +1416,8 @@ class RotationConfigForm extends CompatForm
                 $fromDay = (int) $options['from_day'];
                 $toDay = (int) $options['to_day'];
                 $interval = (int) $options['interval'];
+                $fromAt = new DateTime($options['from_at']);
+                $toAt = new DateTime($options['to_at']);
 
                 $rule->setFreq(Frequency::WEEKLY);
                 $rule->setInterval($interval * $count);
@@ -1431,6 +1433,7 @@ class RotationConfigForm extends CompatForm
                 if (
                     $fromDay < $toDay && ($firstHandoffDay < $fromDay || $firstHandoffDay > $toDay)
                     || $toDay < $fromDay && ($firstHandoffDay < $fromDay && $firstHandoffDay > $toDay)
+                    || $toDay === $firstHandoffDay && $fromAt >= $toAt
                 ) {
                     // Normalize the first handoff to the first day of the shift in case it's outside the range
                     $firstHandoff->add(new DateInterval(sprintf(
@@ -1447,7 +1450,7 @@ class RotationConfigForm extends CompatForm
 
                     $firstShiftEnd = (clone $firstHandoff)->add(new DateInterval(sprintf(
                         'P%dD',
-                        $toDay > $firstHandoffDay
+                        $toDay >= $firstHandoffDay
                             ? $toDay - $firstHandoffDay
                             : 7 - $firstHandoffDay + $toDay
                     )));
