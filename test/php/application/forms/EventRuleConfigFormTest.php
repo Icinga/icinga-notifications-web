@@ -298,7 +298,7 @@ class EventRuleConfigFormTest extends TestCase
                     if (isset($data['deleted'])) {
                         // This column only exists during deletion
                         $this->assertEquals(
-                            ['id IN (?)' => [1 => 2]],
+                            ['id IN (?)' => [2]],
                             $where
                         );
                         $this->assertEquals(
@@ -327,7 +327,7 @@ class EventRuleConfigFormTest extends TestCase
                             );
                         } else {
                             $this->assertEquals(
-                                ['rule_escalation_id IN (?)' => [1 => 2], 'deleted = ?' => 'n'],
+                                ['rule_escalation_id IN (?)' => [2], 'deleted = ?' => 'n'],
                                 $where
                             );
                         }

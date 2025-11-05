@@ -309,14 +309,18 @@ class EventRuleConfigForm extends CompatForm
         }
 
         $escalations = $this->getElement('escalations')->getEscalations();
-        $currentEscalationIDs = array_map(
-            function ($escalation) {
-                return $escalation->getEscalation()['id'];
-            },
-            $escalations
-        );
+        $remainingDbEscalations = [];
+        $escalationConfigs = [];
+        foreach ($escalations as $escalation) {
+            $config = $escalation->getEscalation();
+            $escalationConfigs[] = $config;
+            if ($config['id'] !== null) {
+                $remainingDbEscalations[$config['id']] = $escalationsFromDb[$config['id']];
+                unset($escalationsFromDb[$config['id']]);
+            }
+        }
 
-        $escalationsToRemove = array_diff(array_keys($escalationsFromDb), $currentEscalationIDs);
+        $escalationsToRemove = array_keys($escalationsFromDb);
         if (! empty($escalationsToRemove)) {
             $db->update('rule_escalation_recipient', [
                 'changed_at' => (int) (new DateTime())->format("Uv"),
@@ -330,9 +334,9 @@ class EventRuleConfigForm extends CompatForm
         }
 
         $recipients = [];
-        foreach ($escalations as $escalation) {
+        foreach ($escalations as $index => $escalation) {
             /** @var Escalation $escalation */
-            $config = $escalation->getEscalation();
+            $config = $escalationConfigs[$index];
             if ($config['id'] === null) {
                 $db->insert('rule_escalation', [
                     'rule_id' => $ruleId,
@@ -346,7 +350,7 @@ class EventRuleConfigForm extends CompatForm
 
                 $recipients[(int) $db->lastInsertId()] = [$escalation->getRecipients(), []];
             } else {
-                $escalationFromDb = $escalationsFromDb[$config['id']];
+                $escalationFromDb = $remainingDbEscalations[$config['id']];
 
                 $recipientsFromDb = [];
                 foreach ($escalationFromDb->rule_escalation_recipient as $recipientFromDb) {
