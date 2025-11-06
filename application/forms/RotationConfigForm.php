@@ -1443,7 +1443,7 @@ class RotationConfigForm extends CompatForm
                     // In case the first handoff is in the range, but doesn't start at the first day of the rotation,
                     // the first shift is shorter than the regular interval and separately injected into the rule seq
                     $firstEntryStart = clone $firstHandoff;
-                    if ($firstHandoffDay === $toDay && $options['to_at'] <= $options['from_at']) {
+                    if ($firstHandoffDay === $toDay) {
                         $firstEntryStart->setTime(0, 0);
                     }
 
