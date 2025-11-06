@@ -302,11 +302,10 @@ class EntryFlyout extends BaseHtmlElement
         );
 
         if ($this->mode === "24-7") {
-            $handoff .= ', ';
             // Include handoff daytime in 24-7 rotations
             $handoff .= sprintf(
                 $this->translate(
-                    'at %s'
+                    ' at %s'
                 ),
                 $startTime
             );
