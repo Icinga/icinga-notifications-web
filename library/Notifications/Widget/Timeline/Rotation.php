@@ -6,6 +6,7 @@ namespace Icinga\Module\Notifications\Widget\Timeline;
 
 use DateInterval;
 use DateTime;
+use DateTimeZone;
 use Generator;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\RotationConfigForm;
@@ -78,13 +79,13 @@ class Rotation
      *
      * @return EntryFlyout
      */
-    public function generateEntryInfo(): EntryFlyout
+    public function generateEntryInfo(DateTimeZone $displayTimezone): EntryFlyout
     {
         $rotationMembers = iterator_to_array(
             $this->model->member->with(['contact', 'contactgroup'])
         );
 
-        $flyout = new EntryFlyout();
+        $flyout = new EntryFlyout($displayTimezone);
         $flyout->setMode($this->model->mode)
             ->setRotationMembers($rotationMembers)
             ->setRotationOptions($this->model->options)
@@ -178,7 +179,8 @@ class Rotation
                         ->setMember($member)
                         ->setStart($recurrence)
                         ->setEnd($recurrenceEnd)
-                        ->setUrl(Links::rotationSettings($this->getId(), $this->getScheduleId()));
+                        ->setUrl(Links::rotationSettings($this->getId(), $this->getScheduleId()))
+                        ->setScheduleTimezone(new DateTimeZone($timeperiodEntry->timezone));
 
                     yield $occurrence;
                 }
@@ -187,7 +189,8 @@ class Rotation
                     ->setMember($member)
                     ->setStart($timeperiodEntry->start_time)
                     ->setEnd($timeperiodEntry->end_time)
-                    ->setUrl(Links::rotationSettings($this->getId(), $this->getScheduleId()));
+                    ->setUrl(Links::rotationSettings($this->getId(), $this->getScheduleId()))
+                    ->setScheduleTimezone(new DateTimeZone($timeperiodEntry->timezone));
 
                 yield $entry;
             }

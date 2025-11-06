@@ -186,7 +186,7 @@ class Timeline extends BaseHtmlElement implements EntryProvider
         foreach ($rotations as $rotation) {
             $entryFound = false;
             if (! $this->minimalLayout) {
-                $flyoutInfo = $rotation->generateEntryInfo();
+                $flyoutInfo = $rotation->generateEntryInfo($this->start->getTimezone());
             }
 
             foreach ($rotation->fetchTimeperiodEntries($this->start, $this->getGrid()->getGridEnd()) as $entry) {
@@ -262,6 +262,7 @@ class Timeline extends BaseHtmlElement implements EntryProvider
                         $resultEntry->setUrl($entry->getUrl());
                         $resultEntry->getAttributes()
                             ->add('data-rotation-position', $entry->getPosition());
+                        $resultEntry->setScheduleTimezone($entry->getScheduleTimezone());
                         $resultEntry->setFlyoutContent($entry->getFlyoutContent())
                             ->calculateAndSetWidthClass($this->getGrid());
                     }

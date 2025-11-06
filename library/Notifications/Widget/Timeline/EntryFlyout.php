@@ -6,8 +6,6 @@ namespace Icinga\Module\Notifications\Widget\Timeline;
 
 use DateTime;
 use DateTimeZone;
-use Icinga\Module\Notifications\Util\ScheduleTimezoneStorage;
-use Icinga\Module\Notifications\Web\Control\TimezonePicker;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\FormattedString;
@@ -46,21 +44,32 @@ class EntryFlyout extends BaseHtmlElement
     /** @var ?ValidHtml Information about name and mode of the rotation */
     protected ?ValidHtml $nameInfo = null;
 
+    /** @var DateTimeZone The display timezone */
+    protected DateTimeZone $displayTimezone;
+
     /**
-     * Set active member and return a new instance
+     * @param DateTimeZone $displayTimezone The display timezone
+     */
+    public function __construct(DateTimeZone $displayTimezone)
+    {
+        $this->displayTimezone = $displayTimezone;
+    }
+
+    /**
+     * Return a copy of this flyout for the given entry
      *
-     * @param Member $member
+     * @param Entry $entry
      *
      * @return static
      */
-    public function withActiveMember(Member $member): static
+    public function forEntry(Entry $entry): static
     {
         if (! isset($this->timeInfo)) {
-            $this->generateAndSetRotationInfo();
+            $this->generateAndSetRotationInfo($entry->getScheduleTimezone());
         }
 
         $flyout = clone $this;
-        $flyout->activeMember = $member;
+        $flyout->activeMember = $entry->getMember();
 
         return $flyout;
     }
@@ -314,9 +323,11 @@ class EntryFlyout extends BaseHtmlElement
     /**
      * Generate and save the part of the entry flyout, that remains equal for all entries of the rotation
      *
+     * @param DateTimeZone $scheduleTimezone The timezone the schedule is created in
+     *
      * @return $this
      */
-    protected function generateAndSetRotationInfo(): static
+    protected function generateAndSetRotationInfo(DateTimeZone $scheduleTimezone): static
     {
         $this->setTag('div');
         $this->setAttribute('class', 'rotation-info');
@@ -333,23 +344,21 @@ class EntryFlyout extends BaseHtmlElement
 
         $noneType = \IntlDateFormatter::NONE;
         $shortType = \IntlDateFormatter::SHORT;
-
-        $scheduleTimezone = new DateTimeZone(ScheduleTimezoneStorage::getScheduleTimezone());
-        $displayTimezone = new DateTimeZone((new TimezonePicker($scheduleTimezone->getName()))->getDisplayTimezone());
         $startTime = match ($this->mode) {
             '24-7'    => $this->rotationOptions['at'],
             'partial' => $this->rotationOptions['from'],
             'multi'   => $this->rotationOptions['from_at']
         };
-        $timeFormatter = new \IntlDateFormatter(\Locale::getDefault(), $noneType, $shortType, $displayTimezone);
-        $dateFormatter = new \IntlDateFormatter(\Locale::getDefault(), $shortType, $noneType, $displayTimezone);
+        $timeFormatter = new \IntlDateFormatter(\Locale::getDefault(), $noneType, $shortType, $this->displayTimezone);
+        $dateFormatter = new \IntlDateFormatter(\Locale::getDefault(), $shortType, $noneType, $this->displayTimezone);
+
         $firstHandoffDt = DateTime::createFromFormat(
             'Y-m-d H:i',
             $this->firstHandoff . ' ' . $startTime,
             $scheduleTimezone
         );
 
-        $displayFirstHandoffDt = (clone $firstHandoffDt)->setTimezone($displayTimezone);
+        $displayFirstHandoffDt = (clone $firstHandoffDt)->setTimezone($this->displayTimezone);
 
         // Determine whether the first handoff date shifted to the previous day (-1), stayed on the same day (0),
         // or moved to the next day (1) after converting to the display timezone.
@@ -377,7 +386,7 @@ class EntryFlyout extends BaseHtmlElement
             );
         }
 
-        if (new DateTime('now', $displayTimezone) < $displayFirstHandoffDt) {
+        if (new DateTime('now', $this->displayTimezone) < $displayFirstHandoffDt) {
             $startText = $this->translate('Starts on %s');
         } else {
             $startText = $this->translate('Started on %s');
@@ -457,7 +466,7 @@ class EntryFlyout extends BaseHtmlElement
                 $scheduleTimezone
             );
 
-            $displayFirstHandoffEndDt = (clone $firstHandoffEndDt)->setTimezone($displayTimezone);
+            $displayFirstHandoffEndDt = (clone $firstHandoffEndDt)->setTimezone($this->displayTimezone);
 
             // Determine whether the end day of the first handoff shifted to the previous day (-1), stayed on the
             // same day (0), or moved to the next day (1) after converting to the display timezone.
