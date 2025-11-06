@@ -10,7 +10,6 @@ use DateTimeZone;
 use Generator;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\RotationConfigForm;
-use Icinga\Module\Notifications\Util\ScheduleTimezoneStorage;
 use ipl\I18n\Translation;
 use ipl\Scheduler\RRule;
 use ipl\Stdlib\Filter;
@@ -159,7 +158,7 @@ class Rotation
                 }
 
                 $rrule = (new RRule($timeperiodEntry->rrule))
-                    ->setTimezone(ScheduleTimezoneStorage::getScheduleTimezone())
+                    ->setTimezone($timeperiodEntry->timezone)
                     ->startAt($firstHandoff);
 
                 $length = $timeperiodEntry->start_time->diff($timeperiodEntry->end_time);
