@@ -12,7 +12,6 @@ use Icinga\Module\Notifications\Forms\MoveRotationForm;
 use Icinga\Module\Notifications\Forms\RotationConfigForm;
 use Icinga\Module\Notifications\Forms\ScheduleForm;
 use Icinga\Module\Notifications\Model\Schedule;
-use Icinga\Module\Notifications\Util\ScheduleTimezoneStorage;
 use Icinga\Module\Notifications\Web\Control\TimezonePicker;
 use Icinga\Module\Notifications\Widget\Detail\ScheduleDetail;
 use Icinga\Module\Notifications\Widget\RecipientSuggestions;
@@ -38,8 +37,6 @@ class ScheduleController extends CompatController
         if ($schedule === null) {
             $this->httpNotFound(t('Schedule not found'));
         }
-
-        ScheduleTimezoneStorage::setScheduleTimezone($schedule->timezone);
 
         $this->addTitleTab(sprintf(t('Schedule: %s'), $schedule->name));
 
