@@ -16,6 +16,7 @@ use Icinga\Module\Notifications\Web\Control\TimezonePicker;
 use Icinga\Module\Notifications\Widget\Detail\ScheduleDetail;
 use Icinga\Module\Notifications\Widget\RecipientSuggestions;
 use Icinga\Module\Notifications\Widget\TimezoneWarning;
+use Icinga\Web\Session;
 use ipl\Html\Form;
 use ipl\Html\Html;
 use ipl\Stdlib\Filter;
@@ -66,7 +67,10 @@ class ScheduleController extends CompatController
         $this->addContent(new ScheduleDetail(
             $schedule,
             $scheduleControls,
-            new DateTime('today', new DateTimeZone($timezonePicker->getDisplayTimezone()))
+            new DateTime('today', new DateTimeZone(
+                $timezonePicker->getValue(TimezonePicker::DEFAULT_TIMEZONE_PARAM)
+                    ?? $this->getDisplayTimezoneFromSession($schedule->timezone)
+            )),
         ));
     }
 
@@ -121,7 +125,7 @@ class ScheduleController extends CompatController
     {
         $scheduleId = (int) $this->params->getRequired('schedule');
         $scheduleTimezone = $this->getScheduleTimezone($scheduleId);
-        $displayTimezone = (new TimezonePicker($scheduleTimezone))->getDisplayTimezone();
+        $displayTimezone = $this->getDisplayTimezoneFromSession($scheduleTimezone);
         $this->setTitle($this->translate('Add Rotation'));
 
         if ($displayTimezone !== $scheduleTimezone) {
@@ -160,7 +164,7 @@ class ScheduleController extends CompatController
         $id = (int) $this->params->getRequired('id');
         $scheduleId = (int) $this->params->getRequired('schedule');
         $scheduleTimezone = $this->getScheduleTimezone($scheduleId);
-        $displayTimezone = (new TimezonePicker($scheduleTimezone))->getDisplayTimezone();
+        $displayTimezone = $this->getDisplayTimezoneFromSession($scheduleTimezone);
         $this->setTitle($this->translate('Edit Rotation'));
 
         if ($displayTimezone !== $scheduleTimezone) {
@@ -254,17 +258,45 @@ class ScheduleController extends CompatController
      */
     protected function createTimezonePicker(string $scheduleTimezone, int $scheduleId): TimezonePicker
     {
-        return (new TimezonePicker($scheduleTimezone))
+        $defaultTimezoneParam = TimezonePicker::DEFAULT_TIMEZONE_PARAM;
+        return (new TimezonePicker())
             ->populate([
-                TimezonePicker::DEFAULT_TIMEZONE_PARAM => $this->params->get(TimezonePicker::DEFAULT_TIMEZONE_PARAM)
+                $defaultTimezoneParam => $this->params->get($defaultTimezoneParam)
+                    ?? $this->getDisplayTimezoneFromSession($scheduleTimezone)
             ])
-            ->on(TimezonePicker::ON_SUBMIT, function (TimezonePicker $timezonePicker) use ($scheduleId) {
-                $this->redirectNow(
-                    Links::schedule($scheduleId)->with([
-                        TimezonePicker::DEFAULT_TIMEZONE_PARAM => $timezonePicker->getDisplayTimezone()
-                    ])
-                );
-            })
+            ->on(
+                TimezonePicker::ON_SUBMIT,
+                function (TimezonePicker $timezonePicker) use ($defaultTimezoneParam, $scheduleId, $scheduleTimezone) {
+                    $this->writeDisplayTimezoneToSession($timezonePicker->getValue($defaultTimezoneParam));
+                    $this->redirectNow(Links::schedule($scheduleId)->with([
+                        $defaultTimezoneParam => $timezonePicker->getValue($defaultTimezoneParam)
+                    ]));
+                }
+            )
             ->handleRequest($this->getServerRequest());
+    }
+
+    /**
+     * Get the display timezone from the session
+     *
+     * @param string|null $defaultTimezone
+     *
+     * @return string
+     */
+    protected function getDisplayTimezoneFromSession(?string $defaultTimezone = null): string
+    {
+        return Session::getSession()->getNamespace('notifications')->get('schedule.display_timezone', $defaultTimezone);
+    }
+
+    /**
+     * Write the display timezone to the session
+     *
+     * @param string $displayTimezone
+     *
+     * @return void
+     */
+    protected function writeDisplayTimezoneToSession(string $displayTimezone): void
+    {
+        Session::getSession()->getNamespace('notifications')->set('schedule.display_timezone', $displayTimezone);
     }
 }
