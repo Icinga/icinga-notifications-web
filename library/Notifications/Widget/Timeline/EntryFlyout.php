@@ -282,11 +282,7 @@ class EntryFlyout extends BaseHtmlElement
         };
 
         $startTime = $timeFormatter->format(DateTime::createFromFormat('H:i', $startTime));
-        if (
-            $dateFormatter->format(new DateTime()) < $firstHandoff ||
-            $dateFormatter->format(new DateTime()) === $firstHandoff &&
-            $timeFormatter->format(new DateTime()) < $startTime
-        ) {
+        if (new DateTime() < DateTime::createFromFormat('Y-m-d H:i A', $this->firstHandoff . ' ' . $startTime)) {
             $startText = $this->translate('Starts on %s');
         } else {
             $startText = $this->translate('Started on %s');
