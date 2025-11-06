@@ -9,7 +9,6 @@ use DateTimeZone;
 use Icinga\Web\Session;
 use IntlTimeZone;
 use ipl\Html\Form;
-use ipl\Html\HtmlElement;
 use ipl\I18n\Translation;
 use ipl\Web\Common\FormUid;
 use Throwable;
@@ -25,7 +24,10 @@ class TimezonePicker extends Form
     /** @var string Default timezone param */
     public const DEFAULT_TIMEZONE_PARAM = 'display_timezone';
 
-    protected $defaultAttributes = ['class' => 'timezone-picker', 'name' => 'timezone-picker-form'];
+    protected $defaultAttributes = [
+        'class' => 'timezone-picker icinga-form inline icinga-controls',
+        'name' => 'timezone-picker-form'
+    ];
 
     protected string $defaultTimezone;
 
@@ -82,7 +84,6 @@ class TimezonePicker extends Form
             ]
         );
         $select = $this->getElement(static::DEFAULT_TIMEZONE_PARAM);
-        $select->prependWrapper(HtmlElement::create('div', ['class' => 'icinga-controls']));
         $select->setValue($this->getDisplayTimezone());
     }
 }
