@@ -281,13 +281,13 @@ class EntryFlyout extends BaseHtmlElement
             'multi'   => $this->rotationOptions['from_at'],
         };
 
-        $startTime = $timeFormatter->format(DateTime::createFromFormat('H:i', $startTime));
-        if (new DateTime() < DateTime::createFromFormat('Y-m-d H:i A', $this->firstHandoff . ' ' . $startTime)) {
+        if (new DateTime() < DateTime::createFromFormat('Y-m-d H:i', $this->firstHandoff . ' ' . $startTime)) {
             $startText = $this->translate('Starts on %s');
         } else {
             $startText = $this->translate('Started on %s');
         }
 
+        $startTime = $timeFormatter->format(DateTime::createFromFormat('H:i', $startTime));
         $firstHandoffInfo = new HtmlElement(
             'span',
             Attributes::create(['class' => 'rotation-info-start']),
