@@ -275,7 +275,18 @@ class EntryFlyout extends BaseHtmlElement
             );
         }
 
-        if ($dateFormatter->format(new DateTime()) < $firstHandoff) {
+        $startTime = match ($this->mode) {
+            '24-7'    => $this->rotationOptions['at'],
+            'partial' => $this->rotationOptions['from'],
+            'multi'   => $this->rotationOptions['from_at'],
+        };
+
+        $startTime = $timeFormatter->format(DateTime::createFromFormat('H:i', $startTime));
+        if (
+            $dateFormatter->format(new DateTime()) < $firstHandoff ||
+            $dateFormatter->format(new DateTime()) === $firstHandoff &&
+            $timeFormatter->format(new DateTime()) < $startTime
+        ) {
             $startText = $this->translate('Starts on %s');
         } else {
             $startText = $this->translate('Started on %s');
@@ -290,6 +301,17 @@ class EntryFlyout extends BaseHtmlElement
             )
         );
 
+        if ($this->mode === "24-7") {
+            $handoff .= ', ';
+            // Include handoff daytime in 24-7 rotations
+            $handoff .= sprintf(
+                $this->translate(
+                    'at %s'
+                ),
+                $startTime
+            );
+        }
+
         $handoffInterval = new HtmlElement(
             'span',
             Attributes::create(['class' => ['rotation-info-interval']]),
@@ -303,7 +325,6 @@ class EntryFlyout extends BaseHtmlElement
 
         if ($this->mode === "partial") {
             $days = $this->rotationOptions["days"];
-            $from = $timeFormatter->format(DateTime::createFromFormat('H:i', $this->rotationOptions["from"]));
             $to = $timeFormatter->format(DateTime::createFromFormat('H:i', $this->rotationOptions["to"]));
             if ($days[count($days) - 1] - $days[0] === (count($days) - 1) && count($days) > 1) {
                 $daysText = sprintf(
@@ -326,14 +347,13 @@ class EntryFlyout extends BaseHtmlElement
                     new HtmlElement(
                         'span',
                         Attributes::create(['class' => ['rotation-info-days']]),
-                        Text::create(sprintf('%s %s - %s, ', $daysText, $from, $to))
+                        Text::create(sprintf('%s %s - %s, ', $daysText, $startTime, $to))
                     ),
                     $handoffInterval
                 )
             )->addHtml($firstHandoffInfo);
         } elseif ($this->mode === "multi") {
             $fromDay = $weekdayNames[$this->rotationOptions["from_day"]];
-            $fromAt = $timeFormatter->format(DateTime::createFromFormat('H:i', $this->rotationOptions["from_at"]));
             $toDay = $weekdayNames[$this->rotationOptions["to_day"]];
             $toAt = $timeFormatter->format(DateTime::createFromFormat('H:i', $this->rotationOptions["to_at"]));
 
@@ -344,7 +364,7 @@ class EntryFlyout extends BaseHtmlElement
                     new HtmlElement(
                         'span',
                         Attributes::create(['class' => ['rotation-info-days']]),
-                        Text::create(sprintf('%s %s - %s %s, ', $fromDay, $fromAt, $toDay, $toAt))
+                        Text::create(sprintf('%s %s - %s %s, ', $fromDay, $startTime, $toDay, $toAt))
                     ),
                     $handoffInterval
                 )
