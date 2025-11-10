@@ -1431,6 +1431,8 @@ class RotationConfigForm extends CompatForm
                 if (
                     $fromDay < $toDay && ($firstHandoffDay < $fromDay || $firstHandoffDay > $toDay)
                     || $toDay < $fromDay && ($firstHandoffDay < $fromDay && $firstHandoffDay > $toDay)
+                    || $firstHandoffDay === $toDay && $toDay !== $fromDay
+                    && $firstHandoff >= $this->parseDateAndTime($this->getValue('first_handoff'), $options['to_at'])
                 ) {
                     // Normalize the first handoff to the first day of the shift in case it's outside the range
                     $firstHandoff->add(new DateInterval(sprintf(
@@ -1442,19 +1444,24 @@ class RotationConfigForm extends CompatForm
                 } elseif ($firstHandoffDay !== $fromDay) {
                     // In case the first handoff is in the range, but doesn't start at the first day of the rotation,
                     // the first shift is shorter than the regular interval and separately injected into the rule seq
-                    $firstRule = new Rule(null, $firstHandoff);
-                    $firstRule->setUntil($firstHandoff);
+                    $firstEntryStart = clone $firstHandoff;
+                    if ($firstHandoffDay === $toDay) {
+                        $firstEntryStart->setTime(0, 0);
+                    }
 
-                    $firstShiftEnd = (clone $firstHandoff)->add(new DateInterval(sprintf(
+                    $firstRule = new Rule(null, $firstEntryStart);
+                    $firstRule->setUntil($firstEntryStart);
+
+                    $firstShiftEnd = (clone $firstEntryStart)->add(new DateInterval(sprintf(
                         'P%dD',
-                        $toDay > $firstHandoffDay
+                        $toDay >= $firstHandoffDay
                             ? $toDay - $firstHandoffDay
                             : 7 - $firstHandoffDay + $toDay
                     )));
                     if ($this->nextHandoff !== null && $firstShiftEnd > $this->nextHandoff) {
-                        $firstShiftDuration = $firstHandoff->diff($this->nextHandoff);
+                        $firstShiftDuration = $firstEntryStart->diff($this->nextHandoff);
                     } else {
-                        $firstShiftDuration = $firstHandoff->diff(
+                        $firstShiftDuration = $firstEntryStart->diff(
                             $this->parseDateAndTime($firstShiftEnd->format('Y-m-d'), $options['to_at'])
                         );
                     }
