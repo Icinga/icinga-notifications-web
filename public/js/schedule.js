@@ -10,6 +10,7 @@
     }
 
     class NotificationsSchedule extends Icinga.EventListener {
+        activeTimeout = null;
         constructor(icinga)
         {
             super(icinga);
@@ -96,18 +97,21 @@
             relatedEntries.forEach(element => element.classList.add('highlighted'));
 
             if (tooltip) {
-                const grid = event.currentTarget.parentElement.previousSibling;
-                requestAnimationFrame(() => {
-                    const tooltipRect = tooltip.getBoundingClientRect();
-                    const gridRect = grid.getBoundingClientRect();
-                    if (tooltipRect.right > gridRect.right) {
-                        tooltip.classList.add('is-left');
-                    }
+                this.activeTimeout = setTimeout(() => {
+                    tooltip.classList.add('entry-is-hovered');
+                    const grid = event.currentTarget.parentElement.previousSibling;
+                    requestAnimationFrame(() => {
+                        const tooltipRect = tooltip.getBoundingClientRect();
+                        const gridRect = grid.getBoundingClientRect();
+                        if (tooltipRect.right > gridRect.right) {
+                            tooltip.classList.add('is-left');
+                        }
 
-                    if (tooltipRect.top < gridRect.top) {
-                        tooltip.classList.add('is-bottom');
-                    }
-                });
+                        if (tooltipRect.top < gridRect.top) {
+                            tooltip.classList.add('is-bottom');
+                        }
+                    });
+                }, 250);
             }
         }
 
@@ -123,7 +127,11 @@
             relatedEntries.forEach(element => element.classList.remove('highlighted'));
 
             if (tooltip) {
-                tooltip.classList.remove('is-left', 'is-bottom');
+                if (this.activeTimeout) {
+                    clearTimeout(this.activeTimeout);
+                }
+
+                tooltip.classList.remove('is-left', 'is-bottom', 'entry-is-hovered');
             }
         }
 
