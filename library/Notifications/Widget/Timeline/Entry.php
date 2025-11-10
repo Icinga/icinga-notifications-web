@@ -4,10 +4,11 @@
 
 namespace Icinga\Module\Notifications\Widget\Timeline;
 
+use DateTimeZone;
+use Icinga\Module\Notifications\Widget\TimeGrid;
 use Icinga\Module\Notifications\Widget\TimeGrid\BaseGrid;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
-use Icinga\Module\Notifications\Widget\TimeGrid;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\Web\Widget\Icon;
@@ -19,6 +20,9 @@ class Entry extends TimeGrid\Entry
 
     /** @var ?EntryFlyout Content of the flyoutmenu that is shown when the entry is hovered */
     protected ?EntryFlyout $flyoutContent = null;
+
+    /** @var ?DateTimeZone The timezone the schedule is created in */
+    protected ?DateTimeZone $scheduleTimezone;
 
     /**
      * @var string A CSS class that changes the placement of the flyout
@@ -68,6 +72,30 @@ class Entry extends TimeGrid\Entry
     public function getFlyoutContent(): ?EntryFlyout
     {
         return $this->flyoutContent;
+    }
+
+    /**
+     * Set the timezone the schedule is created in
+     *
+     * @param DateTimeZone $scheduleTimezone
+     *
+     * @return $this
+     */
+    public function setScheduleTimezone(DateTimeZone $scheduleTimezone): static
+    {
+        $this->scheduleTimezone = $scheduleTimezone;
+
+        return $this;
+    }
+
+    /**
+     * Get the timezone the schedule is created in
+     *
+     * @return DateTimeZone|null
+     */
+    public function getScheduleTimezone(): ?DateTimeZone
+    {
+        return $this->scheduleTimezone;
     }
 
     /**
@@ -136,7 +164,7 @@ class Entry extends TimeGrid\Entry
         );
 
         if (isset($this->flyoutContent)) {
-            $this->addHtml($this->flyoutContent->withActiveMember($this->getMember()));
+            $this->addHtml($this->flyoutContent->forEntry($this));
             $this->getAttributes()->add('class', $this->getWidthClass());
         }
     }

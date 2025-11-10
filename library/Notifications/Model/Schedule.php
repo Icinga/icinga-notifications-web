@@ -15,6 +15,7 @@ use ipl\Orm\Relations;
 /**
  * @property int $id
  * @property string $name
+ * @property string $timezone
  * @property DateTime $changed_at
  * @property bool $deleted
  *
@@ -39,6 +40,7 @@ class Schedule extends Model
         return [
             'name',
             'changed_at',
+            'timezone',
             'deleted'
         ];
     }
@@ -47,7 +49,8 @@ class Schedule extends Model
     {
         return [
             'name'          => t('Name'),
-            'changed_at'    => t('Changed At')
+            'changed_at'    => t('Changed At'),
+            'timezone'      => t('Timezone')
         ];
     }
 

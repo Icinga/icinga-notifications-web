@@ -52,13 +52,15 @@ class DaysHeader extends BaseHtmlElement
             $this->translate('Sun', 'sunday')
         ];
 
+        $displayTimezone = $this->startDay->getTimezone();
         $interval = new DateInterval('P1D');
-        $today = (new DateTime())->setTime(0, 0);
+        $today = new DateTime('today', $displayTimezone);
         $time = clone $this->startDay;
         $dateFormatter = new IntlDateFormatter(
             Locale::getDefault(),
             IntlDateFormatter::MEDIUM,
-            IntlDateFormatter::NONE
+            IntlDateFormatter::NONE,
+            $displayTimezone
         );
 
         for ($i = 0; $i < $this->days; $i++) {

@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Widget\Detail;
 
+use DateTime;
 use Icinga\Module\Notifications\Model\Schedule;
 use Icinga\Module\Notifications\Widget\Detail\ScheduleDetail\Controls;
 use Icinga\Module\Notifications\Widget\Timeline;
@@ -33,6 +34,9 @@ class ScheduleDetail extends BaseHtmlElement
     /** @var Controls */
     protected $controls;
 
+    /** @var DateTime The day the timeline should start on */
+    protected DateTime $start;
+
     /** @var bool */
     private bool $hasRotation = false;
 
@@ -41,11 +45,13 @@ class ScheduleDetail extends BaseHtmlElement
      *
      * @param Schedule $schedule
      * @param Controls $controls
+     * @param DateTime $start The day the timeline should start on
      */
-    public function __construct(Schedule $schedule, Controls $controls)
+    public function __construct(Schedule $schedule, Controls $controls, DateTime $start)
     {
         $this->schedule = $schedule;
         $this->controls = $controls;
+        $this->start = $start;
     }
 
     /**
@@ -68,11 +74,7 @@ class ScheduleDetail extends BaseHtmlElement
      */
     protected function createTimeline(): Timeline
     {
-        $timeline = new Timeline(
-            $this->schedule->id,
-            $this->controls->getStartDate(),
-            $this->controls->getNumberOfDays()
-        );
+        $timeline = new Timeline($this->schedule->id, $this->start, $this->controls->getNumberOfDays());
         $timeline->setStyle(
             (new Style())
                 ->setNonce(Csp::getStyleNonce())

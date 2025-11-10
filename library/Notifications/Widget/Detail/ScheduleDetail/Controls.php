@@ -4,24 +4,25 @@
 
 namespace Icinga\Module\Notifications\Widget\Detail\ScheduleDetail;
 
-use DateTime;
 use Icinga\Web\Session;
 use ipl\Html\Attributes;
 use ipl\Html\Form;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\I18n\Translation;
+use ipl\Web\Common\FormUid;
 
 class Controls extends Form
 {
     use Translation;
+    use FormUid;
 
     /** @var string The default mode */
     public const DEFAULT_MODE = 'week';
 
     protected $method = 'POST';
 
-    protected $defaultAttributes = ['class' => 'schedule-controls'];
+    protected $defaultAttributes = ['class' => 'schedule-controls', 'name' => 'schedule-detail-controls-form'];
 
     /**
      * Get the chosen mode
@@ -55,16 +56,6 @@ class Controls extends Form
         }
     }
 
-    /**
-     * Get the start date where the user wants the schedule to begin
-     *
-     * @return DateTime
-     */
-    public function getStartDate(): DateTime
-    {
-        return (new DateTime())->setTime(0, 0);
-    }
-
     protected function onSuccess()
     {
         Session::getSession()->getNamespace('notifications')
@@ -73,6 +64,8 @@ class Controls extends Form
 
     protected function assemble()
     {
+        $this->addElement($this->createUidElement());
+
         $param = 'mode';
         $options = [
             'day' => $this->translate('Day'),

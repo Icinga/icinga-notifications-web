@@ -5,6 +5,7 @@
 namespace Icinga\Module\Notifications\Widget\Timeline;
 
 use DateTime;
+use DateTimeZone;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\FormattedString;
@@ -43,21 +44,32 @@ class EntryFlyout extends BaseHtmlElement
     /** @var ?ValidHtml Information about name and mode of the rotation */
     protected ?ValidHtml $nameInfo = null;
 
+    /** @var DateTimeZone The display timezone */
+    protected DateTimeZone $displayTimezone;
+
     /**
-     * Set active member and return a new instance
+     * @param DateTimeZone $displayTimezone The display timezone
+     */
+    public function __construct(DateTimeZone $displayTimezone)
+    {
+        $this->displayTimezone = $displayTimezone;
+    }
+
+    /**
+     * Return a copy of this flyout for the given entry
      *
-     * @param Member $member
+     * @param Entry $entry
      *
      * @return static
      */
-    public function withActiveMember(Member $member): static
+    public function forEntry(Entry $entry): static
     {
         if (! isset($this->timeInfo)) {
-            $this->generateAndSetRotationInfo();
+            $this->generateAndSetRotationInfo($entry->getScheduleTimezone());
         }
 
         $flyout = clone $this;
-        $flyout->activeMember = $member;
+        $flyout->activeMember = $entry->getMember();
 
         return $flyout;
     }
@@ -230,11 +242,92 @@ class EntryFlyout extends BaseHtmlElement
     }
 
     /**
+     * Shift the weekday if the entry starts on an earlier or later weekday in the display timezone
+     *
+     * @param int $day
+     * @param int $shift
+     *
+     * @return int
+     */
+    protected function shiftDay(int $day, int $shift): int
+    {
+        return ((($day - 1 + $shift) % 7) + 7) % 7 + 1;
+    }
+
+    /**
+     * Shift the whole weekdays array if the entries start on an earlier or later weekday in the display timezone
+     *
+     * @param array $days
+     * @param int   $shift
+     *
+     * @return array
+     */
+    protected function shiftDays(array $days, int $shift): array
+    {
+        if ($shift === 0) {
+            return $days;
+        }
+
+        $out = [];
+        foreach ($days as $d) {
+            $out[] = $this->shiftDay($d, $shift);
+        }
+
+        return $out;
+    }
+
+    /**
+     * Check whether the passed days are in consecutive order
+     *
+     * @param array $days
+     *
+     * @return bool
+     */
+    protected function daysAreConsecutiveInOrder(array $days): bool
+    {
+        $count = count($days);
+
+        if ($count < 2) {
+            return false;
+        }
+
+        for ($i = 0; $i < $count - 1; $i++) {
+            $expectedNext = ($days[$i] % 7) + 1;
+            if ($days[$i + 1] != $expectedNext) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Calculate the end date for a multi day rotation using the first handoff and the weekdays for the start and end
+     *
+     * @param DateTime $firstHandoff
+     * @param int      $fromDay
+     * @param int      $toDay
+     *
+     * @return DateTime
+     */
+    protected function calculateMultiEndDate(DateTime $firstHandoff, int $fromDay, int $toDay): DateTime
+    {
+        $durationDays = ($toDay - $fromDay + 7) % 7;
+        if ($durationDays === 0) {
+            $durationDays = 7;
+        }
+
+        return (clone $firstHandoff)->modify("+$durationDays days");
+    }
+
+    /**
      * Generate and save the part of the entry flyout, that remains equal for all entries of the rotation
+     *
+     * @param DateTimeZone $scheduleTimezone The timezone the schedule is created in
      *
      * @return $this
      */
-    protected function generateAndSetRotationInfo(): static
+    protected function generateAndSetRotationInfo(DateTimeZone $scheduleTimezone): static
     {
         $this->setTag('div');
         $this->setAttribute('class', 'rotation-info');
@@ -251,9 +344,27 @@ class EntryFlyout extends BaseHtmlElement
 
         $noneType = \IntlDateFormatter::NONE;
         $shortType = \IntlDateFormatter::SHORT;
-        $timeFormatter = new \IntlDateFormatter(\Locale::getDefault(), $noneType, $shortType);
-        $dateFormatter = new \IntlDateFormatter(\Locale::getDefault(), $shortType, $noneType);
-        $firstHandoff = $dateFormatter->format(DateTime::createFromFormat('Y-m-d', $this->firstHandoff));
+        $startTime = match ($this->mode) {
+            '24-7'    => $this->rotationOptions['at'],
+            'partial' => $this->rotationOptions['from'],
+            'multi'   => $this->rotationOptions['from_at']
+        };
+        $timeFormatter = new \IntlDateFormatter(\Locale::getDefault(), $noneType, $shortType, $this->displayTimezone);
+        $dateFormatter = new \IntlDateFormatter(\Locale::getDefault(), $shortType, $noneType, $this->displayTimezone);
+
+        $firstHandoffDt = DateTime::createFromFormat(
+            'Y-m-d H:i',
+            $this->firstHandoff . ' ' . $startTime,
+            $scheduleTimezone
+        );
+
+        $displayFirstHandoffDt = (clone $firstHandoffDt)->setTimezone($this->displayTimezone);
+
+        // Determine whether the first handoff date shifted to the previous day (-1), stayed on the same day (0),
+        // or moved to the next day (1) after converting to the display timezone.
+        $shift = $displayFirstHandoffDt->format('Ymd') <=> $firstHandoffDt->format('Ymd');
+
+        $firstHandoff = $dateFormatter->format($firstHandoffDt);
 
         if (($this->rotationOptions['frequency'] ?? null) === 'd') {
             $handoff = sprintf(
@@ -275,19 +386,17 @@ class EntryFlyout extends BaseHtmlElement
             );
         }
 
-        $startTime = match ($this->mode) {
-            '24-7'    => $this->rotationOptions['at'],
-            'partial' => $this->rotationOptions['from'],
-            'multi'   => $this->rotationOptions['from_at'],
-        };
-
-        if (new DateTime() < DateTime::createFromFormat('Y-m-d H:i', $this->firstHandoff . ' ' . $startTime)) {
+        if (new DateTime('now', $this->displayTimezone) < $displayFirstHandoffDt) {
             $startText = $this->translate('Starts on %s');
         } else {
             $startText = $this->translate('Started on %s');
         }
 
-        $startTime = $timeFormatter->format(DateTime::createFromFormat('H:i', $startTime));
+        $startTime = $timeFormatter->format(DateTime::createFromFormat(
+            'H:i',
+            $startTime,
+            $scheduleTimezone
+        ));
         $firstHandoffInfo = new HtmlElement(
             'span',
             Attributes::create(['class' => 'rotation-info-start']),
@@ -314,9 +423,13 @@ class EntryFlyout extends BaseHtmlElement
         );
 
         if ($this->mode === "partial") {
-            $days = $this->rotationOptions["days"];
-            $to = $timeFormatter->format(DateTime::createFromFormat('H:i', $this->rotationOptions["to"]));
-            if ($days[count($days) - 1] - $days[0] === (count($days) - 1) && count($days) > 1) {
+            $days = $this->shiftDays($this->rotationOptions["days"], $shift);
+            $to = $timeFormatter->format(DateTime::createFromFormat(
+                'H:i',
+                $this->rotationOptions["to"],
+                $scheduleTimezone
+            ));
+            if ($this->daysAreConsecutiveInOrder($days)) {
                 $daysText = sprintf(
                     $this->translate(
                         '%s through %s ',
@@ -343,9 +456,29 @@ class EntryFlyout extends BaseHtmlElement
                 )
             )->addHtml($firstHandoffInfo);
         } elseif ($this->mode === "multi") {
-            $fromDay = $weekdayNames[$this->rotationOptions["from_day"]];
-            $toDay = $weekdayNames[$this->rotationOptions["to_day"]];
-            $toAt = $timeFormatter->format(DateTime::createFromFormat('H:i', $this->rotationOptions["to_at"]));
+            $firstHandoffEndDt = DateTime::createFromFormat(
+                'Y-m-d H:i',
+                $this->calculateMultiEndDate(
+                    $firstHandoffDt,
+                    $this->rotationOptions["from_day"],
+                    $this->rotationOptions["to_day"]
+                )->format('Y-m-d') . ' ' . $this->rotationOptions['to_at'],
+                $scheduleTimezone
+            );
+
+            $displayFirstHandoffEndDt = (clone $firstHandoffEndDt)->setTimezone($this->displayTimezone);
+
+            // Determine whether the end day of the first handoff shifted to the previous day (-1), stayed on the
+            // same day (0), or moved to the next day (1) after converting to the display timezone.
+            $endShift = $displayFirstHandoffEndDt->format('Ymd') <=> $firstHandoffEndDt->format('Ymd');
+
+            $fromDay = $weekdayNames[$this->shiftDay($this->rotationOptions["from_day"], $shift)];
+            $toDay = $weekdayNames[$this->shiftDay($this->rotationOptions["to_day"], $endShift)];
+            $toAt = $timeFormatter->format(DateTime::createFromFormat(
+                'H:i',
+                $this->rotationOptions["to_at"],
+                $scheduleTimezone
+            ));
 
             $this->timeInfo = $timeInfo->addHtml(
                 new HtmlElement(

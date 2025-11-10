@@ -6,6 +6,7 @@ namespace Icinga\Module\Notifications\Widget\Timeline;
 
 use DateInterval;
 use DateTime;
+use DateTimeZone;
 use Generator;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\RotationConfigForm;
@@ -77,13 +78,13 @@ class Rotation
      *
      * @return EntryFlyout
      */
-    public function generateEntryInfo(): EntryFlyout
+    public function generateEntryInfo(DateTimeZone $displayTimezone): EntryFlyout
     {
         $rotationMembers = iterator_to_array(
             $this->model->member->with(['contact', 'contactgroup'])
         );
 
-        $flyout = new EntryFlyout();
+        $flyout = new EntryFlyout($displayTimezone);
         $flyout->setMode($this->model->mode)
             ->setRotationMembers($rotationMembers)
             ->setRotationOptions($this->model->options)
@@ -103,9 +104,11 @@ class Rotation
      */
     public function fetchTimeperiodEntries(DateTime $after, DateTime $until): Generator
     {
+        $displayTimezone = $after->getTimezone();
+
         $actualHandoff = null;
         if (RotationConfigForm::EXPERIMENTAL_OVERRIDES) {
-            $actualHandoff = $this->model->actual_handoff;
+            $actualHandoff = $this->model->actual_handoff->setTimezone($displayTimezone);
         }
 
         $entries = $this->model->timeperiod->timeperiod_entry
@@ -121,6 +124,9 @@ class Rotation
                 )
             ));
         foreach ($entries as $timeperiodEntry) {
+            $timeperiodEntry->start_time->setTimezone($displayTimezone);
+            $timeperiodEntry->end_time->setTimezone($displayTimezone);
+
             if ($timeperiodEntry->member->contact->id !== null) {
                 $member = new Member($timeperiodEntry->member->contact->full_name);
             } else {
@@ -151,8 +157,9 @@ class Rotation
                     $firstHandoff = $timeperiodEntry->start_time;
                 }
 
-                $rrule = new RRule($timeperiodEntry->rrule);
-                $rrule->startAt($firstHandoff);
+                $rrule = (new RRule($timeperiodEntry->rrule))
+                    ->setTimezone($timeperiodEntry->timezone)
+                    ->startAt($firstHandoff);
 
                 $length = $timeperiodEntry->start_time->diff($timeperiodEntry->end_time);
                 $limit = (((int) ceil($after->diff($until)->days / $interval)) + 1) * $limitMultiplier;
@@ -171,7 +178,8 @@ class Rotation
                         ->setMember($member)
                         ->setStart($recurrence)
                         ->setEnd($recurrenceEnd)
-                        ->setUrl(Links::rotationSettings($this->getId(), $this->getScheduleId()));
+                        ->setUrl(Links::rotationSettings($this->getId(), $this->getScheduleId()))
+                        ->setScheduleTimezone(new DateTimeZone($timeperiodEntry->timezone));
 
                     yield $occurrence;
                 }
@@ -180,7 +188,8 @@ class Rotation
                     ->setMember($member)
                     ->setStart($timeperiodEntry->start_time)
                     ->setEnd($timeperiodEntry->end_time)
-                    ->setUrl(Links::rotationSettings($this->getId(), $this->getScheduleId()));
+                    ->setUrl(Links::rotationSettings($this->getId(), $this->getScheduleId()))
+                    ->setScheduleTimezone(new DateTimeZone($timeperiodEntry->timezone));
 
                 yield $entry;
             }

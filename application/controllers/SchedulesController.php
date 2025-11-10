@@ -4,16 +4,12 @@
 
 namespace Icinga\Module\Notifications\Controllers;
 
-use DateTime;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Schedule;
 use Icinga\Module\Notifications\View\ScheduleRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
-use Icinga\Module\Notifications\Widget\TimeGrid\DaysHeader;
-use ipl\Html\Attributes;
-use ipl\Html\HtmlElement;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
@@ -77,12 +73,6 @@ class SchedulesController extends CompatController
                 ]
             ))->openInModal()
         );
-
-        $this->addContent(new HtmlElement(
-            'div',
-            Attributes::create(['class' => 'schedules-header']),
-            new DaysHeader((new DateTime())->setTime(0, 0), 7)
-        ));
 
         $this->addContent(new ObjectList($schedules, new ScheduleRenderer()));
 

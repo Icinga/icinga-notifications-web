@@ -186,7 +186,7 @@ class Timeline extends BaseHtmlElement implements EntryProvider
         foreach ($rotations as $rotation) {
             $entryFound = false;
             if (! $this->minimalLayout) {
-                $flyoutInfo = $rotation->generateEntryInfo();
+                $flyoutInfo = $rotation->generateEntryInfo($this->start->getTimezone());
             }
 
             foreach ($rotation->fetchTimeperiodEntries($this->start, $this->getGrid()->getGridEnd()) as $entry) {
@@ -262,6 +262,7 @@ class Timeline extends BaseHtmlElement implements EntryProvider
                         $resultEntry->setUrl($entry->getUrl());
                         $resultEntry->getAttributes()
                             ->add('data-rotation-position', $entry->getPosition());
+                        $resultEntry->setScheduleTimezone($entry->getScheduleTimezone());
                         $resultEntry->setFlyoutContent($entry->getFlyoutContent())
                             ->calculateAndSetWidthClass($this->getGrid());
                     }
@@ -361,13 +362,16 @@ class Timeline extends BaseHtmlElement implements EntryProvider
                 )
             );
 
+            $displayTimezone = $this->start->getTimezone();
+
             $dateFormatter = new IntlDateFormatter(
                 Locale::getDefault(),
                 IntlDateFormatter::NONE,
-                IntlDateFormatter::SHORT
+                IntlDateFormatter::SHORT,
+                $displayTimezone
             );
 
-            $now = new DateTime();
+            $now = new DateTime('now', $displayTimezone);
             $currentTime = new HtmlElement(
                 'div',
                 new Attributes(['class' => 'time-hand']),
