@@ -1431,7 +1431,8 @@ class RotationConfigForm extends CompatForm
                 if (
                     $fromDay < $toDay && ($firstHandoffDay < $fromDay || $firstHandoffDay > $toDay)
                     || $toDay < $fromDay && ($firstHandoffDay < $fromDay && $firstHandoffDay > $toDay)
-                    || $firstHandoffDay === $toDay && $toDay !== $fromDay && $options["to_at"] === "00:00"
+                    || $firstHandoffDay === $toDay && $toDay !== $fromDay
+                    && $firstHandoff >= $this->parseDateAndTime($this->getValue('first_handoff'), $options['to_at'])
                 ) {
                     // Normalize the first handoff to the first day of the shift in case it's outside the range
                     $firstHandoff->add(new DateInterval(sprintf(
