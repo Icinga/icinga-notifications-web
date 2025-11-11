@@ -12,7 +12,6 @@ use Icinga\Module\Notifications\Forms\MoveRotationForm;
 use Icinga\Module\Notifications\Forms\RotationConfigForm;
 use Icinga\Module\Notifications\Forms\ScheduleForm;
 use Icinga\Module\Notifications\Model\Schedule;
-use Icinga\Module\Notifications\Web\Control\TimezonePicker;
 use Icinga\Module\Notifications\Widget\Detail\ScheduleDetail;
 use Icinga\Module\Notifications\Widget\RecipientSuggestions;
 use Icinga\Module\Notifications\Widget\TimezoneWarning;
@@ -64,6 +63,7 @@ class ScheduleController extends CompatController
 
         $scheduleControls = (new ScheduleDetail\Controls())
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
+            ->setDefaultTimezone($schedule->timezone)
             ->populate([
                 'mode' => $this->params->get(
                     'mode',
@@ -72,24 +72,37 @@ class ScheduleController extends CompatController
                         ScheduleDetail\Controls::DEFAULT_MODE
                     )
                 ),
+                'timezone' => $this->params->get(
+                    'display_timezone',
+                    $this->getDisplayTimezoneFromSession($schedule->timezone)
+                )
             ])
-            ->on(Form::ON_SUBMIT, function (ScheduleDetail\Controls $controls) use ($id) {
-                $this->session->set('timeline.mode', $controls->getValue('mode'));
-                $this->redirectNow(Links::schedule($id)->with(['mode' => $controls->getValue('mode')]));
+            ->on(Form::ON_SUBMIT, function (ScheduleDetail\Controls $controls) use ($schedule) {
+                $mode = $controls->getValue('mode');
+                $timezone = $controls->getValue('timezone');
+
+                $this->session->set('timeline.mode', $mode);
+
+                if ($timezone === $schedule->timezone) {
+                    $this->session->delete('schedule.display_timezone');
+                } else {
+                    $this->session->set('schedule.display_timezone', $timezone);
+                }
+
+                $redirectUrl = Links::schedule($schedule->id)->setParam('mode', $mode);
+                if ($timezone) {
+                    $redirectUrl->setParam('display_timezone', $timezone);
+                }
+
+                $this->redirectNow($redirectUrl);
             })
             ->handleRequest($this->getServerRequest());
 
-        $timezonePicker = $this->createTimezonePicker($schedule->timezone, $id);
-
-        $this->addControl($timezonePicker);
         $this->addControl($scheduleControls);
         $this->addContent(new ScheduleDetail(
             $schedule,
             $scheduleControls,
-            new DateTime('today', new DateTimeZone(
-                $timezonePicker->getValue(TimezonePicker::DEFAULT_TIMEZONE_PARAM)
-                    ?? $this->getDisplayTimezoneFromSession($schedule->timezone)
-            )),
+            new DateTime('today', new DateTimeZone($scheduleControls->getTimezone())),
         ));
     }
 
@@ -268,54 +281,14 @@ class ScheduleController extends CompatController
     }
 
     /**
-     * Create a timezone picker control
-     *
-     * @param string $scheduleTimezone The schedule timezone is used as default if no timezone is in the session
-     * @param int    $scheduleId       The schedule id
-     *
-     * @return TimezonePicker The timezone picker control
-     */
-    protected function createTimezonePicker(string $scheduleTimezone, int $scheduleId): TimezonePicker
-    {
-        $defaultTimezoneParam = TimezonePicker::DEFAULT_TIMEZONE_PARAM;
-        return (new TimezonePicker())
-            ->populate([
-                $defaultTimezoneParam => $this->params->get($defaultTimezoneParam)
-                    ?? $this->getDisplayTimezoneFromSession($scheduleTimezone)
-            ])
-            ->on(
-                TimezonePicker::ON_SUBMIT,
-                function (TimezonePicker $timezonePicker) use ($defaultTimezoneParam, $scheduleId, $scheduleTimezone) {
-                    $this->writeDisplayTimezoneToSession($timezonePicker->getValue($defaultTimezoneParam));
-                    $this->redirectNow(Links::schedule($scheduleId)->with([
-                        $defaultTimezoneParam => $timezonePicker->getValue($defaultTimezoneParam)
-                    ]));
-                }
-            )
-            ->handleRequest($this->getServerRequest());
-    }
-
-    /**
      * Get the display timezone from the session
      *
-     * @param string|null $defaultTimezone
+     * @param string $defaultTimezone
      *
      * @return string
      */
-    protected function getDisplayTimezoneFromSession(?string $defaultTimezone = null): string
+    protected function getDisplayTimezoneFromSession(string $defaultTimezone): string
     {
-        return Session::getSession()->getNamespace('notifications')->get('schedule.display_timezone', $defaultTimezone);
-    }
-
-    /**
-     * Write the display timezone to the session
-     *
-     * @param string $displayTimezone
-     *
-     * @return void
-     */
-    protected function writeDisplayTimezoneToSession(string $displayTimezone): void
-    {
-        Session::getSession()->getNamespace('notifications')->set('schedule.display_timezone', $displayTimezone);
+        return $this->session->get('schedule.display_timezone', $defaultTimezone);
     }
 }

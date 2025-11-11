@@ -2,8 +2,7 @@
 
 .schedule-detail-controls {
   .box-shadow(0, 0, 0, 1px, @gray-lighter);
-  z-index: 2; // The content may clip, this ensures the separator and dropdown is always visible
-  padding-bottom: .5em;
+  z-index: 4; // The content may clip, this ensures the separator and dropdown is always visible
 
   h2 {
     display: inline;
@@ -20,10 +19,6 @@
         text-align: center;
       }
     }
-  }
-
-  .timezone-picker {
-    margin-left: 1em;
   }
 }
 
@@ -116,11 +111,17 @@
 
 .timezone-warning {
   padding: .5em 1em;
-  border: 1px solid @color-warning;
+  border: 1px solid @state-warning;
   border-radius: .25em;
 
   i.icon {
-    color: @color-warning;
+    color: @state-warning;
     font-size: 1.5em;
+  }
+}
+
+.schedule-controls:has(.suggestion-element:invalid) {
+  .suggestion-element-icon {
+    color: @state-critical;
   }
 }
