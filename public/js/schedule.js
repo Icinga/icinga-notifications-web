@@ -14,11 +14,12 @@
         {
             super(icinga);
 
+            this.activeTimeout = null;
+
             this.on('rendered', '#main > .container', this.onRendered, this);
             this.on('end', '#notifications-schedule .sidebar', this.onDrop, this);
             this.on('mouseenter', '#notifications-schedule .entry', this.onEntryHover, this);
             this.on('mouseleave', '#notifications-schedule .entry', this.onEntryLeave, this);
-            this.activeTimeout = null;
         }
 
         /**
