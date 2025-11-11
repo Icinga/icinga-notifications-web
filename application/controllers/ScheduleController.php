@@ -51,7 +51,7 @@ class ScheduleController extends CompatController
         $this->addTitleTab(sprintf(t('Schedule: %s'), $schedule->name));
 
         $this->controls->addHtml(
-            Html::tag('h2', null, $schedule->name),
+            Html::tag('strong', null, $schedule->name),
             (new ButtonLink(
                 null,
                 Links::scheduleSettings($id),
