@@ -98,7 +98,6 @@
 
             if (tooltip) {
                 this.activeTimeout = setTimeout(() => {
-                    this.activeTimeout = null;
                     const grid = event.currentTarget.parentElement.previousSibling;
                     requestAnimationFrame(() => {
                         tooltip.classList.add('entry-is-hovered');
@@ -111,6 +110,8 @@
                         if (tooltipRect.top < gridRect.top) {
                             tooltip.classList.add('is-bottom');
                         }
+
+                        this.activeTimeout = null;
                     });
                 }, 250);
             }
