@@ -14,6 +14,8 @@
         {
             super(icinga);
 
+            this.activeTimeout = null;
+
             this.on('rendered', '#main > .container', this.onRendered, this);
             this.on('end', '#notifications-schedule .sidebar', this.onDrop, this);
             this.on('mouseenter', '#notifications-schedule .entry', this.onEntryHover, this);
@@ -96,18 +98,23 @@
             relatedEntries.forEach(element => element.classList.add('highlighted'));
 
             if (tooltip) {
-                const grid = event.currentTarget.parentElement.previousSibling;
-                requestAnimationFrame(() => {
-                    const tooltipRect = tooltip.getBoundingClientRect();
-                    const gridRect = grid.getBoundingClientRect();
-                    if (tooltipRect.right > gridRect.right) {
-                        tooltip.classList.add('is-left');
-                    }
+                this.activeTimeout = setTimeout(() => {
+                    const grid = event.currentTarget.parentElement.previousSibling;
+                    requestAnimationFrame(() => {
+                        tooltip.classList.add('entry-is-hovered');
+                        const tooltipRect = tooltip.getBoundingClientRect();
+                        const gridRect = grid.getBoundingClientRect();
+                        if (tooltipRect.right > gridRect.right) {
+                            tooltip.classList.add('is-left');
+                        }
 
-                    if (tooltipRect.top < gridRect.top) {
-                        tooltip.classList.add('is-bottom');
-                    }
-                });
+                        if (tooltipRect.top < gridRect.top) {
+                            tooltip.classList.add('is-bottom');
+                        }
+
+                        this.activeTimeout = null;
+                    });
+                }, 250);
             }
         }
 
@@ -123,7 +130,11 @@
             relatedEntries.forEach(element => element.classList.remove('highlighted'));
 
             if (tooltip) {
-                tooltip.classList.remove('is-left', 'is-bottom');
+                if (this.activeTimeout) {
+                    clearTimeout(this.activeTimeout);
+                } else {
+                    tooltip.classList.remove('is-left', 'is-bottom', 'entry-is-hovered');
+                }
             }
         }
 
