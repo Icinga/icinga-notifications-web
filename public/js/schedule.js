@@ -10,7 +10,6 @@
     }
 
     class NotificationsSchedule extends Icinga.EventListener {
-        activeTimeout = null;
         constructor(icinga)
         {
             super(icinga);
@@ -19,6 +18,7 @@
             this.on('end', '#notifications-schedule .sidebar', this.onDrop, this);
             this.on('mouseenter', '#notifications-schedule .entry', this.onEntryHover, this);
             this.on('mouseleave', '#notifications-schedule .entry', this.onEntryLeave, this);
+            this.activeTimeout = null;
         }
 
         /**
@@ -98,9 +98,10 @@
 
             if (tooltip) {
                 this.activeTimeout = setTimeout(() => {
-                    tooltip.classList.add('entry-is-hovered');
+                    this.activeTimeout = null;
                     const grid = event.currentTarget.parentElement.previousSibling;
                     requestAnimationFrame(() => {
+                        tooltip.classList.add('entry-is-hovered');
                         const tooltipRect = tooltip.getBoundingClientRect();
                         const gridRect = grid.getBoundingClientRect();
                         if (tooltipRect.right > gridRect.right) {
@@ -129,9 +130,9 @@
             if (tooltip) {
                 if (this.activeTimeout) {
                     clearTimeout(this.activeTimeout);
+                } else {
+                    tooltip.classList.remove('is-left', 'is-bottom', 'entry-is-hovered');
                 }
-
-                tooltip.classList.remove('is-left', 'is-bottom', 'entry-is-hovered');
             }
         }
 
