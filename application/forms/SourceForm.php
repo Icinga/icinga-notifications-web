@@ -66,11 +66,24 @@ class SourceForm extends CompatForm
             'type',
             [
                 'required'          => true,
+                'class'             => 'autosubmit',
                 'label'             => $this->translate('Source Type'),
                 'options'           => $types,
                 'disabledOptions'   => ['']
             ]
         );
+
+        if ($this->getValue('type') !== 'icinga2') {
+            $this->addElement(
+                'text',
+                'listener_username',
+                [
+                    'required' => true,
+                    'label' => $this->translate('Listener Username'),
+                ]
+            );
+        }
+
         $this->addElement(
             'password',
             'listener_password',
@@ -183,6 +196,10 @@ class SourceForm extends CompatForm
             return;
         }
 
+        if ($source['type'] === 'icinga2') {
+            $source['listener_username'] = null;
+        }
+
         $source['changed_at'] = (int) (new DateTime())->format("Uv");
         $this->db->update('source', $source, ['id = ?' => $this->sourceId]);
     }
@@ -217,7 +234,8 @@ class SourceForm extends CompatForm
 
         return [
             'name' => $source->name,
-            'type' => $source->type
+            'type' => $source->type,
+            'listener_username' => $source->listener_username
         ];
     }
 }

@@ -48,6 +48,7 @@ class Source extends Model
         return [
             'type',
             'name',
+            'listener_username',
             'listener_password_hash',
             'changed_at',
             'deleted'
@@ -59,6 +60,7 @@ class Source extends Model
         return [
             'type'          => t('Type'),
             'name'          => t('Name'),
+            'listener_username' => t('Listener Username'),
             'changed_at'    => t('Changed At')
         ];
     }
