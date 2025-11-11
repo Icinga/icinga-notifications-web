@@ -17,7 +17,7 @@ use Icinga\Module\Notifications\Widget\Detail\ScheduleDetail;
 use Icinga\Module\Notifications\Widget\RecipientSuggestions;
 use Icinga\Module\Notifications\Widget\TimezoneWarning;
 use Icinga\Web\Session;
-use ipl\Html\Form;
+use ipl\Html\Contract\Form;
 use ipl\Html\Html;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
@@ -26,6 +26,16 @@ use ipl\Web\Widget\ButtonLink;
 
 class ScheduleController extends CompatController
 {
+    /** @var ?Session\SessionNamespace */
+    private ?Session\SessionNamespace $session = null;
+
+    public function init(): void
+    {
+        parent::init();
+
+        $this->session = Session::getSession()->getNamespace('notifications.schedule');
+    }
+
     public function indexAction(): void
     {
         $id = (int) $this->params->getRequired('id');
@@ -54,9 +64,18 @@ class ScheduleController extends CompatController
 
         $scheduleControls = (new ScheduleDetail\Controls())
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
-            ->populate(['mode' => $this->params->get('mode')])
-            ->on(Form::ON_SUCCESS, function (ScheduleDetail\Controls $controls) use ($id) {
-                $this->redirectNow(Links::schedule($id)->with(['mode' => $controls->getMode()]));
+            ->populate([
+                'mode' => $this->params->get(
+                    'mode',
+                    $this->session->get(
+                        'timeline.mode',
+                        ScheduleDetail\Controls::DEFAULT_MODE
+                    )
+                ),
+            ])
+            ->on(Form::ON_SUBMIT, function (ScheduleDetail\Controls $controls) use ($id) {
+                $this->session->set('timeline.mode', $controls->getValue('mode'));
+                $this->redirectNow(Links::schedule($id)->with(['mode' => $controls->getValue('mode')]));
             })
             ->handleRequest($this->getServerRequest());
 
@@ -84,13 +103,13 @@ class ScheduleController extends CompatController
         $form->loadSchedule($scheduleId);
         $form->setSubmitLabel($this->translate('Save Changes'));
         $form->setAction($this->getRequest()->getUrl()->getAbsoluteUrl());
-        $form->on(ScheduleForm::ON_SUCCESS, function ($form) use ($scheduleId) {
+        $form->on(Form::ON_SUBMIT, function ($form) use ($scheduleId) {
             $form->editSchedule($scheduleId);
 
             $this->sendExtraUpdates(['#col1']);
             $this->redirectNow(Links::schedule($scheduleId));
         });
-        $form->on(ScheduleForm::ON_SENT, function ($form) use ($scheduleId) {
+        $form->on(Form::ON_SENT, function ($form) use ($scheduleId) {
             if ($form->hasBeenRemoved()) {
                 $form->removeSchedule($scheduleId);
 
@@ -109,7 +128,7 @@ class ScheduleController extends CompatController
         $form = (new ScheduleForm(Database::get()))
             ->setShowTimezoneSuggestionInput()
             ->setAction($this->getRequest()->getUrl()->setParam('showCompact')->getAbsoluteUrl())
-            ->on(Form::ON_SUCCESS, function (ScheduleForm $form) {
+            ->on(Form::ON_SUBMIT, function (ScheduleForm $form) {
                 $scheduleId = $form->addSchedule();
 
                 $this->sendExtraUpdates(['#col1']);
@@ -135,7 +154,7 @@ class ScheduleController extends CompatController
         $form = new RotationConfigForm($scheduleId, Database::get(), $displayTimezone, $scheduleTimezone);
         $form->setAction($this->getRequest()->getUrl()->setParam('showCompact')->getAbsoluteUrl());
         $form->setSuggestionUrl(Url::fromPath('notifications/schedule/suggest-recipient'));
-        $form->on(RotationConfigForm::ON_SENT, function ($form) {
+        $form->on(Form::ON_SENT, function ($form) {
             if (! $form->hasBeenSubmitted()) {
                 foreach ($form->getPartUpdates() as $update) {
                     if (! is_array($update)) {
@@ -146,7 +165,7 @@ class ScheduleController extends CompatController
                 }
             }
         });
-        $form->on(RotationConfigForm::ON_SUCCESS, function (RotationConfigForm $form) use ($scheduleId) {
+        $form->on(Form::ON_SUBMIT, function (RotationConfigForm $form) use ($scheduleId) {
             $form->addRotation();
             $this->sendExtraUpdates(['#col1']);
             $this->closeModalAndRefreshRelatedView(Links::schedule($scheduleId));
@@ -178,12 +197,12 @@ class ScheduleController extends CompatController
         $form->setSubmitLabel($this->translate('Save Changes'));
         $form->setAction($this->getRequest()->getUrl()->setParam('showCompact')->getAbsoluteUrl());
         $form->setSuggestionUrl(Url::fromPath('notifications/schedule/suggest-recipient'));
-        $form->on(RotationConfigForm::ON_SUCCESS, function (RotationConfigForm $form) use ($id, $scheduleId) {
+        $form->on(Form::ON_SUBMIT, function (RotationConfigForm $form) use ($id, $scheduleId) {
             $form->editRotation($id);
             $this->sendExtraUpdates(['#col1']);
             $this->closeModalAndRefreshRelatedView(Links::schedule($scheduleId));
         });
-        $form->on(RotationConfigForm::ON_SENT, function (RotationConfigForm $form) use ($id, $scheduleId) {
+        $form->on(Form::ON_SENT, function (RotationConfigForm $form) use ($id, $scheduleId) {
             if ($form->hasBeenRemoved()) {
                 $form->removeRotation($id);
                 $this->sendExtraUpdates(['#col1']);
@@ -215,7 +234,7 @@ class ScheduleController extends CompatController
         $this->assertHttpMethod('POST');
 
         $form = new MoveRotationForm(Database::get());
-        $form->on(MoveRotationForm::ON_SUCCESS, function (MoveRotationForm $form) {
+        $form->on(Form::ON_SUBMIT, function (MoveRotationForm $form) {
             $this->sendExtraUpdates(['#col1']);
             $this->redirectNow(Links::schedule($form->getScheduleId()));
         });

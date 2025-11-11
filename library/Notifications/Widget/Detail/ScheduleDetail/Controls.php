@@ -4,7 +4,6 @@
 
 namespace Icinga\Module\Notifications\Widget\Detail\ScheduleDetail;
 
-use Icinga\Web\Session;
 use ipl\Html\Attributes;
 use ipl\Html\Form;
 use ipl\Html\HtmlElement;
@@ -25,41 +24,18 @@ class Controls extends Form
     protected $defaultAttributes = ['class' => 'schedule-controls', 'name' => 'schedule-detail-controls-form'];
 
     /**
-     * Get the chosen mode
-     *
-     * @return string
-     */
-    public function getMode(): string
-    {
-        return $this->getPopulatedValue('mode')
-            ?? Session::getSession()->getNamespace('notifications')
-                ->get('schedule.timeline.mode', self::DEFAULT_MODE);
-    }
-
-    /**
      * Get the number of days the user wants to see
      *
      * @return int
      */
     public function getNumberOfDays(): int
     {
-        switch ($this->getMode()) {
-            case 'day':
-                return 1;
-            case 'weeks':
-                return 14;
-            case 'month':
-                return 31;
-            case 'week':
-            default:
-                return 7;
-        }
-    }
-
-    protected function onSuccess()
-    {
-        Session::getSession()->getNamespace('notifications')
-            ->set('schedule.timeline.mode', $this->getValue('mode'));
+        return match ($this->getPopulatedValue('mode')) {
+            'day' => 1,
+            'weeks' => 14,
+            'month' => 31,
+            default => 7
+        };
     }
 
     protected function assemble()
@@ -76,7 +52,7 @@ class Controls extends Form
 
         $this->addElement('hidden', $param, ['required' => true]);
 
-        $chosenMode = $this->getMode();
+        $chosenMode = $this->getPopulatedValue('mode');
         $viewModeSwitcher = HtmlElement::create('fieldset', ['class' => 'view-mode-switcher']);
         foreach ($options as $value => $label) {
             $input = $this->createElement('input', $param, [
