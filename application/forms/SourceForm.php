@@ -71,6 +71,30 @@ class SourceForm extends CompatForm
                 'disabledOptions'   => ['']
             ]
         );
+
+        $this->addElement(
+            'text',
+            'listener_username',
+            [
+                'required' => true,
+                'label' => $this->translate('Username'),
+                'validators' => [new CallbackValidator(
+                    function ($value, CallbackValidator $validator) {
+                        // Username must be unique
+                        $source = Source::on($this->db)
+                            ->filter(Filter::equal('listener_username', $value))
+                            ->first();
+                        if ($source !== null) {
+                            $validator->addMessage($this->translate('This username is already in use.'));
+                            return false;
+                        }
+
+                        return true;
+                    }
+                )]
+            ]
+        );
+
         $this->addElement(
             'password',
             'listener_password',
@@ -217,7 +241,8 @@ class SourceForm extends CompatForm
 
         return [
             'name' => $source->name,
-            'type' => $source->type
+            'type' => $source->type,
+            'listener_username' => $source->listener_username
         ];
     }
 }
