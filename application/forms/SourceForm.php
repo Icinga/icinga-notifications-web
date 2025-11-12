@@ -66,23 +66,35 @@ class SourceForm extends CompatForm
             'type',
             [
                 'required'          => true,
-                'class'             => 'autosubmit',
                 'label'             => $this->translate('Source Type'),
                 'options'           => $types,
                 'disabledOptions'   => ['']
             ]
         );
 
-        if ($this->getValue('type') !== 'icinga2') {
-            $this->addElement(
-                'text',
-                'listener_username',
-                [
-                    'required' => true,
-                    'label' => $this->translate('Listener Username'),
-                ]
-            );
-        }
+        $this->addElement(
+            'text',
+            'listener_username',
+            [
+                'required' => true,
+                'label' => $this->translate('Listener Username'),
+                'validators' => [new CallbackValidator(
+                    function ($value, CallbackValidator $validator) {
+                        // Deleted rows are included to avoid integrity constraint violations
+                        $source = Source::on($this->db)
+                            ->filter(Filter::equal('listener_username', $value))
+                            ->filter(Filter::any(Filter::equal('deleted', 'y'), Filter::equal('deleted', 'n')))
+                            ->execute();
+                        if ($source->hasResult()) {
+                            $validator->addMessage($this->translate('This listener username already exists.'));
+                            return false;
+                        }
+
+                        return true;
+                    }
+                )]
+            ]
+        );
 
         $this->addElement(
             'password',
@@ -194,10 +206,6 @@ class SourceForm extends CompatForm
             $source['listener_password_hash'] = password_hash($listenerPassword, self::HASH_ALGORITHM);
         } elseif (empty(array_diff_assoc($source, $this->fetchDbValues()))) {
             return;
-        }
-
-        if ($source['type'] === 'icinga2') {
-            $source['listener_username'] = null;
         }
 
         $source['changed_at'] = (int) (new DateTime())->format("Uv");
