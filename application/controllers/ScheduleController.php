@@ -74,7 +74,7 @@ class ScheduleController extends CompatController
                 ),
                 'timezone' => $this->params->get(
                     'display_timezone',
-                    $this->getDisplayTimezoneFromSession($schedule->timezone)
+                    $this->getDisplayTimezoneFromSession($schedule->id, $schedule->timezone)
                 )
             ])
             ->on(Form::ON_SUBMIT, function (ScheduleDetail\Controls $controls) use ($schedule) {
@@ -84,9 +84,9 @@ class ScheduleController extends CompatController
                 $this->session->set('timeline.mode', $mode);
 
                 if ($timezone === $schedule->timezone) {
-                    $this->session->delete('schedule.display_timezone');
+                    $this->session->delete(sprintf('schedule[%d].display_timezone', $schedule->id));
                 } else {
-                    $this->session->set('schedule.display_timezone', $timezone);
+                    $this->session->set(sprintf('schedule[%d].display_timezone', $schedule->id), $timezone);
                 }
 
                 $redirectUrl = Links::schedule($schedule->id)->setParam('mode', $mode);
@@ -157,7 +157,7 @@ class ScheduleController extends CompatController
     {
         $scheduleId = (int) $this->params->getRequired('schedule');
         $scheduleTimezone = $this->getScheduleTimezone($scheduleId);
-        $displayTimezone = $this->getDisplayTimezoneFromSession($scheduleTimezone);
+        $displayTimezone = $this->getDisplayTimezoneFromSession($scheduleId, $scheduleTimezone);
         $this->setTitle($this->translate('Add Rotation'));
 
         if ($displayTimezone !== $scheduleTimezone) {
@@ -196,7 +196,7 @@ class ScheduleController extends CompatController
         $id = (int) $this->params->getRequired('id');
         $scheduleId = (int) $this->params->getRequired('schedule');
         $scheduleTimezone = $this->getScheduleTimezone($scheduleId);
-        $displayTimezone = $this->getDisplayTimezoneFromSession($scheduleTimezone);
+        $displayTimezone = $this->getDisplayTimezoneFromSession($scheduleId, $scheduleTimezone);
         $this->setTitle($this->translate('Edit Rotation'));
 
         if ($displayTimezone !== $scheduleTimezone) {
@@ -283,12 +283,13 @@ class ScheduleController extends CompatController
     /**
      * Get the display timezone from the session
      *
+     * @param int $scheduleId
      * @param string $defaultTimezone
      *
      * @return string
      */
-    protected function getDisplayTimezoneFromSession(string $defaultTimezone): string
+    protected function getDisplayTimezoneFromSession(int $scheduleId, string $defaultTimezone): string
     {
-        return $this->session->get('schedule.display_timezone', $defaultTimezone);
+        return $this->session->get(sprintf('schedule[%d].display_timezone', $scheduleId), $defaultTimezone);
     }
 }
