@@ -112,7 +112,7 @@ class DeleteSourceForm extends CompatForm
 
         $db->update(
             'source',
-            ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'],
+            ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y', 'listener_username' => null],
             ['id = ?' => $this->source->id]
         );
     }

@@ -21,7 +21,7 @@ use Throwable;
  * @property int $id The primary key
  * @property string $type Type identifier
  * @property string $name The user-defined name
- * @property string $listener_username The username for HTTP authentication
+ * @property ?string $listener_username The username for HTTP authentication
  * @property ?string $listener_password_hash
  * @property DateTime $changed_at
  * @property bool $deleted
@@ -61,7 +61,7 @@ class Source extends Model
         return [
             'type'              => t('Type'),
             'name'              => t('Name'),
-            'listener_username' => t('Listener Username'),
+            'listener_username' => t('Username'),
             'changed_at'        => t('Changed At')
         ];
     }

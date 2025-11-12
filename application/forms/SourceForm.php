@@ -80,13 +80,12 @@ class SourceForm extends CompatForm
                 'label' => $this->translate('Listener Username'),
                 'validators' => [new CallbackValidator(
                     function ($value, CallbackValidator $validator) {
-                        // Deleted rows are included to avoid integrity constraint violations
+                        // Username must be unique
                         $source = Source::on($this->db)
                             ->filter(Filter::equal('listener_username', $value))
-                            ->filter(Filter::any(Filter::equal('deleted', 'y'), Filter::equal('deleted', 'n')))
-                            ->execute();
-                        if ($source->hasResult()) {
-                            $validator->addMessage($this->translate('This listener username already exists.'));
+                            ->first();
+                        if ($source !== null) {
+                            $validator->addMessage($this->translate('This username is already in use.'));
                             return false;
                         }
 
