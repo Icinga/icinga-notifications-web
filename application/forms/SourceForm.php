@@ -77,7 +77,7 @@ class SourceForm extends CompatForm
             'listener_username',
             [
                 'required' => true,
-                'label' => $this->translate('Listener Username'),
+                'label' => $this->translate('Username'),
                 'validators' => [new CallbackValidator(
                     function ($value, CallbackValidator $validator) {
                         // Username must be unique
