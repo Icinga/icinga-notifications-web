@@ -22,28 +22,16 @@ class FilterRenderer extends Renderer
             return;
         }
 
-        switch (true) {
-            case $condition instanceof Filter\Unequal:
-            case $condition instanceof Filter\Unlike:
-                $this->string .= '!=';
-                break;
-            case $condition instanceof Filter\Equal:
-            case $condition instanceof Filter\Like:
-                $this->string .= '=';
-                break;
-            case $condition instanceof Filter\GreaterThan:
-                $this->string .= '>';
-                break;
-            case $condition instanceof Filter\LessThan:
-                $this->string .= '<';
-                break;
-            case $condition instanceof Filter\GreaterThanOrEqual:
-                $this->string .= '>=';
-                break;
-            case $condition instanceof Filter\LessThanOrEqual:
-                $this->string .= '<=';
-                break;
-        }
+        $this->string .= match (true) {
+            $condition instanceof Filter\Unequal,
+                $condition instanceof Filter\Unlike         => '!=',
+            $condition instanceof Filter\Equal,
+                $condition instanceof Filter\Like           => '=',
+            $condition instanceof Filter\GreaterThan        => '>',
+            $condition instanceof Filter\LessThan           => '<',
+            $condition instanceof Filter\GreaterThanOrEqual => '>=',
+            $condition instanceof Filter\LessThanOrEqual    => '<='
+        };
 
         if (is_array($value)) {
             $this->string .= '(' . join('|', $value) . ')';

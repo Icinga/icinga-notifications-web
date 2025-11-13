@@ -224,22 +224,11 @@ class RotationConfigForm extends CompatForm
 
         if (self::EXPERIMENTAL_OVERRIDES) {
             $getHandoff = function (Rotation $rotation): DateTime {
-                switch ($rotation->mode) {
-                    case '24-7':
-                        $time = $rotation->options['at'];
-
-                        break;
-                    case 'partial':
-                        $time = $rotation->options['from'];
-
-                        break;
-                    case 'multi':
-                        $time = $rotation->options['from_at'];
-
-                        break;
-                    default:
-                        throw new LogicException('Invalid mode');
-                }
+                $time = match ($rotation->mode) {
+                    '24-7'    => $rotation->options['at'],
+                    'partial' => $rotation->options['from'],
+                    'multi'   => $rotation->options['from_at']
+                };
 
                 $handoff = DateTime::createFromFormat(
                     'Y-m-d H:i',

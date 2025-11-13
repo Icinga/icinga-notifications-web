@@ -4,7 +4,6 @@
 
 namespace Icinga\Module\Notifications\Widget\Detail;
 
-use Icinga\Exception\NotImplementedError;
 use Icinga\Module\Notifications\Model\Contactgroup;
 use Icinga\Module\Notifications\Model\Event;
 use Icinga\Module\Notifications\Model\Incident;
@@ -39,27 +38,13 @@ class ObjectHeader extends BaseHtmlElement
         $this->object = $object;
     }
 
-    /**
-     * @throws NotImplementedError When the object type is not supported
-     */
     protected function assemble(): void
     {
-        switch (true) {
-            case $this->object instanceof Event:
-                $renderer = new EventRenderer();
-
-                break;
-            case $this->object instanceof Incident:
-                $renderer = new IncidentRenderer();
-
-                break;
-            case $this->object instanceof Contactgroup:
-                $renderer = new ContactgroupRenderer();
-
-                break;
-            default:
-                throw new NotImplementedError('Not implemented');
-        }
+        $renderer = match (true) {
+            $this->object instanceof Event        => new EventRenderer(),
+            $this->object instanceof Incident     => new IncidentRenderer(),
+            $this->object instanceof Contactgroup => new ContactgroupRenderer()
+        };
 
         $layout = new HeaderItemLayout($this->object, $renderer);
 
