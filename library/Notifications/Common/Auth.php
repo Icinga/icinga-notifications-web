@@ -26,6 +26,10 @@ trait Auth
      */
     public function applyRestrictions(Query $query): void
     {
+        // TODO: Since the recent integration rewrite, restriction support does not work anymore as expected.
+        //       Will be reworked with the next release.
+        return;
+
         /** @var User $user */
         $user = $this->getAuth()->getUser();
         if ($user->isUnrestricted()) {

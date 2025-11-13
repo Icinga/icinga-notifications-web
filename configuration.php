@@ -74,10 +74,10 @@ $this->providePermission(
     $this->translate('Allow to modify configuration via API')
 );
 
-$this->provideRestriction(
-    'notifications/filter/objects',
-    $this->translate('Restrict access to the objects that match the filter')
-);
+//$this->provideRestriction(
+//    'notifications/filter/objects',
+//    $this->translate('Restrict access to the objects that match the filter')
+//);
 
 $this->provideConfigTab(
     'database',
