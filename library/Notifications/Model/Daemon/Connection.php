@@ -71,7 +71,7 @@ class Connection
         return $this->host . ':' . $this->port;
     }
 
-    public function getSession(): ?string
+    public function getSession(): string
     {
         return $this->session;
     }
@@ -112,7 +112,7 @@ class Connection
      * @return object{host: string, port: string, addr: string} | false Host, port and full address or false if the
      * parsing failed
      */
-    public static function parseHostAndPort(?string $address)
+    public static function parseHostAndPort(?string $address): object|false
     {
         if ($address === null) {
             return false;

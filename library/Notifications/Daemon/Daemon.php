@@ -152,9 +152,9 @@ class Daemon extends EventEmitter
      *
      * @param bool $isManualShutdown manual trigger for the shutdown
      *
-     * @return never-return
+     * @return never
      */
-    protected function shutdown(bool $isManualShutdown = false)
+    protected function shutdown(bool $isManualShutdown = false): never
     {
         self::$logger::info(self::PREFIX . "shutting down" . ($isManualShutdown ? " (manually triggered)" : ""));
 

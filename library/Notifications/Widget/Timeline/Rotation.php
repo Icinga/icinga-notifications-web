@@ -28,9 +28,9 @@ class Rotation
     /**
      * Create a new Rotation
      *
-     * @param \Icinga\Module\Notifications\Model\Rotation $model
+     * @param RotationModel $model
      */
-    public function __construct(\Icinga\Module\Notifications\Model\Rotation $model)
+    public function __construct(RotationModel $model)
     {
         $this->model = $model;
     }

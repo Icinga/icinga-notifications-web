@@ -28,7 +28,7 @@ class SourcesController extends CompatController
 {
     use SearchControls;
 
-    public function init()
+    public function init(): void
     {
         $this->assertPermission('config/modules');
     }

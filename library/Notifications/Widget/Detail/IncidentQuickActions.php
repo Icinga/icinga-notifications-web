@@ -100,7 +100,7 @@ class IncidentQuickActions extends Form
         );
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
 
@@ -121,7 +121,7 @@ class IncidentQuickActions extends Form
         }
     }
 
-    protected function onSuccess()
+    protected function onSuccess(): void
     {
         $incidentContact = $this->fetchIncidentContact();
         $pressedButton = $this->getPressedSubmitElement()->getName();

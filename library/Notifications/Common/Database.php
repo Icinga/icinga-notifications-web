@@ -217,7 +217,7 @@ final class Database
      *
      * @return int The given timestamp or 1 + the maximum changed_at value in the table, whichever is greater
      */
-    private static function getNextChangedAt(Connection $db, string $table, $nowUnixMilli)
+    private static function getNextChangedAt(Connection $db, string $table, $nowUnixMilli): int
     {
         return $db->select(
             (new Select())
@@ -273,6 +273,7 @@ final class Database
     /**
      * Check if the given condition is part of the where clause with value 'y'
      *
+     * @param string $baseTable
      * @param string $conditionToFind
      * @param array<int|string, int|string> $where
      *
