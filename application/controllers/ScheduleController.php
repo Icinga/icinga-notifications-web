@@ -66,7 +66,7 @@ class ScheduleController extends CompatController
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->setDefaultTimezone($schedule->timezone)
             ->populate([
-                'mode' => $this->params->get(
+                'mode'     => $this->params->get(
                     'mode',
                     $this->session->get(
                         'timeline.mode',
@@ -276,7 +276,7 @@ class ScheduleController extends CompatController
     /**
      * Get the display timezone from the session
      *
-     * @param int $scheduleId
+     * @param int    $scheduleId
      * @param string $defaultTimezone
      *
      * @return string

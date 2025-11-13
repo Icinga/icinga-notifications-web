@@ -13,20 +13,20 @@ use ipl\Orm\Query;
 use ipl\Orm\Relations;
 
 /**
- * @property int $id
- * @property int $rule_id
- * @property ?int $position
- * @property ?string $condition
- * @property ?string $name
- * @property ?string $fallback_for
- * @property DateTime $changed_at
- * @property bool $deleted
+ * @property int                           $id
+ * @property int                           $rule_id
+ * @property ?int                          $position
+ * @property ?string                       $condition
+ * @property ?string                       $name
+ * @property ?string                       $fallback_for
+ * @property DateTime                      $changed_at
+ * @property bool                          $deleted
  *
- * @property Query|Rule $rule
- * @property Query|Incident $incident
- * @property Query|Contact $contact
+ * @property Query|Rule                    $rule
+ * @property Query|Incident                $incident
+ * @property Query|Contact                 $contact
  * @property Query|RuleEscalationRecipient $rule_escalation_recipient
- * @property Query|IncidentHistory $incident_history
+ * @property Query|IncidentHistory         $incident_history
  */
 class RuleEscalation extends Model
 {
@@ -56,12 +56,12 @@ class RuleEscalation extends Model
     public function getColumnDefinitions(): array
     {
         return [
-            'rule_id'       => t('Rule ID'),
-            'position'      => t('Position'),
-            'condition'     => t('Condition'),
-            'name'          => t('Name'),
-            'fallback_for'  => t('Fallback For'),
-            'changed_at'    => t('Changed At')
+            'rule_id'      => t('Rule ID'),
+            'position'     => t('Position'),
+            'condition'    => t('Condition'),
+            'name'         => t('Name'),
+            'fallback_for' => t('Fallback For'),
+            'changed_at'   => t('Changed At')
         ];
     }
 

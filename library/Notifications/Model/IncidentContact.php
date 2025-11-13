@@ -9,12 +9,12 @@ use ipl\Orm\Query;
 use ipl\Orm\Relations;
 
 /**
- * @property int $incident_id
- * @property ?int $contact_id
- * @property string $role
+ * @property int            $incident_id
+ * @property ?int           $contact_id
+ * @property string         $role
  *
  * @property Query|Incident $incident
- * @property Query|Contact $contact
+ * @property Query|Contact  $contact
  */
 class IncidentContact extends Model
 {
@@ -40,9 +40,9 @@ class IncidentContact extends Model
     public function getColumnDefinitions(): array
     {
         return [
-            'incident_id'   => t('Incident Id'),
-            'contact_id'    => t('Contact Id'),
-            'role'          => t('Role')
+            'incident_id' => t('Incident Id'),
+            'contact_id'  => t('Contact Id'),
+            'role'        => t('Role')
         ];
     }
 

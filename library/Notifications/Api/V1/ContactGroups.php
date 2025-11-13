@@ -106,7 +106,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
      * Get a Contact Group by UUID.
      *
      * @param string|null $identifier
-     * @param string $queryFilter
+     * @param string      $queryFilter
      *
      * @return ResponseInterface
      *
@@ -207,7 +207,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
     /**
      * Update a Contact Group by UUID.
      *
-     * @param string $identifier
+     * @param string      $identifier
      * @param requestBody $requestBody
      *
      * @return ResponseInterface
@@ -265,7 +265,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
             $result = $this->createResponse(
                 201,
                 [
-                    'Location' => sprintf(
+                    'Location'              => sprintf(
                         'notifications/api/%s/%s/%s',
                         self::VERSION,
                         $this->getEndpoint(),
@@ -285,7 +285,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
     /**
      * Create or replace a Contact Group
      *
-     * @param string|null $identifier The identifier of the Contact Group to update, or null to create a new one
+     * @param string|null $identifier  The identifier of the Contact Group to update, or null to create a new one
      * @param requestBody $requestBody The request body containing the Contact Group data
      *
      * @return ResponseInterface
@@ -365,7 +365,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
         return $this->createResponse(
             201,
             [
-                'Location' => sprintf(
+                'Location'              => sprintf(
                     'notifications/api/%s/%s/%s',
                     self::VERSION,
                     $this->getEndpoint(),
@@ -675,9 +675,9 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
                 'contactgroup_member',
                 ['changed_at' => $changedAt, 'deleted' => 'y'],
                 [
-                    'contactgroup_id = ?'   => $contactgroupId,
-                    'contact_id IN (?)'     => $toDelete,
-                    'deleted = ?'           => 'n'
+                    'contactgroup_id = ?' => $contactgroupId,
+                    'contact_id IN (?)'   => $toDelete,
+                    'deleted = ?'         => 'n'
                 ]
             );
         }
@@ -688,9 +688,9 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
                     ->from('contactgroup_member')
                     ->columns(['contact_id'])
                     ->where([
-                        'contactgroup_id = ?'   => $contactgroupId,
-                        'deleted = ?'           => 'y',
-                        'contact_id IN (?)'     => $toAdd
+                        'contactgroup_id = ?' => $contactgroupId,
+                        'deleted = ?'         => 'y',
+                        'contact_id IN (?)'   => $toAdd
                     ])
             );
 
@@ -699,9 +699,9 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
                 Database::get()->insert(
                     'contactgroup_member',
                     [
-                        'contactgroup_id'   => $contactgroupId,
-                        'contact_id'        => $contactId,
-                        'changed_at'        => $changedAt
+                        'contactgroup_id' => $contactgroupId,
+                        'contact_id'      => $contactId,
+                        'changed_at'      => $changedAt
                     ]
                 );
             }
@@ -711,8 +711,8 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
                     'contactgroup_member',
                     ['changed_at' => $changedAt, 'deleted' => 'n'],
                     [
-                        'contactgroup_id = ?'   => $contactgroupId,
-                        'contact_id IN (?)'     => $contactsMarkedAsDeleted
+                        'contactgroup_id = ?' => $contactgroupId,
+                        'contact_id IN (?)'   => $contactsMarkedAsDeleted
                     ]
                 );
             }
@@ -722,7 +722,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
     /**
      * Add the given users as contactgroup_member with the given id
      *
-     * @param int $contactgroupId
+     * @param int      $contactgroupId
      * @param string[] $users
      *
      * @return void
@@ -757,7 +757,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
      * Assert that the name is unique
      *
      * @param string $name
-     * @param ?int $contactgroupId The id of the Contact Group to exclude
+     * @param ?int   $contactgroupId The id of the Contact Group to exclude
      *
      * @return void
      *
@@ -785,6 +785,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
      * Fetch the values from the database
      *
      * @param int $contactgroupId
+     *
      * @return array
      *
      * @throws HttpNotFoundException
@@ -806,8 +807,8 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
         }
 
         return [
-            'group_name'        => $group->name,
-            'group_members'     => implode(',', $groupMembers)
+            'group_name'    => $group->name,
+            'group_members' => implode(',', $groupMembers)
         ];
     }
 }

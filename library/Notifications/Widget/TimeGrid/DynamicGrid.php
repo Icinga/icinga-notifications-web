@@ -125,7 +125,7 @@ class DynamicGrid extends BaseGrid
         $this->style->addFor($this, [
             '--primaryColumns' => $this->days,
             '--columnsPerStep' => 48,
-            '--rowsPerStep' => 1
+            '--rowsPerStep'    => 1
         ]);
 
         $overlay = $this->createGridOverlay();

@@ -49,8 +49,8 @@ class EventRulesController extends CompatController
         $sortControl = $this->createSortControl(
             $eventRules,
             [
-                'name'          => $this->translate('Name'),
-                'changed_at'    => $this->translate('Changed At')
+                'name'       => $this->translate('Name'),
+                'changed_at' => $this->translate('Changed At')
             ]
         );
 
@@ -132,7 +132,7 @@ class EventRulesController extends CompatController
             ->on(Form::ON_SUBMIT, function ($form) {
                 $this->getResponse()->setHeader('X-Icinga-Container', 'col2');
                 $this->redirectNow(Links::eventRule(-1)->addParams([
-                    'name' => $form->getValue('name'),
+                    'name'   => $form->getValue('name'),
                     'source' => $form->getValue('source')
                 ]));
             })->handleRequest($this->getServerRequest());

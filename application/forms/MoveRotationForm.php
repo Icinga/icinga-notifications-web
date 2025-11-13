@@ -111,8 +111,8 @@ class MoveRotationForm extends Form
                     ->from('rotation')
                     ->where([
                         'schedule_id = ?' => $rotation->schedule_id,
-                        'priority >= ?' => $newPriority,
-                        'priority < ?' => $rotation->priority
+                        'priority >= ?'   => $newPriority,
+                        'priority < ?'    => $rotation->priority
                     ])
                     ->orderBy('priority DESC')
             );
@@ -130,8 +130,8 @@ class MoveRotationForm extends Form
                     ->from('rotation')
                     ->where([
                         'schedule_id = ?' => $rotation->schedule_id,
-                        'priority > ?' => $rotation->priority,
-                        'priority <= ?' => $newPriority
+                        'priority > ?'    => $rotation->priority,
+                        'priority <= ?'   => $newPriority
                     ])
                     ->orderBy('priority ASC')
             );

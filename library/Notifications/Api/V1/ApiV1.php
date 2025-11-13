@@ -92,6 +92,7 @@ abstract class ApiV1 extends ApiCore
      * Override this method to modify the row before it is returned in the response.
      *
      * @param stdClass $row
+     *
      * @return void
      */
     public function prepareRow(stdClass $row): void
@@ -102,7 +103,7 @@ abstract class ApiV1 extends ApiCore
      * Create a filter from the filter string.
      *
      * @param string $queryFilter
-     * @param array $allowedColumns
+     * @param array  $allowedColumns
      * @param string $idColumnName
      *
      * @return array|bool Returns an array of filter rules or false if no filter string is provided.
@@ -185,8 +186,8 @@ abstract class ApiV1 extends ApiCore
      *
      * Enables efficient delivery of data by yielding results in batches.
      *
-     * @param Select $stmt The SQL select statement to execute.
-     * @param int $batchSize The number of rows to fetch in each batch (default is 500).
+     * @param Select $stmt      The SQL select statement to execute.
+     * @param int    $batchSize The number of rows to fetch in each batch (default is 500).
      *
      * @return Generator Yields JSON-encoded strings representing the content.
      *

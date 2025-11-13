@@ -44,15 +44,15 @@ class ObjectList extends ItemList
 
         if (! $this->getDetailActionsDisabled()) {
             $link = match (true) {
-                $data instanceof Event          => Url::fromPath('notifications/event'),
-                $data instanceof Incident       => Url::fromPath('notifications/incident'),
-                $data instanceof Schedule       => Url::fromPath('notifications/schedule'),
-                $data instanceof Rule           => Url::fromPath('notifications/event-rule'),
-                $data instanceof Contact        => Url::fromPath('notifications/contact'),
-                $data instanceof Contactgroup   => Url::fromPath('notifications/contact-group'),
-                $data instanceof Channel        => Url::fromPath('notifications/channel'),
-                $data instanceof Source         => Url::fromPath('notifications/source'),
-                default                         => null
+                $data instanceof Event        => Url::fromPath('notifications/event'),
+                $data instanceof Incident     => Url::fromPath('notifications/incident'),
+                $data instanceof Schedule     => Url::fromPath('notifications/schedule'),
+                $data instanceof Rule         => Url::fromPath('notifications/event-rule'),
+                $data instanceof Contact      => Url::fromPath('notifications/contact'),
+                $data instanceof Contactgroup => Url::fromPath('notifications/contact-group'),
+                $data instanceof Channel      => Url::fromPath('notifications/channel'),
+                $data instanceof Source       => Url::fromPath('notifications/source'),
+                default                       => null
             };
 
             if ($link !== null) {

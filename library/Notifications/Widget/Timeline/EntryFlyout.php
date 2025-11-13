@@ -23,7 +23,7 @@ class EntryFlyout extends BaseHtmlElement
     /** @var ?Member Member who is on duty during the entry's timespan */
     protected ?Member $activeMember = null;
 
-    /** @var ?string Mode of the entry's rotation can be "partial", "multi" or "24-7"*/
+    /** @var ?string Mode of the entry's rotation can be "partial", "multi" or "24-7" */
     protected ?string $mode = null;
 
     /** @var ?array All members of the entry's rotation */
@@ -497,9 +497,9 @@ class EntryFlyout extends BaseHtmlElement
         }
 
         $mode = match ($this->mode) {
-            'multi' => $this->translate('Multi Day'),
+            'multi'   => $this->translate('Multi Day'),
             'partial' => $this->translate('Partial Day'),
-            '24-7' => $this->translate('24/7')
+            '24-7'    => $this->translate('24/7')
         };
 
         $this->nameInfo = new HtmlElement(

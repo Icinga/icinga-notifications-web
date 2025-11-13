@@ -21,7 +21,7 @@ trait DynamicElements
      *
      * The given remove button must be rendered in the element's content.
      *
-     * @param int $no The position of the element in the list
+     * @param int                  $no           The position of the element in the list
      * @param ?SubmitButtonElement $removeButton The button to remove the element, if any
      *
      * @return FormElement

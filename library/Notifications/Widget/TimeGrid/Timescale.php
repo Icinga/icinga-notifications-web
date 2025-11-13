@@ -33,7 +33,7 @@ class Timescale extends BaseHtmlElement
     /**
      * Create a new Timescale
      *
-     * @param int $days
+     * @param int   $days
      * @param Style $style
      */
     public function __construct(int $days, Style $style)

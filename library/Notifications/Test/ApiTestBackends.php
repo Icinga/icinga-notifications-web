@@ -79,7 +79,7 @@ SQL;
      * Initialize the configuration for the API tests
      *
      * @param Connection $db
-     * @param string $driver
+     * @param string     $driver
      *
      * @return void
      */
@@ -170,34 +170,34 @@ SQL;
             ->setSection('global', [
                 'config_resource' => 'web_db'
             ])->setSection('logging', [
-                'log' => 'file',
-                'file' => $configDir . '/icingaweb.log',
+                'log'   => 'file',
+                'file'  => $configDir . '/icingaweb.log',
                 'level' => 'debug'
             ])->saveIni();
         Config::app('resources', true)
             ->setSection('web_db', [
-                'type' => 'db',
-                'db' => $connectionConfig->db,
-                'host' => $connectionConfig->host,
-                'port' => $connectionConfig->port,
-                'dbname' => self::getEnvironmentVariable(strtoupper($driver) . '_ICINGAWEBDB'),
+                'type'     => 'db',
+                'db'       => $connectionConfig->db,
+                'host'     => $connectionConfig->host,
+                'port'     => $connectionConfig->port,
+                'dbname'   => self::getEnvironmentVariable(strtoupper($driver) . '_ICINGAWEBDB'),
                 'username' => self::getEnvironmentVariable(strtoupper($driver) . '_ICINGAWEBDB_USER'),
                 'password' => self::getEnvironmentVariable(strtoupper($driver) . '_ICINGAWEBDB_PASSWORD')
             ])->setSection('notifications_db', [
-                'type' => 'db',
-                'db' => $connectionConfig->db,
-                'host' => $connectionConfig->host,
-                'port' => $connectionConfig->port,
-                'dbname' => $connectionConfig->dbname,
+                'type'     => 'db',
+                'db'       => $connectionConfig->db,
+                'host'     => $connectionConfig->host,
+                'port'     => $connectionConfig->port,
+                'dbname'   => $connectionConfig->dbname,
                 'username' => $connectionConfig->username,
                 'password' => $connectionConfig->password
             ])->saveIni();
         Config::app('roles', true)->setSection('test', [
             'permissions' => 'module/notifications,notifications/api',
-            'users' => 'test'
+            'users'       => 'test'
         ])->saveIni();
         Config::app('authentication', true)->setSection('test', [
-            'backend' => 'db',
+            'backend'  => 'db',
             'resource' => 'web_db'
         ])->saveIni();
         Config::module('notifications', fromDisk: true)->setSection('database', [
@@ -254,7 +254,7 @@ SQL;
      * Initialize the Icinga Web database
      *
      * @param Connection $db
-     * @param string $driver
+     * @param string     $driver
      *
      * @return void
      *
@@ -263,8 +263,8 @@ SQL;
     final protected static function initializeIcingaWebDb(Connection $db, string $driver): void
     {
         $db->insert('icingaweb_user', [
-            'name' => 'test',
-            'active' => 1,
+            'name'          => 'test',
+            'active'        => 1,
             'password_hash' => password_hash('test', PASSWORD_DEFAULT),
         ]);
     }
@@ -305,12 +305,12 @@ SQL;
     final protected static function connectToIcingaWebDb(string $driver): Connection
     {
         return new Connection([
-            'db' => $driver,
-            'host' => self::getEnvironmentVariable(strtoupper($driver) . '_TESTDB_HOST'),
-            'port' => self::getEnvironmentVariable(strtoupper($driver) . '_TESTDB_PORT'),
+            'db'       => $driver,
+            'host'     => self::getEnvironmentVariable(strtoupper($driver) . '_TESTDB_HOST'),
+            'port'     => self::getEnvironmentVariable(strtoupper($driver) . '_TESTDB_PORT'),
             'username' => self::getEnvironmentVariable(strtoupper($driver) . '_ICINGAWEBDB_USER'),
             'password' => self::getEnvironmentVariable(strtoupper($driver) . '_ICINGAWEBDB_PASSWORD'),
-            'dbname' => self::getEnvironmentVariable(strtoupper($driver) . '_ICINGAWEBDB')
+            'dbname'   => self::getEnvironmentVariable(strtoupper($driver) . '_ICINGAWEBDB')
         ]);
     }
 

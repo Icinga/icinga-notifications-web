@@ -24,7 +24,7 @@ class RuleEscalationRecipientBadge extends BaseHtmlElement
      * Create the rule escalation recipient badge with icon
      *
      * @param RuleEscalationRecipient $recipient
-     * @param ?int $moreCount The more count to show
+     * @param ?int                    $moreCount The more count to show
      */
     public function __construct(RuleEscalationRecipient $recipient, ?int $moreCount = null)
     {

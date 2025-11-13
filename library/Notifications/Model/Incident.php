@@ -19,19 +19,19 @@ use ipl\Sql\Select;
 /**
  * Incident Model
  *
- * @property int $id
- * @property string $object_id
- * @property DateTime $started_at
- * @property ?DateTime $recovered_at
- * @property string $severity
+ * @property int                   $id
+ * @property string                $object_id
+ * @property DateTime              $started_at
+ * @property ?DateTime             $recovered_at
+ * @property string                $severity
  *
- * @property Query|Objects $object
- * @property Query|Event $event
- * @property Query|Contact $contact
+ * @property Query|Objects         $object
+ * @property Query|Event           $event
+ * @property Query|Contact         $contact
  * @property Query|IncidentContact $incident_contact
  * @property Query|IncidentHistory $incident_history
- * @property Query|Rule $rule
- * @property Query|RuleEscalation $rule_escalation
+ * @property Query|Rule            $rule
+ * @property Query|RuleEscalation  $rule_escalation
  */
 class Incident extends Model
 {

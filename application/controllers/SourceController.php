@@ -29,7 +29,7 @@ class SourceController extends CompatController
             ->setCsrfCounterMeasureId(Session::getSession()->getId())
             ->loadSource($sourceId)
             ->on(Form::ON_SUBMIT, function (SourceForm $form): never {
-                Database::get()->transaction(fn () => $form->editSource());
+                Database::get()->transaction(fn() => $form->editSource());
                 Notification::success(sprintf(
                     $this->translate('Updated source "%s" successfully'),
                     $form->getSourceName()
@@ -51,7 +51,7 @@ class SourceController extends CompatController
             ->loadSource($sourceId)
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->on(Form::ON_SUBMIT, function (DeleteSourceForm $form): never {
-                Database::get()->transaction(fn (Connection $db) => $form->removeSource($db));
+                Database::get()->transaction(fn(Connection $db) => $form->removeSource($db));
                 Notification::success($this->translate('Deleted source successfully'));
                 $this->switchToSingleColumnLayout();
             })

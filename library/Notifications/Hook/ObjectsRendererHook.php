@@ -117,7 +117,8 @@ abstract class ObjectsRendererHook
      * ['object source type' => ['object ID' => [object ID tags]]].
      *
      * @param array<string, array<string, array<string, string>>> $objectIdTags Array of object ID tags for each source
-     * @param bool $asHtml When true, object names are prepared as HTML otherwise as string
+     * @param bool                                                $asHtml       When true, object names are prepared as
+     *                                                                          HTML otherwise as string
      *
      * @return void
      */
@@ -284,7 +285,7 @@ abstract class ObjectsRendererHook
 
                     return $objectLink->addAttributes([
                         'data-base-target' => '_next',
-                        'class' => [
+                        'class'            => [
                             'icinga-module',
                             'module-' . ($sourceType === 'icinga2' ? 'icingadb' : $sourceType)
                         ]

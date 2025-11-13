@@ -13,17 +13,17 @@ use ipl\Orm\Query;
 use ipl\Orm\Relations;
 
 /**
- * @property int $id
- * @property string $name
- * @property int $source_id
- * @property ?int $timeperiod_id
- * @property ?string $object_filter
- * @property DateTime $changed_at
- * @property bool $deleted
+ * @property int                   $id
+ * @property string                $name
+ * @property int                   $source_id
+ * @property ?int                  $timeperiod_id
+ * @property ?string               $object_filter
+ * @property DateTime              $changed_at
+ * @property bool                  $deleted
  *
- * @property Query|Source $source
- * @property Query|RuleEscalation $rule_escalation
- * @property Query|Incident $incident
+ * @property Query|Source          $source
+ * @property Query|RuleEscalation  $rule_escalation
+ * @property Query|Incident        $incident
  * @property Query|IncidentHistory $incident_history
  */
 class Rule extends Model

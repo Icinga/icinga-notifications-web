@@ -14,17 +14,17 @@ use ipl\Orm\Relations;
 use ipl\Web\Widget\Icon;
 
 /**
- * @property int $id
- * @property string $name
- * @property string $type
- * @property ?string $config
- * @property DateTime $changed_at
- * @property bool $deleted
+ * @property int                           $id
+ * @property string                        $name
+ * @property string                        $type
+ * @property ?string                       $config
+ * @property DateTime                      $changed_at
+ * @property bool                          $deleted
  *
- * @property Query|IncidentHistory $incident_history
+ * @property Query|IncidentHistory         $incident_history
  * @property Query|RuleEscalationRecipient $rule_escalation_recipient
- * @property Query|Contact $contact
- * @property Query|AvailableChannelType $available_channel_type
+ * @property Query|Contact                 $contact
+ * @property Query|AvailableChannelType    $available_channel_type
  */
 class Channel extends Model
 {

@@ -51,15 +51,15 @@ abstract class BaseGrid extends BaseHtmlElement
 
     protected ?DateTime $end = null;
 
-    /** @var array Extra counts stored as [date1 => count1, date2 => count2]*/
+    /** @var array Extra counts stored as [date1 => count1, date2 => count2] */
     protected array $extraEntriesCount = [];
 
     /**
      * Create a new time grid
      *
      * @param EntryProvider $provider The provider for the grid's entries
-     * @param Style $style Required to place entries onto the grid's overlay
-     * @param DateTime $start When the shown timespan should start
+     * @param Style         $style    Required to place entries onto the grid's overlay
+     * @param DateTime      $start    When the shown timespan should start
      */
     public function __construct(EntryProvider $provider, Style $style, DateTime $start)
     {
@@ -488,9 +488,9 @@ abstract class BaseGrid extends BaseHtmlElement
 
         foreach ($generator as $gridArea => $entry) {
             $this->style->addFor($entry, [
-                '--entry-bg' => $entry->getColor(10),
+                '--entry-bg'           => $entry->getColor(10),
                 '--entry-border-color' => $entry->getColor(50),
-                'grid-area' => sprintf('~"%d / %d / %d / %d"', ...$gridArea)
+                'grid-area'            => sprintf('~"%d / %d / %d / %d"', ...$gridArea)
             ]);
 
             $overlay->addHtml($entry);

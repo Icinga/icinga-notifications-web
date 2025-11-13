@@ -17,14 +17,14 @@ class DatabaseConfigForm extends CompatForm
             'select',
             'resource',
             [
-                'label'       => $this->translate('Database'),
-                'options'     => array_merge(
+                'label'    => $this->translate('Database'),
+                'options'  => array_merge(
                     ['' => sprintf(' - %s - ', $this->translate('Please choose'))],
                     array_combine($dbResources, $dbResources)
                 ),
-                'disable'     => [''],
-                'required'    => true,
-                'value'       => ''
+                'disable'  => [''],
+                'required' => true,
+                'value'    => ''
             ]
         );
 

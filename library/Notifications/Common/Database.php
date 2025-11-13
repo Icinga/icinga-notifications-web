@@ -202,8 +202,8 @@ final class Database
      * Return the next changed_at value for the given database and table
      *
      * @param Connection $db
-     * @param string $table
-     * @param mixed $nowUnixMilli
+     * @param string     $table
+     * @param mixed      $nowUnixMilli
      *
      * @return int The given timestamp or 1 + the maximum changed_at value in the table, whichever is greater
      */
@@ -225,7 +225,7 @@ final class Database
     /**
      * Generate a group by expression and register it on the given select
      *
-     * @param Query $query
+     * @param Query  $query
      * @param Select $select
      *
      * @return void
@@ -263,8 +263,8 @@ final class Database
     /**
      * Check if the given condition is part of the where clause with value 'y'
      *
-     * @param string $baseTable
-     * @param string $conditionToFind
+     * @param string                        $baseTable
+     * @param string                        $conditionToFind
      * @param array<int|string, int|string> $where
      *
      * @return bool
@@ -275,9 +275,8 @@ final class Database
             if (is_array($value)) {
                 $found = self::hasCondition($baseTable, $conditionToFind, $value);
             } else {
-                $found = (
-                    $condition === $conditionToFind || $condition === $baseTable . '.' . $conditionToFind
-                    ) && $value === 'y';
+                $found = ($condition === $conditionToFind || $condition === $baseTable . '.' . $conditionToFind)
+                    && $value === 'y';
             }
 
             if ($found) {

@@ -132,7 +132,7 @@ class IncidentDetail extends BaseHtmlElement
                 $name = preg_replace('/(\[\d*])/', '.\1', $name);
 
                 $hostCustomvars[] = (object) [
-                    'flatname' => $name,
+                    'flatname'  => $name,
                     'flatvalue' => $extraTag->value
                 ];
             } elseif (str_starts_with($extraTag->tag, IcingaCustomVars::SERVICE_PREFIX)) {
@@ -140,7 +140,7 @@ class IncidentDetail extends BaseHtmlElement
                 $name = preg_replace('/(\[\d*])/', '.\1', $name);
 
                 $serviceCustomvars[] = (object) [
-                    'flatname' => $name,
+                    'flatname'  => $name,
                     'flatvalue' => $extraTag->value
                 ];
             } else {

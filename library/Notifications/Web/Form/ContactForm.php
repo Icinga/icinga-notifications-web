@@ -38,7 +38,7 @@ class ContactForm extends CompatForm
 
     private Connection $db;
 
-    /** @var ?string Contact ID*/
+    /** @var ?string Contact ID */
     private ?string $contactId = null;
 
     public function __construct(Connection $db)
@@ -88,7 +88,7 @@ class ContactForm extends CompatForm
             'text',
             'full_name',
             [
-                'label' => $this->translate('Contact Name'),
+                'label'    => $this->translate('Contact Name'),
                 'required' => true
             ]
         );
@@ -100,8 +100,8 @@ class ContactForm extends CompatForm
             'suggestion',
             'username',
             [
-                'label' => $this->translate('Icinga Web User'),
-                'description' => $this->translate(
+                'label'          => $this->translate('Icinga Web User'),
+                'description'    => $this->translate(
                     'Use this to associate actions in the UI, such as incident management, with this contact.'
                     . ' To successfully receive desktop notifications, this is also required.'
                 ),
@@ -109,7 +109,7 @@ class ContactForm extends CompatForm
                     'notifications/contact/suggest-icinga-web-user',
                     ['showCompact' => true, '_disableLayout' => 1]
                 ),
-                'validators' => [
+                'validators'     => [
                     new StringLengthValidator(['max' => 254]),
                     new CallbackValidator(function ($value, $validator) {
                         $contact = Contact::on($this->db)
@@ -154,17 +154,17 @@ class ContactForm extends CompatForm
             'select',
             'default_channel_id',
             [
-                'label'             => $this->translate('Default Channel'),
-                'description'       => $this->translate(
+                'label'           => $this->translate('Default Channel'),
+                'description'     => $this->translate(
                     "Contact will be notified via the default channel, when no specific channel is configured"
                     . " in an event rule."
                 ),
-                'required'          => true,
-                'class'             => 'autosubmit',
-                'disabledOptions'   => [''],
-                'options'           => [
-                    '' => sprintf(' - %s - ', $this->translate('Please choose'))
-                ] + $channelNames,
+                'required'        => true,
+                'class'           => 'autosubmit',
+                'disabledOptions' => [''],
+                'options'         => [
+                        '' => sprintf(' - %s - ', $this->translate('Please choose'))
+                    ] + $channelNames,
             ]
         );
 

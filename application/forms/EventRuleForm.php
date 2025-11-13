@@ -55,17 +55,17 @@ class EventRuleForm extends CompatForm
             'text',
             'name',
             [
-                'label'     => $this->translate('Title'),
-                'required'  => true
+                'label'    => $this->translate('Title'),
+                'required' => true
             ]
         );
 
         $this->addElement('select', 'source', [
-            'label' => $this->translate('Source'),
-            'required' => true,
-            'options' => ['' => ' - ' . $this->translate('Please choose') . ' - '] + $this->sources,
+            'label'           => $this->translate('Source'),
+            'required'        => true,
+            'options'         => ['' => ' - ' . $this->translate('Please choose') . ' - '] + $this->sources,
             'disabledOptions' => [''],
-            'value' => ''
+            'value'           => ''
         ]);
         if (! $this->isNew) {
             $this->getElement('source')

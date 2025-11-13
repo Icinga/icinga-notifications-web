@@ -90,8 +90,8 @@ class ContactController extends CompatController
 
                 foreach ($names as $name) {
                     yield [
-                        'search' => $name . $domain,
-                        'label'  => $name . $domain,
+                        'search'  => $name . $domain,
+                        'label'   => $name . $domain,
                         'backend' => $backend->getName(),
                     ];
                 }

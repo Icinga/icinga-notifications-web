@@ -32,7 +32,7 @@ class DaysHeader extends BaseHtmlElement
      * Create a new DaysHeader
      *
      * @param DateTime $startDay
-     * @param int $days
+     * @param int      $days
      */
     public function __construct(DateTime $startDay, int $days)
     {

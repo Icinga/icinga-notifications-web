@@ -42,7 +42,7 @@ class EventRuleConfigForm extends CompatForm
      * Create a new EventRuleConfigForm
      *
      * @param ConfigProviderInterface $configProvider
-     * @param Url $searchEditorUrl
+     * @param Url                     $searchEditorUrl
      */
     public function __construct(ConfigProviderInterface $configProvider, Url $searchEditorUrl)
     {
@@ -99,9 +99,9 @@ class EventRuleConfigForm extends CompatForm
         );
 
         $this->addElement('escalations', 'escalations', [
-            'decorators'    => [],
-            'provider'      => $this->configProvider,
-            'required'      => true
+            'decorators' => [],
+            'provider'   => $this->configProvider,
+            'required'   => true
         ]);
 
         $this->addElement('hidden', 'id', ['required' => true]);
@@ -158,7 +158,7 @@ class EventRuleConfigForm extends CompatForm
      * Get the element to update in case the config of the rule is changed
      *
      * @param string $newName
-     * @param int $newSource
+     * @param int    $newSource
      *
      * @return ValidHtml
      */
@@ -200,18 +200,18 @@ class EventRuleConfigForm extends CompatForm
         $buttons = [
             $this->createElement('submitButton', 'save', [
                 'data-progress-label' => $this->translate('Saving rule'),
-                'label' => $this->translate('Save'),
-                'form' => 'event-rule-config-form'
+                'label'               => $this->translate('Save'),
+                'form'                => 'event-rule-config-form'
             ])
         ];
 
         if ((int) $this->getValue('id') !== -1) {
             $buttons[] = $this->createElement('submitButton', 'delete', [
-                'label' => $this->translate('Delete'),
+                'label'               => $this->translate('Delete'),
                 'data-progress-label' => $this->translate('Deleting rule'),
-                'form' => 'event-rule-config-form',
-                'class' => 'btn-remove',
-                'formnovalidate' => true
+                'form'                => 'event-rule-config-form',
+                'class'               => 'btn-remove',
+                'formnovalidate'      => true
             ]);
         }
 
@@ -228,10 +228,10 @@ class EventRuleConfigForm extends CompatForm
     public function load(Rule $rule): void
     {
         $fields = [
-            'id'                => $rule->id,
-            'name'              => $rule->name,
-            'source'            => $rule->source_id,
-            'object_filter'     => $rule->object_filter
+            'id'            => $rule->id,
+            'name'          => $rule->name,
+            'source'        => $rule->source_id,
+            'object_filter' => $rule->object_filter
         ];
 
         $escalations = $rule->rule_escalation->orderBy('position', 'asc')->execute();
@@ -272,7 +272,7 @@ class EventRuleConfigForm extends CompatForm
      * Insert to or update event rule in the database and return the id of the event rule
      *
      * @param Connection $db
-     * @param ?Rule $previousRule
+     * @param ?Rule      $previousRule
      *
      * @return int
      */
@@ -338,13 +338,13 @@ class EventRuleConfigForm extends CompatForm
             $config = $escalationConfigs[$index];
             if ($config['id'] === null) {
                 $db->insert('rule_escalation', [
-                    'rule_id' => $ruleId,
-                    'position' => $config['position'],
+                    'rule_id'                         => $ruleId,
+                    'position'                        => $config['position'],
                     $db->quoteIdentifier('condition') => $config['condition'],
-                    'name' => null,
-                    'fallback_for' => null,
-                    'changed_at' => (int) (new DateTime())->format("Uv"),
-                    'deleted' => 'n'
+                    'name'                            => null,
+                    'fallback_for'                    => null,
+                    'changed_at'                      => (int) (new DateTime())->format("Uv"),
+                    'deleted'                         => 'n'
                 ]);
 
                 $recipients[(int) $db->lastInsertId()] = [$escalation->getRecipients(), []];
@@ -360,9 +360,9 @@ class EventRuleConfigForm extends CompatForm
 
                 if ($escalation->hasChanged($escalationFromDb)) {
                     $db->update('rule_escalation', [
-                        'position' => $config['position'],
+                        'position'                        => $config['position'],
                         $db->quoteIdentifier('condition') => $config['condition'],
-                        'changed_at' => (int) (new DateTime())->format("Uv")
+                        'changed_at'                      => (int) (new DateTime())->format("Uv")
                     ], ['id = ?' => $config['id'], 'rule_id = ?' => $ruleId]);
                 }
             }
@@ -375,22 +375,22 @@ class EventRuleConfigForm extends CompatForm
                 if ($config['id'] === null) {
                     unset($config['id']);
                     $db->insert('rule_escalation_recipient', $config + [
-                        'rule_escalation_id' => $escalationId,
-                        'contact_id' => null,
-                        'contactgroup_id' => null,
-                        'schedule_id' => null,
-                        'changed_at' => (int) (new DateTime())->format("Uv"),
-                        'deleted'    => 'n'
-                    ]);
+                            'rule_escalation_id' => $escalationId,
+                            'contact_id'         => null,
+                            'contactgroup_id'    => null,
+                            'schedule_id'        => null,
+                            'changed_at'         => (int) (new DateTime())->format("Uv"),
+                            'deleted'            => 'n'
+                        ]);
                 } else {
                     if ($escalationRecipient->hasChanged($recipientsFromDb[$config['id']])) {
                         $db->update('rule_escalation_recipient', $config + [
-                            'changed_at' => (int) (new DateTime())->format("Uv"),
-                            // Ensure unused fields are reset to null
-                            'contact_id' => null,
-                            'contactgroup_id' => null,
-                            'schedule_id' => null
-                        ], ['id = ?' => $config['id']]);
+                                'changed_at'      => (int) (new DateTime())->format("Uv"),
+                                // Ensure unused fields are reset to null
+                                'contact_id'      => null,
+                                'contactgroup_id' => null,
+                                'schedule_id'     => null
+                            ], ['id = ?' => $config['id']]);
                     }
 
                     unset($recipientsFromDb[$config['id']]);
@@ -428,7 +428,7 @@ class EventRuleConfigForm extends CompatForm
      * Remove the given event rule
      *
      * @param Connection $db
-     * @param Rule $rule
+     * @param Rule       $rule
      *
      * @return void
      */

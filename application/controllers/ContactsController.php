@@ -57,8 +57,8 @@ class ContactsController extends CompatController
         $sortControl = $this->createSortControl(
             $contacts,
             [
-                'full_name'     => $this->translate('Full Name'),
-                'changed_at'    => $this->translate('Changed At')
+                'full_name'  => $this->translate('Full Name'),
+                'changed_at' => $this->translate('Changed At')
             ]
         );
 

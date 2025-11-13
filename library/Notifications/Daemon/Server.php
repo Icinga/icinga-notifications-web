@@ -375,8 +375,8 @@ class Server
     }
 
     /**
-     * @param Connection $connection
-     * @param array<string> $cookies
+     * @param Connection           $connection
+     * @param array<string>        $cookies
      * @param array<array<string>> $headers
      *
      * @return object{isValid: bool, php_session_id: ?string, user: ?string, user_agent: ?string}

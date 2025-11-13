@@ -77,9 +77,9 @@ class ChannelForm extends CompatForm
             'text',
             'name',
             [
-                'label'         => $this->translate('Name'),
-                'autocomplete'  => 'off',
-                'required'      => true
+                'label'        => $this->translate('Name'),
+                'autocomplete' => 'off',
+                'required'     => true
             ]
         );
 
@@ -104,12 +104,12 @@ class ChannelForm extends CompatForm
             'select',
             'type',
             [
-                'label'             => $this->translate('Type'),
-                'class'             => 'autosubmit',
-                'required'          => true,
-                'disabledOptions'   => [''],
-                'value'             => $defaultType,
-                'options'           => $typeNamePair
+                'label'           => $this->translate('Type'),
+                'class'           => 'autosubmit',
+                'required'        => true,
+                'disabledOptions' => [''],
+                'value'           => $defaultType,
+                'options'         => $typeNamePair
             ]
         );
 
@@ -272,12 +272,12 @@ class ChannelForm extends CompatForm
     /**
      * Create config elements for the given channel type
      *
-     * @param string $type The channel type
+     * @param string $type   The channel type
      * @param string $config The channel type config
      */
     protected function createConfigElements(string $type, string $config): void
     {
-        /** @var array<int, ChannelOptionConfig>  $elementsConfig */
+        /** @var array<int, ChannelOptionConfig> $elementsConfig */
         $elementsConfig = json_decode($config, true);
 
         if (empty($elementsConfig)) {
@@ -460,9 +460,9 @@ class ChannelForm extends CompatForm
         }
 
         return [
-            'name'      => $channel->name,
-            'type'      => $channel->type,
-            'config'    => json_decode($channel->config, true) ?? []
+            'name'   => $channel->name,
+            'type'   => $channel->type,
+            'config' => json_decode($channel->config, true) ?? []
         ];
     }
 
