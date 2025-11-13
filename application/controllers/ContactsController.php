@@ -5,12 +5,12 @@
 namespace Icinga\Module\Notifications\Controllers;
 
 use Icinga\Module\Notifications\Common\ConfigurationTabs;
+use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Channel;
+use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\View\ContactRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
-use Icinga\Module\Notifications\Common\Database;
-use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Web\Form\ContactForm;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Web\Notification;

@@ -10,10 +10,6 @@ use Icinga\Exception\Http\HttpException;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Exception\Json\JsonEncodeException;
 use Icinga\Module\Notifications\Api\EndpointInterface;
-use Icinga\Module\Notifications\Api\Exception\InvalidFilterParameterException;
-use Icinga\Module\Notifications\Model\Contact;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Server\RequestHandlerInterface;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\OadV1Delete;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\OadV1Get;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\OadV1GetPlural;
@@ -23,8 +19,8 @@ use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Parameter\PathPara
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Parameter\QueryParameter;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Response\Example\ResponseExample;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Schema\SchemaUUID;
-use Ramsey\Uuid\Uuid;
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Rotation;
 use Icinga\Module\Notifications\Model\RotationMember;
 use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
@@ -32,8 +28,11 @@ use Icinga\Util\Json;
 use ipl\Sql\Select;
 use ipl\Stdlib\Filter;
 use ipl\Validator\EmailAddressValidator;
-use stdClass;
 use OpenApi\Attributes as OA;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Server\RequestHandlerInterface;
+use Ramsey\Uuid\Uuid;
+use stdClass;
 
 /**
  * @phpstan-type requestBody array{
