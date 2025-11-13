@@ -165,7 +165,7 @@ final class Database
 
                 // getNextChangedAt() wants MAX(changed_at) of all rows, deleted or not
                 foreach ($select->getColumns() as $column) {
-                    if ($column instanceof Expression && strpos($column->getStatement(), 'MAX(changed_at)') !== false) {
+                    if ($column instanceof Expression && str_contains($column->getStatement(), 'MAX(changed_at)')) {
                         return;
                     }
                 }

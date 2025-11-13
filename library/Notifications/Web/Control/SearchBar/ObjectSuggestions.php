@@ -114,7 +114,7 @@ class ObjectSuggestions extends Suggestions
         $query = $model::on(Database::get());
         $query->limit(static::DEFAULT_LIMIT);
 
-        if (strpos($column, ' ') !== false) {
+        if (str_contains($column, ' ')) {
             // $column may be a label
             /** @var string $path */
             [$path, $_] = Seq::find(
@@ -134,10 +134,10 @@ class ObjectSuggestions extends Suggestions
         [$targetPath, $columnName] = $splitted;
 
         $isTag = false;
-        if (substr($targetPath, -4) === '.tag') {
+        if (str_ends_with($targetPath, '.tag')) {
             $isTag = true;
             $targetPath = substr($targetPath, 0, -3) . 'object_id_tag';
-        } elseif (substr($targetPath, -10) === '.extra_tag') {
+        } elseif (str_ends_with($targetPath, '.extra_tag')) {
             $isTag = true;
             $targetPath = substr($targetPath, 0, -9) . 'object_extra_tag';
         } elseif (
@@ -152,7 +152,7 @@ class ObjectSuggestions extends Suggestions
             );
         }
 
-        if (strpos($targetPath, '.') !== false) {
+        if (str_contains($targetPath, '.')) {
             try {
                 $query->with($targetPath); // TODO: Remove this, once ipl/orm does it as early
             } catch (InvalidRelationException $e) {

@@ -1097,7 +1097,7 @@ class RotationConfigForm extends CompatForm
             $groupTerms = [];
             foreach ($terms as $term) {
                 /** @var TermInput\Term $term */
-                if (strpos($term->getSearchValue(), ':') === false) {
+                if (! str_contains($term->getSearchValue(), ':')) {
                     // TODO: Auto-correct this to a valid type:id pair, if possible
                     $term->setMessage($this->translate('Is not a contact nor a group of contacts'));
                     continue;
