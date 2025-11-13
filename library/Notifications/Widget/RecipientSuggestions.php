@@ -77,7 +77,7 @@ class RecipientSuggestions extends BaseHtmlElement
     {
         $identifyExcludes = function (string $for): array {
             return array_filter(array_map(function ($term) use ($for) {
-                if (strpos($term, ':') === false) {
+                if (! str_contains($term, ':')) {
                     return '';
                 }
 

@@ -132,7 +132,7 @@ class Connection
             return false;
         }
 
-        if (strpos($host, '[') !== false) {
+        if (str_contains($host, '[')) {
             // IPv6 format
             if (strpos($host, '.')) {
                 // IPv4 represented in IPv6
