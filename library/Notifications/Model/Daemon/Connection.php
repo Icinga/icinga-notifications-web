@@ -132,9 +132,9 @@ class Connection
             return false;
         }
 
-        if (strpos($host, '[') !== false) {
+        if (str_contains($host, '[')) {
             // IPv6 format
-            if (strpos($host, '.')) {
+            if (str_contains($host, '.')) {
                 // IPv4 represented in IPv6
                 $offset = strrpos($host, ':');
                 $parsed->host = substr($host, $offset === false ? 0 : $offset + 1, -1);
