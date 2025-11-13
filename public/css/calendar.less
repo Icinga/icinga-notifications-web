@@ -86,7 +86,7 @@
     overflow: hidden;
     grid-template-rows: repeat(~"calc(var(--primaryRows) * var(--rowsPerStep))", var(--stepRowHeight));
     grid-template-columns: repeat(~"calc(var(--primaryColumns) * var(--columnsPerStep))", minmax(var(--minimumStepColumnWidth), 1fr));
-    border-width: 1px 0 0 1px;
+    border-width: 0 0 1px 1px;
     border-style: solid;
     border-color: transparent;
 
@@ -101,7 +101,7 @@
     position: relative;
     grid-row-end: span var(--rowsPerStep);
     grid-column-end: span var(--columnsPerStep);
-    border-width: 0 1px 1px 0;
+    border-width: 1px 1px 0 0;
     border-style: solid;
     border-color: transparent;
   }
