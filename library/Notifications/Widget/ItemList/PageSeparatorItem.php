@@ -22,7 +22,7 @@ class PageSeparatorItem extends BaseHtmlElement
         $this->pageNumber = $pageNumber;
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->add(Html::tag(
             'a',

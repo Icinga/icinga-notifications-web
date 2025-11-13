@@ -120,7 +120,7 @@ class DynamicGrid extends BaseGrid
         }
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->style->addFor($this, [
             '--primaryColumns' => $this->days,

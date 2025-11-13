@@ -52,7 +52,7 @@ class RuleEscalationRecipientBadge extends BaseHtmlElement
         return Html::tag('span', ['class' => 'badge'], [new Icon($icon), $recipientModel->$nameColumn]);
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->add($this->createBadge());
 

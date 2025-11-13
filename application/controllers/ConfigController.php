@@ -13,14 +13,14 @@ use ipl\Web\Compat\CompatController;
 
 class ConfigController extends CompatController
 {
-    public function init()
+    public function init(): void
     {
         $this->assertPermission('config/modules');
 
         parent::init();
     }
 
-    public function databaseAction()
+    public function databaseAction(): void
     {
         $moduleConfig = Config::module('notifications');
         $form = (new DatabaseConfigForm())

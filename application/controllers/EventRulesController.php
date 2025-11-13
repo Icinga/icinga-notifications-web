@@ -32,7 +32,7 @@ class EventRulesController extends CompatController
     use ConfigurationTabs;
     use SearchControls;
 
-    public function init()
+    public function init(): void
     {
         $this->assertPermission('notifications/config/event-rules');
     }

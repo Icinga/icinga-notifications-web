@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Web\Control\SearchBar;
 
+use Generator;
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Behavior\IcingaCustomVars;
@@ -41,7 +42,7 @@ class ObjectSuggestions extends Suggestions
      *
      * @return $this
      */
-    public function setModel($model): self
+    public function setModel(string|Model $model): self
     {
         if (is_string($model)) {
             $model = new $model();
@@ -89,7 +90,7 @@ class ObjectSuggestions extends Suggestions
         return $columnPath[0] !== $tableName;
     }
 
-    protected function createQuickSearchFilter($searchTerm)
+    protected function createQuickSearchFilter($searchTerm): Filter\Any|Filter\Chain
     {
         $model = $this->getModel();
         $resolver = $model::on(Database::get())->getResolver();
@@ -104,8 +105,11 @@ class ObjectSuggestions extends Suggestions
         return $quickFilter;
     }
 
-    protected function fetchValueSuggestions($column, $searchTerm, Filter\Chain $searchFilter)
-    {
+    protected function fetchValueSuggestions(
+        $column,
+        $searchTerm,
+        Filter\Chain $searchFilter
+    ): ObjectSuggestionsCursor {
         $model = $this->getModel();
         $query = $model::on(Database::get());
         $query->limit(static::DEFAULT_LIMIT);
@@ -191,7 +195,7 @@ class ObjectSuggestions extends Suggestions
         }
     }
 
-    protected function fetchColumnSuggestions($searchTerm)
+    protected function fetchColumnSuggestions($searchTerm): Generator
     {
         $model = $this->getModel();
         $query = $model::on(Database::get());
@@ -274,7 +278,7 @@ class ObjectSuggestions extends Suggestions
         return $tags;
     }
 
-    protected function matchSuggestion($path, $label, $searchTerm)
+    protected function matchSuggestion($path, $label, $searchTerm): bool
     {
         if (preg_match('/[_.](id)$/', $path)) {
             // Only suggest exotic columns if the user knows the full column path
@@ -314,8 +318,10 @@ class ObjectSuggestions extends Suggestions
      * @param Model $subject
      * @param array $models
      * @param array $path
+     *
+     * @return void
      */
-    protected static function collectRelations(Resolver $resolver, Model $subject, array &$models, array $path)
+    protected static function collectRelations(Resolver $resolver, Model $subject, array &$models, array $path): void
     {
         foreach ($resolver->getRelations($subject) as $name => $relation) {
             /** @var Relation $relation */

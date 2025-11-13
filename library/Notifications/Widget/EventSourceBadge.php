@@ -21,14 +21,14 @@ class EventSourceBadge extends BaseHtmlElement
     /**
      * Create an event source badge with source icon
      *
-     * @param Source    $source
+     * @param Source $source
      */
     public function __construct(Source $source)
     {
         $this->source = $source;
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         if ($this->source->name === null) {
             $title = $this->source->type;

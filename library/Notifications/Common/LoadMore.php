@@ -28,7 +28,7 @@ trait LoadMore
      *
      * @return $this
      */
-    public function setPageSize(int $size): self
+    public function setPageSize(int $size): static
     {
         $this->pageSize = $size;
 
@@ -42,7 +42,7 @@ trait LoadMore
      *
      * @return $this
      */
-    public function setPageNumber(int $number): self
+    public function setPageNumber(int $number): static
     {
         $this->pageNumber = $number;
 
@@ -56,7 +56,7 @@ trait LoadMore
      *
      * @return $this
      */
-    public function setLoadMoreUrl(Url $url): self
+    public function setLoadMoreUrl(Url $url): static
     {
         $this->loadMoreUrl = $url;
 

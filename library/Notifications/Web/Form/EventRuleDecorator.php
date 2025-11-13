@@ -16,7 +16,7 @@ class EventRuleDecorator extends HtmlDocument implements FormElementDecorator
     /** @var FormElement */
     private FormElement $element;
 
-    public function decorate(FormElement $formElement)
+    public function decorate(FormElement $formElement): void
     {
         $me = clone $this;
 
@@ -24,7 +24,7 @@ class EventRuleDecorator extends HtmlDocument implements FormElementDecorator
         $formElement->prependWrapper($me);
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->addHtml($this->element);
 

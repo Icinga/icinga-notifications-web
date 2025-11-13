@@ -28,9 +28,12 @@ class IdTagAggregator extends PropertyBehavior implements RewriteColumnBehavior,
         parent::__construct(['id_tags']);
     }
 
-    public function setQuery(Query $query)
+    /** @return $this */
+    public function setQuery(Query $query): static
     {
         $this->query = $query;
+
+        return $this;
     }
 
     public function rewriteColumn($column, ?string $relation = null)
@@ -68,7 +71,8 @@ class IdTagAggregator extends PropertyBehavior implements RewriteColumnBehavior,
         return $name === 'id_tags';
     }
 
-    public function fromDb($value, $key, $context)
+    /** @return array<string, string> */
+    public function fromDb($value, $key, $context): array
     {
         if (! is_string($value)) {
             return [];
@@ -82,7 +86,12 @@ class IdTagAggregator extends PropertyBehavior implements RewriteColumnBehavior,
         return $tags;
     }
 
-    public function toDb($value, $key, $context)
+    /**
+     * @return never
+     *
+     * @throws InvalidColumnException
+     */
+    public function toDb($value, $key, $context): never
     {
         throw new InvalidColumnException($key, new Objects());
     }

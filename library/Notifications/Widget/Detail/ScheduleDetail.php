@@ -86,7 +86,7 @@ class ScheduleDetail extends BaseHtmlElement
         return $timeline;
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $timeline = $this->createTimeline();
         if (! $this->hasRotation) {

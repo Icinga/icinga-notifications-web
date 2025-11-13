@@ -148,7 +148,7 @@ class EventDetail extends BaseHtmlElement
         return $elements;
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->add([
             $this->createInfo(),

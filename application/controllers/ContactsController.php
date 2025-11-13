@@ -39,14 +39,14 @@ class ContactsController extends CompatController
     /** @var ?Filter\Rule Filter from query string parameters */
     private ?Filter\Rule $filter = null;
 
-    public function init()
+    public function init(): void
     {
         $this->assertPermission('notifications/config/contacts');
 
         $this->db = Database::get();
     }
 
-    public function indexAction()
+    public function indexAction(): void
     {
         $this->setTitle($this->translate('Contacts'));
         $this->getTabs()->activate('contacts');

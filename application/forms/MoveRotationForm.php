@@ -54,7 +54,7 @@ class MoveRotationForm extends Form
         return $this->scheduleId;
     }
 
-    public function getMessages()
+    public function getMessages(): array
     {
         $messages = parent::getMessages();
         foreach ($this->getElements() as $element) {
@@ -66,21 +66,21 @@ class MoveRotationForm extends Form
         return $messages;
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->addElement('hidden', 'rotation', ['required' => true]);
         $this->addElement('hidden', 'priority', ['required' => true]);
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
     }
 
-    protected function onError()
+    protected function onError(): void
     {
         $this->removeAttribute('hidden');
 
         parent::onError();
     }
 
-    protected function onSuccess()
+    protected function onSuccess(): void
     {
         $rotationId = $this->getValue('rotation');
         $newPriority = $this->getValue('priority');

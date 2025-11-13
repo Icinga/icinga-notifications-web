@@ -9,7 +9,7 @@ use ipl\Web\Compat\CompatForm;
 
 class DatabaseConfigForm extends CompatForm
 {
-    protected function assemble()
+    protected function assemble(): void
     {
         $dbResources = ResourceFactory::getResourceConfigs('db')->keys();
 
