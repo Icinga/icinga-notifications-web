@@ -13,7 +13,12 @@
     position: relative;
 
     &:has(.timescale) {
-      margin-right: 1em; // make midnight timestamp visible
+      margin-right: 1em; // make midnight-right timestamp visible
+
+      .grid,
+      .overlay {
+        border-bottom-width: 0;
+      }
     }
 
     .time-grid-header {
@@ -220,10 +225,10 @@
 
       .ticks {
         position: relative;
-        border-right: 1px solid @gray-lighter;
-        border-left: 1px solid @gray-lighter;
+        border-right: 1px solid @gray-light;
+        border-left: 1px solid @gray-light;
 
-        &:after { // overlaps the unnecessary part of border-left
+        &::after { // overlaps the unnecessary part of border-left
           content: '';
           position: absolute;
           top: 0.25em;
@@ -249,7 +254,7 @@
           left: 50%;
         }
 
-        > span:last-child {
+        > span:nth-child(2) {
           opacity: 0.5;
         }
       }
