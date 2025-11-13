@@ -5,12 +5,9 @@
 
 namespace Tests\Icinga\Module\Notifications\Controllers;
 
-use GuzzleHttp\Client;
-use Icinga\Exception\IcingaException;
 use Icinga\Module\Notifications\Test\BaseApiV1TestCase;
 use Icinga\Web\Url;
 use ipl\Sql\Connection;
-use stdClass;
 use WebSocket\Base;
 use PHPUnit\Framework\Attributes\DataProvider;
 

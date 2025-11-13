@@ -5,8 +5,8 @@
 
 namespace Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Parameter;
 
-use OpenApi\Attributes\Parameter;
 use OpenApi\Attributes as OA;
+use OpenApi\Attributes\Parameter;
 use OpenApi\Attributes\Schema;
 
 class QueryParameter extends Parameter

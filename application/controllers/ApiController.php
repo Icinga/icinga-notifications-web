@@ -5,8 +5,6 @@
 
 namespace Icinga\Module\Notifications\Controllers;
 
-use Exception;
-use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Module\Notifications\Api\Middleware\DispatchMiddleware;
 use Icinga\Module\Notifications\Api\Middleware\EndpointExecutionMiddleware;
 use Icinga\Module\Notifications\Api\Middleware\ErrorHandlingMiddleware;
@@ -15,7 +13,6 @@ use Icinga\Module\Notifications\Api\Middleware\MiddlewarePipeline;
 use Icinga\Module\Notifications\Api\Middleware\RoutingMiddleware;
 use Icinga\Module\Notifications\Api\Middleware\ValidationMiddleware;
 use Icinga\Security\SecurityException;
-use Icinga\Web\Request;
 use ipl\Web\Compat\CompatController;
 use Psr\Http\Message\ResponseInterface;
 
