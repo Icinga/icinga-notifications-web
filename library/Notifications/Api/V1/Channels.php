@@ -168,7 +168,8 @@ class Channels extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
      * Get a channel by UUID.
      *
      * @param string|null $identifier
-     * @param string $queryFilter
+     * @param string      $queryFilter
+     *
      * @return ResponseInterface
      * @throws HttpBadRequestException
      * @throws HttpNotFoundException

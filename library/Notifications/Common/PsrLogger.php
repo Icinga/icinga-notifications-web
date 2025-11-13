@@ -39,9 +39,9 @@ class PsrLogger implements LoggerInterface
     /**
      * Logs with an arbitrary level.
      *
-     * @param string $level   The log level
+     * @param string            $level   The log level
      * @param string|Stringable $message The log message
-     * @param array  $context Additional context variables to interpolate in the message
+     * @param array             $context Additional context variables to interpolate in the message
      *
      * @return void
      */

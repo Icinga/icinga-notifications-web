@@ -36,16 +36,16 @@ class SourcesController extends CompatController
     public function indexAction(): void
     {
         $sources = Source::on(Database::get())
-            ->columns(['id', 'type',  'name']);
+            ->columns(['id', 'type', 'name']);
 
         $limitControl = $this->createLimitControl();
         $paginationControl = $this->createPaginationControl($sources);
         $sortControl = $this->createSortControl(
             $sources,
             [
-                'name'          => t('Name'),
-                'type'          => t('Type'),
-                'changed_at'    => t('Changed At')
+                'name'       => t('Name'),
+                'type'       => t('Type'),
+                'changed_at' => t('Changed At')
             ]
         );
 

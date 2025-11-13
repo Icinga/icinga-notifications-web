@@ -239,9 +239,9 @@ class EventRuleController extends CompatController
                     ->applyDefaultElementDecorators()
                     ->setAction(Url::fromRequest()->getAbsoluteUrl())
                     ->addElement('select', 'target', [
-                        'required' => true,
-                        'label' => $this->translate('Filter Target'),
-                        'options' => ['' => ' - ' . $this->translate('Please choose') . ' - '] + $targets,
+                        'required'        => true,
+                        'label'           => $this->translate('Filter Target'),
+                        'options'         => ['' => ' - ' . $this->translate('Please choose') . ' - '] + $targets,
                         'disabledOptions' => ['']
                     ])
                     ->addElement('submit', 'btn_submit', [
@@ -288,7 +288,7 @@ class EventRuleController extends CompatController
                 )
             )
             ->populate([
-                'name' => $this->session->get('name'),
+                'name'   => $this->session->get('name'),
                 'source' => $this->session->get('source')
             ])
             ->setAction(Url::fromRequest()->getAbsoluteUrl())

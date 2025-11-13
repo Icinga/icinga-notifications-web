@@ -64,9 +64,9 @@ class EscalationRecipient extends FieldsetElement
         }
 
         return [
-            'id' => (string) $recipient->id,
+            'id'         => (string) $recipient->id,
             'channel_id' => $recipient->channel_id !== null ? (string) $recipient->channel_id : null,
-            'recipient' => $typeAndId
+            'recipient'  => $typeAndId
         ];
     }
 
@@ -92,9 +92,9 @@ class EscalationRecipient extends FieldsetElement
         $typeAndId = $this->getElement('recipient')->getValue();
         [$type, $id] = explode(':', $typeAndId, 2);
         $typeIdColumn = match ($type) {
-            'contact' => 'contact_id',
+            'contact'      => 'contact_id',
             'contactgroup' => 'contactgroup_id',
-            'schedule' => 'schedule_id'
+            'schedule'     => 'schedule_id'
         };
 
         $recipientId = null;
@@ -108,9 +108,9 @@ class EscalationRecipient extends FieldsetElement
         }
 
         return [
-            'id' => $recipientId,
+            'id'          => $recipientId,
             $typeIdColumn => (int) $id,
-            'channel_id' => $channelId
+            'channel_id'  => $channelId
         ];
     }
 
@@ -122,15 +122,15 @@ class EscalationRecipient extends FieldsetElement
         $this->addElement('hidden', 'id');
 
         $this->addElement('select', 'recipient', [
-            'required' => true,
-            'options' => $pleaseChoose + $this->selectRecipients(),
-            'value' => '',
+            'required'        => true,
+            'options'         => $pleaseChoose + $this->selectRecipients(),
+            'value'           => '',
             'disabledOptions' => [''],
         ]);
 
         $this->addElement('select', 'channel_id', [
             'options' => $defaultChannel + $this->selectChannels(),
-            'value' => ''
+            'value'   => ''
         ]);
 
         if ($this->removeButton !== null) {

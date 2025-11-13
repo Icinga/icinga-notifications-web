@@ -192,10 +192,10 @@ class RotationConfigForm extends CompatForm
     /**
      * Create a new RotationConfigForm
      *
-     * @param int $scheduleId
+     * @param int        $scheduleId
      * @param Connection $db
-     * @param string $displayTimezone
-     * @param string $scheduleTimezone
+     * @param string     $displayTimezone
+     * @param string     $scheduleTimezone
      */
     public function __construct(int $scheduleId, Connection $db, string $displayTimezone, string $scheduleTimezone)
     {
@@ -345,16 +345,16 @@ class RotationConfigForm extends CompatForm
                 if ($type === 'contact') {
                     $this->db->insert('rotation_member', [
                         'rotation_id' => $rotationId,
-                        'contact_id' => $id,
-                        'position' => $position,
-                        'changed_at' => $changedAt
+                        'contact_id'  => $id,
+                        'position'    => $position,
+                        'changed_at'  => $changedAt
                     ]);
                 } elseif ($type === 'group') {
                     $this->db->insert('rotation_member', [
-                        'rotation_id' => $rotationId,
+                        'rotation_id'     => $rotationId,
                         'contactgroup_id' => $id,
-                        'position' => $position,
-                        'changed_at' => $changedAt
+                        'position'        => $position,
+                        'changed_at'      => $changedAt
                     ]);
                 }
 
@@ -371,14 +371,14 @@ class RotationConfigForm extends CompatForm
             }
 
             $this->db->insert('timeperiod_entry', [
-                'timeperiod_id' => $timeperiodId,
+                'timeperiod_id'      => $timeperiodId,
                 'rotation_member_id' => $memberId,
-                'start_time' => $rrule->getStartDate()->format('U.u') * 1000.0,
-                'end_time' => $endTime,
-                'until_time' => $untilTime,
-                'timezone' => $rrule->getStartDate()->getTimezone()->getName(),
-                'rrule' => $rrule->getString(Rule::TZ_FIXED),
-                'changed_at' => $changedAt
+                'start_time'         => $rrule->getStartDate()->format('U.u') * 1000.0,
+                'end_time'           => $endTime,
+                'until_time'         => $untilTime,
+                'timezone'           => $rrule->getStartDate()->getTimezone()->getName(),
+                'rrule'              => $rrule->getString(Rule::TZ_FIXED),
+                'changed_at'         => $changedAt
             ]);
         }
     }
@@ -404,8 +404,8 @@ class RotationConfigForm extends CompatForm
             $this->db->update(
                 'rotation',
                 [
-                    'priority'      => new Expression('priority + 1'),
-                    'changed_at'    => (int) (new DateTime())->format("Uv")
+                    'priority'   => new Expression('priority + 1'),
+                    'changed_at' => (int) (new DateTime())->format("Uv")
                 ],
                 ['id = ?' => $rotation->id]
             );
@@ -477,13 +477,13 @@ class RotationConfigForm extends CompatForm
 
                     $allEntriesRemoved = false;
                     $this->db->insert('timeperiod_entry', [
-                        'timeperiod_id' => $timeperiodEntry->timeperiod_id,
+                        'timeperiod_id'      => $timeperiodEntry->timeperiod_id,
                         'rotation_member_id' => $timeperiodEntry->rotation_member_id,
-                        'start_time' => $gapStart->format('U.u') * 1000.0,
-                        'end_time' => $gapEnd->format('U.u') * 1000.0,
-                        'until_time' => $gapEnd->format('U.u') * 1000.0,
-                        'timezone' => $gapStart->getTimezone()->getName(),
-                        'changed_at' => $changedAt
+                        'start_time'         => $gapStart->format('U.u') * 1000.0,
+                        'end_time'           => $gapEnd->format('U.u') * 1000.0,
+                        'until_time'         => $gapEnd->format('U.u') * 1000.0,
+                        'timezone'           => $gapStart->getTimezone()->getName(),
+                        'changed_at'         => $changedAt
                     ]);
                 }
 
@@ -498,9 +498,9 @@ class RotationConfigForm extends CompatForm
                 } else {
                     $allEntriesRemoved = false;
                     $this->db->update('timeperiod_entry', [
-                        'until_time'    => $lastShiftEnd->format('U.u') * 1000.0,
-                        'rrule'         => $rrule->setUntil($lastHandoff)->getString(Rule::TZ_FIXED),
-                        'changed_at'    => $changedAt
+                        'until_time' => $lastShiftEnd->format('U.u') * 1000.0,
+                        'rrule'      => $rrule->setUntil($lastHandoff)->getString(Rule::TZ_FIXED),
+                        'changed_at' => $changedAt
                     ], ['id = ?' => $timeperiodEntry->id]);
                 }
             }
@@ -614,8 +614,8 @@ class RotationConfigForm extends CompatForm
 
         $modes = [
             'partial' => $this->translate('Partial Day'),
-            'multi' => $this->translate('Multi Day'),
-            '24-7' => $this->translate('24/7')
+            'multi'   => $this->translate('Multi Day'),
+            '24-7'    => $this->translate('24/7')
         ];
 
         $modeList = new HtmlElement('ul', Attributes::create([
@@ -623,11 +623,11 @@ class RotationConfigForm extends CompatForm
         ]));
         foreach ($modes as $mode => $label) {
             $radio = $this->createElement('input', 'mode', [
-                'type' => 'radio',
-                'value' => $mode,
+                'type'     => 'radio',
+                'value'    => $mode,
                 'disabled' => $this->disableModeSelection,
-                'id' => 'rotation-mode-' . $mode,
-                'class' => 'autosubmit'
+                'id'       => 'rotation-mode-' . $mode,
+                'class'    => 'autosubmit'
             ]);
             if ($value === null || $mode === $value) {
                 $radio->getAttributes()->set('checked', true);
@@ -726,13 +726,13 @@ class RotationConfigForm extends CompatForm
     protected function assembleTwentyFourSevenOptions(FieldsetElement $options): DateTime
     {
         $options->addElement('number', 'interval', [
-            'required' => true,
-            'label' => $this->translate('Handoff every'),
+            'required'    => true,
+            'label'       => $this->translate('Handoff every'),
             'description' => $this->translate('Have multiple rotation members take turns after this interval.'),
-            'step' => 1,
-            'min' => 1,
-            'value' => 1,
-            'validators' => [new GreaterThanValidator()]
+            'step'        => 1,
+            'min'         => 1,
+            'value'       => 1,
+            'validators'  => [new GreaterThanValidator()]
         ]);
         $interval = $options->getElement('interval');
         $interval->getDecorators()
@@ -740,7 +740,7 @@ class RotationConfigForm extends CompatForm
 
         $frequency = $options->createElement('select', 'frequency', [
             'required' => true,
-            'options' => [
+            'options'  => [
                 'd' => $this->translate('Days'),
                 'w' => $this->translate('Weeks')
             ]
@@ -748,9 +748,9 @@ class RotationConfigForm extends CompatForm
         $options->registerElement($frequency);
 
         $at = $options->createElement('select', 'at', [
-            'class' => 'autosubmit',
+            'class'    => 'autosubmit',
             'required' => true,
-            'options' => $this->getTimeOptions()
+            'options'  => $this->getTimeOptions()
         ]);
         $options->registerElement($at);
 
@@ -795,11 +795,11 @@ class RotationConfigForm extends CompatForm
         $options->addElement('select', 'days', [
             'required' => true,
             'multiple' => true,
-            'class' => 'autosubmit',
-            'label' => $this->translate('Days'),
-            'value' => [1],
-            'size' => 7,
-            'options' => [
+            'class'    => 'autosubmit',
+            'label'    => $this->translate('Days'),
+            'value'    => [1],
+            'size'     => 7,
+            'options'  => [
                 1 => $this->translate('Monday'),
                 2 => $this->translate('Tuesday'),
                 3 => $this->translate('Wednesday'),
@@ -812,22 +812,22 @@ class RotationConfigForm extends CompatForm
 
         $timeOptions = $this->getTimeOptions();
         $options->addElement('select', 'from', [
-            'class' => 'autosubmit',
+            'class'    => 'autosubmit',
             'required' => true,
-            'value' => '00:00',
-            'options' => $timeOptions,
-            'label' => $this->translate('From')
+            'value'    => '00:00',
+            'options'  => $timeOptions,
+            'label'    => $this->translate('From')
         ]);
         $from = $options->getElement('from');
 
         $options->addElement('number', 'interval', [
-            'required' => true,
-            'label' => $this->translate('Handoff every'),
+            'required'    => true,
+            'label'       => $this->translate('Handoff every'),
             'description' => $this->translate('Have multiple rotation members take turns after this interval.'),
-            'step' => 1,
-            'min' => 1,
-            'value' => 1,
-            'validators' => [new GreaterThanValidator()]
+            'step'        => 1,
+            'min'         => 1,
+            'value'       => 1,
+            'validators'  => [new GreaterThanValidator()]
         ]);
         $interval = $options->getElement('interval');
         $interval->getDecorators()
@@ -846,7 +846,7 @@ class RotationConfigForm extends CompatForm
 
         $to = $options->createElement('select', 'to', [
             'required' => true,
-            'options' => empty($timeOptions)
+            'options'  => empty($timeOptions)
                 ? [$this->translate('Next Day') => $nextDayTimeOptions]
                 : [$this->translate('Same Day') => $timeOptions, $this->translate('Next Day') => $nextDayTimeOptions]
         ]);
@@ -915,11 +915,11 @@ class RotationConfigForm extends CompatForm
         ];
 
         $options->addElement('select', 'from_day', [
-            'class' => 'autosubmit',
+            'class'    => 'autosubmit',
             'required' => true,
-            'options' => $fromDays,
-            'value' => 1,
-            'label' => $this->translate('From', 'notifications.rotation')
+            'options'  => $fromDays,
+            'value'    => 1,
+            'label'    => $this->translate('From', 'notifications.rotation')
         ]);
         $from = $options->getElement('from_day');
 
@@ -932,20 +932,20 @@ class RotationConfigForm extends CompatForm
         }
 
         $options->addElement('select', 'to_day', [
-            'class' => 'autosubmit',
+            'class'    => 'autosubmit',
             'required' => true,
-            'options' => $toDays,
-            'value' => 7,
-            'label' => $this->translate('To', 'notifications.rotation')
+            'options'  => $toDays,
+            'value'    => 7,
+            'label'    => $this->translate('To', 'notifications.rotation')
         ]);
         $to = $options->getElement('to_day');
 
         $options->addElement('number', 'interval', [
-            'required' => true,
-            'step' => 1,
-            'min' => 1,
-            'value' => 1,
-            'label' => $this->translate('Handoff every'),
+            'required'    => true,
+            'step'        => 1,
+            'min'         => 1,
+            'value'       => 1,
+            'label'       => $this->translate('Handoff every'),
             'description' => $this->translate('Have multiple rotation members take turns after this interval.')
         ]);
         $interval = $options->getElement('interval');
@@ -954,9 +954,9 @@ class RotationConfigForm extends CompatForm
 
         $timeOptions = $this->getTimeOptions();
         $fromAt = $options->createElement('select', 'from_at', [
-            'class' => 'autosubmit',
+            'class'    => 'autosubmit',
             'required' => true,
-            'options' => $timeOptions
+            'options'  => $timeOptions
         ]);
         $options->registerElement($fromAt);
         $selectedFromAt = $fromAt->getValue();
@@ -984,9 +984,9 @@ class RotationConfigForm extends CompatForm
         }
 
         $toAt = $options->createElement('select', 'to_at', [
-            'class' => 'autosubmit',
+            'class'    => 'autosubmit',
             'required' => true,
-            'options' => $timeOptions
+            'options'  => $timeOptions
         ]);
         $options->registerElement($toAt);
 
@@ -1066,8 +1066,8 @@ class RotationConfigForm extends CompatForm
         $this->addElement('hidden', 'priority', ['ignore' => true]);
 
         $this->addElement('text', 'name', [
-            'required' => true,
-            'label' => $this->translate('Rotation Name'),
+            'required'   => true,
+            'label'      => $this->translate('Rotation Name'),
             'validators' => [
                 new CallbackValidator(function ($value, $validator) {
                     $rotations = Rotation::on($this->db)
@@ -1187,15 +1187,15 @@ class RotationConfigForm extends CompatForm
         }
 
         $this->addElement('input', 'first_handoff', [
-            'class' => 'autosubmit',
-            'type' => 'date',
-            'required' => true,
+            'class'            => 'autosubmit',
+            'type'             => 'date',
+            'required'         => true,
             'aria-describedby' => 'first-handoff-description',
-            'min' => $earliestHandoff !== null ? $earliestHandoff->format('Y-m-d') : null,
-            'max' => $latestHandoff->format('Y-m-d'),
-            'label' => $this->translate('Rotation Start'),
-            'value' => $firstHandoffDefault,
-            'validators' => [
+            'min'              => $earliestHandoff !== null ? $earliestHandoff->format('Y-m-d') : null,
+            'max'              => $latestHandoff->format('Y-m-d'),
+            'label'            => $this->translate('Rotation Start'),
+            'value'            => $firstHandoffDefault,
+            'validators'       => [
                 new CallbackValidator(
                     function ($value, $validator) use ($earliestHandoff, $firstHandoff, $latestHandoff) {
                         $chosenHandoff = $this->parseDateAndTime($value, $firstHandoff->format('H:i'));
@@ -1284,8 +1284,8 @@ class RotationConfigForm extends CompatForm
             $removeButtons = [];
             if ($this->previousShift !== null || $this->nextHandoff !== null) {
                 $removeAllBtn = $this->createElement('submit', 'remove_all', [
-                    'label' => $this->translate('Remove All'),
-                    'class' => 'btn-remove',
+                    'label'          => $this->translate('Remove All'),
+                    'class'          => 'btn-remove',
                     'formnovalidate' => true
                 ]);
                 $this->registerElement($removeAllBtn);
@@ -1293,8 +1293,8 @@ class RotationConfigForm extends CompatForm
             }
 
             $removeBtn = $this->createElement('submit', 'remove', [
-                'label' => $this->translate('Remove'),
-                'class' => 'btn-remove',
+                'label'          => $this->translate('Remove'),
+                'class'          => 'btn-remove',
                 'formnovalidate' => true
             ]);
             $this->registerElement($removeBtn);
@@ -1585,9 +1585,9 @@ class RotationConfigForm extends CompatForm
     /**
      * Get the last possible handoff before the given date
      *
-     * @param Rule $rrule
+     * @param Rule         $rrule
      * @param DateInterval $shiftDuration
-     * @param DateTime $before
+     * @param DateTime     $before
      *
      * @return array{0: ?DateTime, 1?: array{0: DateTime, 1: DateTime}}
      * @throws LogicException If the frequency is not supported
@@ -1696,11 +1696,11 @@ class RotationConfigForm extends CompatForm
         }
 
         $formData = [
-            'mode' => $rotation->mode,
-            'name' => $rotation->name,
+            'mode'     => $rotation->mode,
+            'name'     => $rotation->name,
             'priority' => $rotation->priority,
             'schedule' => $rotation->schedule_id,
-            'options' => $rotation->options
+            'options'  => $rotation->options
         ];
         if (! self::EXPERIMENTAL_OVERRIDES) {
             $formData['first_handoff'] = $rotation->first_handoff;

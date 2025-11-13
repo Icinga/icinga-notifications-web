@@ -48,9 +48,9 @@ class ChannelsController extends CompatController
         $sortControl = $this->createSortControl(
             $channels,
             [
-                'name'          => t('Name'),
-                'type'          => t('Type'),
-                'changed_at'    => t('Changed At')
+                'name'       => t('Name'),
+                'type'       => t('Type'),
+                'changed_at' => t('Changed At')
             ]
         );
 

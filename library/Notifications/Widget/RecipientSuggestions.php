@@ -113,11 +113,11 @@ class RecipientSuggestions extends BaseHtmlElement
                 new HtmlElement(
                     'input',
                     Attributes::create([
-                        'type' => 'button',
-                        'value' => $contact->full_name,
-                        'data-label' => $contact->full_name,
+                        'type'        => 'button',
+                        'value'       => $contact->full_name,
+                        'data-label'  => $contact->full_name,
                         'data-search' => 'contact:' . $contact->id,
-                        'data-class' => 'contact'
+                        'data-class'  => 'contact'
                     ])
                 )
             ));
@@ -130,11 +130,11 @@ class RecipientSuggestions extends BaseHtmlElement
                 new HtmlElement(
                     'input',
                     Attributes::create([
-                        'type' => 'button',
-                        'value' => $group->name,
-                        'data-label' => $group->name,
+                        'type'        => 'button',
+                        'value'       => $group->name,
+                        'data-label'  => $group->name,
                         'data-search' => 'group:' . $group->id,
-                        'data-class' => 'group'
+                        'data-class'  => 'group'
                     ])
                 )
             ));

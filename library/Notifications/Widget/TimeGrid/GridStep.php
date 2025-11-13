@@ -31,9 +31,9 @@ class GridStep extends BaseHtmlElement
      * Create a new grid step
      *
      * @param DateTime $start The start time of the grid step
-     * @param DateTime $end The end time of the grid step
-     * @param int $x The x position of the step on the grid
-     * @param int $y The y position of the step on the grid
+     * @param DateTime $end   The end time of the grid step
+     * @param int      $x     The x position of the step on the grid
+     * @param int      $y     The y position of the step on the grid
      */
     public function __construct(DateTime $start, DateTime $end, int $x, int $y)
     {

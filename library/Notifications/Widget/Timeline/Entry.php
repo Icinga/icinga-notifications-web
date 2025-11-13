@@ -125,8 +125,8 @@ class Entry extends TimeGrid\Entry
      * Assign a width class based on the fraction of the grid duration occupied by this entry
      *
      * @param BaseGrid $grid
-     * @param float $mediumThreshold Fraction of grid duration below which the entry is considered medium width
-     * @param float $narrowThreshold Fraction of grid duration below which the entry is considered narrow
+     * @param float    $mediumThreshold Fraction of grid duration below which the entry is considered medium width
+     * @param float    $narrowThreshold Fraction of grid duration below which the entry is considered narrow
      *
      * @return $this
      */

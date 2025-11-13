@@ -83,11 +83,11 @@ abstract class ApiCore
     /**
      * Create a Response object.
      *
-     * @param int $status The HTTP status code.
-     * @param array $headers An associative array of HTTP headers.
-     * @param ?(StreamInterface|resource|string) $body The response body.
-     * @param string $version The HTTP version.
-     * @param ?string $reason The reason phrase (optional).
+     * @param int                                $status  The HTTP status code.
+     * @param array                              $headers An associative array of HTTP headers.
+     * @param ?(StreamInterface|resource|string) $body    The response body.
+     * @param string                             $version The HTTP version.
+     * @param ?string                            $reason  The reason phrase (optional).
      *
      * @return ResponseInterface
      */

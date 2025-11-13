@@ -24,7 +24,7 @@ class CalendarTest extends TestCase
             date_default_timezone_set('Europe/Berlin');
 
             $controls = (new Calendar\Controls())->populate([
-                'mode' => 'month',
+                'mode'  => 'month',
                 'month' => '2023-02'
             ])->ensureAssembled();
 
@@ -51,7 +51,7 @@ class CalendarTest extends TestCase
             date_default_timezone_set('Europe/Berlin');
 
             $controls = (new Calendar\Controls())->populate([
-                'mode' => 'month',
+                'mode'  => 'month',
                 'month' => '2023-02'
             ])->ensureAssembled();
 

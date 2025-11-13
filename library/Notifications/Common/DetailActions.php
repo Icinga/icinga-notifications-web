@@ -47,7 +47,7 @@ trait DetailActions
         $this->getAttributes()
             ->registerAttributeCallback(
                 'class',
-                fn () => $this->getDetailActionsDisabled() ? null : 'action-list'
+                fn() => $this->getDetailActionsDisabled() ? null : 'action-list'
             );
 
         return $this;

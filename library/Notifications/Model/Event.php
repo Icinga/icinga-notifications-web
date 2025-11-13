@@ -22,19 +22,19 @@ use ipl\Web\Widget\Icon;
 /**
  * Event model
  *
- * @property int $id
- * @property DateTime $time
- * @property string $object_id
- * @property string $type
- * @property ?string $severity
- * @property ?string $message
- * @property ?string $username
- * @property ?bool $mute
- * @property ?string $mute_reason
+ * @property int                   $id
+ * @property DateTime              $time
+ * @property string                $object_id
+ * @property string                $type
+ * @property ?string               $severity
+ * @property ?string               $message
+ * @property ?string               $username
+ * @property ?bool                 $mute
+ * @property ?string               $mute_reason
  *
- * @property Query|Objects $object
+ * @property Query|Objects         $object
  * @property Query|IncidentHistory $incident_history
- * @property Query|Incident $incident
+ * @property Query|Incident        $incident
  */
 class Event extends Model
 {
@@ -65,13 +65,13 @@ class Event extends Model
     public function getColumnDefinitions(): array
     {
         return [
-            'time'      => t('Received On'),
-            'object_id' => t('Object Id'),
-            'type'      => t('Type'),
-            'severity'  => t('Severity'),
-            'message'   => t('Message'),
-            'username'  => t('Username'),
-            'mute'      => t('Mute'),
+            'time'        => t('Received On'),
+            'object_id'   => t('Object Id'),
+            'type'        => t('Type'),
+            'severity'    => t('Severity'),
+            'message'     => t('Message'),
+            'username'    => t('Username'),
+            'mute'        => t('Mute'),
             'mute_reason' => t('Mute Reason')
         ];
     }

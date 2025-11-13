@@ -257,7 +257,7 @@ class ObjectSuggestions extends Suggestions
     /**
      * Prepare query with all available tags/extra_tags from provided model matching the given term
      *
-     * @param Model $model The model to fetch tag/extra_tag from
+     * @param Model  $model      The model to fetch tag/extra_tag from
      * @param string $searchTerm The given search term
      *
      * @return Query
@@ -290,7 +290,7 @@ class ObjectSuggestions extends Suggestions
     /**
      * Collect all columns of this model and its relations that can be used for filtering
      *
-     * @param Model $model
+     * @param Model    $model
      * @param Resolver $resolver
      *
      * @return Traversable
@@ -314,9 +314,9 @@ class ObjectSuggestions extends Suggestions
      * or a descendant of such related in a to-one cardinality.
      *
      * @param Resolver $resolver
-     * @param Model $subject
-     * @param array $models
-     * @param array $path
+     * @param Model    $subject
+     * @param array    $models
+     * @param array    $path
      */
     protected static function collectRelations(Resolver $resolver, Model $subject, array &$models, array $path): void
     {

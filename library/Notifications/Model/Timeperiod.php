@@ -15,12 +15,12 @@ use ipl\Orm\Relations;
 /**
  * Timeperiod
  *
- * @property int $id
- * @property ?int $owned_by_rotation_id
- * @property DateTime $changed_at
- * @property bool $deleted
+ * @property int                   $id
+ * @property ?int                  $owned_by_rotation_id
+ * @property DateTime              $changed_at
+ * @property bool                  $deleted
  *
- * @property Query|Rotation $rotation
+ * @property Query|Rotation        $rotation
  * @property Query|TimeperiodEntry $timeperiod_entry
  */
 class Timeperiod extends Model

@@ -21,7 +21,7 @@ class AddGlobal401Response
 
                 if (! $already) {
                     $operation->responses[] = new OA\Response([
-                        'response' => 401,
+                        'response'    => 401,
                         'description' => 'Unauthorized',
                     ]);
                 }

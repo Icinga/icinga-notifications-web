@@ -116,8 +116,8 @@ class ScheduleForm extends CompatForm
         }
 
         $this->db->update('schedule', [
-            'name'          => $values['name'],
-            'changed_at'    => (int) (new DateTime())->format("Uv")
+            'name'       => $values['name'],
+            'changed_at' => (int) (new DateTime())->format("Uv")
         ], ['id = ?' => $id]);
 
         $this->db->commitTransaction();
@@ -189,9 +189,9 @@ class ScheduleForm extends CompatForm
         }
 
         $this->addElement('text', 'name', [
-            'required'      => true,
-            'label'         => $this->translate('Schedule Name'),
-            'placeholder'   => $this->translate('e.g. working hours, on call, etc ...')
+            'required'    => true,
+            'label'       => $this->translate('Schedule Name'),
+            'placeholder' => $this->translate('e.g. working hours, on call, etc ...')
         ]);
 
         if ($this->showTimezoneSuggestionInput) {
@@ -238,8 +238,8 @@ class ScheduleForm extends CompatForm
 
         if ($this->showRemoveButton) {
             $removeBtn = $this->createElement('submit', 'delete', [
-                'label' => $this->translate('Delete'),
-                'class' => 'btn-remove',
+                'label'          => $this->translate('Delete'),
+                'class'          => 'btn-remove',
                 'formnovalidate' => true
             ]);
             $this->registerElement($removeBtn);

@@ -26,7 +26,7 @@ class PageSeparatorItem extends BaseHtmlElement
         $this->add(Html::tag(
             'a',
             [
-                'id' => 'page-' . $this->pageNumber,
+                'id'                             => 'page-' . $this->pageNumber,
                 'data-icinga-no-scroll-on-focus' => true
             ],
             $this->pageNumber

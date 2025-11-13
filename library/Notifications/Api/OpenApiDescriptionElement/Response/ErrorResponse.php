@@ -19,7 +19,6 @@ use OpenApi\Attributes\Response;
     ],
     type: 'object',
 )]
-
 class ErrorResponse extends Response
 {
     public const ERROR_RESPONSES = [

@@ -44,9 +44,9 @@ class EventRuleConfigFormTest extends TestCase
         $requestStub->method('getMethod')->willReturn('POST');
         $requestStub->method('getUploadedFiles')->willReturn([]);
         $requestStub->method('getParsedBody')->willReturn([
-            'id' => 1337,
+            'id'     => 1337,
             'source' => 1338,
-            'name' => 'Test'
+            'name'   => 'Test'
         ]);
 
         $form = new EventRuleConfigForm($providerMock, $this->createStub(Url::class));
@@ -120,23 +120,23 @@ class EventRuleConfigFormTest extends TestCase
             ]);
 
         $dbRule = (new Rule())->setProperties([
-            'id' => 1337,
-            'source_id' => 1338,
-            'name' => 'Test',
-            'object_filter' => 'servicegroup.name=Test%20Group',
-            'timeperiod_id' => null,
+            'id'              => 1337,
+            'source_id'       => 1338,
+            'name'            => 'Test',
+            'object_filter'   => 'servicegroup.name=Test%20Group',
+            'timeperiod_id'   => null,
             'rule_escalation' => [
                 (new RuleEscalation())->setProperties([
-                    'id' => 1,
-                    'position' => 0,
-                    'condition' => 'incident_age>=5m',
+                    'id'                        => 1,
+                    'position'                  => 0,
+                    'condition'                 => 'incident_age>=5m',
                     'rule_escalation_recipient' => [
                         (new RuleEscalationRecipient())->setProperties([
-                            'id' => 1,
-                            'contact_id' => 1,
+                            'id'              => 1,
+                            'contact_id'      => 1,
                             'contactgroup_id' => null,
-                            'schedule_id' => null,
-                            'channel_id' => null
+                            'schedule_id'     => null,
+                            'channel_id'      => null
                         ]),
                         (new RuleEscalationRecipient())->setProperties([
                             'id' => 2
@@ -153,11 +153,11 @@ class EventRuleConfigFormTest extends TestCase
             ->with(['id', 'contact_id', 'contactgroup_id', 'schedule_id', 'channel_id'])
             ->willReturn([
                 (new RuleEscalationRecipient())->setProperties([
-                    'id' => 1,
-                    'contact_id' => 1,
+                    'id'              => 1,
+                    'contact_id'      => 1,
                     'contactgroup_id' => null,
-                    'schedule_id' => null,
-                    'channel_id' => 1
+                    'schedule_id'     => null,
+                    'channel_id'      => 1
                 ])
             ]);
 
@@ -167,18 +167,18 @@ class EventRuleConfigFormTest extends TestCase
             ->with(['id', 'contact_id', 'contactgroup_id', 'schedule_id', 'channel_id'])
             ->willReturn([
                 (new RuleEscalationRecipient())->setProperties([
-                    'id' => null,
-                    'contact_id' => null,
+                    'id'              => null,
+                    'contact_id'      => null,
                     'contactgroup_id' => 1,
-                    'schedule_id' => null,
-                    'channel_id' => null
+                    'schedule_id'     => null,
+                    'channel_id'      => null
                 ]),
                 (new RuleEscalationRecipient())->setProperties([
-                    'id' => null,
-                    'contact_id' => null,
+                    'id'              => null,
+                    'contact_id'      => null,
                     'contactgroup_id' => null,
-                    'schedule_id' => 1,
-                    'channel_id' => 1
+                    'schedule_id'     => 1,
+                    'channel_id'      => 1
                 ])
             ]);
 
@@ -191,13 +191,13 @@ class EventRuleConfigFormTest extends TestCase
         $queryResult = new ResultSet(
             new \ArrayIterator([
                 (new RuleEscalation())->setProperties([
-                    'id' => 1,
-                    'condition' => null,
+                    'id'                        => 1,
+                    'condition'                 => null,
                     'rule_escalation_recipient' => $firstRuleEscalationRecipientMock
                 ]),
                 (new RuleEscalation())->setProperties([
-                    'id' => null,
-                    'condition' => 'incident_severity>=crit&incident_age>5m',
+                    'id'                        => null,
+                    'condition'                 => 'incident_severity>=crit&incident_age>5m',
                     'rule_escalation_recipient' => $secondRuleEscalationRecipientMock
                 ])
             ])
@@ -208,11 +208,11 @@ class EventRuleConfigFormTest extends TestCase
             ->willReturn($queryResult);
 
         $ruleModel = (new Rule())->setProperties([
-            'id' => 1337,
-            'source_id' => 1338,
-            'name' => 'Test',
-            'object_filter' => 'hostgroup.name=Test%20Group',
-            'timeperiod_id' => null,
+            'id'              => 1337,
+            'source_id'       => 1338,
+            'name'            => 'Test',
+            'object_filter'   => 'hostgroup.name=Test%20Group',
+            'timeperiod_id'   => null,
             'rule_escalation' => $ruleEscalationMock
         ]);
 
@@ -232,12 +232,12 @@ class EventRuleConfigFormTest extends TestCase
                 if ($table === 'rule_escalation') {
                     $this->assertEquals(
                         [
-                            'rule_id' => 1337,
-                            'position' => 1,
-                            'condition' => 'incident_severity>=crit&incident_age>5m',
-                            'name' => null,
+                            'rule_id'      => 1337,
+                            'position'     => 1,
+                            'condition'    => 'incident_severity>=crit&incident_age>5m',
+                            'name'         => null,
                             'fallback_for' => null,
-                            'deleted' => 'n'
+                            'deleted'      => 'n'
                         ],
                         $data
                     );
@@ -246,11 +246,11 @@ class EventRuleConfigFormTest extends TestCase
                         $this->assertEquals(
                             [
                                 'rule_escalation_id' => 2,
-                                'contact_id' => null,
-                                'contactgroup_id' => 1,
-                                'schedule_id' => null,
-                                'channel_id' => null,
-                                'deleted' => 'n'
+                                'contact_id'         => null,
+                                'contactgroup_id'    => 1,
+                                'schedule_id'        => null,
+                                'channel_id'         => null,
+                                'deleted'            => 'n'
                             ],
                             $data
                         );
@@ -258,11 +258,11 @@ class EventRuleConfigFormTest extends TestCase
                         $this->assertEquals(
                             [
                                 'rule_escalation_id' => 2,
-                                'contact_id' => null,
-                                'contactgroup_id' => null,
-                                'schedule_id' => 1,
-                                'channel_id' => 1,
-                                'deleted' => 'n'
+                                'contact_id'         => null,
+                                'contactgroup_id'    => null,
+                                'schedule_id'        => 1,
+                                'channel_id'         => 1,
+                                'deleted'            => 'n'
                             ],
                             $data
                         );
@@ -288,8 +288,8 @@ class EventRuleConfigFormTest extends TestCase
                     $this->assertSame(['id = ?' => 1337], $where);
                     $this->assertEquals(
                         [
-                            'name' => 'Test',
-                            'source_id' => 1338,
+                            'name'          => 'Test',
+                            'source_id'     => 1338,
                             'object_filter' => 'hostgroup.name=Test%20Group'
                         ],
                         $data
@@ -303,7 +303,7 @@ class EventRuleConfigFormTest extends TestCase
                         );
                         $this->assertEquals(
                             [
-                                'deleted' => 'y',
+                                'deleted'  => 'y',
                                 'position' => null
                             ],
                             $data
@@ -312,7 +312,7 @@ class EventRuleConfigFormTest extends TestCase
                         $this->assertSame(['id = ?' => 1, 'rule_id = ?' => 1337], $where);
                         $this->assertEquals(
                             [
-                                'position' => 0,
+                                'position'  => 0,
                                 'condition' => null
                             ],
                             $data
@@ -342,11 +342,11 @@ class EventRuleConfigFormTest extends TestCase
                         $this->assertSame(['id = ?' => 1], $where);
                         $this->assertEquals(
                             [
-                                'id' => 1, // Actually redundant, included for consistency
-                                'contact_id' => 1,
+                                'id'              => 1, // Actually redundant, included for consistency
+                                'contact_id'      => 1,
                                 'contactgroup_id' => null,
-                                'schedule_id' => null,
-                                'channel_id' => 1
+                                'schedule_id'     => null,
+                                'channel_id'      => 1
                             ],
                             $data
                         );
@@ -397,23 +397,23 @@ class EventRuleConfigFormTest extends TestCase
             ]);
 
         $dbRule = (new Rule())->setProperties([
-            'id' => 1337,
-            'source_id' => 1338,
-            'name' => 'Test',
-            'object_filter' => null,
-            'timeperiod_id' => null,
+            'id'              => 1337,
+            'source_id'       => 1338,
+            'name'            => 'Test',
+            'object_filter'   => null,
+            'timeperiod_id'   => null,
             'rule_escalation' => [
                 (new RuleEscalation())->setProperties([
-                    'id' => 1,
-                    'position' => 0,
-                    'condition' => null,
+                    'id'                        => 1,
+                    'position'                  => 0,
+                    'condition'                 => null,
                     'rule_escalation_recipient' => [
                         (new RuleEscalationRecipient())->setProperties([
-                            'id' => 1,
-                            'contact_id' => 1,
+                            'id'              => 1,
+                            'contact_id'      => 1,
                             'contactgroup_id' => null,
-                            'schedule_id' => null,
-                            'channel_id' => 1
+                            'schedule_id'     => null,
+                            'channel_id'      => 1
                         ])
                     ]
                 ])
@@ -426,11 +426,11 @@ class EventRuleConfigFormTest extends TestCase
             ->with(['id', 'contact_id', 'contactgroup_id', 'schedule_id', 'channel_id'])
             ->willReturn([
                 (new RuleEscalationRecipient())->setProperties([
-                    'id' => 1,
-                    'contact_id' => 1,
+                    'id'              => 1,
+                    'contact_id'      => 1,
                     'contactgroup_id' => null,
-                    'schedule_id' => null,
-                    'channel_id' => 1
+                    'schedule_id'     => null,
+                    'channel_id'      => 1
                 ])
             ]);
 
@@ -443,8 +443,8 @@ class EventRuleConfigFormTest extends TestCase
         $queryResult = new ResultSet(
             new \ArrayIterator([
                 (new RuleEscalation())->setProperties([
-                    'id' => 1,
-                    'condition' => null,
+                    'id'                        => 1,
+                    'condition'                 => null,
                     'rule_escalation_recipient' => $escalationRecipientMock
                 ])
             ])
@@ -455,11 +455,11 @@ class EventRuleConfigFormTest extends TestCase
             ->willReturn($queryResult);
 
         $ruleModel = (new Rule())->setProperties([
-            'id' => 1337,
-            'source_id' => 1338,
-            'name' => 'Test',
-            'object_filter' => null,
-            'timeperiod_id' => null,
+            'id'              => 1337,
+            'source_id'       => 1338,
+            'name'            => 'Test',
+            'object_filter'   => null,
+            'timeperiod_id'   => null,
             'rule_escalation' => $ruleEscalationMock
         ]);
 
@@ -510,23 +510,23 @@ class EventRuleConfigFormTest extends TestCase
             ]);
 
         $dbRule = (new Rule())->setProperties([
-            'id' => 1337,
-            'source_id' => 1338,
-            'name' => 'Test',
-            'object_filter' => null,
-            'timeperiod_id' => null,
+            'id'              => 1337,
+            'source_id'       => 1338,
+            'name'            => 'Test',
+            'object_filter'   => null,
+            'timeperiod_id'   => null,
             'rule_escalation' => [
                 (new RuleEscalation())->setProperties([
-                    'id' => 1,
-                    'position' => 0,
-                    'condition' => null,
+                    'id'                        => 1,
+                    'position'                  => 0,
+                    'condition'                 => null,
                     'rule_escalation_recipient' => [
                         (new RuleEscalationRecipient())->setProperties([
-                            'id' => 1,
-                            'contact_id' => 1,
+                            'id'              => 1,
+                            'contact_id'      => 1,
                             'contactgroup_id' => null,
-                            'schedule_id' => null,
-                            'channel_id' => 1
+                            'schedule_id'     => null,
+                            'channel_id'      => 1
                         ])
                     ]
                 ])
@@ -539,11 +539,11 @@ class EventRuleConfigFormTest extends TestCase
             ->with(['id', 'contact_id', 'contactgroup_id', 'schedule_id', 'channel_id'])
             ->willReturn([
                 (new RuleEscalationRecipient())->setProperties([
-                    'id' => 1,
-                    'contact_id' => 1,
+                    'id'              => 1,
+                    'contact_id'      => 1,
                     'contactgroup_id' => null,
-                    'schedule_id' => null,
-                    'channel_id' => 1
+                    'schedule_id'     => null,
+                    'channel_id'      => 1
                 ])
             ]);
 
@@ -556,8 +556,8 @@ class EventRuleConfigFormTest extends TestCase
         $queryResult = new ResultSet(
             new \ArrayIterator([
                 (new RuleEscalation())->setProperties([
-                    'id' => 1,
-                    'condition' => null,
+                    'id'                        => 1,
+                    'condition'                 => null,
                     'rule_escalation_recipient' => $escalationRecipientMock
                 ])
             ])
@@ -568,11 +568,11 @@ class EventRuleConfigFormTest extends TestCase
             ->willReturn($queryResult);
 
         $ruleModel = (new Rule())->setProperties([
-            'id' => 1337,
-            'source_id' => 1338,
-            'name' => 'Test',
-            'object_filter' => 'servicegroup.name=Test%20Group',
-            'timeperiod_id' => null,
+            'id'              => 1337,
+            'source_id'       => 1338,
+            'name'            => 'Test',
+            'object_filter'   => 'servicegroup.name=Test%20Group',
+            'timeperiod_id'   => null,
             'rule_escalation' => $ruleEscalationMock
         ]);
 
@@ -588,8 +588,8 @@ class EventRuleConfigFormTest extends TestCase
                 unset($data['changed_at']);
                 $this->assertEquals(
                     [
-                        'name' => 'Test',
-                        'source_id' => 1338,
+                        'name'          => 'Test',
+                        'source_id'     => 1338,
                         'object_filter' => 'servicegroup.name=Test%20Group'
                     ],
                     $data
@@ -639,23 +639,23 @@ class EventRuleConfigFormTest extends TestCase
             ]);
 
         $dbRule = (new Rule())->setProperties([
-            'id' => 1337,
-            'source_id' => 1338,
-            'name' => 'Test',
-            'object_filter' => null,
-            'timeperiod_id' => null,
+            'id'              => 1337,
+            'source_id'       => 1338,
+            'name'            => 'Test',
+            'object_filter'   => null,
+            'timeperiod_id'   => null,
             'rule_escalation' => [
                 (new RuleEscalation())->setProperties([
-                    'id' => 1,
-                    'position' => 0,
-                    'condition' => null,
+                    'id'                        => 1,
+                    'position'                  => 0,
+                    'condition'                 => null,
                     'rule_escalation_recipient' => [
                         (new RuleEscalationRecipient())->setProperties([
-                            'id' => 1,
-                            'contact_id' => 1,
+                            'id'              => 1,
+                            'contact_id'      => 1,
                             'contactgroup_id' => null,
-                            'schedule_id' => null,
-                            'channel_id' => 1
+                            'schedule_id'     => null,
+                            'channel_id'      => 1
                         ])
                     ]
                 ])
@@ -668,11 +668,11 @@ class EventRuleConfigFormTest extends TestCase
             ->with(['id', 'contact_id', 'contactgroup_id', 'schedule_id', 'channel_id'])
             ->willReturn([
                 (new RuleEscalationRecipient())->setProperties([
-                    'id' => 1,
-                    'contact_id' => 1,
+                    'id'              => 1,
+                    'contact_id'      => 1,
                     'contactgroup_id' => null,
-                    'schedule_id' => null,
-                    'channel_id' => 1
+                    'schedule_id'     => null,
+                    'channel_id'      => 1
                 ])
             ]);
 
@@ -685,8 +685,8 @@ class EventRuleConfigFormTest extends TestCase
         $queryResult = new ResultSet(
             new \ArrayIterator([
                 (new RuleEscalation())->setProperties([
-                    'id' => 1,
-                    'condition' => 'incident_severity>=crit&incident_age>5m',
+                    'id'                        => 1,
+                    'condition'                 => 'incident_severity>=crit&incident_age>5m',
                     'rule_escalation_recipient' => $escalationRecipientMock
                 ])
             ])
@@ -697,11 +697,11 @@ class EventRuleConfigFormTest extends TestCase
             ->willReturn($queryResult);
 
         $ruleModel = (new Rule())->setProperties([
-            'id' => 1337,
-            'source_id' => 1338,
-            'name' => 'Test',
-            'object_filter' => null,
-            'timeperiod_id' => null,
+            'id'              => 1337,
+            'source_id'       => 1338,
+            'name'            => 'Test',
+            'object_filter'   => null,
+            'timeperiod_id'   => null,
             'rule_escalation' => $ruleEscalationMock
         ]);
 
@@ -721,7 +721,7 @@ class EventRuleConfigFormTest extends TestCase
                 unset($data['changed_at']);
                 $this->assertEquals(
                     [
-                        'position' => 0,
+                        'position'  => 0,
                         'condition' => 'incident_severity>=crit&incident_age>5m'
                     ],
                     $data
@@ -773,23 +773,23 @@ class EventRuleConfigFormTest extends TestCase
             ]);
 
         $dbRule = (new Rule())->setProperties([
-            'id' => 1337,
-            'source_id' => 1338,
-            'name' => 'Test',
-            'object_filter' => null,
-            'timeperiod_id' => null,
+            'id'              => 1337,
+            'source_id'       => 1338,
+            'name'            => 'Test',
+            'object_filter'   => null,
+            'timeperiod_id'   => null,
             'rule_escalation' => [
                 (new RuleEscalation())->setProperties([
-                    'id' => 1,
-                    'position' => 0,
-                    'condition' => null,
+                    'id'                        => 1,
+                    'position'                  => 0,
+                    'condition'                 => null,
                     'rule_escalation_recipient' => [
                         (new RuleEscalationRecipient())->setProperties([
-                            'id' => 1,
-                            'contact_id' => 1,
+                            'id'              => 1,
+                            'contact_id'      => 1,
                             'contactgroup_id' => null,
-                            'schedule_id' => null,
-                            'channel_id' => 1
+                            'schedule_id'     => null,
+                            'channel_id'      => 1
                         ])
                     ]
                 ])
@@ -802,11 +802,11 @@ class EventRuleConfigFormTest extends TestCase
             ->with(['id', 'contact_id', 'contactgroup_id', 'schedule_id', 'channel_id'])
             ->willReturn([
                 (new RuleEscalationRecipient())->setProperties([
-                    'id' => 1,
-                    'contact_id' => null,
+                    'id'              => 1,
+                    'contact_id'      => null,
                     'contactgroup_id' => 1,
-                    'schedule_id' => null,
-                    'channel_id' => null
+                    'schedule_id'     => null,
+                    'channel_id'      => null
                 ])
             ]);
 
@@ -819,8 +819,8 @@ class EventRuleConfigFormTest extends TestCase
         $queryResult = new ResultSet(
             new \ArrayIterator([
                 (new RuleEscalation())->setProperties([
-                    'id' => 1,
-                    'condition' => null,
+                    'id'                        => 1,
+                    'condition'                 => null,
                     'rule_escalation_recipient' => $escalationRecipientMock
                 ])
             ])
@@ -831,11 +831,11 @@ class EventRuleConfigFormTest extends TestCase
             ->willReturn($queryResult);
 
         $ruleModel = (new Rule())->setProperties([
-            'id' => 1337,
-            'source_id' => 1338,
-            'name' => 'Test',
-            'object_filter' => null,
-            'timeperiod_id' => null,
+            'id'              => 1337,
+            'source_id'       => 1338,
+            'name'            => 'Test',
+            'object_filter'   => null,
+            'timeperiod_id'   => null,
             'rule_escalation' => $ruleEscalationMock
         ]);
 
@@ -851,11 +851,11 @@ class EventRuleConfigFormTest extends TestCase
                 unset($data['changed_at']);
                 $this->assertEquals(
                     [
-                        'id' => 1,
-                        'contact_id' => null,
+                        'id'              => 1,
+                        'contact_id'      => null,
                         'contactgroup_id' => 1,
-                        'schedule_id' => null,
-                        'channel_id' => null
+                        'schedule_id'     => null,
+                        'channel_id'      => null
                     ],
                     $data
                 );

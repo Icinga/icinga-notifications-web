@@ -13,9 +13,9 @@ use ipl\Orm\Relations;
 /**
  * ObjectExtraTag database model
  *
- * @property string $object_id
- * @property string $tag
- * @property string $value
+ * @property string        $object_id
+ * @property string        $tag
+ * @property string        $value
  *
  * @property Query|Objects $object
  */

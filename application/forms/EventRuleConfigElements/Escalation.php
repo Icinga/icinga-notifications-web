@@ -68,7 +68,7 @@ class Escalation extends FieldsetElement
     public static function prepare(RuleEscalation $escalation): array
     {
         return [
-            'id' => $escalation->id,
+            'id'         => $escalation->id,
             'conditions' => EscalationConditions::prepare($escalation->condition ?? ''),
             'recipients' => EscalationRecipients::prepare(
                 $escalation->rule_escalation_recipient
@@ -110,8 +110,8 @@ class Escalation extends FieldsetElement
         }
 
         return [
-            'id' => $escalationId,
-            'position' => (int) $this->getName(),
+            'id'        => $escalationId,
+            'position'  => (int) $this->getName(),
             'condition' => $this->getElement('conditions')->getConditions()
         ];
     }

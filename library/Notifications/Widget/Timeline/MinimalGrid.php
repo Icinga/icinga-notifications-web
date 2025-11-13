@@ -60,11 +60,11 @@ class MinimalGrid extends BaseGrid
     protected function assemble(): void
     {
         $this->style->addFor($this, [
-            '--primaryRows'     => 1,
-            '--primaryColumns'  => self::DAYS,
-            '--columnsPerStep'  => 48,
-            '--rowsPerStep'     => 1,
-            '--stepRowHeight'   => '1.5em'
+            '--primaryRows'    => 1,
+            '--primaryColumns' => self::DAYS,
+            '--columnsPerStep' => 48,
+            '--rowsPerStep'    => 1,
+            '--stepRowHeight'  => '1.5em'
         ]);
 
         $overlay = $this->createGridOverlay();

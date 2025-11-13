@@ -91,9 +91,9 @@ class Timeline extends BaseHtmlElement implements EntryProvider
     /**
      * Create a new Timeline
      *
-     * @param int $scheduleId The schedule ID
-     * @param DateTime $start The day the grid should start on
-     * @param int $days Number of days to show on the grid
+     * @param int      $scheduleId The schedule ID
+     * @param DateTime $start      The day the grid should start on
+     * @param int      $days       Number of days to show on the grid
      */
     public function __construct(int $scheduleId, DateTime $start, int $days)
     {
@@ -321,7 +321,7 @@ class Timeline extends BaseHtmlElement implements EntryProvider
         ]);
         $dragInitiator
             ->getAttributes()
-            ->registerAttributeCallback('data-drag-initiator', fn () => $this->noOfRotations > 1);
+            ->registerAttributeCallback('data-drag-initiator', fn() => $this->noOfRotations > 1);
 
         $entry->addHtml(
             $form,

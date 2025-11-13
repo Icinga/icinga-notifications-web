@@ -63,7 +63,7 @@ final class Util
     /**
      * Calculate a color for an entry based on the given text
      *
-     * @param string $text
+     * @param string      $text
      * @param int<0, 100> $transparency
      *
      * @return string A CSS color definition

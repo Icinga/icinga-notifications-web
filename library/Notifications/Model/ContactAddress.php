@@ -13,12 +13,12 @@ use ipl\Orm\Query;
 use ipl\Orm\Relations;
 
 /**
- * @property int $id
- * @property int $contact_id
- * @property string $type
- * @property string $address
- * @property DateTime $changed_at
- * @property bool $deleted
+ * @property int           $id
+ * @property int           $contact_id
+ * @property string        $type
+ * @property string        $address
+ * @property DateTime      $changed_at
+ * @property bool          $deleted
  *
  * @property Query|Contact $contact
  */

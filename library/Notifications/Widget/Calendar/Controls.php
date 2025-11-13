@@ -56,8 +56,8 @@ class Controls extends Form
 
         $modeParam = 'mode';
         $options = [
-            Calendar::MODE_DAY => $this->translate('Day'),
-            Calendar::MODE_WEEK => $this->translate('Week'),
+            Calendar::MODE_DAY   => $this->translate('Day'),
+            Calendar::MODE_WEEK  => $this->translate('Week'),
             Calendar::MODE_MONTH => $this->translate('Month')
         ];
 
@@ -66,7 +66,7 @@ class Controls extends Form
             $input = $this->createElement('input', $modeParam, [
                 'class' => 'autosubmit',
                 'type'  => 'radio',
-                'id' => $modeParam . '-' . $value,
+                'id'    => $modeParam . '-' . $value,
                 'value' => $value
             ]);
 
@@ -100,7 +100,7 @@ class Controls extends Form
         $previousBtn = $this->createElement('button', 'day', [
             'value' => $previousDay->format(self::DAY_FORMAT),
             'class' => 'control-button',
-            'type' => 'submit',
+            'type'  => 'submit',
             'title' => sprintf(
                 $this->translate('Show %s'),
                 $this->getLocalizedDay($previousDay)
@@ -110,7 +110,7 @@ class Controls extends Form
 
         $dayInput = $this->createElement('input', 'day', [
             'class' => 'autosubmit',
-            'type' => 'date',
+            'type'  => 'date',
             'value' => (new DateTime())->format(self::DAY_FORMAT),
             'title' => $this->translate('Show a different day')
         ]);
@@ -121,7 +121,7 @@ class Controls extends Form
         $nextBtn = $this->createElement('button', 'day', [
             'value' => $nextDay->format(self::DAY_FORMAT),
             'class' => 'control-button',
-            'type' => 'submit',
+            'type'  => 'submit',
             'title' => sprintf(
                 $this->translate('Show %s'),
                 $this->getLocalizedDay($nextDay)
@@ -196,7 +196,7 @@ class Controls extends Form
         } elseif (! isset($years[$now->format(self::WEEK_FORMAT)])) {
             $years = array_merge([
                 $now->format(self::WEEK_FORMAT) => $now->format('Y'),
-                '' => '…'
+                ''                              => '…'
             ], $years);
         }
 
@@ -243,14 +243,14 @@ class Controls extends Form
                     $this->translate('%s to %s'),
                     ...$this->getLocalizedWeek($now)
                 ),
-                '' => '…'
+                ''                              => '…'
             ], $weeks);
         }
 
         $previousYearBtn = $this->createElement('button', 'week', [
             'value' => $previousYear->format(self::WEEK_FORMAT),
             'class' => 'control-button',
-            'type' => 'submit',
+            'type'  => 'submit',
             'title' => sprintf(
                 $this->translate('Show %s to %s'),
                 ...$this->getLocalizedWeek($previousYear)
@@ -262,11 +262,11 @@ class Controls extends Form
             'div',
             Attributes::create(['class' => 'icinga-controls']),
             $this->createElement('select', 'week', [
-                'class' => 'autosubmit',
-                'value' => $chosenWeekFormatted,
-                'options' => $years,
+                'class'           => 'autosubmit',
+                'value'           => $chosenWeekFormatted,
+                'options'         => $years,
                 'disabledOptions' => [$chosenWeekFormatted, ''],
-                'title' => sprintf(
+                'title'           => sprintf(
                     $this->translate('Show the first week in %s of a different year'),
                     $this->getLocalizedMonth($chosenWeek)
                 )
@@ -276,7 +276,7 @@ class Controls extends Form
         $nextYearBtn = $this->createElement('button', 'week', [
             'value' => $nextYear->format(self::WEEK_FORMAT),
             'class' => 'control-button',
-            'type' => 'submit',
+            'type'  => 'submit',
             'title' => sprintf(
                 $this->translate('Show %s to %s'),
                 ...$this->getLocalizedWeek($nextYear)
@@ -287,7 +287,7 @@ class Controls extends Form
         $previousMonthBtn = $this->createElement('button', 'week', [
             'value' => $previousMonth->format(self::WEEK_FORMAT),
             'class' => 'control-button',
-            'type' => 'submit',
+            'type'  => 'submit',
             'title' => sprintf(
                 $this->translate('Show %s to %s'),
                 ...$this->getLocalizedWeek($previousMonth)
@@ -299,11 +299,11 @@ class Controls extends Form
             'div',
             Attributes::create(['class' => 'icinga-controls']),
             $this->createElement('select', 'week', [
-                'class' => 'autosubmit',
-                'value' => $chosenWeekFormatted,
-                'options' => $months,
+                'class'           => 'autosubmit',
+                'value'           => $chosenWeekFormatted,
+                'options'         => $months,
                 'disabledOptions' => [$chosenWeekFormatted],
-                'title' => sprintf(
+                'title'           => sprintf(
                     $this->translate('Show a different month in %d'),
                     $chosenYear
                 )
@@ -313,7 +313,7 @@ class Controls extends Form
         $nextMonthBtn = $this->createElement('button', 'week', [
             'value' => $nextMonth->format(self::WEEK_FORMAT),
             'class' => 'control-button',
-            'type' => 'submit',
+            'type'  => 'submit',
             'title' => sprintf(
                 $this->translate('Show %s to %s'),
                 ...$this->getLocalizedWeek($nextMonth)
@@ -325,7 +325,7 @@ class Controls extends Form
         $previousWeekBtn = $this->createElement('button', 'week', [
             'value' => $previousWeek->format(self::WEEK_FORMAT),
             'class' => 'control-button',
-            'type' => 'submit',
+            'type'  => 'submit',
             'title' => sprintf(
                 $this->translate('Show %s to %s'),
                 ...$this->getLocalizedWeek($previousWeek)
@@ -337,11 +337,11 @@ class Controls extends Form
             'div',
             Attributes::create(['class' => 'icinga-controls']),
             $this->createElement('select', 'week', [
-                'class' => 'autosubmit',
-                'value' => $chosenWeekFormatted,
-                'options' => $weeks,
+                'class'           => 'autosubmit',
+                'value'           => $chosenWeekFormatted,
+                'options'         => $weeks,
                 'disabledOptions' => [$chosenWeekFormatted, ''],
-                'title' => sprintf(
+                'title'           => sprintf(
                     $this->translate('Show a different week in %s of %d'),
                     $this->getLocalizedMonth($chosenWeek),
                     $chosenYear
@@ -353,7 +353,7 @@ class Controls extends Form
         $nextWeekBtn = $this->createElement('button', 'week', [
             'value' => $nextWeek->format(self::WEEK_FORMAT),
             'class' => 'control-button',
-            'type' => 'submit',
+            'type'  => 'submit',
             'title' => sprintf(
                 $this->translate('Show %s to %s'),
                 ...$this->getLocalizedWeek($nextWeek)
@@ -385,7 +385,7 @@ class Controls extends Form
         $previousYearBtn = $this->createElement('button', 'month', [
             'value' => $previousYear->format(self::MONTH_FORMAT),
             'class' => 'control-button',
-            'type' => 'submit',
+            'type'  => 'submit',
             'title' => sprintf(
                 $this->translate('Show %s %d'),
                 $this->getLocalizedMonth($previousYear),
@@ -416,7 +416,7 @@ class Controls extends Form
         } elseif (! isset($years[$now->format(self::MONTH_FORMAT)])) {
             $years = array_merge([
                 $now->format(self::MONTH_FORMAT) => $now->format('Y'),
-                '' => '…'
+                ''                               => '…'
             ], $years);
         }
 
@@ -435,11 +435,11 @@ class Controls extends Form
             'div',
             Attributes::create(['class' => 'icinga-controls']),
             $this->createElement('select', 'month', [
-                'class' => 'autosubmit',
-                'value' => $chosenMonthFormatted,
-                'options' => $years,
+                'class'           => 'autosubmit',
+                'value'           => $chosenMonthFormatted,
+                'options'         => $years,
                 'disabledOptions' => [$chosenMonthFormatted, ''],
-                'title' => sprintf(
+                'title'           => sprintf(
                     $this->translate('Show %s of a different year'),
                     $this->getLocalizedMonth($chosenMonth)
                 )
@@ -450,7 +450,7 @@ class Controls extends Form
         $nextYearBtn = $this->createElement('button', 'month', [
             'value' => $nextYear->format(self::MONTH_FORMAT),
             'class' => 'control-button',
-            'type' => 'submit',
+            'type'  => 'submit',
             'title' => sprintf(
                 $this->translate('Show %s %d'),
                 $this->getLocalizedMonth($nextYear),
@@ -463,7 +463,7 @@ class Controls extends Form
         $previousMonthBtn = $this->createElement('button', 'month', [
             'value' => $previousMonth->format(self::MONTH_FORMAT),
             'class' => 'control-button',
-            'type' => 'submit',
+            'type'  => 'submit',
             'title' => sprintf(
                 $this->translate('Show %s %d'),
                 $this->getLocalizedMonth($previousMonth),
@@ -476,11 +476,11 @@ class Controls extends Form
             'div',
             Attributes::create(['class' => 'icinga-controls']),
             $this->createElement('select', 'month', [
-                'class' => 'autosubmit',
-                'value' => $chosenMonthFormatted,
-                'options' => $months,
+                'class'           => 'autosubmit',
+                'value'           => $chosenMonthFormatted,
+                'options'         => $months,
                 'disabledOptions' => [$chosenMonthFormatted],
-                'title' => sprintf(
+                'title'           => sprintf(
                     $this->translate('Show a different month in %d'),
                     $chosenMonth->format('Y')
                 )
@@ -491,7 +491,7 @@ class Controls extends Form
         $nextMonthBtn = $this->createElement('button', 'month', [
             'value' => $nextMonth->format(self::MONTH_FORMAT),
             'class' => 'control-button',
-            'type' => 'submit',
+            'type'  => 'submit',
             'title' => sprintf(
                 $this->translate('Show %s %d'),
                 $this->getLocalizedMonth($nextMonth),
