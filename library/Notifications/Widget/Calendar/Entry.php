@@ -17,10 +17,9 @@ use Icinga\Module\Notifications\Widget\TimeGrid;
 class Entry extends TimeGrid\Entry
 {
     /** @var ?string The description */
-    protected $description;
+    protected ?string $description = null;
 
-    /** @var Attendee */
-    protected $attendee;
+    protected Attendee $attendee;
 
     /**
      * Set the description

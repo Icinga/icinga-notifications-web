@@ -20,14 +20,12 @@ class RecipientSuggestions extends BaseHtmlElement
 {
     protected $tag = 'ul';
 
-    /** @var string */
-    protected $searchTerm;
+    protected string $searchTerm;
 
-    /** @var string */
-    protected $originalValue;
+    protected string $originalValue;
 
     /** @var string[] */
-    protected $excludeTerms = [];
+    protected array $excludeTerms = [];
 
     public function setSearchTerm(string $term): self
     {

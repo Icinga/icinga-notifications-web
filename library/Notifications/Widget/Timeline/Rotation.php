@@ -10,6 +10,7 @@ use DateTimeZone;
 use Generator;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\RotationConfigForm;
+use Icinga\Module\Notifications\Model\Rotation as RotationModel;
 use ipl\I18n\Translation;
 use ipl\Scheduler\RRule;
 use ipl\Stdlib\Filter;
@@ -20,8 +21,7 @@ class Rotation
 {
     use Translation;
 
-    /** @var \Icinga\Module\Notifications\Model\Rotation */
-    protected $model;
+    protected RotationModel $model;
 
     /**
      * Create a new Rotation

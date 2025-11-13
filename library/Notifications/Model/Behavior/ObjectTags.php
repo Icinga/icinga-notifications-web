@@ -15,8 +15,7 @@ class ObjectTags implements RewriteColumnBehavior, QueryAwareBehavior
 {
     use Auth;
 
-    /** @var Query */
-    protected $query;
+    protected Query $query;
 
     public function setQuery(Query $query): self
     {

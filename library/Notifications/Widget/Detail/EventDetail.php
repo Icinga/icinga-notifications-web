@@ -21,11 +21,9 @@ use ipl\Web\Widget\HorizontalKeyValue;
 
 class EventDetail extends BaseHtmlElement
 {
-    /** @var Event */
-    protected $event;
+    protected Event $event;
 
-    /** @var Incident */
-    protected $incident;
+    protected Incident $incident;
 
     protected $defaultAttributes = [
         'class'                         => 'event-detail',
