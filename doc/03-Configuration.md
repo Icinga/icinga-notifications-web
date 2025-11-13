@@ -18,6 +18,18 @@ If you just installed Icinga Notifications Web, remember to activate it on your 
 
 <!-- {% endif %} -->
 
+## Access Control
+
+### Permissions
+
+| Permission                       | Description                                    |
+|----------------------------------|------------------------------------------------|
+| notifications/config/schedules   | Allow to configure schedules                   |
+| notifications/config/event-rules | Allow to configure event rules                 |
+| notifications/config/contacts    | Allow to configure contacts and contact groups |
+| notifications/view/contacts      | Allow to view contacts                         |
+| notifications/api                | Allow to modify configuration via API          |
+
 ## Database Configuration
 
 Connection configuration for the database, which both,
