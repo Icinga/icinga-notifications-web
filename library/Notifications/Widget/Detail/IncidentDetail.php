@@ -21,6 +21,7 @@ use ipl\Html\Html;
 use ipl\Html\HtmlElement;
 use ipl\Html\Table;
 use ipl\Html\Text;
+use ipl\Html\ValidHtml;
 use ipl\I18n\Translation;
 use ipl\Stdlib\Filter;
 use ipl\Web\Layout\MinimalItemLayout;
@@ -44,7 +45,8 @@ class IncidentDetail extends BaseHtmlElement
         $this->incident = $incident;
     }
 
-    protected function createContacts()
+    /** @return ValidHtml[] */
+    protected function createContacts(): array
     {
         $contacts = [];
         $query = $this->incident->incident_contact
@@ -70,7 +72,8 @@ class IncidentDetail extends BaseHtmlElement
         ];
     }
 
-    protected function createRelatedObject()
+    /** @return ValidHtml[] */
+    protected function createRelatedObject(): array
     {
         $objectUrl = ObjectsRendererHook::renderObjectLink($this->incident->object);
 
@@ -84,7 +87,8 @@ class IncidentDetail extends BaseHtmlElement
         ];
     }
 
-    protected function createHistory()
+    /** @return ValidHtml[] */
+    protected function createHistory(): array
     {
         $query = $this->incident->incident_history
             ->with([
@@ -104,7 +108,8 @@ class IncidentDetail extends BaseHtmlElement
         ];
     }
 
-    protected function createSource()
+    /** @return ValidHtml[] */
+    protected function createSource(): array
     {
         $list = new HtmlElement('ul', Attributes::create(['class' => 'source-list']));
         $list->addHtml(new HtmlElement('li', null, new EventSourceBadge($this->incident->object->source)));
@@ -115,6 +120,7 @@ class IncidentDetail extends BaseHtmlElement
         ];
     }
 
+    /** @return ValidHtml[] */
     protected function createObjectTag(): array
     {
         $tags = [];
@@ -175,7 +181,7 @@ class IncidentDetail extends BaseHtmlElement
         return $result;
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->add([
             $this->createContacts(),

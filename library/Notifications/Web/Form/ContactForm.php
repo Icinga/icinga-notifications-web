@@ -66,7 +66,7 @@ class ContactForm extends CompatForm
         return $csrf !== null && $csrf->isValid() && $btn !== null && $btn->getName() === 'delete';
     }
 
-    public function isValidEvent($event)
+    public function isValidEvent($event): bool
     {
         if ($event === self::ON_REMOVE) {
             return true;
@@ -75,7 +75,7 @@ class ContactForm extends CompatForm
         return parent::isValidEvent($event);
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->addAttributes(['class' => 'contact-form']);
         $this->addCsrfCounterMeasure(Session::getSession()->getId());

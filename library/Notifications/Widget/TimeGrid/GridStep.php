@@ -72,7 +72,7 @@ class GridStep extends BaseHtmlElement
         return $this->coordinates;
     }
 
-    protected function registerAttributeCallbacks(Attributes $attributes)
+    protected function registerAttributeCallbacks(Attributes $attributes): void
     {
         $this->getAttributes()
             ->registerAttributeCallback('data-start', function () {

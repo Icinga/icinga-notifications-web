@@ -212,7 +212,7 @@ abstract class Entry extends BaseHtmlElement
 
     abstract protected function assembleContainer(BaseHtmlElement $container): void;
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->getAttributes()
             ->add('data-entry-id', $this->getId())
