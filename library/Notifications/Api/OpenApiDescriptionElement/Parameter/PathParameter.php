@@ -4,10 +4,10 @@
 
 namespace Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Parameter;
 
+use OpenApi\Attributes as OA;
 use OpenApi\Attributes\Parameter;
 use OpenApi\Attributes\Schema;
 use OpenApi\Generator;
-use OpenApi\Attributes as OA;
 
 class PathParameter extends Parameter
 {

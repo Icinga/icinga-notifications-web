@@ -4,8 +4,8 @@
 
 namespace Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Response;
 
-use OpenApi\Attributes\Response;
 use OpenApi\Attributes as OA;
+use OpenApi\Attributes\Response;
 
 #[OA\Schema(
     schema: 'SuccessResponse',

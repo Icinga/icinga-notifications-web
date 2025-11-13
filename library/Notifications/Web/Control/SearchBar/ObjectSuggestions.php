@@ -20,10 +20,10 @@ use ipl\Orm\Query;
 use ipl\Orm\Relation;
 use ipl\Orm\Relation\HasOne;
 use ipl\Orm\Resolver;
+use ipl\Stdlib\Filter;
 use ipl\Stdlib\Seq;
 use ipl\Web\Control\SearchBar\SearchException;
 use ipl\Web\Control\SearchBar\Suggestions;
-use ipl\Stdlib\Filter;
 use PDO;
 use Traversable;
 

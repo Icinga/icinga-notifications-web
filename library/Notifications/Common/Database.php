@@ -4,7 +4,6 @@
 
 namespace Icinga\Module\Notifications\Common;
 
-use DateTime;
 use Icinga\Application\Config as AppConfig;
 use Icinga\Data\ResourceFactory;
 use Icinga\Exception\ConfigurationError;

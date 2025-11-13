@@ -4,7 +4,6 @@
 
 namespace Tests\Icinga\Module\Notifications\Controllers;
 
-use GuzzleHttp\Client;
 use Icinga\Module\Notifications\Test\BaseApiV1TestCase;
 use Icinga\Web\Url;
 use ipl\Sql\Connection;

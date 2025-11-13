@@ -6,13 +6,12 @@ namespace Icinga\Module\Notifications\Test;
 
 use DateTime;
 use GuzzleHttp\Client;
-use Icinga\Module\Notifications\Api\V1\Channels;
 use Icinga\Util\Json;
 use Icinga\Web\Url;
 use ipl\Sql\Connection;
 use ipl\Sql\Select;
-use Psr\Http\Message\ResponseInterface;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\ResponseInterface;
 
 class BaseApiV1TestCase extends TestCase
 {
