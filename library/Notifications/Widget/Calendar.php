@@ -172,7 +172,7 @@ class Calendar extends BaseHtmlElement implements EntryProvider
         yield from $this->entries;
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $modeStart = $this->getModeStart();
 

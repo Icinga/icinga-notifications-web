@@ -131,7 +131,7 @@ class RotationConfigForm extends CompatForm
      *
      * @param Url $url
      *
-     * @return void
+     * @return $this
      */
     public function setSuggestionUrl(Url $url): self
     {
@@ -143,7 +143,7 @@ class RotationConfigForm extends CompatForm
     /**
      * Disable the mode selection
      *
-     * @return void
+     * @return $this
      */
     public function disableModeSelection(): self
     {
@@ -1067,7 +1067,7 @@ class RotationConfigForm extends CompatForm
         return $firstHandoff;
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->getAttributes()->add('class', 'rotation-config');
 
