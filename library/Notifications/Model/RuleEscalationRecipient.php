@@ -90,7 +90,7 @@ class RuleEscalationRecipient extends Model
      *
      * @return Contact|Contactgroup|Schedule|null
      */
-    public function getRecipient(): ?Model
+    public function getRecipient(): Contact|Contactgroup|Schedule|null
     {
         $recipientModel = null;
         if ($this->contact_id) {

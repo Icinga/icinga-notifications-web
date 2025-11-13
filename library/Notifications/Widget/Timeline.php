@@ -277,7 +277,7 @@ class Timeline extends BaseHtmlElement implements EntryProvider
      *
      * @return DynamicGrid|MinimalGrid
      */
-    protected function getGrid()
+    protected function getGrid(): DynamicGrid|MinimalGrid
     {
         if ($this->grid === null) {
             if ($this->minimalLayout) {
@@ -335,7 +335,7 @@ class Timeline extends BaseHtmlElement implements EntryProvider
         return $entry;
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         if ($this->minimalLayout && empty($this->rotations)) {
             $this->addHtml(new HtmlElement(

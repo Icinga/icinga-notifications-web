@@ -55,7 +55,7 @@ class RecipientSuggestions extends BaseHtmlElement
      *
      * @return $this
      */
-    public function forRequest(ServerRequestInterface $request)
+    public function forRequest(ServerRequestInterface $request): self
     {
         if ($request->getMethod() !== 'POST') {
             return $this;
@@ -73,7 +73,7 @@ class RecipientSuggestions extends BaseHtmlElement
         return $this;
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $identifyExcludes = function (string $for): array {
             return array_filter(array_map(function ($term) use ($for) {
@@ -149,7 +149,7 @@ class RecipientSuggestions extends BaseHtmlElement
         }
     }
 
-    public function renderUnwrapped()
+    public function renderUnwrapped(): string
     {
         $this->ensureAssembled();
 
