@@ -44,22 +44,12 @@ class ObjectHeader extends BaseHtmlElement
      */
     protected function assemble(): void
     {
-        switch (true) {
-            case $this->object instanceof Event:
-                $renderer = new EventRenderer();
-
-                break;
-            case $this->object instanceof Incident:
-                $renderer = new IncidentRenderer();
-
-                break;
-            case $this->object instanceof Contactgroup:
-                $renderer = new ContactgroupRenderer();
-
-                break;
-            default:
-                throw new NotImplementedError('Not implemented');
-        }
+        $renderer = match (true) {
+            $this->object instanceof Event        => new EventRenderer(),
+            $this->object instanceof Incident     => new IncidentRenderer(),
+            $this->object instanceof Contactgroup => new ContactgroupRenderer(),
+            default                               => throw new NotImplementedError('Not implemented'),
+        };
 
         $layout = new HeaderItemLayout($this->object, $renderer);
 
