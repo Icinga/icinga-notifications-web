@@ -43,8 +43,8 @@ final class Database
         'timeperiod_entry',
     ];
 
-    /** @var Connection Database connection */
-    private static $instance;
+    /** @var ?Connection Database connection */
+    private static ?Connection $instance = null;
 
     /** Singleton class */
     private function __construct()
