@@ -213,6 +213,9 @@ class RotationConfigForm extends CompatForm
      * @param int $rotationId
      *
      * @return $this
+     *
+     * @throws LogicException If an invalid rotation mode is set
+     * @throws ConfigurationError If the schedule's timezone is invalid'
      * @throws HttpNotFoundException If the rotation with the given ID does not exist
      */
     public function loadRotation(int $rotationId): self
@@ -432,6 +435,8 @@ class RotationConfigForm extends CompatForm
      * @param int $rotationId
      *
      * @return void
+     *
+     * @throws LogicException If the priority is not set
      */
     public function editRotation(int $rotationId): void
     {
@@ -555,6 +560,8 @@ class RotationConfigForm extends CompatForm
      * @param int $id
      *
      * @return void
+     *
+     * @throws LogicException If the priority is not set
      */
     public function removeRotation(int $id): void
     {
@@ -585,6 +592,8 @@ class RotationConfigForm extends CompatForm
      * Remove all versions of the rotation from the database
      *
      * @return void
+     *
+     * @throws LogicException If the priority is not set
      */
     public function wipeRotation(int $priority = null): void
     {
@@ -1595,6 +1604,8 @@ class RotationConfigForm extends CompatForm
      * @param DateTime $before
      *
      * @return array{0: ?DateTime, 1?: array{0: DateTime, 1: DateTime}}
+     *
+     * @throws LogicException If the frequency is not supported
      */
     private function calculateRemainingHandoffs(Rule $rrule, DateInterval $shiftDuration, DateTime $before): array
     {
