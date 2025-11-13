@@ -4,12 +4,9 @@
 
 namespace Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Response;
 
-use OpenApi\Attributes\Attachable;
 use OpenApi\Attributes\Examples;
 use OpenApi\Attributes\JsonContent;
-use OpenApi\Attributes\MediaType;
 use OpenApi\Attributes\Response;
-use OpenApi\Attributes\XmlContent;
 
 class Error404Response extends Response
 {

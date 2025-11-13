@@ -4,8 +4,6 @@
 
 namespace Icinga\Module\Notifications\Daemon;
 
-use DateTimeInterface;
-use DateTimeZone;
 use Evenement\EventEmitter;
 use Icinga\Application\Logger;
 use Icinga\Module\Notifications\Common\Database;
@@ -16,7 +14,6 @@ use Icinga\Module\Notifications\Model\Daemon\Event;
 use Icinga\Module\Notifications\Model\Daemon\EventIdentifier;
 use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\Model\IncidentHistory;
-use Icinga\Module\Notifications\Model\ObjectIdTag;
 use ipl\Sql\Connection as SQLConnection;
 use ipl\Stdlib\Filter;
 use React\EventLoop\Loop;
