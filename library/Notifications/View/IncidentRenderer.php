@@ -34,19 +34,12 @@ class IncidentRenderer implements ItemRenderer
 
     public function assembleVisual($item, HtmlDocument $visual, string $layout): void
     {
-        switch ($item->severity) {
-            case 'ok':
-                $icon = Icons::OK;
-                break;
-            case 'err':
-                $icon = Icons::ERROR;
-                break;
-            case 'crit':
-                $icon = Icons::CRITICAL;
-                break;
-            default:
-                $icon = Icons::WARNING;
-        }
+        $icon = match ($item->severity) {
+            'ok'    => Icons::OK,
+            'err'   => Icons::ERROR,
+            'crit'  => Icons::CRITICAL,
+            default => Icons::WARNING
+        };
 
         $content = new Icon($icon, ['class' => ['severity-' . $item->severity]]);
 

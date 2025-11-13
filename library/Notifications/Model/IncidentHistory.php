@@ -145,17 +145,12 @@ class IncidentHistory extends Model
      */
     public static function translateNotificationState(string $state): string
     {
-        switch ($state) {
-            case 'sent':
-                return t('sent', 'notifications.transmission.state');
-            case 'failed':
-                return t('failed', 'notifications.transmission.state');
-            case 'pending':
-                return t('pending', 'notifications.transmission.state');
-            case 'suppressed':
-                return t('suppressed', 'notifications.transmission.state');
-            default:
-                return t('unknown', 'notifications.transmission.state');
-        }
+        return match ($state) {
+            'sent'       => t('sent', 'notifications.transmission.state'),
+            'failed'     => t('failed', 'notifications.transmission.state'),
+            'pending'    => t('pending', 'notifications.transmission.state'),
+            'suppressed' => t('suppressed', 'notifications.transmission.state'),
+            default      => t('unknown', 'notifications.transmission.state')
+        };
     }
 }
