@@ -44,6 +44,7 @@ class IncidentController extends CompatController
 
         $this->controls->addAttributes(Attributes::create(['class' => 'incident-detail']));
 
+        /** @var ?Contact $contact */
         $contact = Contact::on(Database::get())
             ->columns('id')
             ->filter(Filter::equal('username', $this->Auth()->getUser()->getUsername()))

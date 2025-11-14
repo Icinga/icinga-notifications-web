@@ -6,6 +6,7 @@ namespace Icinga\Module\Notifications\View;
 
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Rule;
+use Icinga\Module\Notifications\Model\RuleEscalation;
 use Icinga\Module\Notifications\Widget\RuleEscalationRecipientBadge;
 use ipl\Html\Attributes;
 use ipl\Html\HtmlDocument;
@@ -37,6 +38,7 @@ class EventRuleRenderer implements ItemRenderer
 
     public function assembleExtendedInfo($item, HtmlDocument $info, string $layout): void
     {
+        /** @var ?RuleEscalation $rs */
         $rs = $item->rule_escalation->first();
         if ($rs) {
             $recipientCount = $rs->rule_escalation_recipient->count();

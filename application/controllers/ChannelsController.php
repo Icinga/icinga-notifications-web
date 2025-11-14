@@ -13,7 +13,6 @@ use Icinga\Module\Notifications\View\ChannelRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Web\Notification;
-use Icinga\Web\Widget\Tab;
 use Icinga\Web\Widget\Tabs;
 use ipl\Html\Contract\Form;
 use ipl\Sql\Expression;
@@ -171,7 +170,6 @@ class ChannelsController extends CompatController
      */
     protected function mergeTabs(Tabs $tabs): void
     {
-        /** @var Tab $tab */
         foreach ($tabs->getTabs() as $tab) {
             $this->tabs->add($tab->getName(), $tab);
         }

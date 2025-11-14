@@ -415,6 +415,7 @@ class ContactGroupForm extends CompatForm
             ->columns(['id', 'name'])
             ->filter(Filter::equal('id', $this->contactgroupId));
 
+        /** @var ?Contactgroup $group */
         $group = $query->first();
         if ($group === null) {
             throw new HttpNotFoundException($this->translate('Contact group not found'));

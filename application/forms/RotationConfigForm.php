@@ -21,6 +21,7 @@ use ipl\Html\Attributes;
 use ipl\Html\DeferredText;
 use ipl\Html\FormDecoration\DescriptionDecorator;
 use ipl\Html\FormElement\FieldsetElement;
+use ipl\Html\FormElement\SelectElement;
 use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
@@ -986,6 +987,7 @@ class RotationConfigForm extends CompatForm
             );
         }
 
+        /** @var SelectElement $toAt */
         $toAt = $options->createElement('select', 'to_at', [
             'class' => 'autosubmit',
             'required' => true,

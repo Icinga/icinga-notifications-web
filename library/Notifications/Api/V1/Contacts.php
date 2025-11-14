@@ -1009,6 +1009,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
             ->columns(['id', 'full_name', 'default_channel_id'])
             ->filter(Filter::equal('id', $contactId));
 
+        /** @var ?Contact $contact */
         $contact = $query->first();
         if ($contact === null) {
             throw new HttpNotFoundException('Contact contact not found');
