@@ -212,7 +212,10 @@ class ScheduleForm extends CompatForm
                     'value'          => date_default_timezone_get(),
                     'validators'     => [
                         new CallbackValidator(function ($value, $validator) {
-                            foreach (IntlTimeZone::createEnumeration() as $tz) {
+                            // https://github.com/php/php-src/issues/11874#issuecomment-1666223477
+                            $timezones = IntlTimeZone::createEnumeration() ?: [];
+
+                            foreach ($timezones as $tz) {
                                 try {
                                     if (
                                         (new DateTime('now', new DateTimeZone($tz)))->getTimezone()->getLocation()
