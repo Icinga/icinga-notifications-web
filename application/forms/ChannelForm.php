@@ -72,7 +72,7 @@ class ChannelForm extends CompatForm
         }
 
         $this->addAttributes(['class' => 'channel-form']);
-        $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
+        $this->addCsrfCounterMeasure(Session::getSession()->getId());
 
         $this->addElement(
             'text',

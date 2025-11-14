@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Controllers;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Forms\ChannelForm;
 use Icinga\Web\Notification;
+use ipl\Html\Contract\Form;
 use ipl\Web\Compat\CompatController;
 
 class ChannelController extends CompatController
@@ -21,7 +22,7 @@ class ChannelController extends CompatController
         $channelId = $this->params->getRequired('id');
         $form = (new ChannelForm(Database::get()))
             ->loadChannel($channelId)
-            ->on(ChannelForm::ON_SUCCESS, function (ChannelForm $form) {
+            ->on(Form::ON_SUBMIT, function (ChannelForm $form) {
                 if ($form->getPressedSubmitElement()->getName() === 'delete') {
                     $form->removeChannel();
                     Notification::success(sprintf(

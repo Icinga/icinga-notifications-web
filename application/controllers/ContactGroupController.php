@@ -13,7 +13,7 @@ use Icinga\Module\Notifications\View\ContactRenderer;
 use Icinga\Module\Notifications\Widget\Detail\ObjectHeader;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Web\Notification;
-use ipl\Html\Form;
+use ipl\Html\Contract\Form;
 use ipl\Html\Text;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
@@ -97,7 +97,7 @@ class ContactGroupController extends CompatController
                     }
                 }
             })
-            ->on(Form::ON_SUCCESS, function (ContactGroupForm $form) use ($groupId) {
+            ->on(Form::ON_SUBMIT, function (ContactGroupForm $form) use ($groupId) {
                 $form->editGroup();
                 Notification::success(sprintf(
                     t('Successfully updated contact group %s'),

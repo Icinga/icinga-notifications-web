@@ -13,6 +13,7 @@ use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Web\Form\ContactForm;
 use Icinga\Repository\Repository;
 use Icinga\Web\Notification;
+use ipl\Html\Contract\Form;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\FormElement\SearchSuggestions;
 
@@ -29,7 +30,7 @@ class ContactController extends CompatController
 
         $form = (new ContactForm(Database::get()))
             ->loadContact($contactId)
-            ->on(ContactForm::ON_SUCCESS, function (ContactForm $form) {
+            ->on(Form::ON_SUBMIT, function (ContactForm $form) {
                 $form->editContact();
                 Notification::success(sprintf(
                     t('Contact "%s" has successfully been saved'),
