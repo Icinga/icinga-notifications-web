@@ -4,11 +4,13 @@
 
 namespace Icinga\Module\Notifications\View;
 
+use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Icons;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\IncidentContact;
 use ipl\Html\Attributes;
 use ipl\Html\HtmlDocument;
+use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\I18n\Translation;
 use ipl\Web\Common\ItemRenderer;
@@ -19,6 +21,23 @@ use ipl\Web\Widget\Link;
 class IncidentContactRenderer implements ItemRenderer
 {
     use Translation;
+
+    /** @var bool Whether the rendered item should not include a link to the contact */
+    private bool $disableContactLink = false;
+
+    /**
+     * Set whether the rendered item should not include a link to the contact
+     *
+     * @param bool $disableLink
+     *
+     * @return $this
+     */
+    public function disableContactLink(bool $disableLink): static
+    {
+        $this->disableContactLink = $disableLink;
+
+        return $this;
+    }
 
     public function assembleAttributes($item, Attributes $attributes, string $layout): void
     {
@@ -32,7 +51,15 @@ class IncidentContactRenderer implements ItemRenderer
 
     public function assembleTitle($item, HtmlDocument $title, string $layout): void
     {
-        $title->addHtml(new Link($item->full_name, Links::contact($item->id), ['class' => 'subject']));
+        if (! $this->disableContactLink) {
+            $title->addHtml(new Link($item->full_name, Links::contact($item->id), ['class' => 'subject']));
+        } else {
+            $title->addHtml(new HtmlElement(
+                'span',
+                Attributes::create(['class' => 'subject']),
+                Text::create($item->full_name)
+            ));
+        }
 
         if ($item->role === 'manager') {
             $title->addHtml(new Text($this->translate('manages this incident')));

@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Controllers;
 
+use Icinga\Module\Notifications\Common\ConfigurationTabs;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\EventRuleForm;
@@ -28,6 +29,7 @@ use ipl\Web\Widget\ButtonLink;
 
 class EventRulesController extends CompatController
 {
+    use ConfigurationTabs;
     use SearchControls;
 
     public function init()
@@ -158,31 +160,5 @@ class EventRulesController extends CompatController
 
         $this->getDocument()->add($editor);
         $this->setTitle($this->translate('Adjust Filter'));
-    }
-
-    public function getTabs()
-    {
-        if ($this->getRequest()->getActionName() === 'index') {
-            return parent::getTabs()
-                ->add('schedules', [
-                    'label'      => $this->translate('Schedules'),
-                    'url'        => Links::schedules(),
-                    'baseTarget' => '_main'
-                ])->add('event-rules', [
-                    'label'      => $this->translate('Event Rules'),
-                    'url'        => Links::eventRules(),
-                    'baseTarget' => '_main'
-                ])->add('contacts', [
-                    'label'      => $this->translate('Contacts'),
-                    'url'        => Links::contacts(),
-                    'baseTarget' => '_main'
-                ])->add('contact-groups', [
-                    'label'      => $this->translate('Contact Groups'),
-                    'url'        => Links::contactGroups(),
-                    'baseTarget' => '_main'
-                ]);
-        }
-
-        return parent::getTabs();
     }
 }

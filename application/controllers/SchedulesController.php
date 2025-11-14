@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Controllers;
 
+use Icinga\Module\Notifications\Common\ConfigurationTabs;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Schedule;
@@ -17,14 +18,19 @@ use ipl\Web\Control\LimitControl;
 use ipl\Web\Control\SortControl;
 use ipl\Web\Filter\QueryString;
 use ipl\Web\Widget\ButtonLink;
-use ipl\Web\Widget\Tabs;
 
 class SchedulesController extends CompatController
 {
+    use ConfigurationTabs;
     use SearchControls;
 
     /** @var Filter\Rule Filter from query string parameters */
     private $filter;
+
+    public function init(): void
+    {
+        $this->assertPermission('notifications/config/schedules');
+    }
 
     public function indexAction(): void
     {
@@ -100,28 +106,6 @@ class SchedulesController extends CompatController
 
         $this->getDocument()->add($editor);
         $this->setTitle(t('Adjust Filter'));
-    }
-
-    public function getTabs(): Tabs
-    {
-        return parent::getTabs()
-            ->add('schedules', [
-                'label'         => $this->translate('Schedules'),
-                'url'           => Links::schedules(),
-                'baseTarget'    => '_main'
-            ])->add('event-rules', [
-                'label' => $this->translate('Event Rules'),
-                'url'   => Links::eventRules(),
-                'baseTarget' => '_main'
-            ])->add('contacts', [
-                'label' => $this->translate('Contacts'),
-                'url'   => Links::contacts(),
-                'baseTarget' => '_main'
-            ])->add('contact-groups', [
-                'label'      => $this->translate('Contact Groups'),
-                'url'        => Links::contactGroups(),
-                'baseTarget' => '_main'
-            ]);
     }
 
     /**

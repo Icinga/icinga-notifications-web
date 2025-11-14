@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Controllers;
 
+use Icinga\Module\Notifications\Common\ConfigurationTabs;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\ContactGroupForm;
@@ -28,10 +29,10 @@ use ipl\Web\Filter\QueryString;
 use ipl\Web\Layout\MinimalItemLayout;
 use ipl\Web\Widget\ActionLink;
 use ipl\Web\Widget\ButtonLink;
-use ipl\Web\Widget\Tabs;
 
 class ContactGroupsController extends CompatController
 {
+    use ConfigurationTabs;
     use SearchControls;
 
     /** @var Filter\Rule Filter from query string parameters */
@@ -39,7 +40,7 @@ class ContactGroupsController extends CompatController
 
     public function init(): void
     {
-        $this->assertPermission('notifications/config/contact-groups');
+        $this->assertPermission('notifications/config/contacts');
     }
 
     public function indexAction(): void
@@ -96,15 +97,23 @@ class ContactGroupsController extends CompatController
             if (Channel::on(Database::get())->columns([new Expression('1')])->limit(1)->first() === null) {
                 $addButton->disable($this->translate('A channel is required to add a contact group'));
 
-                $emptyStateMessage = TemplateString::create(
-                    // translators: %1$s will be replaced by a line break
-                    $this->translate(
-                        'No contact groups found.%1$sTo add new contact group, please {{#link}}configure a'
-                        . ' Channel{{/link}} first.%1$sOnce done, you should proceed by creating your first contact.'
-                    ),
-                    ['link' => (new ActionLink(null, Links::channelAdd()))->setBaseTarget('_next')],
-                    [HtmlString::create('<br>')]
-                );
+                if ($this->Auth()->hasPermission('config/modules')) {
+                    $emptyStateMessage = TemplateString::create(
+                        // translators: %1$s will be replaced by a line break
+                        $this->translate(
+                            'No contact groups found.%1$s'
+                            . 'To add new contact group, please {{#link}}configure a Channel{{/link}} first.%1$s'
+                            . 'Once done, you should proceed by creating your first contact.'
+                        ),
+                        ['link' => (new ActionLink(null, Links::channelAdd()))->setBaseTarget('_next')],
+                        [HtmlString::create('<br>')]
+                    );
+                } else {
+                    $emptyStateMessage = $this->translate(
+                        'No contact groups found. To add a new contact group, a channel is required.'
+                        . ' Please contact your system administrator.'
+                    );
+                }
             } else {
                 $emptyStateMessage = TemplateString::create(
                     $this->translate(
@@ -193,28 +202,6 @@ class ContactGroupsController extends CompatController
         $members->forRequest($this->getServerRequest());
 
         $this->getDocument()->addHtml($members);
-    }
-
-    public function getTabs(): Tabs
-    {
-        return parent::getTabs()
-            ->add('schedules', [
-                'label'      => $this->translate('Schedules'),
-                'url'        => Links::schedules(),
-                'baseTarget' => '_main'
-            ])->add('event-rules', [
-                'label'      => $this->translate('Event Rules'),
-                'url'        => Links::eventRules(),
-                'baseTarget' => '_main'
-            ])->add('contacts', [
-                'label'      => $this->translate('Contacts'),
-                'url'        => Links::contacts(),
-                'baseTarget' => '_main'
-            ])->add('contact-groups', [
-                'label'      => $this->translate('Contact Groups'),
-                'url'        => Links::contactGroups(),
-                'baseTarget' => '_main'
-            ]);
     }
 
     /**
