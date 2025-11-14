@@ -2,15 +2,39 @@
 
 .schedule-detail-controls {
   .box-shadow(0, 0, 0, 1px, @gray-lighter);
-  z-index: 2; // The content may clip, this ensures the separator and dropdown is always visible
-  padding-bottom: .5em;
+  z-index: 4; // The content may clip, this ensures the separator and dropdown is always visible
 
-  h2 {
+  > * {
+    margin-bottom: .5em;
+  }
+
+  strong {
+    font-size: 1.333em;
+  }
+
+  .button-link i.icon {
     display: inline;
+
+    &::before {
+      display: inline;
+      margin-right: 0;
+    }
   }
 
   .schedule-controls {
     float: right;
+    min-height: 2em;
+
+    display: inline-flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: .5em;
+
+    .suggestion-element-group .suggestion-element-icon,
+    .suggestion-element-group .suggestion-element {
+      height: 2em;
+      line-height: 1;
+    }
 
     .view-mode-switcher {
       margin-bottom: 0;
@@ -20,10 +44,6 @@
         text-align: center;
       }
     }
-  }
-
-  .timezone-picker {
-    margin-left: 1em;
   }
 }
 
@@ -116,11 +136,17 @@
 
 .timezone-warning {
   padding: .5em 1em;
-  border: 1px solid @color-warning;
+  border: 1px solid @state-warning;
   border-radius: .25em;
 
   i.icon {
-    color: @color-warning;
+    color: @state-warning;
     font-size: 1.5em;
+  }
+}
+
+.schedule-controls:has(.suggestion-element:invalid) {
+  .suggestion-element-icon {
+    color: @state-critical;
   }
 }
