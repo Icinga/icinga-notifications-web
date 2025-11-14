@@ -99,11 +99,7 @@ class Calendar extends BaseHtmlElement implements EntryProvider
 
     public function getStepUrl(GridStep $step): ?Url
     {
-        if ($this->addEntryUrl === null) {
-            return null;
-        }
-
-        return $this->addEntryUrl->with('start', $step->getStart()->format('Y-m-d\TH:i:s'));
+        return $this->addEntryUrl?->with('start', $step->getStart()->format('Y-m-d\TH:i:s'));
     }
 
     public function setUrl(?Url $url): self
