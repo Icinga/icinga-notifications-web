@@ -1200,7 +1200,7 @@ class RotationConfigForm extends CompatForm
             'type' => 'date',
             'required' => true,
             'aria-describedby' => 'first-handoff-description',
-            'min' => $earliestHandoff !== null ? $earliestHandoff->format('Y-m-d') : null,
+            'min' => $earliestHandoff?->format('Y-m-d'),
             'max' => $latestHandoff->format('Y-m-d'),
             'label' => $this->translate('Rotation Start'),
             'value' => $firstHandoffDefault,
