@@ -4,6 +4,7 @@
 
 namespace Tests\Icinga\Module\Notifications\Forms;
 
+use ArrayIterator;
 use DateTime;
 use Icinga\Module\Notifications\Forms\EventRuleConfigElements\ConfigProviderInterface;
 use Icinga\Module\Notifications\Forms\EventRuleConfigForm;
@@ -189,7 +190,7 @@ class EventRuleConfigFormTest extends TestCase
             ->willReturnSelf();
 
         $queryResult = new ResultSet(
-            new \ArrayIterator([
+            new ArrayIterator([
                 (new RuleEscalation())->setProperties([
                     'id' => 1,
                     'condition' => null,
@@ -441,7 +442,7 @@ class EventRuleConfigFormTest extends TestCase
             ->willReturnSelf();
 
         $queryResult = new ResultSet(
-            new \ArrayIterator([
+            new ArrayIterator([
                 (new RuleEscalation())->setProperties([
                     'id' => 1,
                     'condition' => null,
@@ -554,7 +555,7 @@ class EventRuleConfigFormTest extends TestCase
             ->willReturnSelf();
 
         $queryResult = new ResultSet(
-            new \ArrayIterator([
+            new ArrayIterator([
                 (new RuleEscalation())->setProperties([
                     'id' => 1,
                     'condition' => null,
@@ -683,7 +684,7 @@ class EventRuleConfigFormTest extends TestCase
             ->willReturnSelf();
 
         $queryResult = new ResultSet(
-            new \ArrayIterator([
+            new ArrayIterator([
                 (new RuleEscalation())->setProperties([
                     'id' => 1,
                     'condition' => 'incident_severity>=crit&incident_age>5m',
@@ -817,7 +818,7 @@ class EventRuleConfigFormTest extends TestCase
             ->willReturnSelf();
 
         $queryResult = new ResultSet(
-            new \ArrayIterator([
+            new ArrayIterator([
                 (new RuleEscalation())->setProperties([
                     'id' => 1,
                     'condition' => null,

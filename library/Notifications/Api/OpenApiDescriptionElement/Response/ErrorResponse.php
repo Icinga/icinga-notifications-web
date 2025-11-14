@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Response;
 
+use InvalidArgumentException;
 use OpenApi\Attributes as OA;
 use OpenApi\Attributes\Response;
 
@@ -43,7 +44,7 @@ class ErrorResponse extends Response
         if (isset(self::ERROR_RESPONSES[$response])) {
             $description = self::ERROR_RESPONSES[$response];
         } else {
-            throw new \InvalidArgumentException('Unexpected response type');
+            throw new InvalidArgumentException('Unexpected response type');
         }
 
         parent::__construct(

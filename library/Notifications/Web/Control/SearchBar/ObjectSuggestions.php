@@ -24,6 +24,7 @@ use ipl\Stdlib\Filter;
 use ipl\Stdlib\Seq;
 use ipl\Web\Control\SearchBar\SearchException;
 use ipl\Web\Control\SearchBar\Suggestions;
+use LogicException;
 use PDO;
 use Traversable;
 
@@ -61,7 +62,7 @@ class ObjectSuggestions extends Suggestions
     public function getModel(): Model
     {
         if ($this->model === null) {
-            throw new \LogicException(
+            throw new LogicException(
                 'You are accessing an unset property. Please make sure to set it beforehand.'
             );
         }

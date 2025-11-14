@@ -5,11 +5,11 @@
 namespace Icinga\Module\Notifications\Widget\Calendar;
 
 use DateTimeInterface;
+use Icinga\Module\Notifications\Widget\TimeGrid;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
-use Icinga\Module\Notifications\Widget\TimeGrid;
 use LogicException;
 
 /**
