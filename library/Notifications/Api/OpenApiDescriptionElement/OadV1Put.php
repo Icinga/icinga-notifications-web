@@ -71,7 +71,7 @@ class OadV1Put extends Put
                         ],
                         links: [
                             new OA\Link(
-                                link: 'Get' . $entityName . 'ByIdentifiere',
+                                link: 'Get' . $entityName . 'ByIdentifier',
                                 operationId: 'get' . $entityName,
                                 parameters: [
                                     'identifier' => '$response.header.X-Resource-Identifier'
