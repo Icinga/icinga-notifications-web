@@ -161,7 +161,7 @@ class ContactGroupsController extends CompatController
                     }
                 }
             })
-            ->on(Form::ON_SUCCESS, function (ContactGroupForm $form) {
+            ->on(Form::ON_SUBMIT, function (ContactGroupForm $form) {
                 $groupIdentifier = $form->addGroup();
 
                 Notification::success($this->translate('New contact group has been successfully added'));
