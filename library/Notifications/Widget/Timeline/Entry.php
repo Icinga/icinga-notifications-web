@@ -131,8 +131,11 @@ class Entry extends TimeGrid\Entry
      *
      * @return $this
      */
-    public function calculateAndSetWidthClass(BaseGrid $grid, $mediumThreshold = 0.2, $narrowThreshold = 0.1): static
-    {
+    public function calculateAndSetWidthClass(
+        BaseGrid $grid,
+        float $mediumThreshold = 0.2,
+        float $narrowThreshold = 0.1
+    ): static {
         $totalGridDuration = $grid->getGridEnd()->getTimestamp() - $grid->getGridStart()->getTimestamp();
         $start = max($this->getStart()->getTimestamp(), $grid->getGridStart()->getTimestamp());
         $end = min($this->getEnd()->getTimestamp(), $grid->getGridEnd()->getTimestamp());
