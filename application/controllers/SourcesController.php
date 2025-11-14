@@ -35,6 +35,9 @@ class SourcesController extends CompatController
 
     public function indexAction(): void
     {
+        $this->mergeTabs($this->Module()->getConfigTabs());
+        $this->getTabs()->activate('sources');
+
         $sources = Source::on(Database::get())
             ->columns(['id', 'type',  'name']);
 
@@ -96,8 +99,6 @@ class SourcesController extends CompatController
         $this->addControl($searchBar);
         $this->addContent($addButton);
 
-        $this->mergeTabs($this->Module()->getConfigTabs());
-        $this->getTabs()->activate('sources');
         $this->addContent(
             (new ObjectList($sources, new SourceRenderer()))
                 ->setItemLayoutClass(MinimalItemLayout::class)

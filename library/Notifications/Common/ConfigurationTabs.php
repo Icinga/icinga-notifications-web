@@ -24,7 +24,10 @@ trait ConfigurationTabs
             if ($this->Auth()->hasPermission('notifications/config/schedules')) {
                 $tabs->add('schedules', [
                     'label'      => $this->translate('Schedules'),
-                    'url'        => Links::schedules(),
+                    'url'        => match ($this->getRequest()->getControllerName()) {
+                        'schedules' => $this->getRequest()->getUrl(),
+                        default     => Links::schedules()
+                    },
                     'baseTarget' => '_main'
                 ]);
             }
@@ -32,7 +35,10 @@ trait ConfigurationTabs
             if ($this->Auth()->hasPermission('notifications/config/event-rules')) {
                 $tabs->add('event-rules', [
                     'label'      => $this->translate('Event Rules'),
-                    'url'        => Links::eventRules(),
+                    'url'        => match ($this->getRequest()->getControllerName()) {
+                        'event-rules' => $this->getRequest()->getUrl(),
+                        default       => Links::eventRules()
+                    },
                     'baseTarget' => '_main'
                 ]);
             }
@@ -40,11 +46,17 @@ trait ConfigurationTabs
             if ($this->Auth()->hasPermission('notifications/config/contacts')) {
                 $tabs->add('contacts', [
                     'label'      => $this->translate('Contacts'),
-                    'url'        => Links::contacts(),
+                    'url'        => match ($this->getRequest()->getControllerName()) {
+                        'contacts'  => $this->getRequest()->getUrl(),
+                        default     => Links::contacts()
+                    },
                     'baseTarget' => '_main'
                 ])->add('contact-groups', [
                     'label'      => $this->translate('Contact Groups'),
-                    'url'        => Links::contactGroups(),
+                    'url'        => match ($this->getRequest()->getControllerName()) {
+                        'contact-groups' => $this->getRequest()->getUrl(),
+                        default          => Links::contactGroups()
+                    },
                     'baseTarget' => '_main'
                 ]);
             }
