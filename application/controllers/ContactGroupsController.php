@@ -45,6 +45,9 @@ class ContactGroupsController extends CompatController
 
     public function indexAction(): void
     {
+        $this->setTitle($this->translate('Contact Groups'));
+        $this->getTabs()->activate('contact-groups');
+
         $groups = Contactgroup::on(Database::get());
 
         $limitControl = $this->createLimitControl();
@@ -140,9 +143,6 @@ class ContactGroupsController extends CompatController
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {
             $this->sendMultipartUpdate();
         }
-
-        $this->setTitle($this->translate('Contact Groups'));
-        $this->getTabs()->activate('contact-groups');
     }
 
     public function addAction(): void

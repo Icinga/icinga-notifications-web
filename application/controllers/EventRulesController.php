@@ -39,6 +39,9 @@ class EventRulesController extends CompatController
 
     public function indexAction(): void
     {
+        $this->setTitle($this->translate('Event Rules'));
+        $this->getTabs()->activate('event-rules');
+
         $eventRules = Rule::on(Database::get());
 
         $limitControl = $this->createLimitControl();
@@ -111,9 +114,6 @@ class EventRulesController extends CompatController
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {
             $this->sendMultipartUpdate();
         }
-
-        $this->setTitle($this->translate('Event Rules'));
-        $this->getTabs()->activate('event-rules');
     }
 
     public function addAction(): void
