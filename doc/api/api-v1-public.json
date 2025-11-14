@@ -144,7 +144,7 @@
                                     "properties": {
                                         "data": {
                                             "$ref": "#/components/schemas/Channel",
-                                            "description": "Successfull response with the Channel object"
+                                            "description": "Successful response with the Channel object"
                                         }
                                     },
                                     "type": "object"
@@ -482,7 +482,7 @@
                                     "properties": {
                                         "data": {
                                             "$ref": "#/components/schemas/Contactgroup",
-                                            "description": "Successfull response with the Contactgroup object"
+                                            "description": "Successful response with the Contactgroup object"
                                         }
                                     },
                                     "type": "object"
@@ -595,7 +595,7 @@
                             }
                         },
                         "links": {
-                            "GetContactgroupByIdentifiere": {
+                            "GetContactgroupByIdentifier": {
                                 "operationId": "getContactgroup",
                                 "parameters": {
                                     "identifier": "$response.header.X-Resource-Identifier"
@@ -1290,7 +1290,7 @@
                                     "properties": {
                                         "data": {
                                             "$ref": "#/components/schemas/Contact",
-                                            "description": "Successfull response with the Contact object"
+                                            "description": "Successful response with the Contact object"
                                         }
                                     },
                                     "type": "object"
@@ -1403,7 +1403,7 @@
                             }
                         },
                         "links": {
-                            "GetContactByIdentifiere": {
+                            "GetContactByIdentifier": {
                                 "operationId": "getContact",
                                 "parameters": {
                                     "identifier": "$response.header.X-Resource-Identifier"
@@ -2001,78 +2001,6 @@
             }
         },
         "examples": {
-            "IdentifierMismatch": {
-                "summary": "Identifier mismatch",
-                "value": {
-                    "message": "Identifier mismatch"
-                }
-            },
-            "IdentifierNotFound": {
-                "summary": "Identifier not found",
-                "value": {
-                    "message": "Identifier not found"
-                }
-            },
-            "IdentifierPayloadIdMissmatch": {
-                "summary": "Identifier and payload Id missmatch",
-                "value": {
-                    "message": "Identifier mismatch: the Payload id must be different from the URL identifier"
-                }
-            },
-            "InvalidContentType": {
-                "summary": "Invalid content type",
-                "value": {
-                    "message": "Invalid request header: Content-Type must be application/json"
-                }
-            },
-            "InvalidFilterParameter": {
-                "summary": "Invalid filter parameter",
-                "value": {
-                    "message": "Invalid request parameter: Filter column x is not allowed"
-                }
-            },
-            "InvalidIdentifier": {
-                "summary": "Identifier is not valid",
-                "value": {
-                    "message": "The given identifier is not a valid UUID"
-                }
-            },
-            "InvalidRequestBodyFieldFormat": {
-                "summary": "Invalid request body field format",
-                "value": {
-                    "message": "Invalid request body: expects x to be of type y"
-                }
-            },
-            "InvalidRequestBodyFormat": {
-                "summary": "Invalid request body format",
-                "value": {
-                    "message": "Invalid request body: given content is not a valid JSON"
-                }
-            },
-            "InvalidRequestBodyId": {
-                "summary": "Invalid request body id",
-                "value": {
-                    "message": "Invalid request body: given id is not a valid UUID"
-                }
-            },
-            "MissingRequiredRequestBodyField": {
-                "summary": "Missing required request body field",
-                "value": {
-                    "message": "Invalid request body: the field x must be present"
-                }
-            },
-            "NoIdentifierWithFilter": {
-                "summary": "No identifier with filter",
-                "value": {
-                    "message": "Invalid request: GET with identifier and query parameters, it's not allowed to use both together."
-                }
-            },
-            "UnexpectedQueryParameter": {
-                "summary": "Unexpected query parameter",
-                "value": {
-                    "message": "Unexpected query parameter: Filter is only allowed for GET requests"
-                }
-            },
             "InvalidUserFormat": {
                 "summary": "Invalid user format",
                 "value": {
@@ -2149,6 +2077,78 @@
                 "summary": "Username already exists",
                 "value": {
                     "message": "Username x already exists"
+                }
+            },
+            "IdentifierMismatch": {
+                "summary": "Identifier mismatch",
+                "value": {
+                    "message": "Identifier mismatch"
+                }
+            },
+            "IdentifierNotFound": {
+                "summary": "Identifier not found",
+                "value": {
+                    "message": "Identifier not found"
+                }
+            },
+            "IdentifierPayloadIdMissmatch": {
+                "summary": "Identifier and payload Id missmatch",
+                "value": {
+                    "message": "Identifier mismatch: the Payload id must be different from the URL identifier"
+                }
+            },
+            "InvalidContentType": {
+                "summary": "Invalid content type",
+                "value": {
+                    "message": "Invalid request header: Content-Type must be application/json"
+                }
+            },
+            "InvalidFilterParameter": {
+                "summary": "Invalid filter parameter",
+                "value": {
+                    "message": "Invalid request parameter: Filter column x is not allowed"
+                }
+            },
+            "InvalidIdentifier": {
+                "summary": "Identifier is not valid",
+                "value": {
+                    "message": "The given identifier is not a valid UUID"
+                }
+            },
+            "InvalidRequestBodyFieldFormat": {
+                "summary": "Invalid request body field format",
+                "value": {
+                    "message": "Invalid request body: expects x to be of type y"
+                }
+            },
+            "InvalidRequestBodyFormat": {
+                "summary": "Invalid request body format",
+                "value": {
+                    "message": "Invalid request body: given content is not a valid JSON"
+                }
+            },
+            "InvalidRequestBodyId": {
+                "summary": "Invalid request body id",
+                "value": {
+                    "message": "Invalid request body: given id is not a valid UUID"
+                }
+            },
+            "MissingRequiredRequestBodyField": {
+                "summary": "Missing required request body field",
+                "value": {
+                    "message": "Invalid request body: the field x must be present"
+                }
+            },
+            "NoIdentifierWithFilter": {
+                "summary": "No identifier with filter",
+                "value": {
+                    "message": "Invalid request: GET with identifier and query parameters, it's not allowed to use both together."
+                }
+            },
+            "UnexpectedQueryParameter": {
+                "summary": "Unexpected query parameter",
+                "value": {
+                    "message": "Unexpected query parameter: Filter is only allowed for GET requests"
                 }
             }
         },
