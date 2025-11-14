@@ -226,8 +226,6 @@ abstract class ObjectsRendererHook
      * If the object name is not loaded, it is prepared using object ID tags and the same is returned.
      *
      * @param Objects $obj
-     * @param bool $prepare If true prepares the object name string from the hook implementation if it is not
-     *                      already present in the cache
      *
      * @return string
      */

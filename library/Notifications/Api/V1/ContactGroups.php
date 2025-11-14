@@ -620,6 +620,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
      * @param requestBody $requestBody
      *
      * @return void
+     *
      * @throws HttpException
      */
     private function addContactgroup(array $requestBody): void

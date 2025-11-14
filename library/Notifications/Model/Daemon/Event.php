@@ -81,6 +81,7 @@ class Event
      * {@link https://html.spec.whatwg.org/multipage/server-sent-events.html#parsing-an-event-stream SSE Spec}
      *
      * @return string
+     *
      * @throws JsonEncodeException
      */
     protected function compileMessage(): string
