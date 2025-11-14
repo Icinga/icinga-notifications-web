@@ -19,6 +19,7 @@ use Icinga\Module\Notifications\Model\Source;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ExtraTagSuggestions;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
+use ipl\Html\Attributes;
 use ipl\Html\Contract\Form;
 use ipl\Html\Html;
 use ipl\Stdlib\Filter;
@@ -45,8 +46,8 @@ class EventRuleController extends CompatController
 
     public function indexAction(): void
     {
-        $this->controls->addAttributes(['class' => 'event-rule-detail']);
-        $this->content->addAttributes(['class' => 'event-rule-detail']);
+        $this->controls->addAttributes(Attributes::create(['class' => 'event-rule-detail']));
+        $this->content->addAttributes(Attributes::create(['class' => 'event-rule-detail']));
         $this->getTabs()->disableLegacyExtensions();
 
         $ruleId = (int) $this->params->getRequired('id');

@@ -78,7 +78,7 @@ class ContactForm extends CompatForm
 
     protected function assemble(): void
     {
-        $this->addAttributes(['class' => 'contact-form']);
+        $this->addAttributes(Attributes::create(['class' => 'contact-form']));
         $this->addCsrfCounterMeasure(Session::getSession()->getId());
 
         // Fieldset for contact full name and username

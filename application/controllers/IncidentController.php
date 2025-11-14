@@ -12,6 +12,7 @@ use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\Widget\Detail\IncidentDetail;
 use Icinga\Module\Notifications\Widget\Detail\IncidentQuickActions;
 use Icinga\Module\Notifications\Widget\Detail\ObjectHeader;
+use ipl\Html\Attributes;
 use ipl\Html\Contract\Form;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
@@ -41,7 +42,7 @@ class IncidentController extends CompatController
 
         $this->addControl(new ObjectHeader($incident));
 
-        $this->controls->addAttributes(['class' => 'incident-detail']);
+        $this->controls->addAttributes(Attributes::create(['class' => 'incident-detail']));
 
         $contact = Contact::on(Database::get())
             ->columns('id')

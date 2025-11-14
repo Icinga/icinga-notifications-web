@@ -5,6 +5,7 @@
 namespace Icinga\Module\Notifications\Widget;
 
 use Icinga\Module\Notifications\Model\Source;
+use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use ipl\Web\Widget\Ball;
@@ -41,7 +42,7 @@ class EventSourceBadge extends BaseHtmlElement
             ->add('title', $title);
 
         $this->addHtml((new Ball(Ball::SIZE_LARGE))
-            ->addAttributes(['class' => 'source-icon'])
+            ->addAttributes(Attributes::create(['class' => 'source-icon']))
             ->addHtml($this->source->getIcon()));
         $this->add(Html::tag('span', ['class' => 'name'], $this->source->name ?? $this->source->type));
     }

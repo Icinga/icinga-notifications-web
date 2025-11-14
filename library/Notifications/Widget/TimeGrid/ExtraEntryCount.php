@@ -3,6 +3,7 @@
 namespace Icinga\Module\Notifications\Widget\TimeGrid;
 
 use DateTime;
+use ipl\Html\Attributes;
 use ipl\I18n\Translation;
 use ipl\Web\Widget\ButtonLink;
 
@@ -47,7 +48,7 @@ class ExtraEntryCount extends ButtonLink
     protected function assemble(): void
     {
         $count = $this->grid->getExtraEntryCount($this->gridStep);
-        $this->addAttributes(['class' => 'extra-count'])
+        $this->addAttributes(Attributes::create(['class' => 'extra-count']))
             ->setBaseTarget('_self')
             ->setContent(
                 sprintf(
