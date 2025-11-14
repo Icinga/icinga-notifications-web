@@ -102,7 +102,10 @@ class Controls extends Form
                     return true;
                 }
 
-                foreach (IntlTimeZone::createEnumeration() as $tz) {
+                // https://github.com/php/php-src/issues/11874#issuecomment-1666223477
+                $timezones = IntlTimeZone::createEnumeration() ?: [];
+
+                foreach ($timezones as $tz) {
                     if ($tz !== $value) {
                         continue;
                     }

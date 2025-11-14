@@ -18,8 +18,11 @@ class SuggestController extends CompatController
         $default = $this->params->get('default');
 
         $suggestions = new SearchSuggestions((function () use (&$suggestions, $default) {
+            // https://github.com/php/php-src/issues/11874#issuecomment-1666223477
+            $timezones = IntlTimeZone::createEnumeration() ?: [];
+
             $matches = [];
-            foreach (IntlTimeZone::createEnumeration() as $tz) {
+            foreach ($timezones as $tz) {
                 try {
                     if (
                         (new DateTime('now', new DateTimeZone($tz)))->getTimezone()->getLocation()
