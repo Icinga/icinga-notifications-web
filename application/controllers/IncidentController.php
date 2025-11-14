@@ -12,6 +12,7 @@ use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\Widget\Detail\IncidentDetail;
 use Icinga\Module\Notifications\Widget\Detail\IncidentQuickActions;
 use Icinga\Module\Notifications\Widget\Detail\ObjectHeader;
+use ipl\Html\Contract\Form;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 
@@ -50,7 +51,7 @@ class IncidentController extends CompatController
         if ($contact !== null) {
             $this->addControl(
                 (new IncidentQuickActions($incident, $contact->id))
-                    ->on(IncidentQuickActions::ON_SUCCESS, function () use ($incident) {
+                    ->on(Form::ON_SUBMIT, function () use ($incident) {
                         $this->redirectNow(Links::incident($incident->id));
                     })
                     ->handleRequest($this->getServerRequest())

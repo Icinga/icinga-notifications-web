@@ -98,7 +98,7 @@ class ContactGroupController extends CompatController
                     }
                 }
             })
-            ->on(Form::ON_SUCCESS, function (ContactGroupForm $form) use ($groupId) {
+            ->on(Form::ON_SUBMIT, function (ContactGroupForm $form) use ($groupId) {
                 $form->editGroup();
                 Notification::success(sprintf(
                     t('Successfully updated contact group %s'),

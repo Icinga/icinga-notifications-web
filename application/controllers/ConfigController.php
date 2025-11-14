@@ -9,6 +9,7 @@ use Icinga\Module\Notifications\Forms\DatabaseConfigForm;
 use Icinga\Web\Notification;
 use Icinga\Web\Widget\Tab;
 use Icinga\Web\Widget\Tabs;
+use ipl\Html\Contract\Form;
 use ipl\Web\Compat\CompatController;
 
 class ConfigController extends CompatController
@@ -25,7 +26,7 @@ class ConfigController extends CompatController
         $moduleConfig = Config::module('notifications');
         $form = (new DatabaseConfigForm())
             ->populate($moduleConfig->getSection('database'))
-            ->on(DatabaseConfigForm::ON_SUCCESS, function ($form) use ($moduleConfig) {
+            ->on(Form::ON_SUBMIT, function ($form) use ($moduleConfig) {
                 $moduleConfig->setSection('database', $form->getValues());
                 $moduleConfig->saveIni();
 
