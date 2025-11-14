@@ -151,7 +151,12 @@ class Rotation
                 );
 
                 if ($timeperiodEntry->start_time < $before) {
-                    $daysSinceLatestHandoff = $timeperiodEntry->start_time->diff($before)->days % $interval;
+                    $daysSinceFirstHandoff = $timeperiodEntry->start_time->diff($before)->days;
+                    $daysSinceLatestHandoff = $daysSinceFirstHandoff % $interval;
+                    if ($daysSinceFirstHandoff > 0 && $daysSinceLatestHandoff === 0) {
+                        $daysSinceLatestHandoff = $interval;
+                    }
+
                     $firstHandoff = (clone $before)->sub(new DateInterval(sprintf('P%dD', $daysSinceLatestHandoff)));
                 } else {
                     $firstHandoff = $timeperiodEntry->start_time;
