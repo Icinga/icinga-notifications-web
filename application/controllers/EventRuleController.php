@@ -206,6 +206,7 @@ class EventRuleController extends CompatController
                 ))
                 ->first();
         } elseif (isset($this->session->source)) {
+            /** @var ?Source $source */
             $source = Source::on(Database::get())
                 ->columns(['id', 'type'])
                 ->filter(Filter::equal('id', $this->session->source))

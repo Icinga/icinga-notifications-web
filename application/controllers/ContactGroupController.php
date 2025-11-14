@@ -36,6 +36,7 @@ class ContactGroupController extends CompatController
             ->columns(['id', 'name'])
             ->filter(Filter::equal('id', $groupId));
 
+        /** @var ?Contactgroup $group */
         $group = $query->first();
         if ($group === null) {
             $this->httpNotFound(t('Contact group not found'));

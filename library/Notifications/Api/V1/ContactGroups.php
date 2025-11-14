@@ -795,6 +795,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
             ->columns(['id', 'name'])
             ->filter(Filter::equal('id', $contactgroupId));
 
+        /** @var ?Contactgroup $group */
         $group = $query->first();
         if ($group === null) {
             throw new HttpNotFoundException('Contact group not found');
