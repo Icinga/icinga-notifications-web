@@ -45,7 +45,7 @@ class ExtraEntryCount extends ButtonLink
         return $this;
     }
 
-    protected function assemble(): void
+    public function assemble(): void
     {
         $count = $this->grid->getExtraEntryCount($this->gridStep);
         $this->addAttributes(new Attributes(['class' => 'extra-count']))
