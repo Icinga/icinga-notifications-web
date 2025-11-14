@@ -84,7 +84,7 @@ class IncidentRenderer implements ItemRenderer
         $source = $item->object->source;
         $info->addHtml(
             (new Ball(Ball::SIZE_BIG))
-                ->addAttributes(['class' => 'source-icon'])
+                ->addAttributes(new Attributes(['class' => 'source-icon']))
                 ->addHtml($source->getIcon())
         );
 
