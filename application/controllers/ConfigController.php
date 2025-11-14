@@ -7,7 +7,6 @@ namespace Icinga\Module\Notifications\Controllers;
 use Icinga\Application\Config;
 use Icinga\Module\Notifications\Forms\DatabaseConfigForm;
 use Icinga\Web\Notification;
-use Icinga\Web\Widget\Tab;
 use Icinga\Web\Widget\Tabs;
 use ipl\Html\Contract\Form;
 use ipl\Web\Compat\CompatController;
@@ -47,7 +46,6 @@ class ConfigController extends CompatController
      */
     protected function mergeTabs(Tabs $tabs): void
     {
-        /** @var Tab $tab */
         foreach ($tabs->getTabs() as $tab) {
             $this->tabs->add($tab->getName(), $tab);
         }
