@@ -583,6 +583,8 @@ class RotationConfigForm extends CompatForm
     /**
      * Remove all versions of the rotation from the database
      *
+     * @param int|null $priority The priority of the rotations to remove.
+     *
      * @return void
      *
      * @throws LogicException If the priority is not set

@@ -325,6 +325,7 @@ class EventRuleController extends CompatController
      * @param int $ruleId
      *
      * @return Rule
+     *
      * @throws HttpNotFoundException
      */
     private function fetchRule(int $ruleId): Rule

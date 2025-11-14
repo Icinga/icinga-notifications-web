@@ -74,7 +74,9 @@ class Channels extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
      *
      * @param string|null $identifier
      * @param string $queryFilter
+     *
      * @return ResponseInterface
+     *
      * @throws HttpBadRequestException
      * @throws HttpNotFoundException
      * @throws JsonEncodeException
