@@ -53,7 +53,7 @@ class DynamicGrid extends BaseGrid
      */
     public function addToSideBar(BaseHtmlElement $row): self
     {
-        $row->addAttributes(['class' => 'row-title']);
+        $row->addAttributes(Attributes::create(['class' => 'row-title']));
         $this->sideBar()->addHtml($row);
 
         return $this;

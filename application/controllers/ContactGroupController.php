@@ -13,6 +13,7 @@ use Icinga\Module\Notifications\View\ContactRenderer;
 use Icinga\Module\Notifications\Widget\Detail\ObjectHeader;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Web\Notification;
+use ipl\Html\Attributes;
 use ipl\Html\Contract\Form;
 use ipl\Html\Text;
 use ipl\Stdlib\Filter;
@@ -40,7 +41,7 @@ class ContactGroupController extends CompatController
             $this->httpNotFound(t('Contact group not found'));
         }
 
-        $this->controls->addAttributes(['class' => 'contactgroup-detail']);
+        $this->controls->addAttributes(Attributes::create(['class' => 'contactgroup-detail']));
 
         $this->addControl(new ObjectHeader($group));
 
