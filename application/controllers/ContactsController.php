@@ -48,6 +48,9 @@ class ContactsController extends CompatController
 
     public function indexAction()
     {
+        $this->setTitle($this->translate('Contacts'));
+        $this->getTabs()->activate('contacts');
+
         $contacts = Contact::on($this->db);
 
         $limitControl = $this->createLimitControl();
@@ -126,9 +129,6 @@ class ContactsController extends CompatController
         }
 
         $this->setAutorefreshInterval(30);
-
-        $this->setTitle($this->translate('Contacts'));
-        $this->getTabs()->activate('contacts');
     }
 
     public function addAction(): void
