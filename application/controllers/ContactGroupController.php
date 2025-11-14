@@ -13,6 +13,7 @@ use Icinga\Module\Notifications\View\ContactRenderer;
 use Icinga\Module\Notifications\Widget\Detail\ObjectHeader;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Web\Notification;
+use ipl\Html\Attributes;
 use ipl\Html\Form;
 use ipl\Html\Text;
 use ipl\Stdlib\Filter;
@@ -35,12 +36,13 @@ class ContactGroupController extends CompatController
             ->columns(['id', 'name'])
             ->filter(Filter::equal('id', $groupId));
 
+        /** @var Contactgroup $group */
         $group = $query->first();
         if ($group === null) {
             $this->httpNotFound(t('Contact group not found'));
         }
 
-        $this->controls->addAttributes(['class' => 'contactgroup-detail']);
+        $this->controls->addAttributes(new Attributes(['class' => 'contactgroup-detail']));
 
         $this->addControl(new ObjectHeader($group));
 
@@ -98,7 +100,7 @@ class ContactGroupController extends CompatController
                     }
                 }
             })
-            ->on(Form::ON_SUCCESS, function (ContactGroupForm $form) use ($groupId) {
+            ->on(Form::ON_SUBMIT, function (ContactGroupForm $form) use ($groupId) {
                 $form->editGroup();
                 Notification::success(sprintf(
                     t('Successfully updated contact group %s'),

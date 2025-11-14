@@ -12,11 +12,9 @@ use ipl\Web\Widget\Icon;
 
 class RuleEscalationRecipientBadge extends BaseHtmlElement
 {
-    /** @var RuleEscalationRecipient */
-    protected $recipient;
+    protected RuleEscalationRecipient $recipient;
 
-    /** @var int */
-    protected $moreCount;
+    protected ?int $moreCount = null;
 
     protected $tag = 'span';
 
@@ -26,7 +24,7 @@ class RuleEscalationRecipientBadge extends BaseHtmlElement
      * Create the rule escalation recipient badge with icon
      *
      * @param RuleEscalationRecipient $recipient
-     * @param ?int $moreCount The more count to show
+     * @param ?int                    $moreCount The more count to show
      */
     public function __construct(RuleEscalationRecipient $recipient, ?int $moreCount = null)
     {
@@ -52,7 +50,7 @@ class RuleEscalationRecipientBadge extends BaseHtmlElement
         return Html::tag('span', ['class' => 'badge'], [new Icon($icon), $recipientModel->$nameColumn]);
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->add($this->createBadge());
 

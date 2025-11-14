@@ -13,22 +13,22 @@ use ipl\Orm\Query;
 use ipl\Orm\Relations;
 
 /**
- * @property int $id
- * @property string $full_name
- * @property ?string $username
- * @property int $default_channel_id
- * @property DateTime $changed_at
- * @property bool $deleted
+ * @property int                           $id
+ * @property string                        $full_name
+ * @property ?string                       $username
+ * @property int                           $default_channel_id
+ * @property DateTime                      $changed_at
+ * @property bool                          $deleted
  *
- * @property Query|Channel $channel
- * @property Query|Incident $incident
- * @property Query|IncidentContact $incident_contact
- * @property Query|IncidentHistory $incident_history
- * @property Query|RotationMember $rotation_member
- * @property Query|ContactAddress $contact_address
+ * @property Query|Channel                 $channel
+ * @property Query|Incident                $incident
+ * @property Query|IncidentContact         $incident_contact
+ * @property Query|IncidentHistory         $incident_history
+ * @property Query|RotationMember          $rotation_member
+ * @property Query|ContactAddress          $contact_address
  * @property Query|RuleEscalationRecipient $rule_escalation_recipient
- * @property Query|ContactgroupMember $contactgroup_member
- * @property Query|Contactgroup $contactgroup
+ * @property Query|ContactgroupMember      $contactgroup_member
+ * @property Query|Contactgroup            $contactgroup
  */
 class Contact extends Model
 {

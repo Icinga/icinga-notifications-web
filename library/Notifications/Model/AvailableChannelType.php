@@ -9,11 +9,11 @@ use ipl\Orm\Query;
 use ipl\Orm\Relations;
 
 /**
- * @property string $type
- * @property string $name
- * @property string $version
- * @property string $author
- * @property string $config_attrs
+ * @property string        $type
+ * @property string        $name
+ * @property string        $version
+ * @property string        $author
+ * @property string        $config_attrs
  *
  * @property Query|Channel $channel
  */

@@ -29,7 +29,6 @@ class ContactGroupForm extends CompatForm
 {
     use CsrfCounterMeasure;
 
-    /** @var Connection */
     private Connection $db;
 
     /** @var ?int Contact group id */
@@ -52,7 +51,7 @@ class ContactGroupForm extends CompatForm
         $termInput = (new TermInput(
             'group_members',
             [
-                'label'    => $this->translate('Members')
+                'label' => $this->translate('Members')
             ]
         ))
             ->setVerticalTermDirection()
@@ -65,10 +64,10 @@ class ContactGroupForm extends CompatForm
             ->on(TermInput::ON_SAVE, $callValidation)
             ->on(TermInput::ON_PASTE, $callValidation);
 
-            // TODO: TermInput is not compatible with the new decorators yet: https://github.com/Icinga/ipl-web/pull/317
-            $legacyDecorator = new IcingaFormDecorator();
-            $termInput->setDefaultElementDecorator($legacyDecorator);
-            $legacyDecorator->decorate($termInput);
+        // TODO: TermInput is not compatible with the new decorators yet: https://github.com/Icinga/ipl-web/pull/317
+        $legacyDecorator = new IcingaFormDecorator();
+        $termInput->setDefaultElementDecorator($legacyDecorator);
+        $legacyDecorator->decorate($termInput);
 
         $this->addElement(
             'text',
@@ -93,9 +92,9 @@ class ContactGroupForm extends CompatForm
             $deleteBtn = new SubmitElement(
                 'delete',
                 [
-                    'label'             => $this->translate('Delete'),
-                    'class'             => 'btn-remove',
-                    'formnovalidate'    => true
+                    'label'          => $this->translate('Delete'),
+                    'class'          => 'btn-remove',
+                    'formnovalidate' => true
                 ]
             );
 
@@ -209,9 +208,9 @@ class ContactGroupForm extends CompatForm
             $this->db->insert(
                 'contactgroup_member',
                 [
-                    'contactgroup_id'   => $groupIdentifier,
-                    'contact_id'        => $contactId,
-                    'changed_at'        => $changedAt
+                    'contactgroup_id' => $groupIdentifier,
+                    'contact_id'      => $contactId,
+                    'changed_at'      => $changedAt
                 ]
             );
         }
@@ -261,9 +260,9 @@ class ContactGroupForm extends CompatForm
                 'contactgroup_member',
                 ['changed_at' => $changedAt, 'deleted' => 'y'],
                 [
-                    'contactgroup_id = ?'   => $this->contactgroupId,
-                    'contact_id IN (?)'     => $toDelete,
-                    'deleted = ?'           => 'n'
+                    'contactgroup_id = ?' => $this->contactgroupId,
+                    'contact_id IN (?)'   => $toDelete,
+                    'deleted = ?'         => 'n'
                 ]
             );
         }
@@ -274,9 +273,9 @@ class ContactGroupForm extends CompatForm
                     ->from('contactgroup_member')
                     ->columns(['contact_id'])
                     ->where([
-                        'contactgroup_id = ?'   => $this->contactgroupId,
-                        'deleted = ?'           => 'y',
-                        'contact_id IN (?)'     => $toAdd
+                        'contactgroup_id = ?' => $this->contactgroupId,
+                        'deleted = ?'         => 'y',
+                        'contact_id IN (?)'   => $toAdd
                     ])
             );
 
@@ -285,9 +284,9 @@ class ContactGroupForm extends CompatForm
                 $this->db->insert(
                     'contactgroup_member',
                     [
-                        'contactgroup_id'   => $this->contactgroupId,
-                        'contact_id'        => $contactId,
-                        'changed_at'        => $changedAt
+                        'contactgroup_id' => $this->contactgroupId,
+                        'contact_id'      => $contactId,
+                        'changed_at'      => $changedAt
                     ]
                 );
             }
@@ -297,8 +296,8 @@ class ContactGroupForm extends CompatForm
                     'contactgroup_member',
                     ['changed_at' => $changedAt, 'deleted' => 'n'],
                     [
-                        'contactgroup_id = ?'   => $this->contactgroupId,
-                        'contact_id IN (?)'     => $contactsMarkedAsDeleted
+                        'contactgroup_id = ?' => $this->contactgroupId,
+                        'contact_id IN (?)'   => $contactsMarkedAsDeleted
                     ]
                 );
             }
@@ -363,9 +362,9 @@ class ContactGroupForm extends CompatForm
 
         $escalationIds = $this->db->fetchCol(
             RuleEscalationRecipient::on($this->db)
-            ->columns('rule_escalation_id')
-            ->filter(Filter::equal('contactgroup_id', $this->contactgroupId))
-            ->assembleSelect()
+                ->columns('rule_escalation_id')
+                ->filter(Filter::equal('contactgroup_id', $this->contactgroupId))
+                ->assembleSelect()
         );
 
         $this->db->update('rule_escalation_recipient', $markAsDeleted, $updateCondition);
@@ -415,6 +414,7 @@ class ContactGroupForm extends CompatForm
             ->columns(['id', 'name'])
             ->filter(Filter::equal('id', $this->contactgroupId));
 
+        /** @var Contactgroup $group */
         $group = $query->first();
         if ($group === null) {
             throw new HttpNotFoundException($this->translate('Contact group not found'));
@@ -426,8 +426,8 @@ class ContactGroupForm extends CompatForm
         }
 
         return [
-            'group_name'        => $group->name,
-            'group_members'     => implode(',', $groupMembers)
+            'group_name'    => $group->name,
+            'group_members' => implode(',', $groupMembers)
         ];
     }
 }

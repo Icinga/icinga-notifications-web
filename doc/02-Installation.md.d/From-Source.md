@@ -6,7 +6,7 @@ Make sure you use `notifications` as the module name. The following requirements
 
 ### Requirements
 
-- PHP (≥7.2)
+- PHP (≥8.2)
 - PHP needs the following extensions to be installed and activated:
     - `json`
 - [MySQL](https://www.php.net/manual/en/ref.pdo-mysql.php)

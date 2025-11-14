@@ -18,16 +18,16 @@ use ipl\Web\Widget\Icon;
 use Throwable;
 
 /**
- * @property int $id The primary key
- * @property string $type Type identifier
- * @property string $name The user-defined name
- * @property ?string $listener_username The username for HTTP authentication
- * @property ?string $listener_password_hash
- * @property DateTime $changed_at
- * @property bool $deleted
+ * @property int           $id                The primary key
+ * @property string        $type              Type identifier
+ * @property string        $name              The user-defined name
+ * @property ?string       $listener_username The username for HTTP authentication
+ * @property ?string       $listener_password_hash
+ * @property DateTime      $changed_at
+ * @property bool          $deleted
  *
  * @property Query|Objects $object
- * @property Query|Rule $rule
+ * @property Query|Rule    $rule
  */
 class Source extends Model
 {

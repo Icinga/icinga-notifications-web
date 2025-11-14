@@ -6,13 +6,12 @@ namespace Icinga\Module\Notifications\Test;
 
 use DateTime;
 use GuzzleHttp\Client;
-use Icinga\Module\Notifications\Api\V1\Channels;
 use Icinga\Util\Json;
 use Icinga\Web\Url;
 use ipl\Sql\Connection;
 use ipl\Sql\Select;
-use Psr\Http\Message\ResponseInterface;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\ResponseInterface;
 
 class BaseApiV1TestCase extends TestCase
 {
@@ -37,24 +36,24 @@ class BaseApiV1TestCase extends TestCase
     protected static function initializeNotificationsDb(Connection $db, string $driver): void
     {
         $db->insert('available_channel_type', [
-                'type' => 'email',
-                'name' => 'Email',
-                'version' => 1,
-                'author' => 'Test',
-                'config_attrs' => ''
-            ]);
-        $db->insert('available_channel_type', [
-                'type' => 'webhook',
-                'name' => 'Webhook',
-                'version' => 1,
-                'author' => 'Test',
-                'config_attrs' => ''
+            'type'         => 'email',
+            'name'         => 'Email',
+            'version'      => 1,
+            'author'       => 'Test',
+            'config_attrs' => ''
         ]);
         $db->insert('available_channel_type', [
-            'type' => 'rocketchat',
-            'name' => 'rocketchat',
-            'version' => 1,
-            'author' => 'Test',
+            'type'         => 'webhook',
+            'name'         => 'Webhook',
+            'version'      => 1,
+            'author'       => 'Test',
+            'config_attrs' => ''
+        ]);
+        $db->insert('available_channel_type', [
+            'type'         => 'rocketchat',
+            'name'         => 'rocketchat',
+            'version'      => 1,
+            'author'       => 'Test',
             'config_attrs' => ''
         ]);
 
@@ -67,16 +66,16 @@ class BaseApiV1TestCase extends TestCase
     {
         $db->insert('channel', [
             'external_uuid' => self::CHANNEL_UUID,
-            'name' => 'Test',
-            'type' => 'email',
-            'changed_at' => (int) (new DateTime())->format("Uv"),
+            'name'          => 'Test',
+            'type'          => 'email',
+            'changed_at'    => (int) (new DateTime())->format("Uv"),
         ]);
 
         $db->insert('channel', [
             'external_uuid' => self::CHANNEL_UUID_2,
-            'name' => 'Test2',
-            'type' => 'webhook',
-            'changed_at' => (int) (new DateTime())->format("Uv"),
+            'name'          => 'Test2',
+            'type'          => 'webhook',
+            'changed_at'    => (int) (new DateTime())->format("Uv"),
         ]);
     }
 
@@ -104,32 +103,32 @@ class BaseApiV1TestCase extends TestCase
         )->fetchColumn();
 
         $db->insert('contact', [
-            'full_name' => 'Test',
-            'username' => 'test',
+            'full_name'          => 'Test',
+            'username'           => 'test',
             'default_channel_id' => $channelId,
-            'external_uuid' => self::CONTACT_UUID,
-            'changed_at' => (int) (new DateTime())->format("Uv"),
+            'external_uuid'      => self::CONTACT_UUID,
+            'changed_at'         => (int) (new DateTime())->format("Uv"),
         ]);
         $db->insert('contact', [
-            'full_name' => 'Test2',
-            'username' => 'test2',
+            'full_name'          => 'Test2',
+            'username'           => 'test2',
             'default_channel_id' => $channelId,
-            'external_uuid' => self::CONTACT_UUID_2,
-            'changed_at' => (int) (new DateTime())->format("Uv"),
+            'external_uuid'      => self::CONTACT_UUID_2,
+            'changed_at'         => (int) (new DateTime())->format("Uv"),
         ]);
 
         $contactIds = $db->select(
             (new Select())
-            ->from('contact')
-            ->columns('id')
-            ->where(['external_uuid IN (?)' => [self::CONTACT_UUID, self::CONTACT_UUID_2]])
+                ->from('contact')
+                ->columns('id')
+                ->where(['external_uuid IN (?)' => [self::CONTACT_UUID, self::CONTACT_UUID_2]])
         )->fetchAll(\PDO::FETCH_COLUMN);
 
         foreach ($contactIds as $contactId) {
             $db->insert('contact_address', [
                 'contact_id' => $contactId,
-                'type' => $channelType,
-                'address' => 'test@example.com',
+                'type'       => $channelType,
+                'address'    => 'test@example.com',
                 'changed_at' => (int) (new DateTime())->format("Uv"),
             ]);
         }
@@ -144,14 +143,14 @@ class BaseApiV1TestCase extends TestCase
     protected static function createContactGroups(Connection $db): void
     {
         $db->insert('contactgroup', [
-            'name' => 'Test',
+            'name'          => 'Test',
             'external_uuid' => self::GROUP_UUID,
-            'changed_at' => (int) (new DateTime())->format("Uv"),
+            'changed_at'    => (int) (new DateTime())->format("Uv"),
         ]);
         $db->insert('contactgroup', [
-            'name' => 'Test2',
+            'name'          => 'Test2',
             'external_uuid' => self::GROUP_UUID_2,
-            'changed_at' => (int) (new DateTime())->format("Uv"),
+            'changed_at'    => (int) (new DateTime())->format("Uv"),
         ]);
     }
 

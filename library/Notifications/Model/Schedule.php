@@ -13,15 +13,15 @@ use ipl\Orm\Query;
 use ipl\Orm\Relations;
 
 /**
- * @property int $id
- * @property string $name
- * @property string $timezone
- * @property DateTime $changed_at
- * @property bool $deleted
+ * @property int                           $id
+ * @property string                        $name
+ * @property string                        $timezone
+ * @property DateTime                      $changed_at
+ * @property bool                          $deleted
  *
- * @property Query|Rotation $rotation
+ * @property Query|Rotation                $rotation
  * @property Query|RuleEscalationRecipient $rule_escalation_recipient
- * @property Query|IncidentHistory $incident_history
+ * @property Query|IncidentHistory         $incident_history
  */
 class Schedule extends Model
 {
@@ -48,9 +48,9 @@ class Schedule extends Model
     public function getColumnDefinitions(): array
     {
         return [
-            'name'          => t('Name'),
-            'changed_at'    => t('Changed At'),
-            'timezone'      => t('Timezone')
+            'name'       => t('Name'),
+            'changed_at' => t('Changed At'),
+            'timezone'   => t('Timezone')
         ];
     }
 

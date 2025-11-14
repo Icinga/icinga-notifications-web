@@ -40,23 +40,19 @@ class Calendar extends BaseHtmlElement implements EntryProvider
 
     protected $defaultAttributes = ['class' => 'calendar'];
 
-    /** @var Controls */
-    protected $controls;
+    protected ?Controls $controls = null;
 
-    /** @var Style */
-    protected $style;
+    protected ?Style $style = null;
 
-    /** @var BaseGrid The grid implementation */
-    protected $grid;
+    /** @var ?BaseGrid The grid implementation */
+    protected ?BaseGrid $grid = null;
 
     /** @var Entry[] */
-    protected $entries = [];
+    protected array $entries = [];
 
-    /** @var Url */
-    protected $addEntryUrl;
+    protected ?Url $addEntryUrl = null;
 
-    /** @var ?Url */
-    protected $url;
+    protected ?Url $url = null;
 
     public function setControls(Controls $controls): self
     {
@@ -99,11 +95,7 @@ class Calendar extends BaseHtmlElement implements EntryProvider
 
     public function getStepUrl(GridStep $step): ?Url
     {
-        if ($this->addEntryUrl === null) {
-            return null;
-        }
-
-        return $this->addEntryUrl->with('start', $step->getStart()->format('Y-m-d\TH:i:s'));
+        return $this->addEntryUrl?->with('start', $step->getStart()->format('Y-m-d\TH:i:s'));
     }
 
     public function setUrl(?Url $url): self
@@ -171,7 +163,7 @@ class Calendar extends BaseHtmlElement implements EntryProvider
         yield from $this->entries;
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $modeStart = $this->getModeStart();
 

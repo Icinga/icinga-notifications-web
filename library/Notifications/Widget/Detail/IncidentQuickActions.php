@@ -24,17 +24,15 @@ class IncidentQuickActions extends Form
 
     protected $defaultAttributes = [
         'class' => ['inline', 'quick-actions'],
-        'name' => 'incident-quick-actions'
+        'name'  => 'incident-quick-actions'
     ];
 
-    /** @var Incident */
-    protected $incident;
+    protected Incident $incident;
 
     /** @var int Current logged-in user's id */
-    protected $currentUserId;
+    protected int $currentUserId;
 
-    /** @var IncidentContact */
-    protected $incidentContact;
+    protected ?IncidentContact $incidentContact = null;
 
     public function __construct(Incident $incident, int $currentUserId)
     {
@@ -99,7 +97,7 @@ class IncidentQuickActions extends Form
         );
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
 
@@ -120,7 +118,7 @@ class IncidentQuickActions extends Form
         }
     }
 
-    protected function onSuccess()
+    protected function onSuccess(): void
     {
         $incidentContact = $this->fetchIncidentContact();
         $pressedButton = $this->getPressedSubmitElement()->getName();
@@ -143,7 +141,7 @@ class IncidentQuickActions extends Form
      * Add the incident's contact role of given contact
      *
      * @param IncidentContact $incidentContact The incident contact to add
-     * @param string $roleName The role to add
+     * @param string          $roleName        The role to add
      *
      * @return void
      */
@@ -156,15 +154,15 @@ class IncidentQuickActions extends Form
                     'incident_contact',
                     ['role' => $roleName],
                     [
-                        'contact_id = ?'    => $incidentContact->contact_id,
-                        'incident_id = ?'   => $this->incident->id
+                        'contact_id = ?'  => $incidentContact->contact_id,
+                        'incident_id = ?' => $this->incident->id
                     ]
                 );
             } else {
                 Database::get()->insert('incident_contact', [
-                    'incident_id'   => $this->incident->id,
-                    'contact_id'    => $this->currentUserId,
-                    'role'          => $roleName
+                    'incident_id' => $this->incident->id,
+                    'contact_id'  => $this->currentUserId,
+                    'role'        => $roleName
                 ]);
             }
 
@@ -196,9 +194,9 @@ class IncidentQuickActions extends Form
         Database::get()->beginTransaction();
         try {
             Database::get()->delete('incident_contact', [
-                'incident_id = ?'   => $this->incident->id,
-                'contact_id = ?'    => $incidentContact->contact_id,
-                'role = ?'          => 'subscriber'
+                'incident_id = ?' => $this->incident->id,
+                'contact_id = ?'  => $incidentContact->contact_id,
+                'role = ?'        => 'subscriber'
             ]);
 
             $this->updateHistory($incidentContact);
@@ -217,7 +215,7 @@ class IncidentQuickActions extends Form
      * Update the incident history
      *
      * @param IncidentContact $incidentContact
-     * @param string|null $newRole
+     * @param string|null     $newRole
      *
      * @return void
      */
@@ -229,12 +227,12 @@ class IncidentQuickActions extends Form
         Database::get()->insert(
             'incident_history',
             [
-                'incident_id'           => $this->incident->id,
-                'contact_id'            => $contactId,
-                'type'                  => 'recipient_role_changed',
-                'new_recipient_role'    => $newRole,
-                'old_recipient_role'    => $oldRole,
-                'time'                  => (int) (new DateTime())->format("Uv")
+                'incident_id'        => $this->incident->id,
+                'contact_id'         => $contactId,
+                'type'               => 'recipient_role_changed',
+                'new_recipient_role' => $newRole,
+                'old_recipient_role' => $oldRole,
+                'time'               => (int) (new DateTime())->format("Uv")
             ]
         );
     }

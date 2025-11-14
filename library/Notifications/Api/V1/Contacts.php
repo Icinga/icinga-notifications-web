@@ -10,10 +10,6 @@ use Icinga\Exception\Http\HttpException;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Exception\Json\JsonEncodeException;
 use Icinga\Module\Notifications\Api\EndpointInterface;
-use Icinga\Module\Notifications\Api\Exception\InvalidFilterParameterException;
-use Icinga\Module\Notifications\Model\Contact;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Server\RequestHandlerInterface;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\OadV1Delete;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\OadV1Get;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\OadV1GetPlural;
@@ -23,8 +19,8 @@ use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Parameter\PathPara
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Parameter\QueryParameter;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Response\Example\ResponseExample;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Schema\SchemaUUID;
-use Ramsey\Uuid\Uuid;
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Rotation;
 use Icinga\Module\Notifications\Model\RotationMember;
 use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
@@ -32,8 +28,11 @@ use Icinga\Util\Json;
 use ipl\Sql\Select;
 use ipl\Stdlib\Filter;
 use ipl\Validator\EmailAddressValidator;
-use stdClass;
 use OpenApi\Attributes as OA;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Server\RequestHandlerInterface;
+use Ramsey\Uuid\Uuid;
+use stdClass;
 
 /**
  * @phpstan-type requestBody array{
@@ -100,10 +99,10 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
         'addresses'
     ];
     public const REQUIRED_FIELD_TYPES = [
-        'id' => 'string',
-        'full_name' => 'string',
+        'id'              => 'string',
+        'full_name'       => 'string',
         'default_channel' => 'string',
-        'addresses' => 'object',
+        'addresses'       => 'object',
     ];
 
     #[OA\Examples(
@@ -208,7 +207,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
      * Get a contact by UUID.
      *
      * @param string|null $identifier
-     * @param string $queryFilter
+     * @param string      $queryFilter
      *
      * @return ResponseInterface
      *
@@ -317,7 +316,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
     /**
      * Update a contact by UUID.
      *
-     * @param string $identifier
+     * @param string      $identifier
      * @param requestBody $requestBody
      *
      * @return ResponseInterface
@@ -383,7 +382,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
             $result = $this->createResponse(
                 201,
                 [
-                    'Location' => sprintf(
+                    'Location'              => sprintf(
                         'notifications/api/%s/%s/%s',
                         self::VERSION,
                         $this->getEndpoint(),
@@ -497,7 +496,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
         return $this->createResponse(
             201,
             [
-                'Location' => sprintf(
+                'Location'              => sprintf(
                     'notifications/api/%s/%s/%s',
                     self::VERSION,
                     $this->getEndpoint(),
@@ -547,10 +546,10 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
 
     public function prepareRow(stdClass $row): void
     {
-            $row->groups = ContactGroups::fetchGroupIdentifiers($row->contact_id);
-            $row->addresses = self::fetchContactAddresses($row->contact_id) ?: new stdClass();
+        $row->groups = ContactGroups::fetchGroupIdentifiers($row->contact_id);
+        $row->addresses = self::fetchContactAddresses($row->contact_id) ?: new stdClass();
 
-            unset($row->contact_id);
+        unset($row->contact_id);
     }
 
     /**
@@ -610,7 +609,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
     /**
      * Add the groups to the given contact
      *
-     * @param int $contactId
+     * @param int      $contactId
      * @param string[] $groups
      *
      * @return void
@@ -639,7 +638,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
     /**
      * Add the addresses to the given contact
      *
-     * @param int $contactId
+     * @param int                   $contactId
      * @param array<string, string> $addresses
      *
      * @return void
@@ -742,9 +741,9 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
                 'contactgroup_member',
                 ['changed_at' => $changedAt, 'deleted' => 'y'],
                 [
-                    'contactgroup_id = ?'   => $toDelete,
-                    'contact_id IN (?)'     => $contactId,
-                    'deleted = ?'           => 'n'
+                    'contactgroup_id = ?' => $toDelete,
+                    'contact_id IN (?)'   => $contactId,
+                    'deleted = ?'         => 'n'
                 ]
             );
         }
@@ -755,8 +754,8 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
                     ->from('contactgroup_member')
                     ->columns(['contactgroup_id'])
                     ->where([
-                        'contact_id = ?' => $contactId,
-                        'deleted = ?' => 'y',
+                        'contact_id = ?'         => $contactId,
+                        'deleted = ?'            => 'y',
                         'contactgroup_id IN (?)' => $toAdd
                     ])
             );
@@ -767,8 +766,8 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
                     'contactgroup_member',
                     [
                         'contactgroup_id' => $contactgroupId,
-                        'contact_id' => $contactId,
-                        'changed_at' => $changedAt
+                        'contact_id'      => $contactId,
+                        'changed_at'      => $changedAt
                     ]
                 );
             }
@@ -778,7 +777,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
                     'contactgroup_member',
                     ['changed_at' => $changedAt, 'deleted' => 'n'],
                     [
-                        'contact_id = ?' => $contactId,
+                        'contact_id = ?'         => $contactId,
                         'contactgroup_id IN (?)' => $contactgroupsMarkedAsDeleted
                     ]
                 );
@@ -892,7 +891,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
      * Assert that the username is unique
      *
      * @param string $username
-     * @param ?int $contactId The id of the contact to exclude
+     * @param ?int   $contactId The id of the contact to exclude
      *
      * @return void
      *
@@ -1042,6 +1041,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
      * Fetch the values from the database
      *
      * @param int $contactId
+     *
      * @return array
      *
      * @throws HttpNotFoundException
@@ -1052,6 +1052,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
             ->columns(['id', 'full_name', 'default_channel_id'])
             ->filter(Filter::equal('id', $contactId));
 
+        /** @var Contact $contact */
         $contact = $query->first();
         if ($contact === null) {
             throw new HttpNotFoundException('Contact contact not found');

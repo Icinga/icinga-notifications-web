@@ -10,9 +10,9 @@ use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
 
 /**
- * @property string $php_session_id
- * @property string $username
- * @property string $user_agent
+ * @property string   $php_session_id
+ * @property string   $username
+ * @property string   $user_agent
  * @property DateTime $authenticated_at
  */
 class BrowserSession extends Model

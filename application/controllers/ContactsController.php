@@ -5,12 +5,12 @@
 namespace Icinga\Module\Notifications\Controllers;
 
 use Icinga\Module\Notifications\Common\ConfigurationTabs;
+use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Channel;
+use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\View\ContactRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
-use Icinga\Module\Notifications\Common\Database;
-use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Web\Form\ContactForm;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Web\Notification;
@@ -33,20 +33,19 @@ class ContactsController extends CompatController
     use ConfigurationTabs;
     use SearchControls;
 
-    /** @var Connection */
-    private $db;
+    private Connection $db;
 
-    /** @var Filter\Rule Filter from query string parameters */
-    private $filter;
+    /** @var ?Filter\Rule Filter from query string parameters */
+    private ?Filter\Rule $filter = null;
 
-    public function init()
+    public function init(): void
     {
         $this->assertPermission('notifications/config/contacts');
 
         $this->db = Database::get();
     }
 
-    public function indexAction()
+    public function indexAction(): void
     {
         $contacts = Contact::on($this->db);
 
@@ -55,8 +54,8 @@ class ContactsController extends CompatController
         $sortControl = $this->createSortControl(
             $contacts,
             [
-                'full_name'     => $this->translate('Full Name'),
-                'changed_at'    => $this->translate('Changed At')
+                'full_name'  => $this->translate('Full Name'),
+                'changed_at' => $this->translate('Changed At')
             ]
         );
 

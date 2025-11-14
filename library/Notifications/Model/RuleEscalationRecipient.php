@@ -13,20 +13,20 @@ use ipl\Orm\Query;
 use ipl\Orm\Relations;
 
 /**
- * @property int $id
- * @property int $rule_escalation_id
- * @property ?int $contact_id
- * @property ?int $contactgroup_id
- * @property ?int $schedule_id
- * @property ?int $channel_id
- * @property DateTime $changed_at
- * @property bool $deleted
+ * @property int                  $id
+ * @property int                  $rule_escalation_id
+ * @property ?int                 $contact_id
+ * @property ?int                 $contactgroup_id
+ * @property ?int                 $schedule_id
+ * @property ?int                 $channel_id
+ * @property DateTime             $changed_at
+ * @property bool                 $deleted
  *
  * @property Query|RuleEscalation $rule_escalation
- * @property Query|Contact $contact
- * @property Query|Schedule $schedule
- * @property Query|Contactgroup $contactgroup
- * @property Query|Channel $channel
+ * @property Query|Contact        $contact
+ * @property Query|Schedule       $schedule
+ * @property Query|Contactgroup   $contactgroup
+ * @property Query|Channel        $channel
  */
 class RuleEscalationRecipient extends Model
 {
@@ -90,7 +90,7 @@ class RuleEscalationRecipient extends Model
      *
      * @return Contact|Contactgroup|Schedule|null
      */
-    public function getRecipient(): ?Model
+    public function getRecipient(): Contact|Contactgroup|Schedule|null
     {
         $recipientModel = null;
         if ($this->contact_id) {

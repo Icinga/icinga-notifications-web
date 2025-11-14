@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Forms\EventRuleConfigElements;
 
+use ipl\Html\Attributes;
 use ipl\Html\Contract\FormElement;
 use ipl\Html\FormElement\SubmitButtonElement;
 
@@ -21,7 +22,7 @@ trait DynamicElements
      *
      * The given remove button must be rendered in the element's content.
      *
-     * @param int $no The position of the element in the list
+     * @param int                  $no           The position of the element in the list
      * @param ?SubmitButtonElement $removeButton The button to remove the element, if any
      *
      * @return FormElement
@@ -86,7 +87,7 @@ trait DynamicElements
             $count++;
         }
 
-        $add = $this->createAddButton()->addAttributes(['formnovalidate' => true]);
+        $add = $this->createAddButton()->addAttributes(new Attributes(['formnovalidate' => true]));
         $this->registerElement($add);
         if ($add->hasBeenPressed()) {
             $this->createRemoveButton($newCount);
@@ -114,6 +115,6 @@ trait DynamicElements
         $this->clearPopulatedValue('count');
         $this->addElement('hidden', 'count', ['ignore' => true, 'value' => $newCount]);
 
-        $this->addAttributes(['class' => ['dynamic-list', $newCount === 0 ? 'empty' : '']]);
+        $this->addAttributes(new Attributes(['class' => ['dynamic-list', $newCount === 0 ? 'empty' : '']]));
     }
 }

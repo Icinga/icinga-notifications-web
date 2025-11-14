@@ -20,14 +20,12 @@ class RecipientSuggestions extends BaseHtmlElement
 {
     protected $tag = 'ul';
 
-    /** @var string */
-    protected $searchTerm;
+    protected string $searchTerm;
 
-    /** @var string */
-    protected $originalValue;
+    protected string $originalValue;
 
     /** @var string[] */
-    protected $excludeTerms = [];
+    protected array $excludeTerms = [];
 
     public function setSearchTerm(string $term): self
     {
@@ -57,7 +55,7 @@ class RecipientSuggestions extends BaseHtmlElement
      *
      * @return $this
      */
-    public function forRequest(ServerRequestInterface $request)
+    public function forRequest(ServerRequestInterface $request): self
     {
         if ($request->getMethod() !== 'POST') {
             return $this;
@@ -75,11 +73,11 @@ class RecipientSuggestions extends BaseHtmlElement
         return $this;
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $identifyExcludes = function (string $for): array {
             return array_filter(array_map(function ($term) use ($for) {
-                if (strpos($term, ':') === false) {
+                if (! str_contains($term, ':')) {
                     return '';
                 }
 
@@ -115,11 +113,11 @@ class RecipientSuggestions extends BaseHtmlElement
                 new HtmlElement(
                     'input',
                     Attributes::create([
-                        'type' => 'button',
-                        'value' => $contact->full_name,
-                        'data-label' => $contact->full_name,
+                        'type'        => 'button',
+                        'value'       => $contact->full_name,
+                        'data-label'  => $contact->full_name,
                         'data-search' => 'contact:' . $contact->id,
-                        'data-class' => 'contact'
+                        'data-class'  => 'contact'
                     ])
                 )
             ));
@@ -132,11 +130,11 @@ class RecipientSuggestions extends BaseHtmlElement
                 new HtmlElement(
                     'input',
                     Attributes::create([
-                        'type' => 'button',
-                        'value' => $group->name,
-                        'data-label' => $group->name,
+                        'type'        => 'button',
+                        'value'       => $group->name,
+                        'data-label'  => $group->name,
                         'data-search' => 'group:' . $group->id,
-                        'data-class' => 'group'
+                        'data-class'  => 'group'
                     ])
                 )
             ));
@@ -151,7 +149,7 @@ class RecipientSuggestions extends BaseHtmlElement
         }
     }
 
-    public function renderUnwrapped()
+    public function renderUnwrapped(): string
     {
         $this->ensureAssembled();
 

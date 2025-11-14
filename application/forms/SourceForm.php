@@ -27,11 +27,9 @@ class SourceForm extends CompatForm
     /** @var string|int The used password hash algorithm */
     public const HASH_ALGORITHM = PASSWORD_BCRYPT;
 
-    /** @var Connection */
-    private $db;
+    private Connection $db;
 
-    /** @var ?int */
-    private $sourceId;
+    private ?int $sourceId = null;
 
     public function __construct(Connection $db)
     {
@@ -57,18 +55,18 @@ class SourceForm extends CompatForm
             'text',
             'name',
             [
-                'label'     => $this->translate('Source Name'),
-                'required'  => true
+                'label'    => $this->translate('Source Name'),
+                'required' => true
             ]
         );
         $this->addElement(
             'select',
             'type',
             [
-                'required'          => true,
-                'label'             => $this->translate('Source Type'),
-                'options'           => $types,
-                'disabledOptions'   => ['']
+                'required'        => true,
+                'label'           => $this->translate('Source Type'),
+                'options'         => $types,
+                'disabledOptions' => ['']
             ]
         );
 
@@ -76,8 +74,8 @@ class SourceForm extends CompatForm
             'text',
             'listener_username',
             [
-                'required' => true,
-                'label' => $this->translate('Username'),
+                'required'   => true,
+                'label'      => $this->translate('Username'),
                 'validators' => [new CallbackValidator(
                     function ($value, CallbackValidator $validator) {
                         // Username must be unique
@@ -99,24 +97,24 @@ class SourceForm extends CompatForm
             'password',
             'listener_password',
             [
-                'ignore'        => true,
-                'required'      => $this->sourceId === null,
-                'label'         => $this->sourceId !== null
+                'ignore'       => true,
+                'required'     => $this->sourceId === null,
+                'label'        => $this->sourceId !== null
                     ? $this->translate('New Password')
                     : $this->translate('Password'),
-                'autocomplete'  => 'new-password',
-                'validators'    => [['name' => 'StringLength', 'options' => ['min' => 16]]]
+                'autocomplete' => 'new-password',
+                'validators'   => [['name' => 'StringLength', 'options' => ['min' => 16]]]
             ]
         );
         $this->addElement(
             'password',
             'listener_password_dupe',
             [
-                'ignore'        => true,
-                'required'      => $this->sourceId === null,
-                'label'         => $this->translate('Repeat Password'),
-                'autocomplete'  => 'new-password',
-                'validators'    => [new CallbackValidator(function (string $value, CallbackValidator $validator) {
+                'ignore'       => true,
+                'required'     => $this->sourceId === null,
+                'label'        => $this->translate('Repeat Password'),
+                'autocomplete' => 'new-password',
+                'validators'   => [new CallbackValidator(function (string $value, CallbackValidator $validator) {
                     if ($value !== $this->getValue('listener_password')) {
                         $validator->addMessage($this->translate('Passwords do not match'));
 
@@ -240,8 +238,8 @@ class SourceForm extends CompatForm
         }
 
         return [
-            'name' => $source->name,
-            'type' => $source->type,
+            'name'              => $source->name,
+            'type'              => $source->type,
             'listener_username' => $source->listener_username
         ];
     }
