@@ -70,7 +70,7 @@ class MoveRotationForm extends Form
     {
         $this->addElement('hidden', 'rotation', ['required' => true]);
         $this->addElement('hidden', 'priority', ['required' => true]);
-        $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
+        $this->addCsrfCounterMeasure(Session::getSession()->getId());
     }
 
     protected function onError(): void

@@ -15,6 +15,7 @@ use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Web\Notification;
 use Icinga\Web\Widget\Tab;
 use Icinga\Web\Widget\Tabs;
+use ipl\Html\Contract\Form;
 use ipl\Sql\Expression;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
@@ -110,7 +111,7 @@ class ChannelsController extends CompatController
     {
         $this->addTitleTab(t('Add Channel'));
         $form = (new ChannelForm(Database::get()))
-            ->on(ChannelForm::ON_SUCCESS, function (ChannelForm $form) {
+            ->on(Form::ON_SUBMIT, function (ChannelForm $form) {
                 $form->addChannel();
                 Notification::success(
                     sprintf(
