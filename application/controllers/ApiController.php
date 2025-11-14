@@ -24,6 +24,7 @@ class ApiController extends CompatController
      * Processes API requests for the Notifications module, serving as the main entry point for all API interactions.
      *
      * @return never
+     *
      * @throws SecurityException
      */
     public function indexAction(): never
