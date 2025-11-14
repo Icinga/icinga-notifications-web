@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Widget\Timeline;
 
 use DateTime;
 use DateTimeZone;
+use IntlDateFormatter;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\FormattedString;
@@ -16,6 +17,7 @@ use ipl\Html\Text;
 use ipl\Html\ValidHtml;
 use ipl\I18n\Translation;
 use ipl\Web\Widget\Icon;
+use Locale;
 
 class EntryFlyout extends BaseHtmlElement
 {
@@ -343,15 +345,15 @@ class EntryFlyout extends BaseHtmlElement
             7 => $this->translate("Sun")
         ];
 
-        $noneType = \IntlDateFormatter::NONE;
-        $shortType = \IntlDateFormatter::SHORT;
+        $noneType = IntlDateFormatter::NONE;
+        $shortType = IntlDateFormatter::SHORT;
         $startTime = match ($this->mode) {
             '24-7'    => $this->rotationOptions['at'],
             'partial' => $this->rotationOptions['from'],
             'multi'   => $this->rotationOptions['from_at']
         };
-        $timeFormatter = new \IntlDateFormatter(\Locale::getDefault(), $noneType, $shortType, $this->displayTimezone);
-        $dateFormatter = new \IntlDateFormatter(\Locale::getDefault(), $shortType, $noneType, $this->displayTimezone);
+        $timeFormatter = new IntlDateFormatter(Locale::getDefault(), $noneType, $shortType, $this->displayTimezone);
+        $dateFormatter = new IntlDateFormatter(Locale::getDefault(), $shortType, $noneType, $this->displayTimezone);
 
         $firstHandoffDt = DateTime::createFromFormat(
             'Y-m-d H:i',

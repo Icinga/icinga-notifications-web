@@ -8,6 +8,7 @@ namespace Icinga\Module\Notifications\Model;
 use Icinga\Module\Notifications\Model\Behavior\ObjectTags;
 use ipl\Orm\Behaviors;
 use ipl\Sql\Connection;
+use LogicException;
 
 class ExtraTag extends ObjectExtraTag
 {
@@ -17,7 +18,7 @@ class ExtraTag extends ObjectExtraTag
      */
     public static function on(Connection $_)
     {
-        throw new \LogicException('Documentation says: DO NOT USE. Can\'t you read?');
+        throw new LogicException('Documentation says: DO NOT USE. Can\'t you read?');
     }
 
     public function createBehaviors(Behaviors $behaviors): void

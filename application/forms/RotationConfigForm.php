@@ -18,6 +18,7 @@ use Icinga\Module\Notifications\Model\Rotation;
 use Icinga\Module\Notifications\Model\TimeperiodEntry;
 use Icinga\Util\Json;
 use Icinga\Web\Session;
+use IntlDateFormatter;
 use ipl\Html\Attributes;
 use ipl\Html\DeferredText;
 use ipl\Html\FormDecoration\DescriptionDecorator;
@@ -37,6 +38,7 @@ use ipl\Web\Compat\CompatForm;
 use ipl\Web\FormDecorator\IcingaFormDecorator;
 use ipl\Web\FormElement\TermInput;
 use ipl\Web\Url;
+use Locale;
 use LogicException;
 use Recurr\Frequency;
 use Recurr\Rule;
@@ -1249,10 +1251,10 @@ class RotationConfigForm extends CompatForm
                     } else {
                         return sprintf(
                             $this->translate('The rotation will start on %s'),
-                            (new \IntlDateFormatter(
-                                \Locale::getDefault(),
-                                \IntlDateFormatter::MEDIUM,
-                                \IntlDateFormatter::SHORT,
+                            (new IntlDateFormatter(
+                                Locale::getDefault(),
+                                IntlDateFormatter::MEDIUM,
+                                IntlDateFormatter::SHORT,
                                 $this->scheduleTimezone
                             ))->format($actualFirstHandoff)
                         );
@@ -1272,10 +1274,10 @@ class RotationConfigForm extends CompatForm
                         return sprintf(
                             $this->translate('In your chosen display timezone (%s) this is the %s'),
                             $this->displayTimezone,
-                            (new \IntlDateFormatter(
-                                \Locale::getDefault(),
-                                \IntlDateFormatter::MEDIUM,
-                                \IntlDateFormatter::SHORT,
+                            (new IntlDateFormatter(
+                                Locale::getDefault(),
+                                IntlDateFormatter::MEDIUM,
+                                IntlDateFormatter::SHORT,
                                 $this->displayTimezone
                             ))->format($actualFirstHandoff)
                         );
@@ -1364,10 +1366,10 @@ class RotationConfigForm extends CompatForm
      */
     private function getTimeOptions(): array
     {
-        $formatter = new \IntlDateFormatter(
-            \Locale::getDefault(),
-            \IntlDateFormatter::NONE,
-            \IntlDateFormatter::SHORT,
+        $formatter = new IntlDateFormatter(
+            Locale::getDefault(),
+            IntlDateFormatter::NONE,
+            IntlDateFormatter::SHORT,
             $this->scheduleTimezone
         );
 

@@ -8,6 +8,7 @@ namespace Icinga\Module\Notifications\Controllers;
 use Icinga\Application\Hook;
 use Icinga\Application\Logger;
 use Icinga\Exception\Http\HttpNotFoundException;
+use Icinga\Exception\MissingParameterException;
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
@@ -190,7 +191,7 @@ class EventRuleController extends CompatController
      *
      * @return void
      *
-     * @throws \Icinga\Exception\MissingParameterException
+     * @throws MissingParameterException
      */
     public function searchEditorAction(): void
     {
