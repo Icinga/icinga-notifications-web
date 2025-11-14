@@ -78,6 +78,8 @@ class Rotation
     /**
      * Create the base version of the flyout for this rotation
      *
+     * @param DateTimeZone $displayTimezone
+     *
      * @return EntryFlyout
      */
     public function generateEntryInfo(DateTimeZone $displayTimezone): EntryFlyout
