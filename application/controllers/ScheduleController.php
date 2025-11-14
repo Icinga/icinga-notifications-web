@@ -16,6 +16,7 @@ use Icinga\Module\Notifications\Model\Schedule;
 use Icinga\Module\Notifications\Widget\Detail\ScheduleDetail;
 use Icinga\Module\Notifications\Widget\TimezoneWarning;
 use Icinga\Web\Session;
+use ipl\Html\Attributes;
 use ipl\Html\Contract\Form;
 use ipl\Html\Html;
 use ipl\Stdlib\Filter;
@@ -61,7 +62,7 @@ class ScheduleController extends CompatController
             ))->openInModal()
         );
 
-        $this->controls->addAttributes(['class' => 'schedule-detail-controls']);
+        $this->controls->addAttributes(Attributes::create(['class' => 'schedule-detail-controls']));
 
         $scheduleControls = (new ScheduleDetail\Controls())
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
