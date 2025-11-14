@@ -10,7 +10,10 @@ use Icinga\Application\Logger;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Hook\V1\SourceHook;
 use Icinga\Module\Notifications\Model\Source;
+use ipl\Html\Attributes;
 use ipl\Html\HtmlDocument;
+use ipl\Html\HtmlElement;
+use ipl\Html\Text;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
 use ipl\Validator\CallbackValidator;
@@ -53,6 +56,17 @@ class SourceForm extends CompatForm
             }
         }
 
+        $this->addHtml(new HtmlElement(
+            'p',
+            Attributes::create(['class' => 'description']),
+            Text::create($this->translate(
+                'Sources are the most vital part of Icinga Notifications. They submit events that will be'
+                . ' processed to notify users about incidents. You can only configure sources that provide an'
+                . ' integration in Icinga Web. If you cannot choose the desired source below, consult their'
+                . ' documentation on how to integrate it.'
+            ))
+        ));
+
         $this->addElement(
             'text',
             'name',
@@ -72,7 +86,20 @@ class SourceForm extends CompatForm
             ]
         );
 
-        $this->addElement(
+        $this->addElement('fieldset', 'credentials', [
+            'label' => $this->translate('Source Credentials')
+        ]);
+        $credentials = $this->getElement('credentials');
+        $credentials->addHtml(new HtmlElement(
+            'p',
+            Attributes::create(['class' => 'description']),
+            Text::create($this->translate(
+                'These credentials will be used by the source to authenticate'
+                . ' against Icinga Notifications when submitting events.'
+            ))
+        ));
+
+        $credentials->addElement(
             'text',
             'listener_username',
             [
@@ -82,9 +109,12 @@ class SourceForm extends CompatForm
                     function ($value, CallbackValidator $validator) {
                         // Username must be unique
                         $source = Source::on($this->db)
-                            ->filter(Filter::equal('listener_username', $value))
-                            ->first();
-                        if ($source !== null) {
+                            ->filter(Filter::equal('listener_username', $value));
+                        if ($this->sourceId !== null) {
+                            $source->filter(Filter::unequal('id', $this->sourceId));
+                        }
+
+                        if ($source->first() !== null) {
                             $validator->addMessage($this->translate('This username is already in use.'));
                             return false;
                         }
@@ -95,11 +125,10 @@ class SourceForm extends CompatForm
             ]
         );
 
-        $this->addElement(
+        $credentials->addElement(
             'password',
             'listener_password',
             [
-                'ignore'        => true,
                 'required'      => $this->sourceId === null,
                 'label'         => $this->sourceId !== null
                     ? $this->translate('New Password')
@@ -108,7 +137,7 @@ class SourceForm extends CompatForm
                 'validators'    => [['name' => 'StringLength', 'options' => ['min' => 16]]]
             ]
         );
-        $this->addElement(
+        $credentials->addElement(
             'password',
             'listener_password_dupe',
             [
@@ -117,7 +146,7 @@ class SourceForm extends CompatForm
                 'label'         => $this->translate('Repeat Password'),
                 'autocomplete'  => 'new-password',
                 'validators'    => [new CallbackValidator(function (string $value, CallbackValidator $validator) {
-                    if ($value !== $this->getValue('listener_password')) {
+                    if ($value !== $this->getElement('credentials')->getValue('listener_password')) {
                         $validator->addMessage($this->translate('Passwords do not match'));
 
                         return false;
@@ -172,16 +201,20 @@ class SourceForm extends CompatForm
      */
     public function addSource(): void
     {
-        $source = $this->getValues();
+        $data = $this->getValues();
 
-        // Not using PASSWORD_DEFAULT, as the used algorithm should
-        // be kept in sync with what the daemon understands
-        $source['listener_password_hash'] = password_hash(
-            $this->getValue('listener_password'),
-            self::HASH_ALGORITHM
-        );
-
-        $source['changed_at'] = (int) (new DateTime())->format("Uv");
+        $source = [
+            'name' => $data['name'],
+            'type' => $data['type'],
+            'listener_username' => $data['credentials']['listener_username'],
+            // Not using PASSWORD_DEFAULT, as the used algorithm should
+            // be kept in sync with what the daemon understands
+            'listener_password_hash' => password_hash(
+                $data['credentials']['listener_password'],
+                self::HASH_ALGORITHM
+            ),
+            'changed_at' => (int) (new DateTime())->format("Uv")
+        ];
 
         $this->db->transaction(function (Connection $db) use ($source): void {
             $db->insert('source', $source);
@@ -195,10 +228,17 @@ class SourceForm extends CompatForm
      */
     public function editSource(): void
     {
-        $source = $this->getValues();
+        $data = $this->getValues();
+
+        $source = [
+            'name' => $data['name'],
+            'type' => $data['type'],
+            'listener_username' => $data['credentials']['listener_username']
+        ];
 
         /** @var ?string $listenerPassword */
-        $listenerPassword = $this->getValue('listener_password');
+        $listenerPassword = $data['credentials']['listener_password'] ?? null;
+
         if ($listenerPassword) {
             // Not using PASSWORD_DEFAULT, as the used algorithm should
             // be kept in sync with what the daemon understands
@@ -242,7 +282,9 @@ class SourceForm extends CompatForm
         return [
             'name' => $source->name,
             'type' => $source->type,
-            'listener_username' => $source->listener_username
+            'credentials' => [
+                'listener_username' => $source->listener_username
+            ]
         ];
     }
 }
