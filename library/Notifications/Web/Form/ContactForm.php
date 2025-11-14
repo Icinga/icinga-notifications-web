@@ -140,10 +140,14 @@ class ContactForm extends CompatForm
         $channelQuery = Channel::on($this->db)
             ->columns(['id', 'name', 'type']);
 
+        $availableTypes = $this->db->fetchPairs(
+            AvailableChannelType::on($this->db)->columns(['type', 'name'])->assembleSelect()
+        );
+
         $channelNames = [];
         $channelTypes = [];
         foreach ($channelQuery as $channel) {
-            $channelNames[$channel->id] = $channel->name;
+            $channelNames[$availableTypes[$channel->type]][$channel->id] = $channel->name;
             $channelTypes[$channel->id] = $channel->type;
         }
 
@@ -172,7 +176,7 @@ class ContactForm extends CompatForm
 
         $contact->registerElement($defaultChannel);
 
-        $this->addAddressElements($channelTypes[$defaultChannel->getValue()] ?? null);
+        $this->addAddressElements($availableTypes, $channelTypes[$defaultChannel->getValue()] ?? null);
 
         $this->addHtml(new HtmlElement('hr'));
 
@@ -446,19 +450,14 @@ class ContactForm extends CompatForm
     /**
      * Add address elements for all existing channel plugins
      *
+     * @param array<string, string> $availableChannelTypes The available channel types as `type` => `name` pair
      * @param ?string $defaultType The selected default channel type
      *
      * @return void
      */
-    private function addAddressElements(?string $defaultType): void
+    private function addAddressElements(array $availableChannelTypes, ?string $defaultType): void
     {
-        $plugins = $this->db->fetchPairs(
-            AvailableChannelType::on($this->db)
-                ->columns(['type', 'name'])
-                ->assembleSelect()
-        );
-
-        if (empty($plugins)) {
+        if (empty($availableChannelTypes)) {
             return;
         }
 
@@ -471,7 +470,7 @@ class ContactForm extends CompatForm
             new Text($this->translate('Configure the channels available for this contact here.'))
         ));
 
-        foreach ($plugins as $type => $name) {
+        foreach ($availableChannelTypes as $type => $name) {
             $element = $this->createElement('text', $type, [
                 'label'      => $name,
                 'validators' => [new StringLengthValidator(['max' => 255])],
