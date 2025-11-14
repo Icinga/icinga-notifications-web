@@ -71,7 +71,7 @@ class SchedulesController extends CompatController
         $this->addControl($searchBar);
         $this->addContent(
             (new ButtonLink(
-                t('New Schedule'),
+                t('Create Schedule'),
                 Links::scheduleAdd(),
                 'plus',
                 [

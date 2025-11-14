@@ -139,7 +139,7 @@ class ScheduleController extends CompatController
 
     public function addAction(): void
     {
-        $this->setTitle($this->translate('New Schedule'));
+        $this->setTitle($this->translate('Create Schedule'));
         $form = (new ScheduleForm(Database::get()))
             ->setShowTimezoneSuggestionInput()
             ->setAction($this->getRequest()->getUrl()->setParam('showCompact')->getAbsoluteUrl())
