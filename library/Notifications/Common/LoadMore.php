@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Common;
 use Generator;
 use Icinga\Module\Notifications\Widget\ItemList\PageSeparatorItem;
 use Icinga\Module\Notifications\Widget\ShowMore;
+use ipl\Html\Attributes;
 use ipl\Orm\ResultSet;
 use ipl\Web\Url;
 
@@ -98,7 +99,7 @@ trait LoadMore
                 ->setLabel(t('Load More'))
                 ->setAttribute('data-no-icinga-ajax', true);
 
-            $this->add($showMore->setTag('li')->addAttributes(['class' => 'list-item']));
+            $this->add($showMore->setTag('li')->addAttributes(new Attributes(['class' => 'list-item'])));
         }
     }
 }
