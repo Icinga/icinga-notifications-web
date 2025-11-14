@@ -86,6 +86,10 @@ class IdTagAggregator extends PropertyBehavior implements RewriteColumnBehavior,
     }
 
     /**
+     * @param mixed $value
+     * @param mixed $key
+     * @param mixed $context
+     *
      * @return never
      * @throws InvalidColumnException
      */
