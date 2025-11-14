@@ -85,7 +85,7 @@ class ContactGroupForm extends CompatForm
             [
                 'label' => $this->contactgroupId
                     ? $this->translate('Save Changes')
-                    : $this->translate('Add Contact Group')
+                    : $this->translate('Create Contact Group')
             ]
         );
 

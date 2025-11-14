@@ -77,7 +77,7 @@ class EventRulesController extends CompatController
         $this->addControl($searchBar);
 
         $addButton = new ButtonLink(
-            $this->translate('Add Event Rule'),
+            $this->translate('Create Event Rule'),
             Url::fromPath('notifications/event-rules/add'),
             'plus',
             ['class' => 'add-new-component']
@@ -116,7 +116,7 @@ class EventRulesController extends CompatController
 
     public function addAction(): void
     {
-        $this->setTitle($this->translate('Add Event Rule'));
+        $this->setTitle($this->translate('Create Event Rule'));
 
         $eventRuleForm = (new EventRuleForm())
             ->setIsNew()
