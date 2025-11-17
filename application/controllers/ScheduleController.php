@@ -13,7 +13,6 @@ use Icinga\Module\Notifications\Forms\RotationConfigForm;
 use Icinga\Module\Notifications\Forms\ScheduleForm;
 use Icinga\Module\Notifications\Model\Schedule;
 use Icinga\Module\Notifications\Widget\Detail\ScheduleDetail;
-use Icinga\Module\Notifications\Widget\RecipientSuggestions;
 use Icinga\Module\Notifications\Widget\TimezoneWarning;
 use Icinga\Web\Session;
 use ipl\Html\Contract\Form;
@@ -168,7 +167,7 @@ class ScheduleController extends CompatController
 
         $form = new RotationConfigForm($scheduleId, Database::get(), $displayTimezone, $scheduleTimezone);
         $form->setAction($this->getRequest()->getUrl()->setParam('showCompact')->getAbsoluteUrl());
-        $form->setSuggestionUrl(Url::fromPath('notifications/schedule/suggest-recipient'));
+        $form->setSuggestionUrl(Url::fromPath('notifications/suggest/recipient'));
         $form->on(Form::ON_SENT, function ($form) {
             if (! $form->hasBeenSubmitted()) {
                 foreach ($form->getPartUpdates() as $update) {
@@ -211,7 +210,7 @@ class ScheduleController extends CompatController
         $form->loadRotation($id);
         $form->setSubmitLabel($this->translate('Save Changes'));
         $form->setAction($this->getRequest()->getUrl()->setParam('showCompact')->getAbsoluteUrl());
-        $form->setSuggestionUrl(Url::fromPath('notifications/schedule/suggest-recipient'));
+        $form->setSuggestionUrl(Url::fromPath('notifications/suggest/recipient'));
         $form->on(Form::ON_SUBMIT, function (RotationConfigForm $form) use ($id, $scheduleId) {
             $form->editRotation($id);
             $this->sendExtraUpdates(['#col1']);
@@ -257,14 +256,6 @@ class ScheduleController extends CompatController
         $form->handleRequest($this->getServerRequest());
 
         $this->addContent($form);
-    }
-
-    public function suggestRecipientAction(): void
-    {
-        $suggestions = new RecipientSuggestions();
-        $suggestions->forRequest($this->getServerRequest());
-
-        $this->getDocument()->addHtml($suggestions);
     }
 
     /**
