@@ -34,6 +34,9 @@ class SchedulesController extends CompatController
 
     public function indexAction(): void
     {
+        $this->setTitle(t('Schedules'));
+        $this->getTabs()->activate('schedules');
+
         $schedules = Schedule::on(Database::get());
 
         $limitControl = $this->createLimitControl();
@@ -85,8 +88,6 @@ class SchedulesController extends CompatController
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {
             $this->sendMultipartUpdate();
         }
-
-        $this->getTabs()->activate('schedules');
     }
 
     public function completeAction(): void

@@ -67,8 +67,7 @@ class ContactGroupController extends CompatController
                 ->setItemLayoutClass(MinimalItemLayout::class)
         );
 
-        $this->addTitleTab(t('Contact Group'));
-        $this->setTitle(sprintf(t('Contact Group: %s'), $group->name));
+        $this->addTitleTab(sprintf(t('Contact Group: %s'), $group->name));
     }
 
     public function editAction(): void
