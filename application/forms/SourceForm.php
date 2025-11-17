@@ -122,7 +122,7 @@ class SourceForm extends CompatForm
                     ),
                     ['target' => '_blank']
                 ),
-                'icinga_for_kubernetes' => new Link(
+                'kubernetes' => new Link(
                     [
                         $this->translate('Icinga for Kubernetes Documentation'),
                         ' ',
