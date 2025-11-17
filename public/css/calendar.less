@@ -46,7 +46,7 @@
     display: grid;
     align-items: flex-end;
     border-left: 1px solid transparent;
-    grid-template-columns: repeat(var(--primaryColumns), minmax(var(--minimumPrimaryColumnWidth), 1fr));
+    grid-template-columns: var(--sidebarWidth) repeat(var(--primaryColumns), minmax(var(--minimumPrimaryColumnWidth), 1fr));
 
     .column-title {
       border-right: 1px solid transparent;
@@ -233,7 +233,7 @@
   grid-template-rows: var(--headerHeight) var(--headerHeight) minmax(0, 1fr);
 
   .time-grid-header {
-    grid-area: ~"1 / 2 / 3 / 3";
+    grid-area: ~"1 / 1 / 3 / 3";
   }
 
   .sidebar {
@@ -275,6 +275,19 @@
   .day-name {
     color: @text-color-light;
     text-transform: uppercase;
+  }
+
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: -1px;
+    right: -1px;
+    display: block;
+    height: 1px;
+    .box-shadow(0, 1px, 0, 0, @gray-lighter);
   }
 }
 
@@ -332,6 +345,10 @@
   .step {
     border-color: @gray-lighter;
     color: @text-color-light;
+  }
+
+  &:has(.time-grid-header) .step[data-y-position="0"] {
+    border-top-color: transparent;
   }
 
   .step,

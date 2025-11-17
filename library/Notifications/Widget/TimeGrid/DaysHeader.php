@@ -63,6 +63,8 @@ class DaysHeader extends BaseHtmlElement
             $displayTimezone
         );
 
+        $this->addHtml(new HtmlElement('span', Attributes::create(['class' => 'spacer'])));
+
         for ($i = 0; $i < $this->days; $i++) {
             if ($time == $today) {
                 $title = [new HtmlElement(
