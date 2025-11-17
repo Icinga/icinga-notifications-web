@@ -34,6 +34,7 @@ class SchedulesController extends CompatController
 
     public function indexAction(): void
     {
+        $this->setTitle(t('Schedules'));
         $this->getTabs()->activate('schedules');
 
         $schedules = Schedule::on(Database::get());

@@ -45,7 +45,6 @@ class EventRuleController extends CompatController
 
     public function indexAction(): void
     {
-        $this->addTitleTab($this->translate('Event Rule'));
         $this->controls->addAttributes(['class' => 'event-rule-detail']);
         $this->content->addAttributes(['class' => 'event-rule-detail']);
         $this->getTabs()->disableLegacyExtensions();
@@ -100,6 +99,12 @@ class EventRuleController extends CompatController
                     $multiPartUpdate = true;
 
                     if ($nameOnly) {
+                        $this->addTitleTab(sprintf(
+                            $this->translate('Event Rule: %s'),
+                            $this->session->get('name')
+                        ));
+
+                        $this->addPart($this->tabs);
                         $this->addPart($form->prepareObjectFilterUpdate($this->session->get('object_filter')));
                         $this->addPart($form->prepareConfigUpdate(
                             $this->session->get('name'),
@@ -162,6 +167,7 @@ class EventRuleController extends CompatController
             )
         ]));
 
+        $this->addTitleTab(sprintf($this->translate('Event Rule: %s'), $eventRuleConfig->getValue('name')));
         $this->addContent($eventRuleConfig);
     }
 
