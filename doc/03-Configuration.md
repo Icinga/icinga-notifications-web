@@ -76,11 +76,11 @@ Icinga DB Web installed. This is the integration required to configure Icinga 2 
 1. Navigate to `Configuration → Module → notifications → Sources` and add a new source.
 2. Choose type `Icinga` and define a name as well as a set of credentials.
 3. Open `/etc/icingadb/config.yml` on the host where Icinga DB is running and add the following lines:  
-   The full documentation can be found [here](https://icinga.com/docs/icinga-db/latest/doc/03-Configuration/#notifications-source-configuration).
+   The full documentation can be found [here](https://icinga.com/docs/icinga-db/latest/doc/03-Configuration/#notifications-configuration).
     ```yaml
-    notifications-source:
+    notifications:
       # URL to the API root.
-      api-base-url: http://localhost:5680
+      url: http://localhost:5680
 
       # Use the username and password you just defined for the credentials.
       username: icingadb
