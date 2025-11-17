@@ -127,8 +127,6 @@ class ContactsController extends CompatController
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {
             $this->sendMultipartUpdate();
         }
-
-        $this->setAutorefreshInterval(30);
     }
 
     public function addAction(): void
