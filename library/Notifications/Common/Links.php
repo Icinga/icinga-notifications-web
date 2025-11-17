@@ -26,14 +26,19 @@ abstract class Links
         return Url::fromPath('notifications/events');
     }
 
-    public static function incidents(): Url
+    public static function myIncidents(): Url
     {
-        return Url::fromPath('notifications/incidents');
+        return Url::fromPath('notifications/my-incidents');
     }
 
     public static function incident(int $id): Url
     {
         return Url::fromPath('notifications/incident', ['id' => $id]);
+    }
+
+    public static function incidents(): Url
+    {
+        return Url::fromPath('notifications/incidents');
     }
 
     public static function contacts(): Url
