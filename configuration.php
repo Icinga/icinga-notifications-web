@@ -29,25 +29,37 @@ if ($authenticated) {
     }
 }
 
-if ($configLandingPage !== null) {
-    $section->add(
-        N_('Configuration'),
-        [
-            'icon'          => 'wrench',
-            'description'   => $this->translate('Configuration'),
-            'url'           => $configLandingPage
-        ]
-    );
-}
+$section->add(
+    N_('Open Incidents'),
+    [
+        'icon'          => 'th-list',
+        'description'   => $this->translate('Open Incidents'),
+        'url'           => 'notifications/incidents?incident.severity!=ok',
+        'priority'      => 10
+    ]
+);
 
 $section->add(
     N_('Events'),
     [
         'icon'          => 'history',
         'description'   => $this->translate('Events'),
-        'url'           => 'notifications/events'
+        'url'           => 'notifications/events',
+        'priority'      => 20
     ]
 );
+
+if ($configLandingPage !== null) {
+    $section->add(
+        N_('Configuration'),
+        [
+            'icon'          => 'wrench',
+            'description'   => $this->translate('Configuration'),
+            'url'           => $configLandingPage,
+            'priority'      => 30
+        ]
+    );
+}
 
 $this->providePermission(
     'notifications/config/schedules',
@@ -103,15 +115,6 @@ $this->provideConfigTab(
         'title' => $this->translate('Sources'),
         'label' => $this->translate('Sources'),
         'url'   => 'sources'
-    ]
-);
-
-$section->add(
-    N_('Incidents'),
-    [
-        'icon'          => 'th-list',
-        'description'   => $this->translate('Incidents'),
-        'url'           => 'notifications/incidents'
     ]
 );
 
