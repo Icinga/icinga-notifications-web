@@ -51,8 +51,7 @@ use OpenApi\Attributes as OA;
     required: [
         'id',
         'full_name',
-        'default_channel',
-        'addresses'
+        'default_channel'
     ],
     type: 'object',
     additionalProperties: false,
@@ -96,14 +95,12 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
     public const REQUIRED_FIELDS = [
         'id',
         'full_name',
-        'default_channel',
-        'addresses'
+        'default_channel'
     ];
     public const REQUIRED_FIELD_TYPES = [
         'id' => 'string',
         'full_name' => 'string',
-        'default_channel' => 'string',
-        'addresses' => 'object',
+        'default_channel' => 'string'
     ];
 
     #[OA\Examples(
@@ -951,35 +948,45 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
         $channelId = Channels::getChannelId($requestBody['default_channel']);
 
         if ($channelId === false) {
-            throw new HttpException(422, 'Channel with identifier 0817d973-398e-41d7-9cd2-61cdb7ef41a3 does not exist');
+            throw new HttpException(
+                422,
+                sprintf('Channel with identifier %s does not exist', $requestBody['default_channel'])
+            );
         }
 
         $channelType = Channels::getChannelType($channelId);
 
-        if (! is_array($requestBody['addresses']) || empty($requestBody['addresses'][$channelType])) {
+        if ($channelType === 'webhook') {
+            // pass
+        } elseif (
+            ! isset($requestBody['addresses'])
+            || ! is_array($requestBody['addresses'])
+            || empty($requestBody['addresses'][$channelType])
+        ) {
             throw new HttpException(
                 422,
                 $msgPrefix . "an address according to default_channel type $channelType is required"
             );
         }
 
-        $addressTypes = array_keys($requestBody['addresses']);
-
-        $types = Database::get()->fetchCol(
-            (new Select())
-                ->from('available_channel_type')
-                ->columns('type')
-                ->where(['type IN (?)' => $addressTypes])
-        );
-
-        if (count($types) !== count($addressTypes)) {
-            throw new HttpException(
-                422,
-                sprintf(
-                    $msgPrefix . 'undefined address type %s given',
-                    implode(', ', array_diff($addressTypes, $types))
-                )
+        $addressTypes = array_keys($requestBody['addresses'] ?? []);
+        if (! empty($addressTypes)) {
+            $types = Database::get()->fetchCol(
+                (new Select())
+                    ->from('available_channel_type')
+                    ->columns('type')
+                    ->where(['type IN (?)' => $addressTypes])
             );
+
+            if (count($types) !== count($addressTypes)) {
+                throw new HttpException(
+                    422,
+                    sprintf(
+                        $msgPrefix . 'undefined address type %s given',
+                        implode(', ', array_diff($addressTypes, $types))
+                    )
+                );
+            }
         }
 
         //TODO: is it a good idea to check valid channel types here?, if yes,

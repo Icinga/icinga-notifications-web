@@ -1923,8 +1923,7 @@
                 "required": [
                     "id",
                     "full_name",
-                    "default_channel",
-                    "addresses"
+                    "default_channel"
                 ],
                 "properties": {
                     "id": {

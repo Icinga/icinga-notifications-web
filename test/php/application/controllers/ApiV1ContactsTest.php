@@ -522,7 +522,9 @@ YAML;
 
         $this->assertSame(422, $response->getStatusCode(), $content);
         $this->assertJsonStringEqualsJsonString(
-            $this->jsonEncodeError('Invalid request body: the field addresses must be present'),
+            $this->jsonEncodeError(
+                'Invalid request body: an address according to default_channel type email is required'
+            ),
             $content
         );
     }
@@ -719,6 +721,34 @@ YAML;
     /**
      * @dataProvider apiTestBackends
      */
+    public function testPostToCreateWithWebhookAsDefaultChannel(Connection $db, Url $endpoint): void
+    {
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contacts',
+            json:  [
+                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name' => 'Test3',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID_2
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(201, $response->getStatusCode(), $content);
+        $this->assertSame(
+            ['notifications/api/v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3],
+            $response->getHeader('Location')
+        );
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeSuccessMessage('Contact created successfully'),
+            $content
+        );
+    }
+
+    /**
+     * @dataProvider apiTestBackends
+     */
     public function testPostToCreateWithInvalidDefaultChannel(Connection $db, Url $endpoint): void
     {
         // invalid default_channel uuid
@@ -818,7 +848,9 @@ YAML;
         $content = $response->getBody()->getContents();
         $this->assertSame(422, $response->getStatusCode(), $content);
         $this->assertJsonStringEqualsJsonString(
-            $this->jsonEncodeError('Invalid request body: the field addresses must be present'),
+            $this->jsonEncodeError(
+                'Invalid request body: an address according to default_channel type email is required'
+            ),
             $content
         );
     }
@@ -1280,7 +1312,9 @@ YAML;
 
         $this->assertSame(422, $response->getStatusCode(), $content);
         $this->assertJsonStringEqualsJsonString(
-            $this->jsonEncodeError('Invalid request body: the field addresses must be present'),
+            $this->jsonEncodeError(
+                'Invalid request body: an address according to default_channel type email is required'
+            ),
             $content
         );
     }
@@ -1680,7 +1714,9 @@ YAML;
         $content = $response->getBody()->getContents();
         $this->assertEquals(422, $response->getStatusCode(), $content);
         $this->assertJsonStringEqualsJsonString(
-            $this->jsonEncodeError('Invalid request body: the field addresses must be present'),
+            $this->jsonEncodeError(
+                'Invalid request body: an address according to default_channel type email is required'
+            ),
             $content
         );
     }
