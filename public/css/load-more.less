@@ -35,9 +35,11 @@
 }
 
 //layout
-.item-list .list-item {
-  &.show-more a {
-    flex: 1;
+.item-list .list-item.show-more {
+  display: flex;
+
+  .action-link {
+    flex: 1 1 auto;
     margin: 1.5em 0;
     padding: .5em 0;
   }
