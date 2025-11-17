@@ -73,15 +73,6 @@
   #first-handoff-description {
     margin: 0 0 0 14em;
   }
-
-  .term-input-area.read-only {
-    label.contact,
-    label.group {
-      input + i {
-        display: block;
-      }
-    }
-  }
 }
 
 /* Style */
@@ -112,16 +103,6 @@
 };
 
 .rotation-config {
-  label:not(:hover) {
-    &.contact input:not(:focus) ~ .icon::before {
-      content: "\f007";
-    }
-
-    &.group input:not(:focus) ~ .icon::before {
-      content: "\f0c0";
-    }
-  }
-
   .rotation-mode {
     padding: .75em;
     border: 1px solid @gray-light;
