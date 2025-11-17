@@ -11,15 +11,17 @@ use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\MoveRotationForm;
 use Icinga\Module\Notifications\Forms\RotationConfigForm;
 use Icinga\Module\Notifications\Forms\ScheduleForm;
+use Icinga\Module\Notifications\Model\Contact;
+use Icinga\Module\Notifications\Model\Contactgroup;
 use Icinga\Module\Notifications\Model\Schedule;
 use Icinga\Module\Notifications\Widget\Detail\ScheduleDetail;
-use Icinga\Module\Notifications\Widget\RecipientSuggestions;
 use Icinga\Module\Notifications\Widget\TimezoneWarning;
 use Icinga\Web\Session;
 use ipl\Html\Contract\Form;
 use ipl\Html\Html;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
+use ipl\Web\FormElement\SearchSuggestions;
 use ipl\Web\Url;
 use ipl\Web\Widget\ButtonLink;
 
@@ -261,9 +263,58 @@ class ScheduleController extends CompatController
 
     public function suggestRecipientAction(): void
     {
-        $suggestions = new RecipientSuggestions();
-        $suggestions->forRequest($this->getServerRequest());
+        $suggestions = new SearchSuggestions(
+            (function () use (&$suggestions) {
+                $createExcludeFilter = function (string $for, array $from): Filter\None {
+                    $toExclude = array_filter(array_map(function ($term) use ($for) {
+                        if (str_contains($term, ':') === false) {
+                            return '';
+                        }
 
+                        [$type, $id] = explode(':', $term, 2);
+
+                        return $type === $for ? $id : '';
+                    }, $from));
+
+                    $filter = Filter::none();
+                    if (! empty($toExclude)) {
+                        $filter->add(Filter::equal('id', $toExclude));
+                    }
+
+                    return $filter;
+                };
+
+                $contactFilter = Filter::all(
+                    $createExcludeFilter('contact', $suggestions->getExcludeTerms()),
+                    Filter::like('full_name', $suggestions->getSearchTerm())
+                );
+                foreach (Contact::on(Database::get())->filter($contactFilter) as $contact) {
+                    yield [
+                        'search' => 'contact:' . $contact->id,
+                        'label' => $contact->full_name
+                    ];
+                }
+
+                $groupFilter = Filter::all(
+                    $createExcludeFilter('group', $suggestions->getExcludeTerms()),
+                    Filter::like('name', $suggestions->getSearchTerm())
+                );
+                foreach (Contactgroup::on(Database::get())->filter($groupFilter) as $group) {
+                    yield [
+                        'search' => 'group:' . $group->id,
+                        'label' => $group->name
+                    ];
+                }
+            })()
+        );
+
+        $suggestions->setGroupingCallback(function (array $data) {
+            return str_starts_with($data['search'], 'contact:')
+                ? $this->translate('Contacts')
+                : $this->translate('Contact Groups');
+        });
+
+        $suggestions->forRequest($this->getServerRequest());
         $this->getDocument()->addHtml($suggestions);
     }
 
