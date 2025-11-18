@@ -46,9 +46,9 @@ class EventRenderer implements ItemRenderer
         }
 
         if ($layout === 'header') {
-            $content = new HtmlElement('span');
+            $content = new HtmlElement('span', Attributes::create(['class' => 'subject']));
         } else {
-            $content = new Link(null, Links::event($item->id));
+            $content = new Link(null, Links::event($item->id), ['class' => 'subject']);
         }
 
         /** @var Objects $obj */

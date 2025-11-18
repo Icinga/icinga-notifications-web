@@ -62,9 +62,9 @@ class IncidentRenderer implements ItemRenderer
         $title->addHtml(Html::tag('span', [], sprintf('#%d:', $item->id)));
 
         if ($layout === 'header') {
-            $content = new HtmlElement('span');
+            $content = new HtmlElement('span', Attributes::create(['class' => 'subject']));
         } else {
-            $content = new Link(null, Links::incident($item->id));
+            $content = new Link(null, Links::incident($item->id), ['class' => 'subject']);
         }
 
         /** @var Objects $obj */
