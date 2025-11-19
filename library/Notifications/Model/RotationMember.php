@@ -15,17 +15,17 @@ use ipl\Orm\Relations;
 /**
  * RotationMember
  *
- * @property int $id
- * @property int $rotation_id
- * @property ?int $contact_id
- * @property ?int $contactgroup_id
- * @property ?int $position
- * @property DateTime $changed_at
- * @property bool $deleted
+ * @property int                   $id
+ * @property int                   $rotation_id
+ * @property ?int                  $contact_id
+ * @property ?int                  $contactgroup_id
+ * @property ?int                  $position
+ * @property DateTime              $changed_at
+ * @property bool                  $deleted
  *
- * @property Query|Rotation $rotation
- * @property Query|Contact $contact
- * @property Query|Contactgroup $contactgroup
+ * @property Query|Rotation        $rotation
+ * @property Query|Contact         $contact
+ * @property Query|Contactgroup    $contactgroup
  * @property Query|TimeperiodEntry $shift
  */
 class RotationMember extends Model

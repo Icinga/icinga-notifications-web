@@ -17,16 +17,16 @@ use Recurr\Rule;
 /**
  * TimeperiodEntry
  *
- * @property int $id
- * @property int $timeperiod_id
- * @property int $rotation_member_id
- * @property DateTime $start_time
- * @property DateTime $end_time
- * @property ?DateTime $until_time
- * @property string $timezone
- * @property ?string $rrule
+ * @property int                  $id
+ * @property int                  $timeperiod_id
+ * @property int                  $rotation_member_id
+ * @property DateTime             $start_time
+ * @property DateTime             $end_time
+ * @property ?DateTime            $until_time
+ * @property string               $timezone
+ * @property ?string              $rrule
  *
- * @property Query|Timeperiod $timeperiod
+ * @property Query|Timeperiod     $timeperiod
  * @property Query|RotationMember $member
  */
 class TimeperiodEntry extends Model

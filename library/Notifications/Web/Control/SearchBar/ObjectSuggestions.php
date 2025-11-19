@@ -4,6 +4,7 @@
 
 namespace Icinga\Module\Notifications\Web\Control\SearchBar;
 
+use Generator;
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Behavior\IcingaCustomVars;
@@ -19,10 +20,11 @@ use ipl\Orm\Query;
 use ipl\Orm\Relation;
 use ipl\Orm\Relation\HasOne;
 use ipl\Orm\Resolver;
+use ipl\Stdlib\Filter;
 use ipl\Stdlib\Seq;
 use ipl\Web\Control\SearchBar\SearchException;
 use ipl\Web\Control\SearchBar\Suggestions;
-use ipl\Stdlib\Filter;
+use LogicException;
 use PDO;
 use Traversable;
 
@@ -31,8 +33,7 @@ class ObjectSuggestions extends Suggestions
     use Auth;
     use Translation;
 
-    /** @var Model */
-    protected $model;
+    protected ?Model $model = null;
 
     /**
      * Set the model to show suggestions for
@@ -41,7 +42,7 @@ class ObjectSuggestions extends Suggestions
      *
      * @return $this
      */
-    public function setModel($model): self
+    public function setModel(string|Model $model): self
     {
         if (is_string($model)) {
             $model = new $model();
@@ -60,7 +61,7 @@ class ObjectSuggestions extends Suggestions
     public function getModel(): Model
     {
         if ($this->model === null) {
-            throw new \LogicException(
+            throw new LogicException(
                 'You are accessing an unset property. Please make sure to set it beforehand.'
             );
         }
@@ -89,7 +90,7 @@ class ObjectSuggestions extends Suggestions
         return $columnPath[0] !== $tableName;
     }
 
-    protected function createQuickSearchFilter($searchTerm)
+    protected function createQuickSearchFilter($searchTerm): Filter\Any|Filter\Chain
     {
         $model = $this->getModel();
         $resolver = $model::on(Database::get())->getResolver();
@@ -104,13 +105,16 @@ class ObjectSuggestions extends Suggestions
         return $quickFilter;
     }
 
-    protected function fetchValueSuggestions($column, $searchTerm, Filter\Chain $searchFilter)
-    {
+    protected function fetchValueSuggestions(
+        $column,
+        $searchTerm,
+        Filter\Chain $searchFilter
+    ): ObjectSuggestionsCursor {
         $model = $this->getModel();
         $query = $model::on(Database::get());
         $query->limit(static::DEFAULT_LIMIT);
 
-        if (strpos($column, ' ') !== false) {
+        if (str_contains($column, ' ')) {
             // $column may be a label
             /** @var string $path */
             [$path, $_] = Seq::find(
@@ -130,10 +134,10 @@ class ObjectSuggestions extends Suggestions
         [$targetPath, $columnName] = $splitted;
 
         $isTag = false;
-        if (substr($targetPath, -4) === '.tag') {
+        if (str_ends_with($targetPath, '.tag')) {
             $isTag = true;
             $targetPath = substr($targetPath, 0, -3) . 'object_id_tag';
-        } elseif (substr($targetPath, -10) === '.extra_tag') {
+        } elseif (str_ends_with($targetPath, '.extra_tag')) {
             $isTag = true;
             $targetPath = substr($targetPath, 0, -9) . 'object_extra_tag';
         } elseif (
@@ -148,7 +152,7 @@ class ObjectSuggestions extends Suggestions
             );
         }
 
-        if (strpos($targetPath, '.') !== false) {
+        if (str_contains($targetPath, '.')) {
             try {
                 $query->with($targetPath); // TODO: Remove this, once ipl/orm does it as early
             } catch (InvalidRelationException $e) {
@@ -191,7 +195,7 @@ class ObjectSuggestions extends Suggestions
         }
     }
 
-    protected function fetchColumnSuggestions($searchTerm)
+    protected function fetchColumnSuggestions($searchTerm): Generator
     {
         $model = $this->getModel();
         $query = $model::on(Database::get());
@@ -254,7 +258,7 @@ class ObjectSuggestions extends Suggestions
     /**
      * Prepare query with all available tags/extra_tags from provided model matching the given term
      *
-     * @param Model $model The model to fetch tag/extra_tag from
+     * @param Model  $model      The model to fetch tag/extra_tag from
      * @param string $searchTerm The given search term
      *
      * @return Query
@@ -274,7 +278,7 @@ class ObjectSuggestions extends Suggestions
         return $tags;
     }
 
-    protected function matchSuggestion($path, $label, $searchTerm)
+    protected function matchSuggestion($path, $label, $searchTerm): bool
     {
         if (preg_match('/[_.](id)$/', $path)) {
             // Only suggest exotic columns if the user knows the full column path
@@ -287,7 +291,7 @@ class ObjectSuggestions extends Suggestions
     /**
      * Collect all columns of this model and its relations that can be used for filtering
      *
-     * @param Model $model
+     * @param Model    $model
      * @param Resolver $resolver
      *
      * @return Traversable
@@ -311,11 +315,11 @@ class ObjectSuggestions extends Suggestions
      * or a descendant of such related in a to-one cardinality.
      *
      * @param Resolver $resolver
-     * @param Model $subject
-     * @param array $models
-     * @param array $path
+     * @param Model    $subject
+     * @param array    $models
+     * @param array    $path
      */
-    protected static function collectRelations(Resolver $resolver, Model $subject, array &$models, array $path)
+    protected static function collectRelations(Resolver $resolver, Model $subject, array &$models, array $path): void
     {
         foreach ($resolver->getRelations($subject) as $name => $relation) {
             /** @var Relation $relation */

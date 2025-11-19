@@ -4,8 +4,9 @@
 
 namespace Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Response;
 
-use OpenApi\Attributes\Response;
+use InvalidArgumentException;
 use OpenApi\Attributes as OA;
+use OpenApi\Attributes\Response;
 
 #[OA\Schema(
     schema: 'SuccessResponse',
@@ -35,7 +36,7 @@ class SuccessResponse extends Response
         ?array $links = null,
     ) {
         if (! isset(self::SUCCESS_RESPONSES[$response])) {
-            throw new \InvalidArgumentException('Unexpected response type');
+            throw new InvalidArgumentException('Unexpected response type');
         }
 
         $content = $response !== 204

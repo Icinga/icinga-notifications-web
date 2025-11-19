@@ -44,14 +44,13 @@ class ChannelForm extends CompatForm
 {
     use CsrfCounterMeasure;
 
-    /** @var Connection */
-    private $db;
+    private Connection $db;
 
     /** @var ?int Channel ID */
-    private $channelId;
+    private ?int $channelId = null;
 
     /** @var array<string, mixed> */
-    private $defaultChannelOptions = [];
+    private array $defaultChannelOptions = [];
 
     public function __construct(Connection $db)
     {
@@ -72,15 +71,15 @@ class ChannelForm extends CompatForm
         }
 
         $this->addAttributes(['class' => 'channel-form']);
-        $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
+        $this->addCsrfCounterMeasure(Session::getSession()->getId());
 
         $this->addElement(
             'text',
             'name',
             [
-                'label'         => $this->translate('Name'),
-                'autocomplete'  => 'off',
-                'required'      => true
+                'label'        => $this->translate('Name'),
+                'autocomplete' => 'off',
+                'required'     => true
             ]
         );
 
@@ -105,12 +104,12 @@ class ChannelForm extends CompatForm
             'select',
             'type',
             [
-                'label'             => $this->translate('Type'),
-                'class'             => 'autosubmit',
-                'required'          => true,
-                'disabledOptions'   => [''],
-                'value'             => $defaultType,
-                'options'           => $typeNamePair
+                'label'           => $this->translate('Type'),
+                'class'           => 'autosubmit',
+                'required'        => true,
+                'disabledOptions' => [''],
+                'value'           => $defaultType,
+                'options'         => $typeNamePair
             ]
         );
 
@@ -273,12 +272,12 @@ class ChannelForm extends CompatForm
     /**
      * Create config elements for the given channel type
      *
-     * @param string $type The channel type
+     * @param string $type   The channel type
      * @param string $config The channel type config
      */
     protected function createConfigElements(string $type, string $config): void
     {
-        /** @var array<int, ChannelOptionConfig>  $elementsConfig */
+        /** @var array<int, ChannelOptionConfig> $elementsConfig */
         $elementsConfig = json_decode($config, true);
 
         if (empty($elementsConfig)) {
@@ -331,31 +330,15 @@ class ChannelForm extends CompatForm
      */
     protected function getElementType(string $configType): string
     {
-        switch ($configType) {
-            case 'string':
-                $elementType = 'text';
-                break;
-            case 'number':
-                $elementType = 'number';
-                break;
-            case 'text':
-                $elementType = 'textarea';
-                break;
-            case 'bool':
-                $elementType = 'checkbox';
-                break;
-            case 'option':
-            case 'options':
-                $elementType = 'select';
-                break;
-            case 'secret':
-                $elementType = 'password';
-                break;
-            default:
-                $elementType = 'text';
-        }
-
-        return $elementType;
+        return match ($configType) {
+            'string'            => 'text',
+            'number'            => 'number',
+            'text'              => 'textarea',
+            'bool'              => 'checkbox',
+            'option', 'options' => 'select',
+            'secret'            => 'password',
+            default             => 'text',
+        };
     }
 
     /**
@@ -477,9 +460,9 @@ class ChannelForm extends CompatForm
         }
 
         return [
-            'name'      => $channel->name,
-            'type'      => $channel->type,
-            'config'    => json_decode($channel->config, true) ?? []
+            'name'   => $channel->name,
+            'type'   => $channel->type,
+            'config' => json_decode($channel->config, true) ?? []
         ];
     }
 

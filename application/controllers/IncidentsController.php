@@ -7,9 +7,9 @@ namespace Icinga\Module\Notifications\Controllers;
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Hook\ObjectsRendererHook;
+use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\View\IncidentRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
-use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
@@ -26,8 +26,8 @@ class IncidentsController extends CompatController
     use Auth;
     use SearchControls;
 
-    /** @var Filter\Rule Filter from query string parameters */
-    private $filter;
+    /** @var ?Filter\Rule Filter from query string parameters */
+    private ?Filter\Rule $filter = null;
 
     public function indexAction(): void
     {

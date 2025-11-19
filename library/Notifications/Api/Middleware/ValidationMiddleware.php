@@ -45,7 +45,7 @@ class ValidationMiddleware implements MiddlewareInterface
      * Validate the HTTP method of the request.
      *
      * @param ServerRequestInterface $request
-     * @param EndpointInterface $endpointHandler
+     * @param EndpointInterface      $endpointHandler
      *
      * @return ServerRequestInterface
      *

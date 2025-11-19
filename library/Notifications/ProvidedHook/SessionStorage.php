@@ -19,10 +19,10 @@ use PDOException;
 class SessionStorage extends AuthenticationHook
 {
     /** @var Session\Session Session object */
-    protected $session;
+    protected Session\Session $session;
 
     /** @var Connection Database object */
-    protected $database;
+    protected Connection $database;
 
     public function __construct()
     {

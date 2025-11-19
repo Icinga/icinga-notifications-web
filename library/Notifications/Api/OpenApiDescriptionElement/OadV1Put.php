@@ -9,9 +9,9 @@ use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Response\Error404R
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Response\ErrorResponse;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Response\Example\ResponseExample;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Response\SuccessResponse;
+use OpenApi\Attributes as OA;
 use OpenApi\Attributes\Put;
 use OpenApi\Attributes\RequestBody;
-use OpenApi\Attributes as OA;
 
 #[Attribute(Attribute::TARGET_CLASS | Attribute::TARGET_METHOD | Attribute::IS_REPEATABLE)]
 class OadV1Put extends Put
@@ -71,7 +71,7 @@ class OadV1Put extends Put
                         ],
                         links: [
                             new OA\Link(
-                                link: 'Get' . $entityName . 'ByIdentifiere',
+                                link: 'Get' . $entityName . 'ByIdentifier',
                                 operationId: 'get' . $entityName,
                                 parameters: [
                                     'identifier' => '$response.header.X-Resource-Identifier'

@@ -56,7 +56,7 @@ class EscalationCondition extends FieldsetElement
     public static function prepare(Condition $condition): array
     {
         $data = [
-            'column' => $condition->getColumn(),
+            'column'   => $condition->getColumn(),
             'operator' => QueryString::getRuleSymbol($condition)
         ];
         if ($data['column'] === 'incident_severity') {
@@ -83,7 +83,7 @@ class EscalationCondition extends FieldsetElement
 
         $value = match ($column) {
             'incident_severity' => $this->getElement('severity')->getValue(),
-            'incident_age' => $this->getElement('no_of')->getValue()
+            'incident_age'      => $this->getElement('no_of')->getValue()
                 . $this->getElement('unit')->getValue()
         };
 
@@ -100,15 +100,15 @@ class EscalationCondition extends FieldsetElement
     protected function assemble(): void
     {
         $this->addElement('select', 'column', [
-            'required' => true,
-            'options' => [
-                '' => sprintf(' - %s - ', $this->translate('Please choose')),
+            'required'        => true,
+            'options'         => [
+                ''                  => sprintf(' - %s - ', $this->translate('Please choose')),
                 'incident_severity' => $this->translate('Incident Severity'),
-                'incident_age' => $this->translate('Incident Age')
+                'incident_age'      => $this->translate('Incident Age')
             ],
-            'class' => 'autosubmit',
+            'class'           => 'autosubmit',
             'disabledOptions' => [''],
-            'value' => ''
+            'value'           => ''
         ]);
         $this->addHtml(new Icon('spinner', [
             'class' => 'spinner',
@@ -119,7 +119,7 @@ class EscalationCondition extends FieldsetElement
 
         $this->addElement('select', 'operator', [
             'required' => true,
-            'options' => [
+            'options'  => [
                 '='  => '=',
                 '>'  => '>',
                 '>=' => '>=',
@@ -132,28 +132,28 @@ class EscalationCondition extends FieldsetElement
         if ($this->getPopulatedValue('column') === 'incident_severity') {
             $this->addElement('select', 'severity', [
                 'required' => true,
-                'options' => [
-                    'ok' => $this->translate('Ok', 'notification.severity'),
-                    'debug' => $this->translate('Debug', 'notification.severity'),
-                    'info' => $this->translate('Information', 'notification.severity'),
-                    'notice' => $this->translate('Notice', 'notification.severity'),
+                'options'  => [
+                    'ok'      => $this->translate('Ok', 'notification.severity'),
+                    'debug'   => $this->translate('Debug', 'notification.severity'),
+                    'info'    => $this->translate('Information', 'notification.severity'),
+                    'notice'  => $this->translate('Notice', 'notification.severity'),
                     'warning' => $this->translate('Warning', 'notification.severity'),
-                    'err' => $this->translate('Error', 'notification.severity'),
-                    'crit' => $this->translate('Critical', 'notification.severity'),
-                    'alert' => $this->translate('Alert', 'notification.severity'),
-                    'emerg' => $this->translate('Emergency', 'notification.severity')
+                    'err'     => $this->translate('Error', 'notification.severity'),
+                    'crit'    => $this->translate('Critical', 'notification.severity'),
+                    'alert'   => $this->translate('Alert', 'notification.severity'),
+                    'emerg'   => $this->translate('Emergency', 'notification.severity')
                 ]
             ]);
         } elseif ($this->getPopulatedValue('column') === 'incident_age') {
             $noOf = $this->createElement('number', 'no_of', [
                 'required' => true,
-                'min' => 1,
-                'step' => 1,
-                'value' => 1
+                'min'      => 1,
+                'step'     => 1,
+                'value'    => 1
             ]);
             $unit = $this->createElement('select', 'unit', [
                 'required' => true,
-                'options' => [
+                'options'  => [
                     'h' => $this->translate('Hours'),
                     'm' => $this->translate('Minutes'),
                     's' => $this->translate('Seconds')
@@ -166,9 +166,9 @@ class EscalationCondition extends FieldsetElement
             $this->addHtml(new HtmlElement('div', Attributes::create(['class' => 'age-inputs']), $noOf, $unit));
         } else {
             $this->addElement('text', 'noop', [
-                'required' => true,
+                'required'    => true,
                 'placeholder' => $this->translate('Please make a decision'),
-                'disabled' => true
+                'disabled'    => true
             ]);
         }
 

@@ -29,7 +29,7 @@ abstract class ObjectsRendererHook
      *
      * @var array<string, array<string, array<string, string>>>
      */
-    private static $objectIdTags = [];
+    private static array $objectIdTags = [];
 
     /**
      * Array of HTMLs for objects with their corresponding object IDs as keys
@@ -38,7 +38,7 @@ abstract class ObjectsRendererHook
      *
      * @var array<string, ValidHtml>
      */
-    private static $objectNameHtmls = [];
+    private static array $objectNameHtmls = [];
 
     /**
      * Array of object names with their corresponding object IDs as keys
@@ -47,7 +47,7 @@ abstract class ObjectsRendererHook
      *
      * @var array<string, string>
      */
-    private static $objectNames = [];
+    private static array $objectNames = [];
 
     /**
      * Get the object names for the objects using the object ID tags
@@ -117,7 +117,8 @@ abstract class ObjectsRendererHook
      * ['object source type' => ['object ID' => [object ID tags]]].
      *
      * @param array<string, array<string, array<string, string>>> $objectIdTags Array of object ID tags for each source
-     * @param bool $asHtml When true, object names are prepared as HTML otherwise as string
+     * @param bool                                                $asHtml       When true, object names are prepared as
+     *                                                                          HTML otherwise as string
      *
      * @return void
      */
@@ -226,8 +227,6 @@ abstract class ObjectsRendererHook
      * If the object name is not loaded, it is prepared using object ID tags and the same is returned.
      *
      * @param Objects $obj
-     * @param bool $prepare If true prepares the object name string from the hook implementation if it is not
-     *                      already present in the cache
      *
      * @return string
      */
@@ -284,7 +283,7 @@ abstract class ObjectsRendererHook
 
                     return $objectLink->addAttributes([
                         'data-base-target' => '_next',
-                        'class' => [
+                        'class'            => [
                             'icinga-module',
                             'module-' . ($sourceType === 'icinga2' ? 'icingadb' : $sourceType)
                         ]

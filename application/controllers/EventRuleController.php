@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Controllers;
 use Icinga\Application\Hook;
 use Icinga\Application\Logger;
 use Icinga\Exception\Http\HttpNotFoundException;
+use Icinga\Exception\MissingParameterException;
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
@@ -19,6 +20,7 @@ use Icinga\Module\Notifications\Model\Source;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ExtraTagSuggestions;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
+use ipl\Html\Attributes;
 use ipl\Html\Contract\Form;
 use ipl\Html\Html;
 use ipl\Stdlib\Filter;
@@ -34,7 +36,6 @@ class EventRuleController extends CompatController
 {
     use Auth;
 
-    /** @var Session\SessionNamespace */
     private Session\SessionNamespace $session;
 
     public function init(): void
@@ -45,8 +46,8 @@ class EventRuleController extends CompatController
 
     public function indexAction(): void
     {
-        $this->controls->addAttributes(['class' => 'event-rule-detail']);
-        $this->content->addAttributes(['class' => 'event-rule-detail']);
+        $this->controls->addAttributes(new Attributes(['class' => 'event-rule-detail']));
+        $this->content->addAttributes(new Attributes(['class' => 'event-rule-detail']));
         $this->getTabs()->disableLegacyExtensions();
 
         $ruleId = (int) $this->params->getRequired('id');
@@ -188,7 +189,7 @@ class EventRuleController extends CompatController
      *
      * @return void
      *
-     * @throws \Icinga\Exception\MissingParameterException
+     * @throws MissingParameterException
      */
     public function searchEditorAction(): void
     {
@@ -205,6 +206,7 @@ class EventRuleController extends CompatController
                 ))
                 ->first();
         } elseif (isset($this->session->source)) {
+            /** @var Source $source */
             $source = Source::on(Database::get())
                 ->columns(['id', 'type'])
                 ->filter(Filter::equal('id', $this->session->source))
@@ -246,9 +248,9 @@ class EventRuleController extends CompatController
                     ->applyDefaultElementDecorators()
                     ->setAction(Url::fromRequest()->getAbsoluteUrl())
                     ->addElement('select', 'target', [
-                        'required' => true,
-                        'label' => $this->translate('Filter Target'),
-                        'options' => ['' => ' - ' . $this->translate('Please choose') . ' - '] + $targets,
+                        'required'        => true,
+                        'label'           => $this->translate('Filter Target'),
+                        'options'         => ['' => ' - ' . $this->translate('Please choose') . ' - '] + $targets,
                         'disabledOptions' => ['']
                     ])
                     ->addElement('submit', 'btn_submit', [
@@ -295,7 +297,7 @@ class EventRuleController extends CompatController
                 )
             )
             ->populate([
-                'name' => $this->session->get('name'),
+                'name'   => $this->session->get('name'),
                 'source' => $this->session->get('source')
             ])
             ->setAction(Url::fromRequest()->getAbsoluteUrl())

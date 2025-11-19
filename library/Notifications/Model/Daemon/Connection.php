@@ -10,25 +10,25 @@ use React\Stream\ThroughStream;
 class Connection
 {
     /** @var ConnectionInterface Associated Connection from ReactPHP */
-    protected $connection;
+    protected ConnectionInterface $connection;
 
     /** @var string Hostname */
-    protected $host;
+    protected string $host;
 
     /** @var int Port */
-    protected $port;
+    protected int $port;
 
-    /** @var string Session identifier */
-    protected $session;
+    /** @var ?string Session identifier */
+    protected ?string $session = null;
 
     /** @var User User information */
-    protected $user;
+    protected User $user;
 
     /** @var ThroughStream Data stream between connection and server */
-    protected $stream;
+    protected ThroughStream $stream;
 
-    /** @var string User agent */
-    protected $userAgent;
+    /** @var ?string User agent */
+    protected ?string $userAgent = null;
 
     /**
      * Construct an instance of the Connection class
@@ -111,7 +111,7 @@ class Connection
      * @return object{host: string, port: string, addr: string} | false Host, port and full address or false if the
      * parsing failed
      */
-    public static function parseHostAndPort(?string $address)
+    public static function parseHostAndPort(?string $address): object|false
     {
         if ($address === null) {
             return false;
@@ -132,7 +132,7 @@ class Connection
             return false;
         }
 
-        if (strpos($host, '[') !== false) {
+        if (str_contains($host, '[')) {
             // IPv6 format
             if (strpos($host, '.')) {
                 // IPv4 represented in IPv6

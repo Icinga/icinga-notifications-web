@@ -21,11 +21,9 @@ use ipl\Web\Widget\HorizontalKeyValue;
 
 class EventDetail extends BaseHtmlElement
 {
-    /** @var Event */
-    protected $event;
+    protected Event $event;
 
-    /** @var Incident */
-    protected $incident;
+    protected Incident $incident;
 
     protected $defaultAttributes = [
         'class'                         => 'event-detail',
@@ -78,9 +76,9 @@ class EventDetail extends BaseHtmlElement
             $messages[] = Html::tag(
                 'div',
                 [
-                    'id'                    => 'mute-reason-' . $this->event->id,
-                    'class'                 => 'collapsible',
-                    'data-visible-height'   => 100
+                    'id'                  => 'mute-reason-' . $this->event->id,
+                    'class'               => 'collapsible',
+                    'data-visible-height' => 100
                 ],
                 $this->event->mute_reason
             );
@@ -91,9 +89,9 @@ class EventDetail extends BaseHtmlElement
             $messages[] = Html::tag(
                 'div',
                 [
-                    'id'                    => 'message-' . $this->event->id,
-                    'class'                 => 'collapsible',
-                    'data-visible-height'   => 100
+                    'id'                  => 'message-' . $this->event->id,
+                    'class'               => 'collapsible',
+                    'data-visible-height' => 100
                 ],
                 $this->event->message
             );
@@ -148,7 +146,7 @@ class EventDetail extends BaseHtmlElement
         return $elements;
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->add([
             $this->createInfo(),

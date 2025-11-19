@@ -4,6 +4,7 @@
 
 namespace Tests\Icinga\Module\Notifications\Widget;
 
+use DateTime;
 use Icinga\Module\Notifications\Widget\Calendar;
 use ipl\I18n\NoopTranslator;
 use ipl\I18n\StaticTranslator;
@@ -24,7 +25,7 @@ class CalendarTest extends TestCase
             date_default_timezone_set('Europe/Berlin');
 
             $controls = (new Calendar\Controls())->populate([
-                'mode' => 'month',
+                'mode'  => 'month',
                 'month' => '2023-02'
             ])->ensureAssembled();
 
@@ -32,7 +33,7 @@ class CalendarTest extends TestCase
             $calendar->setControls($controls);
 
             $this->assertEquals(
-                new \DateTime('2023-01-30T00:00:00+0100'),
+                new DateTime('2023-01-30T00:00:00+0100'),
                 $calendar->getGrid()->getGridStart()
             );
         } finally {
@@ -51,7 +52,7 @@ class CalendarTest extends TestCase
             date_default_timezone_set('Europe/Berlin');
 
             $controls = (new Calendar\Controls())->populate([
-                'mode' => 'month',
+                'mode'  => 'month',
                 'month' => '2023-02'
             ])->ensureAssembled();
 
@@ -59,7 +60,7 @@ class CalendarTest extends TestCase
             $calendar->setControls($controls);
 
             $this->assertEquals(
-                new \DateTime('2023-03-13T00:00:00+0100'),
+                new DateTime('2023-03-13T00:00:00+0100'),
                 $calendar->getGrid()->getGridEnd()
             );
         } finally {

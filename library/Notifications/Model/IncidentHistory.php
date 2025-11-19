@@ -17,33 +17,33 @@ use ipl\Sql\Select;
 /**
  * IncidentHistory
  *
- * @property int $id
- * @property int $incident_id
- * @property ?int $event_id
- * @property ?int $rule_id
- * @property ?int $rule_escalation_id
- * @property DateTime $time
- * @property string $type
- * @property ?int $contact_id
- * @property ?int $schedule_id
- * @property ?int $contactgroup_id
- * @property ?int $channel_id
- * @property ?string $new_severity
- * @property ?string $old_severity
- * @property ?string $new_recipient_role
- * @property ?string $old_recipient_role
- * @property ?string $message
- * @property ?string $notification_state
- * @property ?DateTime $sent_at
+ * @property int                  $id
+ * @property int                  $incident_id
+ * @property ?int                 $event_id
+ * @property ?int                 $rule_id
+ * @property ?int                 $rule_escalation_id
+ * @property DateTime             $time
+ * @property string               $type
+ * @property ?int                 $contact_id
+ * @property ?int                 $schedule_id
+ * @property ?int                 $contactgroup_id
+ * @property ?int                 $channel_id
+ * @property ?string              $new_severity
+ * @property ?string              $old_severity
+ * @property ?string              $new_recipient_role
+ * @property ?string              $old_recipient_role
+ * @property ?string              $message
+ * @property ?string              $notification_state
+ * @property ?DateTime            $sent_at
  *
- * @property Query|Incident $incident
- * @property Query|Event $event
- * @property Query|Contact $contact
- * @property Query|Contactgroup $contactgroup
- * @property Query|Schedule $schedule
- * @property Query|Rule $rule
+ * @property Query|Incident       $incident
+ * @property Query|Event          $event
+ * @property Query|Contact        $contact
+ * @property Query|Contactgroup   $contactgroup
+ * @property Query|Schedule       $schedule
+ * @property Query|Rule           $rule
  * @property Query|RuleEscalation $rule_escalation
- * @property Query|Channel $channel
+ * @property Query|Channel        $channel
  */
 class IncidentHistory extends Model
 {
@@ -145,17 +145,12 @@ class IncidentHistory extends Model
      */
     public static function translateNotificationState(string $state): string
     {
-        switch ($state) {
-            case 'sent':
-                return t('sent', 'notifications.transmission.state');
-            case 'failed':
-                return t('failed', 'notifications.transmission.state');
-            case 'pending':
-                return t('pending', 'notifications.transmission.state');
-            case 'suppressed':
-                return t('suppressed', 'notifications.transmission.state');
-            default:
-                return t('unknown', 'notifications.transmission.state');
-        }
+        return match ($state) {
+            'sent'       => t('sent', 'notifications.transmission.state'),
+            'failed'     => t('failed', 'notifications.transmission.state'),
+            'pending'    => t('pending', 'notifications.transmission.state'),
+            'suppressed' => t('suppressed', 'notifications.transmission.state'),
+            default      => t('unknown', 'notifications.transmission.state'),
+        };
     }
 }

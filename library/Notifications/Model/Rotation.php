@@ -21,20 +21,20 @@ use ipl\Stdlib\Filter;
 /**
  * Rotation
  *
- * @property int $id
- * @property int $schedule_id
- * @property ?int $priority
- * @property string $name
- * @property string $mode
- * @property string|array $options
- * @property string $first_handoff
- * @property DateTime $actual_handoff
- * @property DateTime $changed_at
- * @property bool $deleted
+ * @property int                  $id
+ * @property int                  $schedule_id
+ * @property ?int                 $priority
+ * @property string               $name
+ * @property string               $mode
+ * @property string|array         $options
+ * @property string               $first_handoff
+ * @property DateTime             $actual_handoff
+ * @property DateTime             $changed_at
+ * @property bool                 $deleted
  *
- * @property Query|Schedule $schedule
+ * @property Query|Schedule       $schedule
  * @property Query|RotationMember $member
- * @property Query|Timeperiod $timeperiod
+ * @property Query|Timeperiod     $timeperiod
  */
 class Rotation extends Model
 {
@@ -66,13 +66,13 @@ class Rotation extends Model
     public function getColumnDefinitions(): array
     {
         return [
-            'schedule_id'       => t('Schedule'),
-            'priority'          => t('Priority'),
-            'name'              => t('Name'),
-            'mode'              => t('Mode'),
-            'first_handoff'     => t('First Handoff'),
-            'actual_handoff'    => t('Actual Handoff'),
-            'changed_at'        => t('Changed At')
+            'schedule_id'    => t('Schedule'),
+            'priority'       => t('Priority'),
+            'name'           => t('Name'),
+            'mode'           => t('Mode'),
+            'first_handoff'  => t('First Handoff'),
+            'actual_handoff' => t('Actual Handoff'),
+            'changed_at'     => t('Changed At')
         ];
     }
 
@@ -127,7 +127,7 @@ class Rotation extends Model
         $changedAt = (int) (new DateTime())->format("Uv");
         $markAsDeleted = ['changed_at' => $changedAt, 'deleted' => 'y'];
 
-        $db->update('timeperiod_entry', $markAsDeleted, ['timeperiod_id = ?' => $timeperiodId,  'deleted = ?' => 'n']);
+        $db->update('timeperiod_entry', $markAsDeleted, ['timeperiod_id = ?' => $timeperiodId, 'deleted = ?' => 'n']);
         $db->update('timeperiod', $markAsDeleted, ['id = ?' => $timeperiodId]);
 
         $db->update(

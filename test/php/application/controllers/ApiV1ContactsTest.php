@@ -4,12 +4,9 @@
 
 namespace Tests\Icinga\Module\Notifications\Controllers;
 
-use GuzzleHttp\Client;
-use Icinga\Exception\IcingaException;
 use Icinga\Module\Notifications\Test\BaseApiV1TestCase;
 use Icinga\Web\Url;
 use ipl\Sql\Connection;
-use stdClass;
 use WebSocket\Base;
 
 class ApiV1ContactsTest extends BaseApiV1TestCase
@@ -23,12 +20,12 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
         $content = $response->getBody()->getContents();
 
         $expected = $this->jsonEncodeResults([
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
-            'full_name' => 'Test',
-            'username' => 'test',
+            'id'              => BaseApiV1TestCase::CONTACT_UUID,
+            'full_name'       => 'Test',
+            'username'        => 'test',
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-            'groups' => [],
-            'addresses' => ['email' => 'test@example.com']
+            'groups'          => [],
+            'addresses'       => ['email' => 'test@example.com']
         ]);
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertJsonStringEqualsJsonString($expected, $content);
@@ -57,20 +54,20 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
 
         $expected = $this->jsonEncodeResults([
             [
-                'id' => BaseApiV1TestCase::CONTACT_UUID,
-                'full_name' => 'Test',
-                'username' => 'test',
+                'id'              => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name'       => 'Test',
+                'username'        => 'test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'groups' => [],
-                'addresses' => ['email' => 'test@example.com']
+                'groups'          => [],
+                'addresses'       => ['email' => 'test@example.com']
             ],
             [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_2,
-                'full_name' => 'Test2',
-                'username' => 'test2',
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_2,
+                'full_name'       => 'Test2',
+                'username'        => 'test2',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'groups' => [],
-                'addresses' => ['email' => 'test@example.com']
+                'groups'          => [],
+                'addresses'       => ['email' => 'test@example.com']
             ],
         ]);
         $this->assertSame(200, $response->getStatusCode(), $content);
@@ -86,12 +83,12 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
         $content = $response->getBody()->getContents();
 
         $expected = $this->jsonEncodeResult([
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
-            'full_name' => 'Test',
-            'username' => 'test',
+            'id'              => BaseApiV1TestCase::CONTACT_UUID,
+            'full_name'       => 'Test',
+            'username'        => 'test',
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-            'groups' => [],
-            'addresses' => ['email' => 'test@example.com']
+            'groups'          => [],
+            'addresses'       => ['email' => 'test@example.com']
         ]);
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertJsonStringEqualsJsonString($expected, $content);
@@ -186,7 +183,7 @@ YAML;
             'v1/contacts',
             body: $body,
             headers: [
-                'Accept' => 'application/json',
+                'Accept'       => 'application/json',
                 'Content-Type' => 'application/json'
             ]
         );
@@ -215,7 +212,7 @@ YAML;
             'v1/contacts',
             body: $body,
             headers: [
-                'Accept' => 'application/json',
+                'Accept'       => 'application/json',
                 'Content-Type' => 'text/yaml'
             ]
         );
@@ -239,10 +236,10 @@ YAML;
             'v1/contacts',
             ['id' => BaseApiV1TestCase::CONTACT_UUID],
             [
-                'id' => BaseApiV1TestCase::CONTACT_UUID,
-                'full_name' => 'Test',
+                'id'              => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com']
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -263,11 +260,11 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_4,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_4,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com']
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -287,11 +284,11 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com']
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -314,11 +311,11 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_2,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_2,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com']
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -336,11 +333,11 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test (replaced)',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => 'Test (replaced)',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com']
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -365,12 +362,12 @@ YAML;
 
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
-            'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-            'full_name' => 'Test (replaced)',
-            'username' => null,
+            'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+            'full_name'       => 'Test (replaced)',
+            'username'        => null,
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-            'groups' => [],
-            'addresses' => ['email' => 'test@example.com']
+            'groups'          => [],
+            'addresses'       => ['email' => 'test@example.com']
         ]), $content);
     }
 
@@ -383,11 +380,11 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com']
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -405,11 +402,11 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com']
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -434,12 +431,12 @@ YAML;
 
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
-            'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-            'full_name' => 'Test',
-            'username' => null,
+            'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+            'full_name'       => 'Test',
+            'username'        => null,
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-            'groups' => [],
-            'addresses' => ['email' => 'test@example.com']
+            'groups'          => [],
+            'addresses'       => ['email' => 'test@example.com']
         ]), $content);
     }
 
@@ -455,10 +452,10 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'full_name' => 'Test',
+            json: [
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com']
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -474,10 +471,10 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com']
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -493,8 +490,8 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+            json: [
+                'id'        => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'addresses' => ['email' => 'test@example.com']
             ]
@@ -512,9 +509,9 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             ]
         );
@@ -539,11 +536,11 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => [BaseApiV1TestCase::CONTACT_UUID_3],
-                'full_name' => 'Test',
+            json: [
+                'id'              => [BaseApiV1TestCase::CONTACT_UUID_3],
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com']
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -559,11 +556,11 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => ['Test'],
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => ['Test'],
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com']
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -579,11 +576,11 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => 'Test',
                 'default_channel' => [BaseApiV1TestCase::CHANNEL_UUID],
-                'addresses' => ['email' => 'test@example.com']
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -599,11 +596,11 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => 'test@example.com'
+                'addresses'       => 'test@example.com'
             ]
         );
         $content = $response->getBody()->getContents();
@@ -621,12 +618,12 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com'],
-                'username' => ['test']
+                'addresses'       => ['email' => 'test@example.com'],
+                'username'        => ['test']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -642,12 +639,12 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com'],
-                'groups' => BaseApiV1TestCase::GROUP_UUID
+                'addresses'       => ['email' => 'test@example.com'],
+                'groups'          => BaseApiV1TestCase::GROUP_UUID
             ]
         );
         $content = $response->getBody()->getContents();
@@ -668,15 +665,15 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test3',
-                'username' => 'test3',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => 'Test3',
+                'username'        => 'test3',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'groups' => [BaseApiV1TestCase::GROUP_UUID],
-                'addresses' => [
-                    'email' => 'test@example.com',
-                    'webhook' => 'https://example.com/webhook',
+                'groups'          => [BaseApiV1TestCase::GROUP_UUID],
+                'addresses'       => [
+                    'email'      => 'test@example.com',
+                    'webhook'    => 'https://example.com/webhook',
                     'rocketchat' => 'https://chat.example.com/webhook',
                 ]
             ]
@@ -703,14 +700,14 @@ YAML;
 
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
-            'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-            'full_name' => 'Test3',
-            'username' => 'test3',
+            'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+            'full_name'       => 'Test3',
+            'username'        => 'test3',
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-            'groups' => [BaseApiV1TestCase::GROUP_UUID],
-            'addresses' => [
-                'email' => 'test@example.com',
-                'webhook' => 'https://example.com/webhook',
+            'groups'          => [BaseApiV1TestCase::GROUP_UUID],
+            'addresses'       => [
+                'email'      => 'test@example.com',
+                'webhook'    => 'https://example.com/webhook',
                 'rocketchat' => 'https://chat.example.com/webhook',
             ]
         ]), $content);
@@ -726,11 +723,11 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => 'Test',
                 'default_channel' => 'invalid_uuid',
-                'addresses' => ['email' => 'test@example.com']
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -752,10 +749,10 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
-                'full_name' => 'Test',
+            json: [
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com']
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -771,10 +768,10 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com']
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -790,8 +787,8 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+            json: [
+                'id'        => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'addresses' => ['email' => 'test@example.com']
             ]
@@ -809,9 +806,9 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             ]
         );
@@ -835,11 +832,11 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/',
-            json:  [
-                'id' => [BaseApiV1TestCase::CONTACT_UUID_3],
-                'full_name' => 'Test',
+            json: [
+                'id'              => [BaseApiV1TestCase::CONTACT_UUID_3],
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com']
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -855,11 +852,11 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/',
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => ['Test'],
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => ['Test'],
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com']
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -875,11 +872,11 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/',
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => 'Test',
                 'default_channel' => [BaseApiV1TestCase::CHANNEL_UUID],
-                'addresses' => ['email' => 'test@example.com']
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -895,11 +892,11 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/',
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => 'test@example.com'
+                'addresses'       => 'test@example.com'
             ]
         );
         $content = $response->getBody()->getContents();
@@ -917,12 +914,12 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/',
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com'],
-                'username' => ['test']
+                'addresses'       => ['email' => 'test@example.com'],
+                'username'        => ['test']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -938,12 +935,12 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/',
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com'],
-                'groups' => BaseApiV1TestCase::GROUP_UUID
+                'addresses'       => ['email' => 'test@example.com'],
+                'groups'          => BaseApiV1TestCase::GROUP_UUID
             ]
         );
         $content = $response->getBody()->getContents();
@@ -965,11 +962,11 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => [
+                'addresses'       => [
                     'invalid' => 'value'
                 ]
             ]
@@ -988,13 +985,13 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => [
+                'addresses'       => [
                     'invalid' => 'value',
-                    'email' => 'test@example.com'
+                    'email'   => 'test@example.com'
                 ]
             ]
         );
@@ -1010,11 +1007,11 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => [
+                'addresses'       => [
                     'webhook' => 'value'
                 ]
             ]
@@ -1039,12 +1036,12 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test',
-                'username' => 'test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => 'Test',
+                'username'        => 'test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com']
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -1057,12 +1054,12 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'groups' => [BaseApiV1TestCase::GROUP_UUID_3],
-                'addresses' => ['email' => 'test@example.com']
+                'groups'          => [BaseApiV1TestCase::GROUP_UUID_3],
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -1080,12 +1077,12 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'groups' => ['invalid_uuid'],
-                'addresses' => ['email' => 'test@example.com']
+                'groups'          => ['invalid_uuid'],
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -1113,7 +1110,7 @@ YAML;
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
             body: $body,
             headers: [
-                'Accept' => 'application/json',
+                'Accept'       => 'application/json',
                 'Content-Type' => 'application/json'
             ]
         );
@@ -1142,7 +1139,7 @@ YAML;
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
             body: $body,
             headers: [
-                'Accept' => 'application/json',
+                'Accept'       => 'application/json',
                 'Content-Type' => 'text/yaml'
             ]
         );
@@ -1165,8 +1162,8 @@ YAML;
             $endpoint,
             'v1/contacts?id=' . BaseApiV1TestCase::CONTACT_UUID_3,
             [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full-name' => 'Test',
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full-name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             ]
         );
@@ -1188,9 +1185,9 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts',
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             ]
         );
@@ -1216,8 +1213,8 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'full_name' => 'Test',
+            json: [
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             ]
         );
@@ -1234,8 +1231,8 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID,
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID,
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             ]
         );
@@ -1252,8 +1249,8 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID,
+            json: [
+                'id'        => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
             ]
         );
@@ -1270,9 +1267,9 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             ]
         );
@@ -1297,11 +1294,11 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => [BaseApiV1TestCase::CONTACT_UUID],
-                'full_name' => 'Test',
+            json: [
+                'id'              => [BaseApiV1TestCase::CONTACT_UUID],
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com']
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -1317,11 +1314,11 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID,
-                'full_name' => ['Test'],
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name'       => ['Test'],
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com']
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -1337,11 +1334,11 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name'       => 'Test',
                 'default_channel' => [BaseApiV1TestCase::CHANNEL_UUID],
-                'addresses' => ['email' => 'test@example.com']
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -1357,11 +1354,11 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => 'test@example.com'
+                'addresses'       => 'test@example.com'
             ]
         );
         $content = $response->getBody()->getContents();
@@ -1379,12 +1376,12 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com'],
-                'username' => ['test']
+                'addresses'       => ['email' => 'test@example.com'],
+                'username'        => ['test']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -1400,12 +1397,12 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com'],
-                'groups' => BaseApiV1TestCase::GROUP_UUID
+                'addresses'       => ['email' => 'test@example.com'],
+                'groups'          => BaseApiV1TestCase::GROUP_UUID
             ]
         );
         $content = $response->getBody()->getContents();
@@ -1428,11 +1425,11 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com']
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -1450,13 +1447,13 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => [
-                    'email' => 'test@example.com',
-                    'webhook' => 'https://example.com/webhook',
+                'addresses'       => [
+                    'email'      => 'test@example.com',
+                    'webhook'    => 'https://example.com/webhook',
                     'rocketchat' => 'https://chat.example.com/webhook',
                 ]
             ]
@@ -1482,14 +1479,14 @@ YAML;
 
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
-            'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-            'full_name' => 'Test',
-            'username' => null,
+            'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+            'full_name'       => 'Test',
+            'username'        => null,
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-            'groups' => [],
-            'addresses' => [
-                'email' => 'test@example.com',
-                'webhook' => 'https://example.com/webhook',
+            'groups'          => [],
+            'addresses'       => [
+                'email'      => 'test@example.com',
+                'webhook'    => 'https://example.com/webhook',
                 'rocketchat' => 'https://chat.example.com/webhook',
             ]
         ]), $content);
@@ -1504,11 +1501,11 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com']
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -1525,12 +1522,12 @@ YAML;
 
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
-            'full_name' => 'Test',
-            'username' => null,
+            'id'              => BaseApiV1TestCase::CONTACT_UUID,
+            'full_name'       => 'Test',
+            'username'        => null,
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-            'groups' => [],
-            'addresses' => ['email' => 'test@example.com']
+            'groups'          => [],
+            'addresses'       => ['email' => 'test@example.com']
         ]), $content);
     }
 
@@ -1544,11 +1541,11 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID_3,
-                'addresses' => ['email' => 'test@example.com']
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -1566,12 +1563,12 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'groups' => [BaseApiV1TestCase::GROUP_UUID_3],
-                'addresses' => ['email' => 'test@example.com']
+                'groups'          => [BaseApiV1TestCase::GROUP_UUID_3],
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -1589,11 +1586,11 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => [
+                'addresses'       => [
                     'invalid' => 'value'
                 ]
             ]
@@ -1618,8 +1615,8 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             ]
         );
@@ -1636,8 +1633,8 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
-            json:  [
-                'full_name' => 'Test',
+            json: [
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             ]
         );
@@ -1654,8 +1651,8 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
+            json: [
+                'id'        => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
             ]
         );
@@ -1671,9 +1668,9 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             ]
         );
@@ -1697,11 +1694,11 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
-            json:  [
-                'id' => [BaseApiV1TestCase::CONTACT_UUID_3],
-                'full_name' => 'Test',
+            json: [
+                'id'              => [BaseApiV1TestCase::CONTACT_UUID_3],
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com']
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -1717,11 +1714,11 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => ['Test'],
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => ['Test'],
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com']
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -1737,11 +1734,11 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => 'Test',
                 'default_channel' => [BaseApiV1TestCase::CHANNEL_UUID],
-                'addresses' => ['email' => 'test@example.com']
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -1757,11 +1754,11 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => 'test@example.com'
+                'addresses'       => 'test@example.com'
             ]
         );
         $content = $response->getBody()->getContents();
@@ -1779,12 +1776,12 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com'],
-                'username' => ['test']
+                'addresses'       => ['email' => 'test@example.com'],
+                'username'        => ['test']
             ]
         );
         $content = $response->getBody()->getContents();
@@ -1800,12 +1797,12 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID_3,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID_3,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => ['email' => 'test@example.com'],
-                'groups' => BaseApiV1TestCase::GROUP_UUID
+                'addresses'       => ['email' => 'test@example.com'],
+                'groups'          => BaseApiV1TestCase::GROUP_UUID
             ]
         );
         $content = $response->getBody()->getContents();
@@ -1827,12 +1824,12 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'groups' => [BaseApiV1TestCase::GROUP_UUID],
-                'addresses' => ['email' => 'test@example.com']
+                'groups'          => [BaseApiV1TestCase::GROUP_UUID],
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
 
@@ -1848,12 +1845,12 @@ YAML;
 
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
-            'full_name' => 'Test',
-            'username' => null,
+            'id'              => BaseApiV1TestCase::CONTACT_UUID,
+            'full_name'       => 'Test',
+            'username'        => null,
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-            'groups' => [BaseApiV1TestCase::GROUP_UUID],
-            'addresses' => ['email' => 'test@example.com']
+            'groups'          => [BaseApiV1TestCase::GROUP_UUID],
+            'addresses'       => ['email' => 'test@example.com']
         ]), $content);
 
         // Then remove it
@@ -1861,12 +1858,12 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'groups' => [],
-                'addresses' => ['email' => 'test@example.com']
+                'groups'          => [],
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
 
@@ -1882,12 +1879,12 @@ YAML;
 
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
-            'full_name' => 'Test',
-            'username' => null,
+            'id'              => BaseApiV1TestCase::CONTACT_UUID,
+            'full_name'       => 'Test',
+            'username'        => null,
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-            'groups' => [],
-            'addresses' => ['email' => 'test@example.com']
+            'groups'          => [],
+            'addresses'       => ['email' => 'test@example.com']
         ]), $content);
 
         // And add it again
@@ -1895,12 +1892,12 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'groups' => [BaseApiV1TestCase::GROUP_UUID],
-                'addresses' => ['email' => 'test@example.com']
+                'groups'          => [BaseApiV1TestCase::GROUP_UUID],
+                'addresses'       => ['email' => 'test@example.com']
             ]
         );
 
@@ -1916,12 +1913,12 @@ YAML;
 
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
-            'full_name' => 'Test',
-            'username' => null,
+            'id'              => BaseApiV1TestCase::CONTACT_UUID,
+            'full_name'       => 'Test',
+            'username'        => null,
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-            'groups' => [BaseApiV1TestCase::GROUP_UUID],
-            'addresses' => ['email' => 'test@example.com']
+            'groups'          => [BaseApiV1TestCase::GROUP_UUID],
+            'addresses'       => ['email' => 'test@example.com']
         ]), $content);
     }
 
@@ -1935,13 +1932,13 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => [
-                    'email' => 'test@example.com',
-                    'webhook' => 'https://example.com/webhook',
+                'addresses'       => [
+                    'email'      => 'test@example.com',
+                    'webhook'    => 'https://example.com/webhook',
                     'rocketchat' => 'https://chat.example.com/webhook',
                 ]
             ]
@@ -1959,14 +1956,14 @@ YAML;
 
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
-            'full_name' => 'Test',
-            'username' => null,
+            'id'              => BaseApiV1TestCase::CONTACT_UUID,
+            'full_name'       => 'Test',
+            'username'        => null,
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-            'groups' => [],
-            'addresses' => [
-                'email' => 'test@example.com',
-                'webhook' => 'https://example.com/webhook',
+            'groups'          => [],
+            'addresses'       => [
+                'email'      => 'test@example.com',
+                'webhook'    => 'https://example.com/webhook',
                 'rocketchat' => 'https://chat.example.com/webhook',
             ]
         ]), $content);
@@ -1976,12 +1973,12 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => [
-                    'email' => 'test@example.com',
+                'addresses'       => [
+                    'email'   => 'test@example.com',
                     'webhook' => 'https://example.com/webhook'
                 ]
             ]
@@ -1999,13 +1996,13 @@ YAML;
 
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
-            'full_name' => 'Test',
-            'username' => null,
+            'id'              => BaseApiV1TestCase::CONTACT_UUID,
+            'full_name'       => 'Test',
+            'username'        => null,
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-            'groups' => [],
-            'addresses' => [
-                'email' => 'test@example.com',
+            'groups'          => [],
+            'addresses'       => [
+                'email'   => 'test@example.com',
                 'webhook' => 'https://example.com/webhook'
             ]
         ]), $content);
@@ -2015,13 +2012,13 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
-                'id' => BaseApiV1TestCase::CONTACT_UUID,
-                'full_name' => 'Test',
+            json: [
+                'id'              => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name'       => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-                'addresses' => [
-                    'email' => 'test@example.com',
-                    'webhook' => 'https://example.com/webhook',
+                'addresses'       => [
+                    'email'      => 'test@example.com',
+                    'webhook'    => 'https://example.com/webhook',
                     'rocketchat' => 'https://chat.example.com/webhook',
                 ]
             ]
@@ -2039,14 +2036,14 @@ YAML;
 
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
-            'id' => BaseApiV1TestCase::CONTACT_UUID,
-            'full_name' => 'Test',
-            'username' => null,
+            'id'              => BaseApiV1TestCase::CONTACT_UUID,
+            'full_name'       => 'Test',
+            'username'        => null,
             'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
-            'groups' => [],
-            'addresses' => [
-                'email' => 'test@example.com',
-                'webhook' => 'https://example.com/webhook',
+            'groups'          => [],
+            'addresses'       => [
+                'email'      => 'test@example.com',
+                'webhook'    => 'https://example.com/webhook',
                 'rocketchat' => 'https://chat.example.com/webhook',
             ]
         ]), $content);

@@ -5,7 +5,6 @@
 namespace Icinga\Module\Notifications\Common;
 
 use Psr\Http\Message\ServerRequestInterface;
-use StringBackedEnum;
 
 enum HttpMethod: string
 {

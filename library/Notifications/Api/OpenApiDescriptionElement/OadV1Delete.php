@@ -11,9 +11,6 @@ use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Response\ErrorResp
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Response\Example\ResponseExample;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Response\SuccessResponse;
 use OpenApi\Attributes\Delete;
-use OpenApi\Attributes\ExternalDocumentation;
-use OpenApi\Attributes\RequestBody;
-use OpenApi\Attributes as OA;
 
 #[Attribute(Attribute::TARGET_CLASS | Attribute::TARGET_METHOD)]
 class OadV1Delete extends Delete

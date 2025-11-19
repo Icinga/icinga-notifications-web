@@ -32,11 +32,9 @@ class SourceForm extends CompatForm
     /** @var string|int The used password hash algorithm */
     public const HASH_ALGORITHM = PASSWORD_BCRYPT;
 
-    /** @var Connection */
-    private $db;
+    private Connection $db;
 
-    /** @var ?int */
-    private $sourceId;
+    private ?int $sourceId = null;
 
     public function __construct(Connection $db)
     {
@@ -80,19 +78,19 @@ class SourceForm extends CompatForm
             'text',
             'name',
             [
-                'label'     => $this->translate('Source Name'),
-                'required'  => true
+                'label'    => $this->translate('Source Name'),
+                'required' => true
             ]
         );
         $this->addElement(
             'select',
             'type',
             [
-                'required'          => true,
-                'label'             => $this->translate('Source Type'),
-                'class'             => 'autosubmit',
-                'options'           => $types,
-                'disabledOptions'   => ['']
+                'required'        => true,
+                'label'           => $this->translate('Source Type'),
+                'class'           => 'autosubmit',
+                'options'         => $types,
+                'disabledOptions' => ['']
             ]
         );
 
@@ -110,7 +108,7 @@ class SourceForm extends CompatForm
             )),
             Text::create(' '),
             match ($chosenIntegration?->getSourceType()) {
-                'icinga2' => new Link(
+                'icinga2'    => new Link(
                     [
                         $this->translate('Icinga DB Documentation'),
                         ' ',
@@ -134,7 +132,7 @@ class SourceForm extends CompatForm
                     ),
                     ['target' => '_blank']
                 ),
-                default => Text::create($this->translate(
+                default      => Text::create($this->translate(
                     'Please choose the source type above to see the required configuration.'
                 ))
             }
@@ -144,8 +142,8 @@ class SourceForm extends CompatForm
             'text',
             'listener_username',
             [
-                'required' => true,
-                'label' => $this->translate('Username'),
+                'required'   => true,
+                'label'      => $this->translate('Username'),
                 'validators' => [new CallbackValidator(
                     function ($value, CallbackValidator $validator) {
                         // Username must be unique
@@ -170,23 +168,23 @@ class SourceForm extends CompatForm
             'password',
             'listener_password',
             [
-                'required'      => $this->sourceId === null,
-                'label'         => $this->sourceId !== null
+                'required'     => $this->sourceId === null,
+                'label'        => $this->sourceId !== null
                     ? $this->translate('New Password')
                     : $this->translate('Password'),
-                'autocomplete'  => 'new-password',
-                'validators'    => [['name' => 'StringLength', 'options' => ['min' => 16]]]
+                'autocomplete' => 'new-password',
+                'validators'   => [['name' => 'StringLength', 'options' => ['min' => 16]]]
             ]
         );
         $credentials->addElement(
             'password',
             'listener_password_dupe',
             [
-                'ignore'        => true,
-                'required'      => $this->sourceId === null,
-                'label'         => $this->translate('Repeat Password'),
-                'autocomplete'  => 'new-password',
-                'validators'    => [new CallbackValidator(function (string $value, CallbackValidator $validator) {
+                'ignore'       => true,
+                'required'     => $this->sourceId === null,
+                'label'        => $this->translate('Repeat Password'),
+                'autocomplete' => 'new-password',
+                'validators'   => [new CallbackValidator(function (string $value, CallbackValidator $validator) {
                     if ($value !== $this->getElement('credentials')->getValue('listener_password')) {
                         $validator->addMessage($this->translate('Passwords do not match'));
 
@@ -245,16 +243,16 @@ class SourceForm extends CompatForm
         $data = $this->getValues();
 
         $source = [
-            'name' => $data['name'],
-            'type' => $data['type'],
-            'listener_username' => $data['credentials']['listener_username'],
+            'name'                   => $data['name'],
+            'type'                   => $data['type'],
+            'listener_username'      => $data['credentials']['listener_username'],
             // Not using PASSWORD_DEFAULT, as the used algorithm should
             // be kept in sync with what the daemon understands
             'listener_password_hash' => password_hash(
                 $data['credentials']['listener_password'],
                 self::HASH_ALGORITHM
             ),
-            'changed_at' => (int) (new DateTime())->format("Uv")
+            'changed_at'             => (int) (new DateTime())->format("Uv")
         ];
 
         $this->db->transaction(function (Connection $db) use ($source): void {
@@ -272,8 +270,8 @@ class SourceForm extends CompatForm
         $data = $this->getValues();
 
         $source = [
-            'name' => $data['name'],
-            'type' => $data['type'],
+            'name'              => $data['name'],
+            'type'              => $data['type'],
             'listener_username' => $data['credentials']['listener_username']
         ];
 
@@ -321,8 +319,8 @@ class SourceForm extends CompatForm
         }
 
         return [
-            'name' => $source->name,
-            'type' => $source->type,
+            'name'        => $source->name,
+            'type'        => $source->type,
             'credentials' => [
                 'listener_username' => $source->listener_username
             ]

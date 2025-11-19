@@ -133,8 +133,8 @@ class Controls extends Form
 
         $param = 'mode';
         $options = [
-            'day' => $this->translate('Day'),
-            'week' => $this->translate('Week'),
+            'day'   => $this->translate('Day'),
+            'week'  => $this->translate('Week'),
             'weeks' => $this->translate('2 Weeks'),
             'month' => $this->translate('Month')
         ];
@@ -145,10 +145,10 @@ class Controls extends Form
         $viewModeSwitcher = HtmlElement::create('fieldset', ['class' => 'view-mode-switcher']);
         foreach ($options as $value => $label) {
             $input = $this->createElement('input', $param, [
-                'class' => 'autosubmit',
-                'type'  => 'radio',
-                'id' => $param . '-' . $value,
-                'value' => $value,
+                'class'   => 'autosubmit',
+                'type'    => 'radio',
+                'id'      => $param . '-' . $value,
+                'value'   => $value,
                 'checked' => $value === $chosenMode
             ]);
 
