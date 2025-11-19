@@ -10,7 +10,6 @@ use Icinga\Exception\Http\HttpException;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Exception\Json\JsonEncodeException;
 use Icinga\Module\Notifications\Api\EndpointInterface;
-use Icinga\Module\Notifications\Api\Exception\InvalidFilterParameterException;
 use Icinga\Module\Notifications\Model\Contact;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -31,7 +30,6 @@ use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use Icinga\Util\Json;
 use ipl\Sql\Select;
 use ipl\Stdlib\Filter;
-use ipl\Validator\EmailAddressValidator;
 use stdClass;
 use OpenApi\Attributes as OA;
 
@@ -51,8 +49,7 @@ use OpenApi\Attributes as OA;
     required: [
         'id',
         'full_name',
-        'default_channel',
-        'addresses'
+        'default_channel'
     ],
     type: 'object',
     additionalProperties: false,
@@ -60,28 +57,11 @@ use OpenApi\Attributes as OA;
 #[OA\Schema(
     schema: 'Addresses',
     description: 'Schema that represents a contact\'s addresses',
-    properties: [
-        new OA\Property(
-            property: 'email',
-            description: "User's email address",
-            type: 'string',
-            format: 'email',
-        ),
-        new OA\Property(
-            property: 'rocketchat',
-            description: 'Rocket.Chat identifier or URL',
-            type: 'string',
-            example: 'rocketchat.example.com',
-        ),
-        new OA\Property(
-            property: 'webhook',
-            description: 'Comma-separated list of webhook URLs or identifiers',
-            type: 'string',
-            example: 'https://example.com/webhook',
-        ),
-    ],
     type: 'object',
-    additionalProperties: false,
+    example: ['webhook' => '@nickname'],
+    additionalProperties: new OA\AdditionalProperties(
+        type: 'string'
+    )
 )]
 #[SchemaUUID(
     entityName: 'Contact',
@@ -96,14 +76,12 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
     public const REQUIRED_FIELDS = [
         'id',
         'full_name',
-        'default_channel',
-        'addresses'
+        'default_channel'
     ];
     public const REQUIRED_FIELD_TYPES = [
         'id' => 'string',
         'full_name' => 'string',
-        'default_channel' => 'string',
-        'addresses' => 'object',
+        'default_channel' => 'string'
     ];
 
     #[OA\Examples(
@@ -135,16 +113,6 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
         example: 'InvalidDefaultChannelUUID',
         summary: 'Invalid default_channel UUID',
         value: ['message' => 'Invalid request body: given default_channel is not a valid UUID']
-    )]
-    #[OA\Examples(
-        example: 'InvalidEmailAddress',
-        summary: 'Invalid email address',
-        value: ['message' => 'Invalid request body: an invalid email address given']
-    )]
-    #[OA\Examples(
-        example: 'InvalidEmailAddressFormat',
-        summary: 'Invalid email address format',
-        value: ['message' => 'Invalid request body: an invalid email address format given']
     )]
     #[OA\Examples(
         example: 'InvalidGroupsFormat',
@@ -353,8 +321,6 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
             new ResponseExample('InvalidContactgroupUUID'),
             new ResponseExample('InvalidContactgroupUUIDFormat'),
             new ResponseExample('InvalidDefaultChannelUUID'),
-            new ResponseExample('InvalidEmailAddress'),
-            new ResponseExample('InvalidEmailAddressFormat'),
             new ResponseExample('InvalidGroupsFormat'),
             new ResponseExample('MissingAddress'),
             new ResponseExample('UsernameAlreadyExists'),
@@ -426,8 +392,6 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
             new ResponseExample('InvalidContactgroupUUID'),
             new ResponseExample('InvalidContactgroupUUIDFormat'),
             new ResponseExample('InvalidDefaultChannelUUID'),
-            new ResponseExample('InvalidEmailAddress'),
-            new ResponseExample('InvalidEmailAddressFormat'),
             new ResponseExample('InvalidGroupsFormat'),
             new ResponseExample('MissingAddress'),
             new ResponseExample('UsernameAlreadyExists'),
@@ -453,8 +417,6 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
             new ResponseExample('InvalidContactgroupUUID'),
             new ResponseExample('InvalidContactgroupUUIDFormat'),
             new ResponseExample('InvalidDefaultChannelUUID'),
-            new ResponseExample('InvalidEmailAddress'),
-            new ResponseExample('InvalidEmailAddressFormat'),
             new ResponseExample('InvalidGroupsFormat'),
             new ResponseExample('MissingAddress'),
             new ResponseExample('UsernameAlreadyExists'),
@@ -951,49 +913,44 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
         $channelId = Channels::getChannelId($requestBody['default_channel']);
 
         if ($channelId === false) {
-            throw new HttpException(422, 'Channel with identifier 0817d973-398e-41d7-9cd2-61cdb7ef41a3 does not exist');
+            throw new HttpException(
+                422,
+                sprintf('Channel with identifier %s does not exist', $requestBody['default_channel'])
+            );
         }
 
         $channelType = Channels::getChannelType($channelId);
 
-        if (! is_array($requestBody['addresses']) || empty($requestBody['addresses'][$channelType])) {
+        if ($channelType === 'webhook') {
+            // pass
+        } elseif (
+            ! isset($requestBody['addresses'])
+            || ! is_array($requestBody['addresses'])
+            || empty($requestBody['addresses'][$channelType])
+        ) {
             throw new HttpException(
                 422,
                 $msgPrefix . "an address according to default_channel type $channelType is required"
             );
         }
 
-        $addressTypes = array_keys($requestBody['addresses']);
-
-        $types = Database::get()->fetchCol(
-            (new Select())
-                ->from('available_channel_type')
-                ->columns('type')
-                ->where(['type IN (?)' => $addressTypes])
-        );
-
-        if (count($types) !== count($addressTypes)) {
-            throw new HttpException(
-                422,
-                sprintf(
-                    $msgPrefix . 'undefined address type %s given',
-                    implode(', ', array_diff($addressTypes, $types))
-                )
+        $addressTypes = array_keys($requestBody['addresses'] ?? []);
+        if (! empty($addressTypes)) {
+            $types = Database::get()->fetchCol(
+                (new Select())
+                    ->from('available_channel_type')
+                    ->columns('type')
+                    ->where(['type IN (?)' => $addressTypes])
             );
-        }
 
-        //TODO: is it a good idea to check valid channel types here?, if yes,
-        //default_channel and group identifiers must be checked here as well..404 OR 400?
-        if (isset($requestBody['addresses']['email'])) {
-            if (! is_string($requestBody['addresses']['email'])) {
-                throw new HttpBadRequestException($msgPrefix . 'an invalid email address format given');
-            }
-
-            if (
-                ! empty($requestBody['addresses']['email'])
-                && ! (new EmailAddressValidator())->isValid($requestBody['addresses']['email'])
-            ) {
-                throw new HttpBadRequestException($msgPrefix . 'an invalid email address given');
+            if (count($types) !== count($addressTypes)) {
+                throw new HttpException(
+                    422,
+                    sprintf(
+                        $msgPrefix . 'undefined address type %s given',
+                        implode(', ', array_diff($addressTypes, $types))
+                    )
+                );
             }
         }
 

@@ -474,7 +474,7 @@ class ContactForm extends CompatForm
             $element = $this->createElement('text', $type, [
                 'label'      => $name,
                 'validators' => [new StringLengthValidator(['max' => 255])],
-                'required'   => $type === $defaultType
+                'required'   => $type === $defaultType && $type !== 'webhook'
             ]);
 
             if ($type === 'email') {

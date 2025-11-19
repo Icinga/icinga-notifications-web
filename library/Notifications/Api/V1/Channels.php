@@ -38,96 +38,7 @@ use stdClass;
     schema: 'ChannelTypes',
     description: 'Available notification channel types',
     type: 'string',
-    enum: ['email', 'webhook', 'rocketchat'],
-)]
-#[OA\Schema(
-    schema: 'WebhookChannelConfig',
-    title: 'Webhook Channel Config',
-    description: 'The configuration for a webhook notification channel',
-    required: ['url_template'],
-    properties: [
-        new OA\Property(
-            property: 'url_template',
-            ref: '#/components/schemas/Url',
-            description: 'URL template for the webhook'
-        )
-    ],
-)]
-#[OA\Schema(
-    schema: 'EmailChannelConfig',
-    title: 'Email Channel Config',
-    description: 'The configuration for an email notification channel',
-    required: [
-        'host',
-        'port',
-        'sender_mail',
-        'encryption',
-    ],
-    properties: [
-        new OA\Property(
-            property: 'host',
-            description: 'SMTP host for sending emails',
-            type: 'string'
-        ),
-        new OA\Property(
-            property: 'port',
-            ref: '#/components/schemas/Port',
-            description: 'SMTP port for sending emails',
-        ),
-        new OA\Property(
-            property: 'sender_name',
-            description: 'Name of the sender for the email channel',
-            type: 'string',
-        ),
-        new OA\Property(
-            property: 'sender_mail',
-            ref: '#/components/schemas/Email',
-            description: 'Email address of the sender',
-        ),
-        new OA\Property(
-            property: 'user',
-            description: 'Username for SMTP authentication',
-            type: 'string'
-        ),
-        new OA\Property(
-            property: 'password',
-            description: 'Password for SMTP authentication',
-            type: 'string'
-        ),
-        new OA\Property(
-            property: 'encryption',
-            description: 'Encryption method for SMTP',
-            type: 'string',
-            enum: ['none', 'ssl', 'tls']
-        ),
-    ]
-)]
-#[OA\Schema(
-    schema: 'RocketChatChannelConfig',
-    title: 'RocketChat Channel Config',
-    description: 'The configuration for a Rocket.Chat notification channel',
-    required: [
-        'url',
-        'user_id',
-        'token'
-    ],
-    properties: [
-        new OA\Property(
-            property: 'url',
-            ref: '#/components/schemas/Url',
-            description: 'URL of the Rocket.Chat server'
-        ),
-        new OA\Property(
-            property: 'user_id',
-            description: 'User ID for Rocket.Chat',
-            type: 'string',
-        ),
-        new OA\Property(
-            property: 'token',
-            description: 'Authentication token for Rocket.Chat',
-            type: 'string',
-        )
-    ],
+    example: 'webhook'
 )]
 class Channels extends ApiV1 implements RequestHandlerInterface, EndpointInterface
 {
@@ -147,15 +58,9 @@ class Channels extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
     protected string $type;
     #[OA\Property(
         description: 'The configuration for the channel, varies depending on the channel type',
-        type: 'object',
-        example: [
-            'url_template' => 'https://example.com/webhook?token=abc123',
-        ],
-        oneOf: [
-            new OA\Schema(ref: '#/components/schemas/EmailChannelConfig'),
-            new OA\Schema(ref: '#/components/schemas/WebhookChannelConfig'),
-            new OA\Schema(ref: '#/components/schemas/RocketChatChannelConfig'),
-        ],
+        type: 'string',
+        format: 'application/json',
+        example: '{"url":"https://example.com/webhook"}'
     )]
     protected array $config;
 
