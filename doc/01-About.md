@@ -2,9 +2,9 @@
 
 !!! warning
 
-    This is an early beta version for you to try, but do not use this in production. There may still be severe bugs.
-
-    At the moment, we don't provide any support for this module.
+    This is an early preview version for you to try, but do not use this in production.
+    There may still be severe bugs and incompatible changes may happen without any notice.
+    At the moment, we don't yet provide any support for this.
 
 Icinga Notifications is a set of components that processes received events from various sources, manages
 incidents and forwards notifications to predefined contacts. The components are:
@@ -23,6 +23,7 @@ Icinga Notifications will receive events from. To set up a source, an accompanyi
 required. At the moment, compatible integrations are available for:
 
 * Icinga 2, by using Icinga DB as backend
+* Icinga for Kubernetes
 
 Icinga Notifications receives events from the configured sources and decides whether to open an incident and when to
 forward them to which recipients. Icinga Notifications Web allows configuring these rules and managing incidents. To
