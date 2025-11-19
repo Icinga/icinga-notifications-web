@@ -1243,12 +1243,6 @@
                                     "InvalidDefaultChannelUUID": {
                                         "$ref": "#/components/examples/InvalidDefaultChannelUUID"
                                     },
-                                    "InvalidEmailAddress": {
-                                        "$ref": "#/components/examples/InvalidEmailAddress"
-                                    },
-                                    "InvalidEmailAddressFormat": {
-                                        "$ref": "#/components/examples/InvalidEmailAddressFormat"
-                                    },
                                     "InvalidGroupsFormat": {
                                         "$ref": "#/components/examples/InvalidGroupsFormat"
                                     },
@@ -1530,12 +1524,6 @@
                                     "InvalidDefaultChannelUUID": {
                                         "$ref": "#/components/examples/InvalidDefaultChannelUUID"
                                     },
-                                    "InvalidEmailAddress": {
-                                        "$ref": "#/components/examples/InvalidEmailAddress"
-                                    },
-                                    "InvalidEmailAddressFormat": {
-                                        "$ref": "#/components/examples/InvalidEmailAddressFormat"
-                                    },
                                     "InvalidGroupsFormat": {
                                         "$ref": "#/components/examples/InvalidGroupsFormat"
                                     },
@@ -1727,12 +1715,6 @@
                                     "InvalidDefaultChannelUUID": {
                                         "$ref": "#/components/examples/InvalidDefaultChannelUUID"
                                     },
-                                    "InvalidEmailAddress": {
-                                        "$ref": "#/components/examples/InvalidEmailAddress"
-                                    },
-                                    "InvalidEmailAddressFormat": {
-                                        "$ref": "#/components/examples/InvalidEmailAddressFormat"
-                                    },
                                     "InvalidGroupsFormat": {
                                         "$ref": "#/components/examples/InvalidGroupsFormat"
                                     },
@@ -1838,25 +1820,13 @@
         "schemas": {
             "Addresses": {
                 "description": "Schema that represents a contact's addresses",
-                "properties": {
-                    "email": {
-                        "description": "User's email address",
-                        "type": "string",
-                        "format": "email"
-                    },
-                    "rocketchat": {
-                        "description": "Rocket.Chat identifier or URL",
-                        "type": "string",
-                        "example": "rocketchat.example.com"
-                    },
-                    "webhook": {
-                        "description": "Comma-separated list of webhook URLs or identifiers",
-                        "type": "string",
-                        "example": "https://example.com/webhook"
-                    }
-                },
                 "type": "object",
-                "additionalProperties": false
+                "example": {
+                    "webhook": "@nickname"
+                },
+                "additionalProperties": {
+                    "type": "string"
+                }
             },
             "Channel": {
                 "description": "A notification channel represents a destination for notifications in Icinga. \\\n    Channels can be of different types, such as email, webhook, or Rocket.Chat, \n    each with its own configuration requirements. \\\n    Channels are used to route notifications to users or external systems based on their type and configuration.",
@@ -1880,21 +1850,9 @@
                     },
                     "config": {
                         "description": "The configuration for the channel, varies depending on the channel type",
-                        "type": "object",
-                        "example": {
-                            "url_template": "https://example.com/webhook?token=abc123"
-                        },
-                        "oneOf": [
-                            {
-                                "$ref": "#/components/schemas/EmailChannelConfig"
-                            },
-                            {
-                                "$ref": "#/components/schemas/WebhookChannelConfig"
-                            },
-                            {
-                                "$ref": "#/components/schemas/RocketChatChannelConfig"
-                            }
-                        ]
+                        "type": "string",
+                        "format": "application/json",
+                        "example": "{\"url\":\"https://example.com/webhook\"}"
                     }
                 },
                 "type": "object"
@@ -1902,11 +1860,7 @@
             "ChannelTypes": {
                 "description": "Available notification channel types",
                 "type": "string",
-                "enum": [
-                    "email",
-                    "webhook",
-                    "rocketchat"
-                ]
+                "example": "webhook"
             },
             "ChannelUUID": {
                 "title": "ChannelUUID",
@@ -2005,58 +1959,6 @@
                 "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
                 "example": "81fb569f-5669-4cd6-93bb-9259446b8b23"
             },
-            "Email": {
-                "description": "An email address",
-                "type": "string",
-                "format": "email",
-                "maxLength": 320
-            },
-            "EmailChannelConfig": {
-                "title": "Email Channel Config",
-                "description": "The configuration for an email notification channel",
-                "required": [
-                    "host",
-                    "port",
-                    "sender_mail",
-                    "encryption"
-                ],
-                "properties": {
-                    "host": {
-                        "description": "SMTP host for sending emails",
-                        "type": "string"
-                    },
-                    "port": {
-                        "$ref": "#/components/schemas/Port",
-                        "description": "SMTP port for sending emails"
-                    },
-                    "sender_name": {
-                        "description": "Name of the sender for the email channel",
-                        "type": "string"
-                    },
-                    "sender_mail": {
-                        "$ref": "#/components/schemas/Email",
-                        "description": "Email address of the sender"
-                    },
-                    "user": {
-                        "description": "Username for SMTP authentication",
-                        "type": "string"
-                    },
-                    "password": {
-                        "description": "Password for SMTP authentication",
-                        "type": "string"
-                    },
-                    "encryption": {
-                        "description": "Encryption method for SMTP",
-                        "type": "string",
-                        "enum": [
-                            "none",
-                            "ssl",
-                            "tls"
-                        ]
-                    }
-                },
-                "type": "object"
-            },
             "ErrorResponse": {
                 "description": "Error response format",
                 "properties": {
@@ -2087,62 +1989,12 @@
                 "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
                 "example": "31fb569f-5669-4cd6-93bb-9259446b8b74"
             },
-            "Port": {
-                "description": "A port number",
-                "type": "string",
-                "maxLength": 5,
-                "minLength": 1
-            },
-            "RocketChatChannelConfig": {
-                "title": "RocketChat Channel Config",
-                "description": "The configuration for a Rocket.Chat notification channel",
-                "required": [
-                    "url",
-                    "user_id",
-                    "token"
-                ],
-                "properties": {
-                    "url": {
-                        "$ref": "#/components/schemas/Url",
-                        "description": "URL of the Rocket.Chat server"
-                    },
-                    "user_id": {
-                        "description": "User ID for Rocket.Chat",
-                        "type": "string"
-                    },
-                    "token": {
-                        "description": "Authentication token for Rocket.Chat",
-                        "type": "string"
-                    }
-                },
-                "type": "object"
-            },
             "SuccessResponse": {
                 "description": "Success response format",
                 "properties": {
                     "message": {
                         "description": "Detailed success message",
                         "type": "string"
-                    }
-                },
-                "type": "object"
-            },
-            "Url": {
-                "description": "A URL used in the API",
-                "type": "string",
-                "maxLength": 2048,
-                "example": "example.com"
-            },
-            "WebhookChannelConfig": {
-                "title": "Webhook Channel Config",
-                "description": "The configuration for a webhook notification channel",
-                "required": [
-                    "url_template"
-                ],
-                "properties": {
-                    "url_template": {
-                        "$ref": "#/components/schemas/Url",
-                        "description": "URL template for the webhook"
                     }
                 },
                 "type": "object"
@@ -2279,18 +2131,6 @@
                 "summary": "Invalid default_channel UUID",
                 "value": {
                     "message": "Invalid request body: given default_channel is not a valid UUID"
-                }
-            },
-            "InvalidEmailAddress": {
-                "summary": "Invalid email address",
-                "value": {
-                    "message": "Invalid request body: an invalid email address given"
-                }
-            },
-            "InvalidEmailAddressFormat": {
-                "summary": "Invalid email address format",
-                "value": {
-                    "message": "Invalid request body: an invalid email address format given"
                 }
             },
             "InvalidGroupsFormat": {
