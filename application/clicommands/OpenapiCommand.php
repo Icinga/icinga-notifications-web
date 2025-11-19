@@ -8,6 +8,7 @@ use FilesystemIterator;
 use Icinga\Application\Icinga;
 use Icinga\Cli\Command;
 use Icinga\Module\Notifications\Api\OpenApiPreprocessor\AddGlobal401Response;
+use Icinga\Module\Notifications\Api\OpenApiPreprocessor\ConsistentOrder;
 use Icinga\Module\Notifications\Common\PsrLogger;
 use OpenApi\Generator;
 use RecursiveDirectoryIterator;
@@ -31,7 +32,7 @@ class OpenapiCommand extends Command
      * OPTIONS
      *
      * --dir <path/>                            Set the path to the directory to scan for PHP files.
-*                                               Default: /library/Notifications/Api/
+     *                                          Default: /library/Notifications/Api/
      *
      * --exclude <comma seperated strings>      Exclude files matching these strings. Wildcard is `*`
      *
@@ -75,7 +76,9 @@ class OpenapiCommand extends Command
 
         $generator = new Generator(new PsrLogger());
         $generator->setVersion($oadVersion);
-        $generator->getProcessorPipeline()->add(new AddGlobal401Response());
+        $generator->getProcessorPipeline()
+            ->add(new ConsistentOrder())
+            ->add(new AddGlobal401Response());
 
         try {
             $openapi = $generator->generate($files);
