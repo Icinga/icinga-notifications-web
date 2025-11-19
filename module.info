@@ -1,5 +1,5 @@
 Module: notifications
-Version: 0.1.0
+Version: 0.2.0
 Requires:
   Libraries: icinga-php-library (>=0.18.0), icinga-php-thirdparty (>=0.14.0)
 Description: Icinga Notifications Web
