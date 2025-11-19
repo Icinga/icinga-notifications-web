@@ -23,6 +23,7 @@ Icinga Notifications will receive events from. To set up a source, an accompanyi
 required. At the moment, compatible integrations are available for:
 
 * Icinga 2, by using Icinga DB as backend
+* Icinga for Kubernetes
 
 Icinga Notifications receives events from the configured sources and decides whether to open an incident and when to
 forward them to which recipients. Icinga Notifications Web allows configuring these rules and managing incidents. To
