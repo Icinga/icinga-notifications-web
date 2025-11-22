@@ -4,6 +4,8 @@
 
 use Icinga\Application\Modules\Module;
 use Icinga\Authentication\Auth;
+use Icinga\Module\Notifications\Common\Links;
+use ipl\Stdlib\Filter;
 
 /** @var Module $this */
 
@@ -21,11 +23,11 @@ $authenticated = $auth->getUser() !== null;
 $configLandingPage = null;
 if ($authenticated) {
     if ($auth->hasPermission('notifications/config/schedules')) {
-        $configLandingPage = 'notifications/schedules';
+        $configLandingPage = Links::schedules()->getAbsoluteUrl();
     } elseif ($auth->hasPermission('notifications/config/event-rules')) {
-        $configLandingPage = 'notifications/event-rules';
+        $configLandingPage = Links::eventRules()->getAbsoluteUrl();
     } elseif ($auth->hasPermission('notifications/config/contacts')) {
-        $configLandingPage = 'notifications/contacts';
+        $configLandingPage = Links::contacts()->getAbsoluteUrl();
     }
 }
 
@@ -34,7 +36,9 @@ $section->add(
     [
         'icon'          => 'th-list',
         'description'   => $this->translate('Open Incidents'),
-        'url'           => 'notifications/incidents?incident.severity!=ok',
+        'url'           => Links::incidents()
+            ->setFilter(Filter::unequal('incident.severity', 'ok'))
+            ->getAbsoluteUrl(),
         'priority'      => 10
     ]
 );
@@ -44,7 +48,7 @@ $section->add(
     [
         'icon'          => 'history',
         'description'   => $this->translate('Events'),
-        'url'           => 'notifications/events',
+        'url'           => Links::events()->getAbsoluteUrl(),
         'priority'      => 20
     ]
 );
