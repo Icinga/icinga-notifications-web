@@ -10,7 +10,7 @@ use InvalidArgumentException;
 final class Util
 {
     /** @var array<string, array{0: int, 1: int}> */
-    private static $entryColors = [];
+    private static array $entryColors = [];
 
     public static function diffHours(DateTime $from, DateTime $to)
     {

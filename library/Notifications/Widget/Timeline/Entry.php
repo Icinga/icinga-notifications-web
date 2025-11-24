@@ -15,14 +15,14 @@ use ipl\Web\Widget\Icon;
 
 class Entry extends TimeGrid\Entry
 {
-    /** @var Member */
-    protected $member;
+    /** @var ?Member */
+    protected ?Member $member = null;
 
     /** @var ?EntryFlyout Content of the flyoutmenu that is shown when the entry is hovered */
     protected ?EntryFlyout $flyoutContent = null;
 
     /** @var ?DateTimeZone The timezone the schedule is created in */
-    protected ?DateTimeZone $scheduleTimezone;
+    protected ?DateTimeZone $scheduleTimezone = null;
 
     /**
      * @var string A CSS class that changes the placement of the flyout

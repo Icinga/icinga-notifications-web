@@ -45,13 +45,13 @@ class ChannelForm extends CompatForm
     use CsrfCounterMeasure;
 
     /** @var Connection */
-    private $db;
+    private Connection $db;
 
     /** @var ?int Channel ID */
-    private $channelId;
+    private ?int $channelId = null;
 
     /** @var array<string, mixed> */
-    private $defaultChannelOptions = [];
+    private array $defaultChannelOptions = [];
 
     public function __construct(Connection $db)
     {

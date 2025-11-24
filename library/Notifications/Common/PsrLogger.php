@@ -24,6 +24,8 @@ class PsrLogger implements LoggerInterface
      * Map PSR-3 levels to Icinga's 4 levels.
      * emergency/alert/critical -> ERROR
      * notice -> INFO
+     *
+     * @var array<string, string>
      */
     private const MAP = [
         LogLevel::EMERGENCY => 'error',

@@ -19,8 +19,8 @@ use function ipl\Stdlib\iterable_key_first;
 
 class IdTagAggregator extends PropertyBehavior implements RewriteColumnBehavior, QueryAwareBehavior
 {
-    /** @var Query */
-    protected $query;
+    /** @var ?Query */
+    protected ?Query $query = null;
 
     final public function __construct()
     {

@@ -29,10 +29,10 @@ class ScheduleDetail extends BaseHtmlElement
     protected $defaultAttributes = ['id' => 'notifications-schedule', 'class' => 'schedule-detail'];
 
     /** @var Schedule */
-    protected $schedule;
+    protected Schedule $schedule;
 
     /** @var Controls */
-    protected $controls;
+    protected Controls $controls;
 
     /** @var DateTime The day the timeline should start on */
     protected DateTime $start;

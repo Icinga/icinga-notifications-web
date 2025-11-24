@@ -28,13 +28,13 @@ class IncidentQuickActions extends Form
     ];
 
     /** @var Incident */
-    protected $incident;
+    protected Incident $incident;
 
     /** @var int Current logged-in user's id */
-    protected $currentUserId;
+    protected int $currentUserId;
 
-    /** @var IncidentContact */
-    protected $incidentContact;
+    /** @var ?IncidentContact */
+    protected ?IncidentContact $incidentContact = null;
 
     public function __construct(Incident $incident, int $currentUserId)
     {

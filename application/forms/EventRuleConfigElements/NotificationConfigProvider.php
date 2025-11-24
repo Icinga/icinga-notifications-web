@@ -13,12 +13,16 @@ use ipl\Orm\ResultSet;
 
 class NotificationConfigProvider implements ConfigProviderInterface
 {
+    /** @var ?ResultSet */
     private ?ResultSet $contacts = null;
 
+    /** @var ?ResultSet  */
     private ?ResultSet $contactGroups = null;
 
+    /** @var ?ResultSet  */
     private ?ResultSet $schedules = null;
 
+    /** @var ?ResultSet */
     private ?ResultSet $channels = null;
 
     public function fetchContacts(): iterable

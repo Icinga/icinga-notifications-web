@@ -37,10 +37,10 @@ class ContactForm extends CompatForm
     public const ON_REMOVE = 'on_remove';
 
     /** @var Connection */
-    private $db;
+    private Connection $db;
 
     /** @var ?string Contact ID*/
-    private $contactId;
+    private ?string $contactId = null;
 
     public function __construct(Connection $db)
     {

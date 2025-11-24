@@ -16,10 +16,10 @@ use Traversable;
 class DynamicGrid extends BaseGrid
 {
     /** @var int The number of days to show */
-    protected $days = 7;
+    protected int $days = 7;
 
     /** @var ?BaseHtmlElement This grid's sidebar */
-    protected $sideBar;
+    protected ?BaseHtmlElement $sideBar = null;
 
     public function setGridStart(DateTime $start): BaseGrid
     {

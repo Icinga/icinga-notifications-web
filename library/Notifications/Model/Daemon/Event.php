@@ -13,22 +13,22 @@ use stdClass;
 class Event
 {
     /** @var string Event identifier */
-    protected $identifier;
+    protected string $identifier;
 
     /** @var stdClass Event data */
-    protected $data;
+    protected stdClass $data;
 
     /** @var DateTime Creation date of event */
-    protected $createdAt;
+    protected DateTime $createdAt;
 
     /** @var int Reconnect interval in milliseconds */
-    protected $reconnectInterval;
+    protected int $reconnectInterval;
 
     /** @var int Last event identifier */
-    protected $lastEventId;
+    protected int $lastEventId;
 
     /** @var int Contact identifier associated with this event */
-    protected $contact;
+    protected int $contact;
 
     public function __construct(string $identifier, int $contact, stdClass $data, int $lastEventId = 0)
     {

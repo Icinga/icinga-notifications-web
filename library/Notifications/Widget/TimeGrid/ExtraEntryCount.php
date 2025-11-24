@@ -10,11 +10,11 @@ class ExtraEntryCount extends ButtonLink
 {
     use Translation;
 
-    /** @var BaseGrid Grid this extra count is tied to*/
-    protected $grid;
+    /** @var ?BaseGrid Grid this extra count is tied to*/
+    protected ?BaseGrid $grid = null;
 
-    /** @var DateTime Grid step for which the extra count is being registered */
-    protected $gridStep;
+    /** @var ?DateTime Grid step for which the extra count is being registered */
+    protected ?DateTime $gridStep = null;
 
     /**
      * Set the grid this extra count is tied to

@@ -26,8 +26,8 @@ class IncidentsController extends CompatController
     use Auth;
     use SearchControls;
 
-    /** @var Filter\Rule Filter from query string parameters */
-    private $filter;
+    /** @var ?Filter\Rule Filter from query string parameters */
+    private ?Filter\Rule $filter = null;
 
     public function indexAction(): void
     {

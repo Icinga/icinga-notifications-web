@@ -25,7 +25,7 @@ use ipl\Web\Layout\HeaderItemLayout;
 class ObjectHeader extends BaseHtmlElement
 {
     /** @var Item */
-    protected $object;
+    protected Model $object;
 
     protected $tag = 'div';
 

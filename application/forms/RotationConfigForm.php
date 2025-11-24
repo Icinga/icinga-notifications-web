@@ -51,41 +51,41 @@ class RotationConfigForm extends CompatForm
      */
     public const EXPERIMENTAL_OVERRIDES = false;
 
-    /** @var ?int The ID of the affected schedule */
-    protected $scheduleId;
+    /** @var int The ID of the affected schedule */
+    protected int $scheduleId;
 
     /** @var Connection The database connection */
-    protected $db;
+    protected Connection $db;
 
-    /** @var string The label shown on the submit button */
-    protected $submitLabel;
+    /** @var ?string The label shown on the submit button */
+    protected ?string $submitLabel = null;
 
     /** @var bool Whether to render the remove button */
-    protected $showRemoveButton = false;
+    protected bool $showRemoveButton = false;
 
-    /** @var Url The URL to fetch member suggestions from */
-    protected $suggestionUrl;
+    /** @var ?Url The URL to fetch member suggestions from */
+    protected ?Url $suggestionUrl = null;
 
     /** @var bool Whether the mode selection is disabled */
-    protected $disableModeSelection = false;
+    protected bool $disableModeSelection = false;
 
     /** @var ?DateTime The previous first handoff of this rotation's version */
-    protected $previousHandoff;
+    protected ?DateTime $previousHandoff = null;
 
     /** @var ?DateTime The end of the last shift of this rotation's previous version */
-    protected $previousShift;
+    protected ?DateTime $previousShift = null;
 
     /** @var ?DateTime The first handoff of a newer version for this rotation */
-    protected $nextHandoff;
+    protected ?DateTime $nextHandoff = null;
 
-    /** @var int The rotation id */
-    protected $rotationId;
+    /** @var ?int The rotation id */
+    protected ?int $rotationId = null;
 
     /** @var string The timezone to display the timeline in */
-    protected $displayTimezone;
+    protected string $displayTimezone;
 
     /** @var string The timezone the schedule is created in */
-    protected $scheduleTimezone;
+    protected string $scheduleTimezone;
 
     /**
      * Set the label for the submit button

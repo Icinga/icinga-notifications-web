@@ -17,14 +17,14 @@ class MemberSuggestions extends BaseHtmlElement
 {
     protected $tag = 'ul';
 
-    /** @var string */
-    protected $searchTerm;
+    /** @var ?string */
+    protected ?string $searchTerm = null;
 
-    /** @var string */
-    protected $originalValue;
+    /** @var ?string */
+    protected ?string $originalValue = null;
 
     /** @var string[] */
-    protected $excludeTerms = [];
+    protected array $excludeTerms = [];
 
     public function setSearchTerm(string $term): self
     {

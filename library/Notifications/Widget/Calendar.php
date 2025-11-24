@@ -40,23 +40,23 @@ class Calendar extends BaseHtmlElement implements EntryProvider
 
     protected $defaultAttributes = ['class' => 'calendar'];
 
-    /** @var Controls */
-    protected $controls;
+    /** @var ?Controls */
+    protected ?Controls $controls = null;
 
-    /** @var Style */
-    protected $style;
+    /** @var ?Style */
+    protected ?Style $style = null;
 
-    /** @var BaseGrid The grid implementation */
-    protected $grid;
+    /** @var ?BaseGrid The grid implementation */
+    protected ?BaseGrid $grid = null;
 
     /** @var Entry[] */
-    protected $entries = [];
-
-    /** @var Url */
-    protected $addEntryUrl;
+    protected array $entries = [];
 
     /** @var ?Url */
-    protected $url;
+    protected ?Url $addEntryUrl = null;
+
+    /** @var ?Url */
+    protected ?Url $url = null;
 
     public function setControls(Controls $controls): self
     {

@@ -10,25 +10,25 @@ use React\Stream\ThroughStream;
 class Connection
 {
     /** @var ConnectionInterface Associated Connection from ReactPHP */
-    protected $connection;
+    protected ConnectionInterface $connection;
 
     /** @var string Hostname */
-    protected $host;
+    protected string $host;
 
     /** @var int Port */
-    protected $port;
+    protected int $port;
 
     /** @var string Session identifier */
-    protected $session;
+    protected string $session;
 
     /** @var User User information */
-    protected $user;
+    protected User $user;
 
     /** @var ThroughStream Data stream between connection and server */
-    protected $stream;
+    protected ThroughStream $stream;
 
-    /** @var string User agent */
-    protected $userAgent;
+    /** @var ?string User agent */
+    protected ?string $userAgent = null;
 
     /**
      * Construct an instance of the Connection class

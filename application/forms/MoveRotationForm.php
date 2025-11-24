@@ -24,18 +24,18 @@ class MoveRotationForm extends Form
 
     protected $method = 'POST';
 
-    /** @var Connection */
-    protected $db;
+    /** @var ?Connection */
+    protected ?Connection $db = null;
 
-    /** @var int */
-    protected $scheduleId;
+    /** @var ?int */
+    protected ?int $scheduleId = null;
 
     /**
      * Create a new MoveRotationForm
      *
      * @param ?Connection $db
      */
-    public function __construct(Connection $db = null)
+    public function __construct(?Connection $db = null)
     {
         $this->db = $db;
     }

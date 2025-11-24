@@ -17,7 +17,7 @@ use Traversable;
 
 class DayGrid extends BaseGrid
 {
-    protected $flowOfTime = BaseGrid::VERTICAL_FLOW_OF_TIME;
+    protected string $flowOfTime = BaseGrid::VERTICAL_FLOW_OF_TIME;
 
     public function setGridStart(DateTime $start): BaseGrid
     {

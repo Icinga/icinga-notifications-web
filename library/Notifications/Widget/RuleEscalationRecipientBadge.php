@@ -13,10 +13,10 @@ use ipl\Web\Widget\Icon;
 class RuleEscalationRecipientBadge extends BaseHtmlElement
 {
     /** @var RuleEscalationRecipient */
-    protected $recipient;
+    protected RuleEscalationRecipient $recipient;
 
-    /** @var int */
-    protected $moreCount;
+    /** @var ?int */
+    protected ?int $moreCount = null;
 
     protected $tag = 'span';
 

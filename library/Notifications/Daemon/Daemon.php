@@ -27,34 +27,35 @@ use function React\Promise\Timer\sleep;
 
 class Daemon extends EventEmitter
 {
+    /** @var string */
     protected const PREFIX = '[daemon] - ';
 
     /** @var Logger Instance of the logger class */
-    protected static $logger;
+    protected static Logger $logger;
 
-    /** @var Daemon Instance of this class */
-    private static $instance;
+    /** @var ?Daemon Instance of this class */
+    private static ?Daemon $instance = null;
 
     /** @var LoopInterface Main loop */
-    protected $loop;
+    protected LoopInterface $loop;
 
     /** @var Server Server object */
-    protected $server;
+    protected Server $server;
 
     /** @var Sender Sender object */
-    protected $sender;
+    protected Sender $sender;
 
     /** @var SQLConnection Database object */
-    protected $database;
+    protected SQLConnection $database;
 
     /** @var bool Token which can be triggered to exit the main routine */
-    protected $cancellationToken;
+    protected bool $cancellationToken;
 
     /** @var int Timestamp holding the creation's time of this {@see self::$instance instance} */
-    protected $initializedAt;
+    protected int $initializedAt;
 
-    /** @var int Last checked incident identifier */
-    protected $lastIncidentId;
+    /** @var ?int Last checked incident identifier */
+    protected ?int $lastIncidentId = null;
 
     /**
      * Construct the singleton instance of the Daemon class
