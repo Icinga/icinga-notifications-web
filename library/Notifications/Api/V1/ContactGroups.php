@@ -787,6 +787,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
      * Fetch the values from the database
      *
      * @param int $contactgroupId
+     *
      * @return array
      *
      * @throws HttpNotFoundException

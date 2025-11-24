@@ -510,10 +510,10 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
 
     public function prepareRow(stdClass $row): void
     {
-            $row->groups = ContactGroups::fetchGroupIdentifiers($row->contact_id);
-            $row->addresses = self::fetchContactAddresses($row->contact_id) ?: new stdClass();
+        $row->groups = ContactGroups::fetchGroupIdentifiers($row->contact_id);
+        $row->addresses = self::fetchContactAddresses($row->contact_id) ?: new stdClass();
 
-            unset($row->contact_id);
+        unset($row->contact_id);
     }
 
     /**
@@ -577,6 +577,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
      * @param string[] $groups
      *
      * @return void
+     *
      * @throws HttpException
      */
     private function addGroups(int $contactId, array $groups): void
@@ -625,6 +626,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
      * @param requestBody $requestBody
      *
      * @return void
+     *
      * @throws HttpException
      */
     private function addContact(array $requestBody): void
@@ -1000,6 +1002,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
      * Fetch the values from the database
      *
      * @param int $contactId
+     *
      * @return array
      *
      * @throws HttpNotFoundException

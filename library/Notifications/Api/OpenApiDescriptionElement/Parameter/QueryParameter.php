@@ -33,8 +33,8 @@ class QueryParameter extends Parameter
             'schema' => $schema,
         ];
 
-         $params = $example !== null ? array_merge($params, ['example' => $example]) : $params;
+        $params = $example !== null ? array_merge($params, ['example' => $example]) : $params;
 
-         parent::__construct(...$params);
+        parent::__construct(...$params);
     }
 }
