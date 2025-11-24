@@ -92,6 +92,7 @@ abstract class ApiV1 extends ApiCore
      * Override this method to modify the row before it is returned in the response.
      *
      * @param stdClass $row
+     *
      * @return void
      */
     public function prepareRow(stdClass $row): void

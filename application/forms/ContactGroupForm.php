@@ -65,10 +65,10 @@ class ContactGroupForm extends CompatForm
             ->on(TermInput::ON_SAVE, $callValidation)
             ->on(TermInput::ON_PASTE, $callValidation);
 
-            // TODO: TermInput is not compatible with the new decorators yet: https://github.com/Icinga/ipl-web/pull/317
-            $legacyDecorator = new IcingaFormDecorator();
-            $termInput->setDefaultElementDecorator($legacyDecorator);
-            $legacyDecorator->decorate($termInput);
+        // TODO: TermInput is not compatible with the new decorators yet: https://github.com/Icinga/ipl-web/pull/317
+        $legacyDecorator = new IcingaFormDecorator();
+        $termInput->setDefaultElementDecorator($legacyDecorator);
+        $legacyDecorator->decorate($termInput);
 
         $this->addElement(
             'text',
@@ -363,9 +363,9 @@ class ContactGroupForm extends CompatForm
 
         $escalationIds = $this->db->fetchCol(
             RuleEscalationRecipient::on($this->db)
-            ->columns('rule_escalation_id')
-            ->filter(Filter::equal('contactgroup_id', $this->contactgroupId))
-            ->assembleSelect()
+                ->columns('rule_escalation_id')
+                ->filter(Filter::equal('contactgroup_id', $this->contactgroupId))
+                ->assembleSelect()
         );
 
         $this->db->update('rule_escalation_recipient', $markAsDeleted, $updateCondition);

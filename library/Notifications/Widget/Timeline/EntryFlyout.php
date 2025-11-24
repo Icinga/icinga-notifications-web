@@ -25,7 +25,7 @@ class EntryFlyout extends BaseHtmlElement
     /** @var ?Member Member who is on duty during the entry's timespan */
     protected ?Member $activeMember = null;
 
-    /** @var ?string Mode of the entry's rotation can be "partial", "multi" or "24-7"*/
+    /** @var ?string Mode of the entry's rotation can be "partial", "multi" or "24-7" */
     protected ?string $mode = null;
 
     /** @var ?array All members of the entry's rotation */
