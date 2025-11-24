@@ -128,7 +128,7 @@ class Rotation extends Model
         $changedAt = (int) (new DateTime())->format("Uv");
         $markAsDeleted = ['changed_at' => $changedAt, 'deleted' => 'y'];
 
-        $db->update('timeperiod_entry', $markAsDeleted, ['timeperiod_id = ?' => $timeperiodId,  'deleted = ?' => 'n']);
+        $db->update('timeperiod_entry', $markAsDeleted, ['timeperiod_id = ?' => $timeperiodId, 'deleted = ?' => 'n']);
         $db->update('timeperiod', $markAsDeleted, ['id = ?' => $timeperiodId]);
 
         $db->update(
