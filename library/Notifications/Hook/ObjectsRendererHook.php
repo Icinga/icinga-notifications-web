@@ -30,7 +30,7 @@ abstract class ObjectsRendererHook
      *
      * @var array<string, array<string, array<string, string>>>
      */
-    private static $objectIdTags = [];
+    private static array $objectIdTags = [];
 
     /**
      * Array of HTMLs for objects with their corresponding object IDs as keys
@@ -39,7 +39,7 @@ abstract class ObjectsRendererHook
      *
      * @var array<string, ValidHtml>
      */
-    private static $objectNameHtmls = [];
+    private static array $objectNameHtmls = [];
 
     /**
      * Array of object names with their corresponding object IDs as keys
@@ -48,7 +48,7 @@ abstract class ObjectsRendererHook
      *
      * @var array<string, string>
      */
-    private static $objectNames = [];
+    private static array $objectNames = [];
 
     /**
      * Get the object names for the objects using the object ID tags

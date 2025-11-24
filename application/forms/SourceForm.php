@@ -37,10 +37,10 @@ class SourceForm extends CompatForm
     public const TYPE_GENERIC = 'generic';
 
     /** @var Connection */
-    private $db;
+    private Connection $db;
 
     /** @var ?int */
-    private $sourceId;
+    private ?int $sourceId = null;
 
     public function __construct(Connection $db)
     {

@@ -32,8 +32,8 @@ class ObjectSuggestions extends Suggestions
     use Auth;
     use Translation;
 
-    /** @var Model */
-    protected $model;
+    /** @var ?Model */
+    protected ?Model $model = null;
 
     /**
      * Set the model to show suggestions for

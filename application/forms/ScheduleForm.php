@@ -30,7 +30,7 @@ class ScheduleForm extends CompatForm
     use CsrfCounterMeasure;
 
     /** @var ?string */
-    protected ?string $submitLabel;
+    protected ?string $submitLabel = null;
 
     /** @var bool */
     protected bool $showRemoveButton = false;
