@@ -275,9 +275,8 @@ final class Database
             if (is_array($value)) {
                 $found = self::hasCondition($baseTable, $conditionToFind, $value);
             } else {
-                $found = (
-                    $condition === $conditionToFind || $condition === $baseTable . '.' . $conditionToFind
-                    ) && $value === 'y';
+                $found = ($condition === $conditionToFind || $condition === $baseTable . '.' . $conditionToFind)
+                    && $value === 'y';
             }
 
             if ($found) {

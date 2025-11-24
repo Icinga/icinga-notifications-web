@@ -39,7 +39,7 @@ class ContactForm extends CompatForm
     /** @var Connection */
     private Connection $db;
 
-    /** @var ?string Contact ID*/
+    /** @var ?string Contact ID */
     private ?string $contactId = null;
 
     public function __construct(Connection $db)
