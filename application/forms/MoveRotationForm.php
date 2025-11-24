@@ -25,11 +25,11 @@ class MoveRotationForm extends Form
 
     protected $method = 'POST';
 
-    /** @var Connection */
-    protected $db;
+    /** @var ?Connection */
+    protected ?Connection $db = null;
 
-    /** @var int */
-    protected $scheduleId;
+    /** @var ?int */
+    protected ?int $scheduleId = null;
 
     /**
      * Create a new MoveRotationForm

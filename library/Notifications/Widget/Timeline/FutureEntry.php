@@ -20,7 +20,7 @@ class FutureEntry extends Entry
 {
     protected $defaultAttributes = ['class' => 'future-entry'];
 
-    protected $continuationType = Entry::TO_NEXT_GRID;
+    protected ?string $continuationType = Entry::TO_NEXT_GRID;
 
     public function __construct()
     {

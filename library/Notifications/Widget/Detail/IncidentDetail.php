@@ -32,7 +32,7 @@ class IncidentDetail extends BaseHtmlElement
     use Translation;
 
     /** @var Incident */
-    protected $incident;
+    protected Incident $incident;
 
     protected $defaultAttributes = [
         'class'                         => 'incident-detail',
