@@ -16,7 +16,6 @@ use Icinga\Web\Notification;
 use Icinga\Web\Widget\Tabs;
 use ipl\Html\Contract\Form;
 use ipl\Sql\Expression;
-use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
 use ipl\Web\Control\LimitControl;
@@ -28,9 +27,6 @@ use ipl\Web\Widget\ButtonLink;
 class ChannelsController extends CompatController
 {
     use SearchControls;
-
-    /** @var ?Filter\Rule Filter from query string parameters */
-    private ?Filter\Rule $filter = null;
 
     public function init(): void
     {
@@ -64,7 +60,7 @@ class ChannelsController extends CompatController
 
         if ($searchBar->hasBeenSent() && ! $searchBar->isValid()) {
             if ($searchBar->hasBeenSubmitted()) {
-                $filter = $this->getFilter();
+                $filter = QueryString::parse((string) $this->params);
             } else {
                 $this->addControl($searchBar);
                 $this->sendMultipartUpdate();
@@ -145,20 +141,6 @@ class ChannelsController extends CompatController
 
         $this->getDocument()->add($editor);
         $this->setTitle($this->translate('Adjust Filter'));
-    }
-
-    /**
-     * Get the filter created from query string parameters
-     *
-     * @return Filter\Rule
-     */
-    protected function getFilter(): Filter\Rule
-    {
-        if ($this->filter === null) {
-            $this->filter = QueryString::parse((string) $this->params);
-        }
-
-        return $this->filter;
     }
 
     /**

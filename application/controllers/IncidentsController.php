@@ -11,7 +11,6 @@ use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\View\IncidentRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
-use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
 use ipl\Web\Control\LimitControl;
@@ -25,9 +24,6 @@ class IncidentsController extends CompatController
 {
     use Auth;
     use SearchControls;
-
-    /** @var ?Filter\Rule Filter from query string parameters */
-    private ?Filter\Rule $filter = null;
 
     public function indexAction(): void
     {
@@ -55,7 +51,7 @@ class IncidentsController extends CompatController
 
         if ($searchBar->hasBeenSent() && ! $searchBar->isValid()) {
             if ($searchBar->hasBeenSubmitted()) {
-                $filter = $this->getFilter();
+                $filter = QueryString::parse((string) $this->params);
             } else {
                 $this->addControl($searchBar);
                 $this->sendMultipartUpdate();
@@ -113,19 +109,5 @@ class IncidentsController extends CompatController
     protected function getPageSize($default)
     {
         return parent::getPageSize($default ?? 50);
-    }
-
-    /**
-     * Get the filter created from query string parameters
-     *
-     * @return Filter\Rule
-     */
-    public function getFilter(): Filter\Rule
-    {
-        if ($this->filter === null) {
-            $this->filter = QueryString::parse((string) $this->params);
-        }
-
-        return $this->filter;
     }
 }

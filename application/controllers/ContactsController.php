@@ -18,7 +18,6 @@ use ipl\Html\Contract\Form;
 use ipl\Html\TemplateString;
 use ipl\Sql\Connection;
 use ipl\Sql\Expression;
-use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
 use ipl\Web\Control\LimitControl;
@@ -35,9 +34,6 @@ class ContactsController extends CompatController
 
     /** @var Connection */
     private Connection $db;
-
-    /** @var ?Filter\Rule Filter from query string parameters */
-    private ?Filter\Rule $filter = null;
 
     public function init(): void
     {
@@ -73,7 +69,7 @@ class ContactsController extends CompatController
 
         if ($searchBar->hasBeenSent() && ! $searchBar->isValid()) {
             if ($searchBar->hasBeenSubmitted()) {
-                $filter = $this->getFilter();
+                $filter = QueryString::parse((string) $this->params);
             } else {
                 $this->addControl($searchBar);
                 $this->sendMultipartUpdate();
@@ -163,19 +159,5 @@ class ContactsController extends CompatController
 
         $this->getDocument()->add($editor);
         $this->setTitle($this->translate('Adjust Filter'));
-    }
-
-    /**
-     * Get the filter created from query string parameters
-     *
-     * @return Filter\Rule
-     */
-    protected function getFilter(): Filter\Rule
-    {
-        if ($this->filter === null) {
-            $this->filter = QueryString::parse((string) $this->params);
-        }
-
-        return $this->filter;
     }
 }

@@ -20,7 +20,6 @@ use ipl\Html\Form;
 use ipl\Html\HtmlString;
 use ipl\Html\TemplateString;
 use ipl\Sql\Expression;
-use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
 use ipl\Web\Control\LimitControl;
@@ -34,9 +33,6 @@ class ContactGroupsController extends CompatController
 {
     use ConfigurationTabs;
     use SearchControls;
-
-    /** @var ?Filter\Rule Filter from query string parameters */
-    private ?Filter\Rule $filter = null;
 
     public function init(): void
     {
@@ -70,7 +66,7 @@ class ContactGroupsController extends CompatController
 
         if ($searchBar->hasBeenSent() && ! $searchBar->isValid()) {
             if ($searchBar->hasBeenSubmitted()) {
-                $filter = $this->getFilter();
+                $filter = QueryString::parse((string) $this->params);
             } else {
                 $this->addControl($searchBar);
                 $this->sendMultipartUpdate();
@@ -202,19 +198,5 @@ class ContactGroupsController extends CompatController
         $members->forRequest($this->getServerRequest());
 
         $this->getDocument()->addHtml($members);
-    }
-
-    /**
-     * Get the filter created from query string parameters
-     *
-     * @return Filter\Rule
-     */
-    private function getFilter(): Filter\Rule
-    {
-        if ($this->filter === null) {
-            $this->filter = QueryString::parse((string) $this->params);
-        }
-
-        return $this->filter;
     }
 }

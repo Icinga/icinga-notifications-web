@@ -25,9 +25,6 @@ class EventsController extends CompatController
     use Auth;
     use SearchControls;
 
-    /** @var ?Filter\Rule Filter from query string parameters */
-    private ?Filter\Rule $filter = null;
-
     public function indexAction(): void
     {
         $this->addTitleTab(t('Events'));
@@ -56,7 +53,7 @@ class EventsController extends CompatController
 
         if ($searchBar->hasBeenSent() && ! $searchBar->isValid()) {
             if ($searchBar->hasBeenSubmitted()) {
-                $filter = $this->getFilter();
+                $filter = QueryString::parse((string) $this->params);
             } else {
                 $this->addControl($searchBar);
                 $this->sendMultipartUpdate();
@@ -129,19 +126,5 @@ class EventsController extends CompatController
 
         $this->getDocument()->add($editor);
         $this->setTitle(t('Adjust Filter'));
-    }
-
-    /**
-     * Get the filter created from query string parameters
-     *
-     * @return Filter\Rule
-     */
-    protected function getFilter(): Filter\Rule
-    {
-        if ($this->filter === null) {
-            $this->filter = QueryString::parse((string) $this->params);
-        }
-
-        return $this->filter;
     }
 }
