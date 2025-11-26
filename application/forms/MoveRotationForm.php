@@ -22,8 +22,6 @@ class MoveRotationForm extends Form
 
     protected $defaultAttributes = ['hidden' => true];
 
-    protected $method = 'POST';
-
     /** @var ?Connection */
     protected ?Connection $db = null;
 
