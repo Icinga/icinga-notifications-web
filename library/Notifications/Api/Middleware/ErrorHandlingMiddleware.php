@@ -36,9 +36,7 @@ class ErrorHandlingMiddleware implements MiddlewareInterface
             return new Response(
                 400,
                 ['Content-Type' => 'application/json'],
-                Json::sanitize([
-                    'message' =>  $e->getMessage()
-                ])
+                Json::sanitize(['message' => $e->getMessage()])
             );
         } catch (Throwable $e) {
             Logger::error($e);

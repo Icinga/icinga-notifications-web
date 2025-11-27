@@ -7,7 +7,7 @@ namespace Icinga\Module\Notifications\Common;
 trait NoSubjectLink
 {
     /** @var bool */
-    protected $noSubjectLink = false;
+    protected bool $noSubjectLink = false;
 
     /**
      * Set whether a list item's subject should be a link

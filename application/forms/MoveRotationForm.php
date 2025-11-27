@@ -22,20 +22,18 @@ class MoveRotationForm extends Form
 
     protected $defaultAttributes = ['hidden' => true];
 
-    protected $method = 'POST';
+    /** @var ?Connection */
+    protected ?Connection $db = null;
 
-    /** @var Connection */
-    protected $db;
-
-    /** @var int */
-    protected $scheduleId;
+    /** @var ?int */
+    protected ?int $scheduleId = null;
 
     /**
      * Create a new MoveRotationForm
      *
      * @param ?Connection $db
      */
-    public function __construct(Connection $db = null)
+    public function __construct(?Connection $db = null)
     {
         $this->db = $db;
     }
@@ -54,7 +52,7 @@ class MoveRotationForm extends Form
         return $this->scheduleId;
     }
 
-    public function getMessages()
+    public function getMessages(): array
     {
         $messages = parent::getMessages();
         foreach ($this->getElements() as $element) {
@@ -66,21 +64,21 @@ class MoveRotationForm extends Form
         return $messages;
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->addElement('hidden', 'rotation', ['required' => true]);
         $this->addElement('hidden', 'priority', ['required' => true]);
-        $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
+        $this->addCsrfCounterMeasure(Session::getSession()->getId());
     }
 
-    protected function onError()
+    protected function onError(): void
     {
         $this->removeAttribute('hidden');
 
         parent::onError();
     }
 
-    protected function onSuccess()
+    protected function onSuccess(): void
     {
         $rotationId = $this->getValue('rotation');
         $newPriority = $this->getValue('priority');

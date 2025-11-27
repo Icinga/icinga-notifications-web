@@ -6,13 +6,12 @@ namespace Icinga\Module\Notifications\Test;
 
 use DateTime;
 use GuzzleHttp\Client;
-use Icinga\Module\Notifications\Api\V1\Channels;
 use Icinga\Util\Json;
 use Icinga\Web\Url;
 use ipl\Sql\Connection;
 use ipl\Sql\Select;
-use Psr\Http\Message\ResponseInterface;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\ResponseInterface;
 
 class BaseApiV1TestCase extends TestCase
 {
@@ -37,18 +36,18 @@ class BaseApiV1TestCase extends TestCase
     protected static function initializeNotificationsDb(Connection $db, string $driver): void
     {
         $db->insert('available_channel_type', [
-                'type' => 'email',
-                'name' => 'Email',
-                'version' => 1,
-                'author' => 'Test',
-                'config_attrs' => ''
-            ]);
+            'type' => 'email',
+            'name' => 'Email',
+            'version' => 1,
+            'author' => 'Test',
+            'config_attrs' => ''
+        ]);
         $db->insert('available_channel_type', [
-                'type' => 'webhook',
-                'name' => 'Webhook',
-                'version' => 1,
-                'author' => 'Test',
-                'config_attrs' => ''
+            'type' => 'webhook',
+            'name' => 'Webhook',
+            'version' => 1,
+            'author' => 'Test',
+            'config_attrs' => ''
         ]);
         $db->insert('available_channel_type', [
             'type' => 'rocketchat',
@@ -120,9 +119,9 @@ class BaseApiV1TestCase extends TestCase
 
         $contactIds = $db->select(
             (new Select())
-            ->from('contact')
-            ->columns('id')
-            ->where(['external_uuid IN (?)' => [self::CONTACT_UUID, self::CONTACT_UUID_2]])
+                ->from('contact')
+                ->columns('id')
+                ->where(['external_uuid IN (?)' => [self::CONTACT_UUID, self::CONTACT_UUID_2]])
         )->fetchAll(\PDO::FETCH_COLUMN);
 
         foreach ($contactIds as $contactId) {

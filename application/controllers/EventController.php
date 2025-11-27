@@ -9,6 +9,7 @@ use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Event;
 use Icinga\Module\Notifications\Widget\Detail\EventDetail;
 use Icinga\Module\Notifications\Widget\Detail\ObjectHeader;
+use ipl\Html\Attributes;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 
@@ -40,7 +41,7 @@ class EventController extends CompatController
 
         $this->addControl(new ObjectHeader($event));
 
-        $this->controls->addAttributes(['class' => 'event-detail']);
+        $this->controls->addAttributes(Attributes::create(['class' => 'event-detail']));
 
         $this->addContent(new EventDetail($event));
     }

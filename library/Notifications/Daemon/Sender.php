@@ -11,22 +11,23 @@ use Icinga\Module\Notifications\Model\Daemon\EventIdentifier;
 
 class Sender
 {
+    /** @var string */
     protected const PREFIX = '[daemon.sender] - ';
 
-    /** @var Sender Instance of this class */
-    private static $instance;
+    /** @var ?Sender Instance of this class */
+    private static ?Sender $instance = null;
 
     /** @var Logger Instance of the logger class */
-    protected static $logger;
+    protected static Logger $logger;
 
     /** @var Daemon Daemon object reference */
-    protected static $daemon;
+    protected static Daemon $daemon;
 
     /** @var Server Server object reference */
-    protected static $server;
+    protected static Server $server;
 
     /** @var Closure {@see processNotification()} wrapper */
-    protected $callback;
+    protected Closure $callback;
 
     /**
      * Construct the singleton instance of the Sender class

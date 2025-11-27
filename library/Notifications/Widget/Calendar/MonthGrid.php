@@ -119,7 +119,7 @@ class MonthGrid extends BaseGrid
         return $sidebar;
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->addHtml(
             $this->createHeader(),

@@ -5,12 +5,12 @@
 namespace Icinga\Module\Notifications\Controllers;
 
 use Icinga\Module\Notifications\Common\ConfigurationTabs;
+use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Channel;
+use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\View\ContactRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
-use Icinga\Module\Notifications\Common\Database;
-use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Web\Form\ContactForm;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Web\Notification;
@@ -18,7 +18,6 @@ use ipl\Html\Contract\Form;
 use ipl\Html\TemplateString;
 use ipl\Sql\Connection;
 use ipl\Sql\Expression;
-use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
 use ipl\Web\Control\LimitControl;
@@ -34,19 +33,16 @@ class ContactsController extends CompatController
     use SearchControls;
 
     /** @var Connection */
-    private $db;
+    private Connection $db;
 
-    /** @var Filter\Rule Filter from query string parameters */
-    private $filter;
-
-    public function init()
+    public function init(): void
     {
         $this->assertPermission('notifications/config/contacts');
 
         $this->db = Database::get();
     }
 
-    public function indexAction()
+    public function indexAction(): void
     {
         $this->setTitle($this->translate('Contacts'));
         $this->getTabs()->activate('contacts');
@@ -73,7 +69,7 @@ class ContactsController extends CompatController
 
         if ($searchBar->hasBeenSent() && ! $searchBar->isValid()) {
             if ($searchBar->hasBeenSubmitted()) {
-                $filter = $this->getFilter();
+                $filter = QueryString::parse((string) $this->params);
             } else {
                 $this->addControl($searchBar);
                 $this->sendMultipartUpdate();
@@ -163,19 +159,5 @@ class ContactsController extends CompatController
 
         $this->getDocument()->add($editor);
         $this->setTitle($this->translate('Adjust Filter'));
-    }
-
-    /**
-     * Get the filter created from query string parameters
-     *
-     * @return Filter\Rule
-     */
-    protected function getFilter(): Filter\Rule
-    {
-        if ($this->filter === null) {
-            $this->filter = QueryString::parse((string) $this->params);
-        }
-
-        return $this->filter;
     }
 }

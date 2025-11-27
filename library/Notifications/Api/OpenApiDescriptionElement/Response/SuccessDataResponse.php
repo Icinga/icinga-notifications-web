@@ -4,8 +4,8 @@
 
 namespace Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Response;
 
-use OpenApi\Attributes\Response;
 use OpenApi\Attributes as OA;
+use OpenApi\Attributes\Response;
 
 class SuccessDataResponse extends Response
 {
@@ -33,7 +33,7 @@ class SuccessDataResponse extends Response
                     new OA\Property(
                         property: 'data',
                         ref: '#/components/schemas/' . $entityName,
-                        description: sprintf('Successfull response with the %s object', $entityName),
+                        description: sprintf('Successful response with the %s object', $entityName),
                         type: 'object',
                     ),
                 ]

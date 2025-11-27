@@ -24,6 +24,8 @@ class PsrLogger implements LoggerInterface
      * Map PSR-3 levels to Icinga's 4 levels.
      * emergency/alert/critical -> ERROR
      * notice -> INFO
+     *
+     * @var array<string, string>
      */
     private const MAP = [
         LogLevel::EMERGENCY => 'error',
@@ -42,8 +44,10 @@ class PsrLogger implements LoggerInterface
      * @param string $level   The log level
      * @param string|Stringable $message The log message
      * @param array  $context Additional context variables to interpolate in the message
+     *
+     * @return void
      */
-    public function log($level, string|\Stringable $message, array $context = []): void
+    public function log($level, string|Stringable $message, array $context = []): void
     {
         $level = strtolower((string) $level);
         $icingaMethod = self::MAP[$level] ?? 'debug';

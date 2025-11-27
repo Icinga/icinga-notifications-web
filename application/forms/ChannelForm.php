@@ -45,13 +45,13 @@ class ChannelForm extends CompatForm
     use CsrfCounterMeasure;
 
     /** @var Connection */
-    private $db;
+    private Connection $db;
 
     /** @var ?int Channel ID */
-    private $channelId;
+    private ?int $channelId = null;
 
     /** @var array<string, mixed> */
-    private $defaultChannelOptions = [];
+    private array $defaultChannelOptions = [];
 
     public function __construct(Connection $db)
     {
@@ -72,7 +72,7 @@ class ChannelForm extends CompatForm
         }
 
         $this->addAttributes(['class' => 'channel-form']);
-        $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
+        $this->addCsrfCounterMeasure(Session::getSession()->getId());
 
         $this->addElement(
             'text',
@@ -331,31 +331,14 @@ class ChannelForm extends CompatForm
      */
     protected function getElementType(string $configType): string
     {
-        switch ($configType) {
-            case 'string':
-                $elementType = 'text';
-                break;
-            case 'number':
-                $elementType = 'number';
-                break;
-            case 'text':
-                $elementType = 'textarea';
-                break;
-            case 'bool':
-                $elementType = 'checkbox';
-                break;
-            case 'option':
-            case 'options':
-                $elementType = 'select';
-                break;
-            case 'secret':
-                $elementType = 'password';
-                break;
-            default:
-                $elementType = 'text';
-        }
-
-        return $elementType;
+        return match ($configType) {
+            'number'            => 'number',
+            'text'              => 'textarea',
+            'bool'              => 'checkbox',
+            'option', 'options' => 'select',
+            'secret'            => 'password',
+            default             => 'text'
+        };
     }
 
     /**

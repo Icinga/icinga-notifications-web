@@ -28,13 +28,13 @@ class IncidentQuickActions extends Form
     ];
 
     /** @var Incident */
-    protected $incident;
+    protected Incident $incident;
 
     /** @var int Current logged-in user's id */
-    protected $currentUserId;
+    protected int $currentUserId;
 
-    /** @var IncidentContact */
-    protected $incidentContact;
+    /** @var ?IncidentContact */
+    protected ?IncidentContact $incidentContact = null;
 
     public function __construct(Incident $incident, int $currentUserId)
     {
@@ -99,7 +99,7 @@ class IncidentQuickActions extends Form
         );
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
 
@@ -120,7 +120,7 @@ class IncidentQuickActions extends Form
         }
     }
 
-    protected function onSuccess()
+    protected function onSuccess(): void
     {
         $incidentContact = $this->fetchIncidentContact();
         $pressedButton = $this->getPressedSubmitElement()->getName();

@@ -95,17 +95,10 @@ class Channel extends Model
      */
     public function getIcon(): Icon
     {
-        switch ($this->type) {
-            case 'rocketchat':
-                $icon = new Icon('comment-dots');
-                break;
-            case 'email':
-                $icon = new Icon('at');
-                break;
-            default:
-                $icon = new Icon('envelope');
-        }
-
-        return $icon;
+        return match ($this->type) {
+            'rocketchat' => new Icon('comment-dots'),
+            'email'      => new Icon('at'),
+            default      => new Icon('envelope')
+        };
     }
 }

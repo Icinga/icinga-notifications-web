@@ -17,7 +17,7 @@ use Traversable;
 
 class WeekGrid extends BaseGrid
 {
-    protected $flowOfTime = BaseGrid::VERTICAL_FLOW_OF_TIME;
+    protected string $flowOfTime = BaseGrid::VERTICAL_FLOW_OF_TIME;
 
     public function setGridStart(DateTime $start): BaseGrid
     {
@@ -125,7 +125,7 @@ class WeekGrid extends BaseGrid
         return $sidebar;
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->addHtml(
             $this->createHeader(),

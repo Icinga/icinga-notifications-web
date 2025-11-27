@@ -9,7 +9,7 @@ use ipl\Web\Compat\CompatForm;
 
 class DatabaseConfigForm extends CompatForm
 {
-    protected function assemble()
+    protected function assemble(): void
     {
         $dbResources = ResourceFactory::getResourceConfigs('db')->keys();
 
@@ -17,14 +17,14 @@ class DatabaseConfigForm extends CompatForm
             'select',
             'resource',
             [
-                'label'       => $this->translate('Database'),
-                'options'     => array_merge(
+                'label'           => $this->translate('Database'),
+                'options'         => array_merge(
                     ['' => sprintf(' - %s - ', $this->translate('Please choose'))],
                     array_combine($dbResources, $dbResources)
                 ),
-                'disable'     => [''],
-                'required'    => true,
-                'value'       => ''
+                'disabledOptions' => [''],
+                'required'        => true,
+                'value'           => ''
             ]
         );
 

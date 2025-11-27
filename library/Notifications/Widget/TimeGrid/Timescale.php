@@ -26,10 +26,10 @@ class Timescale extends BaseHtmlElement
     protected $defaultAttributes = ['class' => 'timescale'];
 
     /** @var int The number of days shown */
-    protected $days;
+    protected int $days;
 
     /** @var Style */
-    protected $style;
+    protected Style $style;
 
     /**
      * Create a new Timescale
