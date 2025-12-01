@@ -12,7 +12,7 @@ class PageSeparatorItem extends BaseHtmlElement
     protected $defaultAttributes = ['class' => 'list-item page-separator'];
 
     /** @var int */
-    protected $pageNumber;
+    protected int $pageNumber;
 
     /** @var string */
     protected $tag = 'li';
@@ -22,7 +22,7 @@ class PageSeparatorItem extends BaseHtmlElement
         $this->pageNumber = $pageNumber;
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->add(Html::tag(
             'a',

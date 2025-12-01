@@ -33,10 +33,10 @@ class SourceForm extends CompatForm
     public const HASH_ALGORITHM = PASSWORD_BCRYPT;
 
     /** @var Connection */
-    private $db;
+    private Connection $db;
 
     /** @var ?int */
-    private $sourceId;
+    private ?int $sourceId = null;
 
     public function __construct(Connection $db)
     {

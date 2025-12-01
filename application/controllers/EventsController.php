@@ -7,8 +7,8 @@ namespace Icinga\Module\Notifications\Controllers;
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Hook\ObjectsRendererHook;
-use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Model\Event;
+use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Widget\ItemList\LoadMoreObjectList;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
@@ -24,9 +24,6 @@ class EventsController extends CompatController
 {
     use Auth;
     use SearchControls;
-
-    /** @var Filter\Rule Filter from query string parameters */
-    private $filter;
 
     public function indexAction(): void
     {
@@ -56,7 +53,7 @@ class EventsController extends CompatController
 
         if ($searchBar->hasBeenSent() && ! $searchBar->isValid()) {
             if ($searchBar->hasBeenSubmitted()) {
-                $filter = $this->getFilter();
+                $filter = QueryString::parse((string) $this->params);
             } else {
                 $this->addControl($searchBar);
                 $this->sendMultipartUpdate();
@@ -129,19 +126,5 @@ class EventsController extends CompatController
 
         $this->getDocument()->add($editor);
         $this->setTitle(t('Adjust Filter'));
-    }
-
-    /**
-     * Get the filter created from query string parameters
-     *
-     * @return Filter\Rule
-     */
-    protected function getFilter(): Filter\Rule
-    {
-        if ($this->filter === null) {
-            $this->filter = QueryString::parse((string) $this->params);
-        }
-
-        return $this->filter;
     }
 }

@@ -13,6 +13,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Zend_Controller_Request_Exception;
 
 /**
  * LegacyRequestConversionMiddleware is a middleware that converts a legacy request
@@ -55,7 +56,7 @@ class LegacyRequestConversionMiddleware implements MiddlewareInterface
             $requestBody = $this->legacyRequest->getPost();
         } catch (JsonDecodeException) {
             throw new HttpBadRequestException('Invalid request body: given content is not a valid JSON');
-        } catch (\Zend_Controller_Request_Exception) {
+        } catch (Zend_Controller_Request_Exception) {
             throw new HttpBadRequestException('Invalid request header: Content-Type must be application/json');
         }
 

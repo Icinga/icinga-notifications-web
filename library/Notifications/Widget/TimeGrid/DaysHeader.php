@@ -19,14 +19,14 @@ class DaysHeader extends BaseHtmlElement
     use Translation;
 
     /** @var int The number of days to show */
-    protected $days;
+    protected int $days;
 
     protected $tag = 'div';
 
     protected $defaultAttributes = ['class' => ['days-header', 'time-grid-header']];
 
     /** @var DateTime Starting day */
-    protected $startDay;
+    protected DateTime $startDay;
 
     /**
      * Create a new DaysHeader

@@ -11,16 +11,16 @@ use Icinga\Exception\Json\JsonDecodeException;
 use Icinga\Exception\Json\JsonEncodeException;
 use Icinga\Module\Notifications\Api\ApiCore;
 use Icinga\Module\Notifications\Api\Exception\InvalidFilterParameterException;
-use Icinga\Module\Notifications\Common\HttpMethod;
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Common\HttpMethod;
 use Icinga\Util\Json;
 use ipl\Sql\Compat\FilterProcessor;
 use ipl\Sql\Select;
 use ipl\Stdlib\Filter\Condition;
 use ipl\Web\Filter\QueryString;
+use OpenApi\Attributes as OA;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use OpenApi\Attributes as OA;
 use Ramsey\Uuid\Uuid;
 use stdClass;
 
@@ -92,6 +92,7 @@ abstract class ApiV1 extends ApiCore
      * Override this method to modify the row before it is returned in the response.
      *
      * @param stdClass $row
+     *
      * @return void
      */
     public function prepareRow(stdClass $row): void

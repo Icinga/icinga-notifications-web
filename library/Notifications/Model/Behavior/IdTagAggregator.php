@@ -19,8 +19,8 @@ use function ipl\Stdlib\iterable_key_first;
 
 class IdTagAggregator extends PropertyBehavior implements RewriteColumnBehavior, QueryAwareBehavior
 {
-    /** @var Query */
-    protected $query;
+    /** @var ?Query */
+    protected ?Query $query = null;
 
     final public function __construct()
     {
@@ -28,9 +28,12 @@ class IdTagAggregator extends PropertyBehavior implements RewriteColumnBehavior,
         parent::__construct(['id_tags']);
     }
 
-    public function setQuery(Query $query)
+    /** @return $this */
+    public function setQuery(Query $query): static
     {
         $this->query = $query;
+
+        return $this;
     }
 
     public function rewriteColumn($column, ?string $relation = null)
@@ -68,7 +71,8 @@ class IdTagAggregator extends PropertyBehavior implements RewriteColumnBehavior,
         return $name === 'id_tags';
     }
 
-    public function fromDb($value, $key, $context)
+    /** @return array<string, string> */
+    public function fromDb($value, $key, $context): array
     {
         if (! is_string($value)) {
             return [];
@@ -82,7 +86,16 @@ class IdTagAggregator extends PropertyBehavior implements RewriteColumnBehavior,
         return $tags;
     }
 
-    public function toDb($value, $key, $context)
+    /**
+     * @param mixed $value
+     * @param mixed $key
+     * @param mixed $context
+     *
+     * @return never
+     *
+     * @throws InvalidColumnException
+     */
+    public function toDb($value, $key, $context): never
     {
         throw new InvalidColumnException($key, new Objects());
     }

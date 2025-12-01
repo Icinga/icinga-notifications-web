@@ -10,6 +10,7 @@ use DateTimeZone;
 use Generator;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\RotationConfigForm;
+use Icinga\Module\Notifications\Model\Rotation as RotationModel;
 use ipl\I18n\Translation;
 use ipl\Scheduler\RRule;
 use ipl\Stdlib\Filter;
@@ -20,15 +21,15 @@ class Rotation
 {
     use Translation;
 
-    /** @var \Icinga\Module\Notifications\Model\Rotation */
-    protected $model;
+    /** @var RotationModel */
+    protected RotationModel $model;
 
     /**
      * Create a new Rotation
      *
-     * @param \Icinga\Module\Notifications\Model\Rotation $model
+     * @param RotationModel $model
      */
-    public function __construct(\Icinga\Module\Notifications\Model\Rotation $model)
+    public function __construct(RotationModel $model)
     {
         $this->model = $model;
     }
@@ -75,6 +76,8 @@ class Rotation
 
     /**
      * Create the base version of the flyout for this rotation
+     *
+     * @param DateTimeZone $displayTimezone
      *
      * @return EntryFlyout
      */

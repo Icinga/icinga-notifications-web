@@ -90,21 +90,13 @@ class RuleEscalationRecipient extends Model
      *
      * @return Contact|Contactgroup|Schedule|null
      */
-    public function getRecipient(): ?Model
+    public function getRecipient(): Contact|Contactgroup|Schedule|null
     {
-        $recipientModel = null;
-        if ($this->contact_id) {
-            $recipientModel = $this->contact->first();
-        }
-
-        if ($this->contactgroup_id) {
-            $recipientModel = $this->contactgroup->first();
-        }
-
-        if ($this->schedule_id) {
-            $recipientModel = $this->schedule->first();
-        }
-
-        return $recipientModel;
+        return match (true) {
+            (bool) $this->contact_id      => $this->contact->first(),
+            (bool) $this->contactgroup_id => $this->contactgroup->first(),
+            (bool) $this->schedule_id     => $this->schedule->first(),
+            default                       => null
+        };
     }
 }

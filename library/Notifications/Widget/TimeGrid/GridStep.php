@@ -15,13 +15,13 @@ use ipl\Html\BaseHtmlElement;
 class GridStep extends BaseHtmlElement
 {
     /** @var DateTime Start time of the grid step */
-    protected $start;
+    protected DateTime $start;
 
     /** @var DateTime End time of the grid step */
-    protected $end;
+    protected DateTime $end;
 
     /** @var array{int, int} The x and y position of the step on the grid */
-    protected $coordinates;
+    protected array $coordinates;
 
     protected $tag = 'div';
 
@@ -72,7 +72,7 @@ class GridStep extends BaseHtmlElement
         return $this->coordinates;
     }
 
-    protected function registerAttributeCallbacks(Attributes $attributes)
+    protected function registerAttributeCallbacks(Attributes $attributes): void
     {
         $this->getAttributes()
             ->registerAttributeCallback('data-start', function () {

@@ -5,6 +5,7 @@
 namespace Icinga\Module\Notifications\Widget;
 
 use Icinga\Module\Notifications\Model\Source;
+use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use ipl\Web\Widget\Ball;
@@ -12,7 +13,7 @@ use ipl\Web\Widget\Ball;
 class EventSourceBadge extends BaseHtmlElement
 {
     /** @var Source */
-    protected $source;
+    protected Source $source;
 
     protected $tag = 'span';
 
@@ -21,14 +22,14 @@ class EventSourceBadge extends BaseHtmlElement
     /**
      * Create an event source badge with source icon
      *
-     * @param Source    $source
+     * @param Source $source
      */
     public function __construct(Source $source)
     {
         $this->source = $source;
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         if ($this->source->name === null) {
             $title = $this->source->type;
@@ -41,7 +42,7 @@ class EventSourceBadge extends BaseHtmlElement
             ->add('title', $title);
 
         $this->addHtml((new Ball(Ball::SIZE_LARGE))
-            ->addAttributes(['class' => 'source-icon'])
+            ->addAttributes(Attributes::create(['class' => 'source-icon']))
             ->addHtml($this->source->getIcon()));
         $this->add(Html::tag('span', ['class' => 'name'], $this->source->name ?? $this->source->type));
     }

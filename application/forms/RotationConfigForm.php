@@ -17,10 +17,12 @@ use Icinga\Module\Notifications\Model\Rotation;
 use Icinga\Module\Notifications\Model\TimeperiodEntry;
 use Icinga\Util\Json;
 use Icinga\Web\Session;
+use IntlDateFormatter;
 use ipl\Html\Attributes;
 use ipl\Html\DeferredText;
 use ipl\Html\FormDecoration\DescriptionDecorator;
 use ipl\Html\FormElement\FieldsetElement;
+use ipl\Html\FormElement\SelectElement;
 use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
@@ -35,6 +37,7 @@ use ipl\Web\Compat\CompatForm;
 use ipl\Web\FormDecorator\IcingaFormDecorator;
 use ipl\Web\FormElement\TermInput;
 use ipl\Web\Url;
+use Locale;
 use LogicException;
 use Recurr\Frequency;
 use Recurr\Rule;
@@ -51,41 +54,41 @@ class RotationConfigForm extends CompatForm
      */
     public const EXPERIMENTAL_OVERRIDES = false;
 
-    /** @var ?int The ID of the affected schedule */
-    protected $scheduleId;
+    /** @var int The ID of the affected schedule */
+    protected int $scheduleId;
 
     /** @var Connection The database connection */
-    protected $db;
+    protected Connection $db;
 
-    /** @var string The label shown on the submit button */
-    protected $submitLabel;
+    /** @var ?string The label shown on the submit button */
+    protected ?string $submitLabel = null;
 
     /** @var bool Whether to render the remove button */
-    protected $showRemoveButton = false;
+    protected bool $showRemoveButton = false;
 
-    /** @var Url The URL to fetch member suggestions from */
-    protected $suggestionUrl;
+    /** @var ?Url The URL to fetch member suggestions from */
+    protected ?Url $suggestionUrl = null;
 
     /** @var bool Whether the mode selection is disabled */
-    protected $disableModeSelection = false;
+    protected bool $disableModeSelection = false;
 
     /** @var ?DateTime The previous first handoff of this rotation's version */
-    protected $previousHandoff;
+    protected ?DateTime $previousHandoff = null;
 
     /** @var ?DateTime The end of the last shift of this rotation's previous version */
-    protected $previousShift;
+    protected ?DateTime $previousShift = null;
 
     /** @var ?DateTime The first handoff of a newer version for this rotation */
-    protected $nextHandoff;
+    protected ?DateTime $nextHandoff = null;
 
-    /** @var int The rotation id */
-    protected $rotationId;
+    /** @var ?int The rotation id */
+    protected ?int $rotationId = null;
 
     /** @var string The timezone to display the timeline in */
-    protected $displayTimezone;
+    protected string $displayTimezone;
 
     /** @var string The timezone the schedule is created in */
-    protected $scheduleTimezone;
+    protected string $scheduleTimezone;
 
     /**
      * Set the label for the submit button
@@ -130,7 +133,7 @@ class RotationConfigForm extends CompatForm
      *
      * @param Url $url
      *
-     * @return void
+     * @return $this
      */
     public function setSuggestionUrl(Url $url): self
     {
@@ -142,7 +145,7 @@ class RotationConfigForm extends CompatForm
     /**
      * Disable the mode selection
      *
-     * @return void
+     * @return $this
      */
     public function disableModeSelection(): self
     {
@@ -213,6 +216,9 @@ class RotationConfigForm extends CompatForm
      * @param int $rotationId
      *
      * @return $this
+     *
+     * @throws LogicException If an invalid rotation mode is set
+     * @throws ConfigurationError If the schedule's timezone is invalid'
      * @throws HttpNotFoundException If the rotation with the given ID does not exist
      */
     public function loadRotation(int $rotationId): self
@@ -221,22 +227,11 @@ class RotationConfigForm extends CompatForm
 
         if (self::EXPERIMENTAL_OVERRIDES) {
             $getHandoff = function (Rotation $rotation): DateTime {
-                switch ($rotation->mode) {
-                    case '24-7':
-                        $time = $rotation->options['at'];
-
-                        break;
-                    case 'partial':
-                        $time = $rotation->options['from'];
-
-                        break;
-                    case 'multi':
-                        $time = $rotation->options['from_at'];
-
-                        break;
-                    default:
-                        throw new LogicException('Invalid mode');
-                }
+                $time = match ($rotation->mode) {
+                    '24-7'    => $rotation->options['at'],
+                    'partial' => $rotation->options['from'],
+                    'multi'   => $rotation->options['from_at']
+                };
 
                 $handoff = DateTime::createFromFormat(
                     'Y-m-d H:i',
@@ -432,6 +427,8 @@ class RotationConfigForm extends CompatForm
      * @param int $rotationId
      *
      * @return void
+     *
+     * @throws LogicException If the priority is not set
      */
     public function editRotation(int $rotationId): void
     {
@@ -555,6 +552,8 @@ class RotationConfigForm extends CompatForm
      * @param int $id
      *
      * @return void
+     *
+     * @throws LogicException If the priority is not set
      */
     public function removeRotation(int $id): void
     {
@@ -584,7 +583,11 @@ class RotationConfigForm extends CompatForm
     /**
      * Remove all versions of the rotation from the database
      *
+     * @param int|null $priority The priority of the rotations to remove.
+     *
      * @return void
+     *
+     * @throws LogicException If the priority is not set
      */
     public function wipeRotation(int $priority = null): void
     {
@@ -988,6 +991,7 @@ class RotationConfigForm extends CompatForm
             );
         }
 
+        /** @var SelectElement $toAt */
         $toAt = $options->createElement('select', 'to_at', [
             'class' => 'autosubmit',
             'required' => true,
@@ -1064,7 +1068,7 @@ class RotationConfigForm extends CompatForm
         return $firstHandoff;
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->getAttributes()->add('class', 'rotation-config');
 
@@ -1099,7 +1103,7 @@ class RotationConfigForm extends CompatForm
             $groupTerms = [];
             foreach ($terms as $term) {
                 /** @var TermInput\Term $term */
-                if (strpos($term->getSearchValue(), ':') === false) {
+                if (! str_contains($term->getSearchValue(), ':')) {
                     // TODO: Auto-correct this to a valid type:id pair, if possible
                     $term->setMessage($this->translate('Is not a contact nor a group of contacts'));
                     continue;
@@ -1196,7 +1200,7 @@ class RotationConfigForm extends CompatForm
             'type' => 'date',
             'required' => true,
             'aria-describedby' => 'first-handoff-description',
-            'min' => $earliestHandoff !== null ? $earliestHandoff->format('Y-m-d') : null,
+            'min' => $earliestHandoff?->format('Y-m-d'),
             'max' => $latestHandoff->format('Y-m-d'),
             'label' => $this->translate('Rotation Start'),
             'value' => $firstHandoffDefault,
@@ -1246,10 +1250,10 @@ class RotationConfigForm extends CompatForm
                     } else {
                         return sprintf(
                             $this->translate('The rotation will start on %s'),
-                            (new \IntlDateFormatter(
-                                \Locale::getDefault(),
-                                \IntlDateFormatter::MEDIUM,
-                                \IntlDateFormatter::SHORT,
+                            (new IntlDateFormatter(
+                                Locale::getDefault(),
+                                IntlDateFormatter::MEDIUM,
+                                IntlDateFormatter::SHORT,
                                 $this->scheduleTimezone
                             ))->format($actualFirstHandoff)
                         );
@@ -1269,10 +1273,10 @@ class RotationConfigForm extends CompatForm
                         return sprintf(
                             $this->translate('In your chosen display timezone (%s) this is the %s'),
                             $this->displayTimezone,
-                            (new \IntlDateFormatter(
-                                \Locale::getDefault(),
-                                \IntlDateFormatter::MEDIUM,
-                                \IntlDateFormatter::SHORT,
+                            (new IntlDateFormatter(
+                                Locale::getDefault(),
+                                IntlDateFormatter::MEDIUM,
+                                IntlDateFormatter::SHORT,
                                 $this->displayTimezone
                             ))->format($actualFirstHandoff)
                         );
@@ -1361,10 +1365,10 @@ class RotationConfigForm extends CompatForm
      */
     private function getTimeOptions(): array
     {
-        $formatter = new \IntlDateFormatter(
-            \Locale::getDefault(),
-            \IntlDateFormatter::NONE,
-            \IntlDateFormatter::SHORT,
+        $formatter = new IntlDateFormatter(
+            Locale::getDefault(),
+            IntlDateFormatter::NONE,
+            IntlDateFormatter::SHORT,
             $this->scheduleTimezone
         );
 
@@ -1595,6 +1599,8 @@ class RotationConfigForm extends CompatForm
      * @param DateTime $before
      *
      * @return array{0: ?DateTime, 1?: array{0: DateTime, 1: DateTime}}
+     *
+     * @throws LogicException If the frequency is not supported
      */
     private function calculateRemainingHandoffs(Rule $rrule, DateInterval $shiftDuration, DateTime $before): array
     {

@@ -131,39 +131,18 @@ class Event extends Model
 
     public static function mapSeverity(?string $severity): ?string
     {
-        switch ($severity) {
-            case 'ok':
-                $label = t('Ok', 'noma.severity');
-                break;
-            case 'crit':
-                $label = t('Critical', 'noma.severity');
-                break;
-            case 'warning':
-                $label = t('Warning', 'noma.severity');
-                break;
-            case 'err':
-                $label = t('Error', 'noma.severity');
-                break;
-            case 'debug':
-                $label = t('Debug', 'noma.severity');
-                break;
-            case 'info':
-                $label = t('Information', 'noma.severity');
-                break;
-            case 'alert':
-                $label = t('Alert', 'noma.severity');
-                break;
-            case 'emerg':
-                $label = t('Emergency', 'noma.severity');
-                break;
-            case 'notice':
-                $label = t('Notice', 'noma.severity');
-                break;
-            default:
-                $label = null;
-        }
-
-        return $label;
+        return match ($severity) {
+            'ok'      => t('Ok', 'notifications.severity'),
+            'crit'    => t('Critical', 'notifications.severity'),
+            'warning' => t('Warning', 'notifications.severity'),
+            'err'     => t('Error', 'notifications.severity'),
+            'debug'   => t('Debug', 'notifications.severity'),
+            'info'    => t('Information', 'notifications.severity'),
+            'alert'   => t('Alert', 'notifications.severity'),
+            'emerg'   => t('Emergency', 'notifications.severity'),
+            'notice'  => t('Notice', 'notifications.severity'),
+            default   => null
+        };
     }
 
     /**
@@ -181,30 +160,19 @@ class Event extends Model
             return t('ran into a problem', 'notifications.type');
         }
 
-        switch ($this->type) {
-            case 'acknowledgement-set':
-                return t('has been acknowledged', 'notifications.type');
-            case 'acknowledgement-cleared':
-                return t('was unacknowledged', 'notifications.type');
-            case 'downtime-start':
-                return t('entered a downtime period', 'notifications.type');
-            case 'downtime-end':
-                return t('left a downtime period', 'notifications.type');
-            case 'downtime-removed':
-                return t('prematurely left a downtime period', 'notifications.type');
-            case 'flapping-start':
-                return t('entered a flapping period', 'notifications.type');
-            case 'flapping-end':
-                return t('left a flapping period', 'notifications.type');
-            case 'incident-age':
-                return t('exceeded a time constraint', 'notifications.type');
-            case 'mute':
-                return t('was muted', 'notifications.type');
-            case 'unmute':
-                return t('was unmuted', 'notifications.type');
-            default: // custom
-                return '';
-        }
+        return match ($this->type) {
+            'acknowledgement-set'     => t('has been acknowledged', 'notifications.type'),
+            'acknowledgement-cleared' => t('was unacknowledged', 'notifications.type'),
+            'downtime-start'          => t('entered a downtime period', 'notifications.type'),
+            'downtime-end'            => t('left a downtime period', 'notifications.type'),
+            'downtime-removed'        => t('prematurely left a downtime period', 'notifications.type'),
+            'flapping-start'          => t('entered a flapping period', 'notifications.type'),
+            'flapping-end'            => t('left a flapping period', 'notifications.type'),
+            'incident-age'            => t('exceeded a time constraint', 'notifications.type'),
+            'mute'                    => t('was muted', 'notifications.type'),
+            'unmute'                  => t('was unmuted', 'notifications.type'),
+            default                   => '' // custom
+        };
     }
 
     /**
@@ -214,74 +182,37 @@ class Event extends Model
      */
     public function getIcon(): ?Icon
     {
-        $icon = null;
-
         if ($this->type === 'state') {
             $severity = $this->severity;
             $class = 'severity-' . $severity;
-            switch ($severity) {
-                case 'ok':
-                    $icon = (new Icon(Icons::SEVERITY_OK, ['class' => $class]))->setStyle('fa-regular');
-                    break;
-                case 'crit':
-                    $icon = new Icon(Icons::SEVERITY_CRIT, ['class' => $class]);
-                    break;
-                case 'warning':
-                    $icon = new Icon(Icons::SEVERITY_WARN, ['class' => $class]);
-                    break;
-                case 'err':
-                    $icon = (new Icon(Icons::SEVERITY_ERR, ['class' => $class]))->setStyle('fa-regular');
-                    break;
-                case 'debug':
-                    $icon = new Icon(Icons::SEVERITY_DEBUG);
-                    break;
-                case 'info':
-                    $icon = new Icon(Icons::SEVERITY_INFO);
-                    break;
-                case 'alert':
-                    $icon = new Icon(Icons::SEVERITY_ALERT);
-                    break;
-                case 'emerg':
-                    $icon = new Icon(Icons::SEVERITY_EMERG);
-                    break;
-                case 'notice':
-                    $icon = new Icon(Icons::SEVERITY_NOTICE);
-                    break;
-            }
 
-            return $icon;
+            return match ($severity) {
+                'ok'      => (new Icon(Icons::SEVERITY_OK, ['class' => $class]))->setStyle('fa-regular'),
+                'crit'    => new Icon(Icons::SEVERITY_CRIT, ['class' => $class]),
+                'warning' => new Icon(Icons::SEVERITY_WARN, ['class' => $class]),
+                'err'     => (new Icon(Icons::SEVERITY_ERR, ['class' => $class]))->setStyle('fa-regular'),
+                'debug'   => new Icon(Icons::SEVERITY_DEBUG),
+                'info'    => new Icon(Icons::SEVERITY_INFO),
+                'alert'   => new Icon(Icons::SEVERITY_ALERT),
+                'emerg'   => new Icon(Icons::SEVERITY_EMERG),
+                'notice'  => new Icon(Icons::SEVERITY_NOTICE),
+                default   => null
+            };
         }
 
-        switch ($this->type) {
-            case 'acknowledgement-set':
-                $icon = new Icon(Icons::ACKNOWLEDGED);
-                break;
-            case 'acknowledgement-cleared':
-                $icon = new Icon(Icons::UNACKNOWLEDGED);
-                break;
-            case 'downtime-start':
-            case 'downtime-end':
-            case 'downtime-removed':
-                $icon = new Icon(Icons::DOWNTIME);
-                break;
-            case 'flapping-start':
-            case 'flapping-end':
-                $icon = new Icon(Icons::FLAPPING);
-                break;
-            case 'incident-age':
-                $icon = new Icon(Icons::INCIDENT_AGE);
-                break;
-            case 'custom':
-                $icon = new Icon(Icons::CUSTOM);
-                break;
-            case 'mute':
-                $icon = new Icon(Icons::MUTE);
-                break;
-            case 'unmute':
-                $icon = new Icon(Icons::UNMUTE);
-                break;
-        }
-
-        return $icon;
+        return match ($this->type) {
+            'acknowledgement-set'     => new Icon(Icons::ACKNOWLEDGED),
+            'acknowledgement-cleared' => new Icon(Icons::UNACKNOWLEDGED),
+            'downtime-start',
+            'downtime-end',
+            'downtime-removed'        => new Icon(Icons::DOWNTIME),
+            'flapping-start',
+            'flapping-end'            => new Icon(Icons::FLAPPING),
+            'incident-age'            => new Icon(Icons::INCIDENT_AGE),
+            'custom'                  => new Icon(Icons::CUSTOM),
+            'mute'                    => new Icon(Icons::MUTE),
+            'unmute'                  => new Icon(Icons::UNMUTE),
+            default                   => null
+        };
     }
 }

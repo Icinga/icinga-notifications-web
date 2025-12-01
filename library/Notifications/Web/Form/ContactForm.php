@@ -37,10 +37,10 @@ class ContactForm extends CompatForm
     public const ON_REMOVE = 'on_remove';
 
     /** @var Connection */
-    private $db;
+    private Connection $db;
 
-    /** @var ?string Contact ID*/
-    private $contactId;
+    /** @var ?string Contact ID */
+    private ?string $contactId = null;
 
     public function __construct(Connection $db)
     {
@@ -67,7 +67,7 @@ class ContactForm extends CompatForm
         return $csrf !== null && $csrf->isValid() && $btn !== null && $btn->getName() === 'delete';
     }
 
-    public function isValidEvent($event)
+    public function isValidEvent($event): bool
     {
         if ($event === self::ON_REMOVE) {
             return true;
@@ -76,9 +76,9 @@ class ContactForm extends CompatForm
         return parent::isValidEvent($event);
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
-        $this->addAttributes(['class' => 'contact-form']);
+        $this->addAttributes(Attributes::create(['class' => 'contact-form']));
         $this->addCsrfCounterMeasure(Session::getSession()->getId());
 
         // Fieldset for contact full name and username

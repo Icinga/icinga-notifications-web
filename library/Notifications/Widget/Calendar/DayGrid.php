@@ -17,7 +17,7 @@ use Traversable;
 
 class DayGrid extends BaseGrid
 {
-    protected $flowOfTime = BaseGrid::VERTICAL_FLOW_OF_TIME;
+    protected string $flowOfTime = BaseGrid::VERTICAL_FLOW_OF_TIME;
 
     public function setGridStart(DateTime $start): BaseGrid
     {
@@ -116,7 +116,7 @@ class DayGrid extends BaseGrid
         return $sidebar;
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->addHtml(
             $this->createHeader(),

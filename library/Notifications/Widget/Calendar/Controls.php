@@ -40,7 +40,7 @@ class Controls extends Form
         return $this->getPopulatedValue('mode', Calendar::MODE_WEEK);
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         switch ($this->getPopulatedValue('mode', Calendar::MODE_WEEK)) {
             case Calendar::MODE_MONTH:

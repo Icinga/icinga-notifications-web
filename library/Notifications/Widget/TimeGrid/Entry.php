@@ -44,22 +44,22 @@ abstract class Entry extends BaseHtmlElement
     protected $defaultAttributes = ['class' => 'entry'];
 
     /** @var int The entry id */
-    protected $id;
+    protected int $id;
 
     /** @var ?DateTime When the entry starts */
-    protected $start;
+    protected ?DateTime $start = null;
 
     /** @var ?DateTime When the entry ends */
-    protected $end;
+    protected ?DateTime $end = null;
 
     /** @var ?int The 0-based position of the row where to place this entry on the grid */
-    protected $position;
+    protected ?int $position = null;
 
     /** @var ?ContinuationType The continuation type */
-    protected $continuationType;
+    protected ?string $continuationType = null;
 
-    /** @var Url The URL to show this entry */
-    protected $url;
+    /** @var ?Url The URL to show this entry */
+    protected ?Url $url = null;
 
     /**
      * Create a new entry
@@ -212,7 +212,7 @@ abstract class Entry extends BaseHtmlElement
 
     abstract protected function assembleContainer(BaseHtmlElement $container): void;
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->getAttributes()
             ->add('data-entry-id', $this->getId())

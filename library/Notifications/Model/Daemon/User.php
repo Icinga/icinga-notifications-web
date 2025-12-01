@@ -7,16 +7,10 @@ namespace Icinga\Module\Notifications\Model\Daemon;
 class User
 {
     /** @var ?string Username */
-    protected $username;
+    protected ?string $username = null;
 
     /** @var ?int Contact identifier */
-    protected $contactId;
-
-    public function __construct()
-    {
-        $this->username = null;
-        $this->contactId = null;
-    }
+    protected ?int $contactId = null;
 
     public function getUsername(): ?string
     {

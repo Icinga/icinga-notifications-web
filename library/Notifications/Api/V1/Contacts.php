@@ -10,9 +10,6 @@ use Icinga\Exception\Http\HttpException;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Exception\Json\JsonEncodeException;
 use Icinga\Module\Notifications\Api\EndpointInterface;
-use Icinga\Module\Notifications\Model\Contact;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Server\RequestHandlerInterface;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\OadV1Delete;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\OadV1Get;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\OadV1GetPlural;
@@ -22,16 +19,19 @@ use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Parameter\PathPara
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Parameter\QueryParameter;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Response\Example\ResponseExample;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Schema\SchemaUUID;
-use Ramsey\Uuid\Uuid;
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Rotation;
 use Icinga\Module\Notifications\Model\RotationMember;
 use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use Icinga\Util\Json;
 use ipl\Sql\Select;
 use ipl\Stdlib\Filter;
-use stdClass;
 use OpenApi\Attributes as OA;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Server\RequestHandlerInterface;
+use Ramsey\Uuid\Uuid;
+use stdClass;
 
 /**
  * @phpstan-type requestBody array{
@@ -509,10 +509,10 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
 
     public function prepareRow(stdClass $row): void
     {
-            $row->groups = ContactGroups::fetchGroupIdentifiers($row->contact_id);
-            $row->addresses = self::fetchContactAddresses($row->contact_id) ?: new stdClass();
+        $row->groups = ContactGroups::fetchGroupIdentifiers($row->contact_id);
+        $row->addresses = self::fetchContactAddresses($row->contact_id) ?: new stdClass();
 
-            unset($row->contact_id);
+        unset($row->contact_id);
     }
 
     /**
@@ -576,6 +576,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
      * @param string[] $groups
      *
      * @return void
+     *
      * @throws HttpException
      */
     private function addGroups(int $contactId, array $groups): void
@@ -624,6 +625,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
      * @param requestBody $requestBody
      *
      * @return void
+     *
      * @throws HttpException
      */
     private function addContact(array $requestBody): void
@@ -999,6 +1001,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
      * Fetch the values from the database
      *
      * @param int $contactId
+     *
      * @return array
      *
      * @throws HttpNotFoundException
@@ -1009,6 +1012,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
             ->columns(['id', 'full_name', 'default_channel_id'])
             ->filter(Filter::equal('id', $contactId));
 
+        /** @var ?Contact $contact */
         $contact = $query->first();
         if ($contact === null) {
             throw new HttpNotFoundException('Contact contact not found');

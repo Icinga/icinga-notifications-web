@@ -28,7 +28,7 @@ class SourcesController extends CompatController
 {
     use SearchControls;
 
-    public function init()
+    public function init(): void
     {
         $this->assertPermission('config/modules');
     }
@@ -39,7 +39,7 @@ class SourcesController extends CompatController
         $this->getTabs()->activate('sources');
 
         $sources = Source::on(Database::get())
-            ->columns(['id', 'type',  'name']);
+            ->columns(['id', 'type', 'name']);
 
         $limitControl = $this->createLimitControl();
         $paginationControl = $this->createPaginationControl($sources);
