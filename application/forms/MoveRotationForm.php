@@ -35,7 +35,7 @@ class MoveRotationForm extends Form
      *
      * @param ?Connection $db
      */
-    public function __construct(Connection $db = null)
+    public function __construct(?Connection $db = null)
     {
         $this->db = $db;
     }

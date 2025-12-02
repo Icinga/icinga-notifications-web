@@ -221,7 +221,7 @@ class IncidentQuickActions extends Form
      *
      * @return void
      */
-    protected function updateHistory(IncidentContact $incidentContact, string $newRole = null): void
+    protected function updateHistory(IncidentContact $incidentContact, ?string $newRole = null): void
     {
         $oldRole = $incidentContact->role;
         $contactId = $incidentContact->contact_id ?? $this->currentUserId;
