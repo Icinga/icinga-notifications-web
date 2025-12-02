@@ -763,7 +763,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
      *
      * @throws HttpException if the username already exists
      */
-    private function assertUniqueName(string $name, int $contactgroupId = null): void
+    private function assertUniqueName(string $name, ?int $contactgroupId = null): void
     {
         $stmt = (new Select())
             ->from('contactgroup')

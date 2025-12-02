@@ -860,7 +860,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
      *
      * @throws HttpException if the username already exists
      */
-    private function assertUniqueUsername(string $username, int $contactId = null): void
+    private function assertUniqueUsername(string $username, ?int $contactId = null): void
     {
         $stmt = (new Select())
             ->from('contact')
