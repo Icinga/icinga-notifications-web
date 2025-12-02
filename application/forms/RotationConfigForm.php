@@ -583,13 +583,13 @@ class RotationConfigForm extends CompatForm
     /**
      * Remove all versions of the rotation from the database
      *
-     * @param int|null $priority The priority of the rotations to remove.
+     * @param ?int $priority
      *
      * @return void
      *
      * @throws LogicException If the priority is not set
      */
-    public function wipeRotation(int $priority = null): void
+    public function wipeRotation(?int $priority = null): void
     {
         $priority = $priority ?? $this->getValue('priority');
         if ($priority === null) {

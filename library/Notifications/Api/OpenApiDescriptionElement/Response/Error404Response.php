@@ -10,7 +10,7 @@ use OpenApi\Attributes\Response;
 
 class Error404Response extends Response
 {
-    public function __construct(string $endpointName = null)
+    public function __construct(?string $endpointName = null)
     {
         parent::__construct(
             response: 404,
