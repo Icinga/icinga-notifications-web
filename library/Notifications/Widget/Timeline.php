@@ -222,7 +222,7 @@ class Timeline extends BaseHtmlElement implements EntryProvider
         foreach ($occupiedCells as $cell => $entry) {
             $cells = $entryToCellsMap[$entry] ?? [];
             $cells[] = $cell;
-            $entryToCellsMap->attach($entry, $cells);
+            $entryToCellsMap->offsetSet($entry, $cells);
         }
 
         foreach ($entryToCellsMap as $entry) {
