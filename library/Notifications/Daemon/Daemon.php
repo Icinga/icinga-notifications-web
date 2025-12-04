@@ -264,7 +264,7 @@ class Daemon extends EventEmitter
         /** @var IncidentHistory $notification */
         $notificationsToProcess = [];
         foreach ($notifications as $notification) {
-            if (isset($connections[$notification->contact_id])) {
+            if ($notification->contact_id !== null && isset($connections[$notification->contact_id])) {
                 ObjectsRendererHook::register($notification->incident->object);
                 $notificationsToProcess[] = $notification;
 
