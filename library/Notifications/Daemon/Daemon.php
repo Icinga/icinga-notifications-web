@@ -22,8 +22,7 @@ use ipl\Stdlib\Filter;
 use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
 
-use function Clue\React\Block\await;
-use function React\Promise\Timer\sleep;
+use function React\Async\delay;
 
 class Daemon extends EventEmitter
 {
@@ -323,8 +322,8 @@ class Daemon extends EventEmitter
 
                 $endMs = (int) (microtime(true) * 1000);
                 if (($endMs - $beginMs) < 3000) {
-                    // run took less than 3 seconds; sleep for the remaining duration to prevent heavy db loads
-                    await(sleep((3000 - ($endMs - $beginMs)) / 1000));
+                    // run took less than 3 seconds; delay for the remaining duration to prevent heavy db loads
+                    delay((3000 - ($endMs - $beginMs)) / 1000);
                 }
             }
             self::$logger::debug(self::PREFIX . "cancellation triggered; exiting loop");
