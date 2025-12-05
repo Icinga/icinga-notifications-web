@@ -253,7 +253,7 @@ abstract class BaseGrid extends BaseHtmlElement
                 $cellOccupiers[$rowStart][$column][] = spl_object_id($entry);
             }
 
-            $occupiedCells->attach($entry, $rows);
+            $occupiedCells->offsetSet($entry, $rows);
         }
 
         $rowPlacements = [];

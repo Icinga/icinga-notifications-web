@@ -176,7 +176,7 @@ class ContactForm extends CompatForm
 
         $contact->registerElement($defaultChannel);
 
-        $this->addAddressElements($availableTypes, $channelTypes[$defaultChannel->getValue()] ?? null);
+        $this->addAddressElements($availableTypes, $channelTypes[$defaultChannel->getValue() ?? ''] ?? null);
 
         $this->addHtml(new HtmlElement('hr'));
 
