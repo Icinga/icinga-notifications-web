@@ -90,7 +90,7 @@ SQL;
      *
      * @return array<string, array{0: Connection, 1: Url}>
      */
-    final public function apiTestBackends(): array
+    final public static function apiTestBackends(): array
     {
         self::initializeBackends();
 
