@@ -11,12 +11,11 @@ use Icinga\Web\Url;
 use ipl\Sql\Connection;
 use stdClass;
 use WebSocket\Base;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 class ApiV1ContactsTest extends BaseApiV1TestCase
 {
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testGetWithMatchingFilter(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest('GET', $endpoint, 'v1/contacts', ['full_name' => 'Test']);
@@ -34,9 +33,7 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
         $this->assertJsonStringEqualsJsonString($expected, $content);
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testGetEverything(Connection $db, Url $endpoint): void
     {
         // At first, there are none
@@ -77,9 +74,7 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
         $this->assertJsonStringEqualsJsonString($expected, $content);
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testGetWithAlreadyExistingIdentifier(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest('GET', $endpoint, 'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID);
@@ -97,9 +92,7 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
         $this->assertJsonStringEqualsJsonString($expected, $content);
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testGetWithUnknownIdentifier(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest('GET', $endpoint, 'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3);
@@ -109,9 +102,7 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
         $this->assertJsonStringEqualsJsonString($this->jsonEncodeError('Contact not found'), $content);
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testGetWithNonMatchingFilter(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest('GET', $endpoint, 'v1/contacts', ['full_name' => 'not_test']);
@@ -121,9 +112,7 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
         $this->assertJsonStringEqualsJsonString($this->jsonEncodeResults([]), $content);
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testGetWithNonExistingFilter(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest('GET', $endpoint, 'v1/contacts', ['unknown' => 'filter']);
@@ -136,9 +125,7 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
         $this->assertJsonStringEqualsJsonString($expected, $content);
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testGetWithIdentifierAndFilter(Connection $db, Url $endpoint): void
     {
         $expected = $this->jsonEncodeError(
@@ -170,9 +157,7 @@ class ApiV1ContactsTest extends BaseApiV1TestCase
         $this->assertJsonStringEqualsJsonString($expected, $content);
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPostToCreateWithInvalidContent(Connection $db, Url $endpoint): void
     {
         $body = <<<YAML
@@ -199,9 +184,7 @@ YAML;
         );
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPostToCreateWithInvalidContentType(Connection $db, Url $endpoint): void
     {
         $body = <<<YAML
@@ -228,9 +211,7 @@ YAML;
         );
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPostToCreateWithFilter(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest(
@@ -254,9 +235,7 @@ YAML;
         );
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPostToReplaceWithUnknownIdentifier(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest(
@@ -276,9 +255,7 @@ YAML;
         $this->assertJsonStringEqualsJsonString($this->jsonEncodeError('Contact not found'), $content);
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPostToReplaceWithIndifferentPayloadId(
         Connection $db,
         Url $endpoint
@@ -303,9 +280,7 @@ YAML;
         );
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPostToReplaceWithAlreadyExistingPayloadId(
         Connection $db,
         Url $endpoint
@@ -327,9 +302,7 @@ YAML;
         $this->assertJsonStringEqualsJsonString($this->jsonEncodeError('Contact already exists'), $content);
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPostToReplaceWithValidData(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest(
@@ -374,9 +347,7 @@ YAML;
         ]), $content);
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPostToCreateWithExistingPayloadId(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest(
@@ -396,9 +367,7 @@ YAML;
         $this->assertJsonStringEqualsJsonString($this->jsonEncodeError('Contact already exists'), $content);
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPostToCreateWithValidData(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest(
@@ -443,9 +412,7 @@ YAML;
         ]), $content);
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPostToReplaceWithMissingRequiredFields(
         Connection $db,
         Url $endpoint
@@ -529,9 +496,7 @@ YAML;
         );
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPostToReplaceWithInvalidFieldFormat(
         Connection $db,
         Url $endpoint
@@ -661,9 +626,7 @@ YAML;
         );
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPostToCreateWithValidOptionalData(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest(
@@ -718,9 +681,7 @@ YAML;
         ]), $content);
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPostToCreateWithWebhookAsDefaultChannel(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest(
@@ -746,9 +707,7 @@ YAML;
         );
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPostToCreateWithInvalidDefaultChannel(Connection $db, Url $endpoint): void
     {
         // invalid default_channel uuid
@@ -772,9 +731,7 @@ YAML;
         );
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPostToCreateWithMissingRequiredFields(Connection $db, Url $endpoint): void
     {
         // missing id
@@ -855,9 +812,7 @@ YAML;
         );
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPostToCreateWithInvalidFieldFormat(
         Connection $db,
         Url $endpoint
@@ -987,9 +942,7 @@ YAML;
         );
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPostToCreateWithInvalidAddresses(Connection $db, Url $endpoint): void
     {
         // with invalid address type
@@ -1061,9 +1014,7 @@ YAML;
         );
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPostToCreateWithInvalidOptionalData(Connection $db, Url $endpoint): void
     {
         // already existing username
@@ -1129,9 +1080,7 @@ YAML;
         );
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPutToUpdateWithInvalidContent(Connection $db, Url $endpoint): void
     {
         $body = <<<YAML
@@ -1158,9 +1107,7 @@ YAML;
         );
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPutToUpdateWithInvalidContentType(Connection $db, Url $endpoint): void
     {
         $body = <<<YAML
@@ -1187,9 +1134,7 @@ YAML;
         );
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPutToUpdateWithFilter(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest(
@@ -1211,9 +1156,7 @@ YAML;
         );
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPutToUpdateWithoutIdentifier(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest(
@@ -1235,9 +1178,7 @@ YAML;
         );
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPutToUpdateWithMissingRequiredFields(
         Connection $db,
         Url $endpoint
@@ -1319,9 +1260,7 @@ YAML;
         );
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPutToUpdateWithInvalidFieldFormat(
         Connection $db,
         Url $endpoint
@@ -1451,9 +1390,7 @@ YAML;
         );
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPutToUpdateWithDifferentPayloadId(
         Connection $db,
         Url $endpoint
@@ -1475,9 +1412,7 @@ YAML;
         $this->assertJsonStringEqualsJsonString($this->jsonEncodeError('Identifier mismatch'), $content);
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPutToCreateWithValidData(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest(
@@ -1529,9 +1464,7 @@ YAML;
         ]), $content);
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPutToUpdateWithValidData(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest(
@@ -1568,9 +1501,7 @@ YAML;
         ]), $content);
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPutToUpdateWithInvalidData(Connection $db, Url $endpoint): void
     {
         // invalid default_channel uuid
@@ -1642,9 +1573,7 @@ YAML;
         );
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPutToCreateWithMissingRequiredFields(Connection $db, Url $endpoint): void
     {
         // missing full_name
@@ -1721,9 +1650,7 @@ YAML;
         );
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPutToCreateWithInvalidFieldFormat(
         Connection $db,
         Url $endpoint
@@ -1853,9 +1780,7 @@ YAML;
         );
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPutToChangeGroupMemberships(Connection $db, Url $endpoint): void
     {
         // First add a group to the user
@@ -1961,9 +1886,7 @@ YAML;
         ]), $content);
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testPutToChangeAddresses(Connection $db, Url $endpoint): void
     {
         // First add addresses to the user
@@ -2088,9 +2011,7 @@ YAML;
         ]), $content);
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testDeleteWithoutIdentifier(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest('DELETE', $endpoint, 'v1/contacts');
@@ -2103,9 +2024,7 @@ YAML;
         );
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testDeleteWithUnknownIdentifier(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest('DELETE', $endpoint, 'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3);
@@ -2115,9 +2034,7 @@ YAML;
         $this->assertJsonStringEqualsJsonString($this->jsonEncodeError('Contact not found'), $content);
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testDeleteWithKnownIdentifier(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest('DELETE', $endpoint, 'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID);
@@ -2127,9 +2044,7 @@ YAML;
         $this->assertEmpty($content);
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testDeleteWithFilter(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest('DELETE', $endpoint, 'v1/contacts', ['name~*']);
@@ -2142,9 +2057,7 @@ YAML;
         );
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testRequestWithNonSupportedMethod(Connection $db, Url $endpoint): void
     {
         // General invalid method
