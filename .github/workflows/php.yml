@@ -15,5 +15,25 @@ jobs:
       databases: true
       dependencies: |
         {
-          "./vendor/icingaweb2-modules/icingadb" : "https://github.com/Icinga/icingadb-web.git"
+          "./vendor/icingaweb2-modules/icingadb"  : "https://github.com/Icinga/icingadb-web.git",
+          "./vendor/notifications_daemon"         : "https://github.com/Icinga/icinga-notifications.git"
+        }
+      setup-commands: |
+        # Only run setup commands if test databases are available which is only the case for PHPUnit jobs
+        [ -z "${MYSQL_TESTDB_PORT}" ] && exit 0
+        mysql --host="${MYSQL_TESTDB_HOST}" --port=${MYSQL_TESTDB_PORT} --user=root --password="${MYSQL_TESTDB_PASSWORD}"  \
+          -e "CREATE DATABASE icingaweb; CREATE USER icingaweb@'%' IDENTIFIED BY 'icingaweb'; GRANT ALL ON icingaweb.* TO icingaweb@'%';"
+        [ -z "${PGSQL_TESTDB_PORT}" ] && exit 0
+        PGPASSWORD="${PGSQL_TESTDB_PASSWORD}" psql --host="${PGSQL_TESTDB_HOST}" --port=${PGSQL_TESTDB_PORT} \
+          --username "${PGSQL_TESTDB_USER}" -c "CREATE DATABASE icingaweb;"
+      env: |
+        {
+          "ICINGAWEB_PATH"              : "./vendor/icingaweb2",
+          "ICINGA_NOTIFICATIONS_SCHEMA" : "./vendor/notifications_daemon/schema",
+          "MYSQL_ICINGAWEBDB"           : "icingaweb",
+          "MYSQL_ICINGAWEBDB_PASSWORD"  : "icingaweb",
+          "MYSQL_ICINGAWEBDB_USER"      : "icingaweb",
+          "PGSQL_ICINGAWEBDB"           : "icingaweb",
+          "PGSQL_ICINGAWEBDB_PASSWORD"  : "icinga_unittest",
+          "PGSQL_ICINGAWEBDB_USER"      : "icinga_unittest"
         }
