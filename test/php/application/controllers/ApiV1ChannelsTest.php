@@ -8,12 +8,11 @@ use Icinga\Module\Notifications\Test\BaseApiV1TestCase;
 use Icinga\Web\Url;
 use ipl\Sql\Connection;
 use WebSocket\Base;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 class ApiV1ChannelsTest extends BaseApiV1TestCase
 {
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testGetWithMatchingFilter(Connection $db, Url $endpoint): void
     {
         $expected = $this->jsonEncodeResults([
@@ -72,9 +71,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $this->assertJsonStringEqualsJsonString($expected, $content);
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testGetEverything(Connection $db, Url $endpoint): void
     {
         // At first, there are none
@@ -119,9 +116,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $this->assertJsonStringEqualsJsonString($expected, $content);
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testGetWithAlreadyExistingIdentifier(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest('GET', $endpoint, 'v1/channels/' . BaseApiV1TestCase::CHANNEL_UUID);
@@ -137,9 +132,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $this->assertJsonStringEqualsJsonString($expected, $content);
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testGetWithNonMatchingFilter(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest('GET', $endpoint, 'v1/channels', ['name' => 'not_test']);
@@ -149,9 +142,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $this->assertJsonStringEqualsJsonString($this->jsonEncodeResults([]), $content);
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testGetWithInvalidFilter(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest('GET', $endpoint, 'v1/channels', ['nonexistingfilter' => 'value']);
@@ -164,9 +155,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $this->assertJsonStringEqualsJsonString($expected, $content);
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testGetWithNewIdentifier(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest('GET', $endpoint, 'v1/channels/' . BaseApiV1TestCase::CHANNEL_UUID_3);
@@ -176,9 +165,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $this->assertJsonStringEqualsJsonString($this->jsonEncodeError('Channel not found'), $content);
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testGetWithInvalidIdentifier(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest('GET', $endpoint, 'v1/channels/' . BaseApiV1TestCase::UUID_INCOMPLETE);
@@ -191,9 +178,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         );
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testGetWithIdentifierAndFilter(Connection $db, Url $endpoint): void
     {
         $expected = $this->jsonEncodeError(
@@ -225,9 +210,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $this->assertJsonStringEqualsJsonString($expected, $content);
     }
 
-    /**
-     * @dataProvider apiTestBackends
-     */
+    #[DataProvider('apiTestBackends')]
     public function testRequestWithNonSupportedMethod(Connection $db, Url $endpoint): void
     {
         $expectedAllowHeader = 'GET';
