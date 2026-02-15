@@ -9,6 +9,7 @@ use ipl\Html\Attributes;
 use ipl\Html\FormElement\FieldsetElement;
 use ipl\Html\FormElement\SubmitButtonElement;
 use ipl\Html\HtmlElement;
+use ipl\Stdlib\Option;
 use ipl\Web\Widget\Icon;
 
 /**
@@ -22,16 +23,17 @@ use ipl\Web\Widget\Icon;
  */
 class Escalation extends FieldsetElement
 {
-    use ConfigProvider {
-        registerAttributeCallbacks as protected baseRegisterAttributeCallbacks;
-    }
-
     protected $defaultAttributes = ['class' => 'escalation'];
+
+    /** @var ?ConfigProviderInterface The config provider */
+    #[Option(required: true)]
+    protected ?ConfigProviderInterface $provider = null;
 
     /** @var ?SubmitButtonElement The button to remove this escalation */
     protected ?SubmitButtonElement $removeButton = null;
 
     /** @var bool Whether the escalation can be triggered immediately */
+    #[Option]
     protected bool $immediate = false;
 
     /**
@@ -44,18 +46,6 @@ class Escalation extends FieldsetElement
     public function setRemoveButton(SubmitButtonElement $removeButton): void
     {
         $this->removeButton = $removeButton;
-    }
-
-    /**
-     * Set whether the escalation can be triggered immediately
-     *
-     * @param bool $immediate
-     *
-     * @return void
-     */
-    public function setImmediate(bool $immediate): void
-    {
-        $this->immediate = $immediate;
     }
 
     /**
@@ -162,12 +152,5 @@ class Escalation extends FieldsetElement
         );
 
         $this->addElement('hidden', 'id');
-    }
-
-    protected function registerAttributeCallbacks(Attributes $attributes): void
-    {
-        $attributes->registerAttributeCallback('immediate', null, $this->setImmediate(...));
-
-        $this->baseRegisterAttributeCallbacks($attributes);
     }
 }

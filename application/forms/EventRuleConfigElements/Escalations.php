@@ -10,6 +10,7 @@ use ipl\Html\Contract\FormElement;
 use ipl\Html\FormElement\FieldsetElement;
 use ipl\Html\FormElement\SubmitButtonElement;
 use ipl\Html\HtmlElement;
+use ipl\Stdlib\Option;
 use ipl\Web\Widget\Icon;
 
 /**
@@ -17,10 +18,13 @@ use ipl\Web\Widget\Icon;
  */
 class Escalations extends FieldsetElement
 {
-    use ConfigProvider;
     use DynamicElements;
 
     protected $defaultAttributes = ['class' => 'escalations'];
+
+    /** @var ?ConfigProviderInterface The config provider */
+    #[Option(required: true)]
+    protected ?ConfigProviderInterface $provider = null;
 
     protected function createAddButton(): SubmitButtonElement
     {
