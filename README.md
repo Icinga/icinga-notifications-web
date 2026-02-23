@@ -50,4 +50,4 @@ Icinga Notifications Web documentation is available at [icinga.com/docs](https:/
 
 ## License
 
-Icinga Notifications Web and its documentation are licensed under the terms of the [GNU General Public License Version 2](LICENSE).
+Icinga Notifications Web and its documentation are licensed under the terms of the [GNU General Public License Version 3](LICENSE.md).
