@@ -1,4 +1,5 @@
-/* Icinga Notifications Web | (c) 2024 Icinga GmbH | GPLv2 */
+// SPDX-FileCopyrightText: 2024 Icinga GmbH <https://icinga.com>
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 (function (Icinga) {
 
