@@ -41,4 +41,5 @@ To install Icinga Notifications Web, see [Installation](02-Installation.md).
 
 ## License
 
-Icinga Notifications Web and its documentation are licensed under the terms of the [GNU General Public License Version 2](https://github.com/Icinga/icinga-notifications-web?tab=GPL-2.0-1-ov-file#readme).
+Icinga Notifications Web and its documentation are licensed under the terms of the
+[GNU General Public License Version 3](https://www.gnu.org/licenses/gpl-3.0-standalone.html).
