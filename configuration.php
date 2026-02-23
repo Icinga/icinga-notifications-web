@@ -1,6 +1,7 @@
 <?php
 
-/* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
+// SPDX-FileCopyrightText: 2023 Icinga GmbH <https://icinga.com>
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 use Icinga\Application\Modules\Module;
 use Icinga\Authentication\Auth;
