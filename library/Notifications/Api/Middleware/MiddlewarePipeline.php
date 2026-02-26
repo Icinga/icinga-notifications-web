@@ -82,7 +82,7 @@ final class MiddlewarePipeline implements RequestHandlerInterface
      *
      * @return ResponseInterface
      */
-    public function execute(ServerRequestInterface $request = null): ResponseInterface
+    public function execute(?ServerRequestInterface $request = null): ResponseInterface
     {
         if ($request === null) {
             $request = new ServerRequest('GET', '/'); // initial dummy request
