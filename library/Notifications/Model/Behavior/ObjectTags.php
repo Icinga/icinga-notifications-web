@@ -20,7 +20,7 @@ class ObjectTags implements RewriteColumnBehavior, QueryAwareBehavior
 
     protected ?Query $query = null;
 
-    public function setQuery(Query $query): self
+    public function setQuery(Query $query): static
     {
         $this->query = $query;
 

@@ -28,8 +28,7 @@ class IdTagAggregator extends PropertyBehavior implements RewriteColumnBehavior,
         parent::__construct(['id_tags']);
     }
 
-    /** @return $this */
-    public function setQuery(Query $query)
+    public function setQuery(Query $query): static
     {
         $this->query = $query;
 
