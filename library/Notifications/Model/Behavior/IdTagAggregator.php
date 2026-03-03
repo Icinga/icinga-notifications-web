@@ -99,7 +99,8 @@ class IdTagAggregator extends PropertyBehavior implements RewriteColumnBehavior,
     {
     }
 
-    public function rewriteCondition(Filter\Condition $condition, $relation = null)
+    public function rewriteCondition(Filter\Condition $condition, $relation = null): null
     {
+        return null;
     }
 }
