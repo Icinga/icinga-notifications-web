@@ -53,7 +53,7 @@ class IcingaCustomVars implements RewriteColumnBehavior
         ));
     }
 
-    public function rewriteCondition(Filter\Condition $condition, $relation = null): Filter\Condition|Filter\Rule|null
+    public function rewriteCondition(Filter\Condition $condition, $relation = null): ?Filter\Condition
     {
         if (! $this->isSelectableColumn($condition->metaData()->get('columnName', ''))) {
             return null;
