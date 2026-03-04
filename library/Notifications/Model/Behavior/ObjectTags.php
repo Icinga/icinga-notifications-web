@@ -51,7 +51,7 @@ class ObjectTags implements RewriteColumnBehavior, QueryAwareBehavior
         return $filterAll;
     }
 
-    public function rewriteColumn($column, $relation = null): AliasedExpression
+    public function rewriteColumn($column, ?string $relation = null): AliasedExpression
     {
         /** @var string $relation */
         /** @var string $column */
