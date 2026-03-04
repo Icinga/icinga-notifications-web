@@ -26,7 +26,7 @@ class IcingaCustomVars implements RewriteColumnBehavior
             || str_starts_with($name, self::SERVICE_PREFIX);
     }
 
-    public function rewriteColumn($column, ?string $relation = null): null
+    public function rewriteColumn(mixed $column, ?string $relation = null): null
     {
         return null;
     }

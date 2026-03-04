@@ -36,7 +36,7 @@ class IdTagAggregator extends PropertyBehavior implements RewriteColumnBehavior,
         return $this;
     }
 
-    public function rewriteColumn($column, ?string $relation = null)
+    public function rewriteColumn(mixed $column, ?string $relation = null): ?AliasedExpression
     {
         if ($column === 'id_tags') {
             $path = ($relation ?? $this->query->getModel()->getTableAlias()) . '.object_id_tag';
@@ -64,6 +64,8 @@ class IdTagAggregator extends PropertyBehavior implements RewriteColumnBehavior,
                 $this->query->getResolver()->qualifyColumn('value', $pathAlias)
             ));
         }
+
+        return null;
     }
 
     public function isSelectableColumn(string $name): bool
