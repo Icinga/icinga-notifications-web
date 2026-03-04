@@ -18,7 +18,7 @@ class ObjectTags implements RewriteColumnBehavior, QueryAwareBehavior
     /** @var ?Query */
     protected ?Query $query = null;
 
-    public function setQuery(Query $query): self
+    public function setQuery(Query $query): static
     {
         $this->query = $query;
 
@@ -48,7 +48,7 @@ class ObjectTags implements RewriteColumnBehavior, QueryAwareBehavior
         return $filterAll;
     }
 
-    public function rewriteColumn($column, $relation = null): AliasedExpression
+    public function rewriteColumn(mixed $column, $relation = null): AliasedExpression
     {
         /** @var string $relation */
         /** @var string $column */
