@@ -67,7 +67,7 @@ class ContactForm extends CompatForm
         return $csrf !== null && $csrf->isValid() && $btn !== null && $btn->getName() === 'delete';
     }
 
-    public function isValidEvent($event): bool
+    public function isValidEvent(string $event): bool
     {
         if ($event === self::ON_REMOVE) {
             return true;
