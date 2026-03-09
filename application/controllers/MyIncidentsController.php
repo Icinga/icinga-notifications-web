@@ -1,6 +1,6 @@
 <?php
 
-/* Icinga Notifications Web | (c) 2023 Icinga GmbH | GPLv2 */
+/* Icinga Notifications Web | (c) 2025 Icinga GmbH | GPLv2 */
 
 namespace Icinga\Module\Notifications\Controllers;
 
@@ -9,11 +9,10 @@ use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Hook\ObjectsRendererHook;
 use Icinga\Module\Notifications\Model\Contact;
+use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\View\IncidentRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
-use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
-use ipl\Orm\Query;
 use ipl\Sql\Expression;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
@@ -26,7 +25,7 @@ use ipl\Web\Widget\ItemList;
 use ipl\Web\Widget\ListItem;
 use ipl\Web\Widget\Tabs;
 
-class IncidentsController extends CompatController
+class MyIncidentsController extends CompatController
 {
     use Auth;
     use SearchControls;
@@ -36,11 +35,12 @@ class IncidentsController extends CompatController
 
     public function indexAction(): void
     {
-        $this->getTabs()->activate('incidents');
+        $this->getTabs()->activate('my-incidents');
 
         $incidents = Incident::on(Database::get())
             ->with(['object', 'object.source'])
-            ->withColumns('object.id_tags');
+            ->withColumns('object.id_tags')
+            ->filter(Filter::equal('contact.username', $this->Auth()->getUser()->getUsername()));
 
         $limitControl = $this->createLimitControl();
         $sortControl = $this->createSortControl(
@@ -60,7 +60,7 @@ class IncidentsController extends CompatController
 
         if ($searchBar->hasBeenSent() && ! $searchBar->isValid()) {
             if ($searchBar->hasBeenSubmitted()) {
-                $filter = $this->getFilter();
+                $filter = QueryString::parse((string) $this->params);
             } else {
                 $this->addControl($searchBar);
                 $this->sendMultipartUpdate();
@@ -120,27 +120,13 @@ class IncidentsController extends CompatController
         return parent::getPageSize($default ?? 50);
     }
 
-    /**
-     * Get the filter created from query string parameters
-     *
-     * @return Filter\Rule
-     */
-    public function getFilter(): Filter\Rule
-    {
-        if ($this->filter === null) {
-            $this->filter = QueryString::parse((string) $this->params);
-        }
-
-        return $this->filter;
-    }
-
     public function getTabs(): Tabs
     {
         $tabs = parent::getTabs();
 
         $tabs->add('incidents', [
             'label' => t('Incidents'),
-            'url' => $this->getRequest()->getUrl(),
+            'url' => Links::incidents(),
             'baseTarget' => '_main'
         ]);
 
@@ -151,7 +137,7 @@ class IncidentsController extends CompatController
         if ($contact !== null) {
             $tabs->add('my-incidents', [
                 'label' => t('My Incidents'),
-                'url' => Links::myIncidents(),
+                'url' => $this->getRequest()->getUrl(),
                 'baseTarget' => '_main'
             ]);
         }
