@@ -16,7 +16,6 @@ use ipl\Web\Widget\Icon;
 
 class Entry extends TimeGrid\Entry
 {
-    /** @var ?Member */
     protected ?Member $member = null;
 
     /** @var ?EntryFlyout Content of the flyoutmenu that is shown when the entry is hovered */

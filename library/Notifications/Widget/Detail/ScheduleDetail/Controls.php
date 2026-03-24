@@ -29,7 +29,6 @@ class Controls extends Form
 
     protected $defaultAttributes = ['class' => 'schedule-controls', 'name' => 'schedule-detail-controls-form'];
 
-    /** @var ?string */
     protected ?string $defaultTimezone = null;
 
     /**

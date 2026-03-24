@@ -29,7 +29,6 @@ class Timescale extends BaseHtmlElement
     /** @var int The number of days shown */
     protected int $days;
 
-    /** @var Style */
     protected Style $style;
 
     /**

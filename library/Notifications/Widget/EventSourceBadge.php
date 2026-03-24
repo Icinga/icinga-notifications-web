@@ -13,7 +13,6 @@ use ipl\Web\Widget\Ball;
 
 class EventSourceBadge extends BaseHtmlElement
 {
-    /** @var Source */
     protected Source $source;
 
     protected $tag = 'span';

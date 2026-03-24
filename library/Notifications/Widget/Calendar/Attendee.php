@@ -14,10 +14,8 @@ use ipl\Web\Widget\Icon;
  */
 class Attendee
 {
-    /** @var string */
     protected string $name;
 
-    /** @var string|ValidHtml */
     protected string|ValidHtml $icon = 'user';
 
     public function __construct(string $name)

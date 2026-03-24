@@ -22,7 +22,6 @@ class Rotation
 {
     use Translation;
 
-    /** @var RotationModel */
     protected RotationModel $model;
 
     /**

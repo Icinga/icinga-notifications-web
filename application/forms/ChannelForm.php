@@ -45,7 +45,6 @@ class ChannelForm extends CompatForm
 {
     use CsrfCounterMeasure;
 
-    /** @var Connection */
     private Connection $db;
 
     /** @var ?int Channel ID */

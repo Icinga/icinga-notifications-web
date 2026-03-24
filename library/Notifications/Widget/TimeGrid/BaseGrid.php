@@ -44,16 +44,12 @@ abstract class BaseGrid extends BaseHtmlElement
     /** @var string The orientation of this grid's chronological order of entries */
     protected string $flowOfTime = self::HORIZONTAL_FLOW_OF_TIME;
 
-    /** @var EntryProvider */
     protected EntryProvider $provider;
 
-    /** @var Style */
     protected Style $style;
 
-    /** @var DateTime */
     protected DateTime $start;
 
-    /** @var ?DateTime */
     protected ?DateTime $end = null;
 
     /** @var array Extra counts stored as [date1 => count1, date2 => count2] */

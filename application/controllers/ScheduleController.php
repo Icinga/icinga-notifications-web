@@ -26,7 +26,6 @@ use ipl\Web\Widget\ButtonLink;
 
 class ScheduleController extends CompatController
 {
-    /** @var ?Session\SessionNamespace */
     private ?Session\SessionNamespace $session = null;
 
     public function init(): void

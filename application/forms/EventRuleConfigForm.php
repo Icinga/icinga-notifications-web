@@ -34,7 +34,6 @@ class EventRuleConfigForm extends CompatForm
         'id'    => 'event-rule-config-form'
     ];
 
-    /** @var ConfigProviderInterface */
     protected ConfigProviderInterface $configProvider;
 
     /** @var Url Search editor URL for the config filter fieldset */

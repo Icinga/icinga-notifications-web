@@ -29,19 +29,14 @@ class ScheduleForm extends CompatForm
 {
     use CsrfCounterMeasure;
 
-    /** @var ?string */
     protected ?string $submitLabel = null;
 
-    /** @var bool */
     protected bool $showRemoveButton = false;
 
-    /** @var bool */
     protected bool $showTimezoneSuggestionInput = false;
 
-    /** @var Connection */
     private Connection $db;
 
-    /** @var ?int */
     private ?int $scheduleId = null;
 
     public function __construct(Connection $db)

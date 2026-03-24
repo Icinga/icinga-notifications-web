@@ -14,13 +14,10 @@ use ipl\Web\Url;
 
 trait LoadMore
 {
-    /** @var ?int */
     protected ?int $pageSize = null;
 
-    /** @var ?int */
     protected ?int $pageNumber = null;
 
-    /** @var ?Url */
     protected ?Url $loadMoreUrl = null;
 
     /**

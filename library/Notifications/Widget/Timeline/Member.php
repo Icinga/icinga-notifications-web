@@ -10,10 +10,8 @@ namespace Icinga\Module\Notifications\Widget\Timeline;
  */
 class Member
 {
-    /** @var string */
     protected string $name;
 
-    /** @var string */
     protected string $icon = 'user';
 
     /**
