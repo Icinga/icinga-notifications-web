@@ -21,7 +21,6 @@ class Entry extends TimeGrid\Entry
     /** @var ?string The description */
     protected ?string $description = null;
 
-    /** @var ?Attendee */
     protected ?Attendee $attendee = null;
 
     /**

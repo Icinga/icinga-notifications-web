@@ -14,7 +14,6 @@ use ipl\Web\Widget\Icon;
 
 class EventRuleDecorator extends HtmlDocument implements FormElementDecorator
 {
-    /** @var FormElement */
     private FormElement $element;
 
     public function decorate(FormElement $formElement): void

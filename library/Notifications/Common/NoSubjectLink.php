@@ -7,7 +7,6 @@ namespace Icinga\Module\Notifications\Common;
 
 trait NoSubjectLink
 {
-    /** @var bool */
     protected bool $noSubjectLink = false;
 
     /**

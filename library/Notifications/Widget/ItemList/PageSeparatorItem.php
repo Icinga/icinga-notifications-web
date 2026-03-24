@@ -12,7 +12,6 @@ class PageSeparatorItem extends BaseHtmlElement
 {
     protected $defaultAttributes = ['class' => 'list-item page-separator'];
 
-    /** @var int */
     protected int $pageNumber;
 
     /** @var string */

@@ -37,7 +37,6 @@ class EventRuleController extends CompatController
 {
     use Auth;
 
-    /** @var Session\SessionNamespace */
     private Session\SessionNamespace $session;
 
     public function init(): void

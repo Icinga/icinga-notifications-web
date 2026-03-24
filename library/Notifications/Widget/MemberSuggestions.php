@@ -18,10 +18,8 @@ class MemberSuggestions extends BaseHtmlElement
 {
     protected $tag = 'ul';
 
-    /** @var ?string */
     protected ?string $searchTerm = null;
 
-    /** @var ?string */
     protected ?string $originalValue = null;
 
     /** @var string[] */

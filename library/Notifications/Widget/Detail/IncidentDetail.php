@@ -32,7 +32,6 @@ class IncidentDetail extends BaseHtmlElement
     use Auth;
     use Translation;
 
-    /** @var Incident */
     protected Incident $incident;
 
     protected $defaultAttributes = [

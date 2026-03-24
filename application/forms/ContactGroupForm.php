@@ -30,7 +30,6 @@ class ContactGroupForm extends CompatForm
 {
     use CsrfCounterMeasure;
 
-    /** @var Connection */
     private Connection $db;
 
     /** @var ?int Contact group id */

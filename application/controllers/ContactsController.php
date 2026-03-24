@@ -33,7 +33,6 @@ class ContactsController extends CompatController
     use ConfigurationTabs;
     use SearchControls;
 
-    /** @var Connection */
     private Connection $db;
 
     public function init(): void

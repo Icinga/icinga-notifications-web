@@ -45,25 +45,19 @@ class Timeline extends BaseHtmlElement implements EntryProvider
     /** @var array<int, Rotation> */
     protected array $rotations = [];
 
-    /** @var int */
     protected int $scheduleId;
 
-    /** @var DateTime */
     protected DateTime $start;
 
-    /** @var int */
     protected int $days;
 
-    /** @var ?Style */
     protected ?Style $style = null;
 
-    /** @var ?DynamicGrid|MinimalGrid */
     protected DynamicGrid|MinimalGrid|null $grid = null;
 
     /** @var bool Whether to create the Timeline only with the Result using MinimalGrid */
     protected bool $minimalLayout = false;
 
-    /** @var int */
     protected int $noOfRotations = 0;
 
     /**

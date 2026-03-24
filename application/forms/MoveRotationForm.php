@@ -23,10 +23,8 @@ class MoveRotationForm extends Form
 
     protected $defaultAttributes = ['hidden' => true];
 
-    /** @var ?Connection */
     protected ?Connection $db = null;
 
-    /** @var ?int */
     protected ?int $scheduleId = null;
 
     /**
