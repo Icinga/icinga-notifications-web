@@ -219,7 +219,7 @@ class RotationConfigForm extends CompatForm
      * @return $this
      *
      * @throws LogicException If an invalid rotation mode is set
-     * @throws ConfigurationError If the schedule's timezone is invalid'
+     * @throws ConfigurationError If the schedule's timezone is invalid
      * @throws HttpNotFoundException If the rotation with the given ID does not exist
      */
     public function loadRotation(int $rotationId): self
