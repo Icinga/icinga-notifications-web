@@ -199,7 +199,7 @@ class ChannelForm extends CompatForm
      *
      * @throws HttpNotFoundException
      */
-    public function loadChannel(int $id): self
+    public function loadChannel(int $id): static
     {
         $this->channelId = $id;
         $this->populate($this->fetchDbValues());
@@ -471,7 +471,7 @@ class ChannelForm extends CompatForm
      *
      * @return $this
      */
-    public function validate(): self
+    public function validate(): static
     {
         parent::validate();
 

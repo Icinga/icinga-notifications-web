@@ -27,7 +27,7 @@ class ExtraEntryCount extends ButtonLink
      *
      * @return $this
      */
-    public function setGrid(BaseGrid $grid): self
+    public function setGrid(BaseGrid $grid): static
     {
         $this->grid = $grid;
 
@@ -41,7 +41,7 @@ class ExtraEntryCount extends ButtonLink
      *
      * @return $this
      */
-    public function setGridStep(DateTime $gridStep): self
+    public function setGridStep(DateTime $gridStep): static
     {
         $this->gridStep = clone $gridStep;
 

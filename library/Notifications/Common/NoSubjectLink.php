@@ -16,7 +16,7 @@ trait NoSubjectLink
      *
      * @return $this
      */
-    public function setNoSubjectLink(bool $state = true): self
+    public function setNoSubjectLink(bool $state = true): static
     {
         $this->noSubjectLink = $state;
 

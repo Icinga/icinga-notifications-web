@@ -29,7 +29,7 @@ class IdTagAggregator extends PropertyBehavior implements RewriteColumnBehavior,
     }
 
     /** @return $this */
-    public function setQuery(Query $query): static
+    public function setQuery(Query $query)
     {
         $this->query = $query;
 

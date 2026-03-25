@@ -20,7 +20,7 @@ class DayGrid extends BaseGrid
 {
     protected string $flowOfTime = BaseGrid::VERTICAL_FLOW_OF_TIME;
 
-    public function setGridStart(DateTime $start): BaseGrid
+    public function setGridStart(DateTime $start): static
     {
         if ($start->format('H:i:s') !== '00:00:00') {
             throw new InvalidArgumentException('Start is not midnight');

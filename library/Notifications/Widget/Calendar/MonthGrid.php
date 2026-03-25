@@ -18,7 +18,7 @@ use Traversable;
 
 class MonthGrid extends BaseGrid
 {
-    public function setGridStart(DateTime $start): BaseGrid
+    public function setGridStart(DateTime $start): static
     {
         if ($start->format('j:H:i:s') !== '1:00:00:00') {
             throw new InvalidArgumentException('Start is not the first of the month or not midnight');

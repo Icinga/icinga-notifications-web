@@ -89,7 +89,7 @@ abstract class Entry extends BaseHtmlElement
      *
      * @return $this
      */
-    public function setStart(DateTime $start): self
+    public function setStart(DateTime $start): static
     {
         $this->start = $start;
 
@@ -113,7 +113,7 @@ abstract class Entry extends BaseHtmlElement
      *
      * @return $this
      */
-    public function setEnd(DateTime $end): self
+    public function setEnd(DateTime $end): static
     {
         $this->end = $end;
 
@@ -137,7 +137,7 @@ abstract class Entry extends BaseHtmlElement
      *
      * @return $this
      */
-    public function setPosition(?int $position): self
+    public function setPosition(?int $position): static
     {
         $this->position = $position;
 
@@ -161,7 +161,7 @@ abstract class Entry extends BaseHtmlElement
      *
      * @return $this
      */
-    public function setContinuationType(?string $continuationType): self
+    public function setContinuationType(?string $continuationType): static
     {
         $this->continuationType = $continuationType;
 
@@ -185,7 +185,7 @@ abstract class Entry extends BaseHtmlElement
      *
      * @return $this
      */
-    public function setUrl(?Url $url): self
+    public function setUrl(?Url $url): static
     {
         $this->url = $url;
 

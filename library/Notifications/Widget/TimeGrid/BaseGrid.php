@@ -77,7 +77,7 @@ abstract class BaseGrid extends BaseHtmlElement
         return $this->start;
     }
 
-    public function setGridStart(DateTime $start): self
+    public function setGridStart(DateTime $start): static
     {
         $this->start = $start;
 

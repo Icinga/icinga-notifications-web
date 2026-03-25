@@ -67,7 +67,7 @@ class Timeline extends BaseHtmlElement implements EntryProvider
      *
      * @return $this
      */
-    public function setStyle(Style $style): self
+    public function setStyle(Style $style): static
     {
         $this->style = $style;
 
@@ -107,7 +107,7 @@ class Timeline extends BaseHtmlElement implements EntryProvider
      *
      * @return $this
      */
-    public function minimalLayout(): self
+    public function minimalLayout(): static
     {
         $this->minimalLayout = true;
 
