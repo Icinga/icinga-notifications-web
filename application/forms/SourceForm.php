@@ -234,7 +234,7 @@ class SourceForm extends CompatForm
      *
      * @return $this
      */
-    public function loadSource(int $id): self
+    public function loadSource(int $id): static
     {
         $this->sourceId = $id;
 

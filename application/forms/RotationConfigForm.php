@@ -98,7 +98,7 @@ class RotationConfigForm extends CompatForm
      *
      * @return $this
      */
-    public function setSubmitLabel(string $label): self
+    public function setSubmitLabel(string $label): static
     {
         $this->submitLabel = $label;
 
@@ -122,7 +122,7 @@ class RotationConfigForm extends CompatForm
      *
      * @return $this
      */
-    public function setShowRemoveButton(bool $state = true): self
+    public function setShowRemoveButton(bool $state = true): static
     {
         $this->showRemoveButton = $state;
 
@@ -136,7 +136,7 @@ class RotationConfigForm extends CompatForm
      *
      * @return $this
      */
-    public function setSuggestionUrl(Url $url): self
+    public function setSuggestionUrl(Url $url): static
     {
         $this->suggestionUrl = $url;
 
@@ -148,7 +148,7 @@ class RotationConfigForm extends CompatForm
      *
      * @return $this
      */
-    public function disableModeSelection(): self
+    public function disableModeSelection(): static
     {
         $this->disableModeSelection = true;
 
@@ -222,7 +222,7 @@ class RotationConfigForm extends CompatForm
      * @throws ConfigurationError If the schedule's timezone is invalid
      * @throws HttpNotFoundException If the rotation with the given ID does not exist
      */
-    public function loadRotation(int $rotationId): self
+    public function loadRotation(int $rotationId): static
     {
         $this->rotationId = $rotationId;
 

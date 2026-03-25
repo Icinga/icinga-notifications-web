@@ -28,7 +28,7 @@ class Attendee
         return $this->name;
     }
 
-    public function setIcon($icon): self
+    public function setIcon($icon): static
     {
         if ($icon === null) {
             throw new InvalidArgumentException('Cannot unset icon');

@@ -25,21 +25,21 @@ class MemberSuggestions extends BaseHtmlElement
     /** @var string[] */
     protected array $excludeTerms = [];
 
-    public function setSearchTerm(string $term): self
+    public function setSearchTerm(string $term): static
     {
         $this->searchTerm = $term;
 
         return $this;
     }
 
-    public function setOriginalValue(string $term): self
+    public function setOriginalValue(string $term): static
     {
         $this->originalValue = $term;
 
         return $this;
     }
 
-    public function excludeTerms(array $terms): self
+    public function excludeTerms(array $terms): static
     {
         $this->excludeTerms = $terms;
 
@@ -53,7 +53,7 @@ class MemberSuggestions extends BaseHtmlElement
      *
      * @return $this
      */
-    public function forRequest(ServerRequestInterface $request): self
+    public function forRequest(ServerRequestInterface $request): static
     {
         if ($request->getMethod() !== 'POST') {
             return $this;

@@ -43,7 +43,7 @@ class ObjectSuggestions extends Suggestions
      *
      * @return $this
      */
-    public function setModel(string|Model $model): self
+    public function setModel(string|Model $model): static
     {
         if (is_string($model)) {
             $model = new $model();

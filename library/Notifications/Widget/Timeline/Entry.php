@@ -33,7 +33,7 @@ class Entry extends TimeGrid\Entry
      */
     protected string $widthClass = "wide-entry";
 
-    public function setMember(Member $member): self
+    public function setMember(Member $member): static
     {
         $this->member = $member;
 

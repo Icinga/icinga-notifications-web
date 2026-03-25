@@ -20,7 +20,7 @@ class WeekGrid extends BaseGrid
 {
     protected string $flowOfTime = BaseGrid::VERTICAL_FLOW_OF_TIME;
 
-    public function setGridStart(DateTime $start): BaseGrid
+    public function setGridStart(DateTime $start): static
     {
         if ($start->format('w:H:i:s') !== '1:00:00:00') {
             throw new InvalidArgumentException('Start is not a monday or not midnight');

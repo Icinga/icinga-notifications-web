@@ -55,7 +55,7 @@ class Calendar extends BaseHtmlElement implements EntryProvider
 
     protected ?Url $url = null;
 
-    public function setControls(Controls $controls): self
+    public function setControls(Controls $controls): static
     {
         $this->controls = $controls;
 
@@ -71,7 +71,7 @@ class Calendar extends BaseHtmlElement implements EntryProvider
         return $this->controls;
     }
 
-    public function setStyle(Style $style): self
+    public function setStyle(Style $style): static
     {
         $this->style = $style;
 
@@ -87,7 +87,7 @@ class Calendar extends BaseHtmlElement implements EntryProvider
         return $this->style;
     }
 
-    public function setAddEntryUrl(?Url $url): self
+    public function setAddEntryUrl(?Url $url): static
     {
         $this->addEntryUrl = $url;
 
@@ -99,7 +99,7 @@ class Calendar extends BaseHtmlElement implements EntryProvider
         return $this->addEntryUrl?->with('start', $step->getStart()->format('Y-m-d\TH:i:s'));
     }
 
-    public function setUrl(?Url $url): self
+    public function setUrl(?Url $url): static
     {
         $this->url = $url;
 
@@ -152,7 +152,7 @@ class Calendar extends BaseHtmlElement implements EntryProvider
         return $this->grid;
     }
 
-    public function addEntry(Entry $entry): self
+    public function addEntry(Entry $entry): static
     {
         $this->entries[] = $entry;
 

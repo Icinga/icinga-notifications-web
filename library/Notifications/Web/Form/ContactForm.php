@@ -217,7 +217,7 @@ class ContactForm extends CompatForm
      *
      * @throws HttpNotFoundException
      */
-    public function loadContact(int $id): self
+    public function loadContact(int $id): static
     {
         $this->contactId = $id;
 

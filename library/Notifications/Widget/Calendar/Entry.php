@@ -30,7 +30,7 @@ class Entry extends TimeGrid\Entry
      *
      * @return $this
      */
-    public function setDescription(?string $description): self
+    public function setDescription(?string $description): static
     {
         $this->description = $description;
 
@@ -54,7 +54,7 @@ class Entry extends TimeGrid\Entry
      *
      * @return $this
      */
-    public function setAttendee(Attendee $attendee): self
+    public function setAttendee(Attendee $attendee): static
     {
         $this->attendee = $attendee;
 

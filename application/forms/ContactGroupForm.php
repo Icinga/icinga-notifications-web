@@ -167,7 +167,7 @@ class ContactGroupForm extends CompatForm
      *
      * @return $this
      */
-    public function loadContactgroup(int $groupId): self
+    public function loadContactgroup(int $groupId): static
     {
         $this->contactgroupId = $groupId;
 
