@@ -52,7 +52,7 @@ abstract class BaseGrid extends BaseHtmlElement
 
     protected ?DateTime $end = null;
 
-    /** @var array Extra counts stored as [date1 => count1, date2 => count2] */
+    /** @var array<string, int> Extra counts stored as [date1 => count1, date2 => count2] */
     protected array $extraEntriesCount = [];
 
     /**

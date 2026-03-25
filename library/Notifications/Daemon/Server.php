@@ -30,8 +30,8 @@ class Server
     /** @var ?Server Instance of this class */
     private static ?Server $instance = null;
 
-    /** @var ?LoopInterface Reference to ReactPHP's main loop */
-    protected ?LoopInterface $mainLoop = null;
+    /** @var LoopInterface Reference to ReactPHP's main loop */
+    protected LoopInterface $mainLoop;
 
     /** @var Logger Instance of the logger class */
     protected static Logger $logger;
@@ -79,7 +79,7 @@ class Server
     {
         if (self::$instance === null) {
             self::$instance = new Server($mainLoop);
-        } elseif ((self::$instance->mainLoop !== null) && (self::$instance->mainLoop !== $mainLoop)) {
+        } elseif (self::$instance->mainLoop !== $mainLoop) {
             // main loop changed, reloading daemon server
             self::$instance->mainLoop = $mainLoop;
             self::$instance->reload();
