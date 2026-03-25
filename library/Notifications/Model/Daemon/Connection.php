@@ -28,8 +28,8 @@ class Connection
     /** @var ThroughStream Data stream between connection and server */
     protected ThroughStream $stream;
 
-    /** @var ?string User agent */
-    protected ?string $userAgent = null;
+    /** @var string User agent */
+    protected string $userAgent;
 
     /**
      * Construct an instance of the Connection class
@@ -91,7 +91,7 @@ class Connection
         return $this->user;
     }
 
-    public function getUserAgent(): ?string
+    public function getUserAgent(): string
     {
         return $this->userAgent;
     }
