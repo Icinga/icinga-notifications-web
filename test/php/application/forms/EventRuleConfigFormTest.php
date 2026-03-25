@@ -4,6 +4,7 @@
 
 namespace Tests\Icinga\Module\Notifications\Forms;
 
+use ArrayIterator;
 use DateTime;
 use Icinga\Module\Notifications\Forms\EventRuleConfigElements\ConfigProviderInterface;
 use Icinga\Module\Notifications\Forms\EventRuleConfigForm;
@@ -18,6 +19,7 @@ use ipl\Orm\Query;
 use ipl\Orm\ResultSet;
 use ipl\Sql\Connection;
 use ipl\Web\Url;
+use PDOStatement;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -151,7 +153,10 @@ class EventRuleConfigFormTest extends TestCase
         $firstRuleEscalationRecipientMock->expects($this->once())
             ->method('columns')
             ->with(['id', 'contact_id', 'contactgroup_id', 'schedule_id', 'channel_id'])
-            ->willReturn([
+            ->willReturnSelf();
+
+        $firstRuleEscalationRecipientMock->method('getIterator')
+            ->willReturn(new ArrayIterator([
                 (new RuleEscalationRecipient())->setProperties([
                     'id' => 1,
                     'contact_id' => 1,
@@ -159,13 +164,16 @@ class EventRuleConfigFormTest extends TestCase
                     'schedule_id' => null,
                     'channel_id' => 1
                 ])
-            ]);
+            ]));
 
         $secondRuleEscalationRecipientMock = $this->createMock(Query::class);
         $secondRuleEscalationRecipientMock->expects($this->once())
             ->method('columns')
             ->with(['id', 'contact_id', 'contactgroup_id', 'schedule_id', 'channel_id'])
-            ->willReturn([
+            ->willReturnSelf();
+
+        $secondRuleEscalationRecipientMock->method('getIterator')
+            ->willReturn(new ArrayIterator([
                 (new RuleEscalationRecipient())->setProperties([
                     'id' => null,
                     'contact_id' => null,
@@ -180,7 +188,7 @@ class EventRuleConfigFormTest extends TestCase
                     'schedule_id' => 1,
                     'channel_id' => 1
                 ])
-            ]);
+            ]));
 
         $ruleEscalationMock = $this->createMock(Query::class);
         $ruleEscalationMock->expects($this->once())
@@ -189,7 +197,7 @@ class EventRuleConfigFormTest extends TestCase
             ->willReturnSelf();
 
         $queryResult = new ResultSet(
-            new \ArrayIterator([
+            new ArrayIterator([
                 (new RuleEscalation())->setProperties([
                     'id' => 1,
                     'condition' => null,
@@ -270,6 +278,8 @@ class EventRuleConfigFormTest extends TestCase
                 } else {
                     $this->fail(sprintf('Unexpected table %s', $table));
                 }
+
+                return $this->createStub(PDOStatement::class);
             });
 
         $databaseMock->expects($this->once())
@@ -354,6 +364,8 @@ class EventRuleConfigFormTest extends TestCase
                 } else {
                     $this->fail(sprintf('Unexpected table %s', $table));
                 }
+
+                return $this->createStub(PDOStatement::class);
             });
 
         $form = new EventRuleConfigForm($providerMock, $this->createStub(Url::class));
@@ -424,7 +436,10 @@ class EventRuleConfigFormTest extends TestCase
         $escalationRecipientMock->expects($this->once())
             ->method('columns')
             ->with(['id', 'contact_id', 'contactgroup_id', 'schedule_id', 'channel_id'])
-            ->willReturn([
+            ->willReturnSelf();
+
+        $escalationRecipientMock->method('getIterator')
+            ->willReturn(new ArrayIterator([
                 (new RuleEscalationRecipient())->setProperties([
                     'id' => 1,
                     'contact_id' => 1,
@@ -432,7 +447,7 @@ class EventRuleConfigFormTest extends TestCase
                     'schedule_id' => null,
                     'channel_id' => 1
                 ])
-            ]);
+            ]));
 
         $ruleEscalationMock = $this->createMock(Query::class);
         $ruleEscalationMock->expects($this->once())
@@ -441,7 +456,7 @@ class EventRuleConfigFormTest extends TestCase
             ->willReturnSelf();
 
         $queryResult = new ResultSet(
-            new \ArrayIterator([
+            new ArrayIterator([
                 (new RuleEscalation())->setProperties([
                     'id' => 1,
                     'condition' => null,
@@ -537,7 +552,10 @@ class EventRuleConfigFormTest extends TestCase
         $escalationRecipientMock->expects($this->once())
             ->method('columns')
             ->with(['id', 'contact_id', 'contactgroup_id', 'schedule_id', 'channel_id'])
-            ->willReturn([
+            ->willReturnSelf();
+
+        $escalationRecipientMock->method('getIterator')
+            ->willReturn(new ArrayIterator([
                 (new RuleEscalationRecipient())->setProperties([
                     'id' => 1,
                     'contact_id' => 1,
@@ -545,7 +563,7 @@ class EventRuleConfigFormTest extends TestCase
                     'schedule_id' => null,
                     'channel_id' => 1
                 ])
-            ]);
+            ]));
 
         $ruleEscalationMock = $this->createMock(Query::class);
         $ruleEscalationMock->expects($this->once())
@@ -554,7 +572,7 @@ class EventRuleConfigFormTest extends TestCase
             ->willReturnSelf();
 
         $queryResult = new ResultSet(
-            new \ArrayIterator([
+            new ArrayIterator([
                 (new RuleEscalation())->setProperties([
                     'id' => 1,
                     'condition' => null,
@@ -594,6 +612,8 @@ class EventRuleConfigFormTest extends TestCase
                     ],
                     $data
                 );
+
+                return $this->createStub(PDOStatement::class);
             });
         $databaseMock->expects($this->never())
             ->method('insert');
@@ -666,7 +686,10 @@ class EventRuleConfigFormTest extends TestCase
         $escalationRecipientMock->expects($this->once())
             ->method('columns')
             ->with(['id', 'contact_id', 'contactgroup_id', 'schedule_id', 'channel_id'])
-            ->willReturn([
+            ->willReturnSelf();
+
+        $escalationRecipientMock->method('getIterator')
+            ->willReturn(new ArrayIterator([
                 (new RuleEscalationRecipient())->setProperties([
                     'id' => 1,
                     'contact_id' => 1,
@@ -674,7 +697,7 @@ class EventRuleConfigFormTest extends TestCase
                     'schedule_id' => null,
                     'channel_id' => 1
                 ])
-            ]);
+            ]));
 
         $ruleEscalationMock = $this->createMock(Query::class);
         $ruleEscalationMock->expects($this->once())
@@ -683,7 +706,7 @@ class EventRuleConfigFormTest extends TestCase
             ->willReturnSelf();
 
         $queryResult = new ResultSet(
-            new \ArrayIterator([
+            new ArrayIterator([
                 (new RuleEscalation())->setProperties([
                     'id' => 1,
                     'condition' => 'incident_severity>=crit&incident_age>5m',
@@ -726,6 +749,8 @@ class EventRuleConfigFormTest extends TestCase
                     ],
                     $data
                 );
+
+                return $this->createStub(PDOStatement::class);
             });
         $databaseMock->expects($this->never())
             ->method('insert');
@@ -800,7 +825,10 @@ class EventRuleConfigFormTest extends TestCase
         $escalationRecipientMock->expects($this->once())
             ->method('columns')
             ->with(['id', 'contact_id', 'contactgroup_id', 'schedule_id', 'channel_id'])
-            ->willReturn([
+            ->willReturnSelf();
+
+        $escalationRecipientMock->method('getIterator')
+            ->willReturn(new ArrayIterator([
                 (new RuleEscalationRecipient())->setProperties([
                     'id' => 1,
                     'contact_id' => null,
@@ -808,7 +836,7 @@ class EventRuleConfigFormTest extends TestCase
                     'schedule_id' => null,
                     'channel_id' => null
                 ])
-            ]);
+            ]));
 
         $ruleEscalationMock = $this->createMock(Query::class);
         $ruleEscalationMock->expects($this->once())
@@ -817,7 +845,7 @@ class EventRuleConfigFormTest extends TestCase
             ->willReturnSelf();
 
         $queryResult = new ResultSet(
-            new \ArrayIterator([
+            new ArrayIterator([
                 (new RuleEscalation())->setProperties([
                     'id' => 1,
                     'condition' => null,
@@ -859,6 +887,8 @@ class EventRuleConfigFormTest extends TestCase
                     ],
                     $data
                 );
+
+                return $this->createStub(PDOStatement::class);
             });
         $databaseMock->expects($this->never())
             ->method('insert');
