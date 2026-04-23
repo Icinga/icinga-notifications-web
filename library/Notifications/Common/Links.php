@@ -17,16 +17,6 @@ abstract class Links
         return Url::fromPath('notifications/sources/add');
     }
 
-    public static function event(int $id): Url
-    {
-        return Url::fromPath('notifications/event', ['id' => $id]);
-    }
-
-    public static function events(): Url
-    {
-        return Url::fromPath('notifications/events');
-    }
-
     public static function incidents(): Url
     {
         return Url::fromPath('notifications/incidents');

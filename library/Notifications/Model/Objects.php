@@ -23,7 +23,6 @@ use ipl\Orm\Relations;
  * @property ?string $url
  * @property ?string $mute_reason
  *
- * @property Query|Event $event
  * @property Query|Incident $incident
  * @property Query|Tag $tag
  * @property Query|ObjectExtraTag $object_extra_tag
@@ -77,7 +76,6 @@ class Objects extends Model
 
     public function createRelations(Relations $relations): void
     {
-        $relations->hasMany('event', Event::class);
         $relations->hasMany('incident', Incident::class);
 
         $relations->hasMany('object_id_tag', ObjectIdTag::class);

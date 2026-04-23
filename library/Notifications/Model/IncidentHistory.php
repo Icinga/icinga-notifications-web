@@ -20,7 +20,6 @@ use ipl\Sql\Select;
  *
  * @property int $id
  * @property int $incident_id
- * @property ?int $event_id
  * @property ?int $rule_id
  * @property ?int $rule_escalation_id
  * @property DateTime $time
@@ -38,7 +37,6 @@ use ipl\Sql\Select;
  * @property ?DateTime $sent_at
  *
  * @property Query|Incident $incident
- * @property Query|Event $event
  * @property Query|Contact $contact
  * @property Query|Contactgroup $contactgroup
  * @property Query|Schedule $schedule
@@ -62,7 +60,6 @@ class IncidentHistory extends Model
     {
         return [
             'incident_id',
-            'event_id',
             'rule_id',
             'rule_escalation_id',
             'time',
@@ -85,7 +82,6 @@ class IncidentHistory extends Model
     {
         return [
             'incident_id'        => t('Incident Id'),
-            'event_id'           => t('Event Id'),
             'rule_escalation_id' => t('Rule Escalation Id'),
             'time'               => t('Time'),
             'type'               => t('Type'),
@@ -128,7 +124,6 @@ class IncidentHistory extends Model
     {
         $relations->belongsTo('incident', Incident::class);
 
-        $relations->belongsTo('event', Event::class)->setJoinType('LEFT');
         $relations->belongsTo('contact', Contact::class)->setJoinType('LEFT');
         $relations->belongsTo('contactgroup', Contactgroup::class)->setJoinType('LEFT');
         $relations->belongsTo('schedule', Schedule::class)->setJoinType('LEFT');
