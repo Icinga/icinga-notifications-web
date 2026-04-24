@@ -5,7 +5,6 @@
 
 namespace Icinga\Module\Notifications\Controllers;
 
-use Icinga\Application\Hook;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Forms\SourceForm;
 use Icinga\Module\Notifications\Model\Source;
@@ -75,24 +74,12 @@ class SourcesController extends CompatController
 
         $sources->filter($filter);
 
-        $addButton = new ButtonLink(
+        $addButton = (new ButtonLink(
             t('Add Source'),
             Url::fromPath('notifications/sources/add'),
             'plus',
             ['class' => 'add-new-component']
-        );
-        $emptyStateMessage = null;
-        if (! Hook::has('Notifications/v1/Source')) {
-            $addButton->disable($this->translate(
-                'You have to install a module that serves as an integration for a source first.'
-            ));
-            $emptyStateMessage = $this->translate(
-                'No sources found. To add a new source, please install a module that serves as an integration'
-                . ' for a source first. Notable examples are Icinga DB Web and Icinga for Kubernetes Web.'
-            );
-        } else {
-            $addButton->setBaseTarget('_next');
-        }
+        ))->setBaseTarget('_next');
 
         $this->addControl($paginationControl);
         $this->addControl($sortControl);
@@ -103,7 +90,6 @@ class SourcesController extends CompatController
         $this->addContent(
             (new ObjectList($sources, new SourceRenderer()))
                 ->setItemLayoutClass(MinimalItemLayout::class)
-                ->setEmptyStateMessage($emptyStateMessage)
         );
 
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {

@@ -33,6 +33,9 @@ class SourceForm extends CompatForm
     /** @var string|int The used password hash algorithm */
     public const HASH_ALGORITHM = PASSWORD_BCRYPT;
 
+    /** @var string @var The generic source type */
+    public const TYPE_GENERIC = 'generic';
+
     /** @var Connection */
     private $db;
 
@@ -49,17 +52,15 @@ class SourceForm extends CompatForm
         $this->applyDefaultElementDecorators();
         $this->addCsrfCounterMeasure();
 
-        $chosenIntegration = null;
+        $types = [
+            ''                  => ' - ' . $this->translate('Please choose') . ' - ',
+            self::TYPE_GENERIC  => $this->translate('Generic')
+        ];
 
-        $types = ['' => ' - ' . $this->translate('Please choose') . ' - '];
         foreach (Hook::all('Notifications/v1/Source') as $hook) {
             /** @var SourceHook $hook */
             try {
                 $type = $hook->getSourceType();
-                if ($this->getPopulatedValue('type') === $type) {
-                    $chosenIntegration = $hook;
-                }
-
                 $types[$type] = $hook->getSourceLabel();
             } catch (Throwable $e) {
                 Logger::error('Failed to load source integration %s: %s', $hook::class, $e);
@@ -71,9 +72,10 @@ class SourceForm extends CompatForm
             Attributes::create(['class' => 'description']),
             Text::create($this->translate(
                 'Sources are the most vital part of Icinga Notifications. They submit events that will be'
-                . ' processed to notify users about incidents. You can only configure sources that provide an'
-                . ' integration in Icinga Web. If you cannot choose the desired source below, consult their'
-                . ' documentation on how to integrate it.'
+                . ' processed to notify users about incidents. You can either configure sources that provide an'
+                . ' integration in Icinga Web or use the Generic type for sources that communicate directly with the'
+                . ' Icinga Notifications API. If you cannot choose the desired source below, consult its documentation'
+                . ' on how to integrate it.'
             ))
         ));
 
@@ -110,7 +112,7 @@ class SourceForm extends CompatForm
                 . ' source\'s configuration as well:'
             )),
             Text::create(' '),
-            match ($chosenIntegration?->getSourceType()) {
+            match ($this->getValue('type')) {
                 'icinga2' => new Link(
                     [
                         $this->translate('Icinga DB Documentation'),
@@ -135,6 +137,9 @@ class SourceForm extends CompatForm
                     ),
                     ['target' => '_blank']
                 ),
+                self::TYPE_GENERIC => Text::create($this->translate(
+                    'Consult the documentation of your source for configuration details.'
+                )),
                 default => Text::create($this->translate(
                     'Please choose the source type above to see the required configuration.'
                 ))
