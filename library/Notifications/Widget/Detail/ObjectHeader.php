@@ -19,7 +19,7 @@ use ipl\Web\Layout\HeaderItemLayout;
  *
  * Create a header
  *
- * @template Item of Incident
+ * @template Item of Incident|Contactgroup
  */
 class ObjectHeader extends BaseHtmlElement
 {
