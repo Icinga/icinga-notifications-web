@@ -252,7 +252,7 @@ class Daemon extends EventEmitter
 
         // grab new notifications and the current connections
         $notifications = IncidentHistory::on(Database::get())
-            ->with(['event', 'incident', 'incident.object', 'incident.object.source'])
+            ->with(['incident', 'incident.object', 'incident.object.source'])
             ->withColumns(['incident.object.id_tags'])
             ->filter(Filter::greaterThan('id', $this->lastIncidentId))
             ->filter(Filter::equal('type', 'notified'))
@@ -287,10 +287,9 @@ class Daemon extends EventEmitter
                         $notification->contact_id,
                         (object) [
                             'incident_id' => $notification->incident_id,
-                            'event_id'    => $notification->event_id,
                             'severity'    => $incident->severity,
                             'title'       => ObjectsRendererHook::getObjectNameAsString($incident->object),
-                            'message'     => $notification->event->message
+                            'message'     => $notification->message
                         ]
                     )
                 ]);

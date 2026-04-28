@@ -40,16 +40,6 @@ $section->add(
     ]
 );
 
-$section->add(
-    N_('Events'),
-    [
-        'icon'          => 'history',
-        'description'   => $this->translate('Events'),
-        'url'           => 'notifications/events',
-        'priority'      => 20
-    ]
-);
-
 if ($configLandingPage !== null) {
     $section->add(
         N_('Configuration'),

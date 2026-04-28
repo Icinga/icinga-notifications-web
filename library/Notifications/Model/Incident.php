@@ -27,7 +27,6 @@ use ipl\Sql\Select;
  * @property string $severity
  *
  * @property Query|Objects $object
- * @property Query|Event $event
  * @property Query|Contact $contact
  * @property Query|IncidentContact $incident_contact
  * @property Query|IncidentHistory $incident_history
@@ -102,10 +101,6 @@ class Incident extends Model
     public function createRelations(Relations $relations): void
     {
         $relations->belongsTo('object', Objects::class);
-
-        $relations
-            ->belongsToMany('event', Event::class)
-            ->through('incident_event');
 
         $relations->belongsToMany('contact', Contact::class)
             ->through('incident_contact');

@@ -6,7 +6,6 @@
 namespace Icinga\Module\Notifications\View;
 
 use Icinga\Module\Notifications\Common\Icons;
-use Icinga\Module\Notifications\Model\Event;
 use Icinga\Module\Notifications\Model\IncidentHistory;
 use Icinga\Module\Notifications\Widget\IconBall;
 use ipl\Html\Attributes;
@@ -171,7 +170,7 @@ class IncidentHistoryRenderer implements ItemRenderer
             case 'opened':
                 $message = sprintf(
                     $this->translate('Incident opened at severity %s'),
-                    Event::mapSeverity($item->new_severity)
+                    $this->mapSeverity($item->new_severity)
                 );
 
                 break;
@@ -239,8 +238,8 @@ class IncidentHistoryRenderer implements ItemRenderer
             case 'incident_severity_changed':
                 $message = sprintf(
                     $this->translate('Incident severity changed from %s to %s'),
-                    Event::mapSeverity($item->old_severity),
-                    Event::mapSeverity($item->new_severity)
+                    $this->mapSeverity($item->old_severity),
+                    $this->mapSeverity($item->new_severity)
                 );
 
                 break;
@@ -328,5 +327,21 @@ class IncidentHistoryRenderer implements ItemRenderer
         }
 
         return $message;
+    }
+
+    private function mapSeverity(?string $severity): ?string
+    {
+        return match ($severity) {
+            'ok'        => $this->translate('Ok', 'notifications.severity'),
+            'crit'      => $this->translate('Critical', 'notifications.severity'),
+            'warning'   => $this->translate('Warning', 'notifications.severity'),
+            'err'       => $this->translate('Error', 'notifications.severity'),
+            'debug'     => $this->translate('Debug', 'notifications.severity'),
+            'info'      => $this->translate('Information', 'notifications.severity'),
+            'alert'     => $this->translate('Alert', 'notifications.severity'),
+            'emerg'     => $this->translate('Emergency', 'notifications.severity'),
+            'notice'    => $this->translate('Notice', 'notifications.severity'),
+            default     => null,
+        };
     }
 }
