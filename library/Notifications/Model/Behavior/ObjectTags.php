@@ -21,7 +21,7 @@ class ObjectTags implements RewriteColumnBehavior, QueryAwareBehavior
     /** @var Query */
     protected $query;
 
-    public function setQuery(Query $query): self
+    public function setQuery(Query $query): static
     {
         $this->query = $query;
 
@@ -51,7 +51,7 @@ class ObjectTags implements RewriteColumnBehavior, QueryAwareBehavior
         return $filterAll;
     }
 
-    public function rewriteColumn($column, $relation = null): AliasedExpression
+    public function rewriteColumn($column, ?string $relation = null): AliasedExpression
     {
         /** @var string $relation */
         /** @var string $column */

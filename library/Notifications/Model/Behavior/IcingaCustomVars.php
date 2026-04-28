@@ -27,7 +27,7 @@ class IcingaCustomVars implements RewriteColumnBehavior
             || str_starts_with($name, self::SERVICE_PREFIX);
     }
 
-    public function rewriteColumn($column, ?string $relation = null)
+    public function rewriteColumn($column, ?string $relation = null): null
     {
         return null;
     }
@@ -54,7 +54,7 @@ class IcingaCustomVars implements RewriteColumnBehavior
         ));
     }
 
-    public function rewriteCondition(Filter\Condition $condition, $relation = null)
+    public function rewriteCondition(Filter\Condition $condition, $relation = null): Filter\Condition|Filter\Rule|null
     {
         if (! $this->isSelectableColumn($condition->metaData()->get('columnName', ''))) {
             return null;
