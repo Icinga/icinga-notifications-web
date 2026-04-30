@@ -14,14 +14,9 @@ use ipl\Web\Widget\Icon;
  */
 class Attendee
 {
-    /** @var string */
-    protected $name;
+    protected string $name;
 
-    /** @var string|ValidHtml */
-    protected $icon = 'user';
-
-    /** @var string */
-    protected $color = '';
+    protected string|ValidHtml $icon = 'user';
 
     public function __construct(string $name)
     {
@@ -33,7 +28,7 @@ class Attendee
         return $this->name;
     }
 
-    public function setIcon($icon): self
+    public function setIcon($icon): static
     {
         if ($icon === null) {
             throw new InvalidArgumentException('Cannot unset icon');

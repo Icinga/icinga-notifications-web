@@ -19,11 +19,11 @@ class ShowMore extends BaseHtmlElement
 
     protected $tag = 'div';
 
-    protected $resultSet;
+    protected ResultSet $resultSet;
 
-    protected $url;
+    protected Url $url;
 
-    protected $label;
+    protected ?string $label = null;
 
     public function __construct(ResultSet $resultSet, Url $url, ?string $label = null)
     {
@@ -32,7 +32,7 @@ class ShowMore extends BaseHtmlElement
         $this->url = $url;
     }
 
-    public function setLabel(string $label): self
+    public function setLabel(string $label): static
     {
         $this->label = $label;
 
@@ -53,7 +53,7 @@ class ShowMore extends BaseHtmlElement
         return '';
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         if ($this->resultSet->hasMore()) {
             $this->add(new ActionLink($this->getLabel(), $this->url));

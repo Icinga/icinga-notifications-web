@@ -43,27 +43,21 @@ class Timeline extends BaseHtmlElement implements EntryProvider
     protected $defaultAttributes = ['class' => ['timeline']];
 
     /** @var array<int, Rotation> */
-    protected $rotations = [];
+    protected array $rotations = [];
 
-    /** @var int */
     protected int $scheduleId;
 
-    /** @var DateTime */
-    protected $start;
+    protected DateTime $start;
 
-    /** @var int */
-    protected $days;
+    protected int $days;
 
-    /** @var Style */
-    protected $style;
+    protected ?Style $style = null;
 
-    /** @var ?DynamicGrid|MinimalGrid */
-    protected $grid;
+    protected DynamicGrid|MinimalGrid|null $grid = null;
 
     /** @var bool Whether to create the Timeline only with the Result using MinimalGrid */
-    protected $minimalLayout = false;
+    protected bool $minimalLayout = false;
 
-    /** @var int */
     protected int $noOfRotations = 0;
 
     /**
@@ -73,7 +67,7 @@ class Timeline extends BaseHtmlElement implements EntryProvider
      *
      * @return $this
      */
-    public function setStyle(Style $style): self
+    public function setStyle(Style $style): static
     {
         $this->style = $style;
 
@@ -113,7 +107,7 @@ class Timeline extends BaseHtmlElement implements EntryProvider
      *
      * @return $this
      */
-    public function minimalLayout(): self
+    public function minimalLayout(): static
     {
         $this->minimalLayout = true;
 
@@ -283,7 +277,7 @@ class Timeline extends BaseHtmlElement implements EntryProvider
      *
      * @return DynamicGrid|MinimalGrid
      */
-    protected function getGrid()
+    protected function getGrid(): DynamicGrid|MinimalGrid
     {
         if ($this->grid === null) {
             if ($this->minimalLayout) {
@@ -341,7 +335,7 @@ class Timeline extends BaseHtmlElement implements EntryProvider
         return $entry;
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         if ($this->minimalLayout && empty($this->rotations)) {
             $this->addHtml(new HtmlElement(

@@ -45,22 +45,22 @@ abstract class Entry extends BaseHtmlElement
     protected $defaultAttributes = ['class' => 'entry'];
 
     /** @var int The entry id */
-    protected $id;
+    protected int $id;
 
     /** @var ?DateTime When the entry starts */
-    protected $start;
+    protected ?DateTime $start = null;
 
     /** @var ?DateTime When the entry ends */
-    protected $end;
+    protected ?DateTime $end = null;
 
     /** @var ?int The 0-based position of the row where to place this entry on the grid */
-    protected $position;
+    protected ?int $position = null;
 
     /** @var ?ContinuationType The continuation type */
-    protected $continuationType;
+    protected ?string $continuationType = null;
 
-    /** @var Url The URL to show this entry */
-    protected $url;
+    /** @var ?Url The URL to show this entry */
+    protected ?Url $url = null;
 
     /**
      * Create a new entry
@@ -89,7 +89,7 @@ abstract class Entry extends BaseHtmlElement
      *
      * @return $this
      */
-    public function setStart(DateTime $start): self
+    public function setStart(DateTime $start): static
     {
         $this->start = $start;
 
@@ -113,7 +113,7 @@ abstract class Entry extends BaseHtmlElement
      *
      * @return $this
      */
-    public function setEnd(DateTime $end): self
+    public function setEnd(DateTime $end): static
     {
         $this->end = $end;
 
@@ -137,7 +137,7 @@ abstract class Entry extends BaseHtmlElement
      *
      * @return $this
      */
-    public function setPosition(?int $position): self
+    public function setPosition(?int $position): static
     {
         $this->position = $position;
 
@@ -161,7 +161,7 @@ abstract class Entry extends BaseHtmlElement
      *
      * @return $this
      */
-    public function setContinuationType(?string $continuationType): self
+    public function setContinuationType(?string $continuationType): static
     {
         $this->continuationType = $continuationType;
 
@@ -185,7 +185,7 @@ abstract class Entry extends BaseHtmlElement
      *
      * @return $this
      */
-    public function setUrl(?Url $url): self
+    public function setUrl(?Url $url): static
     {
         $this->url = $url;
 
@@ -213,7 +213,7 @@ abstract class Entry extends BaseHtmlElement
 
     abstract protected function assembleContainer(BaseHtmlElement $container): void;
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->getAttributes()
             ->add('data-entry-id', $this->getId())

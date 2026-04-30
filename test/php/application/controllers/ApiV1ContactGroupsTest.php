@@ -5,11 +5,9 @@
 
 namespace Tests\Icinga\Module\Notifications\Controllers;
 
-use GuzzleHttp\Client;
 use Icinga\Module\Notifications\Test\BaseApiV1TestCase;
 use Icinga\Web\Url;
 use ipl\Sql\Connection;
-use WebSocket\Base;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 class ApiV1ContactGroupsTest extends BaseApiV1TestCase
@@ -367,7 +365,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::GROUP_UUID_3,
                 'users' => []
             ]
@@ -410,7 +408,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::GROUP_UUID_3,
                 'name' => ['Test'],
                 'users' => []
@@ -493,7 +491,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contact-groups',
-            json:[
+            json: [
                 'id' => BaseApiV1TestCase::GROUP_UUID_3,
                 'users' => []
             ]
@@ -554,7 +552,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contact-groups/',
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::GROUP_UUID_3,
                 'name' => ['Test'],
                 'users' => []
@@ -691,7 +689,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contact-groups?id=' . BaseApiV1TestCase::GROUP_UUID,
-            json:  [
+            json: [
                     'id' => BaseApiV1TestCase::GROUP_UUID,
                     'name' => 'Test',
                     'users' => []
@@ -756,7 +754,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::GROUP_UUID,
                 'users' => []
             ]
@@ -799,7 +797,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::GROUP_UUID,
                 'name' => ['Test'],
                 'users' => []
@@ -843,7 +841,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::GROUP_UUID_2,
                 'name' => 'Test',
                 'users' => []
@@ -862,7 +860,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID_3,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::GROUP_UUID_3,
                 'name' => 'Test'
             ]
@@ -902,7 +900,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::GROUP_UUID,
                 'name' => 'Test (replaced)',
                 'users' => []
@@ -937,7 +935,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::GROUP_UUID,
                 'name' => 'Test',
                 'users' => [BaseApiV1TestCase::CONTACT_UUID_3]
@@ -959,7 +957,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID_3,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::GROUP_UUID_3,
                 'name' => 'Test',
                 'users' => [BaseApiV1TestCase::CONTACT_UUID]
@@ -1001,7 +999,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID_3,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::GROUP_UUID_3,
                 'users' => []
             ]
@@ -1019,7 +1017,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID_3,
-            json:  [
+            json: [
                 'name' => 'Test',
                 'users' => []
             ]
@@ -1062,7 +1060,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID_3,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::GROUP_UUID_3,
                 'name' => ['Test'],
                 'users' => []

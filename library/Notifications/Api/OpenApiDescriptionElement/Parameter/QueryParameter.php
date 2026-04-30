@@ -5,8 +5,8 @@
 
 namespace Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Parameter;
 
-use OpenApi\Attributes\Parameter;
 use OpenApi\Attributes as OA;
+use OpenApi\Attributes\Parameter;
 use OpenApi\Attributes\Schema;
 
 class QueryParameter extends Parameter
@@ -33,8 +33,8 @@ class QueryParameter extends Parameter
             'schema' => $schema,
         ];
 
-         $params = $example !== null ? array_merge($params, ['example' => $example]) : $params;
+        $params = $example !== null ? array_merge($params, ['example' => $example]) : $params;
 
-         parent::__construct(...$params);
+        parent::__construct(...$params);
     }
 }

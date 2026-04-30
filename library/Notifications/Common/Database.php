@@ -5,7 +5,6 @@
 
 namespace Icinga\Module\Notifications\Common;
 
-use DateTime;
 use Icinga\Application\Config as AppConfig;
 use Icinga\Data\ResourceFactory;
 use Icinga\Exception\ConfigurationError;
@@ -44,8 +43,8 @@ final class Database
         'timeperiod_entry',
     ];
 
-    /** @var Connection Database connection */
-    private static $instance;
+    /** @var ?Connection Database connection */
+    private static ?Connection $instance = null;
 
     /** Singleton class */
     private function __construct()
@@ -175,7 +174,7 @@ final class Database
 
                 // getNextChangedAt() wants MAX(changed_at) of all rows, deleted or not
                 foreach ($select->getColumns() as $column) {
-                    if ($column instanceof Expression && strpos($column->getStatement(), 'MAX(changed_at)') !== false) {
+                    if ($column instanceof Expression && str_contains($column->getStatement(), 'MAX(changed_at)')) {
                         return;
                     }
                 }
@@ -217,7 +216,7 @@ final class Database
      *
      * @return int The given timestamp or 1 + the maximum changed_at value in the table, whichever is greater
      */
-    private static function getNextChangedAt(Connection $db, string $table, $nowUnixMilli)
+    private static function getNextChangedAt(Connection $db, string $table, $nowUnixMilli): int
     {
         return $db->select(
             (new Select())
@@ -273,6 +272,7 @@ final class Database
     /**
      * Check if the given condition is part of the where clause with value 'y'
      *
+     * @param string $baseTable
      * @param string $conditionToFind
      * @param array<int|string, int|string> $where
      *
@@ -284,9 +284,8 @@ final class Database
             if (is_array($value)) {
                 $found = self::hasCondition($baseTable, $conditionToFind, $value);
             } else {
-                $found = (
-                    $condition === $conditionToFind || $condition === $baseTable . '.' . $conditionToFind
-                    ) && $value === 'y';
+                $found = ($condition === $conditionToFind || $condition === $baseTable . '.' . $conditionToFind)
+                    && $value === 'y';
             }
 
             if ($found) {

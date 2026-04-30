@@ -28,7 +28,7 @@ class EventRuleForm extends CompatForm
      *
      * @return $this
      */
-    public function setAvailableSources(array $sources): self
+    public function setAvailableSources(array $sources): static
     {
         $this->sources = $sources;
 

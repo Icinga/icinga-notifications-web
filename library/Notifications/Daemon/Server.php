@@ -24,31 +24,32 @@ use Throwable;
 
 class Server
 {
+    /** @var string */
     protected const PREFIX = '[daemon.server] - ';
 
-    /** @var Server Instance of this class */
-    private static $instance;
+    /** @var ?Server Instance of this class */
+    private static ?Server $instance = null;
 
     /** @var LoopInterface Reference to ReactPHP's main loop */
-    protected $mainLoop;
+    protected LoopInterface $mainLoop;
 
     /** @var Logger Instance of the logger class */
-    protected static $logger;
+    protected static Logger $logger;
 
     /** @var SocketServer SocketServer object */
-    protected $socket;
+    protected SocketServer $socket;
 
     /** @var HttpServer HttpServer object */
-    protected $http;
+    protected HttpServer $http;
 
     /** @var array<Connection> Socket connections */
-    protected $connections;
+    protected array $connections;
 
     /** @var SQLConnection Database object */
-    protected $dbLink;
+    protected SQLConnection $dbLink;
 
     /** @var Config Config object */
-    protected $config;
+    protected Config $config;
 
     /**
      * Construct the singleton instance of the Server class
@@ -78,7 +79,7 @@ class Server
     {
         if (self::$instance === null) {
             self::$instance = new Server($mainLoop);
-        } elseif ((self::$instance->mainLoop !== null) && (self::$instance->mainLoop !== $mainLoop)) {
+        } elseif (self::$instance->mainLoop !== $mainLoop) {
             // main loop changed, reloading daemon server
             self::$instance->mainLoop = $mainLoop;
             self::$instance->reload();

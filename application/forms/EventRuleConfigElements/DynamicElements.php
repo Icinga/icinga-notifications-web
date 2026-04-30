@@ -5,6 +5,7 @@
 
 namespace Icinga\Module\Notifications\Forms\EventRuleConfigElements;
 
+use ipl\Html\Attributes;
 use ipl\Html\Contract\FormElement;
 use ipl\Html\FormElement\SubmitButtonElement;
 
@@ -87,7 +88,7 @@ trait DynamicElements
             $count++;
         }
 
-        $add = $this->createAddButton()->addAttributes(['formnovalidate' => true]);
+        $add = $this->createAddButton()->addAttributes(Attributes::create(['formnovalidate' => true]));
         $this->registerElement($add);
         if ($add->hasBeenPressed()) {
             $this->createRemoveButton($newCount);
@@ -115,6 +116,6 @@ trait DynamicElements
         $this->clearPopulatedValue('count');
         $this->addElement('hidden', 'count', ['ignore' => true, 'value' => $newCount]);
 
-        $this->addAttributes(['class' => ['dynamic-list', $newCount === 0 ? 'empty' : '']]);
+        $this->addAttributes(Attributes::create(['class' => ['dynamic-list', $newCount === 0 ? 'empty' : '']]));
     }
 }

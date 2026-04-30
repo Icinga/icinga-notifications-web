@@ -18,8 +18,7 @@ class ObjectTags implements RewriteColumnBehavior, QueryAwareBehavior
 {
     use Auth;
 
-    /** @var Query */
-    protected $query;
+    protected ?Query $query = null;
 
     public function setQuery(Query $query): self
     {
@@ -35,7 +34,7 @@ class ObjectTags implements RewriteColumnBehavior, QueryAwareBehavior
         /** @var ?string $column */
         $column = $condition->metaData()->get('columnName');
         if ($column !== null) {
-            if (substr($relation, -10) === 'extra_tag.') {
+            if (str_ends_with($relation, 'extra_tag.')) {
                 $relation = substr($relation, 0, -10) . 'object_extra_tag.';
             } else { // tag.
                 $relation = substr($relation, 0, -4) . 'object_id_tag.';

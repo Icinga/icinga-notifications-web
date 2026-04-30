@@ -8,19 +8,17 @@ namespace Icinga\Module\Notifications\Common;
 use Generator;
 use Icinga\Module\Notifications\Widget\ItemList\PageSeparatorItem;
 use Icinga\Module\Notifications\Widget\ShowMore;
+use ipl\Html\Attributes;
 use ipl\Orm\ResultSet;
 use ipl\Web\Url;
 
 trait LoadMore
 {
-    /** @var int */
-    protected $pageSize;
+    protected ?int $pageSize = null;
 
-    /** @var int */
-    protected $pageNumber;
+    protected ?int $pageNumber = null;
 
-    /** @var Url */
-    protected $loadMoreUrl;
+    protected ?Url $loadMoreUrl = null;
 
     /**
      * Set the page size
@@ -29,7 +27,7 @@ trait LoadMore
      *
      * @return $this
      */
-    public function setPageSize(int $size): self
+    public function setPageSize(int $size): static
     {
         $this->pageSize = $size;
 
@@ -43,7 +41,7 @@ trait LoadMore
      *
      * @return $this
      */
-    public function setPageNumber(int $number): self
+    public function setPageNumber(int $number): static
     {
         $this->pageNumber = $number;
 
@@ -57,7 +55,7 @@ trait LoadMore
      *
      * @return $this
      */
-    public function setLoadMoreUrl(Url $url): self
+    public function setLoadMoreUrl(Url $url): static
     {
         $this->loadMoreUrl = $url;
 
@@ -102,7 +100,7 @@ trait LoadMore
                 ->setLabel(t('Load More'))
                 ->setAttribute('data-no-icinga-ajax', true);
 
-            $this->add($showMore->setTag('li')->addAttributes(['class' => 'list-item']));
+            $this->add($showMore->setTag('li')->addAttributes(Attributes::create(['class' => 'list-item'])));
         }
     }
 }

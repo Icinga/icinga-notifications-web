@@ -30,7 +30,6 @@ class ContactGroupForm extends CompatForm
 {
     use CsrfCounterMeasure;
 
-    /** @var Connection */
     private Connection $db;
 
     /** @var ?int Contact group id */
@@ -66,10 +65,10 @@ class ContactGroupForm extends CompatForm
             ->on(TermInput::ON_SAVE, $callValidation)
             ->on(TermInput::ON_PASTE, $callValidation);
 
-            // TODO: TermInput is not compatible with the new decorators yet: https://github.com/Icinga/ipl-web/pull/317
-            $legacyDecorator = new IcingaFormDecorator();
-            $termInput->setDefaultElementDecorator($legacyDecorator);
-            $legacyDecorator->decorate($termInput);
+        // TODO: TermInput is not compatible with the new decorators yet: https://github.com/Icinga/ipl-web/pull/317
+        $legacyDecorator = new IcingaFormDecorator();
+        $termInput->setDefaultElementDecorator($legacyDecorator);
+        $legacyDecorator->decorate($termInput);
 
         $this->addElement(
             'text',
@@ -168,7 +167,7 @@ class ContactGroupForm extends CompatForm
      *
      * @return $this
      */
-    public function loadContactgroup(int $groupId): self
+    public function loadContactgroup(int $groupId): static
     {
         $this->contactgroupId = $groupId;
 
@@ -364,9 +363,9 @@ class ContactGroupForm extends CompatForm
 
         $escalationIds = $this->db->fetchCol(
             RuleEscalationRecipient::on($this->db)
-            ->columns('rule_escalation_id')
-            ->filter(Filter::equal('contactgroup_id', $this->contactgroupId))
-            ->assembleSelect()
+                ->columns('rule_escalation_id')
+                ->filter(Filter::equal('contactgroup_id', $this->contactgroupId))
+                ->assembleSelect()
         );
 
         $this->db->update('rule_escalation_recipient', $markAsDeleted, $updateCondition);
@@ -416,6 +415,7 @@ class ContactGroupForm extends CompatForm
             ->columns(['id', 'name'])
             ->filter(Filter::equal('id', $this->contactgroupId));
 
+        /** @var ?Contactgroup $group */
         $group = $query->first();
         if ($group === null) {
             throw new HttpNotFoundException($this->translate('Contact group not found'));

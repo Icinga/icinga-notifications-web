@@ -27,11 +27,8 @@ class Controls extends Form
     /** @var string The default mode */
     public const DEFAULT_MODE = 'week';
 
-    protected $method = 'POST';
-
     protected $defaultAttributes = ['class' => 'schedule-controls', 'name' => 'schedule-detail-controls-form'];
 
-    /** @var ?string */
     protected ?string $defaultTimezone = null;
 
     /**
