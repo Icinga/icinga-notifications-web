@@ -8,7 +8,6 @@ namespace Tests\Icinga\Module\Notifications\Controllers;
 use Icinga\Module\Notifications\Test\BaseApiV1TestCase;
 use Icinga\Web\Url;
 use ipl\Sql\Connection;
-use WebSocket\Base;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 class ApiV1ContactGroupsTest extends BaseApiV1TestCase
