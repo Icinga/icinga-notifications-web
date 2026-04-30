@@ -19,26 +19,8 @@ parameters:
 			path: application/controllers/ChannelsController.php
 
 		-
-			message: '#^Method Icinga\\Module\\Notifications\\Controllers\\ConfigController\:\:databaseAction\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: application/controllers/ConfigController.php
-
-		-
-			message: '#^Method Icinga\\Module\\Notifications\\Controllers\\ContactsController\:\:indexAction\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: application/controllers/ContactsController.php
-
-		-
 			message: '#^Cannot call method getUsername\(\) on Icinga\\User\|null\.$#'
 			identifier: method.nonObject
-			count: 1
-			path: application/controllers/IncidentController.php
-
-		-
-			message: '#^Parameter \#2 \$currentUserId of class Icinga\\Module\\Notifications\\Widget\\Detail\\IncidentQuickActions constructor expects int, mixed given\.$#'
-			identifier: argument.type
 			count: 1
 			path: application/controllers/IncidentController.php
 
@@ -59,12 +41,6 @@ parameters:
 			identifier: method.nonObject
 			count: 1
 			path: application/forms/ChannelForm.php
-
-		-
-			message: '#^Method Icinga\\Module\\Notifications\\Forms\\DatabaseConfigForm\:\:assemble\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: application/forms/DatabaseConfigForm.php
 
 		-
 			message: '#^Argument of an invalid type array\|null supplied for foreach, only iterables are supported\.$#'
@@ -217,26 +193,8 @@ parameters:
 			path: library/Notifications/Web/Control/SearchBar/ExtraTagSuggestions.php
 
 		-
-			message: '#^Method Icinga\\Module\\Notifications\\Web\\Control\\SearchBar\\ExtraTagSuggestions\:\:fetchColumnSuggestions\(\) return type has no value type specified in iterable type Traversable\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: library/Notifications/Web/Control/SearchBar/ExtraTagSuggestions.php
-
-		-
-			message: '#^Method Icinga\\Module\\Notifications\\Web\\Control\\SearchBar\\ExtraTagSuggestions\:\:fetchValueSuggestions\(\) return type has no value type specified in iterable type Traversable\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: library/Notifications/Web/Control/SearchBar/ExtraTagSuggestions.php
-
-		-
 			message: '#^Method Icinga\\Module\\Notifications\\Web\\Control\\SearchBar\\ObjectSuggestions\:\:collectFilterColumns\(\) return type has no value type specified in iterable type Traversable\.$#'
 			identifier: missingType.iterableValue
-			count: 1
-			path: library/Notifications/Web/Control/SearchBar/ObjectSuggestions.php
-
-		-
-			message: '#^Method Icinga\\Module\\Notifications\\Web\\Control\\SearchBar\\ObjectSuggestions\:\:collectRelations\(\) has no return type specified\.$#'
-			identifier: missingType.return
 			count: 1
 			path: library/Notifications/Web/Control/SearchBar/ObjectSuggestions.php
 
@@ -249,24 +207,6 @@ parameters:
 		-
 			message: '#^Method Icinga\\Module\\Notifications\\Web\\Control\\SearchBar\\ObjectSuggestions\:\:collectRelations\(\) has parameter \$path with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
-			count: 1
-			path: library/Notifications/Web/Control/SearchBar/ObjectSuggestions.php
-
-		-
-			message: '#^Method Icinga\\Module\\Notifications\\Web\\Control\\SearchBar\\ObjectSuggestions\:\:fetchColumnSuggestions\(\) return type has no value type specified in iterable type Traversable\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: library/Notifications/Web/Control/SearchBar/ObjectSuggestions.php
-
-		-
-			message: '#^Method Icinga\\Module\\Notifications\\Web\\Control\\SearchBar\\ObjectSuggestions\:\:fetchValueSuggestions\(\) return type has no value type specified in iterable type Traversable\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: library/Notifications/Web/Control/SearchBar/ObjectSuggestions.php
-
-		-
-			message: '#^Property Icinga\\Module\\Notifications\\Web\\Control\\SearchBar\\ObjectSuggestions\:\:\$model \(ipl\\Orm\\Model\) does not accept object\.$#'
-			identifier: assign.propertyType
 			count: 1
 			path: library/Notifications/Web/Control/SearchBar/ObjectSuggestions.php
 
@@ -289,36 +229,6 @@ parameters:
 			path: library/Notifications/Web/Form/ContactForm.php
 
 		-
-			message: '#^Method Icinga\\Module\\Notifications\\Web\\Form\\ContactForm\:\:assemble\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: library/Notifications/Web/Form/ContactForm.php
-
-		-
-			message: '#^Method Icinga\\Module\\Notifications\\Web\\Form\\EventRuleDecorator\:\:assemble\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: library/Notifications/Web/Form/EventRuleDecorator.php
-
-		-
-			message: '#^Method Icinga\\Module\\Notifications\\Web\\Form\\EventRuleDecorator\:\:decorate\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: library/Notifications/Web/Form/EventRuleDecorator.php
-
-		-
-			message: '#^Property Icinga\\Module\\Notifications\\Web\\Form\\EventRuleDecorator\:\:\$element has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: library/Notifications/Web/Form/EventRuleDecorator.php
-
-		-
-			message: '#^Method Icinga\\Module\\Notifications\\Widget\\Calendar\:\:assemble\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: library/Notifications/Widget/Calendar.php
-
-		-
 			message: '#^Method Icinga\\Module\\Notifications\\Widget\\Calendar\:\:getModeStart\(\) should return DateTime but returns DateTime\|false\.$#'
 			identifier: return.type
 			count: 2
@@ -337,22 +247,10 @@ parameters:
 			path: library/Notifications/Widget/Calendar.php
 
 		-
-			message: '#^Property Icinga\\Module\\Notifications\\Widget\\Calendar\:\:\$addEntryUrl \(ipl\\Web\\Url\) does not accept ipl\\Web\\Url\|null\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: library/Notifications/Widget/Calendar.php
-
-		-
 			message: '#^Method Icinga\\Module\\Notifications\\Widget\\Calendar\\Attendee\:\:setIcon\(\) has parameter \$icon with no type specified\.$#'
 			identifier: missingType.parameter
 			count: 1
 			path: library/Notifications/Widget/Calendar/Attendee.php
-
-		-
-			message: '#^Method Icinga\\Module\\Notifications\\Widget\\Calendar\\Controls\:\:assemble\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: library/Notifications/Widget/Calendar/Controls.php
 
 		-
 			message: '#^Method Icinga\\Module\\Notifications\\Widget\\Calendar\\Controls\:\:getViewMode\(\) should return string but returns mixed\.$#'
@@ -361,133 +259,13 @@ parameters:
 			path: library/Notifications/Widget/Calendar/Controls.php
 
 		-
-			message: '#^Method Icinga\\Module\\Notifications\\Widget\\Calendar\\DayGrid\:\:assemble\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: library/Notifications/Widget/Calendar/DayGrid.php
-
-		-
-			message: '#^Method Icinga\\Module\\Notifications\\Widget\\Calendar\\MonthGrid\:\:assemble\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: library/Notifications/Widget/Calendar/MonthGrid.php
-
-		-
-			message: '#^Method Icinga\\Module\\Notifications\\Widget\\Calendar\\WeekGrid\:\:assemble\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: library/Notifications/Widget/Calendar/WeekGrid.php
-
-		-
-			message: '#^Method Icinga\\Module\\Notifications\\Widget\\Detail\\IncidentDetail\:\:assemble\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: library/Notifications/Widget/Detail/IncidentDetail.php
-
-		-
-			message: '#^Method Icinga\\Module\\Notifications\\Widget\\Detail\\IncidentDetail\:\:createContacts\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: library/Notifications/Widget/Detail/IncidentDetail.php
-
-		-
-			message: '#^Method Icinga\\Module\\Notifications\\Widget\\Detail\\IncidentDetail\:\:createHistory\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: library/Notifications/Widget/Detail/IncidentDetail.php
-
-		-
-			message: '#^Method Icinga\\Module\\Notifications\\Widget\\Detail\\IncidentDetail\:\:createRelatedObject\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: library/Notifications/Widget/Detail/IncidentDetail.php
-
-		-
-			message: '#^Method Icinga\\Module\\Notifications\\Widget\\Detail\\IncidentDetail\:\:createSource\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: library/Notifications/Widget/Detail/IncidentDetail.php
-
-		-
 			message: '#^Cannot call method getName\(\) on ipl\\Html\\Contract\\FormSubmitElement\|null\.$#'
 			identifier: method.nonObject
 			count: 1
 			path: library/Notifications/Widget/Detail/IncidentQuickActions.php
 
 		-
-			message: '#^Method Icinga\\Module\\Notifications\\Widget\\Detail\\IncidentQuickActions\:\:assemble\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: library/Notifications/Widget/Detail/IncidentQuickActions.php
-
-		-
-			message: '#^Method Icinga\\Module\\Notifications\\Widget\\Detail\\IncidentQuickActions\:\:fetchIncidentContact\(\) should return Icinga\\Module\\Notifications\\Model\\IncidentContact but returns ipl\\Orm\\Model\.$#'
-			identifier: return.type
-			count: 1
-			path: library/Notifications/Widget/Detail/IncidentQuickActions.php
-
-		-
-			message: '#^Method Icinga\\Module\\Notifications\\Widget\\Detail\\IncidentQuickActions\:\:onSuccess\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: library/Notifications/Widget/Detail/IncidentQuickActions.php
-
-		-
-			message: '#^Property Icinga\\Module\\Notifications\\Widget\\Detail\\IncidentQuickActions\:\:\$incidentContact \(Icinga\\Module\\Notifications\\Model\\IncidentContact\) does not accept ipl\\Orm\\Model\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: library/Notifications/Widget/Detail/IncidentQuickActions.php
-
-		-
-			message: '#^Method Icinga\\Module\\Notifications\\Widget\\EventSourceBadge\:\:assemble\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: library/Notifications/Widget/EventSourceBadge.php
-
-		-
-			message: '#^Method Icinga\\Module\\Notifications\\Widget\\ItemList\\PageSeparatorItem\:\:assemble\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: library/Notifications/Widget/ItemList/PageSeparatorItem.php
-
-		-
-			message: '#^Method Icinga\\Module\\Notifications\\Widget\\RuleEscalationRecipientBadge\:\:assemble\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: library/Notifications/Widget/RuleEscalationRecipientBadge.php
-
-		-
 			message: '#^Method Icinga\\Module\\Notifications\\Widget\\RuleEscalationRecipientBadge\:\:createBadge\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
 			path: library/Notifications/Widget/RuleEscalationRecipientBadge.php
-
-		-
-			message: '#^Property Icinga\\Module\\Notifications\\Widget\\RuleEscalationRecipientBadge\:\:\$moreCount \(int\) does not accept int\|null\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: library/Notifications/Widget/RuleEscalationRecipientBadge.php
-
-		-
-			message: '#^Method Icinga\\Module\\Notifications\\Widget\\ShowMore\:\:assemble\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: library/Notifications/Widget/ShowMore.php
-
-		-
-			message: '#^Property Icinga\\Module\\Notifications\\Widget\\ShowMore\:\:\$label has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: library/Notifications/Widget/ShowMore.php
-
-		-
-			message: '#^Property Icinga\\Module\\Notifications\\Widget\\ShowMore\:\:\$resultSet has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: library/Notifications/Widget/ShowMore.php
-
-		-
-			message: '#^Property Icinga\\Module\\Notifications\\Widget\\ShowMore\:\:\$url has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: library/Notifications/Widget/ShowMore.php
