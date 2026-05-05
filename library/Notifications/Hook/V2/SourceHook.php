@@ -65,4 +65,13 @@ interface SourceHook
      * @return Suggestions
      */
     public function getSuggestions(): Suggestions;
+
+    /**
+     * Get the metadata keys for the conditions
+     *
+     * Only the given keys will be added to the SearchEditor and stored in the database
+     *
+     * @return string[]
+     */
+    public function getMetadataKeys(): array;
 }

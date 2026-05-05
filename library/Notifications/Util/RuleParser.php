@@ -48,18 +48,20 @@ class RuleParser
     protected function parseCondition(array $data): Filter\Condition
     {
         $condition = match ($data['op']) {
-            '!~' => new Filter\Unlike($data['column'], $data['value']),
-            '!=' => new Filter\Unequal($data['column'], $data['value']),
-            '~' => new Filter\Like($data['column'], $data['value']),
-            '=' => new Filter\Equal($data['column'], $data['value']),
-            '>' => new Filter\GreaterThan($data['column'], $data['value']),
-            '<' => new Filter\LessThan($data['column'], $data['value']),
-            '>=' => new Filter\GreaterThanOrEqual($data['column'], $data['value']),
-            '<=' => new Filter\LessThanOrEqual($data['column'], $data['value']),
+            '!~' => new Filter\Unlike($data['columnName'], $data['value']),
+            '!=' => new Filter\Unequal($data['columnName'], $data['value']),
+            '~' => new Filter\Like($data['columnName'], $data['value']),
+            '=' => new Filter\Equal($data['columnName'], $data['value']),
+            '>' => new Filter\GreaterThan($data['columnName'], $data['value']),
+            '<' => new Filter\LessThan($data['columnName'], $data['value']),
+            '>=' => new Filter\GreaterThanOrEqual($data['columnName'], $data['value']),
+            '<=' => new Filter\LessThanOrEqual($data['columnName'], $data['value']),
         };
 
-        if (isset($data['jsonPath'])) {
-            $condition->metaData()->set('jsonPath', $data['jsonPath']);
+        $condition->metaData()->set('jsonPath', $data['column']);
+
+        foreach ($data['metadata'] ?? [] as $key => $value) {
+            $condition->metaData()->set($key, $value);
         }
 
         return $condition;
