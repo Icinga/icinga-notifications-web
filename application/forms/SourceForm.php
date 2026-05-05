@@ -9,7 +9,7 @@ use DateTime;
 use Icinga\Application\Hook;
 use Icinga\Application\Logger;
 use Icinga\Exception\Http\HttpNotFoundException;
-use Icinga\Module\Notifications\Hook\V1\SourceHook;
+use Icinga\Module\Notifications\Hook\V2\SourceHook;
 use Icinga\Module\Notifications\Model\Source;
 use ipl\Html\Attributes;
 use ipl\Html\HtmlDocument;
@@ -57,7 +57,7 @@ class SourceForm extends CompatForm
             self::TYPE_GENERIC  => $this->translate('Generic')
         ];
 
-        foreach (Hook::all('Notifications/v1/Source') as $hook) {
+        foreach (Hook::all('Notifications/v2/Source') as $hook) {
             /** @var SourceHook $hook */
             try {
                 $type = $hook->getSourceType();
