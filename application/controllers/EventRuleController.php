@@ -235,7 +235,7 @@ class EventRuleController extends CompatController
                 )
             )
             ->setAction(Url::fromRequest()->with('object_filter', $filter)->getAbsoluteUrl())
-            ->setMetadataFields(['customvarid'])
+            ->setMetadataFields($hook->getMetadataKeys())
             ->on(
                 SearchEditor::ON_VALIDATE_COLUMN,
                 function (Condition $condition) use ($hook) {
@@ -247,7 +247,10 @@ class EventRuleController extends CompatController
                 }
             )
             ->on(Form::ON_SUBMIT, function (SearchEditor $form) use ($ruleId, $hook) {
-                $this->session->set('object_filter', (new RuleSerializer($form->getFilter()))->getJson());
+                $this->session->set(
+                    'object_filter',
+                    (new RuleSerializer($form->getFilter(), $hook->getMetadataKeys()))->getJson()
+                );
                 $this->redirectNow(Links::eventRule($ruleId)->setParam('_filterOnly'));
             })
             ->handleRequest($this->getServerRequest());

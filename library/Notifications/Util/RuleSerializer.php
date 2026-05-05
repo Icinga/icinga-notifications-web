@@ -13,14 +13,17 @@ class RuleSerializer
 {
     protected Filter\Rule $filter;
 
+    protected array $metadataKeys = [];
+
     /**
      * Create an object that can be used to serialize a rule to JSON
      *
      * @param Filter\Rule $filter
      */
-    public function __construct(Filter\Rule $filter)
+    public function __construct(Filter\Rule $filter, array $metadataKeys = [])
     {
         $this->filter = $filter;
+        $this->metadataKeys = $metadataKeys;
     }
 
     /**
@@ -92,9 +95,27 @@ class RuleSerializer
                 $condition instanceof Filter\GreaterThanOrEqual => '>=',
                 $condition instanceof Filter\LessThanOrEqual => '<=',
             },
-            'column' => $condition->getColumn(),
+            'column' => $condition->metaData()->get('jsonPath'),
             'value' => $condition->getValue(),
-            'jsonPath' => $condition->metaData()->get('jsonPath'),
+            'columnName' => $condition->getColumn(),
+            'metadata' => $this->serializeConditionMetadata($condition),
         ];
+    }
+
+    /**
+     * Serialize the metadata of a condtion into an array
+     *
+     * @param Filter\Condition $condition
+     *
+     * @return array<string, mixed>
+     */
+    protected function serializeConditionMetadata(Filter\Condition $condition): array
+    {
+        $result = [];
+        foreach ($this->metadataKeys as $key) {
+            $result[$key] = $condition->metaData()->get($key);
+        }
+
+        return $result;
     }
 }
