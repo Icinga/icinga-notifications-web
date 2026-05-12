@@ -29,19 +29,14 @@ class ScheduleForm extends CompatForm
 {
     use CsrfCounterMeasure;
 
-    /** @var ?string */
-    protected ?string $submitLabel;
+    protected ?string $submitLabel = null;
 
-    /** @var bool */
     protected bool $showRemoveButton = false;
 
-    /** @var bool */
     protected bool $showTimezoneSuggestionInput = false;
 
-    /** @var Connection */
     private Connection $db;
 
-    /** @var ?int */
     private ?int $scheduleId = null;
 
     public function __construct(Connection $db)
@@ -50,7 +45,7 @@ class ScheduleForm extends CompatForm
         $this->applyDefaultElementDecorators();
     }
 
-    public function setSubmitLabel(string $label): self
+    public function setSubmitLabel(string $label): static
     {
         $this->submitLabel = $label;
 
@@ -62,7 +57,7 @@ class ScheduleForm extends CompatForm
         return $this->submitLabel ?? $this->translate('Create Schedule');
     }
 
-    public function setShowRemoveButton(bool $state = true): self
+    public function setShowRemoveButton(bool $state = true): static
     {
         $this->showRemoveButton = $state;
 
@@ -76,7 +71,7 @@ class ScheduleForm extends CompatForm
      *
      * @return $this
      */
-    public function setShowTimezoneSuggestionInput(bool $state = true): self
+    public function setShowTimezoneSuggestionInput(bool $state = true): static
     {
         $this->showTimezoneSuggestionInput = $state;
 

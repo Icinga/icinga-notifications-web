@@ -24,7 +24,7 @@ use ipl\Web\Layout\HeaderItemLayout;
 class ObjectHeader extends BaseHtmlElement
 {
     /** @var Item */
-    protected $object;
+    protected Model $object;
 
     protected $tag = 'div';
 
@@ -38,23 +38,12 @@ class ObjectHeader extends BaseHtmlElement
         $this->object = $object;
     }
 
-    /**
-     * @throws NotImplementedError When the object type is not supported
-     */
     protected function assemble(): void
     {
-        switch (true) {
-            case $this->object instanceof Incident:
-                $renderer = new IncidentRenderer();
-
-                break;
-            case $this->object instanceof Contactgroup:
-                $renderer = new ContactgroupRenderer();
-
-                break;
-            default:
-                throw new NotImplementedError('Not implemented');
-        }
+        $renderer = match (true) {
+            $this->object instanceof Incident     => new IncidentRenderer(),
+            $this->object instanceof Contactgroup => new ContactgroupRenderer()
+        };
 
         $layout = new HeaderItemLayout($this->object, $renderer);
 

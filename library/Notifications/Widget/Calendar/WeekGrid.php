@@ -18,9 +18,9 @@ use Traversable;
 
 class WeekGrid extends BaseGrid
 {
-    protected $flowOfTime = BaseGrid::VERTICAL_FLOW_OF_TIME;
+    protected string $flowOfTime = BaseGrid::VERTICAL_FLOW_OF_TIME;
 
-    public function setGridStart(DateTime $start): BaseGrid
+    public function setGridStart(DateTime $start): static
     {
         if ($start->format('w:H:i:s') !== '1:00:00:00') {
             throw new InvalidArgumentException('Start is not a monday or not midnight');
@@ -126,7 +126,7 @@ class WeekGrid extends BaseGrid
         return $sidebar;
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->addHtml(
             $this->createHeader(),

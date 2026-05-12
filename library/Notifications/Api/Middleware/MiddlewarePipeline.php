@@ -46,7 +46,7 @@ final class MiddlewarePipeline implements RequestHandlerInterface
      *
      * @return $this
      */
-    public function pipe(MiddlewareInterface $middleware): self
+    public function pipe(MiddlewareInterface $middleware): static
     {
         $this->pipeline->enqueue($middleware);
 

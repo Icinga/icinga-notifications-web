@@ -10,11 +10,9 @@ namespace Icinga\Module\Notifications\Widget\Timeline;
  */
 class Member
 {
-    /** @var string */
-    protected $name;
+    protected string $name;
 
-    /** @var string */
-    protected $icon = 'user';
+    protected string $icon = 'user';
 
     /**
      * Create a new Member
@@ -43,7 +41,7 @@ class Member
      *
      * @return $this
      */
-    public function setIcon(string $icon): self
+    public function setIcon(string $icon): static
     {
         $this->icon = $icon;
 

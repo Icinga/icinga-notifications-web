@@ -16,14 +16,13 @@ use ipl\Web\Widget\Icon;
 
 class Entry extends TimeGrid\Entry
 {
-    /** @var Member */
-    protected $member;
+    protected ?Member $member = null;
 
     /** @var ?EntryFlyout Content of the flyoutmenu that is shown when the entry is hovered */
     protected ?EntryFlyout $flyoutContent = null;
 
     /** @var ?DateTimeZone The timezone the schedule is created in */
-    protected ?DateTimeZone $scheduleTimezone;
+    protected ?DateTimeZone $scheduleTimezone = null;
 
     /**
      * @var string A CSS class that changes the placement of the flyout
@@ -34,7 +33,7 @@ class Entry extends TimeGrid\Entry
      */
     protected string $widthClass = "wide-entry";
 
-    public function setMember(Member $member): self
+    public function setMember(Member $member): static
     {
         $this->member = $member;
 
@@ -132,8 +131,11 @@ class Entry extends TimeGrid\Entry
      *
      * @return $this
      */
-    public function calculateAndSetWidthClass(BaseGrid $grid, $mediumThreshold = 0.2, $narrowThreshold = 0.1): static
-    {
+    public function calculateAndSetWidthClass(
+        BaseGrid $grid,
+        float $mediumThreshold = 0.2,
+        float $narrowThreshold = 0.1
+    ): static {
         $totalGridDuration = $grid->getGridEnd()->getTimestamp() - $grid->getGridStart()->getTimestamp();
         $start = max($this->getStart()->getTimestamp(), $grid->getGridStart()->getTimestamp());
         $end = min($this->getEnd()->getTimestamp(), $grid->getGridEnd()->getTimestamp());

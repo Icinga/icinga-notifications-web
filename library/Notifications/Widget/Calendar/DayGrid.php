@@ -18,9 +18,9 @@ use Traversable;
 
 class DayGrid extends BaseGrid
 {
-    protected $flowOfTime = BaseGrid::VERTICAL_FLOW_OF_TIME;
+    protected string $flowOfTime = BaseGrid::VERTICAL_FLOW_OF_TIME;
 
-    public function setGridStart(DateTime $start): BaseGrid
+    public function setGridStart(DateTime $start): static
     {
         if ($start->format('H:i:s') !== '00:00:00') {
             throw new InvalidArgumentException('Start is not midnight');
@@ -117,7 +117,7 @@ class DayGrid extends BaseGrid
         return $sidebar;
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->addHtml(
             $this->createHeader(),

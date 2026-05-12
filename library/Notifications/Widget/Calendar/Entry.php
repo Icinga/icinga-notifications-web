@@ -6,11 +6,12 @@
 namespace Icinga\Module\Notifications\Widget\Calendar;
 
 use DateTimeInterface;
+use Icinga\Module\Notifications\Widget\TimeGrid;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
-use Icinga\Module\Notifications\Widget\TimeGrid;
+use LogicException;
 
 /**
  * An entry on a calendar
@@ -18,10 +19,9 @@ use Icinga\Module\Notifications\Widget\TimeGrid;
 class Entry extends TimeGrid\Entry
 {
     /** @var ?string The description */
-    protected $description;
+    protected ?string $description = null;
 
-    /** @var Attendee */
-    protected $attendee;
+    protected ?Attendee $attendee = null;
 
     /**
      * Set the description
@@ -30,7 +30,7 @@ class Entry extends TimeGrid\Entry
      *
      * @return $this
      */
-    public function setDescription(?string $description): self
+    public function setDescription(?string $description): static
     {
         $this->description = $description;
 
@@ -54,7 +54,7 @@ class Entry extends TimeGrid\Entry
      *
      * @return $this
      */
-    public function setAttendee(Attendee $attendee): self
+    public function setAttendee(Attendee $attendee): static
     {
         $this->attendee = $attendee;
 
@@ -68,6 +68,10 @@ class Entry extends TimeGrid\Entry
      */
     public function getAttendee(): Attendee
     {
+        if ($this->attendee === null) {
+            throw new LogicException('You are accessing an unset property. Please make sure to set it beforehand.');
+        }
+
         return $this->attendee;
     }
 

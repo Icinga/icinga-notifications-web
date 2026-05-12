@@ -83,28 +83,18 @@ class IncidentHistoryRenderer implements ItemRenderer
      */
     protected function getIncidentEventIcon(IncidentHistory $item): string
     {
-        switch ($item->type) {
-            case 'opened':
-                return Icons::OPENED;
-            case 'muted':
-                return Icons::MUTE;
-            case 'unmuted':
-                return Icons::UNMUTE;
-            case 'incident_severity_changed':
-                return $this->getSeverityIcon($item);
-            case 'recipient_role_changed':
-                return $this->getRoleIcon($item);
-            case 'closed':
-                return Icons::CLOSED;
-            case 'rule_matched':
-                return Icons::RULE_MATCHED;
-            case 'escalation_triggered':
-                return Icons::TRIGGERED;
-            case 'notified':
-                return Icons::NOTIFIED;
-            default:
-                return Icons::UNDEFINED;
-        }
+        return match ($item->type) {
+            'opened'                    => Icons::OPENED,
+            'muted'                     => Icons::MUTE,
+            'unmuted'                   => Icons::UNMUTE,
+            'incident_severity_changed' => $this->getSeverityIcon($item),
+            'recipient_role_changed'    => $this->getRoleIcon($item),
+            'closed'                    => Icons::CLOSED,
+            'rule_matched'              => Icons::RULE_MATCHED,
+            'escalation_triggered'      => Icons::TRIGGERED,
+            'notified'                  => Icons::NOTIFIED,
+            default                     => Icons::UNDEFINED
+        };
     }
 
     /**
@@ -116,18 +106,13 @@ class IncidentHistoryRenderer implements ItemRenderer
      */
     protected function getSeverityIcon(IncidentHistory $item): string
     {
-        switch ($item->new_severity) {
-            case 'ok':
-                return Icons::OK;
-            case 'warning':
-                return Icons::WARNING;
-            case 'err':
-                return Icons::ERROR;
-            case 'crit':
-                return Icons::CRITICAL;
-            default:
-                return Icons::UNDEFINED;
-        }
+        return match ($item->new_severity) {
+            'ok'      => Icons::OK,
+            'warning' => Icons::WARNING,
+            'err'     => Icons::ERROR,
+            'crit'    => Icons::CRITICAL,
+            default   => Icons::UNDEFINED
+        };
     }
 
     /**

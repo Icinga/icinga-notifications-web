@@ -621,6 +621,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
      * @param requestBody $requestBody
      *
      * @return void
+     *
      * @throws HttpException
      */
     private function addContactgroup(array $requestBody): void
@@ -786,6 +787,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
      * Fetch the values from the database
      *
      * @param int $contactgroupId
+     *
      * @return array
      *
      * @throws HttpNotFoundException
@@ -796,6 +798,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
             ->columns(['id', 'name'])
             ->filter(Filter::equal('id', $contactgroupId));
 
+        /** @var ?Contactgroup $group */
         $group = $query->first();
         if ($group === null) {
             throw new HttpNotFoundException('Contact group not found');

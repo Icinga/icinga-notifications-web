@@ -20,7 +20,7 @@ class MinimalGrid extends BaseGrid
     /** @var int Number of days to show in the grid */
     private const DAYS = 7;
 
-    public function setGridStart(DateTime $start): BaseGrid
+    public function setGridStart(DateTime $start): static
     {
         if ($start->format('H:i:s') !== '00:00:00') {
             throw new InvalidArgumentException('Start is not midnight');

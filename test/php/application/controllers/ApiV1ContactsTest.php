@@ -5,13 +5,9 @@
 
 namespace Tests\Icinga\Module\Notifications\Controllers;
 
-use GuzzleHttp\Client;
-use Icinga\Exception\IcingaException;
 use Icinga\Module\Notifications\Test\BaseApiV1TestCase;
 use Icinga\Web\Url;
 use ipl\Sql\Connection;
-use stdClass;
-use WebSocket\Base;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 class ApiV1ContactsTest extends BaseApiV1TestCase
@@ -243,7 +239,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_4,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -265,7 +261,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -290,7 +286,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_2,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -310,7 +306,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test (replaced)',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -355,7 +351,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -375,7 +371,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -423,7 +419,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
                 'addresses' => ['email' => 'test@example.com']
@@ -442,7 +438,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
                 'addresses' => ['email' => 'test@example.com']
@@ -461,7 +457,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'addresses' => ['email' => 'test@example.com']
@@ -480,7 +476,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -507,7 +503,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => [BaseApiV1TestCase::CONTACT_UUID_3],
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -527,7 +523,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => ['Test'],
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -547,7 +543,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => [BaseApiV1TestCase::CHANNEL_UUID],
@@ -567,7 +563,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -589,7 +585,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -610,7 +606,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -634,7 +630,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test3',
                 'username' => 'test3',
@@ -689,7 +685,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test3',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID_2
@@ -716,7 +712,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => 'invalid_uuid',
@@ -740,7 +736,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
+            json: [
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
                 'addresses' => ['email' => 'test@example.com']
@@ -759,7 +755,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
                 'addresses' => ['email' => 'test@example.com']
@@ -778,7 +774,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'addresses' => ['email' => 'test@example.com']
@@ -797,7 +793,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -823,7 +819,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/',
-            json:  [
+            json: [
                 'id' => [BaseApiV1TestCase::CONTACT_UUID_3],
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -843,7 +839,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/',
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => ['Test'],
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -863,7 +859,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/',
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => [BaseApiV1TestCase::CHANNEL_UUID],
@@ -883,7 +879,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/',
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -905,7 +901,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/',
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -926,7 +922,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts/',
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -951,7 +947,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -974,7 +970,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -996,7 +992,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -1023,7 +1019,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'username' => 'test',
@@ -1041,7 +1037,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -1064,7 +1060,7 @@ YAML;
             'POST',
             $endpoint,
             'v1/contacts',
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -1164,7 +1160,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts',
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -1190,7 +1186,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             ]
@@ -1208,7 +1204,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             ]
@@ -1226,7 +1222,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
             ]
@@ -1244,7 +1240,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -1271,7 +1267,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => [BaseApiV1TestCase::CONTACT_UUID],
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -1291,7 +1287,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => ['Test'],
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -1311,7 +1307,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
                 'default_channel' => [BaseApiV1TestCase::CHANNEL_UUID],
@@ -1331,7 +1327,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -1353,7 +1349,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -1374,7 +1370,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -1400,7 +1396,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -1420,7 +1416,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -1472,7 +1468,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -1510,7 +1506,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID_3,
@@ -1532,7 +1528,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -1555,7 +1551,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -1582,7 +1578,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             ]
@@ -1600,7 +1596,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
-            json:  [
+            json: [
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
             ]
@@ -1618,7 +1614,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
             ]
@@ -1635,7 +1631,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -1661,7 +1657,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
-            json:  [
+            json: [
                 'id' => [BaseApiV1TestCase::CONTACT_UUID_3],
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -1681,7 +1677,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => ['Test'],
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -1701,7 +1697,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => [BaseApiV1TestCase::CHANNEL_UUID],
@@ -1721,7 +1717,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -1743,7 +1739,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -1764,7 +1760,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID_3,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID_3,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -1789,7 +1785,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -1823,7 +1819,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -1857,7 +1853,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -1895,7 +1891,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -1936,7 +1932,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
@@ -1975,7 +1971,7 @@ YAML;
             'PUT',
             $endpoint,
             'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
-            json:  [
+            json: [
                 'id' => BaseApiV1TestCase::CONTACT_UUID,
                 'full_name' => 'Test',
                 'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,

@@ -17,12 +17,12 @@ use Traversable;
 class DynamicGrid extends BaseGrid
 {
     /** @var int The number of days to show */
-    protected $days = 7;
+    protected int $days = 7;
 
     /** @var ?BaseHtmlElement This grid's sidebar */
-    protected $sideBar;
+    protected ?BaseHtmlElement $sideBar = null;
 
-    public function setGridStart(DateTime $start): BaseGrid
+    public function setGridStart(DateTime $start): static
     {
         if ($start->format('H:i:s') !== '00:00:00') {
             throw new InvalidArgumentException('Start is not midnight');
@@ -38,7 +38,7 @@ class DynamicGrid extends BaseGrid
      *
      * @return $this
      */
-    public function setDays(int $days): self
+    public function setDays(int $days): static
     {
         $this->days = $days;
 
@@ -52,9 +52,9 @@ class DynamicGrid extends BaseGrid
      *
      * @return $this
      */
-    public function addToSideBar(BaseHtmlElement $row): self
+    public function addToSideBar(BaseHtmlElement $row): static
     {
-        $row->addAttributes(['class' => 'row-title']);
+        $row->addAttributes(Attributes::create(['class' => 'row-title']));
         $this->sideBar()->addHtml($row);
 
         return $this;
@@ -121,7 +121,7 @@ class DynamicGrid extends BaseGrid
         }
     }
 
-    protected function assemble()
+    protected function assemble(): void
     {
         $this->style->addFor($this, [
             '--primaryColumns' => $this->days,
