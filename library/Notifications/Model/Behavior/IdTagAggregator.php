@@ -28,15 +28,14 @@ class IdTagAggregator extends PropertyBehavior implements RewriteColumnBehavior,
         parent::__construct(['id_tags']);
     }
 
-    /** @return $this */
-    public function setQuery(Query $query)
+    public function setQuery(Query $query): static
     {
         $this->query = $query;
 
         return $this;
     }
 
-    public function rewriteColumn($column, ?string $relation = null)
+    public function rewriteColumn($column, ?string $relation = null): ?AliasedExpression
     {
         if ($column === 'id_tags') {
             $path = ($relation ?? $this->query->getModel()->getTableAlias()) . '.object_id_tag';
@@ -64,6 +63,8 @@ class IdTagAggregator extends PropertyBehavior implements RewriteColumnBehavior,
                 $this->query->getResolver()->qualifyColumn('value', $pathAlias)
             ));
         }
+
+        return null;
     }
 
     public function isSelectableColumn(string $name): bool
@@ -100,7 +101,8 @@ class IdTagAggregator extends PropertyBehavior implements RewriteColumnBehavior,
     {
     }
 
-    public function rewriteCondition(Filter\Condition $condition, $relation = null)
+    public function rewriteCondition(Filter\Condition $condition, $relation = null): null
     {
+        return null;
     }
 }
