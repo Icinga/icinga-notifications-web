@@ -18,9 +18,9 @@ use Icinga\Module\Notifications\Forms\EventRuleForm;
 use Icinga\Module\Notifications\Hook\V2\SourceHook;
 use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Model\Source;
-use Icinga\Module\Notifications\Web\Control\SearchEditor\RuleFilterSuggestions;
 use Icinga\Module\Notifications\Util\RuleSerializer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ExtraTagSuggestions;
+use Icinga\Module\Notifications\Web\Control\SearchEditor\RuleFilterSuggestions;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\Contract\Form;
@@ -254,8 +254,7 @@ class EventRuleController extends CompatController
     public function suggestAction(): void
     {
         $hook = $this->resolveSourceHook((int) $this->params->getRequired('id'));
-        $suggestions = new RuleFilterSuggestions($hook);
-        $suggestions->forRequest($this->getServerRequest());
+        $suggestions = (new RuleFilterSuggestions($hook))->forRequest($this->getServerRequest());
         $this->getDocument()->addHtml($suggestions);
     }
 

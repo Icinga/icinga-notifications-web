@@ -79,13 +79,4 @@ interface SourceHook
      * @return Traversable Columns to be suggested as `search` => `label`
      */
     public function getColumnSuggestions(string $searchTerm): Traversable;
-
-    /**
-     * Get whether a relation label should be added to the suggestion
-     *
-     * @param string $column
-     *
-     * @return bool
-     */
-    public function shouldShowRelationFor(string $column): bool;
 }
