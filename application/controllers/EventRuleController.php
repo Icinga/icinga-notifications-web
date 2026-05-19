@@ -5,6 +5,7 @@
 
 namespace Icinga\Module\Notifications\Controllers;
 
+use EmptyIterator;
 use Icinga\Application\Logger;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\Http\HttpNotFoundException;
@@ -20,7 +21,6 @@ use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Model\Source;
 use Icinga\Module\Notifications\Util\RuleSerializer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ExtraTagSuggestions;
-use Icinga\Module\Notifications\Web\Control\SearchEditor\RuleFilterSuggestions;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\Contract\Form;
@@ -31,6 +31,7 @@ use ipl\Web\Compat\CompatController;
 use ipl\Web\Control\SearchBar\SearchException;
 use ipl\Web\Control\SearchEditor;
 use ipl\Web\Filter\QueryString;
+use ipl\Web\FormElement\SearchSuggestions;
 use ipl\Web\Url;
 use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
@@ -253,7 +254,33 @@ class EventRuleController extends CompatController
     public function suggestAction(): void
     {
         $hook = $this->resolveSourceHook((int) $this->params->getRequired('id'));
-        $suggestions = (new RuleFilterSuggestions($hook))->forRequest($this->getServerRequest());
+        $requestData = SearchSuggestions::parseRequest($this->getServerRequest()) ?? [];
+
+        $type = $requestData['term']['type'] ?? null;
+        $label = $requestData['term']['label'] ?? '';
+
+        if ($type === 'column') {
+            $provider = $hook->getColumnSuggestions($label);
+        } else {
+            $column = $requestData['column'] ?? null;
+            if ($column === null || $column === SearchEditor::FAKE_COLUMN) {
+                $provider = new EmptyIterator();
+            } else {
+                /** @var Filter\Chain $searchFilter */
+                $searchFilter = QueryString::parse($requestData['searchFilter'] ?? '');
+                $provider = $hook->getValueSuggestions($column, $label, $searchFilter);
+            }
+        }
+
+        $suggestions = (new SearchSuggestions($provider))
+            ->setSearchTerm($label)
+            ->setOriginalSearchValue($requestData['term']['search'] ?? '')
+            ->setExcludeTerms($requestData['exclude'] ?? []);
+
+        if ($type === 'column') {
+            $suggestions->setGroupingCallback(fn ($x) => $x['group']);
+        }
+
         $this->getDocument()->addHtml($suggestions);
     }
 
