@@ -37,6 +37,7 @@ use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
 use JsonException;
 use Psr\Http\Message\ServerRequestInterface;
+use Throwable;
 
 class EventRuleController extends CompatController
 {
@@ -240,8 +241,20 @@ class EventRuleController extends CompatController
             ->on(
                 SearchEditor::ON_VALIDATE_COLUMN,
                 function (Condition $condition) use ($hook) {
-                    if (! $hook->isValidCondition($condition)) {
-                        throw new SearchException($this->translate('Is not a valid column'));
+                    try {
+                        $hook->assertValidCondition($condition);
+                    } catch (SearchException $e) {
+                        throw $e;
+                    } catch (Throwable $e) {
+                        Logger::error(
+                            'Source hook %s failed to validate filter condition: %s',
+                            get_class($hook),
+                            $e
+                        );
+
+                        throw new SearchException($this->translate(
+                            'Failed to validate column. Please contact your system administrator.'
+                        ));
                     }
                 }
             )

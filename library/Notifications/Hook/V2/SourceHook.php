@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Hook\V2;
 
 use ipl\Stdlib\Filter\Chain;
 use ipl\Stdlib\Filter\Condition;
+use ipl\Web\Control\SearchBar\SearchException;
 use ipl\Web\Widget\Icon;
 use Traversable;
 
@@ -27,13 +28,18 @@ interface SourceHook
     public function getSourceIcon(): Icon;
 
     /**
-     * Get whether the condition is valid
+     * Assert that the given condition is valid
+     *
+     * Implementations must throw a {@see SearchException} carrying a user-facing
+     * message if the condition is not valid.
      *
      * @param Condition $condition
      *
-     * @return bool
+     * @return void
+     *
+     * @throws SearchException If the condition is not valid
      */
-    public function isValidCondition(Condition $condition): bool;
+    public function assertValidCondition(Condition $condition): void;
 
     /**
      * Enrich the given condition with metadata like the columnLabel
