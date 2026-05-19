@@ -10,6 +10,7 @@ use Icinga\Util\Json;
 use ipl\Stdlib\Filter;
 use ipl\Stdlib\Filter\Chain;
 use ipl\Web\Filter\QueryString;
+use RuntimeException;
 
 class RuleSerializer
 {
@@ -93,6 +94,8 @@ class RuleSerializer
      *
      * @return array{op: string, attributes: list<string>, value: string}
      *       | array{op: string, attributes: list<string>, regex: string}
+     *
+     * @throws RuntimeException If the source hook did not provide a JSON path for the condition's column
      */
     protected function serializeCondition(Filter\Condition $condition): array
     {
@@ -109,9 +112,17 @@ class RuleSerializer
             ? ['regex' => $this->createRegularExpression($condition->getValue())]
             : ['value' => $condition->getValue()];
 
+        $column = $condition->getColumn();
+        if (! array_key_exists($column, $this->jsonPaths)) {
+            throw new RuntimeException(sprintf(
+                'Source hook did not provide a JSON path for column "%s"',
+                $column
+            ));
+        }
+
         return [
             'op' => $op,
-            'attributes' => $this->jsonPaths[$condition->getColumn()],
+            'attributes' => $this->jsonPaths[$column],
             ...$value,
         ];
     }
