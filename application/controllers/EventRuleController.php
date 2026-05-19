@@ -237,7 +237,7 @@ class EventRuleController extends CompatController
 
                 $this->session->set(
                     'object_filter',
-                    (new RuleSerializer($filter, $hook->getJsonPaths($this->collectColumns($filter))))->getJson()
+                    (new RuleSerializer($filter, $hook->getJsonPaths(...$this->collectColumns($filter))))->getJson()
                 );
                 $this->redirectNow(Links::eventRule($ruleId)->setParam('_filterOnly'));
             });
