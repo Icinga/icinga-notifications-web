@@ -214,6 +214,18 @@ class EventRuleController extends CompatController
                     'Failed to parse rule filter configuration. Please contact your system administrator.'
                 ));
             }
+
+            $version = $parsedFilter['version'] ?? null;
+            if ($version !== RuleSerializer::VERSION) {
+                Logger::error(
+                    'Unsupported rule filter version: %s (expected %d)',
+                    var_export($version, true),
+                    RuleSerializer::VERSION
+                );
+                throw new ConfigurationError($this->translate(
+                    'Unsupported rule filter version. Please contact your system administrator.'
+                ));
+            }
         }
 
         $editor = (new SearchEditor())

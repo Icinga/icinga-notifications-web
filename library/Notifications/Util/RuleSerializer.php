@@ -13,6 +13,8 @@ use ipl\Web\Filter\QueryString;
 
 class RuleSerializer
 {
+    public const VERSION = 2;
+
     /** @var Filter\Condition|Filter\Chain */
     protected Filter\Rule $filter;
 
@@ -40,7 +42,10 @@ class RuleSerializer
      */
     public function getJson(): string
     {
-        $result = ['qs' => QueryString::render($this->filter)];
+        $result = [
+            'version' => self::VERSION,
+            'qs'      => QueryString::render($this->filter),
+        ];
         if ($this->filter instanceof Filter\Chain) {
             $result['ast'] = $this->serializeChain($this->filter);
         } else {
