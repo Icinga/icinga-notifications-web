@@ -5,13 +5,13 @@
 
 namespace Icinga\Module\Notifications\Controllers;
 
-use Icinga\Application\Hook;
 use Icinga\Application\Logger;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
+use Icinga\Module\Notifications\Common\SourceHookLocator;
 use Icinga\Module\Notifications\Forms\EventRuleConfigElements\NotificationConfigProvider;
 use Icinga\Module\Notifications\Forms\EventRuleConfigForm;
 use Icinga\Module\Notifications\Forms\EventRuleForm;
@@ -36,7 +36,6 @@ use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
 use JsonException;
 use Psr\Http\Message\ServerRequestInterface;
-use Throwable;
 
 class EventRuleController extends CompatController
 {
@@ -280,19 +279,7 @@ class EventRuleController extends CompatController
             $this->httpNotFound($this->translate('Rule not found'));
         }
 
-        $hook = null;
-        foreach (Hook::all('Notifications/v2/Source') as $h) {
-            /** @var SourceHook $h */
-            try {
-                if ($h->getSourceType() === $source->type) {
-                    $hook = $h;
-
-                    break;
-                }
-            } catch (Throwable $e) {
-                Logger::error('Failed to load source integration %s: %s', $h::class, $e);
-            }
-        }
+        $hook = SourceHookLocator::forType($source->type);
 
         if ($hook === null) {
             $this->httpNotFound(sprintf($this->translate(

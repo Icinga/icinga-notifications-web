@@ -13,13 +13,6 @@ use Traversable;
 interface SourceHook
 {
     /**
-     * Get the type of source this integration is responsible for
-     *
-     * @return string
-     */
-    public function getSourceType(): string;
-
-    /**
      * Get the label of the source this integration is responsible for
      *
      * @return string
