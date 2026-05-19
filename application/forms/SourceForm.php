@@ -72,7 +72,6 @@ class SourceForm extends CompatForm
             [
                 'required'          => true,
                 'label'             => $this->translate('Source Type'),
-                'class'             => 'autosubmit',
             ]
         );
 
