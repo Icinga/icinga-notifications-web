@@ -8,6 +8,7 @@ namespace Icinga\Module\Notifications\Hook\V2;
 use ipl\Stdlib\Filter\Chain;
 use ipl\Stdlib\Filter\Condition;
 use ipl\Web\Control\SearchBar\SearchException;
+use ipl\Web\FormElement\SearchSuggestions;
 use ipl\Web\Widget\Icon;
 use Traversable;
 
@@ -55,7 +56,7 @@ interface SourceHook
      *
      * @param string ...$columns
      *
-     * @return array<array<string>>
+     * @return array<string, string[]>
      */
     public function getJsonPaths(string ...$columns): array;
 
@@ -66,7 +67,7 @@ interface SourceHook
      * @param string $searchTerm
      * @param Chain $searchFilter
      *
-     * @return Traversable Values to be suggested as `search` => `label`
+     * @return Traversable Provider for {@see SearchSuggestions::__construct}
      */
     public function getValueSuggestions(string $column, string $searchTerm, Chain $searchFilter): Traversable;
 
@@ -75,7 +76,7 @@ interface SourceHook
      *
      * @param string $searchTerm
      *
-     * @return Traversable Columns to be suggested as `search` => `label`
+     * @return Traversable Provider for {@see SearchSuggestions::__construct}
      */
     public function getColumnSuggestions(string $searchTerm): Traversable;
 }
