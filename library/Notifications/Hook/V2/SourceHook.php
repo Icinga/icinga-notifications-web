@@ -52,13 +52,13 @@ interface SourceHook
     public function enrichCondition(Condition $condition): void;
 
     /**
-     * Get all jsonPaths for the condition's column
+     * Get all JsonPaths for all given columns, keyed by the column
      *
-     * @param Condition $condition
+     * @param string ...$columns
      *
-     * @return array<string>
+     * @return array<array<string>>
      */
-    public function getJsonPaths(Condition $condition): array;
+    public function getJsonPaths(string ...$columns): array;
 
     /**
      * Get suggestions for a value field

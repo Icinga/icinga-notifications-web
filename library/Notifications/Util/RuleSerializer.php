@@ -9,21 +9,26 @@ use Icinga\Exception\Json\JsonEncodeException;
 use Icinga\Util\Json;
 use ipl\Stdlib\Filter;
 use ipl\Stdlib\Filter\Chain;
-use ipl\Web\Filter\Renderer;
+use ipl\Web\Filter\QueryString;
 
 class RuleSerializer
 {
     /** @var Filter\Condition|Filter\Chain */
     protected Filter\Rule $filter;
 
+    /** @var array<array<string>> JSON paths keyed by column name */
+    protected array $jsonPaths;
+
     /**
      * Create an object that can be used to serialize a rule to JSON
      *
      * @param Filter\Rule $filter
+     * @param array<array<string>> $jsonPaths JSON paths keyed by column name
      */
-    public function __construct(Filter\Rule $filter)
+    public function __construct(Filter\Rule $filter, array $jsonPaths)
     {
         $this->filter = $filter;
+        $this->jsonPaths = $jsonPaths;
     }
 
     /**
@@ -35,7 +40,7 @@ class RuleSerializer
      */
     public function getJson(): string
     {
-        $result = ['qs' => (new Renderer($this->filter))->render()];
+        $result = ['qs' => QueryString::render($this->filter)];
         if ($this->filter instanceof Filter\Chain) {
             $result['ast'] = $this->serializeChain($this->filter);
         } else {
@@ -72,6 +77,7 @@ class RuleSerializer
         }
 
         $result['rules'] = $rules;
+
         return $result;
     }
 
@@ -95,12 +101,12 @@ class RuleSerializer
         };
 
         $value = $condition instanceof Filter\Like || $condition instanceof Filter\Unlike
-            ? ['regex' => $this->preprocessValue($condition->getValue())]
+            ? ['regex' => $this->createRegularExpression($condition->getValue())]
             : ['value' => $condition->getValue()];
 
         return [
             'op' => $op,
-            'attributes' => $condition->metaData()->get('jsonPaths'),
+            'attributes' => $this->jsonPaths[$condition->getColumn()],
             ...$value,
         ];
     }
@@ -114,7 +120,7 @@ class RuleSerializer
      *
      * @return string
      */
-    protected function preprocessValue(string $value): string
+    protected function createRegularExpression(string $value): string
     {
         return '^' . str_replace('\*', '.*', preg_quote($value)) . '$';
     }

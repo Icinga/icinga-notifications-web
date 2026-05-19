@@ -231,14 +231,14 @@ class EventRuleController extends CompatController
                     if (! $hook->isValidCondition($condition)) {
                         throw new SearchException($this->translate('Is not a valid column'));
                     }
-
-                    $condition->metaData()->set('jsonPaths', $hook->getJsonPaths($condition));
                 }
             )
             ->on(Form::ON_SUBMIT, function (SearchEditor $form) use ($ruleId, $hook) {
+                $filter = $form->getFilter();
+
                 $this->session->set(
                     'object_filter',
-                    (new RuleSerializer($form->getFilter()))->getJson()
+                    (new RuleSerializer($filter, $hook->getJsonPaths($this->collectColumns($filter))))->getJson()
                 );
                 $this->redirectNow(Links::eventRule($ruleId)->setParam('_filterOnly'));
             });
@@ -357,5 +357,32 @@ class EventRuleController extends CompatController
         }
 
         return $rule;
+    }
+
+    /**
+     * Get every distinct column used by the filter
+     *
+     * @param Filter\Rule $rule
+     *
+     * @return array<string>
+     */
+    private function collectColumns(Filter\Rule $rule): array
+    {
+        $columns = [];
+        $this->walkFilterTree($rule, $columns);
+
+        return array_keys($columns);
+    }
+
+    private function walkFilterTree(Filter\Rule $rule, array &$columns): void
+    {
+        if ($rule instanceof Filter\Chain) {
+            foreach ($rule as $element) {
+                $this->walkFilterTree($element, $columns);
+            }
+        } else {
+            /** @var Condition $rule */
+            $columns[$rule->getColumn()] = true;
+        }
     }
 }
