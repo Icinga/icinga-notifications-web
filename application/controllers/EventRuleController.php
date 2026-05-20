@@ -300,8 +300,7 @@ class EventRuleController extends CompatController
 
         $suggestions = (new SearchSuggestions($provider))
             ->setSearchTerm($label)
-            ->setOriginalSearchValue($requestData['term']['search'] ?? '')
-            ->setExcludeTerms($requestData['exclude'] ?? []);
+            ->setOriginalSearchValue($requestData['term']['search'] ?? '');
 
         if ($type === 'column') {
             $suggestions->setGroupingCallback(fn ($x) => $x['group']);
