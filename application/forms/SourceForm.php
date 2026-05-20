@@ -6,10 +6,7 @@
 namespace Icinga\Module\Notifications\Forms;
 
 use DateTime;
-use Icinga\Application\Hook;
-use Icinga\Application\Logger;
 use Icinga\Exception\Http\HttpNotFoundException;
-use Icinga\Module\Notifications\Hook\V1\SourceHook;
 use Icinga\Module\Notifications\Model\Source;
 use ipl\Html\Attributes;
 use ipl\Html\HtmlDocument;
@@ -24,7 +21,6 @@ use ipl\Web\Url;
 use ipl\Web\Widget\ButtonLink;
 use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
-use Throwable;
 
 class SourceForm extends CompatForm
 {
@@ -51,22 +47,6 @@ class SourceForm extends CompatForm
     {
         $this->applyDefaultElementDecorators();
         $this->addCsrfCounterMeasure();
-
-        $types = [
-            ''                  => ' - ' . $this->translate('Please choose') . ' - ',
-            self::TYPE_GENERIC  => $this->translate('Generic')
-        ];
-
-        foreach (Hook::all('Notifications/v1/Source') as $hook) {
-            /** @var SourceHook $hook */
-            try {
-                $type = $hook->getSourceType();
-                $types[$type] = $hook->getSourceLabel();
-            } catch (Throwable $e) {
-                Logger::error('Failed to load source integration %s: %s', $hook::class, $e);
-            }
-        }
-
         $this->addHtml(new HtmlElement(
             'p',
             Attributes::create(['class' => 'description']),
@@ -74,8 +54,7 @@ class SourceForm extends CompatForm
                 'Sources are the most vital part of Icinga Notifications. They submit events that will be'
                 . ' processed to notify users about incidents. You can either configure sources that provide an'
                 . ' integration in Icinga Web or use the Generic type for sources that communicate directly with the'
-                . ' Icinga Notifications API. If you cannot choose the desired source below, consult its documentation'
-                . ' on how to integrate it.'
+                . ' Icinga Notifications API. Refer to the source\'s documentation for the correct source type.'
             ))
         ));
 
@@ -88,14 +67,11 @@ class SourceForm extends CompatForm
             ]
         );
         $this->addElement(
-            'select',
+            'text',
             'type',
             [
                 'required'          => true,
                 'label'             => $this->translate('Source Type'),
-                'class'             => 'autosubmit',
-                'options'           => $types,
-                'disabledOptions'   => ['']
             ]
         );
 
