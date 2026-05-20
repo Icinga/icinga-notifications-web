@@ -219,7 +219,8 @@ class EventRuleController extends CompatController
             $version = $parsedFilter['version'] ?? null;
             if ($version !== RuleSerializer::VERSION) {
                 Logger::error(
-                    'Unsupported rule filter version: %s (expected %d)',
+                    'Cannot load filter for rule with id %d: filter version %s is not supported (expected %d)',
+                    $ruleId,
                     var_export($version, true),
                     RuleSerializer::VERSION
                 );
