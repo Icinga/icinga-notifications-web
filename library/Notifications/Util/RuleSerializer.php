@@ -14,19 +14,20 @@ use RuntimeException;
 
 class RuleSerializer
 {
+    /** @var int The filterr version */
     public const VERSION = 2;
 
     /** @var Filter\Condition|Filter\Chain */
     protected Filter\Rule $filter;
 
-    /** @var array<array<string>> JSON paths keyed by column name */
+    /** @var array<string, string[]> JSON paths keyed by column name */
     protected array $jsonPaths;
 
     /**
      * Create an object that can be used to serialize a rule to JSON
      *
      * @param Filter\Rule $filter
-     * @param array<array<string>> $jsonPaths JSON paths keyed by column name
+     * @param array<string, string[]> $jsonPaths JSON paths keyed by column name
      */
     public function __construct(Filter\Rule $filter, array $jsonPaths)
     {
