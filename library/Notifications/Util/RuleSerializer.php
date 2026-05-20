@@ -113,7 +113,11 @@ class RuleSerializer
             : ['value' => $condition->getValue()];
 
         $column = $condition->getColumn();
-        if (! array_key_exists($column, $this->jsonPaths)) {
+        if (
+            ! isset($this->jsonPaths[$column])
+            || ! is_array($this->jsonPaths[$column])
+            || empty($this->jsonPaths[$column])
+        ) {
             throw new RuntimeException(sprintf(
                 'Source hook did not provide a JSON path for column "%s"',
                 $column
