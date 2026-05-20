@@ -14,7 +14,7 @@ use RuntimeException;
 
 class RuleSerializer
 {
-    /** @var int The filterr version */
+    /** @var int The filter version */
     public const VERSION = 2;
 
     /** @var Filter\Condition|Filter\Chain */
