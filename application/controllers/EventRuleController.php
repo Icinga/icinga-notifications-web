@@ -221,7 +221,7 @@ class EventRuleController extends CompatController
                 Logger::error(
                     'Cannot load filter for rule with id %d: filter version %s is not supported (expected %d)',
                     $ruleId,
-                    var_export($version, true),
+                    $version,
                     RuleSerializer::VERSION
                 );
                 throw new ConfigurationError($this->translate(
