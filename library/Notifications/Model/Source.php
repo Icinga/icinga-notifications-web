@@ -6,9 +6,9 @@
 namespace Icinga\Module\Notifications\Model;
 
 use DateTime;
-use Icinga\Application\Hook;
 use Icinga\Application\Logger;
-use Icinga\Module\Notifications\Hook\V1\SourceHook;
+use Icinga\Module\Notifications\Common\SourceHookLocator;
+use Icinga\Module\Notifications\Hook\V2\SourceHook;
 use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
@@ -103,22 +103,17 @@ class Source extends Model
         // Fallback, in case an integration is inactive or missing
         $icon = new Icon('share-nodes');
 
-        foreach (Hook::all('Notifications/v1/Source') as $hook) {
+        $hook = SourceHookLocator::forType($this->type);
+        if ($hook !== null) {
             /** @var SourceHook $hook */
             try {
-                if ($hook->getSourceType() === $this->type) {
-                    $icon = $hook->getSourceIcon();
-
-                    break;
-                }
+                $icon = $hook->getSourceIcon();
             } catch (Throwable $e) {
                 Logger::error(
                     'Failed to retrieve source icon for source type "%s": %s',
                     $this->type,
                     $e
                 );
-
-                break;
             }
         }
 
