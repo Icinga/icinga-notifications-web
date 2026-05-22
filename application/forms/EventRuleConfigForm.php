@@ -177,13 +177,15 @@ class EventRuleConfigForm extends CompatForm
     /**
      * Get the element to update in case the object filter of the rule is changed
      *
-     * @param string $newFilter
+     * @param ?string $newFilter
      *
      * @return ValidHtml
      */
-    public function prepareObjectFilterUpdate(string $newFilter): ValidHtml
+    public function prepareObjectFilterUpdate(?string $newFilter): ValidHtml
     {
-        $this->populate(['object_filter' => $newFilter]);
+        if ($newFilter !== null) {
+            $this->populate(['object_filter' => $newFilter]);
+        }
 
         return new HtmlElement(
             'div',
