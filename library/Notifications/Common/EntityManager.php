@@ -178,7 +178,7 @@ class EntityManager
     /**
      * Insert or update the given model's own row
      *
-     * @param Model    $model
+     * @param Model $model
      * @param Resolver $resolver
      *
      * @return void
@@ -246,7 +246,7 @@ class EntityManager
      * and invoking their `persist()` here would double-convert values.
      *
      * @param Behaviors $behaviors
-     * @param Model     $model
+     * @param Model $model
      *
      * @return void
      */
@@ -266,7 +266,7 @@ class EntityManager
      * (e.g. on `lastInsertId`), and invoking their `retrieve()` here would double-convert values.
      *
      * @param Behaviors $behaviors
-     * @param Model     $model
+     * @param Model $model
      *
      * @return void
      */
@@ -282,9 +282,9 @@ class EntityManager
     /**
      * Build the column => value data for the given model, converting values for persistence
      *
-     * @param Model         $model
-     * @param Behaviors     $behaviors
-     * @param ?string[]     $only Restrict to these property names (e.g. the dirty ones), or null for all
+     * @param Model $model
+     * @param Behaviors $behaviors
+     * @param ?string[] $only Restrict to these property names (e.g. the dirty ones), or null for all
      *
      * @return array<string, mixed>
      */
@@ -311,7 +311,7 @@ class EntityManager
     /**
      * Build a WHERE scope matching the given model by its primary key, converting values for persistence
      *
-     * @param Model     $model
+     * @param Model $model
      * @param Behaviors $behaviors
      *
      * @return ?array<string, mixed> Null if the model has no value for (part of) its primary key
@@ -335,8 +335,8 @@ class EntityManager
      * Write the link row connecting the given source and target through the relation's junction table
      *
      * @param BelongsToMany $relation
-     * @param Model         $source
-     * @param Model         $target
+     * @param Model $source
+     * @param Model $target
      *
      * @return void
      */
