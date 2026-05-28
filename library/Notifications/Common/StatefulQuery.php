@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Common;
 
 use Generator;
 use ipl\Orm\Query;
+use ipl\Stdlib\Seq;
 
 /**
  * Ensures models loaded from the db are not marked as new
@@ -22,11 +23,6 @@ class StatefulQuery extends Query
      */
     public function yieldResults(): Generator
     {
-        /** @var Model $result */
-        foreach (parent::yieldResults() as $result) {
-            $result->setNew(false);
-
-            yield $result;
-        }
+        yield from Seq::map(parent::yieldResults(), fn (Model $model) => $model->setNew(false));
     }
 }

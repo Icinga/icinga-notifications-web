@@ -255,11 +255,7 @@ class EntityManagerTest extends TestCase
         $workshop->name = 'Acme';
         $this->em()->save($workshop);
 
-        $loaded = null;
-        foreach (Workshop::on($this->db)->execute() as $row) {
-            $loaded = $row;
-            break;
-        }
+        $loaded = Workshop::on($this->db)->first();
 
         $this->assertNotNull($loaded);
         $this->assertFalse($loaded->isNew(), 'A hydrated model is not new');
