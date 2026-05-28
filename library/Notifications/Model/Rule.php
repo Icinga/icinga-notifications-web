@@ -7,7 +7,6 @@ namespace Icinga\Module\Notifications\Model;
 
 use DateTime;
 use Icinga\Module\Notifications\Common\Model;
-use Icinga\Module\Notifications\Model\Behavior\ChangedAt;
 use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
@@ -76,7 +75,6 @@ class Rule extends Model
     public function createBehaviors(Behaviors $behaviors): void
     {
         $behaviors->add(new MillisecondTimestamp(['changed_at']));
-        $behaviors->add(new ChangedAt('changed_at'));
         $behaviors->add(new BoolCast(['deleted']));
     }
 

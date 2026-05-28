@@ -7,7 +7,6 @@ use DateTimeInterface;
 use Exception;
 use Icinga\Module\Notifications\Common\EntityManager;
 use Icinga\Module\Notifications\Common\Model;
-use Icinga\Module\Notifications\Model\Behavior\ChangedAt;
 use ipl\Orm\Behavior\Binary;
 use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
@@ -109,9 +108,10 @@ class Flag extends Model
 }
 
 /**
-// * Test double for {@see ChangedAt} that returns deterministic, monotonically increasing timestamps
+ * Test double for {@see EntityManager} that returns deterministic, monotonically increasing
+ * timestamps from {@see now()}, so `changed_at`-stamping assertions can use exact values.
  */
-class FixedChangedAt extends ChangedAt
+class TickingEntityManager extends EntityManager
 {
     /** @var int Seconds since the epoch returned by the next call to {@see now()}. Reset per test. */
     public static int $tick = 0;
@@ -141,7 +141,6 @@ class Stamped extends Model
 
     public function createBehaviors(Behaviors $behaviors)
     {
-        $behaviors->add(new FixedChangedAt());
         $behaviors->add(new MillisecondTimestamp(['changed_at']));
     }
 }
@@ -244,12 +243,12 @@ class EntityManagerTest extends TestCase
 
         $this->db = $db;
 
-        FixedChangedAt::$tick = 0;
+        TickingEntityManager::$tick = 0;
     }
 
     protected function em(): EntityManager
     {
-        return new EntityManager($this->db);
+        return new TickingEntityManager($this->db);
     }
 
     /**
