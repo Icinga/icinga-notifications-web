@@ -187,6 +187,10 @@ class EntityManager
     {
         $behaviors = $resolver->getBehaviors($model);
 
+        if (! $model->isNew() && ! $model->isDirty()) {
+            return;
+        }
+
         // Run non-property persist behaviors first so they can set/change properties (e.g. auto-timestamps)
         // before the row is built. PropertyBehaviors are intentionally skipped here — their per-value
         // conversion is applied below by extract() via persistProperty, and applying both would double-convert.
@@ -209,10 +213,6 @@ class EntityManager
             $model->setNew(false);
             $model->markClean();
 
-            return;
-        }
-
-        if (! $model->isDirty()) {
             return;
         }
 
