@@ -242,7 +242,7 @@ class EntityManager
     /**
      * Invoke non-property {@see PersistBehavior}s on the given model
      *
-     * PropertyBehaviors are skipped: their per-value `persistProperty()` is applied during {@see extract()},
+     * PropertyBehaviors are skipped: their per-value `persistProperty()` is applied during {@see static::extract()},
      * and invoking their `persist()` here would double-convert values.
      *
      * @param Behaviors $behaviors
