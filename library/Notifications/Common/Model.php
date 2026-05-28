@@ -146,6 +146,7 @@ abstract class Model extends \ipl\Orm\Model
                 if ($hadValue) {
                     $this->originalValues[$key] = $original;
                 }
+
                 $this->dirtyProperties[$key] = true;
             }
         }

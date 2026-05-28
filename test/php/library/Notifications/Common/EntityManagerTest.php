@@ -475,6 +475,17 @@ class EntityManagerTest extends TestCase
         $this->assertSame(1, $stamped->changed_at->getTimestamp());
     }
 
+    public function testChangedAtIsNotChangedIfRowHasNoNewChanges()
+    {
+        $stamped = new Stamped();
+        $stamped->name = 'Widget';
+        $this->em()->save($stamped); // changed_at -> 1s
+        $this->assertSame(1, $stamped->changed_at->getTimestamp());
+        $stamped->name = 'Widget';
+        $this->em()->save($stamped);
+        $this->assertSame(1, $stamped->changed_at->getTimestamp());
+        $this->assertCount(1, $this->rows('SELECT * FROM stamped'));
+    }
     public function testBinaryKeyRoundTripsOnInsert()
     {
         $id = hex2bin('deadbeefcafebabe1234567890abcdef');

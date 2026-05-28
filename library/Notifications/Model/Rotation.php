@@ -95,7 +95,7 @@ class Rotation extends Model
         ]));
         $behaviors->add(new BoolCast(['deleted']));
         $behaviors->add(new class implements RetrieveBehavior {
-            public function retrieve(Model $model): void
+            public function retrieve(\ipl\Orm\Model $model): void
             {
                 /** @var Rotation $model */
                 if (isset($model->options) && is_string($model->options)) {
