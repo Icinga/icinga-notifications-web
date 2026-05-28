@@ -240,6 +240,7 @@ class EntityManagerTest extends TestCase
     public function testInsertAssignsGeneratedKeyAndMarksNotNew()
     {
         $workshop = new Workshop();
+        $this->assertTrue($workshop->isNew());
         $workshop->name = 'Acme';
 
         $this->em()->save($workshop);
