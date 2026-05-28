@@ -155,7 +155,7 @@ abstract class Model extends \ipl\Orm\Model
 
     public static function on(Connection $db)
     {
-        return new StatefulQuery()
+        return (new StatefulQuery())
             ->setDb($db)
             ->setModel(new static());
     }
