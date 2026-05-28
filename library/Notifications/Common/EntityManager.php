@@ -89,6 +89,7 @@ class EntityManager
 
         $this->db->delete($model->getTableName(), $scope);
         $model->setNew(true);
+        $model->markClean();
     }
 
     /**
