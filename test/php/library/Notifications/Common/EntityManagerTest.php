@@ -202,6 +202,24 @@ class Charm extends Model
     }
 }
 
+class Pairing extends Model
+{
+    public function getTableName()
+    {
+        return 'pairing';
+    }
+
+    public function getKeyName(): array
+    {
+        return ['left_id', 'right_id'];
+    }
+
+    public function getColumns()
+    {
+        return ['left_id', 'right_id', 'label'];
+    }
+}
+
 class EntityManagerTest extends TestCase
 {
     /** @var Connection */
@@ -219,6 +237,9 @@ class EntityManagerTest extends TestCase
             . 'CREATE TABLE stamped (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR NOT NULL, changed_at INTEGER);'
             . 'CREATE TABLE trinket (id BLOB PRIMARY KEY, name VARCHAR NOT NULL);'
             . 'CREATE TABLE charm (id INTEGER PRIMARY KEY AUTOINCREMENT, trinket_id BLOB NOT NULL, label VARCHAR NOT NULL);'
+            . 'CREATE TABLE pairing ('
+            . 'left_id INTEGER NOT NULL, right_id INTEGER NOT NULL, label VARCHAR NOT NULL,'
+            . ' PRIMARY KEY (left_id, right_id));'
         );
 
         $this->db = $db;
@@ -601,6 +622,92 @@ class EntityManagerTest extends TestCase
             [['trinket_id' => $id, 'label' => 'rune']],
             $this->rows('SELECT trinket_id, label FROM charm'),
             'The child row carries the parent binary key'
+        );
+    }
+
+    public function testSaveAfterDeleteReInserts()
+    {
+        $w = new Workshop();
+        $w->name = 'Acme';
+        $this->em()->save($w);
+        $this->em()->delete($w);
+
+        $this->assertTrue($w->isNew(), 'Deleted model is treated as new again');
+        $this->assertFalse($w->isDirty(), 'Dirty state was cleared');
+
+        $w->name = 'Acme 2';
+        $this->em()->save($w);
+        $this->assertSame([['name' => 'Acme 2']], $this->rows('SELECT name FROM workshop'));
+    }
+
+    public function testCompoundKeyUpdateMatchesByAllKeyColumns()
+    {
+        // Two rows sharing left_id but differing in right_id ensure the UPDATE's WHERE has to
+        // include both key columns to target only one of them.
+        $a = new Pairing();
+        $a->left_id = 1;
+        $a->right_id = 1;
+        $a->label = 'A';
+        $this->em()->save($a);
+
+        $b = new Pairing();
+        $b->left_id = 1;
+        $b->right_id = 2;
+        $b->label = 'B';
+        $this->em()->save($b);
+
+        $b->label = 'B2';
+        $this->em()->save($b);
+
+        $this->assertSame(
+            [
+                ['left_id' => 1, 'right_id' => 1, 'label' => 'A'],
+                ['left_id' => 1, 'right_id' => 2, 'label' => 'B2'],
+            ],
+            $this->rows('SELECT left_id, right_id, label FROM pairing ORDER BY right_id'),
+            'Only the row matching all key columns was updated'
+        );
+    }
+
+    public function testCompoundKeyDeleteMatchesByAllKeyColumns()
+    {
+        $a = new Pairing();
+        $a->left_id = 1;
+        $a->right_id = 1;
+        $a->label = 'A';
+        $this->em()->save($a);
+
+        $b = new Pairing();
+        $b->left_id = 1;
+        $b->right_id = 2;
+        $b->label = 'B';
+        $this->em()->save($b);
+
+        $this->em()->delete($b);
+
+        $this->assertSame(
+            [['left_id' => 1, 'right_id' => 1, 'label' => 'A']],
+            $this->rows('SELECT left_id, right_id, label FROM pairing'),
+            'Only the row matching all key columns was deleted'
+        );
+    }
+
+    public function testCompoundKeyInsertWritesBothKeyColumnsAndMarksClean()
+    {
+        $p = new Pairing();
+        $p->left_id = 7;
+        $p->right_id = 9;
+        $p->label = 'A';
+
+        $this->em()->save($p);
+
+        $this->assertFalse($p->isNew(), 'A saved compound-key model is no longer new');
+        $this->assertFalse($p->isDirty());
+        $this->assertSame(7, $p->left_id, 'left_id was not overwritten by a lastInsertId fetch');
+        $this->assertSame(9, $p->right_id, 'right_id was not overwritten by a lastInsertId fetch');
+        $this->assertSame(
+            [['left_id' => 7, 'right_id' => 9, 'label' => 'A']],
+            $this->rows('SELECT left_id, right_id, label FROM pairing')
         );
     }
 }
