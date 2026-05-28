@@ -5,10 +5,8 @@
 
 namespace Icinga\Module\Notifications\Common;
 
+use DateTime;
 use ipl\Orm\Behaviors;
-use ipl\Orm\Contract\PersistBehavior;
-use ipl\Orm\Contract\PropertyBehavior;
-use ipl\Orm\Contract\RetrieveBehavior;
 use ipl\Orm\Query;
 use ipl\Orm\Relation\BelongsTo;
 use ipl\Orm\Relation\BelongsToMany;
@@ -191,10 +189,10 @@ class EntityManager
             return;
         }
 
-        // Run non-property persist behaviors first so they can set/change properties (e.g. auto-timestamps)
-        // before the row is built. PropertyBehaviors are intentionally skipped here — their per-value
-        // conversion is applied below by extract() via persistProperty, and applying both would double-convert.
-        $this->applyPersistBehaviors($behaviors, $model);
+        // Schema-wide convention: any model declaring a `changed_at` column gets it stamped on
+        // every save. Done here (rather than as a behavior) so individual models don't have to
+        // opt in and so the rule lives in one place.
+        $this->stampChangedAt($model);
 
         if ($model->isNew()) {
             $this->db->insert($model->getTableName(), $this->extract($model, $behaviors));
@@ -207,8 +205,6 @@ class EntityManager
                     $model->$keyName = $behaviors->retrieveProperty($id, $keyName);
                 }
             }
-
-            $this->applyRetrieveBehaviors($behaviors, $model);
 
             $model->setNew(false);
             $model->markClean();
@@ -234,49 +230,35 @@ class EntityManager
 
         $this->db->update($model->getTableName(), $data, $scope);
 
-        $this->applyRetrieveBehaviors($behaviors, $model);
-
         $model->markClean();
     }
 
     /**
-     * Invoke non-property {@see PersistBehavior}s on the given model
+     * Stamp the model's `changed_at` column with the current time if it has one
      *
-     * PropertyBehaviors are skipped: their per-value `persistProperty()` is applied during {@see static::extract()},
-     * and invoking their `persist()` here would double-convert values.
+     * Schema-wide convention; not implemented as a behavior so individual models don't have to opt in.
      *
-     * @param Behaviors $behaviors
      * @param Model $model
      *
      * @return void
      */
-    protected function applyPersistBehaviors(Behaviors $behaviors, Model $model): void
+    protected function stampChangedAt(Model $model): void
     {
-        foreach ($behaviors as $behavior) {
-            if ($behavior instanceof PersistBehavior && ! $behavior instanceof PropertyBehavior) {
-                $behavior->persist($model);
-            }
+        if (isset($this->writableColumns($model)['changed_at'])) {
+            $model->changed_at = $this->now();
         }
     }
 
     /**
-     * Invoke non-property {@see RetrieveBehavior}s on the given model
+     * Get the current time used for {@see stampChangedAt()}
      *
-     * PropertyBehaviors are skipped: their per-value `retrieveProperty()` is applied targetedly
-     * (e.g. on `lastInsertId`), and invoking their `retrieve()` here would double-convert values.
+     * Override in a subclass to inject a fixed clock for testing.
      *
-     * @param Behaviors $behaviors
-     * @param Model $model
-     *
-     * @return void
+     * @return DateTime
      */
-    protected function applyRetrieveBehaviors(Behaviors $behaviors, Model $model): void
+    protected function now(): DateTime
     {
-        foreach ($behaviors as $behavior) {
-            if ($behavior instanceof RetrieveBehavior && ! $behavior instanceof PropertyBehavior) {
-                $behavior->retrieve($model);
-            }
-        }
+        return new DateTime();
     }
 
     /**
