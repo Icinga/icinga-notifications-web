@@ -9,7 +9,6 @@ use ipl\Orm\Behaviors;
 use ipl\Orm\Contract\PersistBehavior;
 use ipl\Orm\Contract\PropertyBehavior;
 use ipl\Orm\Contract\RetrieveBehavior;
-use ipl\Orm\Model;
 use ipl\Orm\Query;
 use ipl\Orm\Relation\BelongsTo;
 use ipl\Orm\Relation\BelongsToMany;
@@ -89,6 +88,7 @@ class EntityManager
         }
 
         $this->db->delete($model->getTableName(), $scope);
+        $model->setNew(true);
     }
 
     /**

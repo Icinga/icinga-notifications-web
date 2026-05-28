@@ -7,12 +7,13 @@ namespace Icinga\Module\Notifications\Model;
 
 use DateTime;
 use Icinga\Application\Logger;
+use Icinga\Module\Notifications\Common\Model;
 use Icinga\Module\Notifications\Common\SourceHookLocator;
 use Icinga\Module\Notifications\Hook\V2\SourceHook;
+use Icinga\Module\Notifications\Model\Behavior\ChangedAt;
 use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
-use ipl\Orm\Model;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
 use ipl\Web\Widget\Icon;
@@ -82,6 +83,7 @@ class Source extends Model
     public function createBehaviors(Behaviors $behaviors): void
     {
         $behaviors->add(new MillisecondTimestamp(['changed_at']));
+        $behaviors->add(new ChangedAt('changed_at'));
         $behaviors->add(new BoolCast(['deleted', 'locked']));
     }
 

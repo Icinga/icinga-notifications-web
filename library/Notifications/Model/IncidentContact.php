@@ -5,7 +5,7 @@
 
 namespace Icinga\Module\Notifications\Model;
 
-use ipl\Orm\Model;
+use Icinga\Module\Notifications\Common\Model;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
 
