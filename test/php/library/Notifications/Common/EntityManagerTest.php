@@ -273,7 +273,7 @@ class EntityManagerTest extends TestCase
         $this->em()->save($gadget);
 
         $gadget->name = 'Wrench';
-        $this->assertSame(['name'], $gadget->getDirty(), 'Only the changed column is tracked as dirty');
+        $this->assertSame(['name' => true], $gadget->getDirtyMap(), 'Only the changed column is tracked as dirty');
 
         $this->em()->save($gadget);
 
@@ -575,9 +575,9 @@ class EntityManagerTest extends TestCase
         // Replace the (still-Closure) relation without first triggering its loader.
         $loaded->gadgets = [new Gadget()];
 
-        $this->assertContains(
+        $this->assertArrayHasKey(
             'gadgets',
-            $loaded->getDirty(),
+            $loaded->getDirtyMap(),
             'Reassigning a relation marks it dirty so saveGraph cascades the new value'
         );
     }

@@ -19,9 +19,6 @@ abstract class Model extends \ipl\Orm\Model
     /** @var array<string, true> Names of properties changed since the model was loaded */
     private array $dirtyProperties = [];
 
-    /** @var array<string, mixed> Original values of changed properties, indexed by property name */
-    private array $originalValues = [];
-
     /**
      * Whether a getter for a Closure-backed property is currently resolving.
      *
@@ -76,31 +73,13 @@ abstract class Model extends \ipl\Orm\Model
     }
 
     /**
-     * Get the names of all properties changed since the entity was loaded
+     * Get the names of all properties changed since the entity was loaded as a set keyed by name
      *
-     * @return string[]
+     * @return array<string, true>
      */
-    public function getDirty(): array
+    public function getDirtyMap(): array
     {
-        return array_keys($this->dirtyProperties);
-    }
-
-    /**
-     * Get the original (pre-change) value of the given property
-     *
-     * Returns the current value if the property has not been changed.
-     *
-     * @param string $property
-     *
-     * @return mixed
-     */
-    public function getOriginal(string $property): mixed
-    {
-        if (array_key_exists($property, $this->originalValues)) {
-            return $this->originalValues[$property];
-        }
-
-        return $this->getProperty($property);
+        return $this->dirtyProperties;
     }
 
     /**
@@ -111,7 +90,6 @@ abstract class Model extends \ipl\Orm\Model
     public function markClean(): static
     {
         $this->dirtyProperties = [];
-        $this->originalValues = [];
 
         return $this;
     }
@@ -143,10 +121,6 @@ abstract class Model extends \ipl\Orm\Model
             }
 
             if (! $hadValue || $original !== $value) {
-                if ($hadValue) {
-                    $this->originalValues[$key] = $original;
-                }
-
                 $this->dirtyProperties[$key] = true;
             }
         }
