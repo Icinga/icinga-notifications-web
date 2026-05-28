@@ -32,7 +32,7 @@ use RuntimeException;
  * ```
  *
  * Whether {@see save()} inserts or updates is decided by {@see Model::isNew()}. Updates only write the
- * properties changed since the model was loaded ({@see Model::getDirty()}). Set relations are cascaded
+ * properties changed since the model was loaded ({@see Model::getDirtyMap()}). Set relations are cascaded
  * (parents first, then the model, then children and many-to-many links), all within a single transaction.
  */
 class EntityManager
@@ -109,7 +109,7 @@ class EntityManager
         // For loaded models, only relations the caller actually (re)assigned are cascaded.
         $set = iterator_to_array($model);
         $isNew = $model->isNew();
-        $dirtyRelations = $isNew ? [] : array_fill_keys($model->getDirty(), true);
+        $dirtyRelations = $isNew ? [] : $model->getDirtyMap();
         $shouldCascade = function (string $name) use ($set, $isNew, $dirtyRelations): bool {
             return isset($set[$name]) && ($isNew || isset($dirtyRelations[$name]));
         };
@@ -216,7 +216,7 @@ class EntityManager
             return;
         }
 
-        $data = $this->extract($model, $behaviors, $model->getDirty());
+        $data = $this->extract($model, $behaviors, $model->getDirtyMap());
         if (empty($data)) {
             // Only relations changed; there is nothing to update on this row
             $model->markClean();
@@ -284,7 +284,7 @@ class EntityManager
      *
      * @param Model $model
      * @param Behaviors $behaviors
-     * @param ?string[] $only Restrict to these property names (e.g. the dirty ones), or null for all
+     * @param ?array<string, true> $only Restrict to this set of property names (e.g. the dirty map), or null for all
      *
      * @return array<string, mixed>
      */
@@ -298,7 +298,7 @@ class EntityManager
                 continue;
             }
 
-            if ($only !== null && ! in_array($property, $only, true)) {
+            if ($only !== null && ! isset($only[$property])) {
                 continue;
             }
 
