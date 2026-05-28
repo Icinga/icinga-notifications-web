@@ -5,10 +5,10 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use Icinga\Module\Notifications\Common\Model;
 use ipl\Orm\Behavior\Binary;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Contract\RewriteFilterBehavior;
-use ipl\Orm\Model;
 use ipl\Orm\Relations;
 use ipl\Stdlib\Filter;
 use ipl\Stdlib\Filter\Condition;

@@ -522,6 +522,51 @@ class EntityManagerTest extends TestCase
         $this->assertSame([], $this->rows('SELECT id FROM trinket'));
     }
 
+    public function testReadingALazyRelationOnLoadedModelDoesNotMarkItDirty()
+    {
+        $workshop = new Workshop();
+        $workshop->name = 'Acme';
+        $this->em()->save($workshop);
+
+        $loaded = null;
+        foreach (Workshop::on($this->db)->execute() as $row) {
+            $loaded = $row;
+            break;
+        }
+
+        // Without the re-entrance guard in setProperty this would recurse forever, because
+        // PropertiesWithDefaults::getProperty() memoizes the resolved Closure via setProperty().
+        $relation = $loaded->gadgets;
+
+        $this->assertNotNull($relation);
+        $this->assertFalse(
+            $loaded->isDirty(),
+            'Reading a lazily-loaded relation must not mark the model dirty'
+        );
+    }
+
+    public function testAssigningALazyRelationOnLoadedModelMarksItDirtyWithoutResolvingIt()
+    {
+        $workshop = new Workshop();
+        $workshop->name = 'Acme';
+        $this->em()->save($workshop);
+
+        $loaded = null;
+        foreach (Workshop::on($this->db)->execute() as $row) {
+            $loaded = $row;
+            break;
+        }
+
+        // Replace the (still-Closure) relation without first triggering its loader.
+        $loaded->gadgets = [new Gadget()];
+
+        $this->assertContains(
+            'gadgets',
+            $loaded->getDirty(),
+            'Reassigning a relation marks it dirty so saveGraph cascades the new value'
+        );
+    }
+
     public function testBinaryParentKeyIsCopiedIntoChildOnCascade()
     {
         $id = hex2bin('deadbeefcafebabe1234567890abcdef');

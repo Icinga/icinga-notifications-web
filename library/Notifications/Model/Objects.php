@@ -5,12 +5,12 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use Icinga\Module\Notifications\Common\Model;
 use Icinga\Module\Notifications\Hook\ObjectsRendererHook;
 use Icinga\Module\Notifications\Model\Behavior\IdTagAggregator;
 use ipl\Html\ValidHtml;
 use ipl\Orm\Behavior\Binary;
 use ipl\Orm\Behaviors;
-use ipl\Orm\Model;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
 

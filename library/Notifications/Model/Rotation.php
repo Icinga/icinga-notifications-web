@@ -7,13 +7,13 @@ namespace Icinga\Module\Notifications\Model;
 
 use DateTime;
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Common\Model;
 use Icinga\Module\Notifications\Forms\RotationConfigForm;
 use Icinga\Util\Json;
 use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Contract\RetrieveBehavior;
-use ipl\Orm\Model;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
 use ipl\Sql\Expression;

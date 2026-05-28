@@ -23,6 +23,17 @@ abstract class Model extends \ipl\Orm\Model
     private array $originalValues = [];
 
     /**
+     * Whether a getter for a Closure-backed property is currently resolving.
+     *
+     * {@see \ipl\Orm\Common\PropertiesWithDefaults::getProperty()} memoizes a resolved Closure by
+     * calling {@see setProperty()}. Without this guard, that internal write would be misread as a
+     * user-driven change and (worse) re-enter {@see setProperty()} recursively.
+     *
+     * @var bool
+     */
+    private bool $resolvingProperty = false;
+
+    /**
      * Get whether this entity is new, i.e. not yet persisted to the database
      *
      * @return bool
@@ -105,12 +116,36 @@ abstract class Model extends \ipl\Orm\Model
         return $this;
     }
 
+    protected function getProperty(string $key): mixed
+    {
+        $wasResolving = $this->resolvingProperty;
+        $this->resolvingProperty = true;
+        try {
+            return parent::getProperty($key);
+        } finally {
+            $this->resolvingProperty = $wasResolving;
+        }
+    }
+
     protected function setProperty(string $key, mixed $value): static
     {
-        if (! $this->isNew && ! isset($this->dirtyProperties[$key])) {
-            $original = $this->hasProperty($key) ? $this->offsetGet($key) : null;
-            if ($original !== $value) {
-                $this->originalValues[$key] = $original;
+        if (! $this->resolvingProperty && ! $this->isNew && ! isset($this->dirtyProperties[$key])) {
+            // Resolve the prior value via the trait's iterator, which skips Closure-valued properties.
+            // This avoids triggering lazy relation loaders just to capture dirty-tracking state.
+            $hadValue = false;
+            $original = null;
+            foreach ($this as $k => $v) {
+                if ($k === $key) {
+                    $hadValue = true;
+                    $original = $v;
+                    break;
+                }
+            }
+
+            if (! $hadValue || $original !== $value) {
+                if ($hadValue) {
+                    $this->originalValues[$key] = $original;
+                }
                 $this->dirtyProperties[$key] = true;
             }
         }
