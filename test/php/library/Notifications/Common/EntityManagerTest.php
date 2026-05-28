@@ -222,6 +222,8 @@ class EntityManagerTest extends TestCase
         );
 
         $this->db = $db;
+
+        FixedChangedAt::$tick = 0;
     }
 
     protected function em(): EntityManager
@@ -430,8 +432,6 @@ class EntityManagerTest extends TestCase
 
     public function testChangedAtIsStampedOnInsert()
     {
-        FixedChangedAt::$tick = 0;
-
         $stamped = new Stamped();
         $stamped->name = 'Widget';
         $this->em()->save($stamped);
@@ -451,8 +451,6 @@ class EntityManagerTest extends TestCase
 
     public function testChangedAtIsStampedOnUpdate()
     {
-        FixedChangedAt::$tick = 0;
-
         $stamped = new Stamped();
         $stamped->name = 'Widget';
         $this->em()->save($stamped); // changed_at -> 1s
@@ -466,6 +464,15 @@ class EntityManagerTest extends TestCase
             $this->rows('SELECT name, changed_at FROM stamped'),
             'The behavior runs on UPDATE and its column is included in the SET'
         );
+    }
+
+    public function testChangedAtIsNotStampedIfRowIsUnchanged()
+    {
+        $stamped = new Stamped();
+        $stamped->name = 'Widget';
+        $this->em()->save($stamped); // changed_at -> 1s
+        $this->em()->save($stamped);
+        $this->assertSame(1, $stamped->changed_at->getTimestamp());
     }
 
     public function testBinaryKeyRoundTripsOnInsert()
