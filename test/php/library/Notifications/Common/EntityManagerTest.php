@@ -151,12 +151,12 @@ class EntityManagerTest extends TestCase
 
         $this->em()->save($workshop);
 
-        $this->assertSame( $workshop->id,  $spanner->workshop_id);
-        $this->assertSame($workshop->id,  $wrench->workshop_id);
+        $this->assertSame($workshop->id, $spanner->workshop_id);
+        $this->assertSame($workshop->id, $wrench->workshop_id);
         $this->assertSame(
             [
-                ['name' => 'Spanner', 'workshop_id' =>  $workshop->id],
-                ['name' => 'Wrench', 'workshop_id' =>  $workshop->id],
+                ['name' => 'Spanner', 'workshop_id' => $workshop->id],
+                ['name' => 'Wrench', 'workshop_id' => $workshop->id],
             ],
             $this->rows('SELECT name, workshop_id FROM gadget ORDER BY id')
         );
@@ -175,8 +175,8 @@ class EntityManagerTest extends TestCase
 
         $this->assertFalse($workshop->isNew(), 'The parent was persisted');
         $this->assertSame(
-             $workshop->id,
-             $gadget->workshop_id,
+            $workshop->id,
+            $gadget->workshop_id,
             'The parent key was copied into the source foreign key'
         );
     }
@@ -194,7 +194,7 @@ class EntityManagerTest extends TestCase
 
         $this->assertFalse($sticker->isNew(), 'The target was persisted');
         $this->assertSame(
-            [['gadget_id' =>  $gadget->id, 'sticker_id' =>  $sticker->id]],
+            [['gadget_id' => $gadget->id, 'sticker_id' => $sticker->id]],
             $this->rows('SELECT gadget_id, sticker_id FROM gadget_sticker')
         );
     }
@@ -330,10 +330,12 @@ class EntityManagerTest extends TestCase
         $this->db->resetCalls();
         $this->em()->save($loaded);
 
-        $stampedWrites = array_values(array_filter(
-            $this->db->calls,
-            fn (array $c): bool => $c['table'] === 'stamped'
-        ));
+        $stampedWrites = array_values(
+            array_filter(
+                $this->db->calls,
+                fn(array $c): bool => $c['table'] === 'stamped'
+            )
+        );
         $this->assertSame(
             [],
             $stampedWrites,
@@ -653,7 +655,7 @@ class EntityManagerTest extends TestCase
         $this->em()->save($workshop);
 
         $methods = array_column($this->db->calls, 'method');
-        $tables  = array_column($this->db->calls, 'table');
+        $tables = array_column($this->db->calls, 'table');
 
         $this->assertSame(['insert', 'insert', 'insert'], $methods, 'Three inserts: parent + two children');
         $this->assertSame(['workshop', 'gadget', 'gadget'], $tables, 'Parent is inserted before children');
