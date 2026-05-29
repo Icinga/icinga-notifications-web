@@ -3,14 +3,13 @@
 namespace Tests\Icinga\Module\Notifications\Lib\EntityManager;
 
 use Icinga\Module\Notifications\Common\Model;
-use ipl\Orm\Behavior\BoolCast;
-use ipl\Orm\Behaviors;
+use ipl\Orm\Relations;
 
-class Flag extends Model
+class StampedNote extends Model
 {
     public function getTableName()
     {
-        return 'flag';
+        return 'stamped_note';
     }
 
     public function getKeyName()
@@ -20,11 +19,11 @@ class Flag extends Model
 
     public function getColumns()
     {
-        return ['label', 'enabled'];
+        return ['stamped_id', 'text'];
     }
 
-    public function createBehaviors(Behaviors $behaviors)
+    public function createRelations(Relations $relations)
     {
-        $behaviors->add(new BoolCast(['enabled']));
+        $relations->belongsTo('stamped', Stamped::class);
     }
 }
