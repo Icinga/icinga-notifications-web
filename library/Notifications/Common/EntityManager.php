@@ -40,7 +40,7 @@ class EntityManager
     protected Connection $db;
 
     /**
-     * The model class' writable column map cached by {@see writableColumns()}
+     * Cache of writable column maps populated by {@see writableColumns()}, keyed by model class
      *
      * @var array<class-string, array<string, string>>
      */
