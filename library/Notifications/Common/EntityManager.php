@@ -359,10 +359,6 @@ class EntityManager
             $legs[] = $leg;
         }
 
-        if (count($legs) !== 2) {
-            return;
-        }
-
         $sourceBehaviors = $this->resolverFor($source)->getBehaviors($source);
         $targetBehaviors = $this->resolverFor($target)->getBehaviors($target);
 
@@ -378,10 +374,6 @@ class EntityManager
         [, , $targetKeys] = $legs[1];
         foreach ($targetKeys as $targetColumn => $junctionColumn) {
             $row[$junctionColumn] = $targetBehaviors->persistProperty($target->$targetColumn, $targetColumn);
-        }
-
-        if (empty($row)) {
-            return;
         }
 
         $this->db->insert($junction->getTableName(), $row);
