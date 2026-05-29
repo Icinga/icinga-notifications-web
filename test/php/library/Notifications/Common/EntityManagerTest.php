@@ -201,6 +201,26 @@ class EntityManagerTest extends TestCase
         );
     }
 
+    public function testManyToManyTargetIsNotPollutedWithJunctionForeignKey()
+    {
+        // The junction's foreign key (gadget_id) lives on the junction table, not on the target
+        // (sticker). It must not leak onto the target as a stray property — that would surface
+        // a column the target doesn't own and confuse any later read of the model.
+        $gadget = new Gadget();
+        $gadget->name = 'Spanner';
+
+        $sticker = new Sticker();
+        $sticker->label = 'fragile';
+        $gadget->stickers = [$sticker];
+
+        $this->em()->save($gadget);
+
+        $this->assertFalse(
+            $sticker->hasProperty('gadget_id'),
+            'A many-to-many target must not carry the junction foreign key as a stray property'
+        );
+    }
+
     public function testGraphIsRolledBackOnFailure()
     {
         $workshop = new Workshop();

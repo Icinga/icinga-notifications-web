@@ -142,9 +142,14 @@ class EntityManager
         $this->persist($model, $resolver);
 
         // 3. Children: the foreign key is on the target table, so they are persisted afterwards with
-        //    the model's now-known key copied in. (HasOne/HasMany)
+        //    the model's now-known key copied in. (HasOne/HasMany — BelongsToMany is handled in step 4
+        //    because its key map points at the junction, not the target.)
         foreach ($relations as $name => $relation) {
-            if ($relation instanceof BelongsTo || ! $shouldCascade($name)) {
+            if (
+                $relation instanceof BelongsTo
+                || $relation instanceof BelongsToMany
+                || ! $shouldCascade($name)
+            ) {
                 continue;
             }
 
