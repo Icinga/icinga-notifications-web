@@ -224,6 +224,27 @@ class EntityManagerTest extends TestCase
         );
     }
 
+    public function testSaveWithinOuterTransactionDoesNotOpenNestedTransaction()
+    {
+        $a = new Workshop();
+        $a->name = 'Acme';
+
+        $b = new Workshop();
+        $b->name = 'Globex';
+
+        $em = $this->em();
+        $this->db->transaction(function () use ($em, $a, $b): void {
+            $em->save($a);
+            $em->save($b);
+        });
+
+        $this->assertSame(
+            [['name' => 'Acme'], ['name' => 'Globex']],
+            $this->rows('SELECT name FROM workshop ORDER BY id'),
+            'Both rows are persisted by the outer transaction; save() joined it instead of nesting'
+        );
+    }
+
     public function testGraphIsRolledBackOnFailure()
     {
         $workshop = new Workshop();
