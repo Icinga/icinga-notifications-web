@@ -202,7 +202,7 @@ class EntityManager
                 // Single auto-increment key that wasn't assigned by the application
                 $id = $this->db->lastInsertId();
                 if ($id !== false) {
-                    $model->$keyName = $behaviors->retrieveProperty($id, $keyName);
+                    $model->$keyName = $behaviors->retrieveProperty((int) $id, $keyName);
                 }
             }
 
