@@ -94,6 +94,7 @@ class EntityManager
         }
 
         $this->db->delete($model->getTableName(), $scope);
+        foreach ((array) $model->getKeyName() as $k) unset($model->$k);
         $model->setNew(true);
         $model->markClean();
     }

@@ -506,6 +506,54 @@ class EntityManagerTest extends TestCase
         $this->assertSame([['name' => 'Acme 2']], $this->rows('SELECT name FROM workshop'));
     }
 
+    public function testDeleteClearsAutoIncrementKey()
+    {
+        $w = new Workshop();
+        $w->name = 'Acme';
+        $this->em()->save($w);
+        $oldId = $w->id;
+
+        $this->em()->delete($w);
+
+        $this->assertFalse($w->hasProperty('id'), 'The auto-increment key is cleared on delete');
+
+        $w->name = 'Acme 2';
+        $this->em()->save($w);
+
+        $this->assertNotSame(
+            $oldId,
+            $w->id,
+            'A save after delete receives a fresh auto-increment id rather than re-using the old key'
+        );
+    }
+
+    public function testDeleteClearsCompoundKey()
+    {
+        $p = new Pairing();
+        $p->left_id = 7;
+        $p->right_id = 9;
+        $p->label = 'A';
+        $this->em()->save($p);
+
+        $this->em()->delete($p);
+
+        $this->assertFalse($p->hasProperty('left_id'), 'Each part of a compound key is cleared');
+        $this->assertFalse($p->hasProperty('right_id'), 'Each part of a compound key is cleared');
+    }
+
+    public function testDeleteClearsApplicationAssignedKey()
+    {
+        $id = hex2bin('deadbeefcafebabe1234567890abcdef');
+        $trinket = new Trinket();
+        $trinket->id = $id;
+        $trinket->name = 'Amulet';
+        $this->em()->save($trinket);
+
+        $this->em()->delete($trinket);
+
+        $this->assertFalse($trinket->hasProperty('id'), 'The application-assigned key is cleared on delete');
+    }
+
     public function testCompoundKeyUpdateMatchesByAllKeyColumns()
     {
         // Two rows sharing left_id but differing in right_id ensure the UPDATE's WHERE has to
