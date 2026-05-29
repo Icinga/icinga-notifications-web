@@ -65,9 +65,13 @@ class EntityManager
      */
     public function save(Model $model): void
     {
-        $this->db->transaction(function () use ($model): void {
+        if ($this->db->inTransaction()) {
             $this->saveGraph($model);
-        });
+        } else {
+            $this->db->transaction(function () use ($model): void {
+                $this->saveGraph($model);
+            });
+        }
     }
 
     /**
