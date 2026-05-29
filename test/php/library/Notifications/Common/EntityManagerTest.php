@@ -31,12 +31,14 @@ class EntityManagerTest extends TestCase
             . 'CREATE TABLE gadget (id INTEGER PRIMARY KEY AUTOINCREMENT, workshop_id INTEGER, name VARCHAR NOT NULL);'
             . 'CREATE TABLE sticker (id INTEGER PRIMARY KEY AUTOINCREMENT, label VARCHAR NOT NULL);'
             . 'CREATE TABLE gadget_sticker (gadget_id INTEGER NOT NULL, sticker_id INTEGER NOT NULL);'
-            . 'CREATE TABLE flag (id INTEGER PRIMARY KEY AUTOINCREMENT, label VARCHAR NOT NULL, enabled VARCHAR NOT NULL);'
+            . 'CREATE TABLE flag (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                label VARCHAR NOT NULL, enabled VARCHAR NOT NULL);'
             . 'CREATE TABLE stamped (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR NOT NULL, changed_at INTEGER);'
             . 'CREATE TABLE stamped_note ('
             . 'id INTEGER PRIMARY KEY AUTOINCREMENT, stamped_id INTEGER NOT NULL, text VARCHAR NOT NULL);'
             . 'CREATE TABLE trinket (id BLOB PRIMARY KEY, name VARCHAR NOT NULL);'
-            . 'CREATE TABLE charm (id INTEGER PRIMARY KEY AUTOINCREMENT, trinket_id BLOB NOT NULL, label VARCHAR NOT NULL);'
+            . 'CREATE TABLE charm (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                trinket_id BLOB NOT NULL, label VARCHAR NOT NULL);'
             . 'CREATE TABLE pairing ('
             . 'left_id INTEGER NOT NULL, right_id INTEGER NOT NULL, label VARCHAR NOT NULL,'
             . ' PRIMARY KEY (left_id, right_id));'
