@@ -192,9 +192,8 @@ class EntityManager
         // Schema-wide convention: any model declaring a `changed_at` column gets it stamped on
         // every save. Done here (rather than as a behavior) so individual models don't have to
         // opt in and so the rule lives in one place.
-        $this->stampChangedAt($model);
-
         if ($model->isNew()) {
+            $this->stampChangedAt($model);
             $this->db->insert($model->getTableName(), $this->extract($model, $behaviors));
 
             $keyName = $model->getKeyName();
@@ -227,6 +226,11 @@ class EntityManager
                 get_class($model)
             ));
         }
+
+        // Stamp only now that we know an UPDATE will actually go out. The stamp adds
+        // `changed_at` to the dirty map, so re-extract to pick it up.
+        $this->stampChangedAt($model);
+        $data = $this->extract($model, $behaviors, $model->getDirtyMap());
 
         $this->db->update($model->getTableName(), $data, $scope);
 
