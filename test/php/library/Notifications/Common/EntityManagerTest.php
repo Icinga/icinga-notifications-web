@@ -33,6 +33,8 @@ class EntityManagerTest extends TestCase
             . 'CREATE TABLE gadget_sticker (gadget_id INTEGER NOT NULL, sticker_id INTEGER NOT NULL);'
             . 'CREATE TABLE flag (id INTEGER PRIMARY KEY AUTOINCREMENT, label VARCHAR NOT NULL, enabled VARCHAR NOT NULL);'
             . 'CREATE TABLE stamped (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR NOT NULL, changed_at INTEGER);'
+            . 'CREATE TABLE stamped_note ('
+            . 'id INTEGER PRIMARY KEY AUTOINCREMENT, stamped_id INTEGER NOT NULL, text VARCHAR NOT NULL);'
             . 'CREATE TABLE trinket (id BLOB PRIMARY KEY, name VARCHAR NOT NULL);'
             . 'CREATE TABLE charm (id INTEGER PRIMARY KEY AUTOINCREMENT, trinket_id BLOB NOT NULL, label VARCHAR NOT NULL);'
             . 'CREATE TABLE pairing ('
@@ -305,6 +307,45 @@ class EntityManagerTest extends TestCase
         $this->assertSame(1, $stamped->changed_at->getTimestamp());
         $this->assertCount(1, $this->rows('SELECT * FROM stamped'));
     }
+
+    public function testChangedAtIsNotStampedWhenOnlyARelationWasReassigned()
+    {
+        // Save once so we have a loadable row with changed_at = 1s.
+        $stamped = new Stamped();
+        $stamped->name = 'Widget';
+        $this->em()->save($stamped);
+
+        // Load it fresh — the relation comes back as a closure-backed lazy loader.
+        $loaded = null;
+        foreach (Stamped::on($this->db)->execute() as $row) {
+            $loaded = $row;
+            break;
+        }
+        $this->assertInstanceOf(Stamped::class, $loaded);
+
+        // Reassign only the relation — no own-column changes. The parent row's data
+        // hasn't actually moved, so neither its `changed_at` nor its row should change.
+        $loaded->notes = [];
+
+        $this->db->resetCalls();
+        $this->em()->save($loaded);
+
+        $stampedWrites = array_values(array_filter(
+            $this->db->calls,
+            fn (array $c): bool => $c['table'] === 'stamped'
+        ));
+        $this->assertSame(
+            [],
+            $stampedWrites,
+            'A relation-only reassignment must not emit an UPDATE on the parent row'
+        );
+        $this->assertSame(
+            1,
+            $loaded->changed_at->getTimestamp(),
+            'changed_at must not be stamped when no column on the row changed'
+        );
+    }
+
     public function testBinaryKeyRoundTripsOnInsert()
     {
         $id = hex2bin('deadbeefcafebabe1234567890abcdef');
