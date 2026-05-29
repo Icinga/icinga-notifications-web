@@ -13,7 +13,9 @@ use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Relations;
 use ipl\Sql\Connection;
+use ipl\Sql\Sql;
 use PDO;
+use PDOStatement;
 use PHPUnit\Framework\TestCase;
 
 // phpcs:ignoreFile PSR1.Classes.ClassDeclaration.MultipleClasses
@@ -219,14 +221,76 @@ class Pairing extends Model
     }
 }
 
+/**
+ * Test double for {@see Connection} that records every write call and forwards to the real parent.
+ *
+ * Lets tests assert that the EntityManager issues the *exact* set of writes expected — and skips
+ * the ones it shouldn't — without giving up the real sqlite-backed end-to-end execution.
+ */
+class RecordingConnection extends Connection
+{
+    /**
+     * Each entry is one recorded write keyed by `method` ('insert'|'update'|'delete'), plus `table`,
+     * `data` (for insert/update), and `condition` (for update/delete).
+     *
+     * @var list<array<string, mixed>>
+     */
+    public array $calls = [];
+
+    public function insert(string $table, iterable $data): PDOStatement
+    {
+        $data = is_array($data) ? $data : iterator_to_array($data);
+        $this->calls[] = ['method' => 'insert', 'table' => $table, 'data' => $data];
+
+        return parent::insert($table, $data);
+    }
+
+    public function update(
+        string|array $table,
+        iterable $data,
+        string|array|null $condition = null,
+        string $operator = Sql::ALL
+    ): PDOStatement {
+        $data = is_array($data) ? $data : iterator_to_array($data);
+        $this->calls[] = [
+            'method'    => 'update',
+            'table'     => $table,
+            'data'      => $data,
+            'condition' => $condition,
+        ];
+
+        return parent::update($table, $data, $condition, $operator);
+    }
+
+    public function delete(
+        string|array $table,
+        string|array|null $condition = null,
+        string $operator = Sql::ALL
+    ): PDOStatement {
+        $this->calls[] = ['method' => 'delete', 'table' => $table, 'condition' => $condition];
+
+        return parent::delete($table, $condition, $operator);
+    }
+
+    /**
+     * Drop the recorded calls so subsequent assertions only see writes from the next action
+     *
+     * @return void
+     */
+    public function resetCalls(): void
+    {
+        $this->calls = [];
+    }
+}
+
 class EntityManagerTest extends TestCase
 {
-    /** @var Connection */
+    /** @var RecordingConnection */
     protected $db;
 
     protected function setUp(): void
     {
-        $db = new Connection(['db' => 'sqlite', 'dbname' => ':memory:']);
+        $db = new RecordingConnection(['db' => 'sqlite', 'dbname' => ':memory:']);
         $db->exec(
             'CREATE TABLE workshop (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR NOT NULL);'
             . 'CREATE TABLE gadget (id INTEGER PRIMARY KEY AUTOINCREMENT, workshop_id INTEGER, name VARCHAR NOT NULL);'
@@ -268,7 +332,7 @@ class EntityManagerTest extends TestCase
         $this->em()->save($workshop);
 
         $this->assertFalse($workshop->isNew(), 'A saved model is no longer new');
-        $this->assertSame(1, (int) $workshop->id, 'The generated primary key is written back to the model');
+        $this->assertSame(1, $workshop->id, 'The generated primary key is written back to the model');
         $this->assertSame([['id' => 1, 'name' => 'Acme']], $this->rows('SELECT * FROM workshop'));
     }
 
@@ -350,12 +414,12 @@ class EntityManagerTest extends TestCase
 
         $this->em()->save($workshop);
 
-        $this->assertSame((int) $workshop->id, (int) $spanner->workshop_id);
-        $this->assertSame((int) $workshop->id, (int) $wrench->workshop_id);
+        $this->assertSame( $workshop->id,  $spanner->workshop_id);
+        $this->assertSame($workshop->id,  $wrench->workshop_id);
         $this->assertSame(
             [
-                ['name' => 'Spanner', 'workshop_id' => (int) $workshop->id],
-                ['name' => 'Wrench', 'workshop_id' => (int) $workshop->id],
+                ['name' => 'Spanner', 'workshop_id' =>  $workshop->id],
+                ['name' => 'Wrench', 'workshop_id' =>  $workshop->id],
             ],
             $this->rows('SELECT name, workshop_id FROM gadget ORDER BY id')
         );
@@ -374,8 +438,8 @@ class EntityManagerTest extends TestCase
 
         $this->assertFalse($workshop->isNew(), 'The parent was persisted');
         $this->assertSame(
-            (int) $workshop->id,
-            (int) $gadget->workshop_id,
+             $workshop->id,
+             $gadget->workshop_id,
             'The parent key was copied into the source foreign key'
         );
     }
@@ -393,7 +457,7 @@ class EntityManagerTest extends TestCase
 
         $this->assertFalse($sticker->isNew(), 'The target was persisted');
         $this->assertSame(
-            [['gadget_id' => (int) $gadget->id, 'sticker_id' => (int) $sticker->id]],
+            [['gadget_id' =>  $gadget->id, 'sticker_id' =>  $sticker->id]],
             $this->rows('SELECT gadget_id, sticker_id FROM gadget_sticker')
         );
     }
@@ -707,6 +771,182 @@ class EntityManagerTest extends TestCase
         $this->assertSame(
             [['left_id' => 7, 'right_id' => 9, 'label' => 'A']],
             $this->rows('SELECT left_id, right_id, label FROM pairing')
+        );
+    }
+
+    public function testReSavingACleanModelIssuesNoWrites()
+    {
+        $workshop = new Workshop();
+        $workshop->name = 'Acme';
+        $this->em()->save($workshop);
+
+        $this->db->resetCalls();
+        $this->em()->save($workshop);
+
+        $this->assertSame([], $this->db->calls, 'A second save of an unchanged model issues no writes');
+    }
+
+    public function testInsertOfNewModelIssuesExactlyOneInsertAndNoOtherWrites()
+    {
+        $workshop = new Workshop();
+        $workshop->name = 'Acme';
+
+        $this->em()->save($workshop);
+
+        $this->assertSame(
+            [['method' => 'insert', 'table' => 'workshop', 'data' => ['name' => 'Acme']]],
+            $this->db->calls,
+            'Inserting a new model emits exactly one INSERT for that row'
+        );
+    }
+
+    public function testUpdateWritesOnlyTheChangedColumnInTheSetClause()
+    {
+        $gadget = new Gadget();
+        $gadget->workshop_id = 5;
+        $gadget->name = 'Spanner';
+        $this->em()->save($gadget);
+
+        $this->db->resetCalls();
+        $gadget->name = 'Wrench';
+        $this->em()->save($gadget);
+
+        $this->assertCount(1, $this->db->calls, 'Exactly one write is issued for the update');
+        $this->assertSame('update', $this->db->calls[0]['method']);
+        $this->assertSame('gadget', $this->db->calls[0]['table']);
+        $this->assertSame(
+            ['name' => 'Wrench'],
+            $this->db->calls[0]['data'],
+            'Unchanged columns are not part of the SET clause'
+        );
+        $this->assertSame(
+            ['id = ?' => $gadget->id],
+            $this->db->calls[0]['condition'],
+            'The WHERE matches the row by its primary key'
+        );
+    }
+
+    public function testCompoundKeyUpdateScopesByAllKeyColumns()
+    {
+        $p = new Pairing();
+        $p->left_id = 1;
+        $p->right_id = 2;
+        $p->label = 'A';
+        $this->em()->save($p);
+
+        $this->db->resetCalls();
+        $p->label = 'B';
+        $this->em()->save($p);
+
+        $this->assertCount(1, $this->db->calls);
+        $this->assertSame(
+            ['left_id = ?' => 1, 'right_id = ?' => 2],
+            $this->db->calls[0]['condition'],
+            'Both key columns are in the WHERE'
+        );
+    }
+
+    public function testDeleteIssuesExactlyOneDeleteAndNoOtherWrites()
+    {
+        $workshop = new Workshop();
+        $workshop->name = 'Acme';
+        $this->em()->save($workshop);
+        $id = $workshop->id;
+
+        $this->db->resetCalls();
+        $this->em()->delete($workshop);
+
+        $this->assertSame(
+            [['method' => 'delete', 'table' => 'workshop', 'condition' => ['id = ?' => $id]]],
+            $this->db->calls,
+            'Exactly one DELETE is issued, scoped by primary key — no incidental UPDATE first'
+        );
+    }
+
+    public function testCascadeInsertEmitsOneInsertPerRowAndNoUpdates()
+    {
+        $spanner = new Gadget();
+        $spanner->name = 'Spanner';
+        $wrench = new Gadget();
+        $wrench->name = 'Wrench';
+
+        $workshop = new Workshop();
+        $workshop->name = 'Acme';
+        $workshop->gadgets = [$spanner, $wrench];
+
+        $this->em()->save($workshop);
+
+        $methods = array_column($this->db->calls, 'method');
+        $tables  = array_column($this->db->calls, 'table');
+
+        $this->assertSame(['insert', 'insert', 'insert'], $methods, 'Three inserts: parent + two children');
+        $this->assertSame(['workshop', 'gadget', 'gadget'], $tables, 'Parent is inserted before children');
+    }
+
+    public function testManyToManyEmitsOneInsertPerEnd()
+    {
+        $gadget = new Gadget();
+        $gadget->name = 'Spanner';
+
+        $sticker = new Sticker();
+        $sticker->label = 'fragile';
+        $gadget->stickers = [$sticker];
+
+        $this->em()->save($gadget);
+
+        $this->assertSame(
+            ['gadget', 'sticker', 'gadget_sticker'],
+            array_column($this->db->calls, 'table'),
+            'Gadget, sticker, and one junction row — three inserts in this order'
+        );
+        $this->assertSame(['insert', 'insert', 'insert'], array_column($this->db->calls, 'method'));
+    }
+
+    public function testUpdatingOnlyAChildDoesNotReWriteTheParent()
+    {
+        $workshop = new Workshop();
+        $workshop->name = 'Acme';
+        $gadget = new Gadget();
+        $gadget->name = 'Spanner';
+        $workshop->gadgets = [$gadget];
+        $this->em()->save($workshop);
+
+        $this->db->resetCalls();
+        $gadget->name = 'Wrench';
+        $this->em()->save($gadget);
+
+        $this->assertCount(1, $this->db->calls, 'Only the child is written');
+        $this->assertSame('update', $this->db->calls[0]['method']);
+        $this->assertSame('gadget', $this->db->calls[0]['table']);
+    }
+
+    public function testNoWritesIfRelationIsReassignedButOwnColumnsAreUnchanged()
+    {
+        // Loaded parent with no column changes; we only swap its many-to-many targets. The parent
+        // row's own data is identical, so persist() should be a no-op — no UPDATE on the parent.
+        $gadget = new Gadget();
+        $gadget->name = 'Spanner';
+        $this->em()->save($gadget);
+
+        $loaded = null;
+        foreach (Gadget::on($this->db)->execute() as $row) {
+            $loaded = $row;
+            break;
+        }
+        $this->assertInstanceOf(Gadget::class, $loaded);
+
+        $sticker = new Sticker();
+        $sticker->label = 'fragile';
+        $loaded->stickers = [$sticker];
+
+        $this->db->resetCalls();
+        $this->em()->save($loaded);
+
+        $tables = array_column($this->db->calls, 'table');
+        $this->assertNotContains(
+            'gadget',
+            $tables,
+            'The parent gadget row was not modified, so it must not be re-written'
         );
     }
 }
