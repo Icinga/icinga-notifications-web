@@ -8,6 +8,7 @@ namespace Icinga\Module\Notifications\Common;
 use DateTime;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Query;
+use ipl\Orm\Relation;
 use ipl\Orm\Relation\BelongsTo;
 use ipl\Orm\Relation\BelongsToMany;
 use ipl\Orm\Resolver;
@@ -107,7 +108,6 @@ class EntityManager
     protected function saveGraph(Model $model): void
     {
         $resolver = $this->resolverFor($model);
-        $relations = $resolver->getRelations($model);
 
         // Snapshot what to cascade before persisting, since persisting resets change tracking. Only
         // explicitly set relations are considered (lazy loaders are closures, skipped by the iterator).
@@ -115,17 +115,30 @@ class EntityManager
         $set = iterator_to_array($model);
         $isNew = $model->isNew();
         $dirtyRelations = $isNew ? [] : $model->getDirtyMap();
-        $shouldCascade = function (string $name) use ($set, $isNew, $dirtyRelations): bool {
-            return isset($set[$name]) && ($isNew || isset($dirtyRelations[$name]));
-        };
 
-        // 1. Dependencies first: on the inverse side the foreign key is on this (source) table, so the
-        //    related entity must be persisted beforehand and its key copied in. (BelongsTo)
-        foreach ($relations as $name => $relation) {
-            if (! $relation instanceof BelongsTo || ! $shouldCascade($name)) {
+        /** @var array<string, BelongsTo> $dependencies */
+        $dependencies = [];
+        /** @var array<string, Relation> $children */
+        $children = [];
+        /** @var array<string, BelongsToMany> $links */
+        $links = [];
+        foreach ($resolver->getRelations($model) as $name => $relation) {
+            if (! isset($set[$name]) || (! $isNew && ! isset($dirtyRelations[$name]))) {
                 continue;
             }
 
+            if ($relation instanceof BelongsTo) {
+                $dependencies[$name] = $relation;
+            } elseif ($relation instanceof BelongsToMany) {
+                $links[$name] = $relation;
+            } else {
+                $children[$name] = $relation;
+            }
+        }
+
+        // 1. Dependencies first: on the inverse side the foreign key is on this (source) table, so the
+        //    related entity must be persisted beforehand and its key copied in. (BelongsTo)
+        foreach ($dependencies as $name => $relation) {
             $related = $set[$name];
             if (! $related instanceof Model) {
                 continue;
@@ -142,17 +155,8 @@ class EntityManager
         $this->persist($model, $resolver);
 
         // 3. Children: the foreign key is on the target table, so they are persisted afterwards with
-        //    the model's now-known key copied in. (HasOne/HasMany — BelongsToMany is handled in step 4
-        //    because its key map points at the junction, not the target.)
-        foreach ($relations as $name => $relation) {
-            if (
-                $relation instanceof BelongsTo
-                || $relation instanceof BelongsToMany
-                || ! $shouldCascade($name)
-            ) {
-                continue;
-            }
-
+        //    the model's now-known key copied in. (HasOne/HasMany)
+        foreach ($children as $name => $relation) {
             $keys = $relation->determineKeys($model);
             foreach ($this->asTraversable($set[$name]) as $child) {
                 if (! $child instanceof Model) {
@@ -169,11 +173,7 @@ class EntityManager
 
         // 4. Many-to-many: persist both ends, then write the link rows into the junction table.
         //    Note: links are appended, not reconciled, so re-assigning a loaded relation may duplicate them.
-        foreach ($relations as $name => $relation) {
-            if (! $relation instanceof BelongsToMany || ! $shouldCascade($name)) {
-                continue;
-            }
-
+        foreach ($links as $name => $relation) {
             foreach ($this->asTraversable($set[$name]) as $target) {
                 if (! $target instanceof Model) {
                     continue;
