@@ -39,6 +39,13 @@ class EntityManager
     protected Connection $db;
 
     /**
+     * The model class' writable column map cached by {@see writableColumns()}
+     *
+     * @var array<class-string, array<string, string>>
+     */
+    private array $writableColumnCache = [];
+
+    /**
      * Create a new EntityManager for the given database connection
      *
      * @param Connection $db
@@ -279,16 +286,22 @@ class EntityManager
         $columns = $this->writableColumns($model);
         $data = [];
 
-        foreach ($model as $property => $value) {
-            if (! isset($columns[$property])) {
-                continue;
-            }
+        if ($only !== null) {
+            foreach ($only as $property => $_) {
+                if (! isset($columns[$property])) {
+                    continue;
+                }
 
-            if ($only !== null && ! isset($only[$property])) {
-                continue;
+                $data[$columns[$property]] = $behaviors->persistProperty($model[$property], $property);
             }
+        } else {
+            foreach ($model as $property => $value) {
+                if (! isset($columns[$property])) {
+                    continue;
+                }
 
-            $data[$columns[$property]] = $behaviors->persistProperty($value, $property);
+                $data[$columns[$property]] = $behaviors->persistProperty($value, $property);
+            }
         }
 
         return $data;
@@ -364,7 +377,9 @@ class EntityManager
     /**
      * Get the model's writable columns as a property => column map
      *
-     * Expression columns are omitted as they cannot be written to.
+     * Expression columns are omitted as they cannot be written to. The result is memoized in
+     * {@see $writableColumnCache} by class, since the column set never changes once a Model
+     * class is defined; repeated calls within the same save graph reuse the cached map.
      *
      * @param Model $model
      *
@@ -372,6 +387,11 @@ class EntityManager
      */
     protected function writableColumns(Model $model): array
     {
+        $class = get_class($model);
+        if (isset($this->writableColumnCache[$class])) {
+            return $this->writableColumnCache[$class];
+        }
+
         $columns = [];
 
         foreach ((array) $model->getKeyName() as $key) {
@@ -389,6 +409,8 @@ class EntityManager
                 $columns[$alias] = $column;
             }
         }
+
+        $this->writableColumnCache[$class] = $columns;
 
         return $columns;
     }
