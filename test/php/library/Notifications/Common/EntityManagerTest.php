@@ -17,6 +17,7 @@ use Tests\Icinga\Module\Notifications\Lib\EntityManager\Pairing;
 use Tests\Icinga\Module\Notifications\Lib\EntityManager\RecordingConnection;
 use Tests\Icinga\Module\Notifications\Lib\EntityManager\Stamped;
 use Tests\Icinga\Module\Notifications\Lib\EntityManager\Sticker;
+use Tests\Icinga\Module\Notifications\Lib\EntityManager\Tag;
 use Tests\Icinga\Module\Notifications\Lib\EntityManager\TickingEntityManager;
 use Tests\Icinga\Module\Notifications\Lib\EntityManager\Trinket;
 use Tests\Icinga\Module\Notifications\Lib\EntityManager\Workshop;
@@ -45,6 +46,11 @@ class EntityManagerTest extends TestCase
             . 'CREATE TABLE pairing ('
             . 'left_id INTEGER NOT NULL, right_id INTEGER NOT NULL, label VARCHAR NOT NULL,'
             . ' PRIMARY KEY (left_id, right_id));'
+            . 'CREATE TABLE tag (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR NOT NULL);'
+            . 'CREATE TABLE gadget_tag ('
+            . 'gadget_id INTEGER NOT NULL, tag_id INTEGER NOT NULL,'
+            . " changed_at INTEGER NOT NULL, deleted VARCHAR NOT NULL DEFAULT 'n',"
+            . ' PRIMARY KEY (gadget_id, tag_id));'
         );
 
         $this->db = $db;
@@ -380,6 +386,120 @@ class EntityManagerTest extends TestCase
             [['gadget_id' => '1', 'sticker_id' => '1']],
             $db->prepexec('SELECT gadget_id, sticker_id FROM gadget_sticker')->fetchAll(PDO::FETCH_ASSOC),
             'The single link is left intact'
+        );
+    }
+
+    public function testManyToManyDeclaredByTableNameHardDeletesRegardlessOfTheColumn()
+    {
+        // Soft-delete awareness is keyed on the junction *model* declaring a `deleted` column. A
+        // junction declared by table name has no model, so it is reconciled with hard deletes even if
+        // the underlying table happens to carry a `deleted` column — the table column alone is ignored.
+        $db = new RecordingConnection(['db' => 'sqlite', 'dbname' => ':memory:']);
+        $db->exec(
+            'CREATE TABLE gadget (id INTEGER PRIMARY KEY AUTOINCREMENT, workshop_id INTEGER, name VARCHAR NOT NULL);'
+            . 'CREATE TABLE sticker (id INTEGER PRIMARY KEY AUTOINCREMENT, label VARCHAR NOT NULL);'
+            . 'CREATE TABLE gadget_sticker ('
+            . 'gadget_id INTEGER NOT NULL, sticker_id INTEGER NOT NULL, deleted INTEGER NOT NULL DEFAULT 0);'
+        );
+
+        $gadget = new Gadget();
+        $gadget->name = 'Spanner';
+        $sticker = new Sticker();
+        $sticker->label = 'fragile';
+        $gadget->stickers = [$sticker];
+        (new TickingEntityManager($db))->save($gadget);
+
+        /** @var Gadget $loaded */
+        $loaded = Gadget::on($db)->first();
+        $loaded->stickers = [];
+        (new TickingEntityManager($db))->save($loaded);
+
+        $this->assertSame(
+            [],
+            $db->prepexec('SELECT gadget_id, sticker_id, deleted FROM gadget_sticker')->fetchAll(PDO::FETCH_ASSOC),
+            'The stickers relation is declared by table name, so the orphan is hard-deleted, not marked deleted'
+        );
+    }
+
+    public function testSoftDeleteJunctionMarksRemovedLinkDeletedAndStampsChangedAt()
+    {
+        // The tags relation goes through a junction model with a `deleted` column, so an orphaned link
+        // is marked deleted = 'y' (the row stays) and changed_at is stamped, rather than hard-deleted.
+        $gadget = new Gadget();
+        $gadget->name = 'Spanner';
+
+        $first = new Tag();
+        $first->name = 'sharp';
+        $second = new Tag();
+        $second->name = 'heavy';
+        $gadget->tags = [$first, $second];
+
+        $this->em()->save($gadget); // changed_at -> 1000
+
+        /** @var Gadget $loaded */
+        $loaded = Gadget::on($this->db)->first();
+        $loaded->tags = [$first];
+        $this->em()->save($loaded); // changed_at -> 2000
+
+        $this->assertSame(
+            [
+                ['tag_id' => 1, 'deleted' => 'n', 'changed_at' => 1000],
+                ['tag_id' => 2, 'deleted' => 'y', 'changed_at' => 2000],
+            ],
+            $this->rows('SELECT tag_id, deleted, changed_at FROM gadget_tag ORDER BY tag_id'),
+            'The removed link is soft-deleted and re-stamped; the kept link is left untouched'
+        );
+    }
+
+    public function testSoftDeleteJunctionRevivesAReAddedLinkInsteadOfDuplicating()
+    {
+        $gadget = new Gadget();
+        $gadget->name = 'Spanner';
+
+        $tag = new Tag();
+        $tag->name = 'sharp';
+        $gadget->tags = [$tag];
+        $this->em()->save($gadget); // link created, changed_at -> 1000
+
+        /** @var Gadget $removed */
+        $removed = Gadget::on($this->db)->first();
+        $removed->tags = [];
+        $this->em()->save($removed); // link soft-deleted, changed_at -> 2000
+
+        /** @var Gadget $readded */
+        $readded = Gadget::on($this->db)->first();
+        $readded->tags = [$tag];
+        $this->em()->save($readded); // link revived, changed_at -> 3000
+
+        $this->assertSame(
+            [['tag_id' => 1, 'deleted' => 'n', 'changed_at' => 3000]],
+            $this->rows('SELECT tag_id, deleted, changed_at FROM gadget_tag'),
+            'Re-adding revives the existing row rather than inserting a duplicate'
+        );
+    }
+
+    public function testSoftDeleteJunctionLeavesAnUnchangedActiveLinkUntouched()
+    {
+        $gadget = new Gadget();
+        $gadget->name = 'Spanner';
+
+        $tag = new Tag();
+        $tag->name = 'sharp';
+        $gadget->tags = [$tag];
+        $this->em()->save($gadget);
+
+        /** @var Gadget $loaded */
+        $loaded = Gadget::on($this->db)->first();
+        $loaded->tags = [$tag];
+
+        $this->db->resetCalls();
+        $this->em()->save($loaded);
+
+        $junctionWrites = array_filter($this->db->calls, fn ($call) => $call['table'] === 'gadget_tag');
+        $this->assertSame(
+            [],
+            $junctionWrites,
+            'Re-saving an unchanged active link writes nothing to the junction'
         );
     }
 

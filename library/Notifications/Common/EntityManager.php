@@ -360,8 +360,13 @@ class EntityManager
      * the new targets).
      *
      * Only the junction rows are touched, never the target rows. The current set is read back from the
-     * junction because the relation is lazy and its prior value was never loaded. This is not yet
-     * soft-delete aware, so it is only correct on junctions without a `deleted` column.
+     * junction because the relation is lazy and its prior value was never loaded.
+     *
+     * If the junction is declared with a model that has a `deleted` column ({@see BelongsToMany::through()}
+     * given a class rather than a table name), reconciliation is soft-delete aware: removed links are
+     * marked deleted, previously soft-deleted links are revived rather than re-inserted, and `changed_at`
+     * is stamped on every touch ({@see reconcileSoftLinks()}). A junction declared by table name has no
+     * such column and is reconciled with hard deletes.
      *
      * @param BelongsToMany $relation
      * @param Model $source
@@ -399,19 +404,25 @@ class EntityManager
             $desired[(string) $value] = $value;
         }
 
+        if (in_array('deleted', $junction->getColumns(), true)) {
+            $this->reconcileSoftLinks($junction, $sourceColumns, $junctionColumn, $desired);
+
+            return;
+        }
+
         $table = $junction->getTableName();
         $stored = $this->fetchLinks($table, $sourceColumns, $junctionColumn);
 
         foreach ($stored as $identity => $value) {
             if (! isset($desired[$identity])) {
-                $this->db->delete($table, $this->equalityScope($sourceColumns + [$junctionColumn => $value]));
+                $this->db->delete($table, $this->equalityScope(array_merge($sourceColumns, [$junctionColumn => $value])));
             }
         }
 
         $missing = [];
         foreach ($desired as $identity => $value) {
             if (! isset($stored[$identity])) {
-                $missing[] = $sourceColumns + [$junctionColumn => $value];
+                $missing[] = array_merge($sourceColumns, [$junctionColumn => $value]);
             }
         }
 
@@ -441,6 +452,82 @@ class EntityManager
         }
 
         return $stored;
+    }
+
+    /**
+     * Reconcile a soft-delete junction to exactly the desired links
+     *
+     * Links no longer desired but still active are soft-deleted; desired links that are currently
+     * soft-deleted are revived; desired links not stored at all are inserted; active links that remain
+     * desired are left untouched. Every soft-delete, revival and insert stamps `changed_at`.
+     *
+     * The `deleted` and `changed_at` columns are written using their schema-wide storage forms directly
+     * (the `'y'`/`'n'` enum and a millisecond timestamp), rather than routing through the junction
+     * model's behaviors — the same way {@see persist()} treats `changed_at` as a fixed convention. Every
+     * soft-delete junction in the schema carries both columns, so neither is treated as optional.
+     *
+     * @param Model $junction
+     * @param array<string, mixed> $sourceColumns
+     * @param string $junctionColumn
+     * @param array<string, mixed> $desired Target values keyed by identity
+     *
+     * @return void
+     */
+    private function reconcileSoftLinks(Model $junction, array $sourceColumns, string $junctionColumn, array $desired): void
+    {
+        $table = $junction->getTableName();
+        $changedAt = (int) ($this->now()->format('U.u') * 1000.0);
+
+        $select = (new Select())
+            ->from($table)
+            ->columns([$junctionColumn, 'deleted'])
+            ->where($this->equalityScope($sourceColumns));
+
+        $stored = [];
+        foreach ($this->db->select($select)->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $stored[(string) $row[$junctionColumn]] = [
+                'value'   => $row[$junctionColumn],
+                'deleted' => $row['deleted'] === 'y',
+            ];
+        }
+
+        // Soft-delete links that are no longer desired but still active.
+        foreach ($stored as $identity => $link) {
+            if (! isset($desired[$identity]) && ! $link['deleted']) {
+                $this->markLink($table, array_merge($sourceColumns, [$junctionColumn => $link['value']]), 'y', $changedAt);
+            }
+        }
+
+        // Revive desired links that are soft-deleted; collect those not stored at all for insert.
+        $missing = [];
+        foreach ($desired as $identity => $value) {
+            if (! isset($stored[$identity])) {
+                $missing[] = array_merge($sourceColumns, [$junctionColumn => $value, 'deleted' => 'n', 'changed_at' => $changedAt]);
+            } elseif ($stored[$identity]['deleted']) {
+                $this->markLink($table, array_merge($sourceColumns, [$junctionColumn => $value]), 'n', $changedAt);
+}
+        }
+
+        $this->insertRows($table, $missing);
+    }
+
+    /**
+     * Set a junction row's `deleted` value  and stamp `changed_at`
+     *
+     * @param string $table
+     * @param array<string, mixed> $scope column => value identifying the row
+     * @param string $deleted The `deleted` enum value to write (`'y'` or `'n'`)
+     * @param int $changedAt The millisecond timestamp to stamp
+     *
+     * @return void
+     */
+    private function markLink(string $table, array $scope, string $deleted, int $changedAt): void
+    {
+        $this->db->update(
+            $table,
+            ['deleted' => $deleted, 'changed_at' => $changedAt],
+            $this->equalityScope($scope)
+        );
     }
 
     /**
