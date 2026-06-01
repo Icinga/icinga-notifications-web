@@ -260,6 +260,129 @@ class EntityManagerTest extends TestCase
         );
     }
 
+    public function testManyToManyDoesNotDuplicateAnExistingLink()
+    {
+        $gadget = new Gadget();
+        $gadget->name = 'Spanner';
+
+        $sticker = new Sticker();
+        $sticker->label = 'fragile';
+        $gadget->stickers = [$sticker];
+
+        $this->em()->save($gadget);
+
+        /** @var Gadget $loaded */
+        $loaded = Gadget::on($this->db)->first();
+
+        $loaded->stickers = [$sticker];
+        $this->em()->save($loaded);
+
+        $this->assertSame(
+            [['gadget_id' => $gadget->id, 'sticker_id' => $sticker->id]],
+            $this->rows('SELECT gadget_id, sticker_id FROM gadget_sticker'),
+            'Re-saving an unchanged link must not duplicate the junction row'
+        );
+    }
+
+    public function testManyToManyReassignmentReplacesThePreviousLinks()
+    {
+        $gadget = new Gadget();
+        $gadget->name = 'Spanner';
+
+        $fragile = new Sticker();
+        $fragile->label = 'fragile';
+        $gadget->stickers = [$fragile];
+
+        $this->em()->save($gadget);
+
+        $heavy = new Sticker();
+        $heavy->label = 'heavy';
+
+        /** @var Gadget $loaded */
+        $loaded = Gadget::on($this->db)->first();
+        $loaded->stickers = [$heavy];
+        $loaded->stickers = array_merge($loaded->stickers, [$heavy]);
+        $this->em()->save($loaded);
+
+        $this->assertSame(
+            [['gadget_id' => $gadget->id, 'sticker_id' => $heavy->id]],
+            $this->rows('SELECT gadget_id, sticker_id FROM gadget_sticker'),
+            'The reassigned set replaces the previous links'
+        );
+        $this->assertSame(
+            2,
+            (int) $this->rows('SELECT COUNT(*) AS c FROM sticker')[0]['c'],
+            'Reconciling the junction must not delete the target rows'
+        );
+    }
+
+    public function testManyToManyAssigningAnEmptySetClearsTheLinks()
+    {
+        $gadget = new Gadget();
+        $gadget->name = 'Spanner';
+
+        $sticker = new Sticker();
+        $sticker->label = 'fragile';
+        $gadget->stickers = [$sticker];
+
+        $this->em()->save($gadget);
+
+        /** @var Gadget $loaded */
+        $loaded = Gadget::on($this->db)->first();
+        $loaded->stickers = [];
+        $this->em()->save($loaded);
+
+        $this->assertSame(
+            [],
+            $this->rows('SELECT gadget_id, sticker_id FROM gadget_sticker'),
+            'Assigning an empty set removes all links'
+        );
+    }
+
+    public function testManyToManyReconciliationMatchesKeysReturnedAsStrings()
+    {
+        // Production drivers (MySQL/PgSQL) return keys as strings while persisted models hold them as
+        // ints, so reconcile must treat those as the same link — re-saving an unchanged relation must
+        // stay a no-op, not delete-and-reinsert. STRINGIFY_FETCHES reproduces that boundary here,
+        // since sqlite otherwise returns ints on both sides and never exercises it.
+        $db = new RecordingConnection([
+            'db'      => 'sqlite',
+            'dbname'  => ':memory:',
+            'options' => [PDO::ATTR_STRINGIFY_FETCHES => true],
+        ]);
+        $db->exec(
+            'CREATE TABLE gadget (id INTEGER PRIMARY KEY AUTOINCREMENT, workshop_id INTEGER, name VARCHAR NOT NULL);'
+            . 'CREATE TABLE sticker (id INTEGER PRIMARY KEY AUTOINCREMENT, label VARCHAR NOT NULL);'
+            . 'CREATE TABLE gadget_sticker (gadget_id INTEGER NOT NULL, sticker_id INTEGER NOT NULL);'
+        );
+
+        $gadget = new Gadget();
+        $gadget->name = 'Spanner';
+        $sticker = new Sticker();
+        $sticker->label = 'fragile';
+        $gadget->stickers = [$sticker];
+        (new TickingEntityManager($db))->save($gadget);
+
+        /** @var Gadget $loaded */
+        $loaded = Gadget::on($db)->first();
+        $loaded->stickers = [$sticker];
+
+        $db->resetCalls();
+        (new TickingEntityManager($db))->save($loaded);
+
+        $junctionWrites = array_filter($db->calls, fn ($call) => $call['table'] === 'gadget_sticker');
+        $this->assertSame(
+            [],
+            $junctionWrites,
+            'An unchanged link must trigger no insert or delete even when keys come back as strings'
+        );
+        $this->assertSame(
+            [['gadget_id' => '1', 'sticker_id' => '1']],
+            $db->prepexec('SELECT gadget_id, sticker_id FROM gadget_sticker')->fetchAll(PDO::FETCH_ASSOC),
+            'The single link is left intact'
+        );
+    }
+
     public function testSaveWithinOuterTransactionDoesNotOpenNestedTransaction()
     {
         $a = new Workshop();
