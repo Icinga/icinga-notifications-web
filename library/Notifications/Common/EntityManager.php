@@ -15,6 +15,8 @@ use ipl\Orm\Resolver;
 use ipl\Sql\Connection;
 use ipl\Sql\ExpressionInterface;
 use ipl\Sql\Insert;
+use ipl\Sql\Select;
+use PDO;
 use RuntimeException;
 
 /**
@@ -180,10 +182,9 @@ class EntityManager
             }
         }
 
-        // 4. Many-to-many: persist both ends, then write the link rows into the junction table. The
-        //    targets are collected first (each is cascade-saved here anyway) so all link rows for a
-        //    relation go out as a single batched INSERT.
-        //    Note: links are appended, not reconciled, so re-assigning a loaded relation may duplicate them.
+        // 4. Many-to-many: persist both ends, then reconcile the junction. The targets are collected
+        //    first (each is cascade-saved here anyway) so the assigned set can be diffed against what
+        //    is stored and written as a single batched INSERT.
         foreach ($links as $name => $relation) {
             $targets = [];
             foreach ($this->asTraversable($set[$name]) as $target) {
@@ -350,7 +351,17 @@ class EntityManager
     }
 
     /**
-     * Write the link rows connecting the given source to each target through the relation's junction table
+     * Reconcile the junction so it links the given source to exactly the given targets
+     *
+     * Assignment is authoritative (implicit reconcile): links no longer present are removed and links
+     * not yet stored are inserted, while links already present are left untouched — so re-saving an
+     * unchanged relation is a no-op rather than a duplicate, and assigning a different set replaces the
+     * previous one. Additive behavior is the caller's job (assign the union of the loaded relation and
+     * the new targets).
+     *
+     * Only the junction rows are touched, never the target rows. The current set is read back from the
+     * junction because the relation is lazy and its prior value was never loaded. This is not yet
+     * soft-delete aware, so it is only correct on junctions without a `deleted` column.
      *
      * @param BelongsToMany $relation
      * @param Model $source
@@ -360,10 +371,6 @@ class EntityManager
      */
     protected function saveLinks(BelongsToMany $relation, Model $source, array $targets): void
     {
-        if (empty($targets)) {
-            return;
-        }
-
         $legs = [];
         foreach ($relation->setSource($source)->resolve() as $leg) {
             $legs[] = $leg;
@@ -378,22 +385,79 @@ class EntityManager
             $sourceColumns[$junctionColumn] = $sourceBehaviors->persistProperty($source->$sourceColumn, $sourceColumn);
         }
 
-        // Leg 1: junction -> target, keys as [targetColumn => junctionColumn]
+        // Leg 1: junction -> target, keys as [targetColumn => junctionColumn]. No many-to-many target
+        // in this module has a compound key, so a single column identifies a link's target side.
         [, , $targetKeys] = $legs[1];
 
-        $rows = [];
+        $targetColumn = array_key_first($targetKeys);
+        $junctionColumn = $targetKeys[$targetColumn];
+
+        $desired = [];
         foreach ($targets as $target) {
             $targetBehaviors = $this->resolverFor($target)->getBehaviors($target);
-
-            $row = $sourceColumns;
-            foreach ($targetKeys as $targetColumn => $junctionColumn) {
-                $row[$junctionColumn] = $targetBehaviors->persistProperty($target->$targetColumn, $targetColumn);
-            }
-
-            $rows[] = $row;
+            $value = $targetBehaviors->persistProperty($target->$targetColumn, $targetColumn);
+            $desired[(string) $value] = $value;
         }
 
-        $this->insertRows($junction->getTableName(), $rows);
+        $table = $junction->getTableName();
+        $stored = $this->fetchLinks($table, $sourceColumns, $junctionColumn);
+
+        foreach ($stored as $identity => $value) {
+            if (! isset($desired[$identity])) {
+                $this->db->delete($table, $this->equalityScope($sourceColumns + [$junctionColumn => $value]));
+            }
+        }
+
+        $missing = [];
+        foreach ($desired as $identity => $value) {
+            if (! isset($stored[$identity])) {
+                $missing[] = $sourceColumns + [$junctionColumn => $value];
+            }
+        }
+
+        $this->insertRows($table, $missing);
+    }
+
+    /**
+     * Read the target value of the links currently stored for the given source, keyed by that value
+     *
+     * @param string $table
+     * @param array<string, mixed> $sourceColumns
+     * @param string $junctionColumn The junction's target-side column to read back
+     *
+     * @return array<string, mixed>
+     */
+    private function fetchLinks(string $table, array $sourceColumns, string $junctionColumn): array
+    {
+        $select = (new Select())
+            ->from($table)
+            ->columns($junctionColumn)
+            ->where($this->equalityScope($sourceColumns));
+
+        $stored = [];
+        foreach ($this->db->select($select)->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $value = $row[$junctionColumn];
+            $stored[(string) $value] = $value;
+        }
+
+        return $stored;
+    }
+
+    /**
+     * Turn a column => value map into an equality WHERE scope (`column = ?`), as ipl-sql expects
+     *
+     * @param array<string, mixed> $columns
+     *
+     * @return array<string, mixed>
+     */
+    private function equalityScope(array $columns): array
+    {
+        $scope = [];
+        foreach ($columns as $column => $value) {
+            $scope[$column . ' = ?'] = $value;
+        }
+
+        return $scope;
     }
 
     /**
