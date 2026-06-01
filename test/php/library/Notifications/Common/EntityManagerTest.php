@@ -224,6 +224,42 @@ class EntityManagerTest extends TestCase
         );
     }
 
+    public function testManyToManyBatchesMultipleLinksIntoASingleInsert()
+    {
+        $gadget = new Gadget();
+        $gadget->name = 'Spanner';
+
+        $fragile = new Sticker();
+        $fragile->label = 'fragile';
+        $thisSideUp = new Sticker();
+        $thisSideUp->label = 'this side up';
+        $heavy = new Sticker();
+        $heavy->label = 'heavy';
+        $gadget->stickers = [$fragile, $thisSideUp, $heavy];
+
+        $this->em()->save($gadget);
+
+        $junctionInserts = array_filter(
+            $this->db->calls,
+            fn ($call) => $call['method'] === 'insert' && $call['table'] === 'gadget_sticker'
+        );
+        $this->assertSame(
+            [],
+            $junctionInserts,
+            'Multiple links must not be written one insert() per target'
+        );
+
+        $this->assertSame(
+            [
+                ['gadget_id' => $gadget->id, 'sticker_id' => $fragile->id],
+                ['gadget_id' => $gadget->id, 'sticker_id' => $thisSideUp->id],
+                ['gadget_id' => $gadget->id, 'sticker_id' => $heavy->id],
+            ],
+            $this->rows('SELECT gadget_id, sticker_id FROM gadget_sticker ORDER BY sticker_id'),
+            'All link rows must be present after the batched insert'
+        );
+    }
+
     public function testSaveWithinOuterTransactionDoesNotOpenNestedTransaction()
     {
         $a = new Workshop();
