@@ -14,6 +14,7 @@ use ipl\Orm\Relation\BelongsToMany;
 use ipl\Orm\Resolver;
 use ipl\Sql\Connection;
 use ipl\Sql\ExpressionInterface;
+use ipl\Sql\Insert;
 use RuntimeException;
 
 /**
@@ -179,17 +180,22 @@ class EntityManager
             }
         }
 
-        // 4. Many-to-many: persist both ends, then write the link rows into the junction table.
+        // 4. Many-to-many: persist both ends, then write the link rows into the junction table. The
+        //    targets are collected first (each is cascade-saved here anyway) so all link rows for a
+        //    relation go out as a single batched INSERT.
         //    Note: links are appended, not reconciled, so re-assigning a loaded relation may duplicate them.
         foreach ($links as $name => $relation) {
+            $targets = [];
             foreach ($this->asTraversable($set[$name]) as $target) {
                 if (! $target instanceof Model) {
                     continue;
                 }
 
                 $this->saveGraph($target);
-                $this->saveLink($relation, $model, $target);
+                $targets[] = $target;
             }
+
+            $this->saveLinks($relation, $model, $targets);
         }
     }
 
@@ -344,39 +350,88 @@ class EntityManager
     }
 
     /**
-     * Write the link row connecting the given source and target through the relation's junction table
+     * Write the link rows connecting the given source to each target through the relation's junction table
      *
      * @param BelongsToMany $relation
      * @param Model $source
-     * @param Model $target
+     * @param list<Model> $targets
      *
      * @return void
      */
-    protected function saveLink(BelongsToMany $relation, Model $source, Model $target): void
+    protected function saveLinks(BelongsToMany $relation, Model $source, array $targets): void
     {
+        if (empty($targets)) {
+            return;
+        }
+
         $legs = [];
         foreach ($relation->setSource($source)->resolve() as $leg) {
             $legs[] = $leg;
         }
 
         $sourceBehaviors = $this->resolverFor($source)->getBehaviors($source);
-        $targetBehaviors = $this->resolverFor($target)->getBehaviors($target);
 
-        $row = [];
-
-        // Leg 0: source -> junction, keys as [junctionColumn => sourceColumn]
+        // Leg 0: source -> junction, keys as [junctionColumn => sourceColumn]. The same for every link.
         [, $junction, $sourceKeys] = $legs[0];
+        $sourceColumns = [];
         foreach ($sourceKeys as $junctionColumn => $sourceColumn) {
-            $row[$junctionColumn] = $sourceBehaviors->persistProperty($source->$sourceColumn, $sourceColumn);
+            $sourceColumns[$junctionColumn] = $sourceBehaviors->persistProperty($source->$sourceColumn, $sourceColumn);
         }
 
         // Leg 1: junction -> target, keys as [targetColumn => junctionColumn]
         [, , $targetKeys] = $legs[1];
-        foreach ($targetKeys as $targetColumn => $junctionColumn) {
-            $row[$junctionColumn] = $targetBehaviors->persistProperty($target->$targetColumn, $targetColumn);
+
+        $rows = [];
+        foreach ($targets as $target) {
+            $targetBehaviors = $this->resolverFor($target)->getBehaviors($target);
+
+            $row = $sourceColumns;
+            foreach ($targetKeys as $targetColumn => $junctionColumn) {
+                $row[$junctionColumn] = $targetBehaviors->persistProperty($target->$targetColumn, $targetColumn);
+            }
+
+            $rows[] = $row;
         }
 
-        $this->db->insert($junction->getTableName(), $row);
+        $this->insertRows($junction->getTableName(), $rows);
+    }
+
+    /**
+     * Insert the given rows into the table, as a single statement
+     *
+     * @param string $table
+     * @param list<array<string, mixed>> $rows Each row must carry the same columns in the same order
+     *
+     * @return void
+     */
+    protected function insertRows(string $table, array $rows): void
+    {
+        if (empty($rows)) {
+            return;
+        }
+
+        if (count($rows) === 1) {
+            $this->db->insert($table, $rows[0]);
+
+            return;
+        }
+
+        $columns = array_keys($rows[0]);
+
+        [$sql, $values] = $this->db->getQueryBuilder()->assembleInsert(
+            (new Insert())->into($table)->values($rows[0])
+        );
+
+        $tuple = '(' . implode(',', array_fill(0, count($columns), '?')) . ')';
+        $sql .= str_repeat(',' . $tuple, count($rows) - 1);
+
+        foreach (array_slice($rows, 1) as $row) {
+            foreach ($columns as $column) {
+                $values[] = $row[$column];
+            }
+        }
+
+        $this->db->prepexec($sql, $values);
     }
 
     /**
