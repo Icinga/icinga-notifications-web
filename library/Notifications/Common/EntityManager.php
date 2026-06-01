@@ -101,7 +101,7 @@ class EntityManager
         }
 
         $this->db->delete($model->getTableName(), $scope);
-        foreach ((array) $model->getKeyName() as $k) {
+        foreach ((array)$model->getKeyName() as $k) {
             unset($model->$k);
         }
 
@@ -228,7 +228,7 @@ class EntityManager
                 // Single auto-increment key that wasn't assigned by the application
                 $id = $this->db->lastInsertId();
                 if ($id !== false) {
-                    $model->$keyName = $behaviors->retrieveProperty((int) $id, $keyName);
+                    $model->$keyName = $behaviors->retrieveProperty((int)$id, $keyName);
                 }
             }
 
@@ -248,10 +248,12 @@ class EntityManager
 
         $scope = $this->keyScope($model, $behaviors);
         if ($scope === null) {
-            throw new RuntimeException(sprintf(
-                'Cannot update %s without a primary key value',
-                get_class($model)
-            ));
+            throw new RuntimeException(
+                sprintf(
+                    'Cannot update %s without a primary key value',
+                    get_class($model)
+                )
+            );
         }
 
         // Stamp only now that we know an UPDATE will actually go out. The stamp adds
@@ -339,7 +341,7 @@ class EntityManager
     {
         $scope = [];
 
-        foreach ((array) $model->getKeyName() as $key) {
+        foreach ((array)$model->getKeyName() as $key) {
             if (! $model->hasProperty($key)) {
                 return null;
             }
@@ -401,7 +403,7 @@ class EntityManager
         foreach ($targets as $target) {
             $targetBehaviors = $this->resolverFor($target)->getBehaviors($target);
             $value = $targetBehaviors->persistProperty($target->$targetColumn, $targetColumn);
-            $desired[(string) $value] = $value;
+            $desired[(string)$value] = $value;
         }
 
         if (in_array('deleted', $junction->getColumns(), true)) {
@@ -415,7 +417,10 @@ class EntityManager
 
         foreach ($stored as $identity => $value) {
             if (! isset($desired[$identity])) {
-                $this->db->delete($table, $this->equalityScope(array_merge($sourceColumns, [$junctionColumn => $value])));
+                $this->db->delete(
+                    $table,
+                    $this->equalityScope(array_merge($sourceColumns, [$junctionColumn => $value]))
+                );
             }
         }
 
@@ -448,7 +453,7 @@ class EntityManager
         $stored = [];
         foreach ($this->db->select($select)->fetchAll(PDO::FETCH_ASSOC) as $row) {
             $value = $row[$junctionColumn];
-            $stored[(string) $value] = $value;
+            $stored[(string)$value] = $value;
         }
 
         return $stored;
@@ -473,10 +478,14 @@ class EntityManager
      *
      * @return void
      */
-    private function reconcileSoftLinks(Model $junction, array $sourceColumns, string $junctionColumn, array $desired): void
-    {
+    private function reconcileSoftLinks(
+        Model $junction,
+        array $sourceColumns,
+        string $junctionColumn,
+        array $desired
+    ): void {
         $table = $junction->getTableName();
-        $changedAt = (int) ($this->now()->format('U.u') * 1000.0);
+        $changedAt = (int)($this->now()->format('U.u') * 1000.0);
 
         $select = (new Select())
             ->from($table)
@@ -485,8 +494,8 @@ class EntityManager
 
         $stored = [];
         foreach ($this->db->select($select)->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            $stored[(string) $row[$junctionColumn]] = [
-                'value'   => $row[$junctionColumn],
+            $stored[(string)$row[$junctionColumn]] = [
+                'value' => $row[$junctionColumn],
                 'deleted' => $row['deleted'] === 'y',
             ];
         }
@@ -494,7 +503,12 @@ class EntityManager
         // Soft-delete links that are no longer desired but still active.
         foreach ($stored as $identity => $link) {
             if (! isset($desired[$identity]) && ! $link['deleted']) {
-                $this->markLink($table, array_merge($sourceColumns, [$junctionColumn => $link['value']]), 'y', $changedAt);
+                $this->markLink(
+                    $table,
+                    array_merge($sourceColumns, [$junctionColumn => $link['value']]),
+                    'y',
+                    $changedAt
+                );
             }
         }
 
@@ -502,10 +516,13 @@ class EntityManager
         $missing = [];
         foreach ($desired as $identity => $value) {
             if (! isset($stored[$identity])) {
-                $missing[] = array_merge($sourceColumns, [$junctionColumn => $value, 'deleted' => 'n', 'changed_at' => $changedAt]);
+                $missing[] = array_merge(
+                    $sourceColumns,
+                    [$junctionColumn => $value, 'deleted' => 'n', 'changed_at' => $changedAt]
+                );
             } elseif ($stored[$identity]['deleted']) {
                 $this->markLink($table, array_merge($sourceColumns, [$junctionColumn => $value]), 'n', $changedAt);
-}
+            }
         }
 
         $this->insertRows($table, $missing);
@@ -605,7 +622,7 @@ class EntityManager
 
         $columns = [];
 
-        foreach ((array) $model->getKeyName() as $key) {
+        foreach ((array)$model->getKeyName() as $key) {
             $columns[$key] = $key;
         }
 
