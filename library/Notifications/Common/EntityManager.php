@@ -101,7 +101,7 @@ class EntityManager
         }
 
         $this->db->delete($model->getTableName(), $scope);
-        foreach ((array)$model->getKeyName() as $k) {
+        foreach ((array) $model->getKeyName() as $k) {
             unset($model->$k);
         }
 
@@ -228,7 +228,7 @@ class EntityManager
                 // Single auto-increment key that wasn't assigned by the application
                 $id = $this->db->lastInsertId();
                 if ($id !== false) {
-                    $model->$keyName = $behaviors->retrieveProperty((int)$id, $keyName);
+                    $model->$keyName = $behaviors->retrieveProperty((int) $id, $keyName);
                 }
             }
 
@@ -341,7 +341,7 @@ class EntityManager
     {
         $scope = [];
 
-        foreach ((array)$model->getKeyName() as $key) {
+        foreach ((array) $model->getKeyName() as $key) {
             if (! $model->hasProperty($key)) {
                 return null;
             }
@@ -403,7 +403,7 @@ class EntityManager
         foreach ($targets as $target) {
             $targetBehaviors = $this->resolverFor($target)->getBehaviors($target);
             $value = $targetBehaviors->persistProperty($target->$targetColumn, $targetColumn);
-            $desired[(string)$value] = $value;
+            $desired[(string) $value] = $value;
         }
 
         if (in_array('deleted', $junction->getColumns(), true)) {
@@ -453,7 +453,7 @@ class EntityManager
         $stored = [];
         foreach ($this->db->select($select)->fetchAll(PDO::FETCH_ASSOC) as $row) {
             $value = $row[$junctionColumn];
-            $stored[(string)$value] = $value;
+            $stored[(string) $value] = $value;
         }
 
         return $stored;
@@ -485,7 +485,7 @@ class EntityManager
         array $desired
     ): void {
         $table = $junction->getTableName();
-        $changedAt = (int)($this->now()->format('U.u') * 1000.0);
+        $changedAt = (int) ($this->now()->format('U.u') * 1000.0);
 
         $select = (new Select())
             ->from($table)
@@ -494,7 +494,7 @@ class EntityManager
 
         $stored = [];
         foreach ($this->db->select($select)->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            $stored[(string)$row[$junctionColumn]] = [
+            $stored[(string) $row[$junctionColumn]] = [
                 'value' => $row[$junctionColumn],
                 'deleted' => $row['deleted'] === 'y',
             ];
@@ -622,7 +622,7 @@ class EntityManager
 
         $columns = [];
 
-        foreach ((array)$model->getKeyName() as $key) {
+        foreach ((array) $model->getKeyName() as $key) {
             $columns[$key] = $key;
         }
 
