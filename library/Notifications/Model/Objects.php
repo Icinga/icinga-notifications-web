@@ -21,7 +21,6 @@ use ipl\Orm\Relations;
  * @property int $source_id
  * @property string $name
  * @property ?string $url
- * @property ?string $mute_reason
  *
  * @property Query|Incident $incident
  * @property Query|Tag $tag
@@ -47,8 +46,7 @@ class Objects extends Model
         return [
             'source_id',
             'name',
-            'url',
-            'mute_reason'
+            'url'
         ];
     }
 
