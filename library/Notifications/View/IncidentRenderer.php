@@ -77,8 +77,8 @@ class IncidentRenderer implements ItemRenderer
 
     public function assembleExtendedInfo($item, HtmlDocument $info, string $layout): void
     {
-        if ($item->severity !== 'ok' && $item->object->mute_reason !== null) {
-            $info->addHtml(new Icon(Icons::MUTE, ['title' => $item->object->mute_reason]));
+        if ($item->severity !== 'ok' && $item->mute_reason !== null) {
+            $info->addHtml(new Icon(Icons::MUTE, ['title' => $item->mute_reason]));
         }
 
         /** @var Source $source */

@@ -25,6 +25,7 @@ use ipl\Sql\Select;
  * @property DateTime $started_at
  * @property ?DateTime $recovered_at
  * @property string $severity
+ * @property ?string $mute_reason
  *
  * @property Query|Objects $object
  * @property Query|Contact $contact
@@ -51,7 +52,8 @@ class Incident extends Model
             'object_id',
             'started_at',
             'recovered_at',
-            'severity'
+            'severity',
+            'mute_reason'
         ];
     }
 
@@ -61,7 +63,8 @@ class Incident extends Model
             'object_id'    => t('Object Id'),
             'started_at'   => t('Started At'),
             'recovered_at' => t('Recovered At'),
-            'severity'     => t('Severity')
+            'severity'     => t('Severity'),
+            'mute_reason'  => t('Mute Reason')
         ];
     }
 
