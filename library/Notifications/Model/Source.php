@@ -26,6 +26,7 @@ use Throwable;
  * @property ?string $listener_password_hash
  * @property DateTime $changed_at
  * @property bool $deleted
+ * @property bool $locked
  *
  * @property Query|Objects $object
  * @property Query|Rule $rule
@@ -53,7 +54,8 @@ class Source extends Model
             'listener_username',
             'listener_password_hash',
             'changed_at',
-            'deleted'
+            'deleted',
+            'locked'
         ];
     }
 
@@ -80,7 +82,7 @@ class Source extends Model
     public function createBehaviors(Behaviors $behaviors): void
     {
         $behaviors->add(new MillisecondTimestamp(['changed_at']));
-        $behaviors->add(new BoolCast(['deleted']));
+        $behaviors->add(new BoolCast(['deleted', 'locked']));
     }
 
     public function createRelations(Relations $relations): void

@@ -15,10 +15,13 @@ use ipl\Html\Text;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
 use ipl\Validator\CallbackValidator;
+use ipl\Web\Common\CalloutType;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
 use ipl\Web\Url;
 use ipl\Web\Widget\ButtonLink;
+use ipl\Web\Widget\Callout;
+use RuntimeException;
 
 class SourceForm extends CompatForm
 {
@@ -39,6 +42,9 @@ class SourceForm extends CompatForm
     /** @var ?int */
     private ?int $sourceId = null;
 
+    /** @var bool Whether the source is locked for editing */
+    private bool $isLocked = false;
+
     public function __construct(Connection $db)
     {
         $this->db = $db;
@@ -46,6 +52,7 @@ class SourceForm extends CompatForm
 
     protected function assemble(): void
     {
+        $this->addAttributes(Attributes::create(['class' => 'source-form']));
         $this->applyDefaultElementDecorators();
         $this->addCsrfCounterMeasure();
         $this->addHtml(new HtmlElement(
@@ -64,7 +71,8 @@ class SourceForm extends CompatForm
             'name',
             [
                 'label'     => $this->translate('Source Name'),
-                'required'  => true
+                'required'  => true,
+                'disabled'  => $this->isLocked
             ]
         );
         $this->addElement(
@@ -75,6 +83,7 @@ class SourceForm extends CompatForm
                 'required'  => true,
                 'label'     => $this->translate('Source Type'),
                 'value'     => self::TYPE_GENERIC,
+                'disabled'  => $this->isLocked,
                 'class'     => 'autosubmit',
                 'options'   => [
                     self::TYPE_GENERIC    => $this->translate('Generic', 'notifications.source.type'),
@@ -103,6 +112,7 @@ class SourceForm extends CompatForm
                 [
                     'required'      => true,
                     'label'         => $this->translate('Source Identifier'),
+                    'disabled'  => $this->isLocked
                 ]
             );
         }
@@ -128,6 +138,7 @@ class SourceForm extends CompatForm
             [
                 'required' => true,
                 'label' => $this->translate('Username'),
+                'disabled'  => $this->isLocked,
                 'validators' => [new CallbackValidator(
                     function ($value, CallbackValidator $validator) {
                         // Username must be unique
@@ -147,6 +158,15 @@ class SourceForm extends CompatForm
                 )]
             ]
         );
+
+        if ($this->isLocked) {
+            $this->prependHtml(new Callout(
+                CalloutType::Info,
+                $this->translate('This source is managed by an integration, so changes can only be applied through it.')
+            ));
+
+            return;
+        }
 
         $credentials->addElement(
             'password',
@@ -260,6 +280,10 @@ class SourceForm extends CompatForm
      */
     public function editSource(): void
     {
+        if ($this->isLocked) {
+            throw new RuntimeException('Source is locked');
+        }
+
         $data = $this->getValues();
 
         $source = [
@@ -310,6 +334,8 @@ class SourceForm extends CompatForm
         if ($source === null) {
             throw new HttpNotFoundException($this->translate('Source not found'));
         }
+
+        $this->isLocked = $source->locked;
 
         return [
             'name' => $source->name,
