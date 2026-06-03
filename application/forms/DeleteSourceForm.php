@@ -16,6 +16,7 @@ use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
+use RuntimeException;
 
 class DeleteSourceForm extends CompatForm
 {
@@ -36,7 +37,7 @@ class DeleteSourceForm extends CompatForm
     public function loadSource(int $id): static
     {
         $source = Source::on(Database::get())
-            ->columns(['id', 'name'])
+            ->columns(['id', 'name', 'locked'])
             ->filter(Filter::equal('id', $id))
             ->first();
         /** @var ?Source $source */
@@ -104,6 +105,10 @@ class DeleteSourceForm extends CompatForm
      */
     public function removeSource(Connection $db): void
     {
+        if ($this->source->locked) {
+            throw new RuntimeException('Source is locked');
+        }
+
         $rules = Rule::on($db)
             ->columns('id')
             ->filter(Filter::equal('source_id', $this->source->id));
