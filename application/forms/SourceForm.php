@@ -19,8 +19,6 @@ use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
 use ipl\Web\Url;
 use ipl\Web\Widget\ButtonLink;
-use ipl\Web\Widget\Icon;
-use ipl\Web\Widget\Link;
 
 class SourceForm extends CompatForm
 {
@@ -31,6 +29,9 @@ class SourceForm extends CompatForm
 
     /** @var string @var The generic source type */
     public const TYPE_GENERIC = 'generic';
+
+    /** @var string The type for sources with an integration */
+    private const TYPE_INTEGRATED = 'integrated';
 
     /** @var Connection */
     private Connection $db;
@@ -53,8 +54,8 @@ class SourceForm extends CompatForm
             Text::create($this->translate(
                 'Sources are the most vital part of Icinga Notifications. They submit events that will be'
                 . ' processed to notify users about incidents. You can either configure sources that provide an'
-                . ' integration in Icinga Web or use the Generic type for sources that communicate directly with the'
-                . ' Icinga Notifications API. Refer to the source\'s documentation for the correct source type.'
+                . ' integration in Icinga Web, or use the generic type for sources that communicate directly with'
+                . ' the Icinga Notifications API.'
             ))
         ));
 
@@ -67,13 +68,44 @@ class SourceForm extends CompatForm
             ]
         );
         $this->addElement(
-            'text',
-            'type',
+            'select',
+            'source_type',
             [
-                'required'          => true,
-                'label'             => $this->translate('Source Type'),
+                'ignore'    => true,
+                'required'  => true,
+                'label'     => $this->translate('Source Type'),
+                'value'     => self::TYPE_GENERIC,
+                'class'     => 'autosubmit',
+                'options'   => [
+                    self::TYPE_GENERIC    => $this->translate('Generic', 'notifications.source.type'),
+                    self::TYPE_INTEGRATED => $this->translate('Integrated', 'notifications.source.type')
+                ]
             ]
         );
+
+        if ($this->getPopulatedValue('source_type') === self::TYPE_INTEGRATED) {
+            $this->addHtml(
+                new HtmlElement(
+                    'p',
+                    Attributes::create(['class' => 'description']),
+                    Text::create(
+                        $this->translate(
+                            'Enter the source identifier as stated in the integration\'s documentation.'
+                            . ' Note that integrated sources usually provide their own configuration interface for'
+                            . ' notifications, which is the recommended way to set them up.'
+                        )
+                    )
+                )
+            );
+            $this->addElement(
+                'text',
+                'type',
+                [
+                    'required'      => true,
+                    'label'         => $this->translate('Source Identifier'),
+                ]
+            );
+        }
 
         $this->addElement('fieldset', 'credentials', [
             'label' => $this->translate('Source Credentials')
@@ -85,41 +117,9 @@ class SourceForm extends CompatForm
             Text::create($this->translate(
                 'These credentials will be used by the source to authenticate'
                 . ' against Icinga Notifications when submitting events. You will need to add this to the'
-                . ' source\'s configuration as well:'
-            )),
-            Text::create(' '),
-            match ($this->getValue('type')) {
-                'icinga2' => new Link(
-                    [
-                        $this->translate('Icinga DB Documentation'),
-                        ' ',
-                        new Icon('arrow-up-right-from-square')
-                    ],
-                    Url::fromPath(
-                        'https://icinga.com/docs/icinga-db'
-                        . '/latest/doc/03-Configuration/#notifications-configuration'
-                    ),
-                    ['target' => '_blank']
-                ),
-                'kubernetes' => new Link(
-                    [
-                        $this->translate('Icinga for Kubernetes Documentation'),
-                        ' ',
-                        new Icon('arrow-up-right-from-square')
-                    ],
-                    Url::fromPath(
-                        'https://icinga.com/docs/icinga-for-kubernetes'
-                        . '/latest/doc/03-Configuration/#notifications-configuration'
-                    ),
-                    ['target' => '_blank']
-                ),
-                self::TYPE_GENERIC => Text::create($this->translate(
-                    'Consult the documentation of your source for configuration details.'
-                )),
-                default => Text::create($this->translate(
-                    'Please choose the source type above to see the required configuration.'
-                ))
-            }
+                . ' source\'s configuration as well.'
+                . ' Consult the documentation of your source for configuration details.'
+            ))
         ));
 
         $credentials->addElement(
@@ -214,7 +214,16 @@ class SourceForm extends CompatForm
     {
         $this->sourceId = $id;
 
-        $this->populate($this->fetchDbValues());
+        $values = $this->fetchDbValues();
+
+        if ($values['type'] === self::TYPE_GENERIC) {
+            unset($values['type']);
+            $values['source_type'] = self::TYPE_GENERIC;
+        } else {
+            $values['source_type'] = self::TYPE_INTEGRATED;
+        }
+
+        $this->populate($values);
 
         return $this;
     }
@@ -228,7 +237,7 @@ class SourceForm extends CompatForm
 
         $source = [
             'name' => $data['name'],
-            'type' => $data['type'],
+            'type' => $this->getValue('type', self::TYPE_GENERIC),
             'listener_username' => $data['credentials']['listener_username'],
             // Not using PASSWORD_DEFAULT, as the used algorithm should
             // be kept in sync with what the daemon understands
@@ -255,7 +264,7 @@ class SourceForm extends CompatForm
 
         $source = [
             'name' => $data['name'],
-            'type' => $data['type'],
+            'type' => $this->getValue('type', self::TYPE_GENERIC),
             'listener_username' => $data['credentials']['listener_username']
         ];
 

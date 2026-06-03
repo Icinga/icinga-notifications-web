@@ -16,6 +16,7 @@ use Icinga\Module\Notifications\Common\SourceHookLocator;
 use Icinga\Module\Notifications\Forms\EventRuleConfigElements\NotificationConfigProvider;
 use Icinga\Module\Notifications\Forms\EventRuleConfigForm;
 use Icinga\Module\Notifications\Forms\EventRuleForm;
+use Icinga\Module\Notifications\Forms\SourceForm;
 use Icinga\Module\Notifications\Hook\V2\SourceHook;
 use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Model\Source;
@@ -26,15 +27,19 @@ use Icinga\Web\Session;
 use ipl\Html\Attributes;
 use ipl\Html\Contract\Form;
 use ipl\Html\Html;
+use ipl\Html\HtmlElement;
+use ipl\Html\Text;
 use ipl\Stdlib\Filter;
 use ipl\Stdlib\Filter\Condition;
 use ipl\Stdlib\Seq;
+use ipl\Web\Common\CalloutType;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Control\SearchBar\SearchException;
 use ipl\Web\Control\SearchEditor;
 use ipl\Web\Filter\QueryString;
 use ipl\Web\FormElement\SearchSuggestions;
 use ipl\Web\Url;
+use ipl\Web\Widget\Callout;
 use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
 use JsonException;
@@ -233,14 +238,15 @@ class EventRuleController extends CompatController
 
         $editor = (new SearchEditor())
             ->setQueryString($parsedFilter['qs'] ?? '')
-            ->setSuggestionUrl(
+            ->setAction(Url::fromRequest()->with('object_filter', $filter)->getAbsoluteUrl());
+
+        if ($hook !== null) {
+            $editor->setSuggestionUrl(
                 Url::fromPath(
                     'notifications/event-rule/suggest',
                     ['id' => $ruleId, '_disableLayout' => true, 'showCompact' => true]
                 )
-            )
-            ->setAction(Url::fromRequest()->with('object_filter', $filter)->getAbsoluteUrl())
-            ->on(
+            )->on(
                 SearchEditor::ON_VALIDATE_COLUMN,
                 function (Condition $condition) use ($hook) {
                     try {
@@ -259,32 +265,56 @@ class EventRuleController extends CompatController
                         ));
                     }
                 }
-            )
-            ->on(Form::ON_SUBMIT, function (SearchEditor $form) use ($ruleId, $hook) {
-                $filter = $form->getFilter();
-
-                $this->session->set(
-                    'object_filter',
-                    (new RuleSerializer(
-                        $filter,
-                        $hook->getJsonPaths(...Seq::unique(Seq::map($filter->yieldRules(), fn($r) => $r->getColumn())))
-                    ))->getJson()
-                );
-                $this->redirectNow(Links::eventRule($ruleId)->setParam('_filterOnly'));
+            )->getParser()->on(QueryString::ON_CONDITION, function (Condition $condition) use ($hook) {
+                try {
+                    $hook->enrichCondition($condition);
+                } catch (Throwable $e) {
+                    Logger::error(
+                        'Source hook %s failed to enrich filter condition: %s',
+                        get_class($hook),
+                        $e
+                    );
+                }
             });
-
-        $editor->getParser()->on(QueryString::ON_CONDITION, function (Condition $condition) use ($hook) {
-            try {
-                $hook->enrichCondition($condition);
-            } catch (Throwable $e) {
-                Logger::error(
-                    'Source hook %s failed to enrich filter condition: %s',
-                    get_class($hook),
-                    $e
+            $getJsonPaths = function (Filter\Chain $filter) use ($hook) {
+                return $hook->getJsonPaths(
+                    ...Seq::unique(
+                        Seq::map($filter->yieldRules(), fn($r) => $r->getColumn())
+                    )
                 );
-            }
-        });
-        $editor->handleRequest($this->getServerRequest());
+            };
+        } else {
+            $getJsonPaths = function (Filter\Chain $filter) {
+                $jsonPaths = [];
+                foreach (Seq::unique(Seq::map($filter->yieldRules(), fn($r) => $r->getColumn())) as $path) {
+                    $jsonPaths[$path] = [$path];
+                }
+
+                return $jsonPaths;
+            };
+        }
+
+        $editor->on(Form::ON_SUBMIT, function (SearchEditor $form) use ($ruleId, $getJsonPaths) {
+            $filter = $form->getFilter();
+            $this->session->set('object_filter', (new RuleSerializer($filter, $getJsonPaths($filter)))->getJson());
+            $this->redirectNow(Links::eventRule($ruleId)->setParam('_filterOnly'));
+        })->handleRequest($this->getServerRequest());
+
+        if ($hook === null) {
+            $this->getDocument()->addHtml(
+                (new Callout(
+                    CalloutType::Info,
+                    Text::create(
+                        $this->translate(
+                            'Please make sure columns are valid JSON paths, '
+                            . 'as no validation is available for this source. '
+                            . 'Refer to the source\'s documentation for available columns.'
+                        )
+                    )
+                ))
+                    ->addAttributes(Attributes::create(['class' => 'generic-source-hint']))
+            );
+        }
 
         $this->getDocument()->addHtml($editor);
 
@@ -326,7 +356,7 @@ class EventRuleController extends CompatController
         $this->getDocument()->addHtml($suggestions);
     }
 
-    protected function resolveSourceHook(int $ruleId): SourceHook
+    protected function resolveSourceHook(int $ruleId): ?SourceHook
     {
         $source = null;
         if ($ruleId !== -1) {
@@ -347,6 +377,10 @@ class EventRuleController extends CompatController
 
         if ($source === null) {
             $this->httpNotFound($this->translate('Rule not found'));
+        }
+
+        if ($source->type === SourceForm::TYPE_GENERIC) {
+            return null;
         }
 
         $hook = SourceHookLocator::forType($source->type);
