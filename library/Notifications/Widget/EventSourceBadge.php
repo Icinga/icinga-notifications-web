@@ -8,7 +8,8 @@ namespace Icinga\Module\Notifications\Widget;
 use Icinga\Module\Notifications\Model\Source;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
-use ipl\Html\Html;
+use ipl\Html\HtmlElement;
+use ipl\Html\Text;
 use ipl\Web\Widget\Ball;
 
 class EventSourceBadge extends BaseHtmlElement
@@ -31,19 +32,15 @@ class EventSourceBadge extends BaseHtmlElement
 
     protected function assemble(): void
     {
-        if ($this->source->name === null) {
-            $title = $this->source->type;
-        } else {
-            $title = sprintf('%s (%s)', $this->source->name, $this->source->type);
-        }
-
         $this
-            ->getAttributes()
-            ->add('title', $title);
-
-        $this->addHtml((new Ball(Ball::SIZE_LARGE))
-            ->addAttributes(Attributes::create(['class' => 'source-icon']))
-            ->addHtml($this->source->getIcon()));
-        $this->add(Html::tag('span', ['class' => 'name'], $this->source->name ?? $this->source->type));
+            ->addAttributes(Attributes::create([
+                'title' => sprintf('%s (%s)', $this->source->name, $this->source->type)
+            ]))
+            ->addHtml(
+                (new Ball(Ball::SIZE_LARGE))
+                    ->addAttributes(Attributes::create(['class' => 'source-icon']))
+                    ->addHtml($this->source->getIcon()),
+                new HtmlElement('span', Attributes::create(['class' => 'name']), Text::create($this->source->name))
+            );
     }
 }
