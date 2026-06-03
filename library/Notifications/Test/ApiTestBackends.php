@@ -231,7 +231,14 @@ SQL;
         $webDb->exec(file_get_contents($webSchema));
         self::initializeIcingaWebDb($webDb, $driver);
 
-        $db->exec(file_get_contents($notificationSchema));
+        $statements = file_get_contents($notificationSchema);
+
+        if (preg_match('/\s*delimiter\s*(\S+)\s*$/im', $statements, $matches)) {
+            $statements = preg_replace('/\s*delimiter\s*(\S+)\s*$/im', '', $statements);
+            $statements = preg_replace('/' . preg_quote($matches[1], '/') . '$/m', ';', $statements);
+        }
+
+        $db->exec($statements);
         static::initializeNotificationsDb($db, $driver);
     }
 
