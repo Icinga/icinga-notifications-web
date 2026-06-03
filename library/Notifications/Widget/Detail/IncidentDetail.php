@@ -5,12 +5,8 @@
 
 namespace Icinga\Module\Notifications\Widget\Detail;
 
-use ArrayIterator;
-use Icinga\Module\Icingadb\Model\CustomvarFlat;
-use Icinga\Module\Icingadb\Widget\Detail\CustomVarTable;
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Hook\ObjectsRendererHook;
-use Icinga\Module\Notifications\Model\Behavior\IcingaCustomVars;
 use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\View\IncidentContactRenderer;
 use Icinga\Module\Notifications\View\IncidentHistoryRenderer;
@@ -20,7 +16,6 @@ use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use ipl\Html\HtmlElement;
-use ipl\Html\Table;
 use ipl\Html\Text;
 use ipl\Html\ValidHtml;
 use ipl\I18n\Translation;
@@ -121,67 +116,6 @@ class IncidentDetail extends BaseHtmlElement
         ];
     }
 
-    /** @return ValidHtml[] */
-    protected function createObjectTag(): array
-    {
-        $tags = [];
-        $hostCustomvars = [];
-        $serviceCustomvars = [];
-        foreach ($this->incident->object->object_extra_tag as $extraTag) {
-            if (str_starts_with($extraTag->tag, IcingaCustomVars::HOST_PREFIX)) {
-                $name = substr($extraTag->tag, strlen(IcingaCustomVars::HOST_PREFIX));
-                $name = preg_replace('/(\[\d*])/', '.\1', $name);
-
-                $hostCustomvars[] = (object) [
-                    'flatname' => $name,
-                    'flatvalue' => $extraTag->value
-                ];
-            } elseif (str_starts_with($extraTag->tag, IcingaCustomVars::SERVICE_PREFIX)) {
-                $name = substr($extraTag->tag, strlen(IcingaCustomVars::SERVICE_PREFIX));
-                $name = preg_replace('/(\[\d*])/', '.\1', $name);
-
-                $serviceCustomvars[] = (object) [
-                    'flatname' => $name,
-                    'flatvalue' => $extraTag->value
-                ];
-            } else {
-                $tags[] = Table::row([$extraTag->tag, $extraTag->value]);
-            }
-        }
-
-        $result = [];
-
-        if (! empty($tags) || ! empty($hostCustomvars) || ! empty($serviceCustomvars)) {
-            $result[] = new HtmlElement('h2', null, new Text(t('Object Tags')));
-        }
-
-        if (! empty($tags)) {
-            $result[] = (new Table())->addHtml(...$tags)->addAttributes(['class' => 'object-tags-table']);
-        }
-
-        // TODO: Drop the following custom variable handling once the final source integration is ready
-
-        if (! empty($hostCustomvars)) {
-            $result[] = new HtmlElement('h3', null, new Text('Host Custom Variables'));
-            $result[] = new HtmlElement(
-                'div',
-                Attributes::create(['class' => ['icinga-module', 'module-icingadb']]),
-                new CustomVarTable((new CustomvarFlat())->unFlattenVars(new ArrayIterator($hostCustomvars)))
-            );
-        }
-
-        if (! empty($serviceCustomvars)) {
-            $result[] = new HtmlElement('h3', null, new Text('Service Custom Variables'));
-            $result[] = new HtmlElement(
-                'div',
-                Attributes::create(['class' => ['icinga-module', 'module-icingadb']]),
-                new CustomVarTable((new CustomvarFlat())->unFlattenVars(new ArrayIterator($serviceCustomvars)))
-            );
-        }
-
-        return $result;
-    }
-
     protected function assemble(): void
     {
         $this->add([
@@ -189,7 +123,6 @@ class IncidentDetail extends BaseHtmlElement
             $this->createHistory(),
             $this->createRelatedObject(),
             $this->createSource(),
-            $this->createObjectTag(),
         ]);
     }
 }

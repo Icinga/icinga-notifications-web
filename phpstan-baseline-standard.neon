@@ -187,12 +187,6 @@ parameters:
 			path: library/Notifications/Model/TimeperiodEntry.php
 
 		-
-			message: '#^Cannot access property \$tag on mixed\.$#'
-			identifier: property.nonObject
-			count: 2
-			path: library/Notifications/Web/Control/SearchBar/ExtraTagSuggestions.php
-
-		-
 			message: '#^Method Icinga\\Module\\Notifications\\Web\\Control\\SearchBar\\ObjectSuggestions\:\:collectFilterColumns\(\) return type has no value type specified in iterable type Traversable\.$#'
 			identifier: missingType.iterableValue
 			count: 1

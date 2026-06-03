@@ -21,7 +21,6 @@ use Icinga\Module\Notifications\Hook\V2\SourceHook;
 use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Model\Source;
 use Icinga\Module\Notifications\Util\RuleSerializer;
-use Icinga\Module\Notifications\Web\Control\SearchBar\ExtraTagSuggestions;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\Attributes;
@@ -187,19 +186,7 @@ class EventRuleController extends CompatController
     }
 
     /**
-     * completeAction for Object Extra Tags
-     *
-     * @return void
-     */
-    public function completeAction(): void
-    {
-        $suggestions = new ExtraTagSuggestions();
-        $suggestions->forRequest($this->getServerRequest());
-        $this->getDocument()->add($suggestions);
-    }
-
-    /**
-     * searchEditorAction for Object Extra Tags
+     * searchEditorAction for editing filters
      *
      * @return void
      *

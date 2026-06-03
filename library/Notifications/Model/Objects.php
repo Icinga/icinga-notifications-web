@@ -24,8 +24,6 @@ use ipl\Orm\Relations;
  *
  * @property Query|Incident $incident
  * @property Query|Tag $tag
- * @property Query|ObjectExtraTag $object_extra_tag
- * @property Query|ExtraTag $extra_tag
  * @property Query|Source $source
  * @property array<string, string> $id_tags
  */
@@ -78,10 +76,6 @@ class Objects extends Model
 
         $relations->hasMany('object_id_tag', ObjectIdTag::class);
         $relations->hasMany('tag', Tag::class);
-        $relations->hasMany('object_extra_tag', ObjectExtraTag::class)
-            ->setJoinType('LEFT');
-        $relations->hasMany('extra_tag', ExtraTag::class)
-            ->setJoinType('LEFT');
 
         $relations->belongsTo('source', Source::class)->setJoinType('LEFT');
     }
