@@ -71,7 +71,7 @@ trait Auth
                 function (Filter\Condition $condition) {
                     //The condition column is actually the tag (eg): tag = hostgroup/linux, value = null
                     if ($condition->getValue() === true) {
-                        $column = 'object.object_extra_tag.tag';
+                        $column = 'object.object_id_tag.tag';
 
                         $condition->setValue($condition->getColumn());
                         $condition->setColumn($column);

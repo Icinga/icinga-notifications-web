@@ -8,12 +8,9 @@ namespace Icinga\Module\Notifications\Web\Control\SearchBar;
 use Generator;
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
-use Icinga\Module\Notifications\Model\Behavior\IcingaCustomVars;
-use Icinga\Module\Notifications\Model\ObjectExtraTag;
 use Icinga\Module\Notifications\Model\ObjectIdTag;
 use Icinga\Module\Notifications\Util\ObjectSuggestionsCursor;
 use ipl\Html\HtmlElement;
-use ipl\I18n\Translation;
 use ipl\Orm\Exception\InvalidColumnException;
 use ipl\Orm\Exception\InvalidRelationException;
 use ipl\Orm\Model;
@@ -32,7 +29,6 @@ use Traversable;
 class ObjectSuggestions extends Suggestions
 {
     use Auth;
-    use Translation;
 
     protected ?Model $model = null;
 
@@ -72,12 +68,7 @@ class ObjectSuggestions extends Suggestions
 
     protected function shouldShowRelationFor(string $column): bool
     {
-        if (
-            str_contains($column, '.tag.')
-            || str_contains($column, '.extra_tag.')
-            || str_starts_with($column, IcingaCustomVars::HOST_PREFIX)
-            || str_starts_with($column, IcingaCustomVars::SERVICE_PREFIX)
-        ) {
+        if (str_contains($column, '.tag.')) {
             return false;
         }
 
@@ -131,26 +122,13 @@ class ObjectSuggestions extends Suggestions
 
         $columnPath = $query->getResolver()->qualifyPath($column, $model->getTableName());
         /** @var string[] $splitted */
-        $splitted = preg_split('/(?<=tag|extra_tag)\.|\.(?=[^.]+$)/', $columnPath, 2);
+        $splitted = preg_split('/(?<=tag)\.|\.(?=[^.]+$)/', $columnPath, 2);
         [$targetPath, $columnName] = $splitted;
 
         $isTag = false;
         if (str_ends_with($targetPath, '.tag')) {
             $isTag = true;
             $targetPath = substr($targetPath, 0, -3) . 'object_id_tag';
-        } elseif (str_ends_with($targetPath, '.extra_tag')) {
-            $isTag = true;
-            $targetPath = substr($targetPath, 0, -9) . 'object_extra_tag';
-        } elseif (
-            str_starts_with($column, IcingaCustomVars::HOST_PREFIX)
-            || str_starts_with($column, IcingaCustomVars::SERVICE_PREFIX)
-        ) {
-            $isTag = true;
-            $columnName = $column;
-            $targetPath = $query->getResolver()->qualifyPath(
-                'object.object_extra_tag',
-                $model->getTableName()
-            );
         }
 
         if (str_contains($targetPath, '.')) {
@@ -206,60 +184,27 @@ class ObjectSuggestions extends Suggestions
             yield $columnName => $columnMeta;
         }
 
-        $parsedArrayVars = [];
-
-        // Custom variables only after the columns are exhausted and there's actually a chance the user sees them
-        foreach ([new ObjectIdTag(), new ObjectExtraTag()] as $model) {
-            $titleAdded = false;
-            /** @var ObjectIdTag|ObjectExtraTag $tag */
-            foreach ($this->queryTags($model, $searchTerm) as $tag) {
-                $isIdTag = $tag instanceof ObjectIdTag;
-
-                if (! $titleAdded) {
-                    $titleAdded = true;
-                    $this->addHtml(HtmlElement::create(
-                        'li',
-                        ['class' => static::SUGGESTION_TITLE_CLASS],
-                        $isIdTag ? t('Object Tags') : t('Object Extra Tags')
-                    ));
-                }
-
-                if (
-                    str_starts_with($tag->tag, IcingaCustomVars::HOST_PREFIX)
-                    || str_starts_with($tag->tag, IcingaCustomVars::SERVICE_PREFIX)
-                ) {
-                    $search = $name = $tag->tag;
-                    if (preg_match('/\w+(?:\[(\d*)])+$/', $name, $matches)) {
-                        $name = substr($name, 0, -(strlen($matches[1]) + 2));
-                        if (isset($parsedArrayVars[$name])) {
-                            continue;
-                        }
-
-                        $parsedArrayVars[$name] = true;
-                        $search = $name . '[*]';
-                    }
-
-                    yield $search => sprintf($this->translate(
-                        ucfirst(substr($name, 0, strpos($name, '.'))) . ' %s',
-                        '..<customvar-name>'
-                    ), substr($name, strlen(
-                        str_starts_with($name, IcingaCustomVars::HOST_PREFIX)
-                            ? IcingaCustomVars::HOST_PREFIX
-                            : IcingaCustomVars::SERVICE_PREFIX
-                    )));
-                } else {
-                    $relation = $isIdTag ? 'object.tag' : 'object.extra_tag';
-
-                    yield $relation . '.' . $tag->tag => ucfirst($tag->tag);
-                }
+        // Object tags only after the columns are exhausted and there's actually a chance the user sees them
+        $titleAdded = false;
+        /** @var ObjectIdTag $tag */
+        foreach ($this->queryTags(new ObjectIdTag(), $searchTerm) as $tag) {
+            if (! $titleAdded) {
+                $titleAdded = true;
+                $this->addHtml(HtmlElement::create(
+                    'li',
+                    ['class' => static::SUGGESTION_TITLE_CLASS],
+                    t('Object Tags')
+                ));
             }
+
+            yield 'object.tag.' . $tag->tag => ucfirst($tag->tag);
         }
     }
 
     /**
-     * Prepare query with all available tags/extra_tags from provided model matching the given term
+     * Prepare query with all available tags from provided model matching the given term
      *
-     * @param Model $model The model to fetch tag/extra_tag from
+     * @param Model $model The model to fetch tag from
      * @param string $searchTerm The given search term
      *
      * @return Query
