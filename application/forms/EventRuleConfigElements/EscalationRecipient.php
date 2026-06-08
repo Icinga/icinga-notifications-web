@@ -118,7 +118,7 @@ class EscalationRecipient extends FieldsetElement
     protected function assemble(): void
     {
         $pleaseChoose = ['' => sprintf(' - %s - ', $this->translate('Please choose'))];
-        $defaultChannel = ['' => $this->translate('Default Channel')];
+        $defaultChannel = ['' => $this->translate('Contact Default Channel')];
 
         $this->addElement('hidden', 'id');
 
