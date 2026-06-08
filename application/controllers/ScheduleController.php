@@ -57,7 +57,7 @@ class ScheduleController extends CompatController
             (new ButtonLink(
                 null,
                 Links::scheduleSettings($id),
-                'cog'
+                'edit'
             ))->openInModal()
         );
 
