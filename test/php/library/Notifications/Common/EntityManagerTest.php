@@ -173,6 +173,33 @@ class EntityManagerTest extends TestCase
         );
     }
 
+    public function testDeleteOnSaveRemovesAChildDroppedFromAHasManyRelation()
+    {
+        $workshop = new Workshop();
+        $workshop->name = 'Acme';
+
+        $spanner = new Gadget();
+        $spanner->name = 'Spanner';
+        $wrench = new Gadget();
+        $wrench->name = 'Wrench';
+        $workshop->gadgets = [$spanner, $wrench];
+
+        $this->em()->save($workshop);
+
+        $workshop->gadgets = [$spanner];
+        $workshop->deleteOnSave($wrench);
+
+        $this->em()->save($workshop);
+
+        $this->assertSame(
+            [['name' => 'Spanner', 'workshop_id' => $workshop->id]],
+            $this->rows('SELECT name, workshop_id FROM gadget ORDER BY id'),
+            'Only the queued child is deleted; its siblings are untouched'
+        );
+        $this->assertTrue($wrench->isNew(), 'The deleted model is marked new again');
+        $this->assertSame([], $workshop->getPendingDeletions(), 'The queue is cleared after save');
+    }
+
     public function testBelongsToCascadeSavesParentFirst()
     {
         $gadget = new Gadget();
