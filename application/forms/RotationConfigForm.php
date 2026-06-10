@@ -216,6 +216,26 @@ class RotationConfigForm extends CompatForm
     }
 
     /**
+     * Get whether the duplicate button was pressed
+     *
+     * @return bool
+     */
+    public function hasBeenDuplicated(): bool
+    {
+        return $this->getPressedSubmitElement()?->getName() === 'duplicate';
+    }
+
+    /**
+     * Get whether the user saved changes or wants to duplicate the rotation
+     *
+     * @return bool
+     */
+    public function hasBeenSubmitted(): bool
+    {
+        return parent::hasBeenSubmitted() || ($this->hasBeenSent() && $this->hasBeenDuplicated());
+    }
+
+    /**
      * Create a new RotationConfigForm
      *
      * @param int $scheduleId
@@ -711,7 +731,7 @@ class RotationConfigForm extends CompatForm
                         ->columns('id')
                         ->filter(Filter::equal('schedule_id', $this->scheduleId))
                         ->filter(Filter::equal('name', $value));
-                    if (($priority = $this->getValue('priority')) !== null) {
+                    if (! $this->hasBeenDuplicated() && ($priority = $this->getValue('priority')) !== null) {
                         $rotations->filter(Filter::unequal('priority', $priority));
                     }
 
@@ -942,7 +962,7 @@ class RotationConfigForm extends CompatForm
                     'formnovalidate' => true
                 ]);
                 $this->registerElement($removeAllBtn);
-                $removeButtons[] = $removeAllBtn;
+                $additionalButtons[] = $removeAllBtn;
             }
 
             $removeBtn = $this->createElement('submit', 'remove', [
