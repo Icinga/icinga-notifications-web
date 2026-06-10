@@ -224,9 +224,17 @@ class ScheduleController extends CompatController
             // TODO: The rotation may not be changed by the user but the repository implementation
             //       right now doesn't detect this and tries to generate rules for no members
             $rotation = $form->getRotation();
-            Database::get()->transaction(function (Connection $db) use ($rotation) {
-                (new RotationRepository($db))->update($rotation);
-            });
+
+            if ($form->hasBeenDuplicated()) {
+                Database::get()->transaction(function (Connection $db) use ($rotation) {
+                    (new RotationRepository($db))->duplicate($rotation);
+                });
+            } else {
+                Database::get()->transaction(function (Connection $db) use ($rotation) {
+                    (new RotationRepository($db))->update($rotation);
+                });
+            }
+
             $this->sendExtraUpdates(['#col1']);
             $this->closeModalAndRefreshRelatedView(Links::schedule($rotation->schedule_id));
         });
