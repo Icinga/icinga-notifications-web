@@ -21,7 +21,7 @@ readonly class Rotation
     /**
      * @param ?int $id The primary database key value, NULL for new rotations
      * @param int $scheduleId The ID of the schedule a rotation belongs to
-     * @param int $priority The piority of the rotation inside the schedule's timeline
+     * @param int $priority The priority of the rotation inside the schedule's timeline
      * @param string $name The name of the rotation
      * @param string $mode The mode of the rotation
      * @param array $options The mode options

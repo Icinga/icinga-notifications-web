@@ -27,7 +27,6 @@ use ipl\Orm\Relations;
  * @property Query|Rotation $rotation
  * @property Query|Contact $contact
  * @property Query|Contactgroup $contactgroup
- * @property Query|TimeperiodEntry $shift
  */
 class RotationMember extends Model
 {
@@ -66,6 +65,5 @@ class RotationMember extends Model
             ->setJoinType('LEFT');
         $relations->belongsTo('contactgroup', Contactgroup::class)
             ->setJoinType('LEFT');
-        $relations->hasMany('shift', TimeperiodEntry::class);
     }
 }

@@ -310,7 +310,7 @@ class Timeline extends BaseHtmlElement implements EntryProvider
         $entry = new HtmlElement('div', Attributes::create(['class' => 'rotation-name']));
 
         $form = new MoveRotationForm();
-        $form->setAction(Links::moveRotation()->getAbsoluteUrl());
+        $form->setAction(Links::moveRotation($this->scheduleId)->getAbsoluteUrl());
         $form->populate([
             'rotation' => $rotation->getId(),
             'priority' => $rotation->getPriority()
@@ -328,7 +328,7 @@ class Timeline extends BaseHtmlElement implements EntryProvider
             $dragInitiator,
             (new Link(
                 [new HtmlElement('span', null, Text::create($rotation->getName())), new Icon('cog')],
-                Links::rotationSettings($rotation->getId(), $rotation->getScheduleId())
+                Links::rotationSettings($rotation->getId())
             ))->openInModal()
         );
 
