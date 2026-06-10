@@ -5,17 +5,15 @@
 
 namespace Icinga\Module\Notifications\Forms;
 
+use ArrayIterator;
 use DateInterval;
 use DateTime;
 use DateTimeZone;
-use Generator;
-use Icinga\Exception\ConfigurationError;
-use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Contactgroup;
 use Icinga\Module\Notifications\Model\Rotation;
-use Icinga\Module\Notifications\Model\TimeperiodEntry;
+use Icinga\Module\Notifications\Model\RotationMember;
 use Icinga\Util\Json;
 use Icinga\Web\Session;
 use IntlDateFormatter;
@@ -27,9 +25,7 @@ use ipl\Html\FormElement\SelectElement;
 use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
-use ipl\Sql\Connection;
-use ipl\Sql\Expression;
-use ipl\Sql\Select;
+use ipl\Orm\ResultSet;
 use ipl\Stdlib\Filter;
 use ipl\Validator\CallbackValidator;
 use ipl\Validator\GreaterThanValidator;
@@ -40,8 +36,6 @@ use ipl\Web\FormElement\TermInput;
 use ipl\Web\Url;
 use Locale;
 use LogicException;
-use Recurr\Frequency;
-use Recurr\Rule;
 
 class RotationConfigForm extends CompatForm
 {
@@ -55,11 +49,11 @@ class RotationConfigForm extends CompatForm
      */
     public const EXPERIMENTAL_OVERRIDES = false;
 
+    /** @var Rotation */
+    protected Rotation $rotation;
+
     /** @var int The ID of the affected schedule */
     protected int $scheduleId;
-
-    /** @var Connection The database connection */
-    protected Connection $db;
 
     /** @var ?string The label shown on the submit button */
     protected ?string $submitLabel = null;
@@ -73,23 +67,40 @@ class RotationConfigForm extends CompatForm
     /** @var bool Whether the mode selection is disabled */
     protected bool $disableModeSelection = false;
 
-    /** @var ?DateTime The previous first handoff of this rotation's version */
-    protected ?DateTime $previousHandoff = null;
-
-    /** @var ?DateTime The end of the last shift of this rotation's previous version */
-    protected ?DateTime $previousShift = null;
-
-    /** @var ?DateTime The first handoff of a newer version for this rotation */
-    protected ?DateTime $nextHandoff = null;
-
-    /** @var ?int The rotation id */
-    protected ?int $rotationId = null;
-
     /** @var string The timezone to display the timeline in */
     protected string $displayTimezone;
 
     /** @var string The timezone the schedule is created in */
     protected string $scheduleTimezone;
+
+    /**
+     * Set the rotation to populate the form with
+     *
+     * @param Rotation $rotation
+     *
+     * @return $this
+     */
+    public function setRotation(Rotation $rotation): static
+    {
+        if ($rotation->schedule_id !== $this->scheduleId) {
+            throw new LogicException('Refusing to load a rotation that does not belong to the schedule.');
+        }
+
+        $this->rotation = $rotation;
+        $this->populate($this->rotationToFormData());
+
+        return $this;
+    }
+
+    /**
+     * Get the rotation as it's currently configured
+     *
+     * @return Rotation
+     */
+    public function getRotation(): Rotation
+    {
+        return $this->rotation;
+    }
 
     /**
      * Set the label for the submit button
@@ -197,424 +208,22 @@ class RotationConfigForm extends CompatForm
      * Create a new RotationConfigForm
      *
      * @param int $scheduleId
-     * @param Connection $db
      * @param string $displayTimezone
      * @param string $scheduleTimezone
      */
-    public function __construct(int $scheduleId, Connection $db, string $displayTimezone, string $scheduleTimezone)
+    public function __construct(int $scheduleId, string $displayTimezone, string $scheduleTimezone)
     {
-        $this->db = $db;
         $this->scheduleId = $scheduleId;
         $this->displayTimezone = $displayTimezone;
         $this->scheduleTimezone = $scheduleTimezone;
+        $this->rotation = new Rotation();
 
         $this->applyDefaultElementDecorators();
     }
 
-    /**
-     * Load the rotation with the given ID from the database
-     *
-     * @param int $rotationId
-     *
-     * @return $this
-     *
-     * @throws LogicException If an invalid rotation mode is set
-     * @throws ConfigurationError If the schedule's timezone is invalid
-     * @throws HttpNotFoundException If the rotation with the given ID does not exist
-     */
-    public function loadRotation(int $rotationId): static
+    protected function onSuccess()
     {
-        $this->rotationId = $rotationId;
-
-        if (self::EXPERIMENTAL_OVERRIDES) {
-            $getHandoff = function (Rotation $rotation): DateTime {
-                $time = match ($rotation->mode) {
-                    '24-7'    => $rotation->options['at'],
-                    'partial' => $rotation->options['from'],
-                    'multi'   => $rotation->options['from_at']
-                };
-
-                $handoff = DateTime::createFromFormat(
-                    'Y-m-d H:i',
-                    $rotation->first_handoff . ' ' . $time,
-                    new DateTimeZone($this->scheduleTimezone)
-                );
-                if ($handoff === false) {
-                    throw new ConfigurationError('Invalid date format');
-                }
-
-                return $handoff;
-            };
-
-            /** @var ?Rotation $rotation */
-            $rotation = Rotation::on($this->db)
-                ->filter(Filter::equal('id', $this->rotationId))
-                ->first();
-            if ($rotation === null) {
-                throw new HttpNotFoundException($this->translate('Rotation not found'));
-            }
-
-            $this->previousHandoff = $getHandoff($rotation);
-
-            /** @var ?TimeperiodEntry $previousShift */
-            $previousShift = TimeperiodEntry::on($this->db)
-                ->columns('until_time')
-                ->filter(Filter::all(
-                    Filter::equal('timeperiod.rotation.schedule_id', $rotation->schedule_id),
-                    Filter::equal('timeperiod.rotation.priority', $rotation->priority),
-                    Filter::unequal('timeperiod.owned_by_rotation_id', $rotation->id),
-                    Filter::lessThanOrEqual('until_time', $this->previousHandoff),
-                    Filter::like('until_time', '*')
-                ))
-                ->orderBy('until_time', SORT_DESC)
-                ->first();
-            if ($previousShift !== null) {
-                $this->previousShift = $previousShift->until_time->setTimezone(
-                    new DateTimeZone($this->scheduleTimezone)
-                );
-            }
-
-            /** @var ?Rotation $newerRotation */
-            $newerRotation = Rotation::on($this->db)
-                ->columns(['first_handoff', 'options', 'mode'])
-                ->filter(Filter::all(
-                    Filter::equal('schedule_id', $rotation->schedule_id),
-                    Filter::equal('priority', $rotation->priority),
-                    Filter::greaterThan('first_handoff', $rotation->first_handoff)
-                ))
-                ->orderBy('first_handoff', SORT_ASC)
-                ->first();
-            if ($newerRotation !== null) {
-                $this->nextHandoff = $getHandoff($newerRotation);
-            }
-        }
-
-        $this->populate($this->fetchDbValues());
-
-        return $this;
-    }
-
-    /**
-     * Insert a new rotation in the database
-     *
-     * @param int $priority The priority of the rotation
-     *
-     * @return Generator<int, DateTime> The first handoff of the rotation, as value
-     */
-    private function createRotation(int $priority): Generator
-    {
-        $data = $this->getValues();
-        $data['options'] = Json::encode($data['options']);
-        $data['schedule_id'] = $this->scheduleId;
-        $data['priority'] = $priority;
-
-        $members = array_map(function ($member) {
-            return explode(':', $member, 2);
-        }, explode(',', $this->getValue('members')));
-
-        $rules = $this->yieldRecurrenceRules(count($members));
-        $firstHandoff = $rules->current()[0]->getStartDate();
-
-        // Only continue, once the caller is ready
-        if (! yield $firstHandoff) {
-            return;
-        }
-
-        $now = new DateTime();
-        if ($firstHandoff < $now) {
-            $data['actual_handoff'] = (int) $now->format('U.u') * 1000.0;
-        } else {
-            $data['actual_handoff'] = $firstHandoff->format('U.u') * 1000.0;
-        }
-
-        $changedAt = (int) (new DateTime())->format("Uv");
-
-        $data['changed_at'] = $changedAt;
-        $this->db->insert('rotation', $data);
-        $rotationId = $this->db->lastInsertId();
-
-        $this->db->insert('timeperiod', ['owned_by_rotation_id' => $rotationId, 'changed_at' => $changedAt]);
-        $timeperiodId = $this->db->lastInsertId();
-
-        $knownMembers = [];
-        foreach ($rules as $position => [$rrule, $shiftDuration]) {
-            /** @var Rule $rrule */
-            /** @var DateInterval $shiftDuration */
-
-            if (isset($knownMembers[$position])) {
-                $memberId = $knownMembers[$position];
-            } else {
-                [$type, $id] = $members[$position];
-
-                if ($type === 'contact') {
-                    $this->db->insert('rotation_member', [
-                        'rotation_id' => $rotationId,
-                        'contact_id' => $id,
-                        'position' => $position,
-                        'changed_at' => $changedAt
-                    ]);
-                } elseif ($type === 'group') {
-                    $this->db->insert('rotation_member', [
-                        'rotation_id' => $rotationId,
-                        'contactgroup_id' => $id,
-                        'position' => $position,
-                        'changed_at' => $changedAt
-                    ]);
-                }
-
-                $memberId = $this->db->lastInsertId();
-                $knownMembers[$position] = $memberId;
-            }
-
-            $endTime = (clone $rrule->getStartDate())->add($shiftDuration)->format('U.u') * 1000.0;
-
-            $untilTime = null;
-            if (! $rrule->repeatsIndefinitely()) {
-                // Our recurrence rules only repeat definitely due to a set until time
-                $untilTime = (clone $rrule->getUntil())->add($shiftDuration)->format('U.u') * 1000.0;
-            }
-
-            $this->db->insert('timeperiod_entry', [
-                'timeperiod_id' => $timeperiodId,
-                'rotation_member_id' => $memberId,
-                'start_time' => $rrule->getStartDate()->format('U.u') * 1000.0,
-                'end_time' => $endTime,
-                'until_time' => $untilTime,
-                'timezone' => $rrule->getStartDate()->getTimezone()->getName(),
-                'rrule' => $rrule->getString(Rule::TZ_FIXED),
-                'changed_at' => $changedAt
-            ]);
-        }
-    }
-
-    /**
-     * Add a new rotation to the database
-     *
-     * @return void
-     */
-    public function addRotation(): void
-    {
-        $transactionStarted = false;
-        if (! $this->db->inTransaction()) {
-            $transactionStarted = $this->db->beginTransaction();
-        }
-
-        $rotationsToMove = Rotation::on($this->db)
-            ->columns('id')
-            ->filter(Filter::equal('schedule_id', $this->scheduleId))
-            ->orderBy('priority', SORT_DESC);
-
-        foreach ($rotationsToMove as $rotation) {
-            $this->db->update(
-                'rotation',
-                [
-                    'priority'      => new Expression('priority + 1'),
-                    'changed_at'    => (int) (new DateTime())->format("Uv")
-                ],
-                ['id = ?' => $rotation->id]
-            );
-        }
-
-        $this->createRotation(0)->send(true);
-
-        if ($transactionStarted) {
-            $this->db->commitTransaction();
-        }
-    }
-
-    /**
-     * Update the rotation with the given ID in the database
-     *
-     * @param int $rotationId
-     *
-     * @return void
-     *
-     * @throws LogicException If the priority is not set
-     */
-    public function editRotation(int $rotationId): void
-    {
-        $priority = $this->getValue('priority');
-        if ($priority === null) {
-            throw new LogicException('The priority must be populated');
-        }
-
-        $transactionStarted = false;
-        if (! $this->db->inTransaction()) {
-            $transactionStarted = $this->db->beginTransaction();
-        }
-
-        if (! $this->hasChanges()) {
-            return;
-        }
-
-        // Delay the creation, avoids intermediate constraint failures
-        $createStmt = $this->createRotation((int) $priority);
-
-        $allEntriesRemoved = true;
-        $changedAt = (int) (new DateTime())->format("Uv");
-        $markAsDeleted = ['changed_at' => $changedAt, 'deleted' => 'y'];
-        if (self::EXPERIMENTAL_OVERRIDES) {
-            // We only show a single name, even in case of multiple versions of a rotation.
-            // To avoid confusion, we update all versions upon change of the name
-            $this->db->update(
-                'rotation',
-                ['name' => $this->getValue('name'), 'changed_at' => $changedAt],
-                ['schedule_id = ?' => $this->scheduleId, 'priority = ?' => $priority]
-            );
-
-            $firstHandoff = $createStmt->current();
-            $timeperiodEntries = TimeperiodEntry::on($this->db)
-                ->filter(Filter::equal('timeperiod.owned_by_rotation_id', $rotationId));
-
-            foreach ($timeperiodEntries as $timeperiodEntry) {
-                $timeperiodEntry->start_time->setTimezone(new DateTimeZone($this->scheduleTimezone));
-                $timeperiodEntry->end_time->setTimezone(new DateTimeZone($this->scheduleTimezone));
-
-                /** @var TimeperiodEntry $timeperiodEntry */
-                $rrule = $timeperiodEntry->toRecurrenceRule();
-                $shiftDuration = $timeperiodEntry->start_time->diff($timeperiodEntry->end_time);
-                $remainingHandoffs = $this->calculateRemainingHandoffs($rrule, $shiftDuration, $firstHandoff);
-                $lastHandoff = array_shift($remainingHandoffs);
-
-                // If there is a gap between the last handoff and the next one, insert a single occurrence to fill it
-                if (! empty($remainingHandoffs)) {
-                    [$gapStart, $gapEnd] = $remainingHandoffs[0];
-
-                    $allEntriesRemoved = false;
-                    $this->db->insert('timeperiod_entry', [
-                        'timeperiod_id' => $timeperiodEntry->timeperiod_id,
-                        'rotation_member_id' => $timeperiodEntry->rotation_member_id,
-                        'start_time' => $gapStart->format('U.u') * 1000.0,
-                        'end_time' => $gapEnd->format('U.u') * 1000.0,
-                        'until_time' => $gapEnd->format('U.u') * 1000.0,
-                        'timezone' => $gapStart->getTimezone()->getName(),
-                        'changed_at' => $changedAt
-                    ]);
-                }
-
-                $lastShiftEnd = null;
-                if ($lastHandoff !== null) {
-                    $lastShiftEnd = (clone $lastHandoff)->add($shiftDuration);
-                }
-
-                if ($lastHandoff === null) {
-                    // If the handoff didn't happen at all, the entry can safely be removed
-                    $this->db->update('timeperiod_entry', $markAsDeleted, ['id = ?' => $timeperiodEntry->id]);
-                } else {
-                    $allEntriesRemoved = false;
-                    $this->db->update('timeperiod_entry', [
-                        'until_time'    => $lastShiftEnd->format('U.u') * 1000.0,
-                        'rrule'         => $rrule->setUntil($lastHandoff)->getString(Rule::TZ_FIXED),
-                        'changed_at'    => $changedAt
-                    ], ['id = ?' => $timeperiodEntry->id]);
-                }
-            }
-        } else {
-            $this->db->update(
-                'timeperiod_entry',
-                $markAsDeleted,
-                [
-                    'deleted = ?'       => 'n',
-                    'timeperiod_id = ?' => (new Select())
-                        ->from('timeperiod')
-                        ->columns('id')
-                        ->where(['owned_by_rotation_id = ?' => $rotationId])
-                ]
-            );
-        }
-
-        if ($allEntriesRemoved) {
-            $this->db->update('timeperiod', $markAsDeleted, ['owned_by_rotation_id = ?' => $rotationId]);
-
-            $this->db->update(
-                'rotation_member',
-                $markAsDeleted + ['position' => null],
-                ['rotation_id = ?' => $rotationId, 'deleted = ?' => 'n']
-            );
-
-            $this->db->update(
-                'rotation',
-                $markAsDeleted + ['priority' => null, 'first_handoff' => null],
-                ['id = ?' => $rotationId]
-            );
-        }
-
-        // Once constraint failures are impossible, create the new version
-        $createStmt->send(true);
-
-        if ($transactionStarted) {
-            $this->db->commitTransaction();
-        }
-    }
-
-    /**
-     * Remove the rotation's version with the given ID from the database
-     *
-     * @param int $id
-     *
-     * @return void
-     *
-     * @throws LogicException If the priority is not set
-     */
-    public function removeRotation(int $id): void
-    {
-        $priority = $this->getValue('priority');
-        if ($priority === null) {
-            throw new LogicException('The priority must be populated');
-        }
-
-        $transactionStarted = false;
-        if (! $this->db->inTransaction()) {
-            $transactionStarted = $this->db->beginTransaction();
-        }
-
-        /** @var Rotation $rotation */
-        $rotation = Rotation::on($this->db)
-            ->columns(['id', 'schedule_id', 'priority', 'timeperiod.id'])
-            ->filter(Filter::equal('id', $id))
-            ->first();
-
-        $rotation->delete();
-
-        if ($transactionStarted) {
-            $this->db->commitTransaction();
-        }
-    }
-
-    /**
-     * Remove all versions of the rotation from the database
-     *
-     * @param ?int $priority The priority of the rotations to remove
-     *
-     * @return void
-     *
-     * @throws LogicException If the priority is not set
-     */
-    public function wipeRotation(?int $priority = null): void
-    {
-        $priority = $priority ?? $this->getValue('priority');
-        if ($priority === null) {
-            throw new LogicException('The priority must be populated');
-        }
-
-        $transactionStarted = false;
-        if (! $this->db->inTransaction()) {
-            $transactionStarted = $this->db->beginTransaction();
-        }
-
-        $rotations = Rotation::on($this->db)
-            ->columns(['id', 'schedule_id', 'priority', 'timeperiod.id'])
-            ->filter(Filter::equal('schedule_id', $this->scheduleId))
-            ->filter(Filter::equal('priority', $priority));
-
-        /** @var Rotation $rotation */
-        foreach ($rotations as $rotation) {
-            $rotation->delete();
-        }
-
-        if ($transactionStarted) {
-            $this->db->commitTransaction();
-        }
+        $this->applyChanges();
     }
 
     protected function assembleModeSelection(): string
@@ -777,17 +386,17 @@ class RotationConfigForm extends CompatForm
         );
 
         $now = new DateTime();
-        if ($this->previousShift !== null && $this->previousShift > $now) {
-            $now = $this->previousShift;
+        if (isset($this->rotation->previousShift) && $this->rotation->previousShift > $now) {
+            $now = $this->rotation->previousShift;
         }
 
         $date = null;
-        if ($this->previousHandoff !== null && $this->previousHandoff >= $now) {
+        if (isset($this->rotation->previousHandoff) && $this->rotation->previousHandoff >= $now) {
             // Use the previous handoff as default, if it's still valid
-            $date = $this->previousHandoff->format('Y-m-d');
+            $date = $this->rotation->previousHandoff->format('Y-m-d');
         }
 
-        $firstHandoff = $this->parseDateAndTime($date, $at->getValue());
+        $firstHandoff = $this->rotation->parseDateAndTime($date, $at->getValue());
 
         return $firstHandoff >= $now ? $firstHandoff : $firstHandoff->add(new DateInterval('P1D'));
     }
@@ -881,17 +490,17 @@ class RotationConfigForm extends CompatForm
         );
 
         $now = new DateTime();
-        if ($this->previousShift !== null && $this->previousShift > $now) {
-            $now = $this->previousShift;
+        if (isset($this->rotation->previousShift) && $this->rotation->previousShift > $now) {
+            $now = $this->rotation->previousShift;
         }
 
         $date = null;
-        if ($this->previousHandoff !== null && $this->previousHandoff >= $now) {
+        if (isset($this->rotation->previousHandoff) && $this->rotation->previousHandoff >= $now) {
             // Use the previous handoff as default, if it's still valid
-            $date = $this->previousHandoff->format('Y-m-d');
+            $date = $this->rotation->previousHandoff->format('Y-m-d');
         }
 
-        $firstHandoff = $this->parseDateAndTime($date, $from->getValue());
+        $firstHandoff = $this->rotation->parseDateAndTime($date, $from->getValue());
         $chosenDays = array_flip($options->getValue('days'));
         if ($firstHandoff < $now || ! isset($chosenDays[$firstHandoff->format('N')])) {
             $remainingAttempts = 7;
@@ -1044,16 +653,16 @@ class RotationConfigForm extends CompatForm
         );
 
         $now = new DateTime();
-        if ($this->previousShift !== null && $this->previousShift > $now) {
-            $now = $this->previousShift;
+        if (isset($this->rotation->previousShift) && $this->rotation->previousShift > $now) {
+            $now = $this->rotation->previousShift;
         }
 
         $date = null;
-        if ($this->previousHandoff !== null && $this->previousHandoff >= $now) {
-            $date = $this->previousHandoff->format('Y-m-d');
+        if (isset($this->rotation->previousHandoff) && $this->rotation->previousHandoff >= $now) {
+            $date = $this->rotation->previousHandoff->format('Y-m-d');
         }
 
-        $firstHandoff = $this->parseDateAndTime($date, $fromAt->getValue());
+        $firstHandoff = $this->rotation->parseDateAndTime($date, $fromAt->getValue());
         $firstHandoffDayOfTheWeek = $firstHandoff->format('N');
         if ($firstHandoffDayOfTheWeek > $from->getValue()) {
             $firstHandoff->add(new DateInterval(
@@ -1081,7 +690,7 @@ class RotationConfigForm extends CompatForm
             'label' => $this->translate('Rotation Name'),
             'validators' => [
                 new CallbackValidator(function ($value, $validator) {
-                    $rotations = Rotation::on($this->db)
+                    $rotations = Rotation::on(Database::get())
                         ->columns('id')
                         ->filter(Filter::equal('schedule_id', $this->scheduleId))
                         ->filter(Filter::equal('name', $value));
@@ -1181,14 +790,17 @@ class RotationConfigForm extends CompatForm
 
         $now = new DateTime();
         $earliestHandoff = null;
-        if ($this->previousHandoff !== null && $this->previousHandoff <= $now || $this->previousShift !== null) {
+        if (
+            isset($this->rotation->previousHandoff) && $this->rotation->previousHandoff <= $now
+            || isset($this->rotation->previousShift)
+        ) {
             // If this rotation started already, someone is probably already on duty, so the next sensible
             // handoff is what the rotation mode already identified as default first handoff
             $earliestHandoff = $firstHandoff;
         }
 
-        $latestHandoff = $this->nextHandoff
-            ? (clone $this->nextHandoff)->sub(new DateInterval('P1D'))
+        $latestHandoff = isset($this->rotation->nextHandoff)
+            ? (clone $this->rotation->nextHandoff)->sub(new DateInterval('P1D'))
             : (clone $now)->add(new DateInterval('P30D'));
 
         $firstHandoffDefault = null;
@@ -1209,8 +821,8 @@ class RotationConfigForm extends CompatForm
             'validators' => [
                 new CallbackValidator(
                     function ($value, $validator) use ($earliestHandoff, $firstHandoff, $latestHandoff) {
-                        $chosenHandoff = $this->parseDateAndTime($value, $firstHandoff->format('H:i'));
-                        $latestHandoff = $this->parseDateAndTime(
+                        $chosenHandoff = $this->rotation->parseDateAndTime($value, $firstHandoff->format('H:i'));
+                        $latestHandoff = $this->rotation->parseDateAndTime(
                             $latestHandoff->format('Y-m-d'),
                             $firstHandoff->format('H:i')
                         );
@@ -1245,7 +857,7 @@ class RotationConfigForm extends CompatForm
                         return '';
                     }
 
-                    $ruleGenerator = $this->yieldRecurrenceRules(1);
+                    $ruleGenerator = $this->applyChanges()->getRotation()->yieldRecurrenceRules(1);
                     if (! $ruleGenerator->valid()) {
                         return $this->translate('This rotation can no longer happen');
                     }
@@ -1271,7 +883,7 @@ class RotationConfigForm extends CompatForm
                         return '';
                     }
 
-                    $ruleGenerator = $this->yieldRecurrenceRules(1);
+                    $ruleGenerator = $this->applyChanges()->getRotation()->yieldRecurrenceRules(1);
                     if (! $ruleGenerator->valid()) {
                         return '';
                     }
@@ -1301,7 +913,7 @@ class RotationConfigForm extends CompatForm
 
         if ($this->showRemoveButton) {
             $removeButtons = [];
-            if ($this->previousShift !== null || $this->nextHandoff !== null) {
+            if (isset($this->rotation->previousShift) || isset($this->rotation->nextHandoff)) {
                 $removeAllBtn = $this->createElement('submit', 'remove_all', [
                     'label' => $this->translate('Remove All'),
                     'class' => 'btn-remove',
@@ -1323,49 +935,6 @@ class RotationConfigForm extends CompatForm
         }
 
         $this->addCsrfCounterMeasure(Session::getSession()->getId());
-    }
-
-    /**
-     * Parse the given date and time expression
-     *
-     * @param ?string $date A date in the format Y-m-d, default is the current day
-     * @param ?string $time The time in the format H:i, default is midnight
-     *
-     * @return DateTime
-     */
-    private function parseDateAndTime(?string $date = null, ?string $time = null): DateTime
-    {
-        $format = '';
-        $expression = '';
-
-        if ($date !== null) {
-            $format = 'Y-m-d';
-            $expression = $date;
-        }
-
-        if ($time !== null) {
-            if ($date !== null) {
-                $format .= ' ';
-                $expression .= ' ';
-            }
-
-            $format .= 'H:i';
-            $expression .= $time;
-        }
-
-        if (! $format) {
-            return new DateTime('today', new DateTimeZone($this->scheduleTimezone));
-        }
-
-        $datetime = DateTime::createFromFormat($format, $expression, new DateTimeZone($this->scheduleTimezone));
-
-        if ($datetime === false) {
-            $datetime = new DateTime('today', $this->scheduleTimezone);
-        } elseif ($time === null) {
-            $datetime->setTime(0, 0);
-        }
-
-        return $datetime;
     }
 
     /**
@@ -1395,339 +964,25 @@ class RotationConfigForm extends CompatForm
     }
 
     /**
-     * Yield recurrence rules based on the form's values
-     *
-     * @param int $count The number of rules to yield
-     *
-     * @return Generator<int, array{0: Rule, 1: DateInterval}>
-     */
-    private function yieldRecurrenceRules(int $count): Generator
-    {
-        $rule = new Rule();
-        $firstRotationOffset = null;
-
-        $options = $this->getValue('options');
-        switch ($this->getValue('mode')) {
-            case '24-7':
-                $interval = (int) $options['interval'];
-                $firstHandoff = $this->parseDateAndTime($this->getValue('first_handoff'), $options['at']);
-
-                if ($options['frequency'] === 'd') {
-                    $frequency = Frequency::DAILY;
-                    $shiftDuration = new DateInterval(sprintf('P%dD', $interval));
-                } else {
-                    $frequency = Frequency::WEEKLY;
-                    $shiftDuration = new DateInterval(sprintf('P%dW', $interval));
-                }
-
-                $rule->setFreq($frequency);
-                $rule->setInterval($interval * $count);
-
-                $ruleSeq = range(0, $count - 1);
-                $rotationOffset = $shiftDuration;
-
-                break;
-            case 'partial':
-                $days = array_map('intval', $options['days']);
-                $interval = (int) $options['interval'];
-
-                $rule->setFreq(Frequency::WEEKLY);
-                $rule->setInterval($interval * $count);
-                $rule->setByDay(array_intersect_key(
-                    [1 => 'MO', 2 => 'TU', 3 => 'WE', 4 => 'TH', 5 => 'FR', 6 => 'SA', 7 => 'SU'],
-                    array_flip($days)
-                ));
-
-                $firstHandoff = $this->parseDateAndTime($this->getValue('first_handoff'), $options['from']);
-                $firstHandoffDay = (int) $firstHandoff->format('N');
-                if ($firstHandoffDay !== $days[0] && in_array($firstHandoffDay, $days, true)) {
-                    // In case the first handoff is in the range, but doesn't start at the first day of the
-                    // rotation, the first shift is shorter than regular so the first rotation offset differs
-                    $firstRotationOffset = $firstHandoff->diff(
-                        (clone $firstHandoff)->add(new DateInterval(sprintf(
-                            'P%dD',
-                            $days[0] > $firstHandoff->format('N')
-                                ? $days[0] - $firstHandoff->format('N')
-                                : 7 - $firstHandoff->format('N') + $days[0]
-                        )))
-                    );
-                } elseif ($firstHandoffDay !== $days[0]) {
-                    // Normalize the first handoff to the first day of the shift in case it's outside the range
-                    $firstHandoff->add(new DateInterval(sprintf(
-                        'P%dD',
-                        $days[0] > $firstHandoffDay
-                            ? $days[0] - $firstHandoffDay
-                            : 7 - $firstHandoffDay + $days[0]
-                    )));
-                }
-
-                $shiftEnd = $this->parseDateAndTime($firstHandoff->format('Y-m-d'), $options['to']);
-                if ($firstHandoff >= $shiftEnd) {
-                    $shiftEnd->add(new DateInterval('P1D'));
-                }
-
-                $rotationOffset = new DateInterval('P1W');
-                $shiftDuration = $firstHandoff->diff($shiftEnd);
-
-                $ruleSeq = [];
-                for ($i = 0; $i < $count; $i++) {
-                    array_push($ruleSeq, ...array_fill(0, $interval, $i));
-                }
-
-                break;
-            case 'multi':
-                $fromDay = (int) $options['from_day'];
-                $toDay = (int) $options['to_day'];
-                $interval = (int) $options['interval'];
-
-                $rule->setFreq(Frequency::WEEKLY);
-                $rule->setInterval($interval * $count);
-
-                $ruleSeq = [];
-                for ($i = 0; $i < $count; $i++) {
-                    array_push($ruleSeq, ...array_fill(0, $interval, $i));
-                }
-
-                $firstHandoff = $this->parseDateAndTime($this->getValue('first_handoff'), $options['from_at']);
-                $firstHandoffDay = (int) $firstHandoff->format('N');
-
-                if (
-                    $fromDay < $toDay && ($firstHandoffDay < $fromDay || $firstHandoffDay > $toDay)
-                    || $toDay < $fromDay && ($firstHandoffDay < $fromDay && $firstHandoffDay > $toDay)
-                    || $firstHandoffDay === $toDay && $toDay !== $fromDay
-                    && $firstHandoff >= $this->parseDateAndTime($this->getValue('first_handoff'), $options['to_at'])
-                ) {
-                    // Normalize the first handoff to the first day of the shift in case it's outside the range
-                    $firstHandoff->add(new DateInterval(sprintf(
-                        'P%dD',
-                        $fromDay > $firstHandoffDay
-                            ? $fromDay - $firstHandoffDay
-                            : 7 - $firstHandoffDay + $fromDay
-                    )));
-                } elseif ($firstHandoffDay !== $fromDay) {
-                    // In case the first handoff is in the range, but doesn't start at the first day of the rotation,
-                    // the first shift is shorter than the regular interval and separately injected into the rule seq
-                    $firstEntryStart = clone $firstHandoff;
-                    if ($firstHandoffDay === $toDay) {
-                        $firstEntryStart->setTime(0, 0);
-                    }
-
-                    $firstRule = new Rule(null, $firstEntryStart);
-                    $firstRule->setUntil($firstEntryStart);
-
-                    $firstShiftEnd = (clone $firstEntryStart)->add(new DateInterval(sprintf(
-                        'P%dD',
-                        $toDay >= $firstHandoffDay
-                            ? $toDay - $firstHandoffDay
-                            : 7 - $firstHandoffDay + $toDay
-                    )));
-                    if ($this->nextHandoff !== null && $firstShiftEnd > $this->nextHandoff) {
-                        $firstShiftDuration = $firstEntryStart->diff($this->nextHandoff);
-                    } else {
-                        $firstShiftDuration = $firstEntryStart->diff(
-                            $this->parseDateAndTime($firstShiftEnd->format('Y-m-d'), $options['to_at'])
-                        );
-                    }
-
-                    yield 0 => [$firstRule, $firstShiftDuration];
-
-                    // The irregular first shift has been injected now, so the first regular shift needs
-                    // to be pushed to the end of the rule sequence so that the pattern continues normally
-                    $ruleSeq[] = array_shift($ruleSeq);
-
-                    $firstHandoff = (clone $firstHandoff)->add(new DateInterval(sprintf(
-                        'P%dD',
-                        $fromDay > $firstHandoffDay
-                            ? $fromDay - $firstHandoffDay
-                            : 7 - $firstHandoffDay + $fromDay
-                    )));
-                }
-
-                $shiftDuration = $firstHandoff->diff($this->parseDateAndTime( // returns the first end datetime
-                    (clone $firstHandoff)
-                        ->add(new DateInterval(sprintf(
-                            'P%dD',
-                            $toDay > $fromDay
-                                ? $toDay - $fromDay
-                                : 7 - $fromDay + $toDay
-                        )))->format('Y-m-d'),
-                    $options['to_at']
-                ));
-
-                $rotationOffset = new DateInterval('P1W');
-
-                break;
-            default:
-                throw new LogicException('Unknown mode');
-        }
-
-        $singleOccurrences = [];
-        foreach ($ruleSeq as $position) {
-            $rule->setStartDate($firstHandoff);
-
-            if ($this->nextHandoff !== null) {
-                $remainingHandoffs = $this->calculateRemainingHandoffs($rule, $shiftDuration, $this->nextHandoff);
-
-                $lastHandoff = array_shift($remainingHandoffs);
-                if (! empty($remainingHandoffs)) {
-                    [$gapStart, $gapEnd] = $remainingHandoffs[0];
-
-                    $singleOccurrences[] = [$position, [
-                        (new Rule(null, $gapStart))->setFreq(Frequency::YEARLY)->setUntil($gapStart),
-                        $gapStart->diff($gapEnd)
-                    ]];
-                }
-
-                if ($lastHandoff !== null) {
-                    $rule->setUntil($lastHandoff);
-                } else {
-                    continue; // Skip occurrences that have no chance to happen
-                }
-            }
-
-            if ($firstRotationOffset !== null) {
-                $firstHandoff = (clone $firstHandoff)->add($firstRotationOffset);
-                $firstRotationOffset = null;
-            } else {
-                $firstHandoff = (clone $firstHandoff)->add($rotationOffset);
-            }
-
-            yield $position => [$rule, $shiftDuration];
-        }
-
-        // After regular occurrences were yielded, single occurrences are yielded in the order they were generated
-        foreach ($singleOccurrences as [$key, $value]) {
-            yield $key => $value;
-        }
-    }
-
-    /**
-     * Get the last possible handoff before the given date
-     *
-     * @param Rule $rrule
-     * @param DateInterval $shiftDuration
-     * @param DateTime $before
-     *
-     * @return array{0: ?DateTime, 1?: array{0: DateTime, 1: DateTime}}
-     *
-     * @throws LogicException If the frequency is not supported
-     */
-    private function calculateRemainingHandoffs(Rule $rrule, DateInterval $shiftDuration, DateTime $before): array
-    {
-        if ($rrule->getStartDate() >= $before) {
-            // No time passed yet, the first occurrence is in the future
-            return [null];
-        }
-
-        if ($rrule->getFreq() === Frequency::YEARLY) {
-            // There is only once chance that this frequency is used: For single occurrences
-            $lastShiftEnd = (clone $rrule->getStartDate())->add($shiftDuration);
-            if ($lastShiftEnd > $before) {
-                $lastShiftEnd = clone $before;
-            }
-
-            // This relies on the fact that the calling code only knows about repeating rules, it
-            // cannot update single occurrences, so $lastHandoff is null here to replace it instead
-            return [null, [$rrule->getStartDate(), $lastShiftEnd]];
-        } elseif ($rrule->getFreq() === Frequency::DAILY) {
-            $interval = $rrule->getInterval();
-        } elseif ($rrule->getFreq() === Frequency::WEEKLY) {
-            $interval = $rrule->getInterval() * 7;
-        } else {
-            throw new LogicException('Unsupported frequency');
-        }
-
-        // $before is based on new changes, so it's required to synchronize it with the given RRULE
-        $beforeNormalized = (clone $before)->setTime(
-            (int) $rrule->getStartDate()->format('H'),
-            (int) $rrule->getStartDate()->format('i')
-        );
-
-        $daysSinceLatestHandoff = $rrule->getStartDate()->diff($beforeNormalized)->days % $interval;
-        $lastHandoff = (clone $beforeNormalized)->sub(new DateInterval(sprintf('P%dD', $daysSinceLatestHandoff)));
-
-        $result = [];
-
-        $byDay = $rrule->getByDay();
-        if (empty($byDay)) {
-            $lastShiftEnd = (clone $lastHandoff)->add($shiftDuration);
-            if ($lastShiftEnd > $before) {
-                if ($lastHandoff < $before) {
-                    // The last shift is still ongoing, so report it as the single remaining handoff
-                    $result[] = [clone $lastHandoff, (clone $lastHandoff)->add($lastHandoff->diff($before))];
-                }
-
-                // Return the occurrence before the last, as it overlaps with the given date otherwise
-                $lastHandoff->sub(new DateInterval(sprintf('P%dD', $interval)));
-            }
-        } else {
-            // If this RRULE is based on a partial day configuration, forward to the very last possible shift
-            $byDay = array_intersect([
-                1 => 'MO',
-                2 => 'TU',
-                3 => 'WE',
-                4 => 'TH',
-                5 => 'FR',
-                6 => 'SA',
-                7 => 'SU'
-            ], $byDay);
-
-            $daysInTheFirstShift = max(array_keys($byDay)) - $rrule->getStartDate()->format('N');
-            $lastHandoff->add(new DateInterval(sprintf('P%dD', $daysInTheFirstShift)));
-            for ($i = 0; $i < $daysInTheFirstShift; $i++) {
-                if (isset($byDay[$lastHandoff->format('N')]) && $lastHandoff < $before) {
-                    $lastShiftEnd = (clone $lastHandoff)->add($shiftDuration);
-                    if ($lastShiftEnd < $before) {
-                        break;
-                    } else {
-                        // The last shift is still ongoing, so report it as the single remaining handoff
-                        $result[] = [clone $lastHandoff, (clone $lastHandoff)->add($lastHandoff->diff($before))];
-                    }
-                }
-
-                $lastHandoff->sub(new DateInterval('P1D'));
-            }
-        }
-
-        if ($lastHandoff < $rrule->getStartDate()) {
-            $lastHandoff = null;
-        }
-
-        array_unshift($result, $lastHandoff);
-
-        return $result;
-    }
-
-    /**
-     * Fetch the values from the database
+     * Transform the current rotation into form data
      *
      * @return array
-     *
-     * @throws HttpNotFoundException
      */
-    private function fetchDbValues(): array
+    private function rotationToFormData(): array
     {
-        /** @var ?Rotation $rotation */
-        $rotation = Rotation::on($this->db)
-            ->filter(Filter::equal('id', $this->rotationId))
-            ->first();
-        if ($rotation === null) {
-            throw new HttpNotFoundException($this->translate('Rotation not found'));
-        }
-
         $formData = [
-            'mode' => $rotation->mode,
-            'name' => $rotation->name,
-            'priority' => $rotation->priority,
-            'schedule' => $rotation->schedule_id,
-            'options' => $rotation->options
+            'mode' => $this->rotation->mode,
+            'name' => $this->rotation->name,
+            'priority' => $this->rotation->priority,
+            'schedule' => $this->rotation->schedule_id,
+            'options' => $this->rotation->options
         ];
         if (! self::EXPERIMENTAL_OVERRIDES) {
-            $formData['first_handoff'] = $rotation->first_handoff;
+            $formData['first_handoff'] = $this->rotation->first_handoff;
         }
 
         $members = [];
-        foreach ($rotation->member->orderBy('position', SORT_ASC) as $member) {
+        foreach ($this->rotation->member->orderBy('position', SORT_ASC) as $member) {
             if ($member->contact_id !== null) {
                 $members[] = 'contact:' . $member->contact_id;
             } else {
@@ -1745,13 +1000,13 @@ class RotationConfigForm extends CompatForm
      *
      * @return bool
      */
-    public function hasChanges(): bool
+    private function hasChanges(): bool
     {
         $values = $this->getValues();
         $values['members'] = $this->getValue('members');
 
         // only keys that are present in $values
-        $dbValuesToCompare = array_intersect_key($this->fetchDbValues(), $values);
+        $dbValuesToCompare = array_intersect_key($this->rotationToFormData(), $values);
 
         $checker = static function ($a, $b) use (&$checker) {
             if (! is_array($a) || ! is_array($b)) {
@@ -1762,5 +1017,49 @@ class RotationConfigForm extends CompatForm
         };
 
         return ! empty(array_udiff_assoc($values, $dbValuesToCompare, $checker));
+    }
+
+    /**
+     * Apply the user's changes to the rotation
+     *
+     * @return $this
+     */
+    private function applyChanges(): static
+    {
+        // TODO: ! $this->rotation->isNew()
+        if (! $this->hasChanges()) {
+            return $this;
+        }
+
+        $this->rotation->schedule_id = $this->scheduleId;
+        $this->rotation->priority = $this->getValue('priority', 0);
+        $this->rotation->name = $this->getValue('name');
+        $this->rotation->mode = $this->getValue('mode');
+        $this->rotation->options = Json::encode($this->getValue('options'));
+        $this->rotation->first_handoff = $this->getValue('first_handoff');
+
+        $members = [];
+        foreach (explode(',', $this->getValue('members')) as $i => $memberDef) {
+            [$type, $id] = explode(':', $memberDef, 2);
+
+            $members[] = match ($type) {
+                'contact' => new RotationMember([
+                    'rotation_id' => $this->rotation->id ?? null,
+                    'contact_id' => $id,
+                    'contactgroup_id' => null,
+                    'position' => $i
+                ]),
+                'contactgroup' => new RotationMember([
+                    'rotation_id' => $this->rotation->id ?? null,
+                    'contact_id' => null,
+                    'contactgroup_id' => $id,
+                    'position' => $i
+                ])
+            };
+        }
+
+        $this->rotation->member = new ResultSet(new ArrayIterator($members));
+
+        return $this;
     }
 }

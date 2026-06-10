@@ -11,6 +11,7 @@ use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Module\Notifications\Model\Rotation;
 use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use Icinga\Module\Notifications\Model\Schedule;
+use Icinga\Module\Notifications\Repository\RotationRepository;
 use Icinga\Web\Session;
 use IntlTimeZone;
 use ipl\Html\Attributes;
@@ -135,7 +136,7 @@ class ScheduleForm extends CompatForm
 
         /** @var Rotation $rotation */
         foreach ($rotations as $rotation) {
-            $rotation->delete();
+            (new RotationRepository($this->db))->delete($rotation);
         }
 
         $markAsDeleted = ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'];
@@ -262,7 +263,7 @@ class ScheduleForm extends CompatForm
     {
         /** @var ?Schedule $schedule */
         $schedule = Schedule::on($this->db)
-            ->columns('name')
+            ->columns($this->showTimezoneSuggestionInput ? ['name', 'timezone'] : 'name')
             ->filter(Filter::equal('id', $this->scheduleId))
             ->first();
 
@@ -270,6 +271,8 @@ class ScheduleForm extends CompatForm
             throw new HttpNotFoundException($this->translate('Schedule not found'));
         }
 
-        return ['name' => $schedule->name];
+        return $this->showTimezoneSuggestionInput
+            ? ['name' => $schedule->name, 'timezone' => $schedule->timezone]
+            : ['name' => $schedule->name];
     }
 }

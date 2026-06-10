@@ -25,6 +25,7 @@ use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Rotation;
 use Icinga\Module\Notifications\Model\RotationMember;
 use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
+use Icinga\Module\Notifications\Repository\RotationRepository;
 use Icinga\Util\Json;
 use ipl\Sql\Select;
 use ipl\Stdlib\Filter;
@@ -810,7 +811,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
 
                 /** @var Rotation $rotation */
                 foreach ($rotations as $rotation) {
-                    $rotation->delete();
+                    (new RotationRepository(Database::get()))->delete($rotation);
                 }
             }
         }
