@@ -41,8 +41,10 @@ class RotationRepositoryTest extends TestCase
     /**
      * Build a real PDOStatement yielding the given rows
      *
-     * `Connection::select()` is declared to return a {@see PDOStatement} and the ORM both calls `setFetchMode()` on
-     * and iterates the result. A genuine SQLite-backed statement satisfies all of that without a production database.
+     * `Connection::select()` is declared to return a {@see PDOStatement} and the result is both iterated and, in the
+     * ORM's case, reconfigured via `setFetchMode()`. A genuine SQLite-backed statement satisfies all of that without a
+     * production database. The default fetch mode mirrors the module's connection (`PDO::FETCH_OBJ`, see
+     * `Common\Database`), which is what `move()` relies on; the ORM overrides it to `PDO::FETCH_ASSOC` itself.
      *
      * @param list<array<string, mixed>> $rows All rows must share the same keys, which become the result's columns
      *
@@ -53,6 +55,7 @@ class RotationRepositoryTest extends TestCase
         $columns = empty($rows) ? ['id'] : array_keys($rows[0]);
 
         $pdo = new PDO('sqlite::memory:');
+        $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
         $pdo->exec('CREATE TABLE result (' . implode(', ', array_map(fn ($c) => '"' . $c . '"', $columns)) . ')');
 
         if (! empty($rows)) {
@@ -448,5 +451,190 @@ class RotationRepositoryTest extends TestCase
         (new RotationRepository($databaseMock))->delete($rotation);
 
         $this->assertTrue($siblingShifted, 'The higher-priority sibling was not shifted down');
+    }
+
+    /**
+     * Run a directional move and verify the issued statements
+     *
+     * A move always frees up the rotation's current priority first, then shifts the siblings between the old and the
+     * new priority (queried via a plain {@see Select}), and finally places the rotation at its new priority.
+     *
+     * @param int $currentPriority The rotation's current priority
+     * @param int $newPriority The priority to move the rotation to
+     * @param array<string, int> $expectedSelectWhere The conditions the sibling query is expected to carry
+     * @param string $expectedOrder The order the siblings are expected to be queried in
+     * @param string $expectedExpression The expression the siblings' priority is expected to be adjusted by
+     * @param list<int> $siblingIds The ids of the siblings to be shifted, in the order they're queried
+     *
+     * @return void
+     */
+    private function assertDirectionalMove(
+        int $currentPriority,
+        int $newPriority,
+        array $expectedSelectWhere,
+        string $expectedOrder,
+        string $expectedExpression,
+        array $siblingIds
+    ): void {
+        $start = (int) (new DateTime())->format('Uv');
+
+        $rotation = (new Rotation())->setProperties([
+            'id'            => 42,
+            'schedule_id'   => 1,
+            'priority'      => $currentPriority
+        ]);
+
+        $databaseMock = $this->createMock(Connection::class);
+        $databaseMock->method('quoteIdentifier')
+            ->willReturnArgument(0);
+
+        $databaseMock->expects($this->never())
+            ->method('insert');
+
+        $databaseMock->expects($this->once())
+            ->method('select')
+            ->with($this->callback(function (Select $select) use ($expectedSelectWhere, $expectedOrder) {
+                $this->assertSame(['id'], $select->getColumns());
+                $this->assertSame(['rotation'], $select->getFrom());
+                $this->assertSame([[$expectedOrder, null]], $select->getOrderBy());
+                $this->assertSame(['AND', [['AND', $expectedSelectWhere]]], $select->getWhere());
+
+                return true;
+            }))
+            ->willReturn($this->selectResult(array_map(fn ($id) => ['id' => $id], $siblingIds)));
+
+        $sequence = [];
+        $shifted = [];
+        $databaseMock->expects($this->exactly(count($siblingIds) + 2))
+            ->method('update')
+            ->willReturnCallback(
+                function (
+                    $table,
+                    $data,
+                    $where
+                ) use (
+                    $start,
+                    $newPriority,
+                    $expectedExpression,
+                    &$sequence,
+                    &$shifted
+                ) {
+                    $this->assertSame('rotation', $table);
+
+                    if ($where === ['id = ?' => 42] && ($data['deleted'] ?? null) === 'y') {
+                        // Free up the rotation's current priority (note: this one carries no changed_at)
+                        $this->assertSame(['priority' => null, 'deleted' => 'y'], $data);
+                        $sequence[] = 'free';
+                    } elseif ($where === ['id = ?' => 42]) {
+                        // Place the rotation at its new priority
+                        $this->assertArrayHasKey('changed_at', $data);
+                        $this->assertGreaterThanOrEqual($start, $data['changed_at']);
+                        unset($data['changed_at']);
+                        $this->assertSame(['priority' => $newPriority, 'deleted' => 'n'], $data);
+                        $sequence[] = 'place';
+                    } else {
+                        // Shift a sibling out of the way
+                        $this->assertInstanceOf(Expression::class, $data['priority']);
+                        $this->assertSame($expectedExpression, $data['priority']->getStatement());
+                        $this->assertArrayHasKey('changed_at', $data);
+                        $this->assertGreaterThanOrEqual($start, $data['changed_at']);
+                        $shifted[] = (int) $where['id = ?'];
+                        $sequence[] = 'shift';
+                    }
+
+                    return $this->createStub(PDOStatement::class);
+                }
+            );
+
+        (new RotationRepository($databaseMock))->move($rotation, $newPriority);
+
+        $this->assertSame('free', $sequence[0] ?? null, 'The current priority must be freed up first');
+        $this->assertSame('place', end($sequence), 'The rotation must be placed at its new priority last');
+        $this->assertSame($siblingIds, $shifted, 'The expected siblings were not shifted in the queried order');
+    }
+
+    /**
+     * Covers moving a rotation to a higher priority (a lower number): the siblings in between are shifted down.
+     *
+     * @return void
+     */
+    public function testMoveToHigherPriorityShiftsInBetweenSiblingsDown(): void
+    {
+        $this->assertDirectionalMove(
+            3,
+            1,
+            ['schedule_id = ?' => 1, 'priority >= ?' => 1, 'priority < ?' => 3],
+            'priority DESC',
+            'priority + 1',
+            [10, 11]
+        );
+    }
+
+    /**
+     * Covers moving a rotation to a lower priority (a higher number): the siblings in between are shifted up.
+     *
+     * @return void
+     */
+    public function testMoveToLowerPriorityShiftsInBetweenSiblingsUp(): void
+    {
+        $this->assertDirectionalMove(
+            1,
+            3,
+            ['schedule_id = ?' => 1, 'priority > ?' => 1, 'priority <= ?' => 3],
+            'priority ASC',
+            'priority - 1',
+            [20, 21]
+        );
+    }
+
+    /**
+     * Covers moving a rotation to its current priority: no siblings are queried or shifted, the rotation is merely
+     * freed up and placed again.
+     *
+     * @return void
+     */
+    public function testMoveToSamePriorityDoesNotShiftSiblings(): void
+    {
+        $start = (int) (new DateTime())->format('Uv');
+
+        $rotation = (new Rotation())->setProperties([
+            'id'            => 42,
+            'schedule_id'   => 1,
+            'priority'      => 2
+        ]);
+
+        $databaseMock = $this->createMock(Connection::class);
+        $databaseMock->method('quoteIdentifier')
+            ->willReturnArgument(0);
+
+        $databaseMock->expects($this->never())
+            ->method('select');
+        $databaseMock->expects($this->never())
+            ->method('insert');
+
+        $sequence = [];
+        $databaseMock->expects($this->exactly(2))
+            ->method('update')
+            ->willReturnCallback(function ($table, $data, $where) use ($start, &$sequence) {
+                $this->assertSame('rotation', $table);
+                $this->assertSame(['id = ?' => 42], $where);
+
+                if (($data['deleted'] ?? null) === 'y') {
+                    $this->assertSame(['priority' => null, 'deleted' => 'y'], $data);
+                    $sequence[] = 'free';
+                } else {
+                    $this->assertArrayHasKey('changed_at', $data);
+                    $this->assertGreaterThanOrEqual($start, $data['changed_at']);
+                    unset($data['changed_at']);
+                    $this->assertSame(['priority' => 2, 'deleted' => 'n'], $data);
+                    $sequence[] = 'place';
+                }
+
+                return $this->createStub(PDOStatement::class);
+            });
+
+        (new RotationRepository($databaseMock))->move($rotation, 2);
+
+        $this->assertSame(['free', 'place'], $sequence);
     }
 }
