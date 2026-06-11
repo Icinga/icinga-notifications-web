@@ -14,6 +14,7 @@ use Icinga\Module\Notifications\Forms\RotationConfigForm;
 use Icinga\Module\Notifications\Forms\ScheduleForm;
 use Icinga\Module\Notifications\Model\Schedule;
 use Icinga\Module\Notifications\Repository\RotationRepository;
+use Icinga\Module\Notifications\Repository\ScheduleRepository;
 use Icinga\Module\Notifications\Widget\Detail\ScheduleDetail;
 use Icinga\Module\Notifications\Widget\TimezoneWarning;
 use Icinga\Web\Session;
@@ -43,11 +44,7 @@ class ScheduleController extends CompatController
     {
         $id = (int) $this->params->getRequired('id');
 
-        $query = Schedule::on(Database::get())
-            ->filter(Filter::equal('schedule.id', $id));
-
-        /** @var ?Schedule $schedule */
-        $schedule = $query->first();
+        $schedule = (new ScheduleRepository(Database::get()))->find($id);
         if ($schedule === null) {
             $this->httpNotFound(t('Schedule not found'));
         }
@@ -115,20 +112,31 @@ class ScheduleController extends CompatController
         $this->setTitle($this->translate('Edit Schedule'));
         $scheduleId = (int) $this->params->getRequired('id');
 
-        $form = new ScheduleForm(Database::get());
+        $schedule = (new ScheduleRepository(Database::get()))->find($scheduleId);
+        if ($schedule === null) {
+            $this->httpNotFound(t('Schedule not found'));
+        }
+
+        $form = new ScheduleForm();
         $form->setShowRemoveButton();
-        $form->loadSchedule($scheduleId);
+        $form->setSchedule($schedule);
         $form->setSubmitLabel($this->translate('Save Changes'));
         $form->setAction($this->getRequest()->getUrl()->getAbsoluteUrl());
         $form->on(Form::ON_SUBMIT, function ($form) use ($scheduleId) {
-            $form->editSchedule($scheduleId);
+            $schedule = $form->getSchedule();
+            Database::get()->transaction(function (Connection $db) use ($schedule) {
+                (new ScheduleRepository($db))->update($schedule);
+            });
 
             $this->sendExtraUpdates(['#col1']);
             $this->redirectNow(Links::schedule($scheduleId));
         });
-        $form->on(Form::ON_SENT, function ($form) use ($scheduleId) {
+        $form->on(Form::ON_SENT, function (ScheduleForm $form) use ($scheduleId) {
             if ($form->hasBeenRemoved()) {
-                $form->removeSchedule($scheduleId);
+                $schedule = $form->getSchedule();
+                Database::get()->transaction(function (Connection $db) use ($schedule) {
+                    (new ScheduleRepository($db))->delete($schedule);
+                });
 
                 $this->redirectNow('__CLOSE__');
             }
@@ -142,15 +150,18 @@ class ScheduleController extends CompatController
     public function addAction(): void
     {
         $this->setTitle($this->translate('Create Schedule'));
-        $form = (new ScheduleForm(Database::get()))
+        $form = (new ScheduleForm())
             ->setShowTimezoneSuggestionInput()
             ->setAction($this->getRequest()->getUrl()->setParam('showCompact')->getAbsoluteUrl())
             ->on(Form::ON_SUBMIT, function (ScheduleForm $form) {
-                $scheduleId = $form->addSchedule();
+                $schedule = $form->getSchedule();
+                Database::get()->transaction(function (Connection $db) use ($schedule) {
+                    (new ScheduleRepository($db))->create($schedule);
+                });
 
                 $this->sendExtraUpdates(['#col1']);
                 $this->getResponse()->setHeader('X-Icinga-Container', 'col2');
-                $this->redirectNow(Links::schedule($scheduleId));
+                $this->redirectNow(Links::schedule($schedule->id));
             })
             ->handleRequest($this->getServerRequest());
 
