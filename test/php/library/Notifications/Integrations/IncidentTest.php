@@ -427,7 +427,7 @@ class IncidentTest extends TestCase
      */
     private function seedContact(string $username): int
     {
-        $fullName ??= ucfirst($username) . ' Example';
+        $fullName = ucfirst($username) . ' Example';
 
         $this->db->insert('contact', ['full_name' => $fullName, 'username' => $username, 'deleted' => 'n']);
 

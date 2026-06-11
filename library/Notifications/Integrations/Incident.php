@@ -18,16 +18,16 @@ use ipl\Stdlib\Filter;
 use ipl\Stdlib\Seq;
 
 /**
- * Allows read and write operations on a {@see IncidentModel}
+ * Manage an incident's recipients and read its state
  *
- * All write operations are in memory only until they are persisted by {@see self::save()}
+ * Changes are in memory until persisted by {@see save()}.
  */
 class Incident
 {
-    /** @var IncidentModel The incident read from and write to */
+    /** @var IncidentModel The managed incident */
     protected IncidentModel $incident;
 
-    /** @var Connection The database connection used for reads and writes */
+    /** @var Connection The database connection to use */
     protected Connection $db;
 
     /** @var IncidentHistory[] History rows created in memory, pending the next {@see save()} */
@@ -46,7 +46,7 @@ class Incident
     }
 
     /**
-     * Add the contact with the given username as manager of the incident
+     * Add the contact with the given username as manager
      *
      * Has no effect if the contact is already a manager.
      *
@@ -56,13 +56,13 @@ class Incident
      */
     public function addManager(string $username): static
     {
-        $this->assignRole($this->getContactByName($username), 'manager', ['manager']);
+        $this->assignRole($username, 'manager', ['manager']);
 
         return $this;
     }
 
     /**
-     * Add the contact with the given username as subscriber of the incident
+     * Add the contact with the given username as subscriber
      *
      * Has no effect if the contact is already a subscriber or a manager.
      *
@@ -72,7 +72,7 @@ class Incident
      */
     public function addSubscriber(string $username): static
     {
-        $this->assignRole($this->getContactByName($username), 'subscriber', ['subscriber', 'manager']);
+        $this->assignRole($username, 'subscriber', ['subscriber', 'manager']);
 
         return $this;
     }
@@ -90,7 +90,7 @@ class Incident
     {
         $contact = $this->getContactByName($username);
         $contacts = $this->incidentContacts();
-        $existing = $this->findIncidentContact($contacts, $contact);
+        $existing = $this->findIncidentContact($contacts, $contact->id);
 
         if ($existing?->role !== 'manager') {
             return $this;
@@ -99,13 +99,13 @@ class Incident
         $existing->role = 'subscriber';
 
         $this->incident->incident_contact = $contacts;
-        $this->addRoleChangedHistory($contact, 'manager', 'subscriber');
+        $this->addRoleChangedHistory($contact->id, 'manager', 'subscriber');
 
         return $this;
     }
 
     /**
-     * Remove the subscriber with the given username from the incident
+     * Remove the subscriber with the given username
      *
      * Has no effect if the contact is not a subscriber.
      *
@@ -117,7 +117,7 @@ class Incident
     {
         $contact = $this->getContactByName($username);
         $contacts = $this->incidentContacts();
-        $existing = $this->findIncidentContact($contacts, $contact);
+        $existing = $this->findIncidentContact($contacts, $contact->id);
 
         if ($existing === null || $existing->role !== 'subscriber') {
             return $this;
@@ -127,13 +127,13 @@ class Incident
             array_filter($contacts, fn(IncidentContact $entry) => $entry !== $existing)
         );
         $this->incident->deleteOnSave($existing);
-        $this->addRoleChangedHistory($contact, 'subscriber', null);
+        $this->addRoleChangedHistory($contact->id, 'subscriber', null);
 
         return $this;
     }
 
     /**
-     * Yield the username and full name of each of the incident's managers
+     * Yield the username and full name of each of the managers
      *
      * @return Generator<int, array{username: string, full_name: string}>
      */
@@ -143,7 +143,7 @@ class Incident
     }
 
     /**
-     * Yield the username and full name of each of the incident's subscribers
+     * Yield the username and full name of each of the subscribers
      *
      * @return Generator<int, array{username: string, full_name: string}>
      */
@@ -153,7 +153,7 @@ class Incident
     }
 
     /**
-     * Yield the username and full name of each contact that was notified about this incident
+     * Yield the username and full name of each contact that was notified
      *
      * @return Generator<int, array{username: string, full_name: string}>
      */
@@ -222,17 +222,17 @@ class Incident
     }
 
     /**
-     * Find the entry for the given contact among the supplied incident_contact entries
+     * Find the entry for the given contact id among the supplied `incident_contact` entries
      *
-     * @param list<IncidentContact> $contacts
-     * @param Contact $contact
+     * @param IncidentContact[] $contacts
+     * @param int $contactId
      *
      * @return ?IncidentContact
      */
-    private function findIncidentContact(array $contacts, Contact $contact): ?IncidentContact
+    private function findIncidentContact(array $contacts, int $contactId): ?IncidentContact
     {
         foreach ($contacts as $entry) {
-            if ($entry->contact_id === $contact->id) {
+            if ($entry->contact_id === $contactId) {
                 return $entry;
             }
         }
@@ -241,9 +241,9 @@ class Incident
     }
 
     /**
-     * Materialize the incident_contact relation into a list
+     * Materialize the `incident_contact` relation into a list
      *
-     * @return list<IncidentContact>
+     * @return IncidentContact[]
      */
     private function incidentContacts(): array
     {
@@ -300,18 +300,19 @@ class Incident
     }
 
     /**
-     * Set the contact's role, appending a new incident_contact entry if it has none yet
+     * Set the contact's role, appending a new `incident_contact` entry if it has none yet
      *
-     * @param Contact $contact
+     * @param string $username
      * @param string $role The role to assign
      * @param string[] $noopRoles Existing roles for which this is a no-op
      *
      * @return $this
      */
-    private function assignRole(Contact $contact, string $role, array $noopRoles): static
+    private function assignRole(string $username, string $role, array $noopRoles): static
     {
+        $contact = $this->getContactByName($username);
         $contacts = $this->incidentContacts();
-        $existing = $this->findIncidentContact($contacts, $contact);
+        $existing = $this->findIncidentContact($contacts, $contact->id);
 
         if ($existing !== null && in_array($existing->role, $noopRoles, true)) {
             return $this;
@@ -322,14 +323,12 @@ class Incident
         if ($existing !== null) {
             $existing->role = $role;
         } else {
-            $entry = new IncidentContact();
-            $entry->contact_id = $contact->id;
-            $entry->role = $role;
+            $entry = new IncidentContact(['contact_id' => $contact->id, 'role' => $role]);
             $contacts[] = $entry;
         }
 
         $this->incident->incident_contact = $contacts;
-        $this->addRoleChangedHistory($contact, $oldRole, $role);
+        $this->addRoleChangedHistory($contact->id, $oldRole, $role);
 
         return $this;
     }
@@ -337,20 +336,23 @@ class Incident
     /**
      * Append a recipient_role_changed entry to the pending history, to be persisted on the next save()
      *
-     * @param Contact $contact
+     * @param int $contactId
      * @param ?string $oldRole
      * @param ?string $newRole
      *
      * @return void
      */
-    protected function addRoleChangedHistory(Contact $contact, ?string $oldRole, ?string $newRole): void
+    protected function addRoleChangedHistory(int $contactId, ?string $oldRole, ?string $newRole): void
     {
-        $history = new IncidentHistory();
-        $history->contact_id = $contact->id;
-        $history->type = 'recipient_role_changed';
-        $history->old_recipient_role = $oldRole;
-        $history->new_recipient_role = $newRole;
-        $history->time = new DateTime();
+        $history = new IncidentHistory(
+            [
+                'contact_id' => $contactId,
+                'type' => 'recipient_role_changed',
+                'old_recipient_role' => $oldRole,
+                'new_recipient_role' => $newRole,
+                'time' => new DateTime()
+            ]
+        );
 
         $this->pendingHistory[] = $history;
     }
