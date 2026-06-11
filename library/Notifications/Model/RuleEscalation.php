@@ -26,6 +26,8 @@ use ipl\Orm\Relations;
  * @property Query|Rule $rule
  * @property Query|Incident $incident
  * @property Query|Contact $contact
+ * @property Query|Contactgroup $contactgroup
+ * @property Query|Schedule $schedule
  * @property Query|RuleEscalationRecipient $rule_escalation_recipient
  * @property Query|IncidentHistory $incident_history
  */
@@ -94,6 +96,10 @@ class RuleEscalation extends Model
         $relations
             ->belongsToMany('contact', Contact::class)
             ->through(RuleEscalationRecipient::class)
+            ->setJoinType('LEFT');
+        $relations->belongsToMany('schedule', Schedule::class)
+            ->through(RuleEscalationRecipient::class)
+            ->setTargetForeignKey('schedule_id')
             ->setJoinType('LEFT');
 
         $relations->hasMany('rule_escalation_recipient', RuleEscalationRecipient::class)

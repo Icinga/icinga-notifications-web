@@ -10,12 +10,12 @@ readonly class Schedule
     /**
      * @param ?int $id The primary database key value, NULL for new schedules
      * @param string $name The name of the schedule
-     * @param ?string $timezone The timezone of the schedule, NULL in case no change is necessary
+     * @param string $timezone The timezone of the schedule
      */
     public function __construct(
         public ?int $id,
         public string $name,
-        public ?string $timezone
+        public string $timezone
     ) {
     }
 }

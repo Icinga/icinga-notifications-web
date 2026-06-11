@@ -7,19 +7,14 @@ namespace Icinga\Module\Notifications\Forms;
 
 use DateTime;
 use DateTimeZone;
-use Icinga\Exception\Http\HttpNotFoundException;
-use Icinga\Module\Notifications\Model\Rotation;
-use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
+use Icinga\Module\Notifications\Form\Data\Schedule as ScheduleData;
 use Icinga\Module\Notifications\Model\Schedule;
-use Icinga\Module\Notifications\Repository\RotationRepository;
 use Icinga\Web\Session;
 use IntlTimeZone;
 use ipl\Html\Attributes;
 use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
-use ipl\Sql\Connection;
-use ipl\Stdlib\Filter;
 use ipl\Validator\CallbackValidator;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
@@ -35,16 +30,6 @@ class ScheduleForm extends CompatForm
     protected bool $showRemoveButton = false;
 
     protected bool $showTimezoneSuggestionInput = false;
-
-    private Connection $db;
-
-    private ?int $scheduleId = null;
-
-    public function __construct(Connection $db)
-    {
-        $this->db = $db;
-        $this->applyDefaultElementDecorators();
-    }
 
     public function setSubmitLabel(string $label): static
     {
@@ -87,93 +72,30 @@ class ScheduleForm extends CompatForm
         return $csrf !== null && $csrf->isValid() && $btn !== null && $btn->getName() === 'delete';
     }
 
-    public function loadSchedule(int $id): void
+    public function __construct()
     {
-        $this->scheduleId = $id;
-        $this->populate($this->fetchDbValues());
+        $this->applyDefaultElementDecorators();
     }
 
-    public function addSchedule(): int
+    public function setSchedule(Schedule $schedule): static
     {
-        return $this->db->transaction(function (Connection $db) {
-            $db->insert('schedule', [
-                'name'       => $this->getValue('name'),
-                'changed_at' => (int) (new DateTime())->format("Uv"),
-                'timezone'   => $this->getValue('timezone')
-            ]);
+        $this->populate($this->prepareFormPopulate($schedule));
 
-            return $db->lastInsertId();
-        });
+        return $this;
     }
 
-    public function editSchedule(int $id): void
+    public function getSchedule(): ScheduleData
     {
-        $this->db->beginTransaction();
-
-        $values = $this->getValues();
-        $storedValues = $this->fetchDbValues();
-
-        if ($values === $storedValues) {
-            return;
+        $timezone = null;
+        if ($this->showTimezoneSuggestionInput) {
+            $timezone = $this->getValue('timezone');
         }
 
-        $this->db->update('schedule', [
-            'name'          => $values['name'],
-            'changed_at'    => (int) (new DateTime())->format("Uv")
-        ], ['id = ?' => $id]);
-
-        $this->db->commitTransaction();
-    }
-
-    public function removeSchedule(int $id): void
-    {
-        $this->db->beginTransaction();
-
-        $rotations = Rotation::on($this->db)
-            ->columns(['id', 'schedule_id', 'priority', 'timeperiod.id'])
-            ->filter(Filter::equal('schedule_id', $id))
-            ->orderBy('priority', SORT_DESC);
-
-        /** @var Rotation $rotation */
-        foreach ($rotations as $rotation) {
-            (new RotationRepository($this->db))->delete($rotation);
-        }
-
-        $markAsDeleted = ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'];
-
-        $escalationIds = $this->db->fetchCol(
-            RuleEscalationRecipient::on($this->db)
-                ->columns('rule_escalation_id')
-                ->filter(Filter::equal('schedule_id', $id))
-                ->assembleSelect()
+        return new ScheduleData(
+            $this->getValue('id'),
+            $this->getValue('name'),
+            $timezone
         );
-
-        $this->db->update('rule_escalation_recipient', $markAsDeleted, ['schedule_id = ?' => $id]);
-
-        if (! empty($escalationIds)) {
-            $escalationIdsWithOtherRecipients = $this->db->fetchCol(
-                RuleEscalationRecipient::on($this->db)
-                    ->columns('rule_escalation_id')
-                    ->filter(Filter::all(
-                        Filter::equal('rule_escalation_id', $escalationIds),
-                        Filter::unequal('schedule_id', $id)
-                    ))->assembleSelect()
-            );
-
-            $toRemoveEscalations = array_diff($escalationIds, $escalationIdsWithOtherRecipients);
-
-            if (! empty($toRemoveEscalations)) {
-                $this->db->update(
-                    'rule_escalation',
-                    $markAsDeleted + ['position' => null],
-                    ['id IN (?)' => $toRemoveEscalations]
-                );
-            }
-        }
-
-        $this->db->update('schedule', $markAsDeleted, ['id = ?' => $id]);
-
-        $this->db->commitTransaction();
     }
 
     protected function assemble(): void
@@ -188,6 +110,12 @@ class ScheduleForm extends CompatForm
                     . ' priorities. Schedules can also be used as recipients for event rules.'
                 ))
             ));
+        }
+
+        $this->addElement('hidden', 'id');
+        $scheduleId = $this->getPopulatedValue('id');
+        if ($scheduleId !== null) {
+            $scheduleId = (int) $scheduleId;
         }
 
         $this->addElement('text', 'name', [
@@ -255,24 +183,20 @@ class ScheduleForm extends CompatForm
     /**
      * Fetch the values from the database
      *
-     * @return string[]
+     * @param Schedule $schedule
      *
-     * @throws HttpNotFoundException
+     * @return array<string, string>
      */
-    private function fetchDbValues(): array
+    private function prepareFormPopulate(Schedule $schedule): array
     {
-        /** @var ?Schedule $schedule */
-        $schedule = Schedule::on($this->db)
-            ->columns($this->showTimezoneSuggestionInput ? ['name', 'timezone'] : 'name')
-            ->filter(Filter::equal('id', $this->scheduleId))
-            ->first();
-
-        if ($schedule === null) {
-            throw new HttpNotFoundException($this->translate('Schedule not found'));
+        $values = [
+            'id' => $schedule->id,
+            'name' => $schedule->name
+        ];
+        if ($this->showTimezoneSuggestionInput) {
+            $values['timezone'] = $schedule->timezone;
         }
 
-        return $this->showTimezoneSuggestionInput
-            ? ['name' => $schedule->name, 'timezone' => $schedule->timezone]
-            : ['name' => $schedule->name];
+        return $values;
     }
 }

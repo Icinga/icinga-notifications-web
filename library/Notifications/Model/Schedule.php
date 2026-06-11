@@ -23,6 +23,7 @@ use ipl\Orm\Relations;
  * @property Query|Rotation $rotation
  * @property Query|RuleEscalationRecipient $rule_escalation_recipient
  * @property Query|IncidentHistory $incident_history
+ * @property Query|RuleEscalation $rule_escalation
  */
 class Schedule extends Model
 {
@@ -77,5 +78,9 @@ class Schedule extends Model
         $relations->hasMany('rule_escalation_recipient', RuleEscalationRecipient::class)
             ->setJoinType('LEFT');
         $relations->hasMany('incident_history', IncidentHistory::class);
+
+        $relations->belongsToMany('rule_escalation', RuleEscalation::class)
+            ->through(RuleEscalationRecipient::class)
+            ->setJoinType('LEFT');
     }
 }
