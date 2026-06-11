@@ -172,6 +172,20 @@ class IncidentTest extends TestCase
         );
     }
 
+    public function testSaveWithoutRoleChangesKeepsExistingContactsReadable(): void
+    {
+        $id = $this->seedIncident();
+        $this->seedIncidentContact($id, $this->seedContact('uname'), 'manager');
+
+        $incident = $this->incident($id);
+        $incident->save();
+
+        $this->assertSame(
+            [['username' => 'uname', 'full_name' => 'Uname Example']],
+            iterator_to_array($incident->getManagers(), false)
+        );
+    }
+
     public function testGetNotifiedContactsYieldsTheUsernameAndFullNameOfDistinctContacts(): void
     {
         $id = $this->seedIncident();

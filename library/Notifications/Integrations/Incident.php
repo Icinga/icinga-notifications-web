@@ -33,6 +33,9 @@ class Incident
     /** @var IncidentHistory[] History rows created in memory, pending the next {@see save()} */
     private array $pendingHistory = [];
 
+    /** @var IncidentContact[]|null Incident_contact entries loaded and mutated in memory, flushed on {@see save()} */
+    private ?array $incidentContacts = null;
+
     /**
      * Create a new wrapper for the given model
      *
@@ -98,7 +101,7 @@ class Incident
 
         $existing->role = 'subscriber';
 
-        $this->incident->incident_contact = $contacts;
+        $this->incidentContacts = $contacts;
         $this->addRoleChangedHistory($contact->id, 'manager', 'subscriber');
 
         return $this;
@@ -123,7 +126,7 @@ class Incident
             return $this;
         }
 
-        $this->incident->incident_contact = array_values(
+        $this->incidentContacts = array_values(
             array_filter($contacts, fn(IncidentContact $entry) => $entry !== $existing)
         );
         $this->incident->deleteOnSave($existing);
@@ -195,6 +198,12 @@ class Incident
     {
         $this->incident->incident_history = $this->pendingHistory;
         $this->pendingHistory = [];
+
+        if ($this->incidentContacts !== null) {
+            $this->incident->incident_contact = $this->incidentContacts;
+            $this->incidentContacts = null;
+        }
+
         (new EntityManager($this->db))->save($this->incident);
 
         return $this;
@@ -247,14 +256,16 @@ class Incident
      */
     private function incidentContacts(): array
     {
-        $contacts = [];
-        if (isset($this->incident->incident_contact)) {
-            foreach ($this->incident->incident_contact as $entry) {
-                $contacts[] = $entry;
+        if ($this->incidentContacts === null) {
+            $this->incidentContacts = [];
+            if (isset($this->incident->incident_contact)) {
+                foreach ($this->incident->incident_contact as $entry) {
+                    $this->incidentContacts[] = $entry;
+                }
             }
         }
 
-        return $contacts;
+        return $this->incidentContacts;
     }
 
     /**
@@ -327,7 +338,7 @@ class Incident
             $contacts[] = $entry;
         }
 
-        $this->incident->incident_contact = $contacts;
+        $this->incidentContacts = $contacts;
         $this->addRoleChangedHistory($contact->id, $oldRole, $role);
 
         return $this;
