@@ -67,7 +67,12 @@ class Incidents implements IteratorAggregate
      */
     public function hasIncident(): bool
     {
-        return $this->incidents()->hasResult();
+        // hasResult() fails if the generator has already been exhausted
+        foreach ($this->incidents() as $_) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

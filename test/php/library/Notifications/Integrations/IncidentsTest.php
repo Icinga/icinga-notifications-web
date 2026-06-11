@@ -91,6 +91,32 @@ class IncidentsTest extends TestCase
         $this->assertFalse((new Incidents(['host' => 'elsewhere'], $db))->hasIncident());
     }
 
+    public function testIteratingAfterHasIncidentYieldsAllMatchesFromTheSameInstance(): void
+    {
+        $tags = ['host' => 'icinga2'];
+        $this->seedIncident(1, $tags);
+        $this->seedIncident(2, $tags);
+        $this->seedIncident(1, ['host' => 'elsewhere']);
+
+        $incidents = new Incidents($tags, $this->db);
+
+        $this->assertTrue($incidents->hasIncident());
+        $this->assertCount(2, iterator_to_array($incidents, false));
+    }
+
+    public function testHasIncidentStillReportsTrueAfterIterating(): void
+    {
+        $tags = ['host' => 'icinga2'];
+        $this->seedIncident(1, $tags);
+
+        $incidents = new Incidents($tags, $this->db);
+        foreach ($incidents as $_) {
+            // exhaust the generator
+        }
+
+        $this->assertTrue($incidents->hasIncident());
+    }
+
     /**
      * Build an Incidents instance reading through the given connection that exposes its protected
      * {@see Incidents::buildQuery()} via a public passthrough, so the test can inspect the resulting
