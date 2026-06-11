@@ -8,7 +8,6 @@ namespace Tests\Icinga\Module\Notifications\Integrations;
 use Icinga\Module\Notifications\Integrations\Incident;
 use Icinga\Module\Notifications\Integrations\Incidents;
 use ipl\Orm\Query;
-use ipl\Sql\Connection;
 use PHPUnit\Framework\TestCase;
 use Tests\Icinga\Module\Notifications\Lib\EntityManager\RecordingConnection;
 
@@ -17,20 +16,22 @@ class IncidentsTest extends TestCase
     /** @var array<string, true> Object ids seeded into the current test's database, keyed by hex id */
     private array $seededObjects = [];
 
+    private RecordingConnection $db;
+
     /**
      * Reset the set of seeded object ids so each test starts with a fresh, empty database
      */
     protected function setUp(): void
     {
         $this->seededObjects = [];
+        $this->db = $this->createDatabase();
     }
 
     public function testBuildQueryMatchesAHostAndAllItsServices(): void
     {
-        $db = $this->createDatabase();
-        $this->seedHostTopology($db, 1);
+        $this->seedHostTopology(1);
 
-        $incidents = $this->inspectableIncidents(['host' => 'icinga2'], $db)
+        $incidents = $this->inspectableIncidents(['host' => 'icinga2'])
             ->exposedBuildQuery()
             ->execute();
 
@@ -39,10 +40,9 @@ class IncidentsTest extends TestCase
 
     public function testBuildQueryMatchesAnExactService(): void
     {
-        $db = $this->createDatabase();
-        $this->seedHostTopology($db, 1);
+        $this->seedHostTopology(1);
 
-        $incidents = $this->inspectableIncidents(['host' => 'icinga2', 'service' => 'http'], $db)
+        $incidents = $this->inspectableIncidents(['host' => 'icinga2', 'service' => 'http'])
             ->exposedBuildQuery()
             ->execute();
 
@@ -51,10 +51,9 @@ class IncidentsTest extends TestCase
 
     public function testBuildQueryMatchesAHostWithoutItsServices(): void
     {
-        $db = $this->createDatabase();
-        $this->seedHostTopology($db, 1);
+        $this->seedHostTopology(1);
 
-        $incidents = $this->inspectableIncidents(['host' => 'icinga2', 'service' => null], $db)
+        $incidents = $this->inspectableIncidents(['host' => 'icinga2', 'service' => null])
             ->exposedBuildQuery()
             ->execute();
 
@@ -63,16 +62,15 @@ class IncidentsTest extends TestCase
 
     public function testGetIterator(): void
     {
-        $db = $this->createDatabase();
         $sourceId = 1;
         $tags = ['host' => 'icinga2', 'service' => 'http'];
 
-        $this->seedIncident($db, $sourceId, $tags);
-        $this->seedIncident($db, $sourceId, $tags);
-        $this->seedIncident($db, $sourceId, ['host' => 'elsewhere']);
-        $this->seedIncident($db, 2, $tags);
+        $this->seedIncident($sourceId, $tags);
+        $this->seedIncident($sourceId, $tags);
+        $this->seedIncident($sourceId, ['host' => 'elsewhere']);
+        $this->seedIncident(2, $tags);
 
-        $incidents = iterator_to_array(new Incidents(['host' => 'icinga2'], $db), false);
+        $incidents = iterator_to_array(new Incidents(['host' => 'icinga2'], $this->db), false);
 
         $this->assertCount(3, $incidents);
         foreach ($incidents as $incident) {
@@ -82,13 +80,12 @@ class IncidentsTest extends TestCase
 
     public function testHasIncident(): void
     {
-        $db = $this->createDatabase();
         $sourceId = 1;
         $tags = ['host' => 'icinga2'];
-        $this->seedIncident($db, $sourceId, $tags);
+        $this->seedIncident($sourceId, $tags);
 
-        $this->assertTrue((new Incidents($tags, $db))->hasIncident());
-        $this->assertFalse((new Incidents(['host' => 'elsewhere'], $db))->hasIncident());
+        $this->assertTrue((new Incidents($tags, $this->db))->hasIncident());
+        $this->assertFalse((new Incidents(['host' => 'elsewhere'], $this->db))->hasIncident());
     }
 
     public function testIteratingAfterHasIncidentYieldsAllMatchesFromTheSameInstance(): void
@@ -118,15 +115,15 @@ class IncidentsTest extends TestCase
     }
 
     /**
-     * Build an Incidents instance reading through the given connection that exposes its protected
+     * Build an Incidents instance reading through the test's connection that exposes its protected
      * {@see Incidents::buildQuery()} via a public passthrough, so the test can inspect the resulting
      * query without running it.
      *
      * @param array<string, ?string> $tags
      */
-    private function inspectableIncidents(array $tags, Connection $db): Incidents
+    private function inspectableIncidents(array $tags): Incidents
     {
-        return new class ($tags, $db) extends Incidents {
+        return new class ($tags, $this->db) extends Incidents {
             public function exposedBuildQuery(): Query
             {
                 return $this->buildQuery();
@@ -140,13 +137,13 @@ class IncidentsTest extends TestCase
      *
      * The incidents are seeded in id order: 1 = http, 2 = ssh, 3 = procs, 4 = bare host, 5 = elsewhere.
      */
-    private function seedHostTopology(RecordingConnection $db, int $sourceId): void
+    private function seedHostTopology(int $sourceId): void
     {
-        $this->seedIncident($db, $sourceId, ['host' => 'icinga2', 'service' => 'http']);
-        $this->seedIncident($db, $sourceId, ['host' => 'icinga2', 'service' => 'ssh']);
-        $this->seedIncident($db, $sourceId, ['host' => 'icinga2', 'service' => 'procs']);
-        $this->seedIncident($db, $sourceId, ['host' => 'icinga2']);
-        $this->seedIncident($db, $sourceId, ['host' => 'elsewhere', 'service' => 'http']);
+        $this->seedIncident($sourceId, ['host' => 'icinga2', 'service' => 'http']);
+        $this->seedIncident($sourceId, ['host' => 'icinga2', 'service' => 'ssh']);
+        $this->seedIncident($sourceId, ['host' => 'icinga2', 'service' => 'procs']);
+        $this->seedIncident($sourceId, ['host' => 'icinga2']);
+        $this->seedIncident($sourceId, ['host' => 'elsewhere', 'service' => 'http']);
     }
 
     /**
@@ -196,13 +193,13 @@ class IncidentsTest extends TestCase
      *
      * @param array<string, string> $tags
      */
-    private function seedIncident(RecordingConnection $db, int $sourceId, array $tags): void
+    private function seedIncident(int $sourceId, array $tags): void
     {
         $objectId = $this->objectId($sourceId, $tags);
 
-        $this->seedObjectTags($db, $tags, $objectId);
+        $this->seedObjectTags($tags, $objectId);
 
-        $db->insert('incident', ['object_id' => hex2bin($objectId), 'severity' => 'crit']);
+        $this->db->insert('incident', ['object_id' => hex2bin($objectId), 'severity' => 'crit']);
     }
 
     /**
@@ -229,7 +226,7 @@ class IncidentsTest extends TestCase
      *
      * @param array<string, string> $tags
      */
-    private function seedObjectTags(RecordingConnection $db, array $tags, string $objectId): void
+    private function seedObjectTags(array $tags, string $objectId): void
     {
         if (isset($this->seededObjects[$objectId])) {
             return;
@@ -240,7 +237,7 @@ class IncidentsTest extends TestCase
         $rawId = hex2bin($objectId);
 
         foreach ($tags as $tag => $value) {
-            $db->insert('object_id_tag', [
+            $this->db->insert('object_id_tag', [
                 'object_id' => $rawId,
                 'tag'       => $tag,
                 'value'     => $value,
