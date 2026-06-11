@@ -80,7 +80,7 @@ final class ScheduleRepository
         }
 
         $model->name = $schedule->name;
-        if (isset($schedule->timezone)) {
+        if ($schedule->timezone !== $model->timezone) {
             $model->timezone = $schedule->timezone;
 
             $rotationRepository = new RotationRepository($this->db);

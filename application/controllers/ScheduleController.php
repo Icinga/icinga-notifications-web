@@ -118,15 +118,21 @@ class ScheduleController extends CompatController
         }
 
         $form = new ScheduleForm();
-        $form->setShowRemoveButton();
         $form->setSchedule($schedule);
-        $form->setSubmitLabel($this->translate('Save Changes'));
-        $form->setAction($this->getRequest()->getUrl()->getAbsoluteUrl());
-        $form->on(Form::ON_SUBMIT, function ($form) use ($scheduleId) {
+        $form->setAction($this->getRequest()->getUrl()->setParam('showCompact')->getAbsoluteUrl());
+        $form->on(Form::ON_SUBMIT, function (ScheduleForm $form) {
             $schedule = $form->getSchedule();
-            Database::get()->transaction(function (Connection $db) use ($schedule) {
-                (new ScheduleRepository($db))->update($schedule);
-            });
+
+            $scheduleId = $schedule->id;
+            if ($form->hasBeenDuplicated()) {
+                $scheduleId = Database::get()->transaction(function (Connection $db) use ($schedule) {
+                    return (new ScheduleRepository($db))->duplicate($schedule);
+                });
+            } else {
+                Database::get()->transaction(function (Connection $db) use ($schedule) {
+                    (new ScheduleRepository($db))->update($schedule);
+                });
+            }
 
             $this->sendExtraUpdates(['#col1']);
             $this->redirectNow(Links::schedule($scheduleId));
@@ -150,7 +156,6 @@ class ScheduleController extends CompatController
     {
         $this->setTitle($this->translate('Create Schedule'));
         $form = (new ScheduleForm())
-            ->setShowTimezoneSuggestionInput()
             ->setAction($this->getRequest()->getUrl()->setParam('showCompact')->getAbsoluteUrl())
             ->on(Form::ON_SUBMIT, function (ScheduleForm $form) {
                 $schedule = $form->getSchedule();
