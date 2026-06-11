@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Forms;
 
 use DateTime;
 use DateTimeZone;
+use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Schedule;
 use Icinga\Web\Session;
 use IntlTimeZone;
@@ -14,6 +15,7 @@ use ipl\Html\Attributes;
 use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
+use ipl\Stdlib\Filter;
 use ipl\Validator\CallbackValidator;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
@@ -73,6 +75,16 @@ class ScheduleForm extends CompatForm
         return $csrf !== null && $csrf->isValid() && $btn !== null && $btn->getName() === 'delete';
     }
 
+    /**
+     * Get whether the duplicate button was pressed
+     *
+     * @return bool
+     */
+    public function hasBeenDuplicated(): bool
+    {
+        return $this->getPressedSubmitElement()?->getName() === 'duplicate';
+    }
+
     public function __construct()
     {
         $this->schedule = new Schedule();
@@ -120,7 +132,25 @@ class ScheduleForm extends CompatForm
         $this->addElement('text', 'name', [
             'required'      => true,
             'label'         => $this->translate('Schedule Name'),
-            'placeholder'   => $this->translate('e.g. working hours, on call, etc ...')
+            'placeholder'   => $this->translate('e.g. working hours, on call, etc ...'),
+            'validators'    => [
+                new CallbackValidator(function ($value, $validator) {
+                    $schedules = Schedule::on(Database::get())
+                        ->columns('id')
+                        ->filter(Filter::equal('name', $value));
+                    if (! $this->hasBeenDuplicated()) {
+                        $schedules->filter(Filter::unequal('id', $this->schedule->id));
+                    }
+
+                    if ($schedules->first() !== null) {
+                        $validator->addMessage($this->translate('A rotation with this name already exists'));
+
+                        return false;
+                    }
+
+                    return true;
+                })
+            ]
         ]);
 
         if ($this->showTimezoneSuggestionInput) {
@@ -165,6 +195,7 @@ class ScheduleForm extends CompatForm
             'label' => $this->getSubmitLabel()
         ]);
 
+        $additionalButtons = [];
         if ($this->showRemoveButton) {
             $removeBtn = $this->createElement('submit', 'delete', [
                 'label' => $this->translate('Delete'),
@@ -172,9 +203,16 @@ class ScheduleForm extends CompatForm
                 'formnovalidate' => true
             ]);
             $this->registerElement($removeBtn);
-
-            $this->getElement('submit')->prependWrapper((new HtmlDocument())->setHtmlContent($removeBtn));
+            $additionalButtons[] = $removeBtn;
         }
+
+        $duplicateBtn = $this->createElement('submit', 'duplicate', [
+            'label' => $this->translate('Duplicate')
+        ]);
+        $this->registerElement($duplicateBtn);
+        $additionalButtons[] = $duplicateBtn;
+
+        $this->getElement('submit')->prependWrapper((new HtmlDocument())->setHtmlContent(...$additionalButtons));
 
         $this->addCsrfCounterMeasure(Session::getSession()->getId());
     }
@@ -202,5 +240,10 @@ class ScheduleForm extends CompatForm
         $storedValues = $this->fetchDbValues();
 
         return $values !== $storedValues;
+    }
+
+    public function hasBeenSubmitted()
+    {
+        return parent::hasBeenSubmitted() || ($this->hasBeenSent() && $this->hasBeenDuplicated());
     }
 }

@@ -121,15 +121,22 @@ class ScheduleController extends CompatController
         $form->setShowRemoveButton();
         $form->setSchedule($schedule);
         $form->setSubmitLabel($this->translate('Save Changes'));
-        $form->setAction($this->getRequest()->getUrl()->getAbsoluteUrl());
-        $form->on(Form::ON_SUBMIT, function ($form) use ($scheduleId) {
+        $form->setAction($this->getRequest()->getUrl()->setParam('showCompact')->getAbsoluteUrl());
+        $form->on(Form::ON_SUBMIT, function (ScheduleForm $form) {
             $schedule = $form->getSchedule();
-            Database::get()->transaction(function (Connection $db) use ($schedule) {
-                (new ScheduleRepository($db))->update($schedule);
-            });
+
+            if ($form->hasBeenDuplicated()) {
+                Database::get()->transaction(function (Connection $db) use ($schedule) {
+                    (new ScheduleRepository($db))->duplicate($schedule);
+                });
+            } else {
+                Database::get()->transaction(function (Connection $db) use ($schedule) {
+                    (new ScheduleRepository($db))->update($schedule);
+                });
+            }
 
             $this->sendExtraUpdates(['#col1']);
-            $this->redirectNow(Links::schedule($scheduleId));
+            $this->redirectNow(Links::schedule($schedule->id));
         });
         $form->on(Form::ON_SENT, function (ScheduleForm $form) use ($scheduleId) {
             if ($form->hasBeenRemoved()) {
