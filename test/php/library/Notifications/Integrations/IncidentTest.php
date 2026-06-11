@@ -297,6 +297,25 @@ class IncidentTest extends TestCase
         );
     }
 
+    public function testASecondSaveDoesNotRewriteHistoryFromAnEarlierSave(): void
+    {
+        $id = $this->seedIncident();
+        $this->seedContact('alice');
+        $this->seedContact('bob');
+
+        $incident = $this->incident($id);
+        $incident->addManager('alice')->save();
+        $incident->addManager('bob')->save();
+
+        $this->assertSame(
+            [
+                ['username' => 'alice', 'old_role' => null, 'new_role' => 'manager'],
+                ['username' => 'bob', 'old_role' => null, 'new_role' => 'manager'],
+            ],
+            $this->storedRoleHistory()
+        );
+    }
+
     public function testAddSubscriberDoesNotDemoteAnExistingManager(): void
     {
         $id = $this->seedIncident();

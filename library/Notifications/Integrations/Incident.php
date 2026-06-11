@@ -193,6 +193,8 @@ class Incident
      */
     public function save(): static
     {
+        $this->incident->incident_history = $this->pendingHistory;
+        $this->pendingHistory = [];
         (new EntityManager($this->db))->save($this->incident);
 
         return $this;
@@ -333,7 +335,7 @@ class Incident
     }
 
     /**
-     * Append a `recipient_role_changed` entry to the incident's history relation
+     * Append a recipient_role_changed entry to the pending history, to be persisted on the next save()
      *
      * @param Contact $contact
      * @param ?string $oldRole
@@ -351,6 +353,5 @@ class Incident
         $history->time = new DateTime();
 
         $this->pendingHistory[] = $history;
-        $this->incident->incident_history = $this->pendingHistory;
     }
 }
