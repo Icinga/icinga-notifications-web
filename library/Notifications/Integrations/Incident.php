@@ -25,15 +25,15 @@ use ipl\Stdlib\Seq;
 class Incident
 {
     /** @var IncidentModel The managed incident */
-    protected IncidentModel $incident;
+    private IncidentModel $incident;
 
     /** @var Connection The database connection to use */
-    protected Connection $db;
+    private Connection $db;
 
     /** @var IncidentHistory[] History rows created in memory, pending the next {@see save()} */
     private array $pendingHistory = [];
 
-    /** @var IncidentContact[]|null Incident_contact entries loaded and mutated in memory, flushed on {@see save()} */
+    /** @var IncidentContact[]|null `incident_contact` entries loaded and mutated in memory, flushed on {@see save()} */
     private ?array $incidentContacts = null;
 
     /**
@@ -334,8 +334,7 @@ class Incident
         if ($existing !== null) {
             $existing->role = $role;
         } else {
-            $entry = new IncidentContact(['contact_id' => $contact->id, 'role' => $role]);
-            $contacts[] = $entry;
+            $contacts[] = new IncidentContact(['contact_id' => $contact->id, 'role' => $role]);
         }
 
         $this->incidentContacts = $contacts;
@@ -345,7 +344,7 @@ class Incident
     }
 
     /**
-     * Append a recipient_role_changed entry to the pending history, to be persisted on the next save()
+     * Append a `recipient_role_changed` entry to the pending history, to be persisted on the next save()
      *
      * @param int $contactId
      * @param ?string $oldRole
@@ -353,9 +352,9 @@ class Incident
      *
      * @return void
      */
-    protected function addRoleChangedHistory(int $contactId, ?string $oldRole, ?string $newRole): void
+    private function addRoleChangedHistory(int $contactId, ?string $oldRole, ?string $newRole): void
     {
-        $history = new IncidentHistory(
+        $this->pendingHistory[] = new IncidentHistory(
             [
                 'contact_id' => $contactId,
                 'type' => 'recipient_role_changed',
@@ -364,7 +363,5 @@ class Incident
                 'time' => new DateTime()
             ]
         );
-
-        $this->pendingHistory[] = $history;
     }
 }
