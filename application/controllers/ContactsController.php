@@ -16,6 +16,7 @@ use Icinga\Module\Notifications\Web\Form\ContactForm;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Web\Notification;
 use ipl\Html\Contract\Form;
+use ipl\Html\HtmlString;
 use ipl\Html\TemplateString;
 use ipl\Sql\Connection;
 use ipl\Sql\Expression;
@@ -100,9 +101,11 @@ class ContactsController extends CompatController
             if ($this->Auth()->hasPermission('config/modules')) {
                 $emptyStateMessage = TemplateString::create(
                     $this->translate(
-                        'No contacts found. To add a new contact, please {{#link}}configure a Channel{{/link}} first.'
+                        'No contacts found.%1$s'
+                        . ' To add a new contact, please {{#link}}configure a Channel{{/link}} first.'
                     ),
-                    ['link' => (new ActionLink(null, Links::channelAdd()))->setBaseTarget('_next')]
+                    ['link' => (new ActionLink(null, Links::channelAdd()))->setBaseTarget('_next')],
+                    [HtmlString::create('<br>')]
                 );
             } else {
                 $emptyStateMessage = $this->translate(

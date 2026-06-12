@@ -102,7 +102,7 @@ class ContactGroupsController extends CompatController
                         // translators: %1$s will be replaced by a line break
                         $this->translate(
                             'No contact groups found.%1$s'
-                            . 'To add new contact group, please {{#link}}configure a Channel{{/link}} first.%1$s'
+                            . 'To add a new contact group, please {{#link}}configure a Channel{{/link}} first.%1$s'
                             . 'Once done, you should proceed by creating your first contact.'
                         ),
                         ['link' => (new ActionLink(null, Links::channelAdd()))->setBaseTarget('_next')],
@@ -115,15 +115,15 @@ class ContactGroupsController extends CompatController
                     );
                 }
             } else {
+                $addButton->disable($this->translate('A contact is required to add a contact group'));
                 $emptyStateMessage = TemplateString::create(
                     $this->translate(
-                        'No contact groups found. Do not forget to also'
-                        . ' {{#link}}create your first contact!{{/link}}'
+                        'No contact groups found.%1$s'
+                        . 'To add a new contact group, please {{#link}}create a Contact{{/link}} first.'
                     ),
-                    ['link' => (new ActionLink(null, Links::contactAdd()))->setBaseTarget('_next')]
+                    ['link' => (new ActionLink(null, Links::contactAdd()))->setBaseTarget('_next')],
+                    [HtmlString::create('<br>')]
                 );
-
-                $addButton->openInModal();
             }
         } else {
             $addButton->openInModal();
