@@ -334,7 +334,10 @@ class Incident
         if ($existing !== null) {
             $existing->role = $role;
         } else {
-            $contacts[] = new IncidentContact(['contact_id' => $contact->id, 'role' => $role]);
+            $incidentContact = new IncidentContact();
+            $incidentContact->contact_id = $contact->id;
+            $incidentContact->role = $role;
+            $contacts[] = $incidentContact;
         }
 
         $this->incidentContacts = $contacts;
@@ -354,14 +357,12 @@ class Incident
      */
     private function addRoleChangedHistory(int $contactId, ?string $oldRole, ?string $newRole): void
     {
-        $this->pendingHistory[] = new IncidentHistory(
-            [
-                'contact_id' => $contactId,
-                'type' => 'recipient_role_changed',
-                'old_recipient_role' => $oldRole,
-                'new_recipient_role' => $newRole,
-                'time' => new DateTime()
-            ]
-        );
+        $history = new IncidentHistory();
+        $history->contact_id = $contactId;
+        $history->type = 'recipient_role_changed';
+        $history->old_recipient_role = $oldRole;
+        $history->new_recipient_role = $newRole;
+        $history->time = new DateTime();
+        $this->pendingHistory[] = $history;
     }
 }
