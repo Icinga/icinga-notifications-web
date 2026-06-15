@@ -5,14 +5,12 @@
 
 namespace Icinga\Module\Notifications\Forms;
 
-use DateTime;
-use Icinga\Exception\Http\HttpNotFoundException;
+use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Source;
 use ipl\Html\Attributes;
 use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
-use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
 use ipl\Validator\CallbackValidator;
 use ipl\Web\Common\CalloutType;
@@ -21,14 +19,10 @@ use ipl\Web\Compat\CompatForm;
 use ipl\Web\Url;
 use ipl\Web\Widget\ButtonLink;
 use ipl\Web\Widget\Callout;
-use RuntimeException;
 
 class SourceForm extends CompatForm
 {
     use CsrfCounterMeasure;
-
-    /** @var string|int The used password hash algorithm */
-    public const HASH_ALGORITHM = PASSWORD_BCRYPT;
 
     /** @var string @var The generic source type */
     public const TYPE_GENERIC = 'generic';
@@ -36,19 +30,8 @@ class SourceForm extends CompatForm
     /** @var string The type for sources with an integration */
     private const TYPE_INTEGRATED = 'integrated';
 
-    /** @var Connection */
-    private Connection $db;
-
-    /** @var ?int */
-    private ?int $sourceId = null;
-
-    /** @var bool Whether the source is locked for editing */
-    private bool $isLocked = false;
-
-    public function __construct(Connection $db)
-    {
-        $this->db = $db;
-    }
+    /** @var ?Source The source to load */
+    private ?Source $source = null;
 
     protected function assemble(): void
     {
@@ -72,7 +55,7 @@ class SourceForm extends CompatForm
             [
                 'label'     => $this->translate('Source Name'),
                 'required'  => true,
-                'disabled'  => $this->isLocked
+                'disabled'  => $this->source?->locked
             ]
         );
         $this->addElement(
@@ -83,7 +66,7 @@ class SourceForm extends CompatForm
                 'required'  => true,
                 'label'     => $this->translate('Source Type'),
                 'value'     => self::TYPE_GENERIC,
-                'disabled'  => $this->isLocked,
+                'disabled'  => $this->source?->locked,
                 'class'     => 'autosubmit',
                 'options'   => [
                     self::TYPE_GENERIC    => $this->translate('Generic', 'notifications.source.type'),
@@ -112,7 +95,7 @@ class SourceForm extends CompatForm
                 [
                     'required'      => true,
                     'label'         => $this->translate('Source Identifier'),
-                    'disabled'  => $this->isLocked
+                    'disabled'  => $this->source?->locked
                 ]
             );
         }
@@ -138,14 +121,14 @@ class SourceForm extends CompatForm
             [
                 'required' => true,
                 'label' => $this->translate('Username'),
-                'disabled'  => $this->isLocked,
+                'disabled'  => $this->source?->locked,
                 'validators' => [new CallbackValidator(
                     function ($value, CallbackValidator $validator) {
                         // Username must be unique
-                        $source = Source::on($this->db)
+                        $source = Source::on(Database::get())
                             ->filter(Filter::equal('listener_username', $value));
-                        if ($this->sourceId !== null) {
-                            $source->filter(Filter::unequal('id', $this->sourceId));
+                        if ($this->source !== null) {
+                            $source->filter(Filter::unequal('id', $this->source->id));
                         }
 
                         if ($source->first() !== null) {
@@ -159,7 +142,7 @@ class SourceForm extends CompatForm
             ]
         );
 
-        if ($this->isLocked) {
+        if ($this->source?->locked) {
             $this->prependHtml(new Callout(
                 CalloutType::Info,
                 $this->translate('This source is managed by an integration, so changes can only be applied through it.')
@@ -172,8 +155,8 @@ class SourceForm extends CompatForm
             'password',
             'listener_password',
             [
-                'required'      => $this->sourceId === null,
-                'label'         => $this->sourceId !== null
+                'required'      => $this->source === null,
+                'label'         => $this->source !== null
                     ? $this->translate('New Password')
                     : $this->translate('Password'),
                 'autocomplete'  => 'new-password',
@@ -185,7 +168,7 @@ class SourceForm extends CompatForm
             'listener_password_dupe',
             [
                 'ignore'        => true,
-                'required'      => $this->sourceId === null,
+                'required'      => $this->source === null,
                 'label'         => $this->translate('Repeat Password'),
                 'autocomplete'  => 'new-password',
                 'validators'    => [new CallbackValidator(function (string $value, CallbackValidator $validator) {
@@ -204,19 +187,19 @@ class SourceForm extends CompatForm
             'submit',
             'save',
             [
-                'label' => $this->sourceId === null ?
+                'label' => $this->source === null ?
                     $this->translate('Add Source') :
                     $this->translate('Save Changes')
             ]
         );
 
-        if ($this->sourceId !== null) {
+        if ($this->source !== null) {
             $this->getElement('save')->prependWrapper(
                 (new HtmlDocument())
                     ->addHtml(
                         (new ButtonLink(
                             $this->translate('Delete'),
-                            Url::fromPath('notifications/source/delete/', ['id' => $this->sourceId])
+                            Url::fromPath('notifications/source/delete/', ['id' => $this->source->id])
                         ))->openInModal()
                     )
             );
@@ -224,125 +207,47 @@ class SourceForm extends CompatForm
     }
 
     /**
-     * Load the source with given id
+     * Set the source to populate the form with
      *
-     * @param int $id
+     * @param Source $source
      *
      * @return $this
      */
-    public function loadSource(int $id): static
+    public function setSource(Source $source): static
     {
-        $this->sourceId = $id;
+        $this->source = $source;
 
-        $values = $this->fetchDbValues();
-
-        if ($values['type'] === self::TYPE_GENERIC) {
-            unset($values['type']);
-            $values['source_type'] = self::TYPE_GENERIC;
-        } else {
-            $values['source_type'] = self::TYPE_INTEGRATED;
-        }
-
-        $this->populate($values);
+        $this->populate([
+            'name' => $source->name,
+            'type' => $source->type,
+            'source_type' => $source->type === self::TYPE_GENERIC ? self::TYPE_GENERIC : self::TYPE_INTEGRATED,
+            'credentials' => [
+                'listener_username' => $source->listener_username
+            ]
+        ]);
 
         return $this;
     }
 
     /**
-     * Add the new source
-     */
-    public function addSource(): void
-    {
-        $data = $this->getValues();
-
-        $source = [
-            'name' => $data['name'],
-            'type' => $this->getValue('type', self::TYPE_GENERIC),
-            'listener_username' => $data['credentials']['listener_username'],
-            // Not using PASSWORD_DEFAULT, as the used algorithm should
-            // be kept in sync with what the daemon understands
-            'listener_password_hash' => password_hash(
-                $data['credentials']['listener_password'],
-                self::HASH_ALGORITHM
-            ),
-            'changed_at' => (int) (new DateTime())->format("Uv")
-        ];
-
-        $this->db->transaction(function (Connection $db) use ($source): void {
-            $db->insert('source', $source);
-        });
-    }
-
-    /**
-     * Edit the source
+     * Get the source as configured by the user
      *
-     * @return void
+     * @return Source
      */
-    public function editSource(): void
+    public function getSource(): Source
     {
-        if ($this->isLocked) {
-            throw new RuntimeException('Source is locked');
+        if ($this->source === null) {
+            $this->source = new Source();
         }
 
-        $data = $this->getValues();
-
-        $source = [
-            'name' => $data['name'],
-            'type' => $this->getValue('type', self::TYPE_GENERIC),
-            'listener_username' => $data['credentials']['listener_username']
-        ];
-
-        /** @var ?string $listenerPassword */
-        $listenerPassword = $data['credentials']['listener_password'] ?? null;
-
-        if ($listenerPassword) {
-            // Not using PASSWORD_DEFAULT, as the used algorithm should
-            // be kept in sync with what the daemon understands
-            $source['listener_password_hash'] = password_hash($listenerPassword, self::HASH_ALGORITHM);
-        } elseif (empty(array_diff_assoc($source, $this->fetchDbValues()))) {
-            return;
+        $this->source->name = $this->getValue('name');
+        $this->source->type = $this->getValue('type', self::TYPE_GENERIC);
+        $this->source->listener_username = $this->getElement('credentials')->getValue('listener_username');
+        $pwd = $this->getElement('credentials')->getValue('listener_password');
+        if ($pwd) {
+            $this->source->listener_password = $pwd;
         }
 
-        $source['changed_at'] = (int) (new DateTime())->format("Uv");
-        $this->db->update('source', $source, ['id = ?' => $this->sourceId]);
-    }
-
-    /**
-     * Get the source name
-     *
-     * @return string
-     */
-    public function getSourceName(): string
-    {
-        return $this->getValue('name');
-    }
-
-    /**
-     * Fetch the values from the database
-     *
-     * @return array
-     *
-     * @throws HttpNotFoundException
-     */
-    private function fetchDbValues(): array
-    {
-        /** @var ?Source $source */
-        $source = Source::on($this->db)
-            ->filter(Filter::equal('id', $this->sourceId))
-            ->first();
-
-        if ($source === null) {
-            throw new HttpNotFoundException($this->translate('Source not found'));
-        }
-
-        $this->isLocked = $source->locked;
-
-        return [
-            'name' => $source->name,
-            'type' => $source->type,
-            'credentials' => [
-                'listener_username' => $source->listener_username
-            ]
-        ];
+        return $this->source;
     }
 }

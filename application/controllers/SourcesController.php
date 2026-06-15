@@ -8,6 +8,7 @@ namespace Icinga\Module\Notifications\Controllers;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Forms\SourceForm;
 use Icinga\Module\Notifications\Model\Source;
+use Icinga\Module\Notifications\Repository\SourceRepository;
 use Icinga\Module\Notifications\View\SourceRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
@@ -15,6 +16,7 @@ use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use Icinga\Web\Widget\Tabs;
 use ipl\Html\Contract\Form;
+use ipl\Sql\Connection;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
 use ipl\Web\Control\LimitControl;
@@ -99,11 +101,12 @@ class SourcesController extends CompatController
 
     public function addAction(): void
     {
-        $form = (new SourceForm(Database::get()))
+        $form = (new SourceForm())
             ->setCsrfCounterMeasureId(Session::getSession()->getId())
             ->on(Form::ON_SUBMIT, function (SourceForm $form) {
-                $form->addSource();
-                Notification::success(sprintf(t('Added new source %s successfully'), $form->getSourceName()));
+                $source = $form->getSource();
+                Database::get()->transaction(fn (Connection $db) => (new SourceRepository($db))->create($source));
+                Notification::success(sprintf(t('Added new source %s successfully'), $source->name));
                 $this->switchToSingleColumnLayout();
             })
             ->handleRequest($this->getServerRequest());
