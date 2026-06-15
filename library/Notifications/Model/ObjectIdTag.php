@@ -7,8 +7,11 @@ namespace Icinga\Module\Notifications\Model;
 
 use ipl\Orm\Behavior\Binary;
 use ipl\Orm\Behaviors;
+use ipl\Orm\Contract\RewriteFilterBehavior;
 use ipl\Orm\Model;
 use ipl\Orm\Relations;
+use ipl\Stdlib\Filter;
+use ipl\Stdlib\Filter\Condition;
 
 /**
  * ObjectIdTag database model
@@ -41,6 +44,22 @@ class ObjectIdTag extends Model
     public function createBehaviors(Behaviors $behaviors): void
     {
         $behaviors->add(new Binary(['object_id']));
+        $behaviors->add(new class implements RewriteFilterBehavior {
+            public function rewriteCondition(Condition $condition, $relation = null): ?Filter\Chain
+            {
+                if ($condition->metaData()->has('requiresTransformation')) {
+                    /** @var string $columnName */
+                    $columnName = $condition->metaData()->get('columnName');
+                    $nameFilter = Filter::like($relation . 'tag', $columnName);
+                    $class = get_class($condition);
+                    $valueFilter = new $class($relation . 'value', $condition->getValue());
+
+                    return Filter::all($nameFilter, $valueFilter);
+                }
+
+                return null;
+            }
+        });
     }
 
     public function createRelations(Relations $relations): void
