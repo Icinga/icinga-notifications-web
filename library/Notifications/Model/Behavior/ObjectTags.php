@@ -29,21 +29,24 @@ class ObjectTags implements RewriteColumnBehavior, QueryAwareBehavior
 
     public function rewriteCondition(Filter\Condition $condition, $relation = null): ?Rule
     {
-        $filterAll = null;
         /** @var string $relation */
         /** @var ?string $column */
         $column = $condition->metaData()->get('columnName');
         if ($column !== null) {
+            // TODO: ipl/orm is still unable to correctly optimize such relations, hence this
+            //       is the same fix as for https://github.com/Icinga/icingadb-web/issues/865
             $relation = substr($relation, 0, -4) . 'object_id_tag.';
+            $condition->metaData()
+                ->set('forceResolved', true)
+                ->set('requiresTransformation', true)
+                ->set('columnPath', $relation . $column)
+                ->set('relationPath', substr($relation, 0, -1));
+            $condition->setColumn('always_the_same_but_totally_irrelevant');
 
-            $nameFilter = Filter::like($relation . 'tag', $column);
-            $class = get_class($condition);
-            $valueFilter = new $class($relation . 'value', $condition->getValue());
-
-            $filterAll = Filter::all($nameFilter, $valueFilter);
+            return $condition;
         }
 
-        return $filterAll;
+        return null;
     }
 
     public function rewriteColumn($column, ?string $relation = null): AliasedExpression
