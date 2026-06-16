@@ -198,15 +198,6 @@ class EntityManager
 
             $this->saveLinks($relation, $model, $targets);
         }
-
-        // 5. Deletions queued on this model via Model::deleteOnSave(). A child dropped from a hasMany
-        //    relation is not removed by the cascade above, so it is deleted explicitly here — within the
-        //    same transaction, and only for entries the caller asked to delete (never a whole relation).
-        foreach ($model->getPendingDeletions() as $deletion) {
-            $this->delete($deletion);
-        }
-
-        $model->clearPendingDeletions();
     }
 
     /**
