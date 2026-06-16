@@ -11,6 +11,7 @@ use ipl\Orm\Query;
 use ipl\Orm\Relation;
 use ipl\Orm\Relation\BelongsTo;
 use ipl\Orm\Relation\BelongsToMany;
+use ipl\Orm\Relation\Junction;
 use ipl\Orm\Resolver;
 use ipl\Sql\Connection;
 use ipl\Sql\ExpressionInterface;
@@ -364,11 +365,10 @@ class EntityManager
      * Only the junction rows are touched, never the target rows. The current set is read back from the
      * junction because the relation is lazy and its prior value was never loaded.
      *
-     * If the junction is declared with a model that has a `deleted` column ({@see BelongsToMany::through()}
-     * given a class rather than a table name), reconciliation is soft-delete aware: removed links are
-     * marked deleted, previously soft-deleted links are revived rather than re-inserted, and `changed_at`
-     * is stamped on every touch ({@see reconcileSoftLinks()}). A junction declared by table name has no
-     * such column and is reconciled with hard deletes.
+     * If the junction is a soft-delete table ({@see isSoftDeleteJunction()}), reconciliation is
+     * soft-delete aware: removed links are marked deleted, previously soft-deleted links are revived
+     * rather than re-inserted, and `changed_at` is stamped on every touch ({@see reconcileSoftLinks()}).
+     * Otherwise the junction is reconciled with hard deletes.
      *
      * @param BelongsToMany $relation
      * @param Model $source
@@ -406,7 +406,7 @@ class EntityManager
             $desired[(string) $value] = $value;
         }
 
-        if (in_array('deleted', $junction->getColumns(), true)) {
+        if ($this->isSoftDeleteJunction($junction)) {
             $this->reconcileSoftLinks($junction, $sourceColumns, $junctionColumn, $desired);
 
             return;
@@ -432,6 +432,29 @@ class EntityManager
         }
 
         $this->insertRows($table, $missing);
+    }
+
+    /**
+     * Get whether the given junction uses soft deletes
+     *
+     * @param Junction|Model $junction A generic {@see Junction} or a junction model
+     *
+     * @return bool
+     */
+    protected function isSoftDeleteJunction(Junction|Model $junction): bool
+    {
+        return in_array($junction->getTableName(), $this->softDeleteTables(), true)
+            || in_array('deleted', $junction->getColumns(), true);
+    }
+
+    /**
+     * Get the junction tables that are reconciled with soft-deletes
+     *
+     * @return list<string>
+     */
+    protected function softDeleteTables(): array
+    {
+        return Database::TABLES_WITH_DELETED_FLAG;
     }
 
     /**
@@ -471,7 +494,7 @@ class EntityManager
      * model's behaviors — the same way {@see persist()} treats `changed_at` as a fixed convention. Every
      * soft-delete junction in the schema carries both columns, so neither is treated as optional.
      *
-     * @param Model $junction
+     * @param Junction|Model $junction A generic {@see Junction} (table-name declaration) or a junction model
      * @param array<string, mixed> $sourceColumns
      * @param string $junctionColumn
      * @param array<string, mixed> $desired Target values keyed by identity
@@ -479,7 +502,7 @@ class EntityManager
      * @return void
      */
     private function reconcileSoftLinks(
-        Model $junction,
+        Junction|Model $junction,
         array $sourceColumns,
         string $junctionColumn,
         array $desired

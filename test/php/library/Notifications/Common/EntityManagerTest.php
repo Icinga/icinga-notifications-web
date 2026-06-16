@@ -389,11 +389,13 @@ class EntityManagerTest extends TestCase
         );
     }
 
-    public function testManyToManyDeclaredByTableNameHardDeletesRegardlessOfTheColumn()
+    public function testManyToManyDeclaredByTableNameHardDeletesWhenTableIsNotRegistered()
     {
-        // Soft-delete awareness is keyed on the junction *model* declaring a `deleted` column. A
-        // junction declared by table name has no model, so it is reconciled with hard deletes even if
-        // the underlying table happens to carry a `deleted` column — the table column alone is ignored.
+        // A junction declared by table name resolves to a generic ipl-orm Junction with no column
+        // metadata, so a bare `deleted` column on the table is not enough to enable soft-delete: the
+        // table must be a known soft-delete table (or the junction be declared via a model that declares
+        // the column). This manager registers no soft-delete tables, so the orphaned link is hard-deleted
+        // even though the column exists — the table column alone is never consulted.
         $db = new RecordingConnection(['db' => 'sqlite', 'dbname' => ':memory:']);
         $db->exec(
             'CREATE TABLE gadget (id INTEGER PRIMARY KEY AUTOINCREMENT, workshop_id INTEGER, name VARCHAR NOT NULL);'
@@ -417,7 +419,43 @@ class EntityManagerTest extends TestCase
         $this->assertSame(
             [],
             $db->prepexec('SELECT gadget_id, sticker_id, deleted FROM gadget_sticker')->fetchAll(PDO::FETCH_ASSOC),
-            'The stickers relation is declared by table name, so the orphan is hard-deleted, not marked deleted'
+            'gadget_sticker is not a registered soft-delete table, so the orphan is hard-deleted despite the column'
+        );
+    }
+
+    public function testManyToManyDeclaredByTableNameSoftDeletesWhenTableIsRegistered()
+    {
+        $db = new RecordingConnection(['db' => 'sqlite', 'dbname' => ':memory:']);
+        $db->exec(
+            'CREATE TABLE gadget (id INTEGER PRIMARY KEY AUTOINCREMENT, workshop_id INTEGER, name VARCHAR NOT NULL);'
+            . 'CREATE TABLE sticker (id INTEGER PRIMARY KEY AUTOINCREMENT, label VARCHAR NOT NULL);'
+            . 'CREATE TABLE gadget_sticker ('
+            . 'gadget_id INTEGER NOT NULL, sticker_id INTEGER NOT NULL,'
+            . " changed_at INTEGER NOT NULL DEFAULT 0, deleted VARCHAR NOT NULL DEFAULT 'n',"
+            . ' PRIMARY KEY (gadget_id, sticker_id));'
+        );
+
+        TickingEntityManager::$tick = 0;
+        $em = new TickingEntityManager($db);
+        $em->softDeleteTableNames = ['gadget_sticker'];
+
+        $gadget = new Gadget();
+        $gadget->name = 'Spanner';
+        $sticker = new Sticker();
+        $sticker->label = 'fragile';
+        $gadget->stickers = [$sticker];
+        $em->save($gadget); // link created, changed_at -> 1000
+
+        /** @var Gadget $loaded */
+        $loaded = Gadget::on($db)->first();
+        $loaded->stickers = [];
+        $em->save($loaded); // link soft-deleted, changed_at -> 2000
+
+        $this->assertSame(
+            [['gadget_id' => 1, 'sticker_id' => 1, 'deleted' => 'y', 'changed_at' => 2000]],
+            $db->prepexec('SELECT gadget_id, sticker_id, deleted, changed_at FROM gadget_sticker')
+                ->fetchAll(PDO::FETCH_ASSOC),
+            'The removed link is soft-deleted (row kept, deleted = y, changed_at stamped), not hard-deleted'
         );
     }
 
