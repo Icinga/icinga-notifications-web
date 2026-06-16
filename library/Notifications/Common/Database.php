@@ -27,7 +27,7 @@ final class Database
      *
      * The filter `deleted=n` is automatically added to these tables.
      */
-    private const TABLES_WITH_DELETED_FLAG = [
+    public const TABLES_WITH_DELETED_FLAG = [
         'channel',
         'contact',
         'contact_address',
