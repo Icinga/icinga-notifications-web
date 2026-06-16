@@ -5,6 +5,7 @@
 
 namespace Tests\Icinga\Module\Notifications\Integrations;
 
+use DateTime;
 use Icinga\Module\Notifications\Integrations\Incident;
 use Icinga\Module\Notifications\Model\Incident as IncidentModel;
 use InvalidArgumentException;
@@ -15,8 +16,15 @@ use Tests\Icinga\Module\Notifications\Lib\EntityManager\RecordingConnection;
 
 /**
  * Contract of the integration-facing {@see Incident}: it is identified by usernames (never Contact
- * instances), interacts with the model and persists internally, and yields the username and full name
- * of contacts from its readers.
+ * instances), and every write operation persists immediately, so the change is in the database the
+ * moment the call returns.
+ *
+ * Its two recipient readers split the incident's `incident_contact` rows by role: {@see Incident::getSubscribers()}
+ * yields the active subscribers (roles `manager` and `subscriber`), {@see Incident::getRecipients()} the
+ * configured recipients (role `recipient`). Both are polymorphic — a recipient may be a contact, contact
+ * group or schedule — and yield a uniform shape carrying a `type` discriminator, the display `name` and a
+ * nullable `full_name`. Subscribers additionally carry their `role` and the `roleChangedAt` time their
+ * current role was assigned (null when unknown); deleted contact groups and schedules are omitted from both.
  */
 class IncidentTest extends TestCase
 {
@@ -35,7 +43,12 @@ class IncidentTest extends TestCase
             . ' object_id BLOB, started_at INTEGER, recovered_at INTEGER, severity VARCHAR, mute_reason VARCHAR);'
             . 'CREATE TABLE contact (id INTEGER PRIMARY KEY AUTOINCREMENT, full_name VARCHAR, username VARCHAR,'
             . ' default_channel_id INTEGER, changed_at INTEGER, deleted VARCHAR, external_uuid VARCHAR);'
-            . 'CREATE TABLE incident_contact (incident_id INTEGER NOT NULL, contact_id INTEGER, role VARCHAR);'
+            . 'CREATE TABLE contactgroup (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR, changed_at INTEGER,'
+            . ' deleted VARCHAR, external_uuid VARCHAR);'
+            . 'CREATE TABLE schedule (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR, changed_at INTEGER,'
+            . ' timezone VARCHAR, deleted VARCHAR);'
+            . 'CREATE TABLE incident_contact (incident_id INTEGER NOT NULL, contact_id INTEGER,'
+            . ' contactgroup_id INTEGER, schedule_id INTEGER, role VARCHAR);'
             . 'CREATE TABLE incident_history (id INTEGER PRIMARY KEY AUTOINCREMENT, incident_id INTEGER NOT NULL,'
             . ' rule_id INTEGER, rule_escalation_id INTEGER, time INTEGER, type VARCHAR, contact_id INTEGER,'
             . ' schedule_id INTEGER, contactgroup_id INTEGER, channel_id INTEGER, new_severity VARCHAR,'
@@ -53,14 +66,14 @@ class IncidentTest extends TestCase
         $incident->addManager('uname');
 
         $this->assertSame(
-            [['username' => 'uname', 'full_name' => 'Uname Example']],
-            iterator_to_array($incident->getManagers(), false)
+            [['type' => 'contact', 'name' => 'uname', 'full_name' => 'Uname Example', 'role' => 'manager']],
+            $this->subscribersWithoutTimestamp($incident)
         );
-        $this->assertSame([], $this->storedContactRoles(), 'Nothing is persisted before save()');
-
-        $incident->save();
-
-        $this->assertSame([['username' => 'uname', 'role' => 'manager']], $this->storedContactRoles());
+        $this->assertSame(
+            [['username' => 'uname', 'role' => 'manager']],
+            $this->storedContactRoles(),
+            'addManager() persists immediately'
+        );
     }
 
     public function testAddManagerThrowsForAnUnknownUsername(): void
@@ -81,16 +94,15 @@ class IncidentTest extends TestCase
         $incident = $this->incident($id);
         $incident->removeManager('uname');
 
-        $this->assertSame([], iterator_to_array($incident->getManagers(), false));
         $this->assertSame(
-            [['username' => 'uname', 'full_name' => 'Uname Example']],
-            iterator_to_array($incident->getSubscribers(), false)
+            [['type' => 'contact', 'name' => 'uname', 'full_name' => 'Uname Example', 'role' => 'subscriber']],
+            $this->subscribersWithoutTimestamp($incident)
         );
-        $this->assertSame([['username' => 'uname', 'role' => 'manager']], $this->storedContactRoles());
-
-        $incident->save();
-
-        $this->assertSame([['username' => 'uname', 'role' => 'subscriber']], $this->storedContactRoles());
+        $this->assertSame(
+            [['username' => 'uname', 'role' => 'subscriber']],
+            $this->storedContactRoles(),
+            'removeManager() persists the demotion immediately'
+        );
     }
 
     public function testAddSubscriberAddsTheContactAsSubscriberByUsername(): void
@@ -102,14 +114,14 @@ class IncidentTest extends TestCase
         $incident->addSubscriber('uname');
 
         $this->assertSame(
-            [['username' => 'uname', 'full_name' => 'Uname Example']],
-            iterator_to_array($incident->getSubscribers(), false)
+            [['type' => 'contact', 'name' => 'uname', 'full_name' => 'Uname Example', 'role' => 'subscriber']],
+            $this->subscribersWithoutTimestamp($incident)
         );
-        $this->assertSame([], $this->storedContactRoles(), 'Nothing is persisted before save()');
-
-        $incident->save();
-
-        $this->assertSame([['username' => 'uname', 'role' => 'subscriber']], $this->storedContactRoles());
+        $this->assertSame(
+            [['username' => 'uname', 'role' => 'subscriber']],
+            $this->storedContactRoles(),
+            'addSubscriber() persists immediately'
+        );
     }
 
     public function testRemoveSubscriberDeletesTheSubscriberEntry(): void
@@ -122,111 +134,185 @@ class IncidentTest extends TestCase
         $incident->removeSubscriber('uname');
 
         $this->assertSame([], iterator_to_array($incident->getSubscribers(), false));
-        $this->assertSame([['username' => 'uname', 'role' => 'subscriber']], $this->storedContactRoles());
-
-        $incident->save();
-
-        $this->assertSame([], $this->storedContactRoles());
+        $this->assertSame(
+            [],
+            $this->storedContactRoles(),
+            'removeSubscriber() deletes the entry immediately'
+        );
     }
 
-    public function testGetManagersYieldsTheUsernameAndFullNameOfManagers(): void
+    public function testGetSubscribersYieldsActiveSubscribersOfEachTypeWithTheirRole(): void
     {
         $id = $this->seedIncident();
         $this->seedIncidentContact($id, $this->seedContact('alice'), 'manager');
-        $this->seedIncidentContact($id, $this->seedContact('bob'), 'manager');
-        $this->seedIncidentContact($id, $this->seedContact('carol'), 'subscriber');
-
-        $managers = iterator_to_array($this->incident($id)->getManagers(), false);
-        sort($managers);
+        $this->seedIncidentContact($id, $this->seedContact('bob'), 'subscriber');
+        $this->seedIncidentContact($id, null, 'subscriber', contactgroupId: $this->seedContactgroup('windows-admins'));
+        $this->seedIncidentContact($id, null, 'subscriber', scheduleId: $this->seedSchedule('On-Call'));
 
         $this->assertSame(
             [
-                ['username' => 'alice', 'full_name' => 'Alice Example'],
-                ['username' => 'bob', 'full_name' => 'Bob Example'],
+                ['type' => 'contact', 'name' => 'alice', 'full_name' => 'Alice Example',
+                    'role' => 'manager', 'roleChangedAt' => null],
+                ['type' => 'contact', 'name' => 'bob', 'full_name' => 'Bob Example',
+                    'role' => 'subscriber', 'roleChangedAt' => null],
+                ['type' => 'contactgroup', 'name' => 'windows-admins', 'full_name' => null,
+                    'role' => 'subscriber', 'roleChangedAt' => null],
+                ['type' => 'schedule', 'name' => 'On-Call', 'full_name' => null,
+                    'role' => 'subscriber', 'roleChangedAt' => null],
             ],
-            $managers
+            $this->sortedByTypeAndName($this->incident($id)->getSubscribers())
         );
     }
 
-    public function testGetManagersExcludesRecipientsThatAreNotContacts(): void
+    public function testGetSubscribersExcludesConfiguredRecipients(): void
     {
         $id = $this->seedIncident();
         $this->seedIncidentContact($id, $this->seedContact('alice'), 'manager');
-        $this->seedIncidentContact($id, null, 'manager');
+        $this->seedIncidentContact($id, $this->seedContact('bob'), 'recipient');
 
         $this->assertSame(
-            [['username' => 'alice', 'full_name' => 'Alice Example']],
-            iterator_to_array($this->incident($id)->getManagers(), false)
-        );
-    }
-
-    public function testGetSubscribersYieldsTheUsernameAndFullNameOfSubscribers(): void
-    {
-        $id = $this->seedIncident();
-        $this->seedIncidentContact($id, $this->seedContact('alice'), 'subscriber');
-        $this->seedIncidentContact($id, $this->seedContact('bob'), 'manager');
-
-        $this->assertSame(
-            [['username' => 'alice', 'full_name' => 'Alice Example']],
+            [['type' => 'contact', 'name' => 'alice', 'full_name' => 'Alice Example',
+                'role' => 'manager', 'roleChangedAt' => null]],
             iterator_to_array($this->incident($id)->getSubscribers(), false)
         );
     }
 
-    public function testSaveWithoutRoleChangesKeepsExistingContactsReadable(): void
+    public function testGetSubscribersIgnoresRowsWithoutARecipientReference(): void
     {
         $id = $this->seedIncident();
-        $this->seedIncidentContact($id, $this->seedContact('uname'), 'manager');
-
-        $incident = $this->incident($id);
-        $incident->save();
+        $this->seedIncidentContact($id, $this->seedContact('alice'), 'manager');
+        // Neither contact, contact group nor schedule is referenced; such a row yields nothing.
+        $this->seedIncidentContact($id, null, 'subscriber');
 
         $this->assertSame(
-            [['username' => 'uname', 'full_name' => 'Uname Example']],
-            iterator_to_array($incident->getManagers(), false)
+            [['type' => 'contact', 'name' => 'alice', 'full_name' => 'Alice Example',
+                'role' => 'manager', 'roleChangedAt' => null]],
+            iterator_to_array($this->incident($id)->getSubscribers(), false)
         );
     }
 
-    public function testGetNotifiedContactsYieldsTheUsernameAndFullNameOfDistinctContacts(): void
+    public function testGetSubscribersOmitsDeletedRecipients(): void
+    {
+        $id = $this->seedIncident();
+        $this->seedIncidentContact($id, $this->seedContact('alice'), 'subscriber');
+        $this->seedIncidentContact($id, $this->seedContact('gone-contact', deleted: true), 'subscriber');
+        $this->seedIncidentContact($id, null, 'subscriber', contactgroupId: $this->seedContactgroup('gone-group', deleted: true));
+        $this->seedIncidentContact($id, null, 'subscriber', scheduleId: $this->seedSchedule('gone-schedule', deleted: true));
+
+        $this->assertSame(
+            [['type' => 'contact', 'name' => 'alice', 'full_name' => 'Alice Example',
+                'role' => 'subscriber', 'roleChangedAt' => null]],
+            iterator_to_array($this->incident($id)->getSubscribers(), false)
+        );
+    }
+
+    public function testGetSubscribersResolvesRoleChangedAtFromTheRoleChangeHistory(): void
     {
         $id = $this->seedIncident();
         $alice = $this->seedContact('alice');
-        $bob = $this->seedContact('bob');
+        $this->seedIncidentContact($id, $alice, 'manager');
+        $this->seedRoleChange($id, 'manager', 1700000000000, contactId: $alice);
 
-        $this->seedHistory($id, $alice, 'notified');
-        $this->seedHistory($id, $alice, 'notified');
-        $this->seedHistory($id, $bob, 'notified');
-        $this->seedHistory($id, $alice, 'opened');
+        $subscribers = iterator_to_array($this->incident($id)->getSubscribers(), false);
 
-        $notified = iterator_to_array($this->incident($id)->getNotifiedContacts(), false);
-        sort($notified);
+        $this->assertCount(1, $subscribers);
+        $this->assertInstanceOf(DateTime::class, $subscribers[0]['roleChangedAt']);
+        $this->assertSame(1700000000, $subscribers[0]['roleChangedAt']->getTimestamp());
+
+        unset($subscribers[0]['roleChangedAt']);
+        $this->assertSame(
+            ['type' => 'contact', 'name' => 'alice', 'full_name' => 'Alice Example', 'role' => 'manager'],
+            $subscribers[0],
+            'Apart from roleChangedAt the entry carries the uniform recipient shape'
+        );
+    }
+
+    public function testGetSubscribersRoleChangedAtUsesTheMostRecentMatchingChange(): void
+    {
+        $id = $this->seedIncident();
+        $alice = $this->seedContact('alice');
+        $this->seedIncidentContact($id, $alice, 'subscriber');
+        $this->seedRoleChange($id, 'subscriber', 1700000000000, contactId: $alice);
+        $this->seedRoleChange($id, 'subscriber', 1700000005000, contactId: $alice);
+
+        $subscribers = iterator_to_array($this->incident($id)->getSubscribers(), false);
+
+        $this->assertSame(1700000005, $subscribers[0]['roleChangedAt']->getTimestamp());
+    }
+
+    public function testGetSubscribersRoleChangedAtIgnoresChangesToOtherRoles(): void
+    {
+        $id = $this->seedIncident();
+        $alice = $this->seedContact('alice');
+        $this->seedIncidentContact($id, $alice, 'manager');
+        // A change into a role the contact no longer holds must not be reported as the current role's time.
+        $this->seedRoleChange($id, 'subscriber', 1700000000000, contactId: $alice);
+
+        $subscribers = iterator_to_array($this->incident($id)->getSubscribers(), false);
+
+        $this->assertNull($subscribers[0]['roleChangedAt']);
+    }
+
+    public function testGetSubscribersRoleChangedAtResolvesForGroupsAndSchedules(): void
+    {
+        $id = $this->seedIncident();
+        $group = $this->seedContactgroup('windows-admins');
+        $schedule = $this->seedSchedule('On-Call');
+        $this->seedIncidentContact($id, null, 'subscriber', contactgroupId: $group);
+        $this->seedIncidentContact($id, null, 'subscriber', scheduleId: $schedule);
+        $this->seedRoleChange($id, 'subscriber', 1700000000000, contactgroupId: $group);
+        // The schedule has no role-change history, so its time stays null (the daemon gap).
+
+        $byName = [];
+        foreach ($this->incident($id)->getSubscribers() as $s) {
+            $byName[$s['name']] = $s['roleChangedAt'];
+        }
+
+        $this->assertSame(1700000000, $byName['windows-admins']->getTimestamp());
+        $this->assertNull($byName['On-Call']);
+    }
+
+    public function testGetRecipientsYieldsConfiguredRecipientsOfEachType(): void
+    {
+        $id = $this->seedIncident();
+        $this->seedIncidentContact($id, $this->seedContact('alice'), 'recipient');
+        $this->seedIncidentContact($id, null, 'recipient', contactgroupId: $this->seedContactgroup('windows-admins'));
+        $this->seedIncidentContact($id, null, 'recipient', scheduleId: $this->seedSchedule('On-Call'));
 
         $this->assertSame(
             [
-                ['username' => 'alice', 'full_name' => 'Alice Example'],
-                ['username' => 'bob', 'full_name' => 'Bob Example'],
+                ['type' => 'contact', 'name' => 'alice', 'full_name' => 'Alice Example'],
+                ['type' => 'contactgroup', 'name' => 'windows-admins', 'full_name' => null],
+                ['type' => 'schedule', 'name' => 'On-Call', 'full_name' => null],
             ],
-            $notified
+            $this->sortedByTypeAndName($this->incident($id)->getRecipients())
         );
     }
 
-    public function testGetNotifiedContactsReadsTheDatabaseRegardlessOfInMemoryMutations(): void
+    public function testGetRecipientsExcludesActiveSubscribers(): void
     {
         $id = $this->seedIncident();
-        $alice = $this->seedContact('alice');
-        $this->seedContact('uname');
-        $this->seedHistory($id, $alice, 'notified');
-
-        $incident = $this->incident($id);
-        $incident->addManager('uname');
+        $this->seedIncidentContact($id, $this->seedContact('alice'), 'manager');
+        $this->seedIncidentContact($id, $this->seedContact('bob'), 'subscriber');
+        $this->seedIncidentContact($id, $this->seedContact('carol'), 'recipient');
 
         $this->assertSame(
-            [['username' => 'alice', 'full_name' => 'Alice Example']],
-            iterator_to_array($incident->getNotifiedContacts(), false)
+            [['type' => 'contact', 'name' => 'carol', 'full_name' => 'Carol Example']],
+            iterator_to_array($this->incident($id)->getRecipients(), false)
         );
-        $incident->save();
+    }
+
+    public function testGetRecipientsOmitsDeletedRecipients(): void
+    {
+        $id = $this->seedIncident();
+        $this->seedIncidentContact($id, $this->seedContact('alice'), 'recipient');
+        $this->seedIncidentContact($id, $this->seedContact('gone-contact', deleted: true), 'recipient');
+        $this->seedIncidentContact($id, null, 'recipient', contactgroupId: $this->seedContactgroup('gone-group', deleted: true));
+        $this->seedIncidentContact($id, null, 'recipient', scheduleId: $this->seedSchedule('gone-schedule', deleted: true));
+
         $this->assertSame(
-            [['username' => 'alice', 'full_name' => 'Alice Example']],
-            iterator_to_array($incident->getNotifiedContacts(), false)
+            [['type' => 'contact', 'name' => 'alice', 'full_name' => 'Alice Example']],
+            iterator_to_array($this->incident($id)->getRecipients(), false)
         );
     }
 
@@ -244,7 +330,7 @@ class IncidentTest extends TestCase
         $id = $this->seedIncident();
         $this->seedContact('uname');
 
-        $this->incident($id)->addManager('uname')->save();
+        $this->incident($id)->addManager('uname');
 
         $this->assertSame(
             [['username' => 'uname', 'old_role' => null, 'new_role' => 'manager']],
@@ -257,7 +343,7 @@ class IncidentTest extends TestCase
         $id = $this->seedIncident();
         $this->seedIncidentContact($id, $this->seedContact('uname'), 'manager');
 
-        $this->incident($id)->removeManager('uname')->save();
+        $this->incident($id)->removeManager('uname');
 
         $this->assertSame(
             [['username' => 'uname', 'old_role' => 'manager', 'new_role' => 'subscriber']],
@@ -270,7 +356,7 @@ class IncidentTest extends TestCase
         $id = $this->seedIncident();
         $this->seedContact('uname');
 
-        $this->incident($id)->addSubscriber('uname')->save();
+        $this->incident($id)->addSubscriber('uname');
 
         $this->assertSame(
             [['username' => 'uname', 'old_role' => null, 'new_role' => 'subscriber']],
@@ -283,7 +369,7 @@ class IncidentTest extends TestCase
         $id = $this->seedIncident();
         $this->seedIncidentContact($id, $this->seedContact('uname'), 'subscriber');
 
-        $this->incident($id)->removeSubscriber('uname')->save();
+        $this->incident($id)->removeSubscriber('uname');
 
         $this->assertSame(
             [['username' => 'uname', 'old_role' => 'subscriber', 'new_role' => null]],
@@ -299,32 +385,31 @@ class IncidentTest extends TestCase
 
         $this->incident($id)
             ->addManager('alice')
-            ->addManager('bob')
-            ->save();
+            ->addSubscriber('bob');
 
         $this->assertSame(
             [
                 ['username' => 'alice', 'old_role' => null, 'new_role' => 'manager'],
-                ['username' => 'bob', 'old_role' => null, 'new_role' => 'manager'],
+                ['username' => 'bob', 'old_role' => null, 'new_role' => 'subscriber'],
             ],
             $this->storedRoleHistory()
         );
     }
 
-    public function testASecondSaveDoesNotRewriteHistoryFromAnEarlierSave(): void
+    public function testASecondWriteDoesNotDuplicateHistoryFromAnEarlierWrite(): void
     {
         $id = $this->seedIncident();
         $this->seedContact('alice');
         $this->seedContact('bob');
 
         $incident = $this->incident($id);
-        $incident->addManager('alice')->save();
-        $incident->addManager('bob')->save();
+        $incident->addManager('alice');
+        $incident->addSubscriber('bob');
 
         $this->assertSame(
             [
                 ['username' => 'alice', 'old_role' => null, 'new_role' => 'manager'],
-                ['username' => 'bob', 'old_role' => null, 'new_role' => 'manager'],
+                ['username' => 'bob', 'old_role' => null, 'new_role' => 'subscriber'],
             ],
             $this->storedRoleHistory()
         );
@@ -335,7 +420,7 @@ class IncidentTest extends TestCase
         $id = $this->seedIncident();
         $this->seedIncidentContact($id, $this->seedContact('uname'), 'manager');
 
-        $this->incident($id)->addSubscriber('uname')->save();
+        $this->incident($id)->addSubscriber('uname');
 
         $this->assertSame([['username' => 'uname', 'role' => 'manager']], $this->storedContactRoles());
         $this->assertSame([], $this->storedRoleHistory());
@@ -346,7 +431,7 @@ class IncidentTest extends TestCase
         $id = $this->seedIncident();
         $this->seedIncidentContact($id, $this->seedContact('uname'), 'subscriber');
 
-        $this->incident($id)->addManager('uname')->save();
+        $this->incident($id)->addManager('uname');
 
         $this->assertSame([['username' => 'uname', 'role' => 'manager']], $this->storedContactRoles());
         $this->assertSame(
@@ -360,7 +445,7 @@ class IncidentTest extends TestCase
         $id = $this->seedIncident();
         $this->seedIncidentContact($id, $this->seedContact('uname'), 'manager');
 
-        $this->incident($id)->addManager('uname')->save();
+        $this->incident($id)->addManager('uname');
 
         $this->assertSame([['username' => 'uname', 'role' => 'manager']], $this->storedContactRoles());
         $this->assertSame([], $this->storedRoleHistory(), 'A no-op records no role change');
@@ -371,7 +456,7 @@ class IncidentTest extends TestCase
         $id = $this->seedIncident();
         $this->seedIncidentContact($id, $this->seedContact('uname'), 'subscriber');
 
-        $this->incident($id)->addSubscriber('uname')->save();
+        $this->incident($id)->addSubscriber('uname');
 
         $this->assertSame([['username' => 'uname', 'role' => 'subscriber']], $this->storedContactRoles());
         $this->assertSame([], $this->storedRoleHistory(), 'A no-op records no role change');
@@ -382,7 +467,7 @@ class IncidentTest extends TestCase
         $id = $this->seedIncident();
         $this->seedIncidentContact($id, $this->seedContact('uname'), 'subscriber');
 
-        $this->incident($id)->removeManager('uname')->save();
+        $this->incident($id)->removeManager('uname');
 
         // A subscriber must not be demoted by removeManager, and no history is written.
         $this->assertSame([['username' => 'uname', 'role' => 'subscriber']], $this->storedContactRoles());
@@ -394,7 +479,7 @@ class IncidentTest extends TestCase
         $id = $this->seedIncident();
         $this->seedContact('uname');
 
-        $this->incident($id)->removeManager('uname')->save();
+        $this->incident($id)->removeManager('uname');
 
         $this->assertSame([], $this->storedContactRoles());
         $this->assertSame([], $this->storedRoleHistory());
@@ -405,7 +490,7 @@ class IncidentTest extends TestCase
         $id = $this->seedIncident();
         $this->seedIncidentContact($id, $this->seedContact('uname'), 'manager');
 
-        $this->incident($id)->removeSubscriber('uname')->save();
+        $this->incident($id)->removeSubscriber('uname');
 
         // A manager entry must not be deleted by removeSubscriber.
         $this->assertSame([['username' => 'uname', 'role' => 'manager']], $this->storedContactRoles());
@@ -417,7 +502,7 @@ class IncidentTest extends TestCase
         $id = $this->seedIncident();
         $this->seedContact('uname');
 
-        $this->incident($id)->removeSubscriber('uname')->save();
+        $this->incident($id)->removeSubscriber('uname');
 
         $this->assertSame([], $this->storedContactRoles());
         $this->assertSame([], $this->storedRoleHistory());
@@ -439,28 +524,88 @@ class IncidentTest extends TestCase
      * The full name defaults to a distinct value derived from the username (e.g. "Alice Example" for
      * "alice"), so the readers' username/full_name pairing can be asserted unambiguously.
      */
-    private function seedContact(string $username): int
+    private function seedContact(string $username, bool $deleted = false): int
     {
         $fullName = ucfirst($username) . ' Example';
 
-        $this->db->insert('contact', ['full_name' => $fullName, 'username' => $username, 'deleted' => 'n']);
+        $this->db->insert(
+            'contact',
+            ['full_name' => $fullName, 'username' => $username, 'deleted' => $deleted ? 'y' : 'n']
+        );
 
         return (int) $this->db->lastInsertId();
     }
 
-    private function seedIncidentContact(int $incidentId, ?int $contactId, string $role): void
+    /**
+     * Insert a contact group with the given name and return its generated id.
+     */
+    private function seedContactgroup(string $name, bool $deleted = false): int
     {
+        $this->db->insert('contactgroup', ['name' => $name, 'deleted' => $deleted ? 'y' : 'n']);
+
+        return (int) $this->db->lastInsertId();
+    }
+
+    /**
+     * Insert a schedule with the given name and return its generated id.
+     */
+    private function seedSchedule(string $name, bool $deleted = false): int
+    {
+        $this->db->insert('schedule', ['name' => $name, 'deleted' => $deleted ? 'y' : 'n']);
+
+        return (int) $this->db->lastInsertId();
+    }
+
+    /**
+     * Insert an `incident_contact` row referencing exactly one recipient.
+     *
+     * Exactly one of $contactId, $contactgroupId or $scheduleId is expected to be set; the others stay
+     * null, mirroring the polymorphic recipient key the daemon writes.
+     */
+    private function seedIncidentContact(
+        int $incidentId,
+        ?int $contactId,
+        string $role,
+        ?int $contactgroupId = null,
+        ?int $scheduleId = null
+    ): void {
         $this->db->insert(
             'incident_contact',
-            ['incident_id' => $incidentId, 'contact_id' => $contactId, 'role' => $role]
+            [
+                'incident_id'     => $incidentId,
+                'contact_id'      => $contactId,
+                'contactgroup_id' => $contactgroupId,
+                'schedule_id'     => $scheduleId,
+                'role'            => $role
+            ]
         );
     }
 
-    private function seedHistory(int $incidentId, int $contactId, string $type): void
-    {
+    /**
+     * Insert a `recipient_role_changed` history row for a single recipient at the given time.
+     *
+     * Exactly one of $contactId, $contactgroupId or $scheduleId is expected to be set. $timeMs is the
+     * stored millisecond timestamp from which the reader derives the recipient's `roleChangedAt`.
+     */
+    private function seedRoleChange(
+        int $incidentId,
+        string $newRole,
+        int $timeMs,
+        ?int $contactId = null,
+        ?int $contactgroupId = null,
+        ?int $scheduleId = null
+    ): void {
         $this->db->insert(
             'incident_history',
-            ['incident_id' => $incidentId, 'contact_id' => $contactId, 'type' => $type, 'time' => 0]
+            [
+                'incident_id'        => $incidentId,
+                'type'               => 'recipient_role_changed',
+                'new_recipient_role' => $newRole,
+                'time'               => $timeMs,
+                'contact_id'         => $contactId,
+                'contactgroup_id'    => $contactgroupId,
+                'schedule_id'        => $scheduleId
+            ]
         );
     }
 
@@ -477,6 +622,44 @@ class IncidentTest extends TestCase
             ->first();
 
         return new Incident($model, $this->db);
+    }
+
+    /**
+     * Collect the given recipients into a list ordered by type and name.
+     *
+     * The readers do not guarantee an order, so tests asserting more than one recipient normalise it here
+     * instead of relying on the database's row order.
+     *
+     * @param iterable<array{type: string, name: string}> $recipients
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function sortedByTypeAndName(iterable $recipients): array
+    {
+        $list = iterator_to_array($recipients, false);
+        usort($list, fn(array $a, array $b): int => [$a['type'], $a['name']] <=> [$b['type'], $b['name']]);
+
+        return $list;
+    }
+
+    /**
+     * Read the incident's subscribers with the `roleChangedAt` timestamp dropped.
+     *
+     * A write operation stamps the role change with the current time, which cannot be asserted verbatim;
+     * the timestamp's contract is covered by the dedicated getSubscribers tests that seed a known time.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function subscribersWithoutTimestamp(Incident $incident): array
+    {
+        return array_map(
+            static function (array $entry): array {
+                unset($entry['roleChangedAt']);
+
+                return $entry;
+            },
+            iterator_to_array($incident->getSubscribers(), false)
+        );
     }
 
     /**

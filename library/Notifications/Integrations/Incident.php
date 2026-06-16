@@ -15,12 +15,9 @@ use Icinga\Module\Notifications\Model\IncidentHistory;
 use InvalidArgumentException;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
-use ipl\Stdlib\Seq;
 
 /**
  * Manage an incident's recipients and read its state
- *
- * Changes are in memory until persisted by {@see save()}.
  */
 class Incident
 {
@@ -29,12 +26,6 @@ class Incident
 
     /** @var Connection The database connection to use */
     private Connection $db;
-
-    /** @var IncidentHistory[] History rows created in memory, pending the next {@see save()} */
-    private array $pendingHistory = [];
-
-    /** @var IncidentContact[]|null `incident_contact` entries loaded and mutated in memory, flushed on {@see save()} */
-    private ?array $incidentContacts = null;
 
     /**
      * Create a new wrapper for the given model
@@ -92,16 +83,14 @@ class Incident
     public function removeManager(string $username): static
     {
         $contact = $this->getContactByName($username);
-        $contacts = $this->incidentContacts();
-        $existing = $this->findIncidentContact($contacts, $contact->id);
+        $existing = $this->existingContact($contact->id);
 
         if ($existing?->role !== 'manager') {
             return $this;
         }
 
         $existing->role = 'subscriber';
-
-        $this->incidentContacts = $contacts;
+        (new EntityManager($this->db))->save($existing);
         $this->addRoleChangedHistory($contact->id, 'manager', 'subscriber');
 
         return $this;
@@ -119,64 +108,58 @@ class Incident
     public function removeSubscriber(string $username): static
     {
         $contact = $this->getContactByName($username);
-        $contacts = $this->incidentContacts();
-        $existing = $this->findIncidentContact($contacts, $contact->id);
+        $existing = $this->existingContact($contact->id);
 
-        if ($existing === null || $existing->role !== 'subscriber') {
+        if ($existing?->role !== 'subscriber') {
             return $this;
         }
 
-        $this->incidentContacts = array_values(
-            array_filter($contacts, fn(IncidentContact $entry) => $entry !== $existing)
-        );
-        $this->incident->deleteOnSave($existing);
+        (new EntityManager($this->db))->delete($existing);
         $this->addRoleChangedHistory($contact->id, 'subscriber', null);
 
         return $this;
     }
 
     /**
-     * Yield the username and full name of each of the managers
+     * Yield each active subscriber of the incident
      *
-     * @return Generator<int, array{username: string, full_name: string}>
-     */
-    public function getManagers(): Generator
-    {
-        yield from $this->contactsWithRole('manager');
-    }
-
-    /**
-     * Yield the username and full name of each of the subscribers
+     * An active subscriber is a recipient whose role is either `manager` or `subscriber`.
      *
-     * @return Generator<int, array{username: string, full_name: string}>
+     * @return Generator<int, array{
+     *     type: 'contact'|'contactgroup'|'schedule',
+     *     name: string,
+     *     full_name: ?string,
+     *     role: 'manager'|'subscriber',
+     *     roleChangedAt: ?DateTime
+     * }>
      */
     public function getSubscribers(): Generator
     {
-        yield from $this->contactsWithRole('subscriber');
+        foreach ($this->resolveRecipients(['manager', 'subscriber']) as $recipient) {
+            yield [
+                'type'          => $recipient['type'],
+                'name'          => $recipient['name'],
+                'full_name'     => $recipient['full_name'],
+                'role'          => $recipient['role'],
+                'roleChangedAt' => $this->roleChangedAt($recipient)
+            ];
+        }
     }
 
     /**
-     * Yield the username and full name of each contact that was notified
+     * Yield each configured recipient of the incident
      *
-     * @return Generator<int, array{username: string, full_name: string}>
+     * @return Generator<int, array{type: 'contact'|'contactgroup'|'schedule', name: string, full_name: ?string}>
      */
-    public function getNotifiedContacts(): Generator
+    public function getRecipients(): Generator
     {
-        $history = IncidentHistory::on($this->db)
-            ->columns(['contact_id'])
-            ->filter(Filter::all(
-                Filter::equal('incident_id', $this->incident->id),
-                Filter::equal('type', 'notified')
-            ));
-
-        $contactIds = [];
-        foreach ($history as $entry) {
-            if ($entry->contact_id !== null) {
-                $contactIds[$entry->contact_id] = true;
-            }
+        foreach ($this->resolveRecipients(['recipient']) as $recipient) {
+            yield [
+                'type'      => $recipient['type'],
+                'name'      => $recipient['name'],
+                'full_name' => $recipient['full_name']
+            ];
         }
-
-        yield from $this->namesOf($contactIds);
     }
 
     /**
@@ -187,26 +170,6 @@ class Incident
     public function isMuted(): bool
     {
         return $this->incident->mute_reason !== null;
-    }
-
-    /**
-     * Persist the pending changes to the database
-     *
-     * @return $this
-     */
-    public function save(): static
-    {
-        $this->incident->incident_history = $this->pendingHistory;
-        $this->pendingHistory = [];
-
-        if ($this->incidentContacts !== null) {
-            $this->incident->incident_contact = $this->incidentContacts;
-            $this->incidentContacts = null;
-        }
-
-        (new EntityManager($this->db))->save($this->incident);
-
-        return $this;
     }
 
     /**
@@ -231,83 +194,100 @@ class Incident
     }
 
     /**
-     * Find the entry for the given contact id among the supplied `incident_contact` entries
+     * Load the incident's `incident_contact` entry for the given contact id
      *
-     * @param IncidentContact[] $contacts
      * @param int $contactId
      *
      * @return ?IncidentContact
      */
-    private function findIncidentContact(array $contacts, int $contactId): ?IncidentContact
+    private function existingContact(int $contactId): ?IncidentContact
     {
-        foreach ($contacts as $entry) {
-            if ($entry->contact_id === $contactId) {
-                return $entry;
-            }
-        }
+        /** @var ?IncidentContact $entry */
+        $entry = IncidentContact::on($this->db)
+            ->filter(Filter::all(
+                Filter::equal('incident_id', $this->incident->id),
+                Filter::equal('contact_id', $contactId)
+            ))
+            ->first();
 
-        return null;
+        return $entry;
     }
 
     /**
-     * Materialize the `incident_contact` relation into a list
+     * Resolve the incident's recipients who match any of the given roles
      *
-     * @return IncidentContact[]
+     * @param string[] $roles
+     *
+     * @return list<array{
+     *     type: 'contact'|'contactgroup'|'schedule',
+     *     id: int,
+     *     name: string,
+     *     full_name: ?string,
+     *     role: 'manager'|'subscriber'|'recipient'
+     * }>
      */
-    private function incidentContacts(): array
+    private function resolveRecipients(array $roles): array
     {
-        if ($this->incidentContacts === null) {
-            $this->incidentContacts = [];
-            if (isset($this->incident->incident_contact)) {
-                foreach ($this->incident->incident_contact as $entry) {
-                    $this->incidentContacts[] = $entry;
-                }
+        $entries = IncidentContact::on($this->db)
+            ->with(['contact', 'contactgroup', 'schedule'])
+            ->filter(Filter::all(
+                Filter::equal('incident_id', $this->incident->id),
+                Filter::equal('role', $roles)
+            ));
+
+        $recipients = [];
+        foreach ($entries as $entry) {
+            if ($entry->contact_id !== null && ! $entry->contact->deleted) {
+                $recipients[] = [
+                    'type'      => 'contact',
+                    'id'        => $entry->contact_id,
+                    'name'      => $entry->contact->username,
+                    'full_name' => $entry->contact->full_name,
+                    'role'      => $entry->role
+                ];
+            } elseif ($entry->contactgroup_id !== null && ! $entry->contactgroup->deleted) {
+                $recipients[] = [
+                    'type'      => 'contactgroup',
+                    'id'        => $entry->contactgroup_id,
+                    'name'      => $entry->contactgroup->name,
+                    'full_name' => null,
+                    'role'      => $entry->role
+                ];
+            } elseif ($entry->schedule_id !== null && ! $entry->schedule->deleted) {
+                $recipients[] = [
+                    'type'      => 'schedule',
+                    'id'        => $entry->schedule_id,
+                    'name'      => $entry->schedule->name,
+                    'full_name' => null,
+                    'role'      => $entry->role
+                ];
             }
         }
 
-        return $this->incidentContacts;
+        return $recipients;
     }
 
     /**
-     * Yield the username and full name of each contact that has the given role
+     * Resolve the time the given recipient was assigned its current role
      *
-     * @param string $role
+     * @param array{type: string, id: int, role: string} $recipient A recipient from {@see resolveRecipients()}
      *
-     * @return Generator<int, array{username: string, full_name: string}>
+     * @return ?DateTime
      */
-    private function contactsWithRole(string $role): Generator
+    private function roleChangedAt(array $recipient): ?DateTime
     {
-        $contactIds = [];
-        foreach ($this->incidentContacts() as $entry) {
-            if ($entry->role === $role && $entry->contact_id !== null) {
-                $contactIds[$entry->contact_id] = true;
-            }
-        }
+        $entry = IncidentHistory::on($this->db)
+            ->columns(['time'])
+            ->filter(Filter::all(
+                Filter::equal('incident_id', $this->incident->id),
+                Filter::equal('type', 'recipient_role_changed'),
+                Filter::equal($recipient['type'] . '_id', $recipient['id']),
+                Filter::equal('new_recipient_role', $recipient['role'])
+            ))
+            ->orderBy('time', SORT_DESC)
+            ->first();
 
-        yield from $this->namesOf($contactIds);
-    }
-
-    /**
-     * Resolve the username and full name for the given contact ids in a single query
-     *
-     * @param array<int, true> $contactIds Set of contact ids keyed by the id
-     *
-     * @return Generator<int, array{username: string, full_name: string}>
-     */
-    private function namesOf(array $contactIds): Generator
-    {
-        if (empty($contactIds)) {
-            return;
-        }
-
-        $contacts = Contact::on($this->db)
-            ->columns(['id', 'username', 'full_name'])
-            ->filter(Filter::equal('id', array_keys($contactIds)));
-
-        yield from Seq::map(
-            $contacts,
-            fn($contact) => ['username' => $contact->username, 'full_name' => $contact->full_name]
-        );
+        return $entry?->time;
     }
 
     /**
@@ -322,8 +302,7 @@ class Incident
     private function assignRole(string $username, string $role, array $noopRoles): static
     {
         $contact = $this->getContactByName($username);
-        $contacts = $this->incidentContacts();
-        $existing = $this->findIncidentContact($contacts, $contact->id);
+        $existing = $this->existingContact($contact->id);
 
         if ($existing !== null && in_array($existing->role, $noopRoles, true)) {
             return $this;
@@ -333,21 +312,22 @@ class Incident
 
         if ($existing !== null) {
             $existing->role = $role;
+            (new EntityManager($this->db))->save($existing);
         } else {
             $incidentContact = new IncidentContact();
+            $incidentContact->incident_id = $this->incident->id;
             $incidentContact->contact_id = $contact->id;
             $incidentContact->role = $role;
-            $contacts[] = $incidentContact;
+            (new EntityManager($this->db))->save($incidentContact);
         }
 
-        $this->incidentContacts = $contacts;
         $this->addRoleChangedHistory($contact->id, $oldRole, $role);
 
         return $this;
     }
 
     /**
-     * Append a `recipient_role_changed` entry to the pending history, to be persisted on the next save()
+     * Persist a `recipient_role_changed` history entry for the incident
      *
      * @param int $contactId
      * @param ?string $oldRole
@@ -358,11 +338,12 @@ class Incident
     private function addRoleChangedHistory(int $contactId, ?string $oldRole, ?string $newRole): void
     {
         $history = new IncidentHistory();
+        $history->incident_id = $this->incident->id;
         $history->contact_id = $contactId;
         $history->type = 'recipient_role_changed';
         $history->old_recipient_role = $oldRole;
         $history->new_recipient_role = $newRole;
         $history->time = new DateTime();
-        $this->pendingHistory[] = $history;
+        (new EntityManager($this->db))->save($history);
     }
 }
