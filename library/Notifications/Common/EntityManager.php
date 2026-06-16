@@ -494,7 +494,7 @@ class EntityManager
         array $desired
     ): void {
         $table = $junction->getTableName();
-        $changedAt = (int) ($this->now()->format('U.u') * 1000.0);
+        $changedAt = (int) $this->now()->format('Uv');
 
         $select = (new Select())
             ->from($table)
