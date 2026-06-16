@@ -196,8 +196,18 @@ class IncidentTest extends TestCase
         $id = $this->seedIncident();
         $this->seedIncidentContact($id, $this->seedContact('alice'), 'subscriber');
         $this->seedIncidentContact($id, $this->seedContact('gone-contact', deleted: true), 'subscriber');
-        $this->seedIncidentContact($id, null, 'subscriber', contactgroupId: $this->seedContactgroup('gone-group', deleted: true));
-        $this->seedIncidentContact($id, null, 'subscriber', scheduleId: $this->seedSchedule('gone-schedule', deleted: true));
+        $this->seedIncidentContact(
+            $id,
+            null,
+            'subscriber',
+            contactgroupId: $this->seedContactgroup('gone-group', deleted: true)
+        );
+        $this->seedIncidentContact(
+            $id,
+            null,
+            'subscriber',
+            scheduleId: $this->seedSchedule('gone-schedule', deleted: true)
+        );
 
         $this->assertSame(
             [['type' => 'contact', 'name' => 'alice', 'full_name' => 'Alice Example',
@@ -307,8 +317,18 @@ class IncidentTest extends TestCase
         $id = $this->seedIncident();
         $this->seedIncidentContact($id, $this->seedContact('alice'), 'recipient');
         $this->seedIncidentContact($id, $this->seedContact('gone-contact', deleted: true), 'recipient');
-        $this->seedIncidentContact($id, null, 'recipient', contactgroupId: $this->seedContactgroup('gone-group', deleted: true));
-        $this->seedIncidentContact($id, null, 'recipient', scheduleId: $this->seedSchedule('gone-schedule', deleted: true));
+        $this->seedIncidentContact(
+            $id,
+            null,
+            'recipient',
+            contactgroupId: $this->seedContactgroup('gone-group', deleted: true)
+        );
+        $this->seedIncidentContact(
+            $id,
+            null,
+            'recipient',
+            scheduleId: $this->seedSchedule('gone-schedule', deleted: true)
+        );
 
         $this->assertSame(
             [['type' => 'contact', 'name' => 'alice', 'full_name' => 'Alice Example']],
