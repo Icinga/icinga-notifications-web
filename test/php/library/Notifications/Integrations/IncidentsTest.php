@@ -7,7 +7,10 @@ namespace Tests\Icinga\Module\Notifications\Integrations;
 
 use Icinga\Module\Notifications\Integrations\Incident;
 use Icinga\Module\Notifications\Integrations\Incidents;
-use ipl\Orm\Query;
+use ipl\Stdlib\Filter\Chain;
+use ipl\Stdlib\Filter\Condition;
+use ipl\Stdlib\Filter\Equal;
+use ipl\Stdlib\Filter\Unlike;
 use PHPUnit\Framework\TestCase;
 use Tests\Icinga\Module\Notifications\Lib\EntityManager\RecordingConnection;
 
@@ -27,52 +30,40 @@ class IncidentsTest extends TestCase
         $this->db = $this->createDatabase();
     }
 
-    public function testBuildQueryMatchesAHostAndAllItsServices(): void
+    public function testBuildsAnEqualFilterForEachTagWithAValue(): void
     {
-        $this->seedHostTopology(1);
+        $conditions = $this->conditions($this->builtFilter(['host' => 'icinga2', 'service' => 'http']));
 
-        $incidents = $this->inspectableIncidents(['host' => 'icinga2'])
-            ->exposedBuildQuery()
-            ->execute();
-
-        $this->assertSame([1, 2, 3, 4], $this->idsOf($incidents));
+        $this->assertCount(3, $conditions);
+        $this->assertContains([Unlike::class, 'recovered_at', '*'], $conditions);
+        $this->assertContains([Equal::class, 'incident.object.tag.host', 'icinga2'], $conditions);
+        $this->assertContains([Equal::class, 'incident.object.tag.service', 'http'], $conditions);
     }
 
-    public function testBuildQueryMatchesAnExactService(): void
+    public function testBuildsAnAbsenceFilterForTagsGivenAsNull(): void
     {
-        $this->seedHostTopology(1);
+        $conditions = $this->conditions($this->builtFilter(['host' => 'icinga2', 'service' => null]));
 
-        $incidents = $this->inspectableIncidents(['host' => 'icinga2', 'service' => 'http'])
-            ->exposedBuildQuery()
-            ->execute();
-
-        $this->assertSame([1], $this->idsOf($incidents));
+        $this->assertCount(3, $conditions);
+        $this->assertContains([Equal::class, 'incident.object.tag.host', 'icinga2'], $conditions);
+        // A null value requires the tag's absence, expressed as "no value matches the wildcard".
+        $this->assertContains([Unlike::class, 'incident.object.tag.service', '*'], $conditions);
     }
 
-    public function testBuildQueryMatchesAHostWithoutItsServices(): void
+    public function testAlwaysFiltersOutRecoveredIncidents(): void
     {
-        $this->seedHostTopology(1);
-
-        $incidents = $this->inspectableIncidents(['host' => 'icinga2', 'service' => null])
-            ->exposedBuildQuery()
-            ->execute();
-
-        $this->assertSame([4], $this->idsOf($incidents));
+        // Even without any tags the query is constrained to open incidents (recovered_at IS NULL).
+        $this->assertSame([[Unlike::class, 'recovered_at', '*']], $this->conditions($this->builtFilter([])));
     }
 
     public function testGetIterator(): void
     {
-        $sourceId = 1;
-        $tags = ['host' => 'icinga2', 'service' => 'http'];
+        $this->seedIncident(1, ['host' => 'a']);
+        $this->seedIncident(2, ['host' => 'b']);
 
-        $this->seedIncident($sourceId, $tags);
-        $this->seedIncident($sourceId, $tags);
-        $this->seedIncident($sourceId, ['host' => 'elsewhere']);
-        $this->seedIncident(2, $tags);
+        $incidents = iterator_to_array(new Incidents([], $this->db), false);
 
-        $incidents = iterator_to_array(new Incidents(['host' => 'icinga2'], $this->db), false);
-
-        $this->assertCount(3, $incidents);
+        $this->assertCount(2, $incidents);
         foreach ($incidents as $incident) {
             $this->assertInstanceOf(Incident::class, $incident);
         }
@@ -80,102 +71,91 @@ class IncidentsTest extends TestCase
 
     public function testHasIncident(): void
     {
-        $sourceId = 1;
-        $tags = ['host' => 'icinga2'];
-        $this->seedIncident($sourceId, $tags);
+        $this->assertFalse((new Incidents([], $this->db))->hasIncident());
 
-        $this->assertTrue((new Incidents($tags, $this->db))->hasIncident());
-        $this->assertFalse((new Incidents(['host' => 'elsewhere'], $this->db))->hasIncident());
+        $this->seedIncident(1, ['host' => 'a']);
+
+        $this->assertTrue((new Incidents([], $this->db))->hasIncident());
     }
 
     public function testIteratingAfterHasIncidentYieldsAllMatchesFromTheSameInstance(): void
     {
-        $tags = ['host' => 'icinga2'];
-        $this->seedIncident(1, $tags);
-        $this->seedIncident(2, $tags);
-        $this->seedIncident(1, ['host' => 'elsewhere']);
+        $this->seedIncident(1, ['host' => 'a']);
+        $this->seedIncident(2, ['host' => 'b']);
 
-        $incidents = new Incidents($tags, $this->db);
+        $incidents = new Incidents([], $this->db);
 
         $this->assertTrue($incidents->hasIncident());
         $this->assertCount(2, iterator_to_array($incidents, false));
     }
 
-    public function testHasIncidentStillReportsTrueAfterIterating(): void
+    public function testCount(): void
     {
-        $tags = ['host' => 'icinga2'];
-        $this->seedIncident(1, $tags);
+        $this->seedIncident(1, ['host' => 'a']);
 
-        $incidents = new Incidents($tags, $this->db);
-        foreach ($incidents as $_) {
-            // exhaust the generator
-        }
+        $this->assertEquals(1, (new Incidents([], $this->db))->count());
+    }
 
-        $this->assertTrue($incidents->hasIncident());
+    public function testExcludesClosedIncidents(): void
+    {
+        // A recovered (closed) incident must never be yielded — the integration only deals with open
+        // incidents (recovered_at IS NULL).
+        $this->seedIncident(1, ['host' => 'a']);
+        $this->seedIncident(2, ['host' => 'b'], 1_700_000_000_000);
+
+        $incidents = new Incidents([], $this->db);
+
+        $this->assertEquals(1, $incidents->count());
+        $this->assertCount(1, iterator_to_array($incidents, false));
     }
 
     /**
-     * Build an Incidents instance reading through the test's connection that exposes its protected
-     * {@see Incidents::buildQuery()} via a public passthrough, so the test can inspect the resulting
-     * query without running it.
+     * Build the query {@see Incidents} would run for the given tags and return its filter
+     *
+     * The query is never executed: with tags it compiles to multi-argument COUNT(DISTINCT …) subqueries
+     * that only MySQL and PostgreSQL support, not the sqlite the test database uses. Asserting on the
+     * filter the integration constructs is this unit's responsibility; turning it into SQL is ipl-orm's.
      *
      * @param array<string, ?string> $tags
      */
-    private function inspectableIncidents(array $tags): Incidents
+    private function builtFilter(array $tags): Chain
     {
-        return new class ($tags, $this->db) extends Incidents {
-            public function exposedBuildQuery(): Query
+        $incidents = new class ($tags, $this->db) extends Incidents {
+            public function exposeBuiltFilter(): Chain
             {
-                return $this->buildQuery();
+                return $this->buildQuery()->getFilter();
             }
         };
+
+        return $incidents->exposeBuiltFilter();
     }
 
     /**
-     * Seed the host/service topology the buildQuery tests share: the host `icinga2` with the services
-     * http, ssh and procs, the bare host itself, and an unrelated host `elsewhere`.
+     * Reduce a filter chain to a list of [operator class, column, value] triples for order-independent assertions
      *
-     * The incidents are seeded in id order: 1 = http, 2 = ssh, 3 = procs, 4 = bare host, 5 = elsewhere.
+     * @return list<array{class-string, string|array<string>, mixed}>
      */
-    private function seedHostTopology(int $sourceId): void
+    private function conditions(Chain $chain): array
     {
-        $this->seedIncident($sourceId, ['host' => 'icinga2', 'service' => 'http']);
-        $this->seedIncident($sourceId, ['host' => 'icinga2', 'service' => 'ssh']);
-        $this->seedIncident($sourceId, ['host' => 'icinga2', 'service' => 'procs']);
-        $this->seedIncident($sourceId, ['host' => 'icinga2']);
-        $this->seedIncident($sourceId, ['host' => 'elsewhere', 'service' => 'http']);
-    }
-
-    /**
-     * Collect the distinct ids of the given incidents, sorted ascending
-     *
-     * The query makes no promise about result order, so the ids are sorted to give the assertions a
-     * stable, readable expectation to compare against.
-     *
-     * @param iterable<object{id: int}> $incidents
-     *
-     * @return list<int>
-     */
-    private function idsOf(iterable $incidents): array
-    {
-        $ids = [];
-        foreach ($incidents as $incident) {
-            $ids[$incident->id] = true;
+        $conditions = [];
+        foreach ($chain as $rule) {
+            $this->assertInstanceOf(Condition::class, $rule);
+            $conditions[] = [$rule::class, $rule->getColumn(), $rule->getValue()];
         }
 
-        $ids = array_keys($ids);
-        sort($ids);
-
-        return $ids;
+        return $conditions;
     }
 
     /**
-     * Stand up an in-memory SQLite database with the incident and object_id_tag tables that
+     * Stand up an in-memory SQLite database with the incident, object and object_id_tag tables that
      * {@see Incidents} reads from, and return it so tests can seed it and hand it to the unit under test.
      */
     private function createDatabase(): RecordingConnection
     {
         $db = new RecordingConnection(['db' => 'sqlite', 'dbname' => ':memory:']);
+        $db->exec(
+            'CREATE TABLE object (id BLOB PRIMARY KEY, source_id INTEGER, name VARCHAR, url VARCHAR);'
+        );
         $db->exec(
             'CREATE TABLE object_id_tag (object_id BLOB, tag VARCHAR, value VARCHAR, PRIMARY KEY (object_id, tag));'
         );
@@ -189,17 +169,22 @@ class IncidentsTest extends TestCase
 
     /**
      * Insert an incident for the object identified by the given source and tags, creating the
-     * object_id_tag rows it relates to so the subqueries in {@see Incidents::buildQuery()} resolve.
+     * object and object_id_tag rows it relates to so the joins in {@see Incidents::buildQuery()} resolve.
      *
      * @param array<string, string> $tags
+     * @param ?int $recoveredAt Recovery time in milliseconds; null leaves the incident open
      */
-    private function seedIncident(int $sourceId, array $tags): void
+    private function seedIncident(int $sourceId, array $tags, ?int $recoveredAt = null): void
     {
         $objectId = $this->objectId($sourceId, $tags);
 
-        $this->seedObjectTags($tags, $objectId);
+        $this->seedObject($sourceId, $tags, $objectId);
 
-        $this->db->insert('incident', ['object_id' => hex2bin($objectId), 'severity' => 'crit']);
+        $this->db->insert('incident', [
+            'object_id'    => hex2bin($objectId),
+            'severity'     => 'crit',
+            'recovered_at' => $recoveredAt,
+        ]);
     }
 
     /**
@@ -219,14 +204,14 @@ class IncidentsTest extends TestCase
     }
 
     /**
-     * Insert the object_id_tag rows that represent the object for the given tags, unless they already
-     * exist — the same object backs every incident sharing its id.
+     * Insert the object row and the object_id_tag rows that represent the object for the given tags,
+     * unless they already exist — the same object backs every incident sharing its id.
      *
      * The object id is stored as the raw bytes the Binary behavior compares against.
      *
      * @param array<string, string> $tags
      */
-    private function seedObjectTags(array $tags, string $objectId): void
+    private function seedObject(int $sourceId, array $tags, string $objectId): void
     {
         if (isset($this->seededObjects[$objectId])) {
             return;
@@ -235,6 +220,12 @@ class IncidentsTest extends TestCase
         $this->seededObjects[$objectId] = true;
 
         $rawId = hex2bin($objectId);
+
+        $this->db->insert('object', [
+            'id'        => $rawId,
+            'source_id' => $sourceId,
+            'name'      => implode(', ', $tags),
+        ]);
 
         foreach ($tags as $tag => $value) {
             $this->db->insert('object_id_tag', [

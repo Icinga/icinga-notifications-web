@@ -5,19 +5,17 @@
 
 namespace Icinga\Module\Notifications\Integrations;
 
+use Countable;
 use Generator;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Incident as IncidentModel;
 use ipl\Orm\Query;
 use ipl\Orm\ResultSet;
 use ipl\Sql\Connection;
-use ipl\Sql\Filter\In;
-use ipl\Sql\Filter\NotIn;
-use ipl\Sql\Select;
-use ipl\Stdlib\Seq;
+use ipl\Stdlib\Filter;
 use IteratorAggregate;
 
-class Incidents implements IteratorAggregate
+class Incidents implements IteratorAggregate, Countable
 {
     /** @var array<string, ?string> Required tags keyed by name; a null value requires the tag's absence */
     protected array $tags;
@@ -26,7 +24,7 @@ class Incidents implements IteratorAggregate
     protected Connection $db;
 
     /** @var ?ResultSet The executed query result */
-    protected ?ResultSet $results = null;
+    private ?ResultSet $results = null;
 
     /**
      * Create new Incidents
@@ -53,11 +51,11 @@ class Incidents implements IteratorAggregate
      *
      * @param array<string, ?string> $tags Required tags keyed by name, a null value requires the tag's absence
      *
-     * @return self
+     * @return static
      */
-    public static function create(array $tags): self
+    public static function find(array $tags): static
     {
-        return new self($tags, Database::get());
+        return new static($tags, Database::get());
     }
 
     /**
@@ -67,12 +65,7 @@ class Incidents implements IteratorAggregate
      */
     public function hasIncident(): bool
     {
-        // hasResult() fails if the generator has already been exhausted
-        foreach ($this->incidents() as $_) {
-            return true;
-        }
-
-        return false;
+        return $this->incidents()->hasResult();
     }
 
     /**
@@ -82,10 +75,17 @@ class Incidents implements IteratorAggregate
      */
     public function getIterator(): Generator
     {
-        yield from Seq::map($this->incidents(), fn($incident) => new Incident($incident, $this->db));
+        foreach ($this->incidents() as $incident) {
+            yield new Incident($incident, $this->db);
+        }
     }
 
-    protected function incidents(): ResultSet
+    public function count(): int
+    {
+        return $this->buildQuery()->count();
+    }
+
+    private function incidents(): ResultSet
     {
         if ($this->results === null) {
             $this->results = $this->buildQuery()->execute();
@@ -96,19 +96,13 @@ class Incidents implements IteratorAggregate
 
     protected function buildQuery(): Query
     {
-        $query = IncidentModel::on($this->db);
+        $query = IncidentModel::on($this->db)->filter(Filter::unlike('recovered_at', '*'));
 
         foreach ($this->tags as $tag => $value) {
-            $objectIds = (new Select())
-                ->columns('object_id')
-                ->from('object_id_tag')
-                ->where('tag = ?', $tag);
-
             if ($value === null) {
-                $query->filter(new NotIn('incident.object_id', $objectIds));
+                $query->filter(Filter::unlike("incident.object.tag.$tag", '*'));
             } else {
-                $objectIds->where('value = ?', $value);
-                $query->filter(new In('incident.object_id', $objectIds));
+                $query->filter(Filter::equal("incident.object.tag.$tag", $value));
             }
         }
 
