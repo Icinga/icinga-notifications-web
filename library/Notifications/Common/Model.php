@@ -31,13 +31,6 @@ abstract class Model extends \ipl\Orm\Model
     private bool $resolvingProperty = false;
 
     /**
-     * Related models queued to be deleted the next time this model is persisted
-     *
-     * @var list<Model>
-     */
-    private array $pendingDeletions = [];
-
-    /**
      * Get whether this entity is new, i.e. not yet persisted to the database
      *
      * @return bool
@@ -97,42 +90,6 @@ abstract class Model extends \ipl\Orm\Model
     public function markClean(): static
     {
         $this->dirtyProperties = [];
-
-        return $this;
-    }
-
-    /**
-     * Queue a related model to be deleted the next time this model is persisted
-     *
-     * @param Model $model
-     *
-     * @return $this
-     */
-    public function deleteOnSave(Model $model): static
-    {
-        $this->pendingDeletions[] = $model;
-
-        return $this;
-    }
-
-    /**
-     * Get the related models queued for deletion via {@see deleteOnSave()}
-     *
-     * @return list<Model>
-     */
-    public function getPendingDeletions(): array
-    {
-        return $this->pendingDeletions;
-    }
-
-    /**
-     * Forget any models queued for deletion via {@see deleteOnSave()}
-     *
-     * @return $this
-     */
-    public function clearPendingDeletions(): static
-    {
-        $this->pendingDeletions = [];
 
         return $this;
     }
