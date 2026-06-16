@@ -955,7 +955,8 @@ class RotationConfigForm extends CompatForm
             'min' => 1,
             'value' => 1,
             'label' => $this->translate('Handoff every'),
-            'description' => $this->translate('Have multiple rotation members take turns after this interval.')
+            'description' => $this->translate('Have multiple rotation members take turns after this interval.'),
+            'validators' => [new GreaterThanValidator()]
         ]);
         $interval = $options->getElement('interval');
         $interval->getDecorators()
@@ -1240,6 +1241,10 @@ class RotationConfigForm extends CompatForm
                 'p',
                 Attributes::create(['id' => 'first-handoff-description']),
                 DeferredText::create(function () {
+                    if (! $this->isValid()) {
+                        return '';
+                    }
+
                     $ruleGenerator = $this->yieldRecurrenceRules(1);
                     if (! $ruleGenerator->valid()) {
                         return $this->translate('This rotation can no longer happen');
@@ -1262,6 +1267,10 @@ class RotationConfigForm extends CompatForm
                 }),
                 new HtmlElement('br'),
                 $this->displayTimezone !== $this->scheduleTimezone ? DeferredText::create(function () {
+                    if (! $this->isValid()) {
+                        return '';
+                    }
+
                     $ruleGenerator = $this->yieldRecurrenceRules(1);
                     if (! $ruleGenerator->valid()) {
                         return '';
