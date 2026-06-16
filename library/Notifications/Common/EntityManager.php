@@ -237,6 +237,16 @@ class EntityManager
             return;
         }
 
+        foreach ((array) $model->getKeyName() as $key) {
+            if ($model->isDirty($key)) {
+                throw new RuntimeException(sprintf(
+                    'Cannot update %s: primary key column "%s" was modified',
+                    get_class($model),
+                    $key
+                ));
+            }
+        }
+
         $data = $this->extract($model, $behaviors, $model->getDirtyMap());
         if (empty($data)) {
             // Only relations changed; there is nothing to update on this row
