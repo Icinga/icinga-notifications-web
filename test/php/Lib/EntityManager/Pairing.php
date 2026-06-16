@@ -9,7 +9,7 @@ use Icinga\Module\Notifications\Common\Model;
 
 class Pairing extends Model
 {
-    public function getTableName()
+    public function getTableName(): string
     {
         return 'pairing';
     }
@@ -19,7 +19,7 @@ class Pairing extends Model
         return ['left_id', 'right_id'];
     }
 
-    public function getColumns()
+    public function getColumns(): array
     {
         return ['left_id', 'right_id', 'label'];
     }

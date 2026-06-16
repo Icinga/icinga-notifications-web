@@ -8,12 +8,14 @@ namespace Icinga\Module\Notifications\Common;
 use ipl\Sql\Connection;
 
 /**
- * Base class for all Models of the module, properties of instances may be edited and can be persisted by
- * passing them to the EntityManager
+ * Base class for all module models that tracks the changes made to a model
+ *
+ * Records which properties have changed since the model was loaded, and whether the model has been
+ * persisted yet, so the {@see EntityManager} can store a model and write only what actually changed.
  */
 abstract class Model extends \ipl\Orm\Model
 {
-    /** @var bool Whether this model is new, i.e. not yet persisted to the database */
+    /** @var bool Whether this model is newly created and does not yet exist in the database */
     private bool $isNew = true;
 
     /** @var array<string, true> Names of properties changed since the model was loaded */
@@ -31,7 +33,7 @@ abstract class Model extends \ipl\Orm\Model
     private bool $resolvingProperty = false;
 
     /**
-     * Get whether this entity is new, i.e. not yet persisted to the database
+     * Get whether this entity is newly created and does not yet exist in the database
      *
      * @return bool
      */
@@ -41,7 +43,7 @@ abstract class Model extends \ipl\Orm\Model
     }
 
     /**
-     * Set whether this entity is new, i.e. not yet persisted to the database
+     * Set whether this entity is newly created and does not yet exist in the database
      *
      * @param bool $new
      *

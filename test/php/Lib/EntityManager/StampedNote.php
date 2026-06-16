@@ -10,22 +10,22 @@ use ipl\Orm\Relations;
 
 class StampedNote extends Model
 {
-    public function getTableName()
+    public function getTableName(): string
     {
         return 'stamped_note';
     }
 
-    public function getKeyName()
+    public function getKeyName(): string
     {
         return 'id';
     }
 
-    public function getColumns()
+    public function getColumns(): array
     {
         return ['stamped_id', 'text'];
     }
 
-    public function createRelations(Relations $relations)
+    public function createRelations(Relations $relations): void
     {
         $relations->belongsTo('stamped', Stamped::class);
     }
