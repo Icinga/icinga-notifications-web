@@ -9,17 +9,17 @@ use Icinga\Module\Notifications\Common\Model;
 
 class Tag extends Model
 {
-    public function getTableName()
+    public function getTableName(): string
     {
         return 'tag';
     }
 
-    public function getKeyName()
+    public function getKeyName(): string
     {
         return 'id';
     }
 
-    public function getColumns()
+    public function getColumns(): array
     {
         return ['name'];
     }

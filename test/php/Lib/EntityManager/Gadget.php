@@ -10,22 +10,22 @@ use ipl\Orm\Relations;
 
 class Gadget extends Model
 {
-    public function getTableName()
+    public function getTableName(): string
     {
         return 'gadget';
     }
 
-    public function getKeyName()
+    public function getKeyName(): string
     {
         return 'id';
     }
 
-    public function getColumns()
+    public function getColumns(): array
     {
         return ['workshop_id', 'name'];
     }
 
-    public function createRelations(Relations $relations)
+    public function createRelations(Relations $relations): void
     {
         $relations->belongsTo('workshop', Workshop::class);
 

@@ -11,22 +11,22 @@ use ipl\Orm\Behaviors;
 
 class Flag extends Model
 {
-    public function getTableName()
+    public function getTableName(): string
     {
         return 'flag';
     }
 
-    public function getKeyName()
+    public function getKeyName(): string
     {
         return 'id';
     }
 
-    public function getColumns()
+    public function getColumns(): array
     {
         return ['label', 'enabled'];
     }
 
-    public function createBehaviors(Behaviors $behaviors)
+    public function createBehaviors(Behaviors $behaviors): void
     {
         $behaviors->add(new BoolCast(['enabled']));
     }

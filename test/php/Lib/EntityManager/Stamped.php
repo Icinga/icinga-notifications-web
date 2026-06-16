@@ -12,27 +12,27 @@ use ipl\Orm\Relations;
 
 class Stamped extends Model
 {
-    public function getTableName()
+    public function getTableName(): string
     {
         return 'stamped';
     }
 
-    public function getKeyName()
+    public function getKeyName(): string
     {
         return 'id';
     }
 
-    public function getColumns()
+    public function getColumns(): array
     {
         return ['name', 'changed_at'];
     }
 
-    public function createBehaviors(Behaviors $behaviors)
+    public function createBehaviors(Behaviors $behaviors): void
     {
         $behaviors->add(new MillisecondTimestamp(['changed_at']));
     }
 
-    public function createRelations(Relations $relations)
+    public function createRelations(Relations $relations): void
     {
         $relations->hasMany('notes', StampedNote::class);
     }

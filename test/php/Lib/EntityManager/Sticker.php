@@ -9,17 +9,17 @@ use Icinga\Module\Notifications\Common\Model;
 
 class Sticker extends Model
 {
-    public function getTableName()
+    public function getTableName(): string
     {
         return 'sticker';
     }
 
-    public function getKeyName()
+    public function getKeyName(): string
     {
         return 'id';
     }
 
-    public function getColumns()
+    public function getColumns(): array
     {
         return ['label'];
     }

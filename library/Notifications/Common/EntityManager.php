@@ -164,7 +164,7 @@ class EntityManager
         }
 
         // 2. The model itself
-        $this->persist($model, $resolver);
+        $this->persist($model, $resolver->getBehaviors($model));
 
         // 3. Children: the foreign key is on the target table, so they are persisted afterwards with
         //    the model's now-known key copied in. (HasOne/HasMany)
@@ -205,14 +205,12 @@ class EntityManager
      * Insert or update the given model's own row
      *
      * @param Model $model
-     * @param Resolver $resolver
+     * @param Behaviors $behaviors
      *
      * @return void
      */
-    protected function persist(Model $model, Resolver $resolver): void
+    protected function persist(Model $model, Behaviors $behaviors): void
     {
-        $behaviors = $resolver->getBehaviors($model);
-
         if (! $model->isNew() && ! $model->isDirty()) {
             return;
         }
@@ -309,22 +307,14 @@ class EntityManager
         $columns = $this->writableColumns($model);
         $data = [];
 
-        if ($only !== null) {
-            foreach ($only as $property => $_) {
-                if (! isset($columns[$property])) {
-                    continue;
-                }
-
-                $data[$columns[$property]] = $behaviors->persistProperty($model[$property], $property);
+        // Restrict to the given property set (e.g. the dirty map) or fall back to all set properties.
+        $properties = $only ?? $model;
+        foreach ($properties as $property => $_) {
+            if (! isset($columns[$property])) {
+                continue;
             }
-        } else {
-            foreach ($model as $property => $value) {
-                if (! isset($columns[$property])) {
-                    continue;
-                }
 
-                $data[$columns[$property]] = $behaviors->persistProperty($value, $property);
-            }
+            $data[$columns[$property]] = $behaviors->persistProperty($model->$property, $property);
         }
 
         return $data;

@@ -12,27 +12,27 @@ use ipl\Orm\Relations;
 
 class Charm extends Model
 {
-    public function getTableName()
+    public function getTableName(): string
     {
         return 'charm';
     }
 
-    public function getKeyName()
+    public function getKeyName(): string
     {
         return 'id';
     }
 
-    public function getColumns()
+    public function getColumns(): array
     {
         return ['trinket_id', 'label'];
     }
 
-    public function createBehaviors(Behaviors $behaviors)
+    public function createBehaviors(Behaviors $behaviors): void
     {
         $behaviors->add(new Binary(['trinket_id']));
     }
 
-    public function createRelations(Relations $relations)
+    public function createRelations(Relations $relations): void
     {
         $relations->belongsTo('trinket', Trinket::class);
     }

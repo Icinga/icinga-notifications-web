@@ -19,22 +19,22 @@ use ipl\Orm\Behaviors;
  */
 class GadgetTag extends Model
 {
-    public function getTableName()
+    public function getTableName(): string
     {
         return 'gadget_tag';
     }
 
-    public function getKeyName()
+    public function getKeyName(): array
     {
         return ['gadget_id', 'tag_id'];
     }
 
-    public function getColumns()
+    public function getColumns(): array
     {
         return ['gadget_id', 'tag_id', 'changed_at', 'deleted'];
     }
 
-    public function createBehaviors(Behaviors $behaviors)
+    public function createBehaviors(Behaviors $behaviors): void
     {
         $behaviors->add(new MillisecondTimestamp(['changed_at']));
         $behaviors->add(new BoolCast(['deleted']));
