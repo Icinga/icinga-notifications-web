@@ -23,7 +23,9 @@ class StatefulQuery extends Query
     public function yieldResults(): Generator
     {
         foreach (parent::yieldResults() as $key => $model) {
-            $model->setNew(false);
+            if ($model instanceof Model) {
+                $model->setNew(false);
+            }
 
             yield $key => $model;
         }

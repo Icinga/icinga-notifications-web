@@ -124,6 +124,7 @@ class EntityManager
         // Snapshot what to cascade before persisting, since persisting resets change tracking. Only
         // explicitly set relations are considered (lazy loaders are closures, skipped by the iterator).
         // For loaded models, only relations the caller actually (re)assigned are cascaded.
+        // An explicit `null` clears the relation
         $set = iterator_to_array($model);
         $isNew = $model->isNew();
         $modifiedRelations = $isNew ? [] : $model->getModifiedProperties();
@@ -135,7 +136,7 @@ class EntityManager
         /** @var array<string, BelongsToMany> $links */
         $links = [];
         foreach ($resolver->getRelations($model) as $name => $relation) {
-            if (! isset($set[$name]) || (! $isNew && ! isset($modifiedRelations[$name]))) {
+            if (! array_key_exists($name, $set) || (! $isNew && ! isset($modifiedRelations[$name]))) {
                 continue;
             }
 
@@ -152,6 +153,14 @@ class EntityManager
         //    related entity must be persisted beforehand and its key copied in. (BelongsTo)
         foreach ($dependencies as $name => $relation) {
             $related = $set[$name];
+            if ($related === null) {
+                foreach ($relation->determineKeys($model) as $sourceColumn) {
+                    $model->$sourceColumn = null;
+                }
+
+                continue;
+            }
+
             if (! $related instanceof Model) {
                 continue;
             }

@@ -196,6 +196,30 @@ class EntityManagerTest extends TestCase
         );
     }
 
+    public function testBelongsToAssigningNullClearsTheForeignKey()
+    {
+        $workshop = new Workshop();
+        $workshop->name = 'Acme';
+        $gadget = new Gadget();
+        $gadget->name = 'Spanner';
+        $gadget->workshop = $workshop;
+        $this->em()->save($gadget);
+        $this->assertSame($workshop->id, $gadget->workshop_id, 'The link is established before it is cleared');
+
+        // Load fresh and clear the relation by assigning null. The relation property holds null (not a
+        // lazy-loader closure), so saveGraph sees it as an explicit assignment and nulls the foreign key.
+        /** @var Gadget $loaded */
+        $loaded = Gadget::on($this->db)->first();
+        $loaded->workshop = null;
+        $this->em()->save($loaded);
+
+        $this->assertSame(
+            [['name' => 'Spanner', 'workshop_id' => null]],
+            $this->rows('SELECT name, workshop_id FROM gadget'),
+            'Assigning null to a BelongsTo nulls the foreign key on update'
+        );
+    }
+
     public function testManyToManyWritesJunctionRows()
     {
         $gadget = new Gadget();
@@ -346,6 +370,31 @@ class EntityManagerTest extends TestCase
             [],
             $this->rows('SELECT gadget_id, sticker_id FROM gadget_sticker'),
             'Assigning an empty set removes all links'
+        );
+    }
+
+    public function testManyToManyAssigningNullClearsTheLinks()
+    {
+        $gadget = new Gadget();
+        $gadget->name = 'Spanner';
+
+        $sticker = new Sticker();
+        $sticker->label = 'fragile';
+        $gadget->stickers = [$sticker];
+
+        $this->em()->save($gadget);
+
+        // Null collapses to the empty set on the way through asTraversable(), so it clears all links
+        // just like assigning [] does.
+        /** @var Gadget $loaded */
+        $loaded = Gadget::on($this->db)->first();
+        $loaded->stickers = null;
+        $this->em()->save($loaded);
+
+        $this->assertSame(
+            [],
+            $this->rows('SELECT gadget_id, sticker_id FROM gadget_sticker'),
+            'Assigning null to a many-to-many relation removes all links'
         );
     }
 
