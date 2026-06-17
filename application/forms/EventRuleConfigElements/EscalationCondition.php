@@ -118,19 +118,27 @@ class EscalationCondition extends FieldsetElement
             )
         ]));
 
-        $this->addElement('select', 'operator', [
-            'required' => true,
-            'options' => [
+        $selectedColumn = $this->getPopulatedValue('column');
+        if ($selectedColumn === 'incident_age') {
+            $operators = ['>' => '>'];
+        } else {
+            $operators = [
                 '='  => '=',
                 '>'  => '>',
                 '>=' => '>=',
                 '<'  => '<',
                 '<=' => '<=',
                 '!=' => '!='
-            ]
+            ];
+        }
+
+        $this->addElement('select', 'operator', [
+            'required' => true,
+            'options' => $operators,
+            'disabled' => $selectedColumn === 'incident_age'
         ]);
 
-        if ($this->getPopulatedValue('column') === 'incident_severity') {
+        if ($selectedColumn === 'incident_severity') {
             $this->addElement('select', 'severity', [
                 'required' => true,
                 'options' => [
@@ -145,7 +153,7 @@ class EscalationCondition extends FieldsetElement
                     'emerg' => $this->translate('Emergency', 'notification.severity')
                 ]
             ]);
-        } elseif ($this->getPopulatedValue('column') === 'incident_age') {
+        } elseif ($selectedColumn === 'incident_age') {
             $noOf = $this->createElement('number', 'no_of', [
                 'required' => true,
                 'min' => 1,

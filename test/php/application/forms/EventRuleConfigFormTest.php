@@ -132,7 +132,7 @@ class EventRuleConfigFormTest extends TestCase
                 (new RuleEscalation())->setProperties([
                     'id' => 1,
                     'position' => 0,
-                    'condition' => 'incident_age>=5m',
+                    'condition' => 'incident_age>5m',
                     'rule_escalation_recipient' => [
                         (new RuleEscalationRecipient())->setProperties([
                             'id' => 1,
