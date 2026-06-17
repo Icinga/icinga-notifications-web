@@ -105,7 +105,11 @@ class EntityManagerTest extends TestCase
         $this->em()->save($gadget);
 
         $gadget->name = 'Wrench';
-        $this->assertSame(['name' => true], $gadget->getModifiedProperties(), 'Only the changed column is tracked as modified');
+        $this->assertSame(
+            ['name' => true],
+            $gadget->getModifiedProperties(),
+            'Only the changed column is tracked as modified'
+        );
 
         $this->em()->save($gadget);
 
