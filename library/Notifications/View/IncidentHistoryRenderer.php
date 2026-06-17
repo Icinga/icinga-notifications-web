@@ -41,11 +41,36 @@ class IncidentHistoryRenderer implements ItemRenderer
 
     public function assembleVisual($item, HtmlDocument $visual, string $layout): void
     {
-        $incidentIcon = $this->getIncidentEventIcon($item);
         if ($item->type === 'incident_severity_changed') {
-            $content = new Icon($incidentIcon, ['class' => 'severity-' . $item->new_severity]);
+            [$icon, $title] = match ($item->new_severity) {
+                'ok'      => [Icons::SEVERITY_OK, $this->translate('Ok')],
+                'warning' => [Icons::SEVERITY_WARN, $this->translate('Warning')],
+                'err'     => [Icons::SEVERITY_ERR, $this->translate('Error')],
+                'crit'    => [Icons::SEVERITY_CRIT, $this->translate('Critical')],
+                'debug'   => [Icons::SEVERITY_DEBUG, $this->translate('Debug')],
+                'info'    => [Icons::SEVERITY_INFO, $this->translate('Info')],
+                'alert'   => [Icons::SEVERITY_ALERT, $this->translate('Alert')],
+                'emerg'   => [Icons::SEVERITY_EMERG, $this->translate('Emergency')],
+                'notice'  => [Icons::SEVERITY_NOTICE, $this->translate('Notice')],
+                default   => [Icons::UNDEFINED, $this->translate('Undefined')]
+            };
+
+            $content = new Icon($icon, [
+                'class' => ['severity-' . $item->new_severity],
+                'title' => sprintf('%s: %s', $this->translate('Severity'), $title)
+            ]);
         } else {
-            $content = new IconBall($incidentIcon);
+            $content = new IconBall(match ($item->type) {
+                'opened'                    => Icons::OPENED,
+                'muted'                     => Icons::MUTE,
+                'unmuted'                   => Icons::UNMUTE,
+                'recipient_role_changed'    => $this->getRoleIcon($item),
+                'closed'                    => Icons::CLOSED,
+                'rule_matched'              => Icons::RULE_MATCHED,
+                'escalation_triggered'      => Icons::TRIGGERED,
+                'notified'                  => Icons::NOTIFIED,
+                default                     => Icons::UNDEFINED
+            });
         }
 
         $visual->addHtml($content);
@@ -72,47 +97,6 @@ class IncidentHistoryRenderer implements ItemRenderer
     public function assemble($item, string $name, HtmlDocument $element, string $layout): bool
     {
         return false; // no custom sections
-    }
-
-    /**
-     * Get the icon for the incident event
-     *
-     * @param IncidentHistory $item
-     *
-     * @return string
-     */
-    protected function getIncidentEventIcon(IncidentHistory $item): string
-    {
-        return match ($item->type) {
-            'opened'                    => Icons::OPENED,
-            'muted'                     => Icons::MUTE,
-            'unmuted'                   => Icons::UNMUTE,
-            'incident_severity_changed' => $this->getSeverityIcon($item),
-            'recipient_role_changed'    => $this->getRoleIcon($item),
-            'closed'                    => Icons::CLOSED,
-            'rule_matched'              => Icons::RULE_MATCHED,
-            'escalation_triggered'      => Icons::TRIGGERED,
-            'notified'                  => Icons::NOTIFIED,
-            default                     => Icons::UNDEFINED
-        };
-    }
-
-    /**
-     * Get the icon for the new incident severity
-     *
-     * @param IncidentHistory $item
-     *
-     * @return string
-     */
-    protected function getSeverityIcon(IncidentHistory $item): string
-    {
-        return match ($item->new_severity) {
-            'ok'      => Icons::OK,
-            'warning' => Icons::WARNING,
-            'err'     => Icons::ERROR,
-            'crit'    => Icons::CRITICAL,
-            default   => Icons::UNDEFINED
-        };
     }
 
     /**
