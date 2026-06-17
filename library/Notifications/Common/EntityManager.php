@@ -35,7 +35,7 @@ use RuntimeException;
  * ```
  *
  * Whether {@see save()} inserts or updates is decided by {@see Model::isNew()}. Updates only write the
- * properties changed since the model was loaded ({@see Model::getDirtyMap()}). Set relations are cascaded
+ * properties changed since the model was loaded ({@see Model::getModifiedProperties()}). Set relations are cascaded
  * (parents first, then the model, then children and many-to-many links), all within a single transaction.
  */
 class EntityManager
@@ -107,7 +107,7 @@ class EntityManager
         }
 
         $model->setNew(true);
-        $model->markClean();
+        $model->clearModifiedProperties();
     }
 
     /**
@@ -126,7 +126,7 @@ class EntityManager
         // For loaded models, only relations the caller actually (re)assigned are cascaded.
         $set = iterator_to_array($model);
         $isNew = $model->isNew();
-        $dirtyRelations = $isNew ? [] : $model->getDirtyMap();
+        $modifiedRelations = $isNew ? [] : $model->getModifiedProperties();
 
         /** @var array<string, BelongsTo> $dependencies */
         $dependencies = [];
@@ -135,7 +135,7 @@ class EntityManager
         /** @var array<string, BelongsToMany> $links */
         $links = [];
         foreach ($resolver->getRelations($model) as $name => $relation) {
-            if (! isset($set[$name]) || (! $isNew && ! isset($dirtyRelations[$name]))) {
+            if (! isset($set[$name]) || (! $isNew && ! isset($modifiedRelations[$name]))) {
                 continue;
             }
 
@@ -211,7 +211,7 @@ class EntityManager
      */
     protected function persist(Model $model, Behaviors $behaviors): void
     {
-        if (! $model->isNew() && ! $model->isDirty()) {
+        if (! $model->isNew() && ! $model->isModified()) {
             return;
         }
 
@@ -232,13 +232,13 @@ class EntityManager
             }
 
             $model->setNew(false);
-            $model->markClean();
+            $model->clearModifiedProperties();
 
             return;
         }
 
         foreach ((array) $model->getKeyName() as $key) {
-            if ($model->isDirty($key)) {
+            if ($model->isModified($key)) {
                 throw new RuntimeException(sprintf(
                     'Cannot update %s: primary key column "%s" was modified',
                     get_class($model),
@@ -247,10 +247,10 @@ class EntityManager
             }
         }
 
-        $data = $this->extract($model, $behaviors, $model->getDirtyMap());
+        $data = $this->extract($model, $behaviors, $model->getModifiedProperties());
         if (empty($data)) {
             // Only relations changed; there is nothing to update on this row
-            $model->markClean();
+            $model->clearModifiedProperties();
 
             return;
         }
@@ -266,13 +266,13 @@ class EntityManager
         }
 
         // Stamp only now that we know an UPDATE will actually go out. The stamp adds
-        // `changed_at` to the dirty map, so re-extract to pick it up.
+        // `changed_at` to the modified set, so re-extract to pick it up.
         $this->stampChangedAt($model);
-        $data = $this->extract($model, $behaviors, $model->getDirtyMap());
+        $data = $this->extract($model, $behaviors, $model->getModifiedProperties());
 
         $this->db->update($model->getTableName(), $data, $scope);
 
-        $model->markClean();
+        $model->clearModifiedProperties();
     }
 
     /**
@@ -308,7 +308,7 @@ class EntityManager
      *
      * @param Model $model
      * @param Behaviors $behaviors
-     * @param ?array<string, true> $only Restrict to this set of property names (e.g. the dirty map), or null for all
+     * @param ?array<string, true> $only Restrict to this set of property names, or `null` for all
      *
      * @return array<string, mixed>
      */
@@ -317,7 +317,7 @@ class EntityManager
         $columns = $this->writableColumns($model);
         $data = [];
 
-        // Restrict to the given property set (e.g. the dirty map) or fall back to all set properties.
+        // Restrict to the given property set (e.g. the modified set) or fall back to all set properties.
         $properties = $only ?? $model;
         foreach ($properties as $property => $_) {
             if (! isset($columns[$property])) {
