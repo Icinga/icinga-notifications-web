@@ -35,14 +35,23 @@ class IncidentRenderer implements ItemRenderer
 
     public function assembleVisual($item, HtmlDocument $visual, string $layout): void
     {
-        $icon = match ($item->severity) {
-            'ok'    => Icons::OK,
-            'err'   => Icons::ERROR,
-            'crit'  => Icons::CRITICAL,
-            default => Icons::WARNING
+        [$icon, $title] = match ($item->severity) {
+            'ok'      => [Icons::SEVERITY_OK, $this->translate('Ok')],
+            'warning' => [Icons::SEVERITY_WARN, $this->translate('Warning')],
+            'err'     => [Icons::SEVERITY_ERR, $this->translate('Error')],
+            'crit'    => [Icons::SEVERITY_CRIT, $this->translate('Critical')],
+            'debug'   => [Icons::SEVERITY_DEBUG, $this->translate('Debug')],
+            'info'    => [Icons::SEVERITY_INFO, $this->translate('Info')],
+            'alert'   => [Icons::SEVERITY_ALERT, $this->translate('Alert')],
+            'emerg'   => [Icons::SEVERITY_EMERG, $this->translate('Emergency')],
+            'notice'  => [Icons::SEVERITY_NOTICE, $this->translate('Notice')],
+            default   => [Icons::UNDEFINED, $this->translate('Undefined')]
         };
 
-        $content = new Icon($icon, ['class' => ['severity-' . $item->severity]]);
+        $content = new Icon($icon, [
+            'class' => ['severity-' . $item->severity],
+            'title' => sprintf('%s: %s', $this->translate('Severity'), $title)
+        ]);
 
         if ($item->severity === 'ok' || $item->severity === 'err') {
             $content->setStyle('fa-regular');
