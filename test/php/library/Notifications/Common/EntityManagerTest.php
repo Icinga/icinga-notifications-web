@@ -84,7 +84,7 @@ class EntityManagerTest extends TestCase
         $this->assertSame([['id' => 1, 'name' => 'Acme']], $this->rows('SELECT * FROM workshop'));
     }
 
-    public function testHydratedModelIsLoadedAndClean()
+    public function testHydratedModelIsLoadedAndUnmodified()
     {
         $workshop = new Workshop();
         $workshop->name = 'Acme';
@@ -94,7 +94,7 @@ class EntityManagerTest extends TestCase
 
         $this->assertNotNull($loaded);
         $this->assertFalse($loaded->isNew(), 'A hydrated model is not new');
-        $this->assertFalse($loaded->isDirty(), 'A freshly hydrated model has no changes');
+        $this->assertFalse($loaded->isModified(), 'A freshly hydrated model has no changes');
     }
 
     public function testUpdateWritesOnlyChangedColumns()
@@ -105,11 +105,11 @@ class EntityManagerTest extends TestCase
         $this->em()->save($gadget);
 
         $gadget->name = 'Wrench';
-        $this->assertSame(['name' => true], $gadget->getDirtyMap(), 'Only the changed column is tracked as dirty');
+        $this->assertSame(['name' => true], $gadget->getModifiedProperties(), 'Only the changed column is tracked as modified');
 
         $this->em()->save($gadget);
 
-        $this->assertFalse($gadget->isDirty(), 'The model is clean after an update');
+        $this->assertFalse($gadget->isModified(), 'The model is unmodified after an update');
         $this->assertSame(
             [['workshop_id' => 5, 'name' => 'Wrench']],
             $this->rows('SELECT workshop_id, name FROM gadget'),
@@ -117,7 +117,7 @@ class EntityManagerTest extends TestCase
         );
     }
 
-    public function testNoOpSaveOnCleanModelDoesNothing()
+    public function testNoOpSaveOnUnmodifiedModelDoesNothing()
     {
         $workshop = new Workshop();
         $workshop->name = 'Acme';
@@ -762,7 +762,7 @@ class EntityManagerTest extends TestCase
         $this->assertSame([], $this->rows('SELECT id FROM trinket'));
     }
 
-    public function testReadingALazyRelationOnLoadedModelDoesNotMarkItDirty()
+    public function testReadingALazyRelationOnLoadedModelDoesNotMarkItModified()
     {
         $workshop = new Workshop();
         $workshop->name = 'Acme';
@@ -780,12 +780,12 @@ class EntityManagerTest extends TestCase
 
         $this->assertNotNull($relation);
         $this->assertFalse(
-            $loaded->isDirty(),
-            'Reading a lazily-loaded relation must not mark the model dirty'
+            $loaded->isModified(),
+            'Reading a lazily-loaded relation must not mark the model modified'
         );
     }
 
-    public function testAssigningALazyRelationOnLoadedModelMarksItDirtyWithoutResolvingIt()
+    public function testAssigningALazyRelationOnLoadedModelMarksItModifiedWithoutResolvingIt()
     {
         $workshop = new Workshop();
         $workshop->name = 'Acme';
@@ -802,8 +802,8 @@ class EntityManagerTest extends TestCase
 
         $this->assertArrayHasKey(
             'gadgets',
-            $loaded->getDirtyMap(),
-            'Reassigning a relation marks it dirty so saveGraph cascades the new value'
+            $loaded->getModifiedProperties(),
+            'Reassigning a relation marks it modified so saveGraph cascades the new value'
         );
     }
 
@@ -837,7 +837,7 @@ class EntityManagerTest extends TestCase
         $this->em()->delete($w);
 
         $this->assertTrue($w->isNew(), 'Deleted model is treated as new again');
-        $this->assertFalse($w->isDirty(), 'Dirty state was cleared');
+        $this->assertFalse($w->isModified(), 'Modified state was cleared');
 
         $w->name = 'Acme 2';
         $this->em()->save($w);
@@ -944,7 +944,7 @@ class EntityManagerTest extends TestCase
         );
     }
 
-    public function testCompoundKeyInsertWritesBothKeyColumnsAndMarksClean()
+    public function testCompoundKeyInsertWritesBothKeyColumnsAndClearsModifiedProperties()
     {
         $p = new Pairing();
         $p->left_id = 7;
@@ -954,7 +954,7 @@ class EntityManagerTest extends TestCase
         $this->em()->save($p);
 
         $this->assertFalse($p->isNew(), 'A saved compound-key model is no longer new');
-        $this->assertFalse($p->isDirty());
+        $this->assertFalse($p->isModified());
         $this->assertSame(7, $p->left_id, 'left_id was not overwritten by a lastInsertId fetch');
         $this->assertSame(9, $p->right_id, 'right_id was not overwritten by a lastInsertId fetch');
         $this->assertSame(
@@ -963,7 +963,7 @@ class EntityManagerTest extends TestCase
         );
     }
 
-    public function testReSavingACleanModelIssuesNoWrites()
+    public function testReSavingAnUnmodifiedModelIssuesNoWrites()
     {
         $workshop = new Workshop();
         $workshop->name = 'Acme';

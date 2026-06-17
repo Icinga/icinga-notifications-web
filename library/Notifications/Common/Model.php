@@ -18,8 +18,8 @@ abstract class Model extends \ipl\Orm\Model
     /** @var bool Whether this model is newly created and does not yet exist in the database */
     private bool $isNew = true;
 
-    /** @var array<string, true> Names of properties changed since the model was loaded */
-    private array $dirtyProperties = [];
+    /** @var array<string, true> Names of properties modified since the model was loaded */
+    private array $modifiedProperties = [];
 
     /**
      * Whether a getter for a Closure-backed property is currently resolving.
@@ -57,7 +57,7 @@ abstract class Model extends \ipl\Orm\Model
     }
 
     /**
-     * Get whether the entity, or the given property, has unsaved changes
+     * Get whether the entity, or the given property, has unsaved modifications
      *
      * Always returns false for new entities, which carry no change tracking.
      *
@@ -65,23 +65,25 @@ abstract class Model extends \ipl\Orm\Model
      *
      * @return bool
      */
-    public function isDirty(?string $property = null): bool
+    public function isModified(?string $property = null): bool
     {
         if ($property === null) {
-            return ! empty($this->dirtyProperties);
+            return ! empty($this->modifiedProperties);
         }
 
-        return isset($this->dirtyProperties[$property]);
+        return isset($this->modifiedProperties[$property]);
     }
 
     /**
-     * Get the names of all properties changed since the entity was loaded as a set keyed by name
+     * Get the names of all properties modified since the entity was loaded as a set keyed by name
+     *
+     * The keys may be columns or relations.
      *
      * @return array<string, true>
      */
-    public function getDirtyMap(): array
+    public function getModifiedProperties(): array
     {
-        return $this->dirtyProperties;
+        return $this->modifiedProperties;
     }
 
     /**
@@ -89,13 +91,16 @@ abstract class Model extends \ipl\Orm\Model
      *
      * @return $this
      */
-    public function markClean(): static
+    public function clearModifiedProperties(): static
     {
-        $this->dirtyProperties = [];
+        $this->modifiedProperties = [];
 
         return $this;
     }
 
+    /**
+     * @param string $key The name of the property, which may be a column or a relation
+     */
     protected function getProperty(string $key): mixed
     {
         $wasResolving = $this->resolvingProperty;
@@ -107,11 +112,14 @@ abstract class Model extends \ipl\Orm\Model
         }
     }
 
+    /**
+     * @param string $key The name of the property, which may be a column or a relation
+     */
     protected function setProperty(string $key, mixed $value): static
     {
-        if (! $this->resolvingProperty && ! $this->isNew && ! isset($this->dirtyProperties[$key])) {
+        if (! $this->resolvingProperty && ! $this->isNew && ! isset($this->modifiedProperties[$key])) {
             // Resolve the prior value via the trait's iterator, which skips Closure-valued properties.
-            // This avoids triggering lazy relation loaders just to capture dirty-tracking state.
+            // This avoids triggering lazy relation loaders just to capture change-tracking state.
             $hadValue = false;
             $original = null;
             foreach ($this as $k => $v) {
@@ -123,7 +131,7 @@ abstract class Model extends \ipl\Orm\Model
             }
 
             if (! $hadValue || $original !== $value) {
-                $this->dirtyProperties[$key] = true;
+                $this->modifiedProperties[$key] = true;
             }
         }
 
