@@ -96,12 +96,12 @@ class EntityManager
 
         $behaviors = $this->resolverFor($model)->getBehaviors($model);
 
-        $scope = $this->keyScope($model, $behaviors);
-        if ($scope === null) {
+        $condition = $this->createPrimaryKeyCondition($model, $behaviors);
+        if ($condition === null) {
             return;
         }
 
-        $this->db->delete($model->getTableName(), $scope);
+        $this->db->delete($model->getTableName(), $condition);
         foreach ((array) $model->getKeyName() as $k) {
             unset($model->$k);
         }
@@ -255,8 +255,8 @@ class EntityManager
             return;
         }
 
-        $scope = $this->keyScope($model, $behaviors);
-        if ($scope === null) {
+        $condition = $this->createPrimaryKeyCondition($model, $behaviors);
+        if ($condition === null) {
             throw new RuntimeException(
                 sprintf(
                     'Cannot update %s without a primary key value',
@@ -270,7 +270,7 @@ class EntityManager
         $this->stampChangedAt($model);
         $data = $this->extract($model, $behaviors, $model->getModifiedProperties());
 
-        $this->db->update($model->getTableName(), $data, $scope);
+        $this->db->update($model->getTableName(), $data, $condition);
 
         $model->clearModifiedProperties();
     }
@@ -331,26 +331,26 @@ class EntityManager
     }
 
     /**
-     * Build a WHERE scope matching the given model by its primary key, converting values for persistence
+     * Build a WHERE condition matching the given model by its primary key, converting values for persistence
      *
      * @param Model $model
      * @param Behaviors $behaviors
      *
      * @return ?array<string, mixed> Null if the model has no value for (part of) its primary key
      */
-    protected function keyScope(Model $model, Behaviors $behaviors): ?array
+    protected function createPrimaryKeyCondition(Model $model, Behaviors $behaviors): ?array
     {
-        $scope = [];
+        $columns = [];
 
         foreach ((array) $model->getKeyName() as $key) {
             if (! $model->hasProperty($key)) {
                 return null;
             }
 
-            $scope[$key . ' = ?'] = $behaviors->persistProperty($model->$key, $key);
+            $columns[$key] = $behaviors->persistProperty($model->$key, $key);
         }
 
-        return $scope;
+        return $this->createCondition($columns);
     }
 
     /**
@@ -419,7 +419,7 @@ class EntityManager
             if (! isset($desired[$identity])) {
                 $this->db->delete(
                     $table,
-                    $this->equalityScope(array_merge($sourceColumns, [$junctionColumn => $value]))
+                    $this->createCondition(array_merge($sourceColumns, [$junctionColumn => $value]))
                 );
             }
         }
@@ -471,7 +471,7 @@ class EntityManager
         $select = (new Select())
             ->from($table)
             ->columns($junctionColumn)
-            ->where($this->equalityScope($sourceColumns));
+            ->where($this->createCondition($sourceColumns));
 
         $stored = [];
         foreach ($this->db->select($select)->fetchAll(PDO::FETCH_ASSOC) as $row) {
@@ -513,7 +513,7 @@ class EntityManager
         $select = (new Select())
             ->from($table)
             ->columns([$junctionColumn, 'deleted'])
-            ->where($this->equalityScope($sourceColumns));
+            ->where($this->createCondition($sourceColumns));
 
         $stored = [];
         foreach ($this->db->select($select)->fetchAll(PDO::FETCH_ASSOC) as $row) {
@@ -555,36 +555,36 @@ class EntityManager
      * Set a junction row's `deleted` value  and stamp `changed_at`
      *
      * @param string $table
-     * @param array<string, mixed> $scope column => value identifying the row
+     * @param array<string, mixed> $columns column => value identifying the row
      * @param string $deleted The `deleted` enum value to write (`'y'` or `'n'`)
      * @param int $changedAt The millisecond timestamp to stamp
      *
      * @return void
      */
-    private function markLink(string $table, array $scope, string $deleted, int $changedAt): void
+    private function markLink(string $table, array $columns, string $deleted, int $changedAt): void
     {
         $this->db->update(
             $table,
             ['deleted' => $deleted, 'changed_at' => $changedAt],
-            $this->equalityScope($scope)
+            $this->createCondition($columns)
         );
     }
 
     /**
-     * Turn a column => value map into an equality WHERE scope (`column = ?`), as ipl-sql expects
+     * Build an equality WHERE condition (`column = ?`) from a column => value map, as ipl-sql expects
      *
      * @param array<string, mixed> $columns
      *
      * @return array<string, mixed>
      */
-    private function equalityScope(array $columns): array
+    private function createCondition(array $columns): array
     {
-        $scope = [];
+        $condition = [];
         foreach ($columns as $column => $value) {
-            $scope[$column . ' = ?'] = $value;
+            $condition[$column . ' = ?'] = $value;
         }
 
-        return $scope;
+        return $condition;
     }
 
     /**
