@@ -87,7 +87,7 @@ class Contact extends Model
             ->setCandidateKey('default_channel_id');
 
         $relations->belongsToMany('incident', Incident::class)
-            ->through('incident_contact')
+            ->through(IncidentContact::class)
             ->setJoinType('LEFT');
 
         $relations->hasMany('incident_contact', IncidentContact::class);
@@ -101,7 +101,7 @@ class Contact extends Model
         $relations->hasMany('contactgroup_member', ContactgroupMember::class);
 
         $relations->belongsToMany('contactgroup', Contactgroup::class)
-            ->through('contactgroup_member')
+            ->through(ContactgroupMember::class)
             ->setJoinType('LEFT');
     }
 }

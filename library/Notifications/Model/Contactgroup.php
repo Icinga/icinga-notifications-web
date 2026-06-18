@@ -76,7 +76,7 @@ class Contactgroup extends Model
         $relations->hasMany('contactgroup_member', ContactgroupMember::class);
         $relations
             ->belongsToMany('contact', Contact::class)
-            ->through('contactgroup_member')
+            ->through(ContactgroupMember::class)
             ->setJoinType('LEFT');
     }
 }

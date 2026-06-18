@@ -18,6 +18,9 @@ abstract class Model extends \ipl\Orm\Model
     /** @var bool Whether this model is newly created and does not yet exist in the database */
     private bool $isNew = true;
 
+    /** @var bool Whether the model is marked for deletion on the next {@see EntityManager::save()} */
+    private bool $toBeDeleted = false;
+
     /** @var array<string, true> Names of properties modified since the model was loaded */
     private array $modifiedProperties = [];
 
@@ -94,8 +97,48 @@ abstract class Model extends \ipl\Orm\Model
     public function clearModifiedProperties(): static
     {
         $this->modifiedProperties = [];
+        $this->toBeDeleted = false;
 
         return $this;
+    }
+
+    /**
+     * Get whether the model's table uses soft deletes
+     *
+     * @return bool
+     */
+    public function useSoftDelete(): bool
+    {
+        // TODO: use proper overrides, current state only for testing, should probably be abstract as well
+        return in_array('deleted', $this->getColumns());
+    }
+
+    /**
+     * Mark the model for deletion on the next {@see EntityManager::save()} and return it
+     *
+     * If an override of this function does not modify at least one property {@see EntityManager::save()} becomes a noop
+     *
+     * @return $this
+     */
+    public function markDeleted(): static
+    {
+        $this->toBeDeleted = true;
+        // TODO: reconsider if this is the right place, $em->save() currently relies on this marking the model as modifed
+        if ($this->useSoftDelete()) {
+            $this->deleted = true;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Get whether the model is marked for deletion on the next {@see EntityManager::save()}
+     *
+     * @return bool
+     */
+    public function isDeleted(): bool
+    {
+        return $this->toBeDeleted;
     }
 
     /**

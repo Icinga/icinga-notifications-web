@@ -93,7 +93,7 @@ class RuleEscalation extends Model
 
         $relations
             ->belongsToMany('contact', Contact::class)
-            ->through('rule_escalation_recipient')
+            ->through(RuleEscalationRecipient::class)
             ->setJoinType('LEFT');
 
         $relations->hasMany('rule_escalation_recipient', RuleEscalationRecipient::class)

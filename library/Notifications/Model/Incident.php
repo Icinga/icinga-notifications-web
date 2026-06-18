@@ -104,7 +104,7 @@ class Incident extends Model
         $relations->belongsTo('object', Objects::class);
 
         $relations->belongsToMany('contact', Contact::class)
-            ->through('incident_contact');
+            ->through(IncidentContact::class);
 
         $relations->hasMany('incident_contact', IncidentContact::class);
         $relations->hasMany('incident_history', IncidentHistory::class);

@@ -13,6 +13,7 @@ use PHPUnit\Framework\TestCase;
 use Tests\Icinga\Module\Notifications\Lib\EntityManager\Charm;
 use Tests\Icinga\Module\Notifications\Lib\EntityManager\Flag;
 use Tests\Icinga\Module\Notifications\Lib\EntityManager\Gadget;
+use Tests\Icinga\Module\Notifications\Lib\EntityManager\GadgetTag;
 use Tests\Icinga\Module\Notifications\Lib\EntityManager\Pairing;
 use Tests\Icinga\Module\Notifications\Lib\EntityManager\RecordingConnection;
 use Tests\Icinga\Module\Notifications\Lib\EntityManager\Stamped;
@@ -132,25 +133,71 @@ class EntityManagerTest extends TestCase
         $this->assertSame([['id' => 1, 'name' => 'Acme']], $this->rows('SELECT * FROM workshop'));
     }
 
-    public function testDeleteRemovesTheRow()
+    public function testDeleteNewModel()
     {
+        $workshop = new Workshop();
+        $workshop->name = 'Acme';
+        $this->em()->save($workshop->markDeleted());
+
+        $this->assertEmpty($this->db->calls, 'Marking a never-saved model deleted and saving issues no writes');
+        $this->assertSame(
+            [],
+            $this->rows('SELECT * FROM workshop'),
+            'A never-saved model marked deleted leaves no row behind'
+        );
+    }
+
+    public function testDeleteNewSoftDeleteModelIsANoOpAndInsertsNoTombstone()
+    {
+        // gadget_tag carries a `deleted` column. A never-saved model marked deleted must still be a no-op:
+        // it must not insert a deleted = 'y' tombstone row for something that never existed.
+        $gadgetTag = new GadgetTag();
+        $gadgetTag->gadget_id = 1;
+        $gadgetTag->tag_id = 1;
+
+        $this->em()->save($gadgetTag->markDeleted());
+
+        $this->assertEmpty($this->db->calls, 'Marking a never-saved soft-delete model deleted issues no writes');
+        $this->assertSame(
+            [],
+            $this->rows('SELECT * FROM gadget_tag'),
+            'No tombstone row is inserted for a never-saved soft-delete model'
+        );
+    }
+
+    public function testSaveOfModelMarkedDeletedHardDeletesWhenItHasNoDeletedColumn()
+    {
+        // workshop has no `deleted` column, so useSoftDelete() is false: the $em->save($model->markDeleted())
+        // flow must remove the row outright.
         $workshop = new Workshop();
         $workshop->name = 'Acme';
         $this->em()->save($workshop);
 
-        $this->em()->delete($workshop);
+        $this->em()->save($workshop->markDeleted());
 
-        $this->assertSame([], $this->rows('SELECT * FROM workshop'));
+        $this->assertSame(
+            [],
+            $this->rows('SELECT * FROM workshop'),
+            'A model with no deleted column is hard-deleted'
+        );
     }
 
-    public function testDeleteIgnoresNewModel()
+    public function testSaveOfModelMarkedDeletedSoftDeletesWhenItHasADeletedColumn()
     {
-        $workshop = new Workshop();
-        $workshop->name = 'Acme';
+        // gadget_tag carries a `deleted` column, so useSoftDelete() is true: the $em->save($model->markDeleted())
+        // flow must keep the row and flip deleted to 'y' (stamping changed_at) rather than removing it.
+        $gadgetTag = new GadgetTag();
+        $gadgetTag->gadget_id = 1;
+        $gadgetTag->tag_id = 1;
+        $this->em()->save($gadgetTag); // changed_at -> 1000
 
-        $this->em()->delete($workshop);
+        $this->em()->save($gadgetTag->markDeleted()); // soft-deleted, changed_at -> 2000
 
-        $this->assertSame([], $this->rows('SELECT * FROM workshop'));
+        $this->assertSame(
+            [['gadget_id' => 1, 'tag_id' => 1, 'deleted' => 'y', 'changed_at' => 2000]],
+            $this->rows('SELECT gadget_id, tag_id, deleted, changed_at FROM gadget_tag'),
+            'A model with a deleted column is kept and marked deleted = y, not removed'
+        );
     }
 
     public function testHasManyCascadeCopiesParentKeyIntoChildren()
@@ -442,13 +489,12 @@ class EntityManagerTest extends TestCase
         );
     }
 
-    public function testManyToManyDeclaredByTableNameHardDeletesWhenTableIsNotRegistered()
+    public function testManyToManyDeclaredByTableNameHardDeletesEvenWithDeletedColumn()
     {
-        // A junction declared by table name resolves to a generic ipl-orm Junction with no column
-        // metadata, so a bare `deleted` column on the table is not enough to enable soft-delete: the
-        // table must be a known soft-delete table (or the junction be declared via a model that declares
-        // the column). This manager registers no soft-delete tables, so the orphaned link is hard-deleted
-        // even though the column exists — the table column alone is never consulted.
+        // A junction declared by table name resolves to a generic ipl-orm Junction, which the
+        // EntityManager never treats as soft-delete: only a junction *model* that reports
+        // isSoftDelete() can opt in. So even though the table carries a `deleted` column, the
+        // generic Junction discards that metadata and the orphaned link is hard-deleted.
         $db = new RecordingConnection(['db' => 'sqlite', 'dbname' => ':memory:']);
         $db->exec(
             'CREATE TABLE gadget (id INTEGER PRIMARY KEY AUTOINCREMENT, workshop_id INTEGER, name VARCHAR NOT NULL);'
@@ -472,43 +518,7 @@ class EntityManagerTest extends TestCase
         $this->assertSame(
             [],
             $db->prepexec('SELECT gadget_id, sticker_id, deleted FROM gadget_sticker')->fetchAll(PDO::FETCH_ASSOC),
-            'gadget_sticker is not a registered soft-delete table, so the orphan is hard-deleted despite the column'
-        );
-    }
-
-    public function testManyToManyDeclaredByTableNameSoftDeletesWhenTableIsRegistered()
-    {
-        $db = new RecordingConnection(['db' => 'sqlite', 'dbname' => ':memory:']);
-        $db->exec(
-            'CREATE TABLE gadget (id INTEGER PRIMARY KEY AUTOINCREMENT, workshop_id INTEGER, name VARCHAR NOT NULL);'
-            . 'CREATE TABLE sticker (id INTEGER PRIMARY KEY AUTOINCREMENT, label VARCHAR NOT NULL);'
-            . 'CREATE TABLE gadget_sticker ('
-            . 'gadget_id INTEGER NOT NULL, sticker_id INTEGER NOT NULL,'
-            . " changed_at INTEGER NOT NULL DEFAULT 0, deleted VARCHAR NOT NULL DEFAULT 'n',"
-            . ' PRIMARY KEY (gadget_id, sticker_id));'
-        );
-
-        TickingEntityManager::$tick = 0;
-        $em = new TickingEntityManager($db);
-        $em->softDeleteTableNames = ['gadget_sticker'];
-
-        $gadget = new Gadget();
-        $gadget->name = 'Spanner';
-        $sticker = new Sticker();
-        $sticker->label = 'fragile';
-        $gadget->stickers = [$sticker];
-        $em->save($gadget); // link created, changed_at -> 1000
-
-        /** @var Gadget $loaded */
-        $loaded = Gadget::on($db)->first();
-        $loaded->stickers = [];
-        $em->save($loaded); // link soft-deleted, changed_at -> 2000
-
-        $this->assertSame(
-            [['gadget_id' => 1, 'sticker_id' => 1, 'deleted' => 'y', 'changed_at' => 2000]],
-            $db->prepexec('SELECT gadget_id, sticker_id, deleted, changed_at FROM gadget_sticker')
-                ->fetchAll(PDO::FETCH_ASSOC),
-            'The removed link is soft-deleted (row kept, deleted = y, changed_at stamped), not hard-deleted'
+            'A table-name junction is a generic Junction, so the orphan is hard-deleted despite the column'
         );
     }
 
@@ -810,7 +820,7 @@ class EntityManagerTest extends TestCase
         $trinket->name = 'Amulet';
         $this->em()->save($trinket);
 
-        $this->em()->delete($trinket);
+        $this->em()->save($trinket->markDeleted());
 
         $this->assertSame([], $this->rows('SELECT id FROM trinket'));
     }
@@ -887,7 +897,7 @@ class EntityManagerTest extends TestCase
         $w = new Workshop();
         $w->name = 'Acme';
         $this->em()->save($w);
-        $this->em()->delete($w);
+        $this->em()->save($w->markDeleted());
 
         $this->assertTrue($w->isNew(), 'Deleted model is treated as new again');
         $this->assertFalse($w->isModified(), 'Modified state was cleared');
@@ -904,7 +914,7 @@ class EntityManagerTest extends TestCase
         $this->em()->save($w);
         $oldId = $w->id;
 
-        $this->em()->delete($w);
+        $this->em()->save($w->markDeleted());
 
         $this->assertFalse($w->hasProperty('id'), 'The auto-increment key is cleared on delete');
 
@@ -926,7 +936,7 @@ class EntityManagerTest extends TestCase
         $p->label = 'A';
         $this->em()->save($p);
 
-        $this->em()->delete($p);
+        $this->em()->save($p->markDeleted());
 
         $this->assertFalse($p->hasProperty('left_id'), 'Each part of a compound key is cleared');
         $this->assertFalse($p->hasProperty('right_id'), 'Each part of a compound key is cleared');
@@ -940,7 +950,7 @@ class EntityManagerTest extends TestCase
         $trinket->name = 'Amulet';
         $this->em()->save($trinket);
 
-        $this->em()->delete($trinket);
+        $this->em()->save($trinket->markDeleted());
 
         $this->assertFalse($trinket->hasProperty('id'), 'The application-assigned key is cleared on delete');
     }
@@ -988,7 +998,7 @@ class EntityManagerTest extends TestCase
         $b->label = 'B';
         $this->em()->save($b);
 
-        $this->em()->delete($b);
+        $this->em()->save($b->markDeleted());
 
         $this->assertSame(
             [['left_id' => 1, 'right_id' => 1, 'label' => 'A']],
@@ -1096,13 +1106,134 @@ class EntityManagerTest extends TestCase
         $id = $workshop->id;
 
         $this->db->resetCalls();
-        $this->em()->delete($workshop);
+        $this->em()->save($workshop->markDeleted());
 
         $this->assertSame(
             [['method' => 'delete', 'table' => 'workshop', 'condition' => ['id = ?' => $id]]],
             $this->db->calls,
             'Exactly one DELETE is issued, scoped by primary key — no incidental UPDATE first'
         );
+    }
+
+    public function testDeletedModelDoesNotCascadeToAssignedChildren()
+    {
+        $workshop = new Workshop();
+        $workshop->name = 'Acme';
+        $this->em()->save($workshop);
+        $id = $workshop->id;
+
+        // Assign a child and delete the parent in the same save. The relation cascade must be skipped
+        // entirely: a deleted parent must not persist its children, whose foreign key is about to vanish.
+        $orphan = new Gadget();
+        $orphan->name = 'Spanner';
+        $workshop->gadgets = [$orphan];
+
+        $this->db->resetCalls();
+        $this->em()->save($workshop->markDeleted());
+
+        $this->assertSame(
+            [['method' => 'delete', 'table' => 'workshop', 'condition' => ['id = ?' => $id]]],
+            $this->db->calls,
+            'A deleted model issues only its own DELETE; assigned children are not cascaded'
+        );
+        $this->assertTrue($orphan->isNew(), 'The assigned child was never persisted');
+    }
+
+    public function testDeletedModelDoesNotCascadeToAssignedParent()
+    {
+        $gadget = new Gadget();
+        $gadget->name = 'Spanner';
+        $this->em()->save($gadget);
+        $id = $gadget->id;
+
+        // Assign a brand-new parent, then delete the gadget. The dependency cascade must be skipped:
+        // deleting a model must not persist a relation hung off it as a side effect.
+        $workshop = new Workshop();
+        $workshop->name = 'Acme';
+        $gadget->workshop = $workshop;
+
+        $this->db->resetCalls();
+        $this->em()->save($gadget->markDeleted());
+
+        $this->assertSame(
+            [['method' => 'delete', 'table' => 'gadget', 'condition' => ['id = ?' => $id]]],
+            $this->db->calls,
+            'A deleted model issues only its own DELETE; an assigned parent is not cascaded'
+        );
+        $this->assertTrue($workshop->isNew(), 'The assigned parent was never persisted');
+    }
+
+    public function testDeletingAModelHonorsAnExplicitlyClearedManyToManyInTheSameSave()
+    {
+        $gadget = new Gadget();
+        $gadget->name = 'Spanner';
+        $sticker = new Sticker();
+        $sticker->label = 'fragile';
+        $gadget->stickers = [$sticker];
+        $this->em()->save($gadget);
+
+        $this->assertNotEmpty($this->rows('SELECT * FROM gadget_sticker'), 'precondition: the link exists');
+
+        // Clear the many-to-many and delete its owner in one save. The unset is an explicit request, so the
+        // junction must be reconciled to empty even though the owning row is being deleted.
+        /** @var Gadget $loaded */
+        $loaded = Gadget::on($this->db)->first();
+        $loaded->stickers = [];
+
+        $this->em()->save($loaded->markDeleted());
+
+        $this->assertSame([], $this->rows('SELECT * FROM gadget_sticker'), 'The junction was reconciled to empty');
+        $this->assertSame([], $this->rows('SELECT * FROM gadget'), 'The owner itself was deleted');
+    }
+
+    public function testDeletingAModelSoftDeletesAnExplicitlyClearedSoftJunctionInTheSameSave()
+    {
+        $gadget = new Gadget();
+        $gadget->name = 'Spanner';
+        $tag = new Tag();
+        $tag->name = 'sharp';
+        $gadget->tags = [$tag];
+        $this->em()->save($gadget);
+
+        // Clear a soft-delete junction and delete its owner in one save. The cleared link must be marked
+        // deleted (not removed), in the same save as the owner's deletion — the daemon needs that signal.
+        /** @var Gadget $loaded */
+        $loaded = Gadget::on($this->db)->first();
+        $loaded->tags = [];
+
+        $this->em()->save($loaded->markDeleted());
+
+        $this->assertSame(
+            [['gadget_id' => $gadget->id, 'tag_id' => $tag->id, 'deleted' => 'y']],
+            $this->rows('SELECT gadget_id, tag_id, deleted FROM gadget_tag'),
+            'The cleared soft-junction row is marked deleted, not removed'
+        );
+        $this->assertSame([], $this->rows('SELECT * FROM gadget'), 'The owner itself was deleted');
+    }
+
+    public function testDeletingAModelAlsoDeletesAChildExplicitlyMarkedDeleted()
+    {
+        $workshop = new Workshop();
+        $workshop->name = 'Acme';
+        $gadget = new Gadget();
+        $gadget->name = 'Spanner';
+        $workshop->gadgets = [$gadget];
+        $this->em()->save($workshop);
+
+        $this->assertNotEmpty($this->rows('SELECT * FROM gadget'), 'precondition: the child exists');
+
+        // Mark a child deleted, assign it to its (also deleted) parent and save the parent. Both deletions
+        // are explicit, so both must happen in one save — the child before the parent.
+        /** @var Workshop $loadedWorkshop */
+        $loadedWorkshop = Workshop::on($this->db)->first();
+        /** @var Gadget $loadedGadget */
+        $loadedGadget = Gadget::on($this->db)->first();
+        $loadedWorkshop->gadgets = [$loadedGadget->markDeleted()];
+
+        $this->em()->save($loadedWorkshop->markDeleted());
+
+        $this->assertSame([], $this->rows('SELECT * FROM gadget'), 'The explicitly deleted child is gone');
+        $this->assertSame([], $this->rows('SELECT * FROM workshop'), 'The parent is gone');
     }
 
     public function testCascadeInsertEmitsOneInsertPerRowAndNoUpdates()
