@@ -285,7 +285,7 @@ class Daemon extends EventEmitter
                         $notification->contact_id,
                         (object) [
                             'incident_id' => $notification->incident_id,
-                            'severity'    => $incident->severity,
+                            'severity'    => $incident->severity->getValue(),
                             'title'       => ObjectsRendererHook::getObjectNameAsString($incident->object),
                             'message'     => $notification->message
                         ]
