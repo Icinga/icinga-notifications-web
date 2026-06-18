@@ -24,10 +24,38 @@ class StatefulQuery extends Query
     {
         foreach (parent::yieldResults() as $key => $model) {
             if ($model instanceof Model) {
-                $model->setNew(false);
+                $this->markLoaded($model);
             }
 
             yield $key => $model;
+        }
+    }
+
+    /**
+     * Recursively mark the given model and its eagerly-loaded related models as loaded
+     *
+     * @param Model $model
+     *
+     * @return void
+     */
+    private function markLoaded(Model $model): void
+    {
+        if (! $model->isNew()) {
+            return;
+        }
+
+        $model->setNew(false);
+
+        foreach ($model as $value) {
+            if ($value instanceof Model) {
+                $this->markLoaded($value);
+            } elseif (is_array($value)) {
+                foreach ($value as $item) {
+                    if ($item instanceof Model) {
+                        $this->markLoaded($item);
+                    }
+                }
+            }
         }
     }
 }

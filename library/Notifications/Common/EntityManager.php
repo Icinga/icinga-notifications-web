@@ -129,8 +129,9 @@ class EntityManager
 
         // Snapshot what to cascade before persisting, since persisting resets change tracking. Only
         // explicitly set relations are considered (lazy loaders are closures, skipped by the iterator).
-        // For loaded models, only relations the caller actually (re)assigned are cascaded.
-        // An explicit `null` clears the relation
+        // A relation is cascaded when the caller (re)assigned it, or when its already-materialized value
+        // has pending changes of its own — so an in-place edit to a loaded related model is persisted.
+        // An explicit `null` clears the relation.
         $set = iterator_to_array($model);
         $isNew = $model->isNew();
         $modifiedRelations = $isNew ? [] : $model->getModifiedProperties();
@@ -142,7 +143,11 @@ class EntityManager
         /** @var array<string, BelongsToMany> $links */
         $links = [];
         foreach ($resolver->getRelations($model) as $name => $relation) {
-            if (! array_key_exists($name, $set) || (! $isNew && ! isset($modifiedRelations[$name]))) {
+            if (
+                ! array_key_exists($name, $set) ||
+                ! $isNew && ! isset($modifiedRelations[$name]) && ! $this->hasPendingChanges($set[$name])
+            ) {
+                // The relation has no changes to persist
                 continue;
             }
 
@@ -252,6 +257,30 @@ class EntityManager
 
             $this->reconcileJunction($relation, $model, $targets);
         }
+    }
+
+    /**
+     * Get whether the given relation value carries unsaved changes that should be cascaded
+     *
+     * @param mixed $value A relation value as snapshotted in the set (a model, a collection of models, or null)
+     *
+     * @return bool
+     */
+    private function hasPendingChanges(mixed $value): bool
+    {
+        if ($value instanceof Model) {
+            return $value->isNew() || $value->isModified() || $value->isDeleted();
+        }
+
+        if (is_array($value)) {
+            foreach ($value as $item) {
+                if ($item instanceof Model && ($item->isNew() || $item->isModified() || $item->isDeleted())) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
