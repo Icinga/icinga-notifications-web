@@ -39,4 +39,9 @@ class GadgetTag extends Model
         $behaviors->add(new MillisecondTimestamp(['changed_at']));
         $behaviors->add(new BoolCast(['deleted']));
     }
+
+    public function useSoftDelete(): bool
+    {
+        return true;
+    }
 }
