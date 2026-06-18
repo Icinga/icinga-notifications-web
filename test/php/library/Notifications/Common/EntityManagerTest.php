@@ -870,6 +870,32 @@ class EntityManagerTest extends TestCase
         );
     }
 
+    public function testSavingAParentPersistsAnInPlaceChangeToALoadedRelation()
+    {
+        $workshop = new Workshop();
+        $workshop->name = 'Acme';
+        $gadget = new Gadget();
+        $gadget->name = 'Spanner';
+        $gadget->workshop = $workshop;
+        $this->em()->save($gadget);
+        $workshopId = $workshop->id;
+
+        // Load the gadget with its parent, edit the parent's column in place (no reassignment of the
+        // relation) and save the gadget. The change must be persisted as an UPDATE to the existing
+        // workshop row — neither skipped nor inserted as a duplicate.
+        /** @var Gadget $loaded */
+        $loaded = Gadget::on($this->db)->with('workshop')->first();
+        $loaded->workshop->name = 'Globex';
+
+        $this->em()->save($loaded);
+
+        $this->assertSame(
+            [['id' => $workshopId, 'name' => 'Globex']],
+            $this->rows('SELECT id, name FROM workshop ORDER BY id'),
+            'An in-place edit to a loaded related model is persisted as an update when the parent is saved'
+        );
+    }
+
     public function testBinaryParentKeyIsCopiedIntoChildOnCascade()
     {
         $id = hex2bin('deadbeefcafebabe1234567890abcdef');
