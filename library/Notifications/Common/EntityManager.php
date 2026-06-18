@@ -177,10 +177,10 @@ class EntityManager
             // The model itself is soft or hard deleted according to its own prefernce
             $this->persist($model, $resolver->getBehaviors($model));
 
-            // walk parents
+            // walk parents and apply deletes or pending updates
             foreach ($dependencies as $name => $relation) {
                 $related = $set[$name];
-                if ($related instanceof Model && $related->isDeleted()) {
+                if ($related instanceof Model && ($related->isDeleted() || $related->isModified())) {
                     $this->saveGraph($related);
                 }
             }
@@ -628,7 +628,12 @@ class EntityManager
                     [$junctionColumn => $value, 'deleted' => 'n', 'changed_at' => $changedAt]
                 );
             } elseif ($stored[$identity]['deleted']) {
-                $this->markJunctionRow($table, array_merge($sourceColumns, [$junctionColumn => $value]), 'n', $changedAt);
+                $this->markJunctionRow(
+                    $table,
+                    array_merge($sourceColumns, [$junctionColumn => $value]),
+                    'n',
+                    $changedAt
+                );
             }
         }
 
