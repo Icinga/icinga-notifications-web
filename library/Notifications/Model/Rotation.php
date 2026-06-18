@@ -81,6 +81,11 @@ class Rotation extends Model
 
         $relations->hasOne('timeperiod', Timeperiod::class)
             ->setForeignKey('owned_by_rotation_id');
+
+        $relations->belongsToMany('contact', Contact::class)
+            ->through(RotationMember::class)
+            ->setTargetForeignKey('contact_id')
+            ->setJoinType('LEFT');
     }
 
     public function createBehaviors(Behaviors $behaviors): void

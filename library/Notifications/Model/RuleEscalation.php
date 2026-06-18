@@ -93,9 +93,9 @@ class RuleEscalation extends Model
             ->belongsToMany('incident', Incident::class)
             ->through('incident_rule_escalation_state');
 
-        $relations
-            ->belongsToMany('contact', Contact::class)
+        $relations->belongsToMany('contact', Contact::class)
             ->through(RuleEscalationRecipient::class)
+            ->setTargetForeignKey('contact_id')
             ->setJoinType('LEFT');
         $relations->belongsToMany('schedule', Schedule::class)
             ->through(RuleEscalationRecipient::class)

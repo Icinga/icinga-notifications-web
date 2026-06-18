@@ -91,7 +91,7 @@ class Contact extends Model
             ->through(IncidentContact::class)
             ->setJoinType('LEFT');
         $relations->belongsToMany('rotation', Rotation::class)
-            ->through('rotation_member')
+            ->through(RotationMember::class)
             ->setJoinType('LEFT');
 
         $relations->hasMany('incident_contact', IncidentContact::class);

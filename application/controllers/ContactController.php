@@ -11,10 +11,13 @@ use Icinga\Authentication\User\DomainAwareInterface;
 use Icinga\Authentication\User\UserBackend;
 use Icinga\Data\Selectable;
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Data\NotificationConfigProvider;
+use Icinga\Module\Notifications\Repository\ContactRepository;
 use Icinga\Module\Notifications\Web\Form\ContactForm;
 use Icinga\Repository\Repository;
 use Icinga\Web\Notification;
 use ipl\Html\Contract\Form;
+use ipl\Sql\Connection;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\FormElement\SearchSuggestions;
 
@@ -27,31 +30,44 @@ class ContactController extends CompatController
 
     public function indexAction(): void
     {
-        $contactId = $this->params->getRequired('id');
+        (new ContactForm(new NotificationConfigProvider()))
+            ->on(Form::ON_REQUEST, function ($_, ContactForm $form) {
+                $contact = (new ContactRepository(Database::get()))
+                    ->find((int) $this->params->getRequired('id'));
+                if ($contact === null) {
+                    $this->httpNotFound($this->translate('Contact not found'));
+                }
 
-        $form = (new ContactForm(Database::get()))
-            ->loadContact($contactId)
+                $form->setContact($contact);
+
+                $this->addTitleTab(sprintf($this->translate('Contact: %s'), $contact->full_name));
+
+                $this->addContent($form);
+            })
             ->on(Form::ON_SUBMIT, function (ContactForm $form) {
-                $form->editContact();
+                $contact = $form->getContact();
+                Database::get()->transaction(fn(Connection $db) => (new ContactRepository($db))->update($contact));
                 Notification::success(sprintf(
-                    t('Contact "%s" has successfully been saved'),
-                    $form->getContactName()
+                    $this->translate('Contact "%s" has successfully been saved'),
+                    $contact->fullName
                 ));
 
                 $this->redirectNow('__CLOSE__');
             })->on(ContactForm::ON_REMOVE, function (ContactForm $form) {
-                $form->removeContact();
+                $contact = $form->getContact();
+                Database::get()->transaction(fn(Connection $db) => (new ContactRepository($db))->delete($contact->id));
                 Notification::success(sprintf(
-                    t('Deleted contact "%s" successfully'),
-                    $form->getContactName()
+                    $this->translate('Deleted contact "%s" successfully'),
+                    $contact->fullName
                 ));
 
                 $this->redirectNow('__CLOSE__');
+            })->on(Form::ON_SENT, function (ContactForm $form) {
+                // TODO: I feel this should be part of CompatForm or CompatController (e.g. $this->sendForm())
+                if (! $this->getResponse()->isRedirect()) {
+                    $this->addPart($form, $this->content->getAttribute('id')->getValue());
+                }
             })->handleRequest($this->getServerRequest());
-
-        $this->addTitleTab(sprintf(t('Contact: %s'), $form->getContactName()));
-
-        $this->addContent($form);
     }
 
     public function suggestIcingaWebUserAction(): void
