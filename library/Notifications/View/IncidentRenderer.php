@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\View;
 
 use Icinga\Module\Notifications\Common\Icons;
 use Icinga\Module\Notifications\Common\Links;
+use Icinga\Module\Notifications\Common\Severity;
 use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\Model\Objects;
 use Icinga\Module\Notifications\Model\Source;
@@ -35,25 +36,8 @@ class IncidentRenderer implements ItemRenderer
 
     public function assembleVisual($item, HtmlDocument $visual, string $layout): void
     {
-        [$icon, $title] = match ($item->severity) {
-            'ok'      => [Icons::SEVERITY_OK, $this->translate('Ok')],
-            'warning' => [Icons::SEVERITY_WARN, $this->translate('Warning')],
-            'err'     => [Icons::SEVERITY_ERR, $this->translate('Error')],
-            'crit'    => [Icons::SEVERITY_CRIT, $this->translate('Critical')],
-            'debug'   => [Icons::SEVERITY_DEBUG, $this->translate('Debug')],
-            'info'    => [Icons::SEVERITY_INFO, $this->translate('Info')],
-            'alert'   => [Icons::SEVERITY_ALERT, $this->translate('Alert')],
-            'emerg'   => [Icons::SEVERITY_EMERG, $this->translate('Emergency')],
-            'notice'  => [Icons::SEVERITY_NOTICE, $this->translate('Notice')],
-            default   => [Icons::UNDEFINED, $this->translate('Undefined')]
-        };
-
-        $content = new Icon($icon, [
-            'class' => ['severity-' . $item->severity],
-            'title' => sprintf('%s: %s', $this->translate('Severity'), $title)
-        ]);
-
-        if ($item->severity === 'ok' || $item->severity === 'err') {
+        $content = $item->severity->getIcon();
+        if ($item->severity === Severity::OK || $item->severity === Severity::ERROR) {
             $content->setStyle('fa-regular');
         }
 
@@ -86,7 +70,7 @@ class IncidentRenderer implements ItemRenderer
 
     public function assembleExtendedInfo($item, HtmlDocument $info, string $layout): void
     {
-        if ($item->severity !== 'ok' && $item->mute_reason !== null) {
+        if ($item->severity !== Severity::OK && $item->mute_reason !== null) {
             $info->addHtml(new Icon(Icons::MUTE, ['title' => $item->mute_reason]));
         }
 

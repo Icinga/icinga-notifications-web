@@ -16,7 +16,6 @@ use ipl\Html\Text;
 use ipl\Html\ValidHtml;
 use ipl\I18n\Translation;
 use ipl\Web\Common\ItemRenderer;
-use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\TimeAgo;
 
 /** @implements ItemRenderer<IncidentHistory> */
@@ -42,23 +41,7 @@ class IncidentHistoryRenderer implements ItemRenderer
     public function assembleVisual($item, HtmlDocument $visual, string $layout): void
     {
         if ($item->type === 'incident_severity_changed') {
-            [$icon, $title] = match ($item->new_severity) {
-                'ok'      => [Icons::SEVERITY_OK, $this->translate('Ok')],
-                'warning' => [Icons::SEVERITY_WARN, $this->translate('Warning')],
-                'err'     => [Icons::SEVERITY_ERR, $this->translate('Error')],
-                'crit'    => [Icons::SEVERITY_CRIT, $this->translate('Critical')],
-                'debug'   => [Icons::SEVERITY_DEBUG, $this->translate('Debug')],
-                'info'    => [Icons::SEVERITY_INFO, $this->translate('Info')],
-                'alert'   => [Icons::SEVERITY_ALERT, $this->translate('Alert')],
-                'emerg'   => [Icons::SEVERITY_EMERG, $this->translate('Emergency')],
-                'notice'  => [Icons::SEVERITY_NOTICE, $this->translate('Notice')],
-                default   => [Icons::UNDEFINED, $this->translate('Undefined')]
-            };
-
-            $content = new Icon($icon, [
-                'class' => ['severity-' . $item->new_severity],
-                'title' => sprintf('%s: %s', $this->translate('Severity'), $title)
-            ]);
+            $content = $item->new_severity->getIcon();
         } else {
             $content = new IconBall(match ($item->type) {
                 'opened'                    => Icons::OPENED,
@@ -139,7 +122,7 @@ class IncidentHistoryRenderer implements ItemRenderer
             case 'opened':
                 $message = sprintf(
                     $this->translate('Incident opened at severity %s'),
-                    $this->mapSeverity($item->new_severity)
+                    $item->new_severity->getLabel()
                 );
 
                 break;
@@ -207,8 +190,8 @@ class IncidentHistoryRenderer implements ItemRenderer
             case 'incident_severity_changed':
                 $message = sprintf(
                     $this->translate('Incident severity changed from %s to %s'),
-                    $this->mapSeverity($item->old_severity),
-                    $this->mapSeverity($item->new_severity)
+                    $item->old_severity->getLabel(),
+                    $item->new_severity->getLabel()
                 );
 
                 break;
@@ -296,21 +279,5 @@ class IncidentHistoryRenderer implements ItemRenderer
         }
 
         return $message;
-    }
-
-    private function mapSeverity(?string $severity): ?string
-    {
-        return match ($severity) {
-            'ok'        => $this->translate('Ok', 'notifications.severity'),
-            'crit'      => $this->translate('Critical', 'notifications.severity'),
-            'warning'   => $this->translate('Warning', 'notifications.severity'),
-            'err'       => $this->translate('Error', 'notifications.severity'),
-            'debug'     => $this->translate('Debug', 'notifications.severity'),
-            'info'      => $this->translate('Information', 'notifications.severity'),
-            'alert'     => $this->translate('Alert', 'notifications.severity'),
-            'emerg'     => $this->translate('Emergency', 'notifications.severity'),
-            'notice'    => $this->translate('Notice', 'notifications.severity'),
-            default     => null,
-        };
     }
 }

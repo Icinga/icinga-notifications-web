@@ -5,6 +5,7 @@
 
 namespace Icinga\Module\Notifications\Forms\EventRuleConfigElements;
 
+use Icinga\Module\Notifications\Common\Severity;
 use ipl\Html\Attributes;
 use ipl\Html\FormElement\FieldsetElement;
 use ipl\Html\FormElement\SubmitButtonElement;
@@ -139,19 +140,14 @@ class EscalationCondition extends FieldsetElement
         ]);
 
         if ($selectedColumn === 'incident_severity') {
+            $severityOptions = [];
+            foreach (Severity::cases() as $severity) {
+                $severityOptions[$severity->getValue()] = $severity->getLabel();
+            }
+
             $this->addElement('select', 'severity', [
                 'required' => true,
-                'options' => [
-                    'ok' => $this->translate('Ok', 'notification.severity'),
-                    'debug' => $this->translate('Debug', 'notification.severity'),
-                    'info' => $this->translate('Information', 'notification.severity'),
-                    'notice' => $this->translate('Notice', 'notification.severity'),
-                    'warning' => $this->translate('Warning', 'notification.severity'),
-                    'err' => $this->translate('Error', 'notification.severity'),
-                    'crit' => $this->translate('Critical', 'notification.severity'),
-                    'alert' => $this->translate('Alert', 'notification.severity'),
-                    'emerg' => $this->translate('Emergency', 'notification.severity')
-                ]
+                'options'  => $severityOptions
             ]);
         } elseif ($selectedColumn === 'incident_age') {
             $noOf = $this->createElement('number', 'no_of', [
