@@ -896,6 +896,33 @@ class EntityManagerTest extends TestCase
         );
     }
 
+    public function testDeletingAModelStillPersistsAnInPlaceEditToARelatedModel()
+    {
+        $workshop = new Workshop();
+        $workshop->name = 'Acme';
+        $gadget = new Gadget();
+        $gadget->name = 'Spanner';
+        $gadget->workshop = $workshop;
+        $this->em()->save($gadget);
+        $workshopId = $workshop->id;
+
+        // Load the gadget with its parent, edit the parent in place and delete the gadget in one save. The
+        // gadget is removed, but the parent's explicit edit must still be persisted — the parent outlives
+        // the gadget and updating it orphans nothing.
+        /** @var Gadget $loaded */
+        $loaded = Gadget::on($this->db)->with('workshop')->first();
+        $loaded->workshop->name = 'Globex';
+
+        $this->em()->save($loaded->markDeleted());
+
+        $this->assertSame([], $this->rows('SELECT * FROM gadget'), 'The deleted model is gone');
+        $this->assertSame(
+            [['id' => $workshopId, 'name' => 'Globex']],
+            $this->rows('SELECT id, name FROM workshop ORDER BY id'),
+            'An in-place edit to a related model is still persisted when the owner is deleted'
+        );
+    }
+
     public function testBinaryParentKeyIsCopiedIntoChildOnCascade()
     {
         $id = hex2bin('deadbeefcafebabe1234567890abcdef');
