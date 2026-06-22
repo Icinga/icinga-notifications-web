@@ -82,16 +82,7 @@ class Incident
      */
     public function removeManager(string $username): static
     {
-        $contact = $this->getContactByName($username);
-        $existing = $this->existingContact($contact->id);
-
-        if ($existing?->role !== 'manager') {
-            return $this;
-        }
-
-        $existing->role = 'subscriber';
-        (new EntityManager($this->db))->save($existing);
-        $this->addRoleChangedHistory($contact->id, 'manager', 'subscriber');
+        $this->assignRole($username, 'subscriber', [null, 'recipient', 'subscriber']);
 
         return $this;
     }
@@ -295,7 +286,7 @@ class Incident
      *
      * @param string $username
      * @param string $role The role to assign
-     * @param string[] $noopRoles Existing roles for which this is a no-op
+     * @param array<?string> $noopRoles Existing roles for which this is a no-op; `null` matches the absence of a contact
      *
      * @return $this
      */
@@ -304,7 +295,7 @@ class Incident
         $contact = $this->getContactByName($username);
         $existing = $this->existingContact($contact->id);
 
-        if ($existing !== null && in_array($existing->role, $noopRoles, true)) {
+        if (in_array($existing?->role, $noopRoles, true)) {
             return $this;
         }
 
