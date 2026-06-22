@@ -305,7 +305,7 @@ class EntityManagerTest extends TestCase
         );
     }
 
-    public function testManyToManyBatchesMultipleLinksIntoASingleInsert()
+    public function testManyToManyWritesOneInsertPerLink()
     {
         $gadget = new Gadget();
         $gadget->name = 'Spanner';
@@ -324,11 +324,7 @@ class EntityManagerTest extends TestCase
             $this->db->calls,
             fn ($call) => $call['method'] === 'insert' && $call['table'] === 'gadget_sticker'
         );
-        $this->assertSame(
-            [],
-            $junctionInserts,
-            'Multiple links must not be written one insert() per target'
-        );
+        $this->assertCount(3, $junctionInserts, 'Each link is written as its own insert');
 
         $this->assertSame(
             [
@@ -337,7 +333,7 @@ class EntityManagerTest extends TestCase
                 ['gadget_id' => $gadget->id, 'sticker_id' => $heavy->id],
             ],
             $this->rows('SELECT gadget_id, sticker_id FROM gadget_sticker ORDER BY sticker_id'),
-            'All link rows must be present after the batched insert'
+            'All link rows are present'
         );
     }
 
@@ -448,7 +444,7 @@ class EntityManagerTest extends TestCase
     public function testManyToManyReconciliationMatchesKeysReturnedAsStrings()
     {
         // Production drivers (MySQL/PgSQL) return keys as strings while persisted models hold them as
-        // ints, so reconcile must treat those as the same link — re-saving an unchanged relation must
+        // ints, so sync must treat those as the same link — re-saving an unchanged relation must
         // stay a no-op, not delete-and-reinsert. STRINGIFY_FETCHES reproduces that boundary here,
         // since sqlite otherwise returns ints on both sides and never exercises it.
         $db = new RecordingConnection([
@@ -1228,14 +1224,14 @@ class EntityManagerTest extends TestCase
         $this->assertNotEmpty($this->rows('SELECT * FROM gadget_sticker'), 'precondition: the link exists');
 
         // Clear the many-to-many and delete its owner in one save. The unset is an explicit request, so the
-        // junction must be reconciled to empty even though the owning row is being deleted.
+        // junction must be synced to empty even though the owning row is being deleted.
         /** @var Gadget $loaded */
         $loaded = Gadget::on($this->db)->first();
         $loaded->stickers = [];
 
         $this->em()->save($loaded->markDeleted());
 
-        $this->assertSame([], $this->rows('SELECT * FROM gadget_sticker'), 'The junction was reconciled to empty');
+        $this->assertSame([], $this->rows('SELECT * FROM gadget_sticker'), 'The junction was synced to empty');
         $this->assertSame([], $this->rows('SELECT * FROM gadget'), 'The owner itself was deleted');
     }
 

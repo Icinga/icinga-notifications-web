@@ -15,7 +15,6 @@ use ipl\Orm\Relation\Junction;
 use ipl\Orm\Resolver;
 use ipl\Sql\Connection;
 use ipl\Sql\ExpressionInterface;
-use ipl\Sql\Insert;
 use ipl\Sql\Select;
 use PDO;
 use RuntimeException;
@@ -24,11 +23,9 @@ use RuntimeException;
  * Persists models and their related models to the database.
  *
  * The EntityManager is the write-side counterpart to {@see Query}. Whereas a query is bound to a model
- * class and operates on rows matching a filter, the EntityManager operates on concrete model instances:
- * a model carries everything needed to persist it (its table, columns, keys and behaviors), so no model
- * class has to be named separately.
+ * class and operates on rows matching a filter, the EntityManager operates on concrete model instances.
  *
- * ```php
+ * ```
  * $em = new EntityManager($db);
  * $em->save($car);                 // INSERT or UPDATE, depending on whether the model is new
  * $em->save($car->markDeleted());  // DELETE or soft-delete, depending on the model
@@ -37,6 +34,23 @@ use RuntimeException;
  * Whether {@see save()} inserts or updates is decided by {@see Model::isNew()}. Updates only write the
  * properties changed since the model was loaded ({@see Model::getModifiedProperties()}). Set relations are cascaded
  * (parents first, then the model, then children and many-to-many links), all within a single transaction.
+ *
+ * Calling {@see Model::markDeleted()} on a model and passing it to {@see save()} will soft or hard delete the
+ * model according to the value of {@see Model::isSoftDeletable()}
+ *
+ * Limitations:
+ * - Saving two separate model instances that map to the same db row will result in the second save overwriting the
+ *   changes of the first
+ * - ManyToMany links no longer present after a save are soft- or hard deleted according to what
+ *   {@see Model::isSoftDeletable()} returns. This only works if the relation was declared using its model class
+ *   which must have a mapping for the `deleted` column, relations that use the table name will always use hard delete.
+ * - {@see saveGraph()} does not detect cycles, passing a cyclic graph like:
+ *   ```
+ *   $parent->children = [$child];
+ *   $child->parent = $parent;
+ *   $em->save($parent);
+ *   ```
+ *   will recurse infinitely
  */
 class EntityManager
 {
@@ -120,8 +134,7 @@ class EntityManager
      */
     protected function saveGraph(Model $model): void
     {
-        //TODO maybe merge into other guards to clean up code
-        if ($model->isNew() && $model->isDeleted()) {
+        if ($model->isNew() && $model->isMarkedForDeletion()) {
             return;
         }
 
@@ -140,8 +153,8 @@ class EntityManager
         $dependencies = [];
         /** @var array<string, Relation> $children */
         $children = [];
-        /** @var array<string, BelongsToMany> $links */
-        $links = [];
+        /** @var array<string, BelongsToMany> $manyToMany */
+        $manyToMany = [];
         foreach ($resolver->getRelations($model) as $name => $relation) {
             if (
                 ! array_key_exists($name, $set) ||
@@ -154,97 +167,155 @@ class EntityManager
             if ($relation instanceof BelongsTo) {
                 $dependencies[$name] = $relation;
             } elseif ($relation instanceof BelongsToMany) {
-                $links[$name] = $relation;
+                $manyToMany[$name] = $relation;
             } else {
                 $children[$name] = $relation;
             }
         }
 
-        // In the delete case children must be saved before the model
-        if ($model->isDeleted()) {
-            // Many-to-many relations
-            $this->saveManyToMany($model, $links, $set);
+        if ($model->isMarkedForDeletion()) {
+            // Delete path
+            $this->saveManyToMany($model, $manyToMany, $set);
+            $this->saveDeletedChildren($children, $set);
 
-            // Children
-            foreach ($children as $name => $relation) {
-                foreach ($this->asTraversable($set[$name]) as $child) {
-                    if ($child instanceof Model && $child->isDeleted()) {
-                        $this->saveGraph($child);
-                    }
-                }
+            if ($model->isSoftDeletable()) {
+                $this->persist($model, $resolver->getBehaviors($model));
+            } else {
+                $this->delete($model);
             }
 
-            // The model itself is soft or hard deleted according to its own prefernce
-            $this->persist($model, $resolver->getBehaviors($model));
-
-            // walk parents and apply deletes or pending updates
-            foreach ($dependencies as $name => $relation) {
-                $related = $set[$name];
-                if ($related instanceof Model && ($related->isDeleted() || $related->isModified())) {
-                    $this->saveGraph($related);
-                }
-            }
+            $this->saveChangedParents($dependencies, $set);
         } else {
-            // 1. Dependencies first: on the inverse side the foreign key is on this (source) table, so the
-            //    related entity must be persisted beforehand and its key copied in. (BelongsTo)
-            foreach ($dependencies as $name => $relation) {
-                $related = $set[$name];
-                if ($related === null) {
-                    foreach ($relation->determineKeys($model) as $sourceColumn) {
-                        $model->$sourceColumn = null;
-                    }
-
-                    continue;
-                }
-
-                if (! $related instanceof Model) {
-                    continue;
-                }
-
-                $this->saveGraph($related);
-
-                foreach ($relation->determineKeys($model) as $targetColumn => $sourceColumn) {
-                    $model->$sourceColumn = $related->$targetColumn;
-                }
-            }
-
-            // 2. The model itself
+            // Insert / Update
+            $this->saveParents($model, $dependencies, $set);
             $this->persist($model, $resolver->getBehaviors($model));
-
-            // 3. Children: the foreign key is on the target table, so they are persisted afterwards with
-            //    the model's now-known key copied in. (HasOne/HasMany)
-            foreach ($children as $name => $relation) {
-                $keys = $relation->determineKeys($model);
-                foreach ($this->asTraversable($set[$name]) as $child) {
-                    if (! $child instanceof Model) {
-                        continue;
-                    }
-
-                    foreach ($keys as $targetColumn => $sourceColumn) {
-                        $child->$targetColumn = $model->$sourceColumn;
-                    }
-
-                    $this->saveGraph($child);
-                }
-            }
-
-            // 4. Many-to-many: persist both ends, then reconcile the junction.
-            $this->saveManyToMany($model, $links, $set);
+            $this->saveChildren($model, $children, $set);
+            $this->saveManyToMany($model, $manyToMany, $set);
         }
     }
 
     /**
-     * Save targets of the given many-to-many relations and reconcile each junction
+     * Persist the model's BelongsTo parents and copy their keys into the model's foreign keys
+     *
+     * Parents are persisted before the model so the foreign key on this (source) table points at an
+     * existing row. An explicitly assigned `null` clears the foreign key instead.
+     *
+     * @param Model $model
+     * @param array<string, BelongsTo> $dependencies
+     * @param array<string, mixed> $set
+     *
+     * @return void
+     */
+    private function saveParents(Model $model, array $dependencies, array $set): void
+    {
+        foreach ($dependencies as $name => $relation) {
+            $related = $set[$name];
+            if ($related === null) {
+                foreach ($relation->determineKeys($model) as $sourceColumn) {
+                    $model->$sourceColumn = null;
+                }
+
+                continue;
+            }
+
+            if (! $related instanceof Model) {
+                continue;
+            }
+
+            $this->saveGraph($related);
+
+            foreach ($relation->determineKeys($model) as $targetColumn => $sourceColumn) {
+                $model->$sourceColumn = $related->$targetColumn;
+            }
+        }
+    }
+
+    /**
+     * Persist the model's HasOne/HasMany children, copying the model's key into each child's foreign key
+     *
+     * Children are persisted after the model so its (possibly generated) key is known and can be copied in.
+     *
+     * @param Model $model
+     * @param array<string, Relation> $children
+     * @param array<string, mixed> $set
+     *
+     * @return void
+     */
+    private function saveChildren(Model $model, array $children, array $set): void
+    {
+        foreach ($children as $name => $relation) {
+            $keys = $relation->determineKeys($model);
+            foreach ($this->asTraversable($set[$name]) as $child) {
+                if (! $child instanceof Model) {
+                    continue;
+                }
+
+                foreach ($keys as $targetColumn => $sourceColumn) {
+                    $child->$targetColumn = $model->$sourceColumn;
+                }
+
+                $this->saveGraph($child);
+            }
+        }
+    }
+
+    /**
+     * Persist the children that are themselves being deleted, while their owner is being deleted
+     *
+     * Only children that carry their own pending deletion are touched: a live child must not be updated or
+     * inserted onto a row that is about to vanish, as that would dangle its foreign key.
+     *
+     * @param array<string, Relation> $children
+     * @param array<string, mixed> $set
+     *
+     * @return void
+     */
+    private function saveDeletedChildren(array $children, array $set): void
+    {
+        foreach ($children as $name => $relation) {
+            foreach ($this->asTraversable($set[$name]) as $child) {
+                if ($child instanceof Model && $child->isMarkedForDeletion()) {
+                    $this->saveGraph($child);
+                }
+            }
+        }
+    }
+
+    /**
+     * Persist the changed BelongsTo parents of a model that is being deleted
+     *
+     * A parent is independent of the model and outlives it, so an explicit deletion or in-place edit of a
+     * parent is still applied — after the model is gone, since the model references the parent. A newly
+     * created parent is left untouched ({@see Model::isModified()} is false for it), as persisting it for a
+     * model that is being deleted would be meaningless.
+     *
+     * @param array<string, BelongsTo> $dependencies
+     * @param array<string, mixed> $set
+     *
+     * @return void
+     */
+    private function saveChangedParents(array $dependencies, array $set): void
+    {
+        foreach ($dependencies as $name => $relation) {
+            $related = $set[$name];
+            if ($related instanceof Model && ($related->isMarkedForDeletion() || $related->isModified())) {
+                $this->saveGraph($related);
+            }
+        }
+    }
+
+    /**
+     * Save targets of the given many-to-many relations and sync each junction
      *
      * @param Model $model The source model
-     * @param array<string, BelongsToMany> $links The model's set & modified many-to-many relations, keyed by name
+     * @param array<string, BelongsToMany> $manyToMany The many-to-many relations to persist, keyed by name
      * @param array<string, mixed> $set The model's set properties, as snapshotted by {@see saveGraph()}
      *
      * @return void
      */
-    private function saveManyToMany(Model $model, array $links, array $set): void
+    private function saveManyToMany(Model $model, array $manyToMany, array $set): void
     {
-        foreach ($links as $name => $relation) {
+        foreach ($manyToMany as $name => $relation) {
             $targets = [];
             foreach ($this->asTraversable($set[$name]) as $target) {
                 if (! $target instanceof Model) {
@@ -255,7 +326,7 @@ class EntityManager
                 $targets[] = $target;
             }
 
-            $this->reconcileJunction($relation, $model, $targets);
+            $this->syncJunction($relation, $model, $targets);
         }
     }
 
@@ -269,12 +340,12 @@ class EntityManager
     private function hasPendingChanges(mixed $value): bool
     {
         if ($value instanceof Model) {
-            return $value->isNew() || $value->isModified() || $value->isDeleted();
+            return $value->isNew() || $value->isModified() || $value->isMarkedForDeletion();
         }
 
         if (is_array($value)) {
             foreach ($value as $item) {
-                if ($item instanceof Model && ($item->isNew() || $item->isModified() || $item->isDeleted())) {
+                if ($item instanceof Model && ($item->isNew() || $item->isModified() || $item->isMarkedForDeletion())) {
                     return true;
                 }
             }
@@ -293,23 +364,8 @@ class EntityManager
      */
     protected function persist(Model $model, Behaviors $behaviors): void
     {
-        if (! $model->isNew() && ! $model->isModified() && ! $model->isDeleted()) {
+        if (! $model->isNew() && ! $model->isModified() && ! $model->isMarkedForDeletion()) {
             return;
-        }
-
-        // TODO: this should be moved into delete(). and maybe call delete() from saveGraph() directly?
-        if ($model->isDeleted() && ! $model->useSoftDelete()) {
-            if ($model->isNew()) {
-                $model->clearModifiedProperties();
-
-                return;
-            }
-
-            if (! $model->useSoftDelete()) {
-                $this->delete($model);
-
-                return;
-            }
         }
 
         // Insert case
@@ -449,48 +505,35 @@ class EntityManager
     }
 
     /**
-     * Reconcile the junction so it links the given source to exactly the given targets
+     * Sync the junction so it links the given source to exactly the given targets
      *
-     * Assignment is authoritative (implicit reconcile): links no longer present are removed and links
-     * not yet stored are inserted, while links already present are left untouched — so re-saving an
-     * unchanged relation is a no-op rather than a duplicate, and assigning a different set replaces the
-     * previous one. Additive behavior is the caller's job (assign the union of the loaded relation and
-     * the new targets).
+     * Assignment is authoritative, the stored set is replaced by the given one. Links absent from $targets
+     * are deleted, new ones inserted, existing ones remain.
      *
-     * Only the junction rows are touched, never the target rows. The current set is read back from the
-     * junction because the relation is lazy and its prior value was never loaded.
-     *
-     * If the junction is a soft-delete table ({@see isSoftDeleteJunction()}), reconciliation is
-     * soft-delete aware: removed links are marked deleted, previously soft-deleted links are revived
-     * rather than re-inserted, and `changed_at` is stamped on every touch ({@see reconcileSoftDeleteJunction()}).
-     * Otherwise the junction is reconciled with hard deletes.
+     * Inserts and deletes are soft-delete aware and stamp `changed_at` if possible.
+     * For this to work the relation must be declared using the junction model.
+     * Relations that use the table name will always use a generic {@see Junction} instance.
      *
      * @param BelongsToMany $relation
      * @param Model $source
-     * @param list<Model> $targets
+     * @param Model[] $targets
      *
      * @return void
      */
-    protected function reconcileJunction(BelongsToMany $relation, Model $source, array $targets): void
+    protected function syncJunction(BelongsToMany $relation, Model $source, array $targets): void
     {
-        $legs = [];
-        foreach ($relation->setSource($source)->resolve() as $leg) {
-            $legs[] = $leg;
-        }
+        [$sourceToJunction, $junctionToTarget] = iterator_to_array($relation->setSource($source)->resolve(), false);
 
         $sourceBehaviors = $this->resolverFor($source)->getBehaviors($source);
 
-        // Leg 0: source -> junction, keys as [junctionColumn => sourceColumn]. The same for every link.
-        [, $junction, $sourceKeys] = $legs[0];
+        $junction = $sourceToJunction[1];
         $sourceColumns = [];
-        foreach ($sourceKeys as $junctionColumn => $sourceColumn) {
-            $sourceColumns[$junctionColumn] = $sourceBehaviors->persistProperty($source->$sourceColumn, $sourceColumn);
+        foreach ($sourceToJunction[2] as $sourceJunctionColumn => $sourceColumn) {
+            $sourceColumns[$sourceJunctionColumn] =
+                $sourceBehaviors->persistProperty($source->$sourceColumn, $sourceColumn);
         }
 
-        // Leg 1: junction -> target, keys as [targetColumn => junctionColumn]. No many-to-many target
-        // in this module has a compound key, so a single column identifies a link's target side.
-        [, , $targetKeys] = $legs[1];
-
+        $targetKeys = $junctionToTarget[2];
         $targetColumn = array_key_first($targetKeys);
         $junctionColumn = $targetKeys[$targetColumn];
 
@@ -502,7 +545,7 @@ class EntityManager
         }
 
         if ($this->isSoftDeleteJunction($junction)) {
-            $this->reconcileSoftDeleteJunction($junction, $sourceColumns, $junctionColumn, $desired);
+            $this->syncSoftDeleteJunction($junction, $sourceColumns, $junctionColumn, $desired);
 
             return;
         }
@@ -538,7 +581,7 @@ class EntityManager
      */
     protected function isSoftDeleteJunction(Junction|Model $junction): bool
     {
-        return  ! $junction instanceof Junction && $junction->useSoftDelete();
+        return ! $junction instanceof Junction && $junction->isSoftDeletable();
     }
 
     /**
@@ -567,7 +610,7 @@ class EntityManager
     }
 
     /**
-     * Reconcile a soft-delete junction to exactly the desired links
+     * Sync a soft-delete junction to exactly the desired links
      *
      * Links no longer desired but still active are soft-deleted; desired links that are currently
      * soft-deleted are revived; desired links not stored at all are inserted; active links that remain
@@ -585,7 +628,7 @@ class EntityManager
      *
      * @return void
      */
-    private function reconcileSoftDeleteJunction(
+    private function syncSoftDeleteJunction(
         Model $junction,
         array $sourceColumns,
         string $junctionColumn,
@@ -641,7 +684,7 @@ class EntityManager
     }
 
     /**
-     * Set a junction row's `deleted` value  and stamp `changed_at`
+     * Set a junction row's `deleted` value and stamp `changed_at`
      *
      * @param string $table
      * @param array<string, mixed> $columns column => value identifying the row
@@ -677,41 +720,18 @@ class EntityManager
     }
 
     /**
-     * Insert the given rows into the table, as a single statement
+     * Insert the given rows into the table
      *
      * @param string $table
-     * @param list<array<string, mixed>> $rows Each row must carry the same columns in the same order
+     * @param array<array<string, mixed>> $rows Each row as a column => value map
      *
      * @return void
      */
     protected function insertRows(string $table, array $rows): void
     {
-        if (empty($rows)) {
-            return;
+        foreach ($rows as $row) {
+            $this->db->insert($table, $row);
         }
-
-        if (count($rows) === 1) {
-            $this->db->insert($table, $rows[0]);
-
-            return;
-        }
-
-        $columns = array_keys($rows[0]);
-
-        [$sql, $values] = $this->db->getQueryBuilder()->assembleInsert(
-            (new Insert())->into($table)->values($rows[0])
-        );
-
-        $tuple = '(' . implode(',', array_fill(0, count($columns), '?')) . ')';
-        $sql .= str_repeat(',' . $tuple, count($rows) - 1);
-
-        foreach (array_slice($rows, 1) as $row) {
-            foreach ($columns as $column) {
-                $values[] = $row[$column];
-            }
-        }
-
-        $this->db->prepexec($sql, $values);
     }
 
     /**

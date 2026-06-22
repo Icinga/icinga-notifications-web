@@ -19,7 +19,7 @@ abstract class Model extends \ipl\Orm\Model
     private bool $isNew = true;
 
     /** @var bool Whether the model is marked for deletion on the next {@see EntityManager::save()} */
-    private bool $toBeDeleted = false;
+    private bool $markedForDeletion = false;
 
     /** @var array<string, true> Names of properties modified since the model was loaded */
     private array $modifiedProperties = [];
@@ -97,7 +97,7 @@ abstract class Model extends \ipl\Orm\Model
     public function clearModifiedProperties(): static
     {
         $this->modifiedProperties = [];
-        $this->toBeDeleted = false;
+        $this->markedForDeletion = false;
 
         return $this;
     }
@@ -107,24 +107,22 @@ abstract class Model extends \ipl\Orm\Model
      *
      * @return bool
      */
-    public function useSoftDelete(): bool
+    public function isSoftDeletable(): bool
     {
-        // TODO: use proper overrides, current state only for testing, should probably be abstract as well
-        return in_array('deleted', $this->getColumns());
+        return in_array('deleted', $this->getColumns(), true);
     }
 
     /**
      * Mark the model for deletion on the next {@see EntityManager::save()} and return it
      *
-     * If an override of this function does not modify at least one property {@see EntityManager::save()} becomes a noop
+     * If the model uses soft deletes this function must set the `deleted` property
      *
      * @return $this
      */
     public function markDeleted(): static
     {
-        $this->toBeDeleted = true;
-        // TODO: reconsider if this is the right place, $em->save() currently relies on this marking the model as modifed
-        if ($this->useSoftDelete()) {
+        $this->markedForDeletion = true;
+        if ($this->isSoftDeletable()) {
             $this->deleted = true;
         }
 
@@ -136,9 +134,9 @@ abstract class Model extends \ipl\Orm\Model
      *
      * @return bool
      */
-    public function isDeleted(): bool
+    public function isMarkedForDeletion(): bool
     {
-        return $this->toBeDeleted;
+        return $this->markedForDeletion;
     }
 
     /**
@@ -181,7 +179,7 @@ abstract class Model extends \ipl\Orm\Model
         return parent::setProperty($key, $value);
     }
 
-    public static function on(Connection $db)
+    public static function on(Connection $db): StatefulQuery
     {
         return (new StatefulQuery())
             ->setDb($db)

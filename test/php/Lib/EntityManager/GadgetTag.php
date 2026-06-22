@@ -13,7 +13,7 @@ use ipl\Orm\Behaviors;
 /**
  * Soft-delete junction model linking {@see Gadget} and {@see Tag}.
  *
- * Carries a `deleted` column (and `changed_at`), so the EntityManager reconciles the link table with
+ * Carries a `deleted` column (and `changed_at`), so the EntityManager syncs the link table with
  * soft-deletes and revives rather than hard deletes — mirroring the real contactgroup_member and
  * rule_escalation_recipient junctions.
  */
@@ -40,7 +40,7 @@ class GadgetTag extends Model
         $behaviors->add(new BoolCast(['deleted']));
     }
 
-    public function useSoftDelete(): bool
+    public function isSoftDeletable(): bool
     {
         return true;
     }
