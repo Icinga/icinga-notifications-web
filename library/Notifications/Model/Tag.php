@@ -5,6 +5,7 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use Icinga\Module\Notifications\Common\StatefulQuery;
 use Icinga\Module\Notifications\Model\Behavior\ObjectTags;
 use ipl\Orm\Behaviors;
 use ipl\Sql\Connection;
@@ -16,7 +17,7 @@ class Tag extends ObjectIdTag
      * @internal Don't use. This model acts only as relation target and is not supposed to be directly used as query
      *           target. Use {@see ObjectIdTag} instead.
      */
-    public static function on(Connection $_)
+    public static function on(Connection $_): StatefulQuery
     {
         throw new LogicException('Documentation says: DO NOT USE. Can\'t you read?');
     }
