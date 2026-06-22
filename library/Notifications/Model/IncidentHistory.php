@@ -8,6 +8,7 @@ namespace Icinga\Module\Notifications\Model;
 use DateTime;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Model;
+use Icinga\Module\Notifications\Common\StatefulQuery;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Query;
@@ -107,7 +108,7 @@ class IncidentHistory extends Model
         return ['incident_history.time desc, incident_history.type desc'];
     }
 
-    public static function on(Connection $db): Query
+    public static function on(Connection $db): StatefulQuery
     {
         $query = parent::on($db);
 
