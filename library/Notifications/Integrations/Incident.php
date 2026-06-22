@@ -114,7 +114,7 @@ class Incident
             return $this;
         }
 
-        (new EntityManager($this->db))->delete($existing);
+        (new EntityManager($this->db))->save($existing->markDeleted());
         $this->addRoleChangedHistory($contact->id, 'subscriber', null);
 
         return $this;
