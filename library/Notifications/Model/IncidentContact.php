@@ -5,7 +5,10 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use DateTime;
 use Icinga\Module\Notifications\Common\Model;
+use ipl\Orm\Behavior\MillisecondTimestamp;
+use ipl\Orm\Behaviors;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
 
@@ -15,6 +18,7 @@ use ipl\Orm\Relations;
  * @property ?int $contactgroup_id
  * @property ?int $schedule_id
  * @property string $role
+ * @property DateTime $changed_at
  *
  * @property Query|Incident $incident
  * @property Query|Contact $contact
@@ -40,7 +44,8 @@ class IncidentContact extends Model
             'contact_id',
             'contactgroup_id',
             'schedule_id',
-            'role'
+            'role',
+            'changed_at',
         ];
     }
 
@@ -51,8 +56,14 @@ class IncidentContact extends Model
             'contact_id'      => t('Contact Id'),
             'contactgroup_id' => t('Contact Group Id'),
             'schedule_id'     => t('Schedule Id'),
-            'role'            => t('Role')
+            'role'            => t('Role'),
+            'changed_at'      => t('Changed At'),
         ];
+    }
+
+    public function createBehaviors(Behaviors $behaviors): void
+    {
+        $behaviors->add(new MillisecondTimestamp(['changed_at']));
     }
 
     public function createRelations(Relations $relations): void
