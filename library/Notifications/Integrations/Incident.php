@@ -223,12 +223,24 @@ class Incident
             ->with(['contact', 'contactgroup', 'schedule'])
             ->filter(Filter::all(
                 Filter::equal('incident_id', $this->incident->id),
-                Filter::equal('role', $roles)
+                Filter::equal('role', $roles),
+                Filter::any(
+                    Filter::unlike('contact_id', '*'),
+                    Filter::equal('contact.deleted', false)
+                ),
+                Filter::any(
+                    Filter::unlike('contactgroup_id', '*'),
+                    Filter::equal('contactgroup.deleted', false)
+                ),
+                Filter::any(
+                    Filter::unlike('schedule_id', '*'),
+                    Filter::equal('schedule.deleted', false)
+                )
             ));
 
         $recipients = [];
         foreach ($entries as $entry) {
-            if ($entry->contact_id !== null && ! $entry->contact->deleted) {
+            if ($entry->contact_id !== null) {
                 $recipients[] = [
                     'type'      => 'contact',
                     'id'        => $entry->contact_id,
@@ -236,7 +248,7 @@ class Incident
                     'full_name' => $entry->contact->full_name,
                     'role'      => $entry->role
                 ];
-            } elseif ($entry->contactgroup_id !== null && ! $entry->contactgroup->deleted) {
+            } elseif ($entry->contactgroup_id !== null) {
                 $recipients[] = [
                     'type'      => 'contactgroup',
                     'id'        => $entry->contactgroup_id,
@@ -244,7 +256,7 @@ class Incident
                     'full_name' => null,
                     'role'      => $entry->role
                 ];
-            } elseif ($entry->schedule_id !== null && ! $entry->schedule->deleted) {
+            } elseif ($entry->schedule_id !== null) {
                 $recipients[] = [
                     'type'      => 'schedule',
                     'id'        => $entry->schedule_id,
