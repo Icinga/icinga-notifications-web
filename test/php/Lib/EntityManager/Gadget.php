@@ -33,7 +33,7 @@ class Gadget extends Model
             ->through('gadget_sticker');
 
         // Declared through a junction model that carries a `deleted` column, so the EntityManager
-        // reconciles these links with soft-deletes and revives instead of hard deletes.
+        // syncs these links with soft-deletes and revives instead of hard deletes.
         $relations->belongsToMany('tags', Tag::class)
             ->through(GadgetTag::class);
     }
