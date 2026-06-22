@@ -94,7 +94,7 @@ class Incidents implements IteratorAggregate, Countable
         return $this->results;
     }
 
-    protected function buildQuery(): Query
+    private function buildQuery(): Query
     {
         $query = IncidentModel::on($this->db)->filter(Filter::unlike('recovered_at', '*'));
 

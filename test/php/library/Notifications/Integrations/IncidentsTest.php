@@ -7,11 +7,13 @@ namespace Tests\Icinga\Module\Notifications\Integrations;
 
 use Icinga\Module\Notifications\Integrations\Incident;
 use Icinga\Module\Notifications\Integrations\Incidents;
+use ipl\Orm\Query;
 use ipl\Stdlib\Filter\Chain;
 use ipl\Stdlib\Filter\Condition;
 use ipl\Stdlib\Filter\Equal;
 use ipl\Stdlib\Filter\Unlike;
 use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 use Tests\Icinga\Module\Notifications\Lib\EntityManager\RecordingConnection;
 
 class IncidentsTest extends TestCase
@@ -120,14 +122,12 @@ class IncidentsTest extends TestCase
      */
     private function builtFilter(array $tags): Chain
     {
-        $incidents = new class ($tags, $this->db) extends Incidents {
-            public function exposeBuiltFilter(): Chain
-            {
-                return $this->buildQuery()->getFilter();
-            }
-        };
+        $incidents = new Incidents($tags, $this->db);
 
-        return $incidents->exposeBuiltFilter();
+        /** @var Query $query */
+        $query = (new ReflectionMethod($incidents, 'buildQuery'))->invoke($incidents);
+
+        return $query->getFilter();
     }
 
     /**
