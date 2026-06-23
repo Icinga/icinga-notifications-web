@@ -633,11 +633,10 @@ class EntityManager
         string $junctionColumn,
         array $desired
     ): void {
-        $table = $junction->getTableName();
-        $changedAt = (int) $this->now()->format('Uv');
+        $behaviors = $this->resolverFor($junction)->getBehaviors($junction);
 
         $select = (new Select())
-            ->from($table)
+            ->from($junction->getTableName())
             ->columns([$junctionColumn, 'deleted'])
             ->where($this->createCondition($sourceColumns));
 
@@ -652,53 +651,60 @@ class EntityManager
         // Soft-delete links that are no longer desired but still active.
         foreach ($stored as $identity => $link) {
             if (! isset($desired[$identity]) && ! $link['deleted']) {
-                $this->markJunctionRow(
-                    $table,
-                    array_merge($sourceColumns, [$junctionColumn => $link['value']]),
-                    'y',
-                    $changedAt
+                $this->delete(
+                    $this->makeJunctionLink(
+                        get_class($junction),
+                        $sourceColumns,
+                        $junctionColumn,
+                        $link['value'],
+                        false
+                    )
+                        ->markDeleted()
                 );
             }
         }
 
-        // Revive desired links that are soft-deleted; collect those not stored at all for insert.
-        $missing = [];
         foreach ($desired as $identity => $value) {
-            if (! isset($stored[$identity])) {
-                $missing[] = array_merge(
-                    $sourceColumns,
-                    [$junctionColumn => $value, 'deleted' => 'n', 'changed_at' => $changedAt]
-                );
-            } elseif ($stored[$identity]['deleted']) {
-                $this->markJunctionRow(
-                    $table,
-                    array_merge($sourceColumns, [$junctionColumn => $value]),
-                    'n',
-                    $changedAt
-                );
+            // In case the link exists, but is marked as deleted, marking the model as `new` ensures the `delete`
+            // flag of the existing row is updated and no insert with an existing PK is attempted
+            $isNew = ! isset($stored[$identity]);
+            if (! $isNew && ! $stored[$identity]['deleted']) {
+                continue;
             }
-        }
 
-        $this->insertRows($table, $missing);
+            $link = $this->makeJunctionLink(get_class($junction), $sourceColumns, $junctionColumn, $value, $isNew);
+            $link->deleted = false;
+            $this->persist($link, $behaviors);
+        }
     }
 
     /**
-     * Set a junction row's `deleted` value and stamp `changed_at`
+     * Build a junction model for one link, with its source and target key columns set
      *
-     * @param string $table
-     * @param array<string, mixed> $columns column => value identifying the row
-     * @param string $deleted The `deleted` enum value to write (`'y'` or `'n'`)
-     * @param int $changedAt The millisecond timestamp to stamp
+     * @param class-string<Model> $model
+     * @param array<string, mixed> $sourceColumns
+     * @param string $junctionColumn
+     * @param mixed $targetValue
+     * @param bool $isNew
      *
-     * @return void
+     * @return Model
      */
-    private function markJunctionRow(string $table, array $columns, string $deleted, int $changedAt): void
-    {
-        $this->db->update(
-            $table,
-            ['deleted' => $deleted, 'changed_at' => $changedAt],
-            $this->createCondition($columns)
-        );
+    private function makeJunctionLink(
+        string $model,
+        array $sourceColumns,
+        string $junctionColumn,
+        mixed $targetValue,
+        bool $isNew
+    ): Model {
+        $link = new $model();
+        foreach ($sourceColumns as $column => $value) {
+            $link->$column = $value;
+        }
+
+        $link->$junctionColumn = $targetValue;
+        $link->setNew($isNew);
+
+        return $link;
     }
 
     /**

@@ -531,17 +531,17 @@ class EntityManagerTest extends TestCase
         $second->name = 'heavy';
         $gadget->tags = [$first, $second];
 
-        $this->em()->save($gadget); // changed_at -> 1000
+        $this->em()->save($gadget); // two links inserted -> changed_at 1000, 2000
 
         /** @var Gadget $loaded */
         $loaded = Gadget::on($this->db)->first();
         $loaded->tags = [$first];
-        $this->em()->save($loaded); // changed_at -> 2000
+        $this->em()->save($loaded); // orphaned link soft-deleted -> changed_at 3000
 
         $this->assertSame(
             [
                 ['tag_id' => 1, 'deleted' => 'n', 'changed_at' => 1000],
-                ['tag_id' => 2, 'deleted' => 'y', 'changed_at' => 2000],
+                ['tag_id' => 2, 'deleted' => 'y', 'changed_at' => 3000],
             ],
             $this->rows('SELECT tag_id, deleted, changed_at FROM gadget_tag ORDER BY tag_id'),
             'The removed link is soft-deleted and re-stamped; the kept link is left untouched'
