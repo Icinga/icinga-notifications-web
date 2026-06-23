@@ -157,8 +157,8 @@ class EntityManager
         $manyToMany = [];
         foreach ($resolver->getRelations($model) as $name => $relation) {
             if (
-                ! array_key_exists($name, $set) ||
-                ! $isNew && ! isset($modifiedRelations[$name]) && ! $this->hasPendingChanges($set[$name])
+                ! array_key_exists($name, $set)
+                || (! $isNew && ! isset($modifiedRelations[$name]) && ! $this->hasPendingChanges($set[$name]))
             ) {
                 // The relation has no changes to persist
                 continue;
