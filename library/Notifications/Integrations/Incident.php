@@ -114,15 +114,12 @@ class Incident
     /**
      * Yield each active subscriber of the incident
      *
-     * An active subscriber is a recipient whose role is either `manager` or `subscriber`.
-     *
      * @return Generator<int, array{
      *     type: 'contact'|'contactgroup'|'schedule',
      *     name: string,
      *     full_name: ?string,
      *     role: 'manager'|'subscriber',
-     *     roleChangedAt: ?DateTime
-     * }>
+     *     roleChangedAt: DateTime}>
      */
     public function getSubscribers(): Generator
     {
@@ -132,7 +129,7 @@ class Incident
                 'name'          => $recipient['name'],
                 'full_name'     => $recipient['full_name'],
                 'role'          => $recipient['role'],
-                'roleChangedAt' => $this->roleChangedAt($recipient)
+                'roleChangedAt' => $recipient['roleChangedAt'],
             ];
         }
     }
@@ -140,15 +137,20 @@ class Incident
     /**
      * Yield each configured recipient of the incident
      *
-     * @return Generator<int, array{type: 'contact'|'contactgroup'|'schedule', name: string, full_name: ?string}>
+     * @return Generator<int, array{
+     *     type: 'contact'|'contactgroup'|'schedule',
+     *     name: string,
+     *     full_name: ?string,
+     *     roleChangedAt: DateTime}>
      */
     public function getRecipients(): Generator
     {
         foreach ($this->resolveRecipients(['recipient']) as $recipient) {
             yield [
-                'type'      => $recipient['type'],
-                'name'      => $recipient['name'],
-                'full_name' => $recipient['full_name']
+                'type'          => $recipient['type'],
+                'name'          => $recipient['name'],
+                'full_name'     => $recipient['full_name'],
+                'roleChangedAt' => $recipient['roleChangedAt']
             ];
         }
     }
@@ -214,7 +216,8 @@ class Incident
      *     id: int,
      *     name: string,
      *     full_name: ?string,
-     *     role: 'manager'|'subscriber'|'recipient'
+     *     role: 'manager'|'subscriber'|'recipient',
+     *     roleChangedAt: DateTime
      * }>
      */
     private function resolveRecipients(array $roles): array
@@ -246,7 +249,8 @@ class Incident
                     'id'        => $entry->contact_id,
                     'name'      => $entry->contact->username,
                     'full_name' => $entry->contact->full_name,
-                    'role'      => $entry->role
+                    'role'      => $entry->role,
+                    'roleChangedAt' => $entry->changed_at
                 ];
             } elseif ($entry->contactgroup_id !== null) {
                 $recipients[] = [
@@ -254,7 +258,8 @@ class Incident
                     'id'        => $entry->contactgroup_id,
                     'name'      => $entry->contactgroup->name,
                     'full_name' => null,
-                    'role'      => $entry->role
+                    'role'      => $entry->role,
+                    'roleChangedAt' => $entry->changed_at
                 ];
             } elseif ($entry->schedule_id !== null) {
                 $recipients[] = [
@@ -262,35 +267,13 @@ class Incident
                     'id'        => $entry->schedule_id,
                     'name'      => $entry->schedule->name,
                     'full_name' => null,
-                    'role'      => $entry->role
+                    'role'      => $entry->role,
+                    'roleChangedAt' => $entry->changed_at
                 ];
             }
         }
 
         return $recipients;
-    }
-
-    /**
-     * Resolve the time the given recipient was assigned its current role
-     *
-     * @param array{type: string, id: int, role: string} $recipient A recipient from {@see resolveRecipients()}
-     *
-     * @return ?DateTime
-     */
-    private function roleChangedAt(array $recipient): ?DateTime
-    {
-        $entry = IncidentHistory::on($this->db)
-            ->columns(['time'])
-            ->filter(Filter::all(
-                Filter::equal('incident_id', $this->incident->id),
-                Filter::equal('type', 'recipient_role_changed'),
-                Filter::equal($recipient['type'] . '_id', $recipient['id']),
-                Filter::equal('new_recipient_role', $recipient['role'])
-            ))
-            ->orderBy('time', SORT_DESC)
-            ->first();
-
-        return $entry?->time;
     }
 
     /**

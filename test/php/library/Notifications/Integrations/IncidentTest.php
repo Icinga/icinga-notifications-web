@@ -24,10 +24,13 @@ use Tests\Icinga\Module\Notifications\Lib\EntityManager\RecordingConnection;
  * configured recipients (role `recipient`). Both are polymorphic — a recipient may be a contact, contact
  * group or schedule — and yield a uniform shape carrying a `type` discriminator, the display `name` and a
  * nullable `full_name`. Subscribers additionally carry their `role` and the `roleChangedAt` time their
- * current role was assigned (null when unknown); deleted contact groups and schedules are omitted from both.
+ * current role was last changed; deleted contact groups and schedules are omitted from both.
  */
 class IncidentTest extends TestCase
 {
+    /** @var int Millisecond timestamp seeded into `incident_contact.changed_at` when a test does not care about it */
+    private const SEEDED_CHANGED_AT = 1700000000000;
+
     private RecordingConnection $db;
 
     /**
@@ -48,7 +51,7 @@ class IncidentTest extends TestCase
             . 'CREATE TABLE schedule (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR, changed_at INTEGER,'
             . ' timezone VARCHAR, deleted VARCHAR);'
             . 'CREATE TABLE incident_contact (incident_id INTEGER NOT NULL, contact_id INTEGER,'
-            . ' contactgroup_id INTEGER, schedule_id INTEGER, role VARCHAR);'
+            . ' contactgroup_id INTEGER, schedule_id INTEGER, role VARCHAR, changed_at INTEGER);'
             . 'CREATE TABLE incident_history (id INTEGER PRIMARY KEY AUTOINCREMENT, incident_id INTEGER NOT NULL,'
             . ' rule_id INTEGER, rule_escalation_id INTEGER, time INTEGER, type VARCHAR, contact_id INTEGER,'
             . ' schedule_id INTEGER, contactgroup_id INTEGER, channel_id INTEGER, new_severity VARCHAR,'
@@ -67,7 +70,7 @@ class IncidentTest extends TestCase
 
         $this->assertSame(
             [['type' => 'contact', 'name' => 'uname', 'full_name' => 'Uname Example', 'role' => 'manager']],
-            $this->subscribersWithoutTimestamp($incident)
+            $this->withoutRoleChangedAt($incident->getSubscribers())
         );
         $this->assertSame(
             [['username' => 'uname', 'role' => 'manager']],
@@ -96,7 +99,7 @@ class IncidentTest extends TestCase
 
         $this->assertSame(
             [['type' => 'contact', 'name' => 'uname', 'full_name' => 'Uname Example', 'role' => 'subscriber']],
-            $this->subscribersWithoutTimestamp($incident)
+            $this->withoutRoleChangedAt($incident->getSubscribers())
         );
         $this->assertSame(
             [['username' => 'uname', 'role' => 'subscriber']],
@@ -115,7 +118,7 @@ class IncidentTest extends TestCase
 
         $this->assertSame(
             [['type' => 'contact', 'name' => 'uname', 'full_name' => 'Uname Example', 'role' => 'subscriber']],
-            $this->subscribersWithoutTimestamp($incident)
+            $this->withoutRoleChangedAt($incident->getSubscribers())
         );
         $this->assertSame(
             [['username' => 'uname', 'role' => 'subscriber']],
@@ -141,7 +144,7 @@ class IncidentTest extends TestCase
         );
     }
 
-    public function testGetSubscribersYieldsActiveSubscribersOfEachTypeWithTheirRole(): void
+    public function testGetSubscribersYieldsActiveSubscriberContactsWithTheirRole(): void
     {
         $id = $this->seedIncident();
         $this->seedIncidentContact($id, $this->seedContact('alice'), 'manager');
@@ -151,16 +154,12 @@ class IncidentTest extends TestCase
 
         $this->assertSame(
             [
-                ['type' => 'contact', 'name' => 'alice', 'full_name' => 'Alice Example',
-                    'role' => 'manager', 'roleChangedAt' => null],
-                ['type' => 'contact', 'name' => 'bob', 'full_name' => 'Bob Example',
-                    'role' => 'subscriber', 'roleChangedAt' => null],
-                ['type' => 'contactgroup', 'name' => 'windows-admins', 'full_name' => null,
-                    'role' => 'subscriber', 'roleChangedAt' => null],
-                ['type' => 'schedule', 'name' => 'On-Call', 'full_name' => null,
-                    'role' => 'subscriber', 'roleChangedAt' => null],
+                ['type' => 'contact', 'name' => 'alice', 'full_name' => 'Alice Example', 'role' => 'manager'],
+                ['type' => 'contact', 'name' => 'bob', 'full_name' => 'Bob Example', 'role' => 'subscriber'],
+                ['type' => 'contactgroup', 'name' => 'windows-admins', 'full_name' => null, 'role' => 'subscriber'],
+                ['type' => 'schedule', 'name' => 'On-Call', 'full_name' => null, 'role' => 'subscriber'],
             ],
-            $this->sortedByTypeAndName($this->incident($id)->getSubscribers())
+            $this->withoutRoleChangedAt($this->sortedByTypeAndName($this->incident($id)->getSubscribers()))
         );
     }
 
@@ -171,9 +170,8 @@ class IncidentTest extends TestCase
         $this->seedIncidentContact($id, $this->seedContact('bob'), 'recipient');
 
         $this->assertSame(
-            [['type' => 'contact', 'name' => 'alice', 'full_name' => 'Alice Example',
-                'role' => 'manager', 'roleChangedAt' => null]],
-            iterator_to_array($this->incident($id)->getSubscribers(), false)
+            [['type' => 'contact', 'name' => 'alice', 'full_name' => 'Alice Example', 'role' => 'manager']],
+            $this->withoutRoleChangedAt($this->incident($id)->getSubscribers())
         );
     }
 
@@ -185,9 +183,8 @@ class IncidentTest extends TestCase
         $this->seedIncidentContact($id, null, 'subscriber');
 
         $this->assertSame(
-            [['type' => 'contact', 'name' => 'alice', 'full_name' => 'Alice Example',
-                'role' => 'manager', 'roleChangedAt' => null]],
-            iterator_to_array($this->incident($id)->getSubscribers(), false)
+            [['type' => 'contact', 'name' => 'alice', 'full_name' => 'Alice Example', 'role' => 'manager']],
+            $this->withoutRoleChangedAt($this->incident($id)->getSubscribers())
         );
     }
 
@@ -210,18 +207,16 @@ class IncidentTest extends TestCase
         );
 
         $this->assertSame(
-            [['type' => 'contact', 'name' => 'alice', 'full_name' => 'Alice Example',
-                'role' => 'subscriber', 'roleChangedAt' => null]],
-            iterator_to_array($this->incident($id)->getSubscribers(), false)
+            [['type' => 'contact', 'name' => 'alice', 'full_name' => 'Alice Example', 'role' => 'subscriber']],
+            $this->withoutRoleChangedAt($this->incident($id)->getSubscribers())
         );
     }
 
-    public function testGetSubscribersResolvesRoleChangedAtFromTheRoleChangeHistory(): void
+    public function testGetSubscribersResolvesRoleChangedAtFromTheContactsChangedAt(): void
     {
         $id = $this->seedIncident();
         $alice = $this->seedContact('alice');
-        $this->seedIncidentContact($id, $alice, 'manager');
-        $this->seedRoleChange($id, 'manager', 1700000000000, contactId: $alice);
+        $this->seedIncidentContact($id, $alice, 'manager', changedAt: 1700000000000);
 
         $subscribers = iterator_to_array($this->incident($id)->getSubscribers(), false);
 
@@ -237,51 +232,6 @@ class IncidentTest extends TestCase
         );
     }
 
-    public function testGetSubscribersRoleChangedAtUsesTheMostRecentMatchingChange(): void
-    {
-        $id = $this->seedIncident();
-        $alice = $this->seedContact('alice');
-        $this->seedIncidentContact($id, $alice, 'subscriber');
-        $this->seedRoleChange($id, 'subscriber', 1700000000000, contactId: $alice);
-        $this->seedRoleChange($id, 'subscriber', 1700000005000, contactId: $alice);
-
-        $subscribers = iterator_to_array($this->incident($id)->getSubscribers(), false);
-
-        $this->assertSame(1700000005, $subscribers[0]['roleChangedAt']->getTimestamp());
-    }
-
-    public function testGetSubscribersRoleChangedAtIgnoresChangesToOtherRoles(): void
-    {
-        $id = $this->seedIncident();
-        $alice = $this->seedContact('alice');
-        $this->seedIncidentContact($id, $alice, 'manager');
-        // A change into a role the contact no longer holds must not be reported as the current role's time.
-        $this->seedRoleChange($id, 'subscriber', 1700000000000, contactId: $alice);
-
-        $subscribers = iterator_to_array($this->incident($id)->getSubscribers(), false);
-
-        $this->assertNull($subscribers[0]['roleChangedAt']);
-    }
-
-    public function testGetSubscribersRoleChangedAtResolvesForGroupsAndSchedules(): void
-    {
-        $id = $this->seedIncident();
-        $group = $this->seedContactgroup('windows-admins');
-        $schedule = $this->seedSchedule('On-Call');
-        $this->seedIncidentContact($id, null, 'subscriber', contactgroupId: $group);
-        $this->seedIncidentContact($id, null, 'subscriber', scheduleId: $schedule);
-        $this->seedRoleChange($id, 'subscriber', 1700000000000, contactgroupId: $group);
-        // The schedule has no role-change history, so its time stays null (the daemon gap).
-
-        $byName = [];
-        foreach ($this->incident($id)->getSubscribers() as $s) {
-            $byName[$s['name']] = $s['roleChangedAt'];
-        }
-
-        $this->assertSame(1700000000, $byName['windows-admins']->getTimestamp());
-        $this->assertNull($byName['On-Call']);
-    }
-
     public function testGetRecipientsYieldsConfiguredRecipientsOfEachType(): void
     {
         $id = $this->seedIncident();
@@ -295,7 +245,7 @@ class IncidentTest extends TestCase
                 ['type' => 'contactgroup', 'name' => 'windows-admins', 'full_name' => null],
                 ['type' => 'schedule', 'name' => 'On-Call', 'full_name' => null],
             ],
-            $this->sortedByTypeAndName($this->incident($id)->getRecipients())
+            $this->withoutRoleChangedAt($this->sortedByTypeAndName($this->incident($id)->getRecipients()))
         );
     }
 
@@ -308,7 +258,7 @@ class IncidentTest extends TestCase
 
         $this->assertSame(
             [['type' => 'contact', 'name' => 'carol', 'full_name' => 'Carol Example']],
-            iterator_to_array($this->incident($id)->getRecipients(), false)
+            $this->withoutRoleChangedAt($this->incident($id)->getRecipients())
         );
     }
 
@@ -332,7 +282,7 @@ class IncidentTest extends TestCase
 
         $this->assertSame(
             [['type' => 'contact', 'name' => 'alice', 'full_name' => 'Alice Example']],
-            iterator_to_array($this->incident($id)->getRecipients(), false)
+            $this->withoutRoleChangedAt($this->incident($id)->getRecipients())
         );
     }
 
@@ -587,7 +537,8 @@ class IncidentTest extends TestCase
         ?int $contactId,
         string $role,
         ?int $contactgroupId = null,
-        ?int $scheduleId = null
+        ?int $scheduleId = null,
+        int $changedAt = self::SEEDED_CHANGED_AT
     ): void {
         $this->db->insert(
             'incident_contact',
@@ -596,35 +547,8 @@ class IncidentTest extends TestCase
                 'contact_id'      => $contactId,
                 'contactgroup_id' => $contactgroupId,
                 'schedule_id'     => $scheduleId,
-                'role'            => $role
-            ]
-        );
-    }
-
-    /**
-     * Insert a `recipient_role_changed` history row for a single recipient at the given time.
-     *
-     * Exactly one of $contactId, $contactgroupId or $scheduleId is expected to be set. $timeMs is the
-     * stored millisecond timestamp from which the reader derives the recipient's `roleChangedAt`.
-     */
-    private function seedRoleChange(
-        int $incidentId,
-        string $newRole,
-        int $timeMs,
-        ?int $contactId = null,
-        ?int $contactgroupId = null,
-        ?int $scheduleId = null
-    ): void {
-        $this->db->insert(
-            'incident_history',
-            [
-                'incident_id'        => $incidentId,
-                'type'               => 'recipient_role_changed',
-                'new_recipient_role' => $newRole,
-                'time'               => $timeMs,
-                'contact_id'         => $contactId,
-                'contactgroup_id'    => $contactgroupId,
-                'schedule_id'        => $scheduleId
+                'role'            => $role,
+                'changed_at'      => $changedAt
             ]
         );
     }
@@ -650,35 +574,40 @@ class IncidentTest extends TestCase
      * The readers do not guarantee an order, so tests asserting more than one recipient normalise it here
      * instead of relying on the database's row order.
      *
-     * @param iterable<array{type: string, name: string}> $recipients
+     * @param iterable<array{type?: string, name: string}> $recipients
      *
      * @return list<array<string, mixed>>
      */
     private function sortedByTypeAndName(iterable $recipients): array
     {
         $list = iterator_to_array($recipients, false);
-        usort($list, fn(array $a, array $b): int => [$a['type'], $a['name']] <=> [$b['type'], $b['name']]);
+        usort($list, fn(array $a, array $b): int => [$a['type'] ?? '', $a['name']] <=> [$b['type'] ?? '', $b['name']]);
 
         return $list;
     }
 
     /**
-     * Read the incident's subscribers with the `roleChangedAt` timestamp dropped.
+     * Collect the given recipients into a list with the `roleChangedAt` timestamp dropped.
      *
-     * A write operation stamps the role change with the current time, which cannot be asserted verbatim;
-     * the timestamp's contract is covered by the dedicated getSubscribers tests that seed a known time.
+     * The timestamp cannot be asserted verbatim — a write stamps the role change with the current time, and a
+     * seeded one yields a {@see DateTime} that is never `assertSame`-equal — so tests not focused on it drop it
+     * here. Its contract is covered by the dedicated test that seeds a known time.
+     *
+     * @param iterable<array<string, mixed>> $recipients
      *
      * @return list<array<string, mixed>>
      */
-    private function subscribersWithoutTimestamp(Incident $incident): array
+    private function withoutRoleChangedAt(iterable $recipients): array
     {
         return array_map(
-            static function (array $entry): array {
+            function (array $entry): array {
+                $this->assertArrayHasKey('roleChangedAt', $entry);
+                $this->assertInstanceOf(DateTime::class, $entry['roleChangedAt']);
                 unset($entry['roleChangedAt']);
 
                 return $entry;
             },
-            iterator_to_array($incident->getSubscribers(), false)
+            iterator_to_array($recipients, false)
         );
     }
 
