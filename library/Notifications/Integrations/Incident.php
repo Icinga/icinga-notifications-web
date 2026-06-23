@@ -47,6 +47,8 @@ class Incident
      * @param string $username
      *
      * @return $this
+     *
+     * @throws InvalidArgumentException If no contact with that username exists
      */
     public function addManager(string $username): static
     {
@@ -63,6 +65,8 @@ class Incident
      * @param string $username
      *
      * @return $this
+     *
+     * @throws InvalidArgumentException If no contact with that username exists
      */
     public function addSubscriber(string $username): static
     {
@@ -79,6 +83,8 @@ class Incident
      * @param string $username
      *
      * @return $this
+     *
+     * @throws InvalidArgumentException If no contact with that username exists
      */
     public function removeManager(string $username): static
     {
@@ -277,8 +283,6 @@ class Incident
      * @param array<?string> $noopRoles Existing roles for which this is a no-op, `null` matches an absent contact
      *
      * @return $this
-     *
-     * @throws InvalidArgumentException If no contact with that username exists
      */
     private function assignRole(string $username, string $role, array $noopRoles): static
     {
