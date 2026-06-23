@@ -93,11 +93,10 @@ class EntityManager
     }
 
     /**
-     * Hard-delete the given model's row and reset it to a fresh state
+     * Delete the given model's row and reset it to a fresh state
      *
-     * Internal helper for the delete flow: callers mark a model with {@see Model::markDeleted()} and
-     * pass it to {@see save()}. Does nothing if the model is new or has no primary key value. Nested
-     * records are expected to be removed by the database (e.g. `ON DELETE CASCADE`).
+     * Soft-deletes via the configured behavior when the model is soft-deletable, otherwise hard-deletes
+     * the row. Does nothing if the model is new or has no primary key value.
      *
      * @param Model $model
      *
@@ -110,6 +109,12 @@ class EntityManager
         }
 
         $behaviors = $this->resolverFor($model)->getBehaviors($model);
+
+        if ($model->isSoftDeletable()) {
+            $this->persist($model, $behaviors);
+
+            return;
+        }
 
         $condition = $this->createPrimaryKeyCondition($model, $behaviors);
         if ($condition === null) {
@@ -177,13 +182,7 @@ class EntityManager
             // Delete path
             $this->saveManyToMany($model, $manyToMany, $set);
             $this->saveDeletedChildren($children, $set);
-
-            if ($model->isSoftDeletable()) {
-                $this->persist($model, $resolver->getBehaviors($model));
-            } else {
-                $this->delete($model);
-            }
-
+            $this->delete($model);
             $this->saveChangedParents($dependencies, $set);
         } else {
             // Insert / Update
