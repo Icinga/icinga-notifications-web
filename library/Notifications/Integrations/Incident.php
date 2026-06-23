@@ -281,7 +281,7 @@ class Incident
      *
      * @param string $username
      * @param string $role The role to assign
-     * @param array<?string> $noopRoles Existing roles for which this is a no-op; `null` matches the absence of a contact
+     * @param array<?string> $noopRoles Existing roles for which this is a no-op, `null` matches an absent contact
      *
      * @return $this
      */
