@@ -226,22 +226,15 @@ class Incident
     {
         $entries = IncidentContact::on($this->db)
             ->with(['contact', 'contactgroup', 'schedule'])
-            ->filter(Filter::all(
-                Filter::equal('incident_id', $this->incident->id),
-                Filter::equal('role', $roles),
-                Filter::any(
-                    Filter::unlike('contact_id', '*'),
-                    Filter::equal('contact.deleted', false)
-                ),
-                Filter::any(
-                    Filter::unlike('contactgroup_id', '*'),
-                    Filter::equal('contactgroup.deleted', false)
-                ),
-                Filter::any(
-                    Filter::unlike('schedule_id', '*'),
-                    Filter::equal('schedule.deleted', false)
+            ->filter(
+                Filter::all(
+                    Filter::equal('incident_id', $this->incident->id),
+                    Filter::equal('role', $roles),
+                    Filter::unequal('contact.deleted', true),
+                    Filter::unequal('contactgroup.deleted', true),
+                    Filter::unequal('schedule.deleted', true),
                 )
-            ));
+            );
 
         $recipients = [];
         foreach ($entries as $entry) {
