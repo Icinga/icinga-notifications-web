@@ -173,8 +173,6 @@ class Incident
      * @param string $username
      *
      * @return Contact
-     *
-     * @throws InvalidArgumentException If no contact with that username exists
      */
     private function getContactByName(string $username): Contact
     {
