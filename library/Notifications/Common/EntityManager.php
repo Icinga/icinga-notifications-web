@@ -32,11 +32,11 @@ use SplObjectStorage;
  * $em->save($car->markDeleted());  // DELETE or soft-delete, depending on the model
  * ```
  *
- * Whether {@see save()} inserts or updates is decided by {@see Model::isNew()}. Updates only write the
+ * Whether {@see self::save()} inserts or updates is decided by {@see Model::isNew()}. Updates only write the
  * properties changed since the model was loaded ({@see Model::getModifiedProperties()}). Set relations are cascaded
  * (parents first, then the model, then children and many-to-many links), all within a single transaction.
  *
- * Calling {@see Model::markDeleted()} on a model and passing it to {@see save()} will soft or hard delete the
+ * Calling {@see Model::markDeleted()} on a model and passing it to {@see self::save()} will soft or hard delete the
  * model according to the value of {@see Model::isSoftDeletable()}
  *
  * Limitations:
@@ -45,7 +45,7 @@ use SplObjectStorage;
  * - ManyToMany links no longer present after a save are soft- or hard deleted according to what
  *   {@see Model::isSoftDeletable()} returns. This only works if the relation was declared using its model class
  *   which must have a mapping for the `deleted` column, relations that use the table name will always use hard delete.
- * - {@see saveGraph()} does not detect cycles, passing a cyclic graph like:
+ * - {@see self::saveGraph()} does not detect cycles, passing a cyclic graph like:
  *   ```
  *   $parent->children = [$child];
  *   $child->parent = $parent;
@@ -59,14 +59,14 @@ class EntityManager
     protected Connection $db;
 
     /**
-     * The models currently being saved by {@see saveGraph()}, used to detect cyclic graphs
+     * The models currently being saved by {@see self::saveGraph()}, used to detect cyclic graphs
      *
      * @var SplObjectStorage<Model, null>
      */
     private SplObjectStorage $activeSaves;
 
     /**
-     * Cache of writable column maps populated by {@see writableColumns()}, keyed by model class
+     * Cache of writable column maps populated by {@see self::writableColumns()}, keyed by model class
      *
      * @var array<class-string, array<string, string>>
      */
@@ -324,7 +324,7 @@ class EntityManager
      *
      * @param Model $model The source model
      * @param array<string, BelongsToMany> $manyToMany The many-to-many relations to persist, keyed by name
-     * @param array<string, mixed> $set The model's set properties, as snapshotted by {@see saveGraph()}
+     * @param array<string, mixed> $set The model's set properties, as snapshotted by {@see self::saveGraph()}
      *
      * @return void
      */
@@ -458,7 +458,7 @@ class EntityManager
     }
 
     /**
-     * Get the current time used for {@see stampChangedAt()}
+     * Get the current time used for {@see self::stampChangedAt()}
      *
      * Override in a subclass to inject a fixed clock for testing.
      *
@@ -633,7 +633,7 @@ class EntityManager
      *
      * The `deleted` and `changed_at` columns are written using their schema-wide storage forms directly
      * (the `'y'`/`'n'` enum and a millisecond timestamp), rather than routing through the junction
-     * model's behaviors — the same way {@see persist()} treats `changed_at` as a fixed convention. Every
+     * model's behaviors — the same way {@see self::persist()} treats `changed_at` as a fixed convention. Every
      * soft-delete junction in the schema carries both columns, so neither is treated as optional.
      *
      * @param Model $junction A junction model
