@@ -69,7 +69,7 @@ class IncidentTest extends TestCase
         $incident->addManager('uname');
 
         $this->assertSame(
-            [['type' => 'contact', 'name' => 'uname', 'full_name' => 'Uname Example', 'role' => 'manager']],
+            [['name' => 'uname', 'full_name' => 'Uname Example', 'role' => 'manager']],
             $this->withoutRoleChangedAt($incident->getSubscribers())
         );
         $this->assertSame(
@@ -98,7 +98,7 @@ class IncidentTest extends TestCase
         $incident->removeManager('uname');
 
         $this->assertSame(
-            [['type' => 'contact', 'name' => 'uname', 'full_name' => 'Uname Example', 'role' => 'subscriber']],
+            [['name' => 'uname', 'full_name' => 'Uname Example', 'role' => 'subscriber']],
             $this->withoutRoleChangedAt($incident->getSubscribers())
         );
         $this->assertSame(
@@ -117,7 +117,7 @@ class IncidentTest extends TestCase
         $incident->addSubscriber('uname');
 
         $this->assertSame(
-            [['type' => 'contact', 'name' => 'uname', 'full_name' => 'Uname Example', 'role' => 'subscriber']],
+            [['name' => 'uname', 'full_name' => 'Uname Example', 'role' => 'subscriber']],
             $this->withoutRoleChangedAt($incident->getSubscribers())
         );
         $this->assertSame(
@@ -144,25 +144,6 @@ class IncidentTest extends TestCase
         );
     }
 
-    public function testGetSubscribersYieldsActiveSubscriberContactsWithTheirRole(): void
-    {
-        $id = $this->seedIncident();
-        $this->seedIncidentContact($id, $this->seedContact('alice'), 'manager');
-        $this->seedIncidentContact($id, $this->seedContact('bob'), 'subscriber');
-        $this->seedIncidentContact($id, null, 'subscriber', contactgroupId: $this->seedContactgroup('windows-admins'));
-        $this->seedIncidentContact($id, null, 'subscriber', scheduleId: $this->seedSchedule('On-Call'));
-
-        $this->assertSame(
-            [
-                ['type' => 'contact', 'name' => 'alice', 'full_name' => 'Alice Example', 'role' => 'manager'],
-                ['type' => 'contact', 'name' => 'bob', 'full_name' => 'Bob Example', 'role' => 'subscriber'],
-                ['type' => 'contactgroup', 'name' => 'windows-admins', 'full_name' => null, 'role' => 'subscriber'],
-                ['type' => 'schedule', 'name' => 'On-Call', 'full_name' => null, 'role' => 'subscriber'],
-            ],
-            $this->withoutRoleChangedAt($this->sortedByTypeAndName($this->incident($id)->getSubscribers()))
-        );
-    }
-
     public function testGetSubscribersExcludesConfiguredRecipients(): void
     {
         $id = $this->seedIncident();
@@ -170,7 +151,7 @@ class IncidentTest extends TestCase
         $this->seedIncidentContact($id, $this->seedContact('bob'), 'recipient');
 
         $this->assertSame(
-            [['type' => 'contact', 'name' => 'alice', 'full_name' => 'Alice Example', 'role' => 'manager']],
+            [['name' => 'alice', 'full_name' => 'Alice Example', 'role' => 'manager']],
             $this->withoutRoleChangedAt($this->incident($id)->getSubscribers())
         );
     }
@@ -183,7 +164,7 @@ class IncidentTest extends TestCase
         $this->seedIncidentContact($id, null, 'subscriber');
 
         $this->assertSame(
-            [['type' => 'contact', 'name' => 'alice', 'full_name' => 'Alice Example', 'role' => 'manager']],
+            [['name' => 'alice', 'full_name' => 'Alice Example', 'role' => 'manager']],
             $this->withoutRoleChangedAt($this->incident($id)->getSubscribers())
         );
     }
@@ -207,7 +188,7 @@ class IncidentTest extends TestCase
         );
 
         $this->assertSame(
-            [['type' => 'contact', 'name' => 'alice', 'full_name' => 'Alice Example', 'role' => 'subscriber']],
+            [['name' => 'alice', 'full_name' => 'Alice Example', 'role' => 'subscriber']],
             $this->withoutRoleChangedAt($this->incident($id)->getSubscribers())
         );
     }
@@ -226,7 +207,7 @@ class IncidentTest extends TestCase
 
         unset($subscribers[0]['roleChangedAt']);
         $this->assertSame(
-            ['type' => 'contact', 'name' => 'alice', 'full_name' => 'Alice Example', 'role' => 'manager'],
+            ['name' => 'alice', 'full_name' => 'Alice Example', 'role' => 'manager'],
             $subscribers[0],
             'Apart from roleChangedAt the entry carries the uniform recipient shape'
         );

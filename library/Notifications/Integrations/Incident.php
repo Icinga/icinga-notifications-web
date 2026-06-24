@@ -123,9 +123,8 @@ class Incident
      * Yield each active subscriber of the incident
      *
      * @return Generator<int, array{
-     *     type: 'contact'|'contactgroup'|'schedule',
      *     name: string,
-     *     full_name: ?string,
+     *     full_name: string,
      *     role: 'manager'|'subscriber',
      *     roleChangedAt: DateTime}>
      */
@@ -133,7 +132,6 @@ class Incident
     {
         foreach ($this->resolveRecipients(['manager', 'subscriber']) as $recipient) {
             yield [
-                'type'          => $recipient['type'],
                 'name'          => $recipient['name'],
                 'full_name'     => $recipient['full_name'],
                 'role'          => $recipient['role'],
