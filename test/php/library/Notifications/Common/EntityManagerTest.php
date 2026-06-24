@@ -10,6 +10,7 @@ use Exception;
 use Icinga\Module\Notifications\Common\EntityManager;
 use PDO;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 use Tests\Icinga\Module\Notifications\Lib\EntityManager\Charm;
 use Tests\Icinga\Module\Notifications\Lib\EntityManager\Flag;
 use Tests\Icinga\Module\Notifications\Lib\EntityManager\Gadget;
@@ -1370,5 +1371,24 @@ class EntityManagerTest extends TestCase
             $tables,
             'The parent gadget row was not modified, so it must not be re-written'
         );
+    }
+
+    public function testSavingACyclicGraphThrows()
+    {
+        $workshop = new Workshop();
+        $workshop->name = 'Acme';
+
+        $gadget = new Gadget();
+        $gadget->name = 'Spanner';
+
+        // Build a cycle: the workshop owns the gadget and the gadget points back at the same workshop
+        // instance. Cascading would otherwise recurse forever, so the guard must abort the save.
+        $workshop->gadgets = [$gadget];
+        $gadget->workshop = $workshop;
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('cyclic');
+
+        $this->em()->save($workshop);
     }
 }

@@ -18,6 +18,7 @@ use ipl\Sql\ExpressionInterface;
 use ipl\Sql\Select;
 use PDO;
 use RuntimeException;
+use SplObjectStorage;
 
 /**
  * Persists models and their related models to the database.
@@ -50,12 +51,19 @@ use RuntimeException;
  *   $child->parent = $parent;
  *   $em->save($parent);
  *   ```
- *   will recurse infinitely
+ *   will throw a {@see RuntimeException}
  */
 class EntityManager
 {
     /** @var Connection The database connection to persist to */
     protected Connection $db;
+
+    /**
+     * The models currently being saved by {@see saveGraph()}, used to detect cyclic graphs
+     *
+     * @var SplObjectStorage<Model, null>
+     */
+    private SplObjectStorage $activeSaves;
 
     /**
      * Cache of writable column maps populated by {@see writableColumns()}, keyed by model class
@@ -72,6 +80,7 @@ class EntityManager
     public function __construct(Connection $db)
     {
         $this->db = $db;
+        $this->activeSaves = new SplObjectStorage();
     }
 
     /**
@@ -143,6 +152,11 @@ class EntityManager
             return;
         }
 
+        if ($this->activeSaves->offsetExists($model)) {
+            throw new RuntimeException('Cannot save a cyclic graph');
+        }
+
+        $this->activeSaves->offsetSet($model);
         $resolver = $this->resolverFor($model);
 
         // Snapshot what to cascade before persisting, since persisting resets change tracking. Only
@@ -191,6 +205,8 @@ class EntityManager
             $this->saveChildren($model, $children, $set);
             $this->saveManyToMany($model, $manyToMany, $set);
         }
+
+        $this->activeSaves->offsetUnset($model);
     }
 
     /**
