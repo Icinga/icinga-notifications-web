@@ -81,8 +81,8 @@ class EntityManagerTest extends TestCase
 
         $this->em()->save($workshop);
 
-        $this->assertFalse($workshop->isNew(), 'A saved model is no longer new');
-        $this->assertSame(1, $workshop->id, 'The generated primary key is written back to the model');
+        $this->assertFalse($workshop->isNew(), 'A saved model should no longer be new');
+        $this->assertSame(1, $workshop->id, 'The generated primary key should be written back to the model');
         $this->assertSame([['id' => 1, 'name' => 'Acme']], $this->rows('SELECT * FROM workshop'));
     }
 
@@ -95,8 +95,8 @@ class EntityManagerTest extends TestCase
         $loaded = Workshop::on($this->db)->first();
 
         $this->assertNotNull($loaded);
-        $this->assertFalse($loaded->isNew(), 'A hydrated model is not new');
-        $this->assertFalse($loaded->isModified(), 'A freshly hydrated model has no changes');
+        $this->assertFalse($loaded->isNew(), 'A hydrated model should not be new');
+        $this->assertFalse($loaded->isModified(), 'A freshly hydrated model should have no changes');
     }
 
     public function testUpdateWritesOnlyChangedColumns()
@@ -110,16 +110,16 @@ class EntityManagerTest extends TestCase
         $this->assertSame(
             ['name' => true],
             $gadget->getModifiedProperties(),
-            'Only the changed column is tracked as modified'
+            'Only the changed column should be tracked as modified'
         );
 
         $this->em()->save($gadget);
 
-        $this->assertFalse($gadget->isModified(), 'The model is unmodified after an update');
+        $this->assertFalse($gadget->isModified(), 'The model should be unmodified after an update');
         $this->assertSame(
             [['workshop_id' => 5, 'name' => 'Wrench']],
             $this->rows('SELECT workshop_id, name FROM gadget'),
-            'The unchanged column is preserved'
+            'The unchanged column should be preserved'
         );
     }
 
@@ -140,11 +140,11 @@ class EntityManagerTest extends TestCase
         $workshop->name = 'Acme';
         $this->em()->save($workshop->markDeleted());
 
-        $this->assertEmpty($this->db->calls, 'Marking a never-saved model deleted and saving issues no writes');
+        $this->assertEmpty($this->db->calls, 'Marking a never-saved model deleted and saving should issue no writes');
         $this->assertSame(
             [],
             $this->rows('SELECT * FROM workshop'),
-            'A never-saved model marked deleted leaves no row behind'
+            'A never-saved model marked deleted should leave no row behind'
         );
     }
 
@@ -158,11 +158,11 @@ class EntityManagerTest extends TestCase
 
         $this->em()->save($gadgetTag->markDeleted());
 
-        $this->assertEmpty($this->db->calls, 'Marking a never-saved soft-delete model deleted issues no writes');
+        $this->assertEmpty($this->db->calls, 'Marking a never-saved soft-delete model deleted should issue no writes');
         $this->assertSame(
             [],
             $this->rows('SELECT * FROM gadget_tag'),
-            'No tombstone row is inserted for a never-saved soft-delete model'
+            'No tombstone row should be inserted for a never-saved soft-delete model'
         );
     }
 
@@ -179,7 +179,7 @@ class EntityManagerTest extends TestCase
         $this->assertSame(
             [],
             $this->rows('SELECT * FROM workshop'),
-            'A model with no deleted column is hard-deleted'
+            'A model with no deleted column should be hard-deleted'
         );
     }
 
@@ -197,7 +197,7 @@ class EntityManagerTest extends TestCase
         $this->assertSame(
             [['gadget_id' => 1, 'tag_id' => 1, 'deleted' => 'y', 'changed_at' => 2000]],
             $this->rows('SELECT gadget_id, tag_id, deleted, changed_at FROM gadget_tag'),
-            'A model with a deleted column is kept and marked deleted = y, not removed'
+            'A model with a deleted column should be kept and marked deleted = y, not removed'
         );
     }
 
@@ -236,11 +236,11 @@ class EntityManagerTest extends TestCase
 
         $this->em()->save($gadget);
 
-        $this->assertFalse($workshop->isNew(), 'The parent was persisted');
+        $this->assertFalse($workshop->isNew(), 'The parent should be persisted');
         $this->assertSame(
             $workshop->id,
             $gadget->workshop_id,
-            'The parent key was copied into the source foreign key'
+            'The parent key should be copied into the source foreign key'
         );
     }
 
@@ -252,7 +252,7 @@ class EntityManagerTest extends TestCase
         $gadget->name = 'Spanner';
         $gadget->workshop = $workshop;
         $this->em()->save($gadget);
-        $this->assertSame($workshop->id, $gadget->workshop_id, 'The link is established before it is cleared');
+        $this->assertSame($workshop->id, $gadget->workshop_id, 'The link should be established before it is cleared');
 
         // Load fresh and clear the relation by assigning null. The relation property holds null (not a
         // lazy-loader closure), so saveGraph sees it as an explicit assignment and nulls the foreign key.
@@ -264,7 +264,7 @@ class EntityManagerTest extends TestCase
         $this->assertSame(
             [['name' => 'Spanner', 'workshop_id' => null]],
             $this->rows('SELECT name, workshop_id FROM gadget'),
-            'Assigning null to a BelongsTo nulls the foreign key on update'
+            'Assigning null to a BelongsTo should null the foreign key on update'
         );
     }
 
@@ -279,7 +279,7 @@ class EntityManagerTest extends TestCase
 
         $this->em()->save($gadget);
 
-        $this->assertFalse($sticker->isNew(), 'The target was persisted');
+        $this->assertFalse($sticker->isNew(), 'The target should be persisted');
         $this->assertSame(
             [['gadget_id' => $gadget->id, 'sticker_id' => $sticker->id]],
             $this->rows('SELECT gadget_id, sticker_id FROM gadget_sticker')
@@ -325,7 +325,7 @@ class EntityManagerTest extends TestCase
             $this->db->calls,
             fn ($call) => $call['method'] === 'insert' && $call['table'] === 'gadget_sticker'
         );
-        $this->assertCount(3, $junctionInserts, 'Each link is written as its own insert');
+        $this->assertCount(3, $junctionInserts, 'Each link should be written as its own insert');
 
         $this->assertSame(
             [
@@ -334,7 +334,7 @@ class EntityManagerTest extends TestCase
                 ['gadget_id' => $gadget->id, 'sticker_id' => $heavy->id],
             ],
             $this->rows('SELECT gadget_id, sticker_id FROM gadget_sticker ORDER BY sticker_id'),
-            'All link rows are present'
+            'All link rows should be present'
         );
     }
 
@@ -385,7 +385,7 @@ class EntityManagerTest extends TestCase
         $this->assertSame(
             [['gadget_id' => $gadget->id, 'sticker_id' => $heavy->id]],
             $this->rows('SELECT gadget_id, sticker_id FROM gadget_sticker'),
-            'The reassigned set replaces the previous links'
+            'The reassigned set should replace the previous links'
         );
         $this->assertSame(
             2,
@@ -413,7 +413,7 @@ class EntityManagerTest extends TestCase
         $this->assertSame(
             [],
             $this->rows('SELECT gadget_id, sticker_id FROM gadget_sticker'),
-            'Assigning an empty set removes all links'
+            'Assigning an empty set should remove all links'
         );
     }
 
@@ -438,7 +438,7 @@ class EntityManagerTest extends TestCase
         $this->assertSame(
             [],
             $this->rows('SELECT gadget_id, sticker_id FROM gadget_sticker'),
-            'Assigning null to a many-to-many relation removes all links'
+            'Assigning null to a many-to-many relation should remove all links'
         );
     }
 
@@ -482,7 +482,7 @@ class EntityManagerTest extends TestCase
         $this->assertSame(
             [['gadget_id' => '1', 'sticker_id' => '1']],
             $db->prepexec('SELECT gadget_id, sticker_id FROM gadget_sticker')->fetchAll(PDO::FETCH_ASSOC),
-            'The single link is left intact'
+            'The single link should be left intact'
         );
     }
 
@@ -515,7 +515,7 @@ class EntityManagerTest extends TestCase
         $this->assertSame(
             [],
             $db->prepexec('SELECT gadget_id, sticker_id, deleted FROM gadget_sticker')->fetchAll(PDO::FETCH_ASSOC),
-            'A table-name junction is a generic Junction, so the orphan is hard-deleted despite the column'
+            'A table-name junction is a generic Junction, so the orphan should be hard-deleted despite the column'
         );
     }
 
@@ -545,7 +545,7 @@ class EntityManagerTest extends TestCase
                 ['tag_id' => 2, 'deleted' => 'y', 'changed_at' => 3000],
             ],
             $this->rows('SELECT tag_id, deleted, changed_at FROM gadget_tag ORDER BY tag_id'),
-            'The removed link is soft-deleted and re-stamped; the kept link is left untouched'
+            'The removed link should be soft-deleted and re-stamped; the kept link should be left untouched'
         );
     }
 
@@ -572,7 +572,7 @@ class EntityManagerTest extends TestCase
         $this->assertSame(
             [['tag_id' => 1, 'deleted' => 'n', 'changed_at' => 3000]],
             $this->rows('SELECT tag_id, deleted, changed_at FROM gadget_tag'),
-            'Re-adding revives the existing row rather than inserting a duplicate'
+            'Re-adding should revive the existing row rather than insert a duplicate'
         );
     }
 
@@ -597,7 +597,7 @@ class EntityManagerTest extends TestCase
         $this->assertSame(
             [],
             $junctionWrites,
-            'Re-saving an unchanged active link writes nothing to the junction'
+            'Re-saving an unchanged active link should write nothing to the junction'
         );
     }
 
@@ -618,7 +618,7 @@ class EntityManagerTest extends TestCase
         $this->assertSame(
             [['name' => 'Acme'], ['name' => 'Globex']],
             $this->rows('SELECT name FROM workshop ORDER BY id'),
-            'Both rows are persisted by the outer transaction; save() joined it instead of nesting'
+            'Both rows should be persisted by the outer transaction; save() should join it instead of nesting'
         );
     }
 
@@ -637,7 +637,7 @@ class EntityManagerTest extends TestCase
             // expected
         }
 
-        $this->assertSame([], $this->rows('SELECT * FROM workshop'), 'The parent insert was rolled back');
+        $this->assertSame([], $this->rows('SELECT * FROM workshop'), 'The parent insert should be rolled back');
     }
 
     public function testPropertyBehaviorConvertsValuesOnPersist()
@@ -651,10 +651,10 @@ class EntityManagerTest extends TestCase
         $this->assertSame(
             [['label' => 'shiny', 'enabled' => 'y']],
             $this->rows('SELECT label, enabled FROM flag'),
-            'BoolCast converts true to its database value on insert'
+            'BoolCast should convert true to its database value on insert'
         );
 
-        $this->assertTrue($flag->enabled, 'The model value remains in PHP form after save');
+        $this->assertTrue($flag->enabled, 'The model value should remain in PHP form after save');
     }
 
     public function testPropertyBehaviorConvertsValuesOnUpdate()
@@ -670,7 +670,7 @@ class EntityManagerTest extends TestCase
         $this->assertSame(
             [['enabled' => 'n']],
             $this->rows('SELECT enabled FROM flag'),
-            'BoolCast converts the new value on update'
+            'BoolCast should convert the new value on update'
         );
     }
 
@@ -683,13 +683,13 @@ class EntityManagerTest extends TestCase
         $this->assertInstanceOf(
             DateTimeInterface::class,
             $stamped->changed_at,
-            'The behavior set a DateTime on the model'
+            'The behavior should set a DateTime on the model'
         );
         $this->assertSame(1, $stamped->changed_at->getTimestamp());
         $this->assertSame(
             [['name' => 'Widget', 'changed_at' => 1000]],
             $this->rows('SELECT name, changed_at FROM stamped'),
-            'The DateTime is converted to a millisecond timestamp on the way to the database'
+            'The DateTime should be converted to a millisecond timestamp on the way to the database'
         );
     }
 
@@ -706,7 +706,7 @@ class EntityManagerTest extends TestCase
         $this->assertSame(
             [['name' => 'Gizmo', 'changed_at' => 2000]],
             $this->rows('SELECT name, changed_at FROM stamped'),
-            'The behavior runs on UPDATE and its column is included in the SET'
+            'The behavior should run on UPDATE and its column should be included in the SET'
         );
     }
 
@@ -739,11 +739,7 @@ class EntityManagerTest extends TestCase
         $this->em()->save($stamped);
 
         // Load it fresh — the relation comes back as a closure-backed lazy loader.
-        $loaded = null;
-        foreach (Stamped::on($this->db)->execute() as $row) {
-            $loaded = $row;
-            break;
-        }
+        $loaded = Stamped::on($this->db)->first();
         $this->assertInstanceOf(Stamped::class, $loaded);
 
         // Reassign only the relation — no own-column changes. The parent row's data
@@ -781,11 +777,11 @@ class EntityManagerTest extends TestCase
 
         $this->em()->save($trinket);
 
-        $this->assertSame($id, $trinket->id, 'The binary key is unchanged on the model after save');
+        $this->assertSame($id, $trinket->id, 'The binary key should be unchanged on the model after save');
         $this->assertSame(
             [['id' => $id, 'name' => 'Amulet']],
             $this->rows('SELECT id, name FROM trinket'),
-            'The binary key was stored byte-for-byte'
+            'The binary key should be stored byte-for-byte'
         );
     }
 
@@ -804,7 +800,7 @@ class EntityManagerTest extends TestCase
         $this->assertSame(
             [['id' => $id, 'name' => 'Charm']],
             $this->rows('SELECT id, name FROM trinket'),
-            'The UPDATE matched the row by its binary primary key'
+            'The UPDATE should match the row by its binary primary key'
         );
     }
 
@@ -828,11 +824,7 @@ class EntityManagerTest extends TestCase
         $workshop->name = 'Acme';
         $this->em()->save($workshop);
 
-        $loaded = null;
-        foreach (Workshop::on($this->db)->execute() as $row) {
-            $loaded = $row;
-            break;
-        }
+        $loaded = Workshop::on($this->db)->first();
 
         // Without the re-entrance guard in setProperty this would recurse forever, because
         // PropertiesWithDefaults::getProperty() memoizes the resolved Closure via setProperty().
@@ -851,11 +843,7 @@ class EntityManagerTest extends TestCase
         $workshop->name = 'Acme';
         $this->em()->save($workshop);
 
-        $loaded = null;
-        foreach (Workshop::on($this->db)->execute() as $row) {
-            $loaded = $row;
-            break;
-        }
+        $loaded = Workshop::on($this->db)->first();
 
         // Replace the (still-Closure) relation without first triggering its loader.
         $loaded->gadgets = [new Gadget()];
@@ -863,7 +851,7 @@ class EntityManagerTest extends TestCase
         $this->assertArrayHasKey(
             'gadgets',
             $loaded->getModifiedProperties(),
-            'Reassigning a relation marks it modified so saveGraph cascades the new value'
+            'Reassigning a relation should mark it modified so saveGraph cascades the new value'
         );
     }
 
@@ -889,7 +877,7 @@ class EntityManagerTest extends TestCase
         $this->assertSame(
             [['id' => $workshopId, 'name' => 'Globex']],
             $this->rows('SELECT id, name FROM workshop ORDER BY id'),
-            'An in-place edit to a loaded related model is persisted as an update when the parent is saved'
+            'An in-place edit to a loaded related model should be persisted as an update when the parent is saved'
         );
     }
 
@@ -912,11 +900,11 @@ class EntityManagerTest extends TestCase
 
         $this->em()->save($loaded->markDeleted());
 
-        $this->assertSame([], $this->rows('SELECT * FROM gadget'), 'The deleted model is gone');
+        $this->assertSame([], $this->rows('SELECT * FROM gadget'), 'The deleted model should be gone');
         $this->assertSame(
             [['id' => $workshopId, 'name' => 'Globex']],
             $this->rows('SELECT id, name FROM workshop ORDER BY id'),
-            'An in-place edit to a related model is still persisted when the owner is deleted'
+            'An in-place edit to a related model should still be persisted when the owner is deleted'
         );
     }
 
@@ -934,11 +922,11 @@ class EntityManagerTest extends TestCase
 
         $this->em()->save($trinket);
 
-        $this->assertSame($id, $charm->trinket_id, 'The parent binary key was copied into the child');
+        $this->assertSame($id, $charm->trinket_id, 'The parent binary key should be copied into the child');
         $this->assertSame(
             [['trinket_id' => $id, 'label' => 'rune']],
             $this->rows('SELECT trinket_id, label FROM charm'),
-            'The child row carries the parent binary key'
+            'The child row should carry the parent binary key'
         );
     }
 
@@ -949,8 +937,8 @@ class EntityManagerTest extends TestCase
         $this->em()->save($w);
         $this->em()->save($w->markDeleted());
 
-        $this->assertTrue($w->isNew(), 'Deleted model is treated as new again');
-        $this->assertFalse($w->isModified(), 'Modified state was cleared');
+        $this->assertTrue($w->isNew(), 'A deleted model should be treated as new again');
+        $this->assertFalse($w->isModified(), 'Modified state should be cleared');
 
         $w->name = 'Acme 2';
         $this->em()->save($w);
@@ -966,7 +954,7 @@ class EntityManagerTest extends TestCase
 
         $this->em()->save($w->markDeleted());
 
-        $this->assertFalse($w->hasProperty('id'), 'The auto-increment key is cleared on delete');
+        $this->assertFalse($w->hasProperty('id'), 'The auto-increment key should be cleared on delete');
 
         $w->name = 'Acme 2';
         $this->em()->save($w);
@@ -974,7 +962,7 @@ class EntityManagerTest extends TestCase
         $this->assertNotSame(
             $oldId,
             $w->id,
-            'A save after delete receives a fresh auto-increment id rather than re-using the old key'
+            'A save after delete should receive a fresh auto-increment id rather than re-use the old key'
         );
     }
 
@@ -988,8 +976,8 @@ class EntityManagerTest extends TestCase
 
         $this->em()->save($p->markDeleted());
 
-        $this->assertFalse($p->hasProperty('left_id'), 'Each part of a compound key is cleared');
-        $this->assertFalse($p->hasProperty('right_id'), 'Each part of a compound key is cleared');
+        $this->assertFalse($p->hasProperty('left_id'), 'Each part of a compound key should be cleared');
+        $this->assertFalse($p->hasProperty('right_id'), 'Each part of a compound key should be cleared');
     }
 
     public function testDeleteClearsApplicationAssignedKey()
@@ -1002,7 +990,7 @@ class EntityManagerTest extends TestCase
 
         $this->em()->save($trinket->markDeleted());
 
-        $this->assertFalse($trinket->hasProperty('id'), 'The application-assigned key is cleared on delete');
+        $this->assertFalse($trinket->hasProperty('id'), 'The application-assigned key should be cleared on delete');
     }
 
     public function testCompoundKeyUpdateMatchesByAllKeyColumns()
@@ -1030,7 +1018,7 @@ class EntityManagerTest extends TestCase
                 ['left_id' => 1, 'right_id' => 2, 'label' => 'B2'],
             ],
             $this->rows('SELECT left_id, right_id, label FROM pairing ORDER BY right_id'),
-            'Only the row matching all key columns was updated'
+            'Only the row matching all key columns should be updated'
         );
     }
 
@@ -1053,7 +1041,7 @@ class EntityManagerTest extends TestCase
         $this->assertSame(
             [['left_id' => 1, 'right_id' => 1, 'label' => 'A']],
             $this->rows('SELECT left_id, right_id, label FROM pairing'),
-            'Only the row matching all key columns was deleted'
+            'Only the row matching all key columns should be deleted'
         );
     }
 
@@ -1066,10 +1054,10 @@ class EntityManagerTest extends TestCase
 
         $this->em()->save($p);
 
-        $this->assertFalse($p->isNew(), 'A saved compound-key model is no longer new');
+        $this->assertFalse($p->isNew(), 'A saved compound-key model should no longer be new');
         $this->assertFalse($p->isModified());
-        $this->assertSame(7, $p->left_id, 'left_id was not overwritten by a lastInsertId fetch');
-        $this->assertSame(9, $p->right_id, 'right_id was not overwritten by a lastInsertId fetch');
+        $this->assertSame(7, $p->left_id, 'left_id should not be overwritten by a lastInsertId fetch');
+        $this->assertSame(9, $p->right_id, 'right_id should not be overwritten by a lastInsertId fetch');
         $this->assertSame(
             [['left_id' => 7, 'right_id' => 9, 'label' => 'A']],
             $this->rows('SELECT left_id, right_id, label FROM pairing')
@@ -1085,7 +1073,7 @@ class EntityManagerTest extends TestCase
         $this->db->resetCalls();
         $this->em()->save($workshop);
 
-        $this->assertSame([], $this->db->calls, 'A second save of an unchanged model issues no writes');
+        $this->assertSame([], $this->db->calls, 'A second save of an unchanged model should issue no writes');
     }
 
     public function testInsertOfNewModelIssuesExactlyOneInsertAndNoOtherWrites()
@@ -1098,7 +1086,7 @@ class EntityManagerTest extends TestCase
         $this->assertSame(
             [['method' => 'insert', 'table' => 'workshop', 'data' => ['name' => 'Acme']]],
             $this->db->calls,
-            'Inserting a new model emits exactly one INSERT for that row'
+            'Inserting a new model should emit exactly one INSERT for that row'
         );
     }
 
@@ -1113,18 +1101,18 @@ class EntityManagerTest extends TestCase
         $gadget->name = 'Wrench';
         $this->em()->save($gadget);
 
-        $this->assertCount(1, $this->db->calls, 'Exactly one write is issued for the update');
+        $this->assertCount(1, $this->db->calls, 'Exactly one write should be issued for the update');
         $this->assertSame('update', $this->db->calls[0]['method']);
         $this->assertSame('gadget', $this->db->calls[0]['table']);
         $this->assertSame(
             ['name' => 'Wrench'],
             $this->db->calls[0]['data'],
-            'Unchanged columns are not part of the SET clause'
+            'Unchanged columns should not be part of the SET clause'
         );
         $this->assertSame(
             ['id = ?' => $gadget->id],
             $this->db->calls[0]['condition'],
-            'The WHERE matches the row by its primary key'
+            'The WHERE should match the row by its primary key'
         );
     }
 
@@ -1144,7 +1132,7 @@ class EntityManagerTest extends TestCase
         $this->assertSame(
             ['left_id = ?' => 1, 'right_id = ?' => 2],
             $this->db->calls[0]['condition'],
-            'Both key columns are in the WHERE'
+            'Both key columns should be in the WHERE'
         );
     }
 
@@ -1161,7 +1149,7 @@ class EntityManagerTest extends TestCase
         $this->assertSame(
             [['method' => 'delete', 'table' => 'workshop', 'condition' => ['id = ?' => $id]]],
             $this->db->calls,
-            'Exactly one DELETE is issued, scoped by primary key — no incidental UPDATE first'
+            'Exactly one DELETE should be issued, scoped by primary key — no incidental UPDATE first'
         );
     }
 
@@ -1184,9 +1172,9 @@ class EntityManagerTest extends TestCase
         $this->assertSame(
             [['method' => 'delete', 'table' => 'workshop', 'condition' => ['id = ?' => $id]]],
             $this->db->calls,
-            'A deleted model issues only its own DELETE; assigned children are not cascaded'
+            'A deleted model should issue only its own DELETE; assigned children should not be cascaded'
         );
-        $this->assertTrue($orphan->isNew(), 'The assigned child was never persisted');
+        $this->assertTrue($orphan->isNew(), 'The assigned child should never be persisted');
     }
 
     public function testDeletedModelDoesNotCascadeToAssignedParent()
@@ -1208,9 +1196,9 @@ class EntityManagerTest extends TestCase
         $this->assertSame(
             [['method' => 'delete', 'table' => 'gadget', 'condition' => ['id = ?' => $id]]],
             $this->db->calls,
-            'A deleted model issues only its own DELETE; an assigned parent is not cascaded'
+            'A deleted model should issue only its own DELETE; an assigned parent should not be cascaded'
         );
-        $this->assertTrue($workshop->isNew(), 'The assigned parent was never persisted');
+        $this->assertTrue($workshop->isNew(), 'The assigned parent should never be persisted');
     }
 
     public function testDeletingAModelHonorsAnExplicitlyClearedManyToManyInTheSameSave()
@@ -1232,8 +1220,8 @@ class EntityManagerTest extends TestCase
 
         $this->em()->save($loaded->markDeleted());
 
-        $this->assertSame([], $this->rows('SELECT * FROM gadget_sticker'), 'The junction was synced to empty');
-        $this->assertSame([], $this->rows('SELECT * FROM gadget'), 'The owner itself was deleted');
+        $this->assertSame([], $this->rows('SELECT * FROM gadget_sticker'), 'The junction should be synced to empty');
+        $this->assertSame([], $this->rows('SELECT * FROM gadget'), 'The owner itself should be deleted');
     }
 
     public function testDeletingAModelSoftDeletesAnExplicitlyClearedSoftJunctionInTheSameSave()
@@ -1256,9 +1244,9 @@ class EntityManagerTest extends TestCase
         $this->assertSame(
             [['gadget_id' => $gadget->id, 'tag_id' => $tag->id, 'deleted' => 'y']],
             $this->rows('SELECT gadget_id, tag_id, deleted FROM gadget_tag'),
-            'The cleared soft-junction row is marked deleted, not removed'
+            'The cleared soft-junction row should be marked deleted, not removed'
         );
-        $this->assertSame([], $this->rows('SELECT * FROM gadget'), 'The owner itself was deleted');
+        $this->assertSame([], $this->rows('SELECT * FROM gadget'), 'The owner itself should be deleted');
     }
 
     public function testDeletingAModelAlsoDeletesAChildExplicitlyMarkedDeleted()
@@ -1282,8 +1270,8 @@ class EntityManagerTest extends TestCase
 
         $this->em()->save($loadedWorkshop->markDeleted());
 
-        $this->assertSame([], $this->rows('SELECT * FROM gadget'), 'The explicitly deleted child is gone');
-        $this->assertSame([], $this->rows('SELECT * FROM workshop'), 'The parent is gone');
+        $this->assertSame([], $this->rows('SELECT * FROM gadget'), 'The explicitly deleted child should be gone');
+        $this->assertSame([], $this->rows('SELECT * FROM workshop'), 'The parent should be gone');
     }
 
     public function testCascadeInsertEmitsOneInsertPerRowAndNoUpdates()
@@ -1303,7 +1291,7 @@ class EntityManagerTest extends TestCase
         $tables = array_column($this->db->calls, 'table');
 
         $this->assertSame(['insert', 'insert', 'insert'], $methods, 'Three inserts: parent + two children');
-        $this->assertSame(['workshop', 'gadget', 'gadget'], $tables, 'Parent is inserted before children');
+        $this->assertSame(['workshop', 'gadget', 'gadget'], $tables, 'Parent should be inserted before children');
     }
 
     public function testManyToManyEmitsOneInsertPerEnd()
@@ -1338,7 +1326,7 @@ class EntityManagerTest extends TestCase
         $gadget->name = 'Wrench';
         $this->em()->save($gadget);
 
-        $this->assertCount(1, $this->db->calls, 'Only the child is written');
+        $this->assertCount(1, $this->db->calls, 'Only the child should be written');
         $this->assertSame('update', $this->db->calls[0]['method']);
         $this->assertSame('gadget', $this->db->calls[0]['table']);
     }
@@ -1351,11 +1339,7 @@ class EntityManagerTest extends TestCase
         $gadget->name = 'Spanner';
         $this->em()->save($gadget);
 
-        $loaded = null;
-        foreach (Gadget::on($this->db)->execute() as $row) {
-            $loaded = $row;
-            break;
-        }
+        $loaded = Gadget::on($this->db)->first();
         $this->assertInstanceOf(Gadget::class, $loaded);
 
         $sticker = new Sticker();

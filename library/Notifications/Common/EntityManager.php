@@ -140,7 +140,7 @@ class EntityManager
             unset($model->$k);
         }
 
-        $model->setNew(true);
+        $model->setNew();
         $model->clearModifiedProperties();
     }
 
@@ -384,7 +384,7 @@ class EntityManager
      */
     protected function persist(Model $model, Behaviors $behaviors): void
     {
-        if (! $model->isNew() && ! $model->isModified() && ! $model->isMarkedForDeletion()) {
+        if (! $model->isNew() && ! $model->isModified()) {
             return;
         }
 
@@ -418,8 +418,7 @@ class EntityManager
             }
         }
 
-        $data = $this->extract($model, $behaviors, $model->getModifiedProperties());
-        if (empty($data)) {
+        if (empty(array_intersect_key($model->getModifiedProperties(), $this->writableColumns($model)))) {
             // Only relations changed; there is nothing to update on this row
             $model->clearModifiedProperties();
 
@@ -565,7 +564,7 @@ class EntityManager
             $desired[(string) $value] = $value;
         }
 
-        if ($this->isSoftDeleteJunction($junction)) {
+        if (! $junction instanceof Junction && $junction->isSoftDeletable()) {
             $this->syncSoftDeleteJunction($junction, $sourceColumns, $junctionColumn, $desired);
 
             return;
@@ -590,19 +589,9 @@ class EntityManager
             }
         }
 
-        $this->insertRows($table, $missing);
-    }
-
-    /**
-     * Get whether the given junction uses soft deletes
-     *
-     * @param Junction|Model $junction A generic {@see Junction} or a junction model
-     *
-     * @return bool
-     */
-    protected function isSoftDeleteJunction(Junction|Model $junction): bool
-    {
-        return ! $junction instanceof Junction && $junction->isSoftDeletable();
+        foreach ($missing as $row) {
+            $this->db->insert($table, $row);
+        }
     }
 
     /**
@@ -744,21 +733,6 @@ class EntityManager
         }
 
         return $condition;
-    }
-
-    /**
-     * Insert the given rows into the table
-     *
-     * @param string $table
-     * @param array<array<string, mixed>> $rows Each row as a column => value map
-     *
-     * @return void
-     */
-    protected function insertRows(string $table, array $rows): void
-    {
-        foreach ($rows as $row) {
-            $this->db->insert($table, $row);
-        }
     }
 
     /**
