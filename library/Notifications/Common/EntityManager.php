@@ -447,7 +447,7 @@ class EntityManager
     }
 
     /**
-     * Stamp the model's `changed_at` column with the current time if it has one
+     * Stamp the model's {@see Model::getChangedAtColumn()} column with the current time if it has one
      *
      * Schema-wide convention; not implemented as a behavior so individual models don't have to opt in.
      *
@@ -457,8 +457,9 @@ class EntityManager
      */
     protected function stampChangedAt(Model $model): void
     {
-        if (isset($this->writableColumns($model)['changed_at'])) {
-            $model->changed_at = $this->now();
+        $column = $model->getChangedAtColumn();
+        if (isset($this->writableColumns($model)[$column])) {
+            $model->$column = $this->now();
         }
     }
 
