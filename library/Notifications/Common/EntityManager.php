@@ -436,7 +436,7 @@ class EntityManager
         }
 
         // Stamp only now that we know an UPDATE will actually go out. The stamp adds
-        // `changed_at` to the modified set, so re-extract to pick it up.
+        // the changedAtColumn to the modified set, so re-extract to pick it up.
         $this->stampChangedAt($model);
         $data = $this->extract($model, $behaviors, $model->getModifiedProperties());
 
