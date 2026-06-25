@@ -530,7 +530,7 @@ class EntityManager
      * Assignment is authoritative, the stored set is replaced by the given one. Links absent from $targets
      * are deleted, new ones inserted, existing ones remain.
      *
-     * Inserts and deletes are soft-delete aware and stamp `changed_at` if possible.
+     * Inserts and deletes are soft-delete aware and stamp the {@see Model::getChangedAtColumn()} column if possible.
      * For this to work the relation must be declared using the junction model.
      * Relations that use the table name will always use a generic {@see Junction} instance.
      *
@@ -624,11 +624,12 @@ class EntityManager
      *
      * Links no longer desired but still active are soft-deleted; desired links that are currently
      * soft-deleted are revived; desired links not stored at all are inserted; active links that remain
-     * desired are left untouched. Every soft-delete, revival and insert stamps `changed_at`.
+     * desired are left untouched. Every soft-delete, revival and insert stamps the
+     * {@see Model::getChangedAtColumn()} column.
      *
-     * The `deleted` and `changed_at` columns are written using their schema-wide storage forms directly
-     * (the `'y'`/`'n'` enum and a millisecond timestamp), rather than routing through the junction
-     * model's behaviors — the same way {@see self::persist()} treats `changed_at` as a fixed convention. Every
+     * The `deleted` and {@see Model::getChangedAtColumn()} columns are written using their schema-wide storage
+     * forms directly (the `'y'`/`'n'` enum and a millisecond timestamp), rather than routing through the junction
+     * model's behaviors — the same way {@see self::persist()} stamps it as a fixed convention. Every
      * soft-delete junction in the schema carries both columns, so neither is treated as optional.
      *
      * @param Model $junction A junction model
