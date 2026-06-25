@@ -140,6 +140,19 @@ abstract class Model extends \ipl\Orm\Model
     }
 
     /**
+     * Get the column used to store the timestamp of the most recent modification to the row
+     *
+     * `changed_at` is the schema-wide convention, the {@see EntityManager} checks whether the column
+     * exists on the model before stamping it.
+     *
+     * @return string
+     */
+    public function getChangedAtColumn(): string
+    {
+        return 'changed_at';
+    }
+
+    /**
      * @param string $key The name of the property, which may be a column or a relation
      */
     protected function getProperty(string $key): mixed
