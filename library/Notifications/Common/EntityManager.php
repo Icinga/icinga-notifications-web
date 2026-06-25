@@ -127,7 +127,12 @@ class EntityManager
 
         $condition = $this->createPrimaryKeyCondition($model, $behaviors);
         if ($condition === null) {
-            return;
+            throw new RuntimeException(
+                sprintf(
+                    'Cannot delete %s without a primary key value',
+                    get_class($model)
+                )
+            );
         }
 
         $this->db->delete($model->getTableName(), $condition);
@@ -153,7 +158,7 @@ class EntityManager
         }
 
         if ($this->activeSaves->offsetExists($model)) {
-            throw new RuntimeException('Cannot save a cyclic graph');
+            throw new RuntimeException('Reference loop detected, failed to save');
         }
 
         $this->activeSaves->offsetSet($model);

@@ -1387,7 +1387,7 @@ class EntityManagerTest extends TestCase
         $gadget->workshop = $workshop;
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('cyclic');
+        $this->expectExceptionMessage('loop detected');
 
         $this->em()->save($workshop);
     }
