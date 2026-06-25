@@ -10,6 +10,7 @@ use Icinga\Application\Logger;
 use Icinga\Module\Notifications\Common\Model;
 use Icinga\Module\Notifications\Common\SourceHookLocator;
 use Icinga\Module\Notifications\Hook\V2\SourceHook;
+use Icinga\Module\Notifications\Repository\SourceRepository;
 use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
@@ -24,6 +25,10 @@ use Throwable;
  * @property string $name The user-defined name
  * @property ?string $listener_username The username for HTTP authentication
  * @property ?string $listener_password_hash
+ * @property ?string $listener_password Helper property to temporarily store the raw password (not persisted to the
+ *                                      database). The repository hashes it and assigns the result to
+ *                                      {@see self::$listener_password_hash} before saving the source to the database.
+ *                                      See the usage in {@see SourceRepository::upsert()}.
  * @property DateTime $changed_at
  * @property bool $deleted
  * @property bool $locked
