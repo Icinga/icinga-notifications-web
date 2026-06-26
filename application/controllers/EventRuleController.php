@@ -26,7 +26,6 @@ use Icinga\Web\Session;
 use ipl\Html\Attributes;
 use ipl\Html\Contract\Form;
 use ipl\Html\Html;
-use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\Stdlib\Filter;
 use ipl\Stdlib\Filter\Condition;
@@ -224,8 +223,37 @@ class EventRuleController extends CompatController
         }
 
         $editor = (new SearchEditor())
+            ->addAttributes(Attributes::create(['class' => 'event-rule-filter']))
             ->setQueryString($parsedFilter['qs'] ?? '')
             ->setAction(Url::fromRequest()->with('object_filter', $filter)->getAbsoluteUrl());
+
+        $filterNameElement = $editor->createElement('text', 'filter_name', [
+            'label' => $this->translate('Filter Name'),
+            'value' => $parsedFilter['filter_name'] ?? null,
+            'placeholder' => $this->translate('Optional filter name'),
+            'decorators' => [
+                'Label',
+                'LabelGroup' => [
+                    'name' => 'HtmlTag',
+                    'options' => [
+                        'tag' => 'div',
+                        'class' => 'control-label-group'
+                    ]
+                ],
+                'RenderElement',
+                'ControlGroup' => [
+                    'name' => 'HtmlTag',
+                    'options' => [
+                        'tag' => 'div',
+                        'class' => 'control-group filter-name'
+                    ]
+                ],
+            ]
+        ]);
+
+        $filterNameElement->applyDecoration();
+        $editor->registerElement($filterNameElement);
+        $editor->prependHtml($filterNameElement);
 
         if ($hook !== null) {
             $editor->setSuggestionUrl(
@@ -283,7 +311,10 @@ class EventRuleController extends CompatController
 
         $editor->on(Form::ON_SUBMIT, function (SearchEditor $form) use ($ruleId, $getJsonPaths) {
             $filter = $form->getFilter();
-            $this->session->set('object_filter', (new RuleSerializer($filter, $getJsonPaths($filter)))->getJson());
+            $this->session->set(
+                'object_filter',
+                (new RuleSerializer($filter, $getJsonPaths($filter), $form->getValue('filter_name')))->getJson()
+            );
             $this->redirectNow(Links::eventRule($ruleId)->setParam('_filterOnly'));
         })->handleRequest($this->getServerRequest());
 

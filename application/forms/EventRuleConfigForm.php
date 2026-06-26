@@ -13,7 +13,9 @@ use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Model\RuleEscalation;
 use ipl\Html\Attributes;
 use ipl\Html\FormElement\SubmitButtonElement;
+use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
+use ipl\Html\Text;
 use ipl\Html\ValidHtml;
 use ipl\I18n\Translation;
 use ipl\Sql\Connection;
@@ -131,11 +133,33 @@ class EventRuleConfigForm extends CompatForm
         $this->registerElement($hiddenInput);
 
         if ($hiddenInput->hasValue()) {
-            $label = new Icon('filter');
-            $title = $this->translate('Adjust Filter');
+            $parsedFilter = json_decode($hiddenInput->getValue(), true, flags: JSON_THROW_ON_ERROR);
+
+            if (! empty($parsedFilter['filter_name'])) {
+                $label = new HtmlElement(
+                    'span',
+                    Attributes::create(['class' => 'name']),
+                    Text::create($parsedFilter['filter_name'])
+                );
+                $title = sprintf(
+                    '%s (%s: %s)',
+                    $this->translate('Adjust Filter'),
+                    $this->translate('Name'),
+                    $parsedFilter['filter_name']
+                );
+            } else {
+                $label = new HtmlDocument();
+                $label
+                    ->addHtml(new Icon('filter'))
+                    ->addHtml(new HtmlElement('span', content: Text::create($this->translate('Adjust Filter'))));
+                $title = $this->translate('Adjust Filter');
+            }
         } else {
-            $label = new Icon('plus');
-            $title = $this->translate('Add filter');
+            $label = new HtmlDocument();
+            $label
+                ->addHtml(new Icon('plus'))
+                ->addHtml(new HtmlElement('span', content: Text::create($this->translate('Add Filter'))));
+            $title = $this->translate('Add Filter');
         }
 
         return new HtmlElement(

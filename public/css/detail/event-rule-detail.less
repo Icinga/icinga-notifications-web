@@ -105,9 +105,18 @@
       background-color: @connectorColor;
     }
 
-    .add-button,
-    .filter-button {
+    .add-button {
       flex: 0;
+    }
+
+    .filter-button {
+      flex-direction: column;
+
+      .name {
+        overflow: hidden;
+        word-break: break-word;
+        .line-clamp(2);
+      }
     }
   }
 
@@ -259,5 +268,19 @@
     .btn-remove {
       .button(@body-bg-color, @color-critical, @color-critical-accentuated);
     }
+  }
+}
+
+.event-rule-filter > .filter-name {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: .5625em;
+  margin-bottom: .5em;
+
+  input {
+    flex-grow: 1;
+    max-width: 35em;
+    .rounded-corners();
   }
 }
