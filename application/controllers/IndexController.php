@@ -19,7 +19,12 @@ class IndexController extends CompatController
 
         $this->addContent($setup);
 
-        if ($setup->ensureAssembled()->isFinished()) {
+        $setup->ensureAssembled();
+
+        if ($setup->integrationAdded()) {
+            $this->redirectNow(Url::fromPath('notifications'));
+        } elseif ($setup->isFinished()) {
+            $this->switchToSingleColumnLayout();
             $this->redirectNow(Url::fromPath('navigation/dashboard', ['name' => 'notifications']));
         }
     }
