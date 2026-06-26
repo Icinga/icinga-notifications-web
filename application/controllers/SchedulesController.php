@@ -8,15 +8,20 @@ namespace Icinga\Module\Notifications\Controllers;
 use Icinga\Module\Notifications\Common\ConfigurationTabs;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
+use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Schedule;
 use Icinga\Module\Notifications\View\ScheduleRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
+use ipl\Html\HtmlString;
+use ipl\Html\TemplateString;
+use ipl\Sql\Expression;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
 use ipl\Web\Control\LimitControl;
 use ipl\Web\Control\SortControl;
 use ipl\Web\Filter\QueryString;
+use ipl\Web\Widget\ActionLink;
 use ipl\Web\Widget\ButtonLink;
 
 class SchedulesController extends CompatController
@@ -69,18 +74,35 @@ class SchedulesController extends CompatController
         $this->addControl($sortControl);
         $this->addControl($limitControl);
         $this->addControl($searchBar);
-        $this->addContent(
-            (new ButtonLink(
-                t('Create Schedule'),
-                Links::scheduleAdd(),
-                'plus',
-                [
-                    'class' => 'add-new-component'
-                ]
-            ))->openInModal()
-        );
 
-        $this->addContent(new ObjectList($schedules, new ScheduleRenderer()));
+        $addButton = new ButtonLink(
+            $this->translate('Create Schedule'),
+            Links::scheduleAdd(),
+            'plus',
+            [
+                'class' => 'add-new-component'
+            ]
+        );
+        $this->addContent($addButton);
+
+        $emptyStateMessage = null;
+        if (Contact::on(Database::get())->columns([new Expression('1')])->limit(1)->first() === null) {
+            $addButton->disable($this->translate('A contact is required to add a schedule'));
+            $emptyStateMessage = TemplateString::create(
+                $this->translate(
+                    'No schedules found.%1$s'
+                    . 'To add a new schedule, please {{#link}}create a Contact{{/link}} first.'
+                ),
+                ['link' => (new ActionLink(null, Links::contactAdd()))->setBaseTarget('_next')],
+                [HtmlString::create('<br>')]
+            );
+        } else {
+            $addButton->openInModal();
+        }
+
+        $this->addContent(
+            (new ObjectList($schedules, new ScheduleRenderer()))->setEmptyStateMessage($emptyStateMessage)
+        );
 
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {
             $this->sendMultipartUpdate();
