@@ -8,6 +8,7 @@ namespace Icinga\Module\Notifications\Widget;
 use Icinga\Application\Logger;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
+use Icinga\Module\Notifications\Hook\SourceIntegrationSetupHook;
 use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Rule;
@@ -38,6 +39,9 @@ class InitialSetup extends BaseHtmlElement
     /** @var bool Whether the setup is finished */
     protected bool $finished = false;
 
+    /** @var bool Whether the integration has been added */
+    protected bool $integrationAdded = false;
+
     /**
      * Whether the setup is finished
      *
@@ -46,6 +50,16 @@ class InitialSetup extends BaseHtmlElement
     public function isFinished(): bool
     {
         return $this->finished;
+    }
+
+    /**
+     * Whether the integration has been added
+     *
+     * @return bool
+     */
+    public function integrationAdded(): bool
+    {
+        return $this->integrationAdded;
     }
 
     protected function assemble(): void
@@ -71,11 +85,16 @@ class InitialSetup extends BaseHtmlElement
 
         if ($this->hasAddButton) {
             try {
-                $hooks = [];
+                $hooks = SourceIntegrationSetupHook::all();
                 $container = new HtmlElement('div', Attributes::create(['class' => 'integrations']));
 
                 foreach ($hooks as $hook) {
-                    // add hook content to the $container
+                    $container->addHtml($hook->getIntegration());
+
+                    if ($hook->isFinished()) {
+                        $this->integrationAdded = true;
+                        break;
+                    }
                 }
 
                 if (! $container->isEmpty()) {
