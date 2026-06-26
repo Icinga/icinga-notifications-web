@@ -75,7 +75,7 @@ class EntityManagerTest extends TestCase
 
     public function testInsertAssignsGeneratedKeyAndMarksNotNew()
     {
-        $workshop = new Workshop();
+        $workshop = (new Workshop())->setNew();
         $this->assertTrue($workshop->isNew());
         $workshop->name = 'Acme';
 
@@ -88,7 +88,7 @@ class EntityManagerTest extends TestCase
 
     public function testHydratedModelIsLoadedAndUnmodified()
     {
-        $workshop = new Workshop();
+        $workshop = (new Workshop())->setNew();
         $workshop->name = 'Acme';
         $this->em()->save($workshop);
 
@@ -101,7 +101,7 @@ class EntityManagerTest extends TestCase
 
     public function testUpdateWritesOnlyChangedColumns()
     {
-        $gadget = new Gadget();
+        $gadget = (new Gadget())->setNew();
         $gadget->workshop_id = 5;
         $gadget->name = 'Spanner';
         $this->em()->save($gadget);
@@ -125,7 +125,7 @@ class EntityManagerTest extends TestCase
 
     public function testNoOpSaveOnUnmodifiedModelDoesNothing()
     {
-        $workshop = new Workshop();
+        $workshop = (new Workshop())->setNew();
         $workshop->name = 'Acme';
         $this->em()->save($workshop);
 
@@ -136,7 +136,7 @@ class EntityManagerTest extends TestCase
 
     public function testDeleteNewModel()
     {
-        $workshop = new Workshop();
+        $workshop = (new Workshop())->setNew();
         $workshop->name = 'Acme';
         $this->em()->save($workshop->markDeleted());
 
@@ -152,7 +152,7 @@ class EntityManagerTest extends TestCase
     {
         // gadget_tag carries a `deleted` column. A never-saved model marked deleted must still be a no-op:
         // it must not insert a deleted = 'y' tombstone row for something that never existed.
-        $gadgetTag = new GadgetTag();
+        $gadgetTag = (new GadgetTag())->setNew();
         $gadgetTag->gadget_id = 1;
         $gadgetTag->tag_id = 1;
 
@@ -170,7 +170,7 @@ class EntityManagerTest extends TestCase
     {
         // workshop has no `deleted` column, so useSoftDelete() is false: the $em->save($model->markDeleted())
         // flow must remove the row outright.
-        $workshop = new Workshop();
+        $workshop = (new Workshop())->setNew();
         $workshop->name = 'Acme';
         $this->em()->save($workshop);
 
@@ -187,7 +187,7 @@ class EntityManagerTest extends TestCase
     {
         // gadget_tag carries a `deleted` column, so useSoftDelete() is true: the $em->save($model->markDeleted())
         // flow must keep the row and flip deleted to 'y' (stamping changed_at) rather than removing it.
-        $gadgetTag = new GadgetTag();
+        $gadgetTag = (new GadgetTag())->setNew();
         $gadgetTag->gadget_id = 1;
         $gadgetTag->tag_id = 1;
         $this->em()->save($gadgetTag); // changed_at -> 1000
@@ -203,12 +203,12 @@ class EntityManagerTest extends TestCase
 
     public function testHasManyCascadeCopiesParentKeyIntoChildren()
     {
-        $workshop = new Workshop();
+        $workshop = (new Workshop())->setNew();
         $workshop->name = 'Acme';
 
-        $spanner = new Gadget();
+        $spanner = (new Gadget())->setNew();
         $spanner->name = 'Spanner';
-        $wrench = new Gadget();
+        $wrench = (new Gadget())->setNew();
         $wrench->name = 'Wrench';
         $workshop->gadgets = [$spanner, $wrench];
 
@@ -227,10 +227,10 @@ class EntityManagerTest extends TestCase
 
     public function testBelongsToCascadeSavesParentFirst()
     {
-        $gadget = new Gadget();
+        $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
 
-        $workshop = new Workshop();
+        $workshop = (new Workshop())->setNew();
         $workshop->name = 'Acme';
         $gadget->workshop = $workshop;
 
@@ -246,9 +246,9 @@ class EntityManagerTest extends TestCase
 
     public function testBelongsToAssigningNullClearsTheForeignKey()
     {
-        $workshop = new Workshop();
+        $workshop = (new Workshop())->setNew();
         $workshop->name = 'Acme';
-        $gadget = new Gadget();
+        $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
         $gadget->workshop = $workshop;
         $this->em()->save($gadget);
@@ -270,10 +270,10 @@ class EntityManagerTest extends TestCase
 
     public function testManyToManyWritesJunctionRows()
     {
-        $gadget = new Gadget();
+        $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
 
-        $sticker = new Sticker();
+        $sticker = (new Sticker())->setNew();
         $sticker->label = 'fragile';
         $gadget->stickers = [$sticker];
 
@@ -291,10 +291,10 @@ class EntityManagerTest extends TestCase
         // The junction's foreign key (gadget_id) lives on the junction table, not on the target
         // (sticker). It must not leak onto the target as a stray property — that would surface
         // a column the target doesn't own and confuse any later read of the model.
-        $gadget = new Gadget();
+        $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
 
-        $sticker = new Sticker();
+        $sticker = (new Sticker())->setNew();
         $sticker->label = 'fragile';
         $gadget->stickers = [$sticker];
 
@@ -308,14 +308,14 @@ class EntityManagerTest extends TestCase
 
     public function testManyToManyWritesOneInsertPerLink()
     {
-        $gadget = new Gadget();
+        $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
 
-        $fragile = new Sticker();
+        $fragile = (new Sticker())->setNew();
         $fragile->label = 'fragile';
-        $thisSideUp = new Sticker();
+        $thisSideUp = (new Sticker())->setNew();
         $thisSideUp->label = 'this side up';
-        $heavy = new Sticker();
+        $heavy = (new Sticker())->setNew();
         $heavy->label = 'heavy';
         $gadget->stickers = [$fragile, $thisSideUp, $heavy];
 
@@ -340,10 +340,10 @@ class EntityManagerTest extends TestCase
 
     public function testManyToManyDoesNotDuplicateAnExistingLink()
     {
-        $gadget = new Gadget();
+        $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
 
-        $sticker = new Sticker();
+        $sticker = (new Sticker())->setNew();
         $sticker->label = 'fragile';
         $gadget->stickers = [$sticker];
 
@@ -364,16 +364,16 @@ class EntityManagerTest extends TestCase
 
     public function testManyToManyReassignmentReplacesThePreviousLinks()
     {
-        $gadget = new Gadget();
+        $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
 
-        $fragile = new Sticker();
+        $fragile = (new Sticker())->setNew();
         $fragile->label = 'fragile';
         $gadget->stickers = [$fragile];
 
         $this->em()->save($gadget);
 
-        $heavy = new Sticker();
+        $heavy = (new Sticker())->setNew();
         $heavy->label = 'heavy';
 
         /** @var Gadget $loaded */
@@ -396,10 +396,10 @@ class EntityManagerTest extends TestCase
 
     public function testManyToManyAssigningAnEmptySetClearsTheLinks()
     {
-        $gadget = new Gadget();
+        $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
 
-        $sticker = new Sticker();
+        $sticker = (new Sticker())->setNew();
         $sticker->label = 'fragile';
         $gadget->stickers = [$sticker];
 
@@ -419,10 +419,10 @@ class EntityManagerTest extends TestCase
 
     public function testManyToManyAssigningNullClearsTheLinks()
     {
-        $gadget = new Gadget();
+        $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
 
-        $sticker = new Sticker();
+        $sticker = (new Sticker())->setNew();
         $sticker->label = 'fragile';
         $gadget->stickers = [$sticker];
 
@@ -459,9 +459,9 @@ class EntityManagerTest extends TestCase
             . 'CREATE TABLE gadget_sticker (gadget_id INTEGER NOT NULL, sticker_id INTEGER NOT NULL);'
         );
 
-        $gadget = new Gadget();
+        $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
-        $sticker = new Sticker();
+        $sticker = (new Sticker())->setNew();
         $sticker->label = 'fragile';
         $gadget->stickers = [$sticker];
         (new TickingEntityManager($db))->save($gadget);
@@ -500,9 +500,9 @@ class EntityManagerTest extends TestCase
             . 'gadget_id INTEGER NOT NULL, sticker_id INTEGER NOT NULL, deleted INTEGER NOT NULL DEFAULT 0);'
         );
 
-        $gadget = new Gadget();
+        $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
-        $sticker = new Sticker();
+        $sticker = (new Sticker())->setNew();
         $sticker->label = 'fragile';
         $gadget->stickers = [$sticker];
         (new TickingEntityManager($db))->save($gadget);
@@ -523,12 +523,12 @@ class EntityManagerTest extends TestCase
     {
         // The tags relation goes through a junction model with a `deleted` column, so an orphaned link
         // is marked deleted = 'y' (the row stays) and changed_at is stamped, rather than hard-deleted.
-        $gadget = new Gadget();
+        $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
 
-        $first = new Tag();
+        $first = (new Tag())->setNew();
         $first->name = 'sharp';
-        $second = new Tag();
+        $second = (new Tag())->setNew();
         $second->name = 'heavy';
         $gadget->tags = [$first, $second];
 
@@ -551,10 +551,10 @@ class EntityManagerTest extends TestCase
 
     public function testSoftDeleteJunctionRevivesAReAddedLinkInsteadOfDuplicating()
     {
-        $gadget = new Gadget();
+        $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
 
-        $tag = new Tag();
+        $tag = (new Tag())->setNew();
         $tag->name = 'sharp';
         $gadget->tags = [$tag];
         $this->em()->save($gadget); // link created, changed_at -> 1000
@@ -578,10 +578,10 @@ class EntityManagerTest extends TestCase
 
     public function testSoftDeleteJunctionLeavesAnUnchangedActiveLinkUntouched()
     {
-        $gadget = new Gadget();
+        $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
 
-        $tag = new Tag();
+        $tag = (new Tag())->setNew();
         $tag->name = 'sharp';
         $gadget->tags = [$tag];
         $this->em()->save($gadget);
@@ -603,10 +603,10 @@ class EntityManagerTest extends TestCase
 
     public function testSaveWithinOuterTransactionDoesNotOpenNestedTransaction()
     {
-        $a = new Workshop();
+        $a = (new Workshop())->setNew();
         $a->name = 'Acme';
 
-        $b = new Workshop();
+        $b = (new Workshop())->setNew();
         $b->name = 'Globex';
 
         $em = $this->em();
@@ -624,11 +624,11 @@ class EntityManagerTest extends TestCase
 
     public function testGraphIsRolledBackOnFailure()
     {
-        $workshop = new Workshop();
+        $workshop = (new Workshop())->setNew();
         $workshop->name = 'Acme';
 
         // A gadget without a name violates the NOT NULL constraint and fails mid-cascade
-        $workshop->gadgets = [new Gadget()];
+        $workshop->gadgets = [(new Gadget())->setNew()];
 
         try {
             $this->em()->save($workshop);
@@ -642,7 +642,7 @@ class EntityManagerTest extends TestCase
 
     public function testPropertyBehaviorConvertsValuesOnPersist()
     {
-        $flag = new Flag();
+        $flag = (new Flag())->setNew();
         $flag->label = 'shiny';
         $flag->enabled = true;
 
@@ -659,7 +659,7 @@ class EntityManagerTest extends TestCase
 
     public function testPropertyBehaviorConvertsValuesOnUpdate()
     {
-        $flag = new Flag();
+        $flag = (new Flag())->setNew();
         $flag->label = 'shiny';
         $flag->enabled = true;
         $this->em()->save($flag);
@@ -676,7 +676,7 @@ class EntityManagerTest extends TestCase
 
     public function testChangedAtIsStampedOnInsert()
     {
-        $stamped = new Stamped();
+        $stamped = (new Stamped())->setNew();
         $stamped->name = 'Widget';
         $this->em()->save($stamped);
 
@@ -695,7 +695,7 @@ class EntityManagerTest extends TestCase
 
     public function testChangedAtIsStampedOnUpdate()
     {
-        $stamped = new Stamped();
+        $stamped = (new Stamped())->setNew();
         $stamped->name = 'Widget';
         $this->em()->save($stamped); // changed_at -> 1s
 
@@ -712,7 +712,7 @@ class EntityManagerTest extends TestCase
 
     public function testChangedAtIsNotStampedIfRowIsUnchanged()
     {
-        $stamped = new Stamped();
+        $stamped = (new Stamped())->setNew();
         $stamped->name = 'Widget';
         $this->em()->save($stamped); // changed_at -> 1s
         $this->em()->save($stamped);
@@ -721,7 +721,7 @@ class EntityManagerTest extends TestCase
 
     public function testChangedAtIsNotChangedIfRowHasNoNewChanges()
     {
-        $stamped = new Stamped();
+        $stamped = (new Stamped())->setNew();
         $stamped->name = 'Widget';
         $this->em()->save($stamped); // changed_at -> 1s
         $this->assertSame(1, $stamped->changed_at->getTimestamp());
@@ -734,7 +734,7 @@ class EntityManagerTest extends TestCase
     public function testChangedAtIsNotStampedWhenOnlyARelationWasReassigned()
     {
         // Save once so we have a loadable row with changed_at = 1s.
-        $stamped = new Stamped();
+        $stamped = (new Stamped())->setNew();
         $stamped->name = 'Widget';
         $this->em()->save($stamped);
 
@@ -771,7 +771,7 @@ class EntityManagerTest extends TestCase
     {
         $id = hex2bin('deadbeefcafebabe1234567890abcdef');
 
-        $trinket = new Trinket();
+        $trinket = (new Trinket())->setNew();
         $trinket->id = $id;
         $trinket->name = 'Amulet';
 
@@ -789,7 +789,7 @@ class EntityManagerTest extends TestCase
     {
         $id = hex2bin('deadbeefcafebabe1234567890abcdef');
 
-        $trinket = new Trinket();
+        $trinket = (new Trinket())->setNew();
         $trinket->id = $id;
         $trinket->name = 'Amulet';
         $this->em()->save($trinket);
@@ -808,7 +808,7 @@ class EntityManagerTest extends TestCase
     {
         $id = hex2bin('deadbeefcafebabe1234567890abcdef');
 
-        $trinket = new Trinket();
+        $trinket = (new Trinket())->setNew();
         $trinket->id = $id;
         $trinket->name = 'Amulet';
         $this->em()->save($trinket);
@@ -820,7 +820,7 @@ class EntityManagerTest extends TestCase
 
     public function testReadingALazyRelationOnLoadedModelDoesNotMarkItModified()
     {
-        $workshop = new Workshop();
+        $workshop = (new Workshop())->setNew();
         $workshop->name = 'Acme';
         $this->em()->save($workshop);
 
@@ -839,14 +839,14 @@ class EntityManagerTest extends TestCase
 
     public function testAssigningALazyRelationOnLoadedModelMarksItModifiedWithoutResolvingIt()
     {
-        $workshop = new Workshop();
+        $workshop = (new Workshop())->setNew();
         $workshop->name = 'Acme';
         $this->em()->save($workshop);
 
         $loaded = Workshop::on($this->db)->first();
 
         // Replace the (still-Closure) relation without first triggering its loader.
-        $loaded->gadgets = [new Gadget()];
+        $loaded->gadgets = [(new Gadget())->setNew()];
 
         $this->assertArrayHasKey(
             'gadgets',
@@ -857,9 +857,9 @@ class EntityManagerTest extends TestCase
 
     public function testSavingAParentPersistsAnInPlaceChangeToALoadedRelation()
     {
-        $workshop = new Workshop();
+        $workshop = (new Workshop())->setNew();
         $workshop->name = 'Acme';
-        $gadget = new Gadget();
+        $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
         $gadget->workshop = $workshop;
         $this->em()->save($gadget);
@@ -883,9 +883,9 @@ class EntityManagerTest extends TestCase
 
     public function testDeletingAModelStillPersistsAnInPlaceEditToARelatedModel()
     {
-        $workshop = new Workshop();
+        $workshop = (new Workshop())->setNew();
         $workshop->name = 'Acme';
-        $gadget = new Gadget();
+        $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
         $gadget->workshop = $workshop;
         $this->em()->save($gadget);
@@ -912,11 +912,11 @@ class EntityManagerTest extends TestCase
     {
         $id = hex2bin('deadbeefcafebabe1234567890abcdef');
 
-        $trinket = new Trinket();
+        $trinket = (new Trinket())->setNew();
         $trinket->id = $id;
         $trinket->name = 'Amulet';
 
-        $charm = new Charm();
+        $charm = (new Charm())->setNew();
         $charm->label = 'rune';
         $trinket->charms = [$charm];
 
@@ -932,7 +932,7 @@ class EntityManagerTest extends TestCase
 
     public function testSaveAfterDeleteReInserts()
     {
-        $w = new Workshop();
+        $w = (new Workshop())->setNew();
         $w->name = 'Acme';
         $this->em()->save($w);
         $this->em()->save($w->markDeleted());
@@ -947,7 +947,7 @@ class EntityManagerTest extends TestCase
 
     public function testDeleteClearsAutoIncrementKey()
     {
-        $w = new Workshop();
+        $w = (new Workshop())->setNew();
         $w->name = 'Acme';
         $this->em()->save($w);
         $oldId = $w->id;
@@ -968,7 +968,7 @@ class EntityManagerTest extends TestCase
 
     public function testDeleteClearsCompoundKey()
     {
-        $p = new Pairing();
+        $p = (new Pairing())->setNew();
         $p->left_id = 7;
         $p->right_id = 9;
         $p->label = 'A';
@@ -983,7 +983,7 @@ class EntityManagerTest extends TestCase
     public function testDeleteClearsApplicationAssignedKey()
     {
         $id = hex2bin('deadbeefcafebabe1234567890abcdef');
-        $trinket = new Trinket();
+        $trinket = (new Trinket())->setNew();
         $trinket->id = $id;
         $trinket->name = 'Amulet';
         $this->em()->save($trinket);
@@ -997,13 +997,13 @@ class EntityManagerTest extends TestCase
     {
         // Two rows sharing left_id but differing in right_id ensure the UPDATE's WHERE has to
         // include both key columns to target only one of them.
-        $a = new Pairing();
+        $a = (new Pairing())->setNew();
         $a->left_id = 1;
         $a->right_id = 1;
         $a->label = 'A';
         $this->em()->save($a);
 
-        $b = new Pairing();
+        $b = (new Pairing())->setNew();
         $b->left_id = 1;
         $b->right_id = 2;
         $b->label = 'B';
@@ -1024,13 +1024,13 @@ class EntityManagerTest extends TestCase
 
     public function testCompoundKeyDeleteMatchesByAllKeyColumns()
     {
-        $a = new Pairing();
+        $a = (new Pairing())->setNew();
         $a->left_id = 1;
         $a->right_id = 1;
         $a->label = 'A';
         $this->em()->save($a);
 
-        $b = new Pairing();
+        $b = (new Pairing())->setNew();
         $b->left_id = 1;
         $b->right_id = 2;
         $b->label = 'B';
@@ -1047,7 +1047,7 @@ class EntityManagerTest extends TestCase
 
     public function testCompoundKeyInsertWritesBothKeyColumnsAndClearsModifiedProperties()
     {
-        $p = new Pairing();
+        $p = (new Pairing())->setNew();
         $p->left_id = 7;
         $p->right_id = 9;
         $p->label = 'A';
@@ -1066,7 +1066,7 @@ class EntityManagerTest extends TestCase
 
     public function testReSavingAnUnmodifiedModelIssuesNoWrites()
     {
-        $workshop = new Workshop();
+        $workshop = (new Workshop())->setNew();
         $workshop->name = 'Acme';
         $this->em()->save($workshop);
 
@@ -1078,7 +1078,7 @@ class EntityManagerTest extends TestCase
 
     public function testInsertOfNewModelIssuesExactlyOneInsertAndNoOtherWrites()
     {
-        $workshop = new Workshop();
+        $workshop = (new Workshop())->setNew();
         $workshop->name = 'Acme';
 
         $this->em()->save($workshop);
@@ -1092,7 +1092,7 @@ class EntityManagerTest extends TestCase
 
     public function testUpdateWritesOnlyTheChangedColumnInTheSetClause()
     {
-        $gadget = new Gadget();
+        $gadget = (new Gadget())->setNew();
         $gadget->workshop_id = 5;
         $gadget->name = 'Spanner';
         $this->em()->save($gadget);
@@ -1118,7 +1118,7 @@ class EntityManagerTest extends TestCase
 
     public function testCompoundKeyUpdateScopesByAllKeyColumns()
     {
-        $p = new Pairing();
+        $p = (new Pairing())->setNew();
         $p->left_id = 1;
         $p->right_id = 2;
         $p->label = 'A';
@@ -1138,7 +1138,7 @@ class EntityManagerTest extends TestCase
 
     public function testDeleteIssuesExactlyOneDeleteAndNoOtherWrites()
     {
-        $workshop = new Workshop();
+        $workshop = (new Workshop())->setNew();
         $workshop->name = 'Acme';
         $this->em()->save($workshop);
         $id = $workshop->id;
@@ -1155,14 +1155,14 @@ class EntityManagerTest extends TestCase
 
     public function testDeletedModelDoesNotCascadeToAssignedChildren()
     {
-        $workshop = new Workshop();
+        $workshop = (new Workshop())->setNew();
         $workshop->name = 'Acme';
         $this->em()->save($workshop);
         $id = $workshop->id;
 
         // Assign a child and delete the parent in the same save. The relation cascade must be skipped
         // entirely: a deleted parent must not persist its children, whose foreign key is about to vanish.
-        $orphan = new Gadget();
+        $orphan = (new Gadget())->setNew();
         $orphan->name = 'Spanner';
         $workshop->gadgets = [$orphan];
 
@@ -1179,14 +1179,14 @@ class EntityManagerTest extends TestCase
 
     public function testDeletedModelDoesNotCascadeToAssignedParent()
     {
-        $gadget = new Gadget();
+        $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
         $this->em()->save($gadget);
         $id = $gadget->id;
 
         // Assign a brand-new parent, then delete the gadget. The dependency cascade must be skipped:
         // deleting a model must not persist a relation hung off it as a side effect.
-        $workshop = new Workshop();
+        $workshop = (new Workshop())->setNew();
         $workshop->name = 'Acme';
         $gadget->workshop = $workshop;
 
@@ -1203,9 +1203,9 @@ class EntityManagerTest extends TestCase
 
     public function testDeletingAModelHonorsAnExplicitlyClearedManyToManyInTheSameSave()
     {
-        $gadget = new Gadget();
+        $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
-        $sticker = new Sticker();
+        $sticker = (new Sticker())->setNew();
         $sticker->label = 'fragile';
         $gadget->stickers = [$sticker];
         $this->em()->save($gadget);
@@ -1226,9 +1226,9 @@ class EntityManagerTest extends TestCase
 
     public function testDeletingAModelSoftDeletesAnExplicitlyClearedSoftJunctionInTheSameSave()
     {
-        $gadget = new Gadget();
+        $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
-        $tag = new Tag();
+        $tag = (new Tag())->setNew();
         $tag->name = 'sharp';
         $gadget->tags = [$tag];
         $this->em()->save($gadget);
@@ -1251,9 +1251,9 @@ class EntityManagerTest extends TestCase
 
     public function testDeletingAModelAlsoDeletesAChildExplicitlyMarkedDeleted()
     {
-        $workshop = new Workshop();
+        $workshop = (new Workshop())->setNew();
         $workshop->name = 'Acme';
-        $gadget = new Gadget();
+        $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
         $workshop->gadgets = [$gadget];
         $this->em()->save($workshop);
@@ -1276,12 +1276,12 @@ class EntityManagerTest extends TestCase
 
     public function testCascadeInsertEmitsOneInsertPerRowAndNoUpdates()
     {
-        $spanner = new Gadget();
+        $spanner = (new Gadget())->setNew();
         $spanner->name = 'Spanner';
-        $wrench = new Gadget();
+        $wrench = (new Gadget())->setNew();
         $wrench->name = 'Wrench';
 
-        $workshop = new Workshop();
+        $workshop = (new Workshop())->setNew();
         $workshop->name = 'Acme';
         $workshop->gadgets = [$spanner, $wrench];
 
@@ -1296,10 +1296,10 @@ class EntityManagerTest extends TestCase
 
     public function testManyToManyEmitsOneInsertPerEnd()
     {
-        $gadget = new Gadget();
+        $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
 
-        $sticker = new Sticker();
+        $sticker = (new Sticker())->setNew();
         $sticker->label = 'fragile';
         $gadget->stickers = [$sticker];
 
@@ -1315,9 +1315,9 @@ class EntityManagerTest extends TestCase
 
     public function testUpdatingOnlyAChildDoesNotReWriteTheParent()
     {
-        $workshop = new Workshop();
+        $workshop = (new Workshop())->setNew();
         $workshop->name = 'Acme';
-        $gadget = new Gadget();
+        $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
         $workshop->gadgets = [$gadget];
         $this->em()->save($workshop);
@@ -1335,14 +1335,14 @@ class EntityManagerTest extends TestCase
     {
         // Loaded parent with no column changes; we only swap its many-to-many targets. The parent
         // row's own data is identical, so persist() should be a no-op — no UPDATE on the parent.
-        $gadget = new Gadget();
+        $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
         $this->em()->save($gadget);
 
         $loaded = Gadget::on($this->db)->first();
         $this->assertInstanceOf(Gadget::class, $loaded);
 
-        $sticker = new Sticker();
+        $sticker = (new Sticker())->setNew();
         $sticker->label = 'fragile';
         $loaded->stickers = [$sticker];
 
@@ -1359,10 +1359,10 @@ class EntityManagerTest extends TestCase
 
     public function testSavingACyclicGraphThrows()
     {
-        $workshop = new Workshop();
+        $workshop = (new Workshop())->setNew();
         $workshop->name = 'Acme';
 
-        $gadget = new Gadget();
+        $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
 
         // Build a cycle: the workshop owns the gadget and the gadget points back at the same workshop

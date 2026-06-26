@@ -6,17 +6,21 @@
 namespace Icinga\Module\Notifications\Common;
 
 use ipl\Sql\Connection;
+use RuntimeException;
 
 /**
  * Base class for all module models that tracks the changes made to a model
  *
  * Records which properties have changed since the model was loaded, and whether the model has been
  * persisted yet, so the {@see EntityManager} can store a model and write only what actually changed.
+ *
+ * {@see self::setNew()} must be called explicitly when creating a new instance, it tells the {@see EntityManager}
+ * whether to insert or update
  */
 abstract class Model extends \ipl\Orm\Model
 {
-    /** @var bool Whether this model is newly created and does not yet exist in the database */
-    private bool $isNew = true;
+    /** @var ?bool Whether this model is newly created and does not yet exist in the database */
+    private ?bool $isNew = null;
 
     /** @var bool Whether the model is marked for deletion on the next {@see EntityManager::save()} */
     private bool $markedForDeletion = false;
@@ -39,9 +43,15 @@ abstract class Model extends \ipl\Orm\Model
      * Get whether this entity is newly created and does not yet exist in the database
      *
      * @return bool
+     *
+     * @throws RuntimeException If $isNew was not explicitly set to a bool value with {@see setNew()}
      */
     public function isNew(): bool
     {
+        if ($this->isNew === null) {
+            throw new RuntimeException('$isNew must be set explicitly before calling isNew()');
+        }
+
         return $this->isNew;
     }
 
@@ -171,7 +181,7 @@ abstract class Model extends \ipl\Orm\Model
      */
     protected function setProperty(string $key, mixed $value): static
     {
-        if (! $this->resolvingProperty && ! $this->isNew && ! isset($this->modifiedProperties[$key])) {
+        if (! $this->resolvingProperty && $this->isNew === false && ! isset($this->modifiedProperties[$key])) {
             // Resolve the prior value via the trait's iterator, which skips Closure-valued properties.
             // This avoids triggering lazy relation loaders just to capture change-tracking state.
             $hadValue = false;
