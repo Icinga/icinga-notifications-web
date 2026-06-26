@@ -20,10 +20,12 @@ use ipl\Orm\Relations;
  * @property int $default_channel_id
  * @property DateTime $changed_at
  * @property bool $deleted
+ * @property string $external_uuid
  *
  * @property Query|Channel $channel
  * @property Query|Incident $incident
  * @property Query|Rotation $rotation
+ * @property Query|RuleEscalation $rule_escalation
  * @property Query|IncidentContact $incident_contact
  * @property Query|IncidentHistory $incident_history
  * @property Query|RotationMember $rotation_member
@@ -93,6 +95,9 @@ class Contact extends Model
         $relations->belongsToMany('rotation', Rotation::class)
             ->through(RotationMember::class)
             ->setJoinType('LEFT');
+        $relations->belongsToMany('rule_escalation', RuleEscalation::class)
+            ->through(RuleEscalationRecipient::class)
+            ->setJoinType('LEFT');
 
         $relations->hasMany('incident_contact', IncidentContact::class);
         $relations->hasMany('incident_history', IncidentHistory::class);
@@ -106,10 +111,6 @@ class Contact extends Model
 
         $relations->belongsToMany('contactgroup', Contactgroup::class)
             ->through(ContactgroupMember::class)
-            ->setJoinType('LEFT');
-
-        $relations->belongsToMany('rule_escalation', RuleEscalation::class)
-            ->through(RuleEscalationRecipient::class)
             ->setJoinType('LEFT');
     }
 }
