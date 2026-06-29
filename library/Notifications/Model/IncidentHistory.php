@@ -7,6 +7,8 @@ namespace Icinga\Module\Notifications\Model;
 
 use DateTime;
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Common\Severity;
+use ipl\Orm\Behavior\EnumCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
@@ -28,8 +30,8 @@ use ipl\Sql\Select;
  * @property ?int $schedule_id
  * @property ?int $contactgroup_id
  * @property ?int $channel_id
- * @property ?string $new_severity
- * @property ?string $old_severity
+ * @property ?Severity $new_severity
+ * @property ?Severity $old_severity
  * @property ?string $new_recipient_role
  * @property ?string $old_recipient_role
  * @property ?string $message
@@ -100,6 +102,7 @@ class IncidentHistory extends Model
     public function createBehaviors(Behaviors $behaviors): void
     {
         $behaviors->add(new MillisecondTimestamp(['time', 'sent_at']));
+        $behaviors->add(new EnumCast(Severity::class, ['new_severity', 'old_severity']));
     }
 
     public function getDefaultSort(): array
