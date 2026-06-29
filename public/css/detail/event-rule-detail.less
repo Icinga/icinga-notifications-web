@@ -76,19 +76,26 @@
   }
 
   #object-filter-controls {
-    width: 16em;
+    width: 20em;
     height: fit-content;
   }
 
   .set-wrapper:has(.dynamic-list.empty .add-button),
   > #object-filter-controls {
-    padding: 1.25em 0;
+    padding: .75em 0;
   }
 
   .dynamic-list.empty .add-button,
   > #object-filter-controls > .button-wrapper .filter-button {
     align-self: flex-start;
-    padding: 1em;
+    flex-direction: column;
+    padding: 1.25em 0.5em;
+
+    > span {
+      overflow: hidden;
+      word-break: break-word;
+      .line-clamp(2);
+    }
   }
 
   .dynamic-list.empty > .add-button-wrapper,
@@ -101,24 +108,19 @@
       flex: 1 1 auto;
       min-width: 1.25em;
       height: @connectorHeight;
-      margin-top: 1.5em;
+      margin-top: 2em;
       background-color: @connectorColor;
     }
 
-    .add-button {
-      flex: 0;
-    }
-
+    .add-button,
     .filter-button {
-      flex-direction: column;
-
-      .name {
-        overflow: hidden;
-        word-break: break-word;
-        .line-clamp(2);
-        min-width: 4em;
-      }
+      flex: 0;
+      min-width: 8em;
     }
+  }
+
+  > #object-filter-controls > .button-wrapper {
+    min-width: 12em;
   }
 
   > .escalations {

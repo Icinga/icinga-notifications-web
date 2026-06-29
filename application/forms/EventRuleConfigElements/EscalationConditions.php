@@ -11,6 +11,7 @@ use ipl\Html\Contract\FormElement;
 use ipl\Html\FormElement\FieldsetElement;
 use ipl\Html\FormElement\SubmitButtonElement;
 use ipl\Html\HtmlElement;
+use ipl\Html\Text;
 use ipl\Stdlib\Filter;
 use ipl\Stdlib\Filter\Condition;
 use ipl\Web\Filter\QueryString;
@@ -30,7 +31,10 @@ class EscalationConditions extends FieldsetElement
         /** @var SubmitButtonElement $button */
         $button = $this->createElement('submitButton', 'add-button', [
             'title' => $this->translate('Add Condition'),
-            'label' => new Icon('plus'),
+            'label' => [
+                new Icon('plus'),
+                new HtmlElement('span', content: Text::create($this->translate('Add Condition')))
+            ],
             'class' => ['add-button', 'animated']
         ]);
 

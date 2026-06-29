@@ -13,7 +13,6 @@ use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Model\RuleEscalation;
 use ipl\Html\Attributes;
 use ipl\Html\FormElement\SubmitButtonElement;
-use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\Html\ValidHtml;
@@ -135,12 +134,9 @@ class EventRuleConfigForm extends CompatForm
         if ($hiddenInput->hasValue()) {
             $parsedFilter = json_decode($hiddenInput->getValue(), true, flags: JSON_THROW_ON_ERROR);
 
+            $icon = 'filter';
             if (! empty($parsedFilter['filter_name'])) {
-                $label = new HtmlElement(
-                    'span',
-                    Attributes::create(['class' => 'name']),
-                    Text::create($parsedFilter['filter_name'])
-                );
+                $text = $parsedFilter['filter_name'];
                 $title = sprintf(
                     '%s (%s: %s)',
                     $this->translate('Adjust Filter'),
@@ -148,25 +144,23 @@ class EventRuleConfigForm extends CompatForm
                     $parsedFilter['filter_name']
                 );
             } else {
-                $label = new HtmlDocument();
-                $label
-                    ->addHtml(new Icon('filter'))
-                    ->addHtml(new HtmlElement('span', content: Text::create($this->translate('Adjust Filter'))));
-                $title = $this->translate('Adjust Filter');
+                $text = $this->translate('Adjust Filter');
+                $title = $text;
             }
         } else {
-            $label = new HtmlDocument();
-            $label
-                ->addHtml(new Icon('plus'))
-                ->addHtml(new HtmlElement('span', content: Text::create($this->translate('Add Filter'))));
-            $title = $this->translate('Add Filter');
+            $icon = 'plus';
+            $text = $this->translate('Add Filter');
+            $title = $text;
         }
 
         return new HtmlElement(
             'div',
             Attributes::create(['class' => 'button-wrapper']),
             new Link(
-                $label,
+                [
+                    new Icon($icon),
+                    new HtmlElement('span', content: Text::create($text))
+                ],
                 $this->searchEditorUrl,
                 Attributes::create([
                     'class'               => ['search-editor-opener', 'filter-button'],
