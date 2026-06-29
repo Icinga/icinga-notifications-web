@@ -14,6 +14,7 @@ use Icinga\Module\Notifications\Model\RuleEscalation;
 use ipl\Html\Attributes;
 use ipl\Html\FormElement\SubmitButtonElement;
 use ipl\Html\HtmlElement;
+use ipl\Html\Text;
 use ipl\Html\ValidHtml;
 use ipl\I18n\Translation;
 use ipl\Sql\Connection;
@@ -131,18 +132,35 @@ class EventRuleConfigForm extends CompatForm
         $this->registerElement($hiddenInput);
 
         if ($hiddenInput->hasValue()) {
-            $label = new Icon('filter');
-            $title = $this->translate('Adjust Filter');
+            $parsedFilter = json_decode($hiddenInput->getValue(), true, flags: JSON_THROW_ON_ERROR);
+
+            $icon = 'filter';
+            if (! empty($parsedFilter['filter_name'])) {
+                $text = $parsedFilter['filter_name'];
+                $title = sprintf(
+                    '%s (%s: %s)',
+                    $this->translate('Adjust Filter'),
+                    $this->translate('Name'),
+                    $parsedFilter['filter_name']
+                );
+            } else {
+                $text = $this->translate('Adjust Filter');
+                $title = $text;
+            }
         } else {
-            $label = new Icon('plus');
-            $title = $this->translate('Add filter');
+            $icon = 'plus';
+            $text = $this->translate('Add Filter');
+            $title = $text;
         }
 
         return new HtmlElement(
             'div',
             Attributes::create(['class' => 'button-wrapper']),
             new Link(
-                $label,
+                [
+                    new Icon($icon),
+                    new HtmlElement('span', content: Text::create($text))
+                ],
                 $this->searchEditorUrl,
                 Attributes::create([
                     'class'               => ['search-editor-opener', 'filter-button'],

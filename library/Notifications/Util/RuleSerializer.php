@@ -17,6 +17,9 @@ class RuleSerializer
     /** @var int The filter version */
     public const VERSION = 2;
 
+    /** @var ?string The name of the filter */
+    protected ?string $filterName;
+
     /** @var Filter\Condition|Filter\Chain */
     protected Filter\Rule $filter;
 
@@ -28,11 +31,13 @@ class RuleSerializer
      *
      * @param Filter\Rule $filter
      * @param array<string, string[]> $jsonPaths JSON paths keyed by column name
+     * @param ?string $filterName The name of the filter
      */
-    public function __construct(Filter\Rule $filter, array $jsonPaths)
+    public function __construct(Filter\Rule $filter, array $jsonPaths, ?string $filterName = null)
     {
         $this->filter = $filter;
         $this->jsonPaths = $jsonPaths;
+        $this->filterName = $filterName;
     }
 
     /**
@@ -48,6 +53,11 @@ class RuleSerializer
             'version' => self::VERSION,
             'qs'      => QueryString::render($this->filter),
         ];
+
+        if ($this->filterName) {
+            $result['filter_name'] = $this->filterName;
+        }
+
         if ($this->filter instanceof Filter\Chain) {
             if ($this->filter->isEmpty()) {
                 return null;

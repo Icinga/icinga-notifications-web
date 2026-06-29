@@ -99,4 +99,22 @@ class RuleSerializerTest extends TestCase
 
         $this->assertNull($result);
     }
+
+    public function testGetJsonIncludesFilterNameWhenProvided()
+    {
+        $filter = Filter::equal('a', 'x');
+
+        $result = json_decode((new RuleSerializer($filter, ['a' => ['$.a']], 'my filter'))->getJson(), true);
+
+        $this->assertSame('my filter', $result['filter_name']);
+    }
+
+    public function testGetJsonDoesNotHaveFilterNameWhenNotProvided()
+    {
+        $filter = Filter::equal('a', 'x');
+
+        $result = json_decode((new RuleSerializer($filter, ['a' => ['$.a']]))->getJson(), true);
+
+        $this->assertNotContains('filter_name', $result);
+    }
 }

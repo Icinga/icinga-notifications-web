@@ -220,7 +220,7 @@ class EventRuleConfigFormTest extends TestCase
             'id' => 1337,
             'source_id' => 1338,
             'name' => 'Test',
-            'object_filter' => 'hostgroup.name=Test%20Group',
+            'object_filter' => '{"filter_name":null,"qs":"hostgroup.name=Test%20Group"}',
             'timeperiod_id' => null,
             'rule_escalation' => $ruleEscalationMock
         ]);
@@ -301,7 +301,7 @@ class EventRuleConfigFormTest extends TestCase
                         [
                             'name' => 'Test',
                             'source_id' => 1338,
-                            'object_filter' => 'hostgroup.name=Test%20Group'
+                            'object_filter' => '{"filter_name":null,"qs":"hostgroup.name=Test%20Group"}'
                         ],
                         $data
                     );
@@ -590,7 +590,7 @@ class EventRuleConfigFormTest extends TestCase
             'id' => 1337,
             'source_id' => 1338,
             'name' => 'Test',
-            'object_filter' => 'servicegroup.name=Test%20Group',
+            'object_filter' => '{"filter_name":null,"qs":"servicegroup.name=Test%20Group"}',
             'timeperiod_id' => null,
             'rule_escalation' => $ruleEscalationMock
         ]);
@@ -609,7 +609,7 @@ class EventRuleConfigFormTest extends TestCase
                     [
                         'name' => 'Test',
                         'source_id' => 1338,
-                        'object_filter' => 'servicegroup.name=Test%20Group'
+                        'object_filter' => '{"filter_name":null,"qs":"servicegroup.name=Test%20Group"}'
                     ],
                     $data
                 );
