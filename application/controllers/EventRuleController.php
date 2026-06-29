@@ -230,7 +230,6 @@ class EventRuleController extends CompatController
         $filterNameElement = $editor->createElement('text', 'filter_name', [
             'label' => $this->translate('Filter Name'),
             'value' => $parsedFilter['filter_name'] ?? null,
-            'placeholder' => $this->translate('Optional filter name'),
             'decorators' => [
                 'Label',
                 'LabelGroup' => [
