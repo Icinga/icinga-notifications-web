@@ -6,10 +6,10 @@
 namespace Icinga\Module\Notifications\Model;
 
 use DateTime;
+use Icinga\Module\Notifications\Common\Model;
 use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
-use ipl\Orm\Model;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
 

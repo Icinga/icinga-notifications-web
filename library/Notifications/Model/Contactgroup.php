@@ -6,10 +6,10 @@
 namespace Icinga\Module\Notifications\Model;
 
 use DateTime;
+use Icinga\Module\Notifications\Common\Model;
 use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
-use ipl\Orm\Model;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
 
@@ -76,7 +76,7 @@ class Contactgroup extends Model
         $relations->hasMany('contactgroup_member', ContactgroupMember::class);
         $relations
             ->belongsToMany('contact', Contact::class)
-            ->through('contactgroup_member')
+            ->through(ContactgroupMember::class)
             ->setJoinType('LEFT');
     }
 }

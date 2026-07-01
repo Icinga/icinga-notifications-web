@@ -7,10 +7,11 @@ namespace Icinga\Module\Notifications\Model;
 
 use DateTime;
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Common\Model;
+use Icinga\Module\Notifications\Common\StatefulQuery;
 use ipl\Orm\Behavior\Binary;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
-use ipl\Orm\Model;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
 use ipl\Sql\Connection;
@@ -77,7 +78,7 @@ class Incident extends Model
         return ['incident.severity desc, incident.started_at'];
     }
 
-    public static function on(Connection $db): Query
+    public static function on(Connection $db): StatefulQuery
     {
         $query = parent::on($db);
 
@@ -104,7 +105,7 @@ class Incident extends Model
         $relations->belongsTo('object', Objects::class);
 
         $relations->belongsToMany('contact', Contact::class)
-            ->through('incident_contact');
+            ->through(IncidentContact::class);
 
         $relations->hasMany('incident_contact', IncidentContact::class);
         $relations->hasMany('incident_history', IncidentHistory::class);

@@ -1,0 +1,1407 @@
+<?php
+
+// SPDX-FileCopyrightText: 2026 Icinga GmbH <https://icinga.com>
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+namespace Tests\Icinga\Module\Notifications\Common;
+
+use DateTimeInterface;
+use Exception;
+use Icinga\Module\Notifications\Common\EntityManager;
+use PDO;
+use PHPUnit\Framework\TestCase;
+use RuntimeException;
+use Tests\Icinga\Module\Notifications\Lib\EntityManager\Charm;
+use Tests\Icinga\Module\Notifications\Lib\EntityManager\Flag;
+use Tests\Icinga\Module\Notifications\Lib\EntityManager\Gadget;
+use Tests\Icinga\Module\Notifications\Lib\EntityManager\GadgetTag;
+use Tests\Icinga\Module\Notifications\Lib\EntityManager\Pairing;
+use Tests\Icinga\Module\Notifications\Lib\EntityManager\RecordingConnection;
+use Tests\Icinga\Module\Notifications\Lib\EntityManager\Stamped;
+use Tests\Icinga\Module\Notifications\Lib\EntityManager\Sticker;
+use Tests\Icinga\Module\Notifications\Lib\EntityManager\Tag;
+use Tests\Icinga\Module\Notifications\Lib\EntityManager\TickingEntityManager;
+use Tests\Icinga\Module\Notifications\Lib\EntityManager\Trinket;
+use Tests\Icinga\Module\Notifications\Lib\EntityManager\Workshop;
+use ipl\Stdlib\Filter;
+
+class EntityManagerTest extends TestCase
+{
+    /** @var RecordingConnection */
+    protected $db;
+
+    protected function setUp(): void
+    {
+        $db = new RecordingConnection(['db' => 'sqlite', 'dbname' => ':memory:']);
+        $db->exec(
+            'CREATE TABLE workshop (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR NOT NULL);'
+            . 'CREATE TABLE gadget (id INTEGER PRIMARY KEY AUTOINCREMENT, workshop_id INTEGER, name VARCHAR NOT NULL);'
+            . 'CREATE TABLE sticker (id INTEGER PRIMARY KEY AUTOINCREMENT, label VARCHAR NOT NULL);'
+            . 'CREATE TABLE gadget_sticker (gadget_id INTEGER NOT NULL, sticker_id INTEGER NOT NULL);'
+            . 'CREATE TABLE flag (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                label VARCHAR NOT NULL, enabled VARCHAR NOT NULL);'
+            . 'CREATE TABLE stamped (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR NOT NULL, changed_at INTEGER);'
+            . 'CREATE TABLE stamped_note ('
+            . 'id INTEGER PRIMARY KEY AUTOINCREMENT, stamped_id INTEGER NOT NULL, text VARCHAR NOT NULL);'
+            . 'CREATE TABLE trinket (id BLOB PRIMARY KEY, name VARCHAR NOT NULL);'
+            . 'CREATE TABLE charm (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                trinket_id BLOB NOT NULL, label VARCHAR NOT NULL);'
+            . 'CREATE TABLE pairing ('
+            . 'left_id INTEGER NOT NULL, right_id INTEGER NOT NULL, label VARCHAR NOT NULL,'
+            . ' PRIMARY KEY (left_id, right_id));'
+            . 'CREATE TABLE tag (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR NOT NULL);'
+            . 'CREATE TABLE gadget_tag ('
+            . 'gadget_id INTEGER NOT NULL, tag_id INTEGER NOT NULL,'
+            . " changed_at INTEGER NOT NULL, deleted VARCHAR NOT NULL DEFAULT 'n',"
+            . ' PRIMARY KEY (gadget_id, tag_id));'
+        );
+
+        $this->db = $db;
+
+        TickingEntityManager::$tick = 0;
+    }
+
+    protected function em(): EntityManager
+    {
+        return new TickingEntityManager($this->db);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    protected function rows(string $sql): array
+    {
+        return $this->db->prepexec($sql)->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function testInsertAssignsGeneratedKeyAndMarksNotNew()
+    {
+        $workshop = (new Workshop())->setNew();
+        $this->assertTrue($workshop->isNew());
+        $workshop->name = 'Acme';
+
+        $this->em()->save($workshop);
+
+        $this->assertFalse($workshop->isNew(), 'A saved model should no longer be new');
+        $this->assertSame(1, $workshop->id, 'The generated primary key should be written back to the model');
+        $this->assertSame([['id' => 1, 'name' => 'Acme']], $this->rows('SELECT * FROM workshop'));
+    }
+
+    public function testHydratedModelIsLoadedAndUnmodified()
+    {
+        $workshop = (new Workshop())->setNew();
+        $workshop->name = 'Acme';
+        $this->em()->save($workshop);
+
+        $loaded = Workshop::on($this->db)->first();
+
+        $this->assertNotNull($loaded);
+        $this->assertFalse($loaded->isNew(), 'A hydrated model should not be new');
+        $this->assertFalse($loaded->isModified(), 'A freshly hydrated model should have no changes');
+    }
+
+    public function testUpdateWritesOnlyChangedColumns()
+    {
+        $gadget = (new Gadget())->setNew();
+        $gadget->workshop_id = 5;
+        $gadget->name = 'Spanner';
+        $this->em()->save($gadget);
+
+        $gadget->name = 'Wrench';
+        $this->assertSame(
+            ['name' => true],
+            $gadget->getModifiedProperties(),
+            'Only the changed column should be tracked as modified'
+        );
+
+        $this->em()->save($gadget);
+
+        $this->assertFalse($gadget->isModified(), 'The model should be unmodified after an update');
+        $this->assertSame(
+            [['workshop_id' => 5, 'name' => 'Wrench']],
+            $this->rows('SELECT workshop_id, name FROM gadget'),
+            'The unchanged column should be preserved'
+        );
+    }
+
+    public function testNoOpSaveOnUnmodifiedModelDoesNothing()
+    {
+        $workshop = (new Workshop())->setNew();
+        $workshop->name = 'Acme';
+        $this->em()->save($workshop);
+
+        $this->em()->save($workshop);
+
+        $this->assertSame([['id' => 1, 'name' => 'Acme']], $this->rows('SELECT * FROM workshop'));
+    }
+
+    public function testDeleteNewModel()
+    {
+        $workshop = (new Workshop())->setNew();
+        $workshop->name = 'Acme';
+        $this->em()->save($workshop->delete());
+
+        $this->assertEmpty($this->db->calls, 'Marking a never-saved model deleted and saving should issue no writes');
+        $this->assertSame(
+            [],
+            $this->rows('SELECT * FROM workshop'),
+            'A never-saved model marked deleted should leave no row behind'
+        );
+    }
+
+    public function testDeleteNewSoftDeleteModelIsANoOpAndInsertsNoTombstone()
+    {
+        // gadget_tag carries a `deleted` column. A never-saved model marked deleted must still be a no-op:
+        // it must not insert a deleted = 'y' tombstone row for something that never existed.
+        $gadgetTag = (new GadgetTag())->setNew();
+        $gadgetTag->gadget_id = 1;
+        $gadgetTag->tag_id = 1;
+
+        $this->em()->save($gadgetTag->delete());
+
+        $this->assertEmpty($this->db->calls, 'Marking a never-saved soft-delete model deleted should issue no writes');
+        $this->assertSame(
+            [],
+            $this->rows('SELECT * FROM gadget_tag'),
+            'No tombstone row should be inserted for a never-saved soft-delete model'
+        );
+    }
+
+    public function testSaveOfModelMarkedDeletedHardDeletesWhenItHasNoDeletedColumn()
+    {
+        // workshop has no `deleted` column, so useSoftDelete() is false: the $em->save($model->markDeleted())
+        // flow must remove the row outright.
+        $workshop = (new Workshop())->setNew();
+        $workshop->name = 'Acme';
+        $this->em()->save($workshop);
+
+        $this->em()->save($workshop->delete());
+
+        $this->assertSame(
+            [],
+            $this->rows('SELECT * FROM workshop'),
+            'A model with no deleted column should be hard-deleted'
+        );
+    }
+
+    public function testSaveOfModelMarkedDeletedSoftDeletesWhenItHasADeletedColumn()
+    {
+        // gadget_tag carries a `deleted` column, so useSoftDelete() is true: the $em->save($model->markDeleted())
+        // flow must keep the row and flip deleted to 'y' (stamping changed_at) rather than removing it.
+        $gadgetTag = (new GadgetTag())->setNew();
+        $gadgetTag->gadget_id = 1;
+        $gadgetTag->tag_id = 1;
+        $this->em()->save($gadgetTag); // changed_at -> 1000
+
+        $this->em()->save($gadgetTag->delete()); // soft-deleted, changed_at -> 2000
+
+        $this->assertSame(
+            [['gadget_id' => 1, 'tag_id' => 1, 'deleted' => 'y', 'changed_at' => 2000]],
+            $this->rows('SELECT gadget_id, tag_id, deleted, changed_at FROM gadget_tag'),
+            'A model with a deleted column should be kept and marked deleted = y, not removed'
+        );
+    }
+
+    public function testHasManyCascadeCopiesParentKeyIntoChildren()
+    {
+        $workshop = (new Workshop())->setNew();
+        $workshop->name = 'Acme';
+
+        $spanner = (new Gadget())->setNew();
+        $spanner->name = 'Spanner';
+        $wrench = (new Gadget())->setNew();
+        $wrench->name = 'Wrench';
+        $workshop->gadgets = [$spanner, $wrench];
+
+        $this->em()->save($workshop);
+
+        $this->assertSame($workshop->id, $spanner->workshop_id);
+        $this->assertSame($workshop->id, $wrench->workshop_id);
+        $this->assertSame(
+            [
+                ['name' => 'Spanner', 'workshop_id' => $workshop->id],
+                ['name' => 'Wrench', 'workshop_id' => $workshop->id],
+            ],
+            $this->rows('SELECT name, workshop_id FROM gadget ORDER BY id')
+        );
+    }
+
+    public function testBelongsToCascadeSavesParentFirst()
+    {
+        $gadget = (new Gadget())->setNew();
+        $gadget->name = 'Spanner';
+
+        $workshop = (new Workshop())->setNew();
+        $workshop->name = 'Acme';
+        $gadget->workshop = $workshop;
+
+        $this->em()->save($gadget);
+
+        $this->assertFalse($workshop->isNew(), 'The parent should be persisted');
+        $this->assertSame(
+            $workshop->id,
+            $gadget->workshop_id,
+            'The parent key should be copied into the source foreign key'
+        );
+    }
+
+    public function testBelongsToAssigningNullClearsTheForeignKey()
+    {
+        $workshop = (new Workshop())->setNew();
+        $workshop->name = 'Acme';
+        $gadget = (new Gadget())->setNew();
+        $gadget->name = 'Spanner';
+        $gadget->workshop = $workshop;
+        $this->em()->save($gadget);
+        $this->assertSame($workshop->id, $gadget->workshop_id, 'The link should be established before it is cleared');
+
+        // Load fresh and clear the relation by assigning null. The relation property holds null (not a
+        // lazy-loader closure), so saveGraph sees it as an explicit assignment and nulls the foreign key.
+        /** @var Gadget $loaded */
+        $loaded = Gadget::on($this->db)->first();
+        $loaded->workshop = null;
+        $this->em()->save($loaded);
+
+        $this->assertSame(
+            [['name' => 'Spanner', 'workshop_id' => null]],
+            $this->rows('SELECT name, workshop_id FROM gadget'),
+            'Assigning null to a BelongsTo should null the foreign key on update'
+        );
+    }
+
+    public function testManyToManyWritesJunctionRows()
+    {
+        $gadget = (new Gadget())->setNew();
+        $gadget->name = 'Spanner';
+
+        $sticker = (new Sticker())->setNew();
+        $sticker->label = 'fragile';
+        $gadget->stickers = [$sticker];
+
+        $this->em()->save($gadget);
+
+        $this->assertFalse($sticker->isNew(), 'The target should be persisted');
+        $this->assertSame(
+            [['gadget_id' => $gadget->id, 'sticker_id' => $sticker->id]],
+            $this->rows('SELECT gadget_id, sticker_id FROM gadget_sticker')
+        );
+    }
+
+    public function testManyToManyTargetIsNotPollutedWithJunctionForeignKey()
+    {
+        // The junction's foreign key (gadget_id) lives on the junction table, not on the target
+        // (sticker). It must not leak onto the target as a stray property — that would surface
+        // a column the target doesn't own and confuse any later read of the model.
+        $gadget = (new Gadget())->setNew();
+        $gadget->name = 'Spanner';
+
+        $sticker = (new Sticker())->setNew();
+        $sticker->label = 'fragile';
+        $gadget->sticker = [$sticker];
+
+        $this->em()->save($gadget);
+
+        $this->assertFalse(
+            $sticker->hasProperty('gadget_id'),
+            'A many-to-many target must not carry the junction foreign key as a stray property'
+        );
+    }
+
+    public function testManyToManyWritesOneInsertPerLink()
+    {
+        $gadget = (new Gadget())->setNew();
+        $gadget->name = 'Spanner';
+
+        $fragile = (new Sticker())->setNew();
+        $fragile->label = 'fragile';
+        $thisSideUp = (new Sticker())->setNew();
+        $thisSideUp->label = 'this side up';
+        $heavy = (new Sticker())->setNew();
+        $heavy->label = 'heavy';
+        $gadget->stickers = [$fragile, $thisSideUp, $heavy];
+
+        $this->em()->save($gadget);
+
+        $junctionInserts = array_filter(
+            $this->db->calls,
+            fn ($call) => $call['method'] === 'insert' && $call['table'] === 'gadget_sticker'
+        );
+        $this->assertCount(3, $junctionInserts, 'Each link should be written as its own insert');
+
+        $this->assertSame(
+            [
+                ['gadget_id' => $gadget->id, 'sticker_id' => $fragile->id],
+                ['gadget_id' => $gadget->id, 'sticker_id' => $thisSideUp->id],
+                ['gadget_id' => $gadget->id, 'sticker_id' => $heavy->id],
+            ],
+            $this->rows('SELECT gadget_id, sticker_id FROM gadget_sticker ORDER BY sticker_id'),
+            'All link rows should be present'
+        );
+    }
+
+    public function testManyToManyDoesNotDuplicateAnExistingLink()
+    {
+        $gadget = (new Gadget())->setNew();
+        $gadget->name = 'Spanner';
+
+        $sticker = (new Sticker())->setNew();
+        $sticker->label = 'fragile';
+        $gadget->stickers = [$sticker];
+
+        $this->em()->save($gadget);
+
+        /** @var Gadget $loaded */
+        $loaded = Gadget::on($this->db)->first();
+
+        $loaded->stickers = [$sticker];
+        $this->em()->save($loaded);
+
+        $this->assertSame(
+            [['gadget_id' => $gadget->id, 'sticker_id' => $sticker->id]],
+            $this->rows('SELECT gadget_id, sticker_id FROM gadget_sticker'),
+            'Re-saving an unchanged link must not duplicate the junction row'
+        );
+    }
+
+    public function testReassigningAManyToManyAddsWithoutRemoving()
+    {
+        $gadget = (new Gadget())->setNew();
+        $gadget->name = 'Spanner';
+
+        $fragile = (new Sticker())->setNew();
+        $fragile->label = 'fragile';
+        $gadget->stickers = [$fragile];
+
+        $this->em()->save($gadget);
+
+        $heavy = (new Sticker())->setNew();
+        $heavy->label = 'heavy';
+
+        /** @var Gadget $loaded */
+        $loaded = Gadget::on($this->db)->first();
+        $loaded->stickers = [$heavy];
+        $this->em()->save($loaded);
+
+        $this->assertSame(
+            [
+                ['gadget_id' => $gadget->id, 'sticker_id' => $fragile->id],
+                ['gadget_id' => $gadget->id, 'sticker_id' => $heavy->id],
+            ],
+            $this->rows('SELECT gadget_id, sticker_id FROM gadget_sticker ORDER BY sticker_id'),
+            'Assigning a new target should add its link without removing the previously linked one'
+        );
+    }
+
+    public function testAssigningAnEmptySetToAManyToManyLeavesLinksIntact()
+    {
+        $gadget = (new Gadget())->setNew();
+        $gadget->name = 'Spanner';
+        $sticker = (new Sticker())->setNew();
+        $sticker->label = 'fragile';
+        $gadget->stickers = [$sticker];
+        $this->em()->save($gadget);
+
+        /** @var Gadget $loaded */
+        $loaded = Gadget::on($this->db)->first();
+        $loaded->stickers = [];
+        $this->em()->save($loaded);
+
+        $this->assertSame(
+            [['gadget_id' => $gadget->id, 'sticker_id' => $sticker->id]],
+            $this->rows('SELECT gadget_id, sticker_id FROM gadget_sticker'),
+            'Assigning an empty set must leave the existing link intact'
+        );
+    }
+
+    public function testManyToManyReconciliationMatchesKeysReturnedAsStrings()
+    {
+        // Production drivers (MySQL/PgSQL) return keys as strings while persisted models hold them as
+        // ints, so sync must treat those as the same link — re-saving an unchanged relation must
+        // stay a no-op, not delete-and-reinsert. STRINGIFY_FETCHES reproduces that boundary here,
+        // since sqlite otherwise returns ints on both sides and never exercises it.
+        $db = new RecordingConnection([
+            'db'      => 'sqlite',
+            'dbname'  => ':memory:',
+            'options' => [PDO::ATTR_STRINGIFY_FETCHES => true],
+        ]);
+        $db->exec(
+            'CREATE TABLE gadget (id INTEGER PRIMARY KEY AUTOINCREMENT, workshop_id INTEGER, name VARCHAR NOT NULL);'
+            . 'CREATE TABLE sticker (id INTEGER PRIMARY KEY AUTOINCREMENT, label VARCHAR NOT NULL);'
+            . 'CREATE TABLE gadget_sticker (gadget_id INTEGER NOT NULL, sticker_id INTEGER NOT NULL);'
+        );
+
+        $gadget = (new Gadget())->setNew();
+        $gadget->name = 'Spanner';
+        $sticker = (new Sticker())->setNew();
+        $sticker->label = 'fragile';
+        $gadget->stickers = [$sticker];
+        (new TickingEntityManager($db))->save($gadget);
+
+        /** @var Gadget $loaded */
+        $loaded = Gadget::on($db)->first();
+        $loaded->stickers = [$sticker];
+
+        $db->resetCalls();
+        (new TickingEntityManager($db))->save($loaded);
+
+        $junctionWrites = array_filter($db->calls, fn ($call) => $call['table'] === 'gadget_sticker');
+        $this->assertSame(
+            [],
+            $junctionWrites,
+            'An unchanged link must trigger no insert or delete even when keys come back as strings'
+        );
+        $this->assertSame(
+            [['gadget_id' => '1', 'sticker_id' => '1']],
+            $db->prepexec('SELECT gadget_id, sticker_id FROM gadget_sticker')->fetchAll(PDO::FETCH_ASSOC),
+            'The single link should be left intact'
+        );
+    }
+
+    public function testExplicitlyDetachingASoftDeleteJunctionMarksItDeletedAndStampsChangedAt()
+    {
+        $gadget = (new Gadget())->setNew();
+        $gadget->name = 'Spanner';
+
+        $first = (new Tag())->setNew();
+        $first->name = 'sharp';
+        $second = (new Tag())->setNew();
+        $second->name = 'heavy';
+        $gadget->tags = [$first, $second];
+
+        $this->em()->save($gadget); // two links inserted -> changed_at 1000, 2000
+
+        foreach (
+            GadgetTag::on($this->db)->filter(
+                Filter::all(
+                    Filter::equal('gadget_id', $gadget->id),
+                    Filter::equal('tag_id', $second->id)
+                )
+            )->deleteAll() as $link
+        ) {
+            $this->em()->save($link); // soft-deleted -> changed_at 3000
+        }
+
+        $this->assertSame(
+            [
+                ['tag_id' => 1, 'deleted' => 'n', 'changed_at' => 1000],
+                ['tag_id' => 2, 'deleted' => 'y', 'changed_at' => 3000],
+            ],
+            $this->rows('SELECT tag_id, deleted, changed_at FROM gadget_tag ORDER BY tag_id'),
+            'Explicitly detaching a soft-delete junction link should mark it deleted and re-stamp changed_at'
+        );
+    }
+
+    public function testReAddingAnExplicitlyDetachedSoftDeleteLinkRevivesItInsteadOfDuplicating()
+    {
+        $gadget = (new Gadget())->setNew();
+        $gadget->name = 'Spanner';
+
+        $tag = (new Tag())->setNew();
+        $tag->name = 'sharp';
+        $gadget->tags = [$tag];
+        $this->em()->save($gadget); // link created, changed_at -> 1000
+
+        // Explicitly detach the link (soft-delete the junction row), changed_at -> 2000.
+        foreach (
+            GadgetTag::on($this->db)->filter(
+                Filter::all(
+                    Filter::equal('gadget_id', $gadget->id),
+                    Filter::equal('tag_id', $tag->id)
+                )
+            )->deleteAll() as $link
+        ) {
+            $this->em()->save($link);
+        }
+
+        // Re-adding the target revives the existing row rather than inserting a duplicate, changed_at -> 3000.
+        /** @var Gadget $readded */
+        $readded = Gadget::on($this->db)->first();
+        $readded->tags = [$tag];
+        $this->em()->save($readded);
+
+        $this->assertSame(
+            [['tag_id' => 1, 'deleted' => 'n', 'changed_at' => 3000]],
+            $this->rows('SELECT tag_id, deleted, changed_at FROM gadget_tag'),
+            'Re-adding an explicitly detached link should revive the existing row rather than insert a duplicate'
+        );
+    }
+
+    public function testSoftDeleteJunctionLeavesAnUnchangedActiveLinkUntouched()
+    {
+        $gadget = (new Gadget())->setNew();
+        $gadget->name = 'Spanner';
+
+        $tag = (new Tag())->setNew();
+        $tag->name = 'sharp';
+        $gadget->tag = [$tag];
+        $this->em()->save($gadget);
+
+        /** @var Gadget $loaded */
+        $loaded = Gadget::on($this->db)->first();
+        $loaded->tag = [$tag];
+
+        $this->db->resetCalls();
+        $this->em()->save($loaded);
+
+        $junctionWrites = array_filter($this->db->calls, fn ($call) => $call['table'] === 'gadget_tag');
+        $this->assertSame(
+            [],
+            $junctionWrites,
+            'Re-saving an unchanged active link should write nothing to the junction'
+        );
+    }
+
+    public function testSaveWithinOuterTransactionDoesNotOpenNestedTransaction()
+    {
+        $a = (new Workshop())->setNew();
+        $a->name = 'Acme';
+
+        $b = (new Workshop())->setNew();
+        $b->name = 'Globex';
+
+        $em = $this->em();
+        $this->db->transaction(function () use ($em, $a, $b): void {
+            $em->save($a);
+            $em->save($b);
+        });
+
+        $this->assertSame(
+            [['name' => 'Acme'], ['name' => 'Globex']],
+            $this->rows('SELECT name FROM workshop ORDER BY id'),
+            'Both rows should be persisted by the outer transaction; save() should join it instead of nesting'
+        );
+    }
+
+    public function testGraphIsRolledBackOnFailure()
+    {
+        $workshop = (new Workshop())->setNew();
+        $workshop->name = 'Acme';
+
+        // A gadget without a name violates the NOT NULL constraint and fails mid-cascade
+        $workshop->gadgets = [(new Gadget())->setNew()];
+
+        try {
+            $this->em()->save($workshop);
+            $this->fail('Expected the failing save to throw');
+        } catch (Exception $e) {
+            // expected
+        }
+
+        $this->assertSame([], $this->rows('SELECT * FROM workshop'), 'The parent insert should be rolled back');
+    }
+
+    public function testPropertyBehaviorConvertsValuesOnPersist()
+    {
+        $flag = (new Flag())->setNew();
+        $flag->label = 'shiny';
+        $flag->enabled = true;
+
+        $this->em()->save($flag);
+
+        $this->assertSame(
+            [['label' => 'shiny', 'enabled' => 'y']],
+            $this->rows('SELECT label, enabled FROM flag'),
+            'BoolCast should convert true to its database value on insert'
+        );
+
+        $this->assertTrue($flag->enabled, 'The model value should remain in PHP form after save');
+    }
+
+    public function testPropertyBehaviorConvertsValuesOnUpdate()
+    {
+        $flag = (new Flag())->setNew();
+        $flag->label = 'shiny';
+        $flag->enabled = true;
+        $this->em()->save($flag);
+
+        $flag->enabled = false;
+        $this->em()->save($flag);
+
+        $this->assertSame(
+            [['enabled' => 'n']],
+            $this->rows('SELECT enabled FROM flag'),
+            'BoolCast should convert the new value on update'
+        );
+    }
+
+    public function testChangedAtIsStampedOnInsert()
+    {
+        $stamped = (new Stamped())->setNew();
+        $stamped->name = 'Widget';
+        $this->em()->save($stamped);
+
+        $this->assertInstanceOf(
+            DateTimeInterface::class,
+            $stamped->changed_at,
+            'The behavior should set a DateTime on the model'
+        );
+        $this->assertSame(1, $stamped->changed_at->getTimestamp());
+        $this->assertSame(
+            [['name' => 'Widget', 'changed_at' => 1000]],
+            $this->rows('SELECT name, changed_at FROM stamped'),
+            'The DateTime should be converted to a millisecond timestamp on the way to the database'
+        );
+    }
+
+    public function testChangedAtIsStampedOnUpdate()
+    {
+        $stamped = (new Stamped())->setNew();
+        $stamped->name = 'Widget';
+        $this->em()->save($stamped); // changed_at -> 1s
+
+        $stamped->name = 'Gizmo';
+        $this->em()->save($stamped); // behavior re-stamps -> 2s
+
+        $this->assertSame(2, $stamped->changed_at->getTimestamp());
+        $this->assertSame(
+            [['name' => 'Gizmo', 'changed_at' => 2000]],
+            $this->rows('SELECT name, changed_at FROM stamped'),
+            'The behavior should run on UPDATE and its column should be included in the SET'
+        );
+    }
+
+    public function testChangedAtIsNotStampedIfRowIsUnchanged()
+    {
+        $stamped = (new Stamped())->setNew();
+        $stamped->name = 'Widget';
+        $this->em()->save($stamped); // changed_at -> 1s
+        $this->em()->save($stamped);
+        $this->assertSame(1, $stamped->changed_at->getTimestamp());
+    }
+
+    public function testChangedAtIsNotChangedIfRowHasNoNewChanges()
+    {
+        $stamped = (new Stamped())->setNew();
+        $stamped->name = 'Widget';
+        $this->em()->save($stamped); // changed_at -> 1s
+        $this->assertSame(1, $stamped->changed_at->getTimestamp());
+        $stamped->name = 'Widget';
+        $this->em()->save($stamped);
+        $this->assertSame(1, $stamped->changed_at->getTimestamp());
+        $this->assertCount(1, $this->rows('SELECT * FROM stamped'));
+    }
+
+    public function testChangedAtIsNotStampedWhenOnlyARelationWasReassigned()
+    {
+        // Save once so we have a loadable row with changed_at = 1s.
+        $stamped = (new Stamped())->setNew();
+        $stamped->name = 'Widget';
+        $this->em()->save($stamped);
+
+        // Load it fresh — the relation comes back as a closure-backed lazy loader.
+        $loaded = Stamped::on($this->db)->first();
+        $this->assertInstanceOf(Stamped::class, $loaded);
+
+        // Reassign only the relation — no own-column changes. The parent row's data
+        // hasn't actually moved, so neither its `changed_at` nor its row should change.
+        $loaded->stamped_note = [];
+
+        $this->db->resetCalls();
+        $this->em()->save($loaded);
+
+        $stampedWrites = array_values(
+            array_filter(
+                $this->db->calls,
+                fn(array $c): bool => $c['table'] === 'stamped'
+            )
+        );
+        $this->assertSame(
+            [],
+            $stampedWrites,
+            'A relation-only reassignment must not emit an UPDATE on the parent row'
+        );
+        $this->assertSame(
+            1,
+            $loaded->changed_at->getTimestamp(),
+            'changed_at must not be stamped when no column on the row changed'
+        );
+    }
+
+    public function testBinaryKeyRoundTripsOnInsert()
+    {
+        $id = hex2bin('deadbeefcafebabe1234567890abcdef');
+
+        $trinket = (new Trinket())->setNew();
+        $trinket->id = $id;
+        $trinket->name = 'Amulet';
+
+        $this->em()->save($trinket);
+
+        $this->assertSame($id, $trinket->id, 'The binary key should be unchanged on the model after save');
+        $this->assertSame(
+            [['id' => $id, 'name' => 'Amulet']],
+            $this->rows('SELECT id, name FROM trinket'),
+            'The binary key should be stored byte-for-byte'
+        );
+    }
+
+    public function testBinaryKeyIsUsedInUpdateWhere()
+    {
+        $id = hex2bin('deadbeefcafebabe1234567890abcdef');
+
+        $trinket = (new Trinket())->setNew();
+        $trinket->id = $id;
+        $trinket->name = 'Amulet';
+        $this->em()->save($trinket);
+
+        $trinket->name = 'Charm';
+        $this->em()->save($trinket);
+
+        $this->assertSame(
+            [['id' => $id, 'name' => 'Charm']],
+            $this->rows('SELECT id, name FROM trinket'),
+            'The UPDATE should match the row by its binary primary key'
+        );
+    }
+
+    public function testBinaryKeyIsUsedInDeleteWhere()
+    {
+        $id = hex2bin('deadbeefcafebabe1234567890abcdef');
+
+        $trinket = (new Trinket())->setNew();
+        $trinket->id = $id;
+        $trinket->name = 'Amulet';
+        $this->em()->save($trinket);
+
+        $this->em()->save($trinket->delete());
+
+        $this->assertSame([], $this->rows('SELECT id FROM trinket'));
+    }
+
+    public function testReadingALazyRelationOnLoadedModelDoesNotMarkItModified()
+    {
+        $workshop = (new Workshop())->setNew();
+        $workshop->name = 'Acme';
+        $this->em()->save($workshop);
+
+        $loaded = Workshop::on($this->db)->first();
+
+        // Without the re-entrance guard in setProperty this would recurse forever, because
+        // PropertiesWithDefaults::getProperty() memoizes the resolved Closure via setProperty().
+        $relation = $loaded->gadgets;
+
+        $this->assertNotNull($relation);
+        $this->assertFalse(
+            $loaded->isModified(),
+            'Reading a lazily-loaded relation must not mark the model modified'
+        );
+    }
+
+    public function testAssigningALazyRelationOnLoadedModelMarksItModifiedWithoutResolvingIt()
+    {
+        $workshop = (new Workshop())->setNew();
+        $workshop->name = 'Acme';
+        $this->em()->save($workshop);
+
+        $loaded = Workshop::on($this->db)->first();
+
+        // Replace the (still-Closure) relation without first triggering its loader.
+        $loaded->gadget = [(new Gadget())->setNew()];
+
+        $this->assertArrayHasKey(
+            'gadget',
+            $loaded->getModifiedProperties(),
+            'Reassigning a relation should mark it modified so saveGraph cascades the new value'
+        );
+    }
+
+    public function testSavingAParentPersistsAnInPlaceChangeToALoadedRelation()
+    {
+        $workshop = (new Workshop())->setNew();
+        $workshop->name = 'Acme';
+        $gadget = (new Gadget())->setNew();
+        $gadget->name = 'Spanner';
+        $gadget->workshop = $workshop;
+        $this->em()->save($gadget);
+        $workshopId = $workshop->id;
+
+        // Load the gadget with its parent, edit the parent's column in place (no reassignment of the
+        // relation) and save the gadget. The change must be persisted as an UPDATE to the existing
+        // workshop row — neither skipped nor inserted as a duplicate.
+        /** @var Gadget $loaded */
+        $loaded = Gadget::on($this->db)->with('workshop')->first();
+        $loaded->workshop->name = 'Globex';
+
+        $this->em()->save($loaded);
+
+        $this->assertSame(
+            [['id' => $workshopId, 'name' => 'Globex']],
+            $this->rows('SELECT id, name FROM workshop ORDER BY id'),
+            'An in-place edit to a loaded related model should be persisted as an update when the parent is saved'
+        );
+    }
+
+    public function testDeletingAModelStillPersistsAnInPlaceEditToARelatedModel()
+    {
+        $workshop = (new Workshop())->setNew();
+        $workshop->name = 'Acme';
+        $gadget = (new Gadget())->setNew();
+        $gadget->name = 'Spanner';
+        $gadget->workshop = $workshop;
+        $this->em()->save($gadget);
+        $workshopId = $workshop->id;
+
+        // Load the gadget with its parent, edit the parent in place and delete the gadget in one save. The
+        // gadget is removed, but the parent's explicit edit must still be persisted — the parent outlives
+        // the gadget and updating it orphans nothing.
+        /** @var Gadget $loaded */
+        $loaded = Gadget::on($this->db)->with('workshop')->first();
+        $loaded->workshop->name = 'Globex';
+
+        $this->em()->save($loaded->delete());
+
+        $this->assertSame([], $this->rows('SELECT * FROM gadget'), 'The deleted model should be gone');
+        $this->assertSame(
+            [['id' => $workshopId, 'name' => 'Globex']],
+            $this->rows('SELECT id, name FROM workshop ORDER BY id'),
+            'An in-place edit to a related model should still be persisted when the owner is deleted'
+        );
+    }
+
+    public function testBinaryParentKeyIsCopiedIntoChildOnCascade()
+    {
+        $id = hex2bin('deadbeefcafebabe1234567890abcdef');
+
+        $trinket = (new Trinket())->setNew();
+        $trinket->id = $id;
+        $trinket->name = 'Amulet';
+
+        $charm = (new Charm())->setNew();
+        $charm->label = 'rune';
+        $trinket->charms = [$charm];
+
+        $this->em()->save($trinket);
+
+        $this->assertSame($id, $charm->trinket_id, 'The parent binary key should be copied into the child');
+        $this->assertSame(
+            [['trinket_id' => $id, 'label' => 'rune']],
+            $this->rows('SELECT trinket_id, label FROM charm'),
+            'The child row should carry the parent binary key'
+        );
+    }
+
+    public function testSaveAfterDeleteReInserts()
+    {
+        $w = (new Workshop())->setNew();
+        $w->name = 'Acme';
+        $this->em()->save($w);
+        $this->em()->save($w->delete());
+
+        $this->assertTrue($w->isNew(), 'A deleted model should be treated as new again');
+        $this->assertFalse($w->isModified(), 'Modified state should be cleared');
+
+        $w->name = 'Acme 2';
+        $this->em()->save($w);
+        $this->assertSame([['name' => 'Acme 2']], $this->rows('SELECT name FROM workshop'));
+    }
+
+    public function testDeleteClearsAutoIncrementKey()
+    {
+        $w = (new Workshop())->setNew();
+        $w->name = 'Acme';
+        $this->em()->save($w);
+        $oldId = $w->id;
+
+        $this->em()->save($w->delete());
+
+        $this->assertFalse($w->hasProperty('id'), 'The auto-increment key should be cleared on delete');
+
+        $w->name = 'Acme 2';
+        $this->em()->save($w);
+
+        $this->assertNotSame(
+            $oldId,
+            $w->id,
+            'A save after delete should receive a fresh auto-increment id rather than re-use the old key'
+        );
+    }
+
+    public function testDeleteClearsCompoundKey()
+    {
+        $p = (new Pairing())->setNew();
+        $p->left_id = 7;
+        $p->right_id = 9;
+        $p->label = 'A';
+        $this->em()->save($p);
+
+        $this->em()->save($p->delete());
+
+        $this->assertFalse($p->hasProperty('left_id'), 'Each part of a compound key should be cleared');
+        $this->assertFalse($p->hasProperty('right_id'), 'Each part of a compound key should be cleared');
+    }
+
+    public function testDeleteClearsApplicationAssignedKey()
+    {
+        $id = hex2bin('deadbeefcafebabe1234567890abcdef');
+        $trinket = (new Trinket())->setNew();
+        $trinket->id = $id;
+        $trinket->name = 'Amulet';
+        $this->em()->save($trinket);
+
+        $this->em()->save($trinket->delete());
+
+        $this->assertFalse($trinket->hasProperty('id'), 'The application-assigned key should be cleared on delete');
+    }
+
+    public function testCompoundKeyUpdateMatchesByAllKeyColumns()
+    {
+        // Two rows sharing left_id but differing in right_id ensure the UPDATE's WHERE has to
+        // include both key columns to target only one of them.
+        $a = (new Pairing())->setNew();
+        $a->left_id = 1;
+        $a->right_id = 1;
+        $a->label = 'A';
+        $this->em()->save($a);
+
+        $b = (new Pairing())->setNew();
+        $b->left_id = 1;
+        $b->right_id = 2;
+        $b->label = 'B';
+        $this->em()->save($b);
+
+        $b->label = 'B2';
+        $this->em()->save($b);
+
+        $this->assertSame(
+            [
+                ['left_id' => 1, 'right_id' => 1, 'label' => 'A'],
+                ['left_id' => 1, 'right_id' => 2, 'label' => 'B2'],
+            ],
+            $this->rows('SELECT left_id, right_id, label FROM pairing ORDER BY right_id'),
+            'Only the row matching all key columns should be updated'
+        );
+    }
+
+    public function testCompoundKeyDeleteMatchesByAllKeyColumns()
+    {
+        $a = (new Pairing())->setNew();
+        $a->left_id = 1;
+        $a->right_id = 1;
+        $a->label = 'A';
+        $this->em()->save($a);
+
+        $b = (new Pairing())->setNew();
+        $b->left_id = 1;
+        $b->right_id = 2;
+        $b->label = 'B';
+        $this->em()->save($b);
+
+        $this->em()->save($b->delete());
+
+        $this->assertSame(
+            [['left_id' => 1, 'right_id' => 1, 'label' => 'A']],
+            $this->rows('SELECT left_id, right_id, label FROM pairing'),
+            'Only the row matching all key columns should be deleted'
+        );
+    }
+
+    public function testCompoundKeyInsertWritesBothKeyColumnsAndClearsModifiedProperties()
+    {
+        $p = (new Pairing())->setNew();
+        $p->left_id = 7;
+        $p->right_id = 9;
+        $p->label = 'A';
+
+        $this->em()->save($p);
+
+        $this->assertFalse($p->isNew(), 'A saved compound-key model should no longer be new');
+        $this->assertFalse($p->isModified());
+        $this->assertSame(7, $p->left_id, 'left_id should not be overwritten by a lastInsertId fetch');
+        $this->assertSame(9, $p->right_id, 'right_id should not be overwritten by a lastInsertId fetch');
+        $this->assertSame(
+            [['left_id' => 7, 'right_id' => 9, 'label' => 'A']],
+            $this->rows('SELECT left_id, right_id, label FROM pairing')
+        );
+    }
+
+    public function testReSavingAnUnmodifiedModelIssuesNoWrites()
+    {
+        $workshop = (new Workshop())->setNew();
+        $workshop->name = 'Acme';
+        $this->em()->save($workshop);
+
+        $this->db->resetCalls();
+        $this->em()->save($workshop);
+
+        $this->assertSame([], $this->db->calls, 'A second save of an unchanged model should issue no writes');
+    }
+
+    public function testInsertOfNewModelIssuesExactlyOneInsertAndNoOtherWrites()
+    {
+        $workshop = (new Workshop())->setNew();
+        $workshop->name = 'Acme';
+
+        $this->em()->save($workshop);
+
+        $this->assertSame(
+            [['method' => 'insert', 'table' => 'workshop', 'data' => ['name' => 'Acme']]],
+            $this->db->calls,
+            'Inserting a new model should emit exactly one INSERT for that row'
+        );
+    }
+
+    public function testUpdateWritesOnlyTheChangedColumnInTheSetClause()
+    {
+        $gadget = (new Gadget())->setNew();
+        $gadget->workshop_id = 5;
+        $gadget->name = 'Spanner';
+        $this->em()->save($gadget);
+
+        $this->db->resetCalls();
+        $gadget->name = 'Wrench';
+        $this->em()->save($gadget);
+
+        $this->assertCount(1, $this->db->calls, 'Exactly one write should be issued for the update');
+        $this->assertSame('update', $this->db->calls[0]['method']);
+        $this->assertSame('gadget', $this->db->calls[0]['table']);
+        $this->assertSame(
+            ['name' => 'Wrench'],
+            $this->db->calls[0]['data'],
+            'Unchanged columns should not be part of the SET clause'
+        );
+        $this->assertSame(
+            ['id = ?' => $gadget->id],
+            $this->db->calls[0]['condition'],
+            'The WHERE should match the row by its primary key'
+        );
+    }
+
+    public function testCompoundKeyUpdateScopesByAllKeyColumns()
+    {
+        $p = (new Pairing())->setNew();
+        $p->left_id = 1;
+        $p->right_id = 2;
+        $p->label = 'A';
+        $this->em()->save($p);
+
+        $this->db->resetCalls();
+        $p->label = 'B';
+        $this->em()->save($p);
+
+        $this->assertCount(1, $this->db->calls);
+        $this->assertSame(
+            ['left_id = ?' => 1, 'right_id = ?' => 2],
+            $this->db->calls[0]['condition'],
+            'Both key columns should be in the WHERE'
+        );
+    }
+
+    public function testDeleteIssuesExactlyOneDeleteAndNoOtherWrites()
+    {
+        $workshop = (new Workshop())->setNew();
+        $workshop->name = 'Acme';
+        $this->em()->save($workshop);
+        $id = $workshop->id;
+
+        $this->db->resetCalls();
+        $this->em()->save($workshop->delete());
+
+        $this->assertSame(
+            [['method' => 'delete', 'table' => 'workshop', 'condition' => ['id = ?' => $id]]],
+            $this->db->calls,
+            'Exactly one DELETE should be issued, scoped by primary key — no incidental UPDATE first'
+        );
+    }
+
+    public function testDeletedModelDoesNotCascadeToAssignedChildren()
+    {
+        $workshop = (new Workshop())->setNew();
+        $workshop->name = 'Acme';
+        $this->em()->save($workshop);
+        $id = $workshop->id;
+
+        // Assign a child and delete the parent in the same save. The relation cascade must be skipped
+        // entirely: a deleted parent must not persist its children, whose foreign key is about to vanish.
+        $orphan = (new Gadget())->setNew();
+        $orphan->name = 'Spanner';
+        $workshop->gadget = [$orphan];
+
+        $this->db->resetCalls();
+        $this->em()->save($workshop->delete());
+
+        $this->assertSame(
+            [['method' => 'delete', 'table' => 'workshop', 'condition' => ['id = ?' => $id]]],
+            $this->db->calls,
+            'A deleted model should issue only its own DELETE; assigned children should not be cascaded'
+        );
+        $this->assertTrue($orphan->isNew(), 'The assigned child should never be persisted');
+    }
+
+    public function testDeletedModelDoesNotCascadeToAssignedParent()
+    {
+        $gadget = (new Gadget())->setNew();
+        $gadget->name = 'Spanner';
+        $this->em()->save($gadget);
+        $id = $gadget->id;
+
+        // Assign a brand-new parent, then delete the gadget. The dependency cascade must be skipped:
+        // deleting a model must not persist a relation hung off it as a side effect.
+        $workshop = (new Workshop())->setNew();
+        $workshop->name = 'Acme';
+        $gadget->workshop = $workshop;
+
+        $this->db->resetCalls();
+        $this->em()->save($gadget->delete());
+
+        $this->assertSame(
+            [['method' => 'delete', 'table' => 'gadget', 'condition' => ['id = ?' => $id]]],
+            $this->db->calls,
+            'A deleted model should issue only its own DELETE; an assigned parent should not be cascaded'
+        );
+        $this->assertTrue($workshop->isNew(), 'The assigned parent should never be persisted');
+    }
+
+    public function testDeletingAModelLeavesItsJunctionRowsUntouched()
+    {
+        $gadget = (new Gadget())->setNew();
+        $gadget->name = 'Spanner';
+        $sticker = (new Sticker())->setNew();
+        $sticker->label = 'fragile';
+        $gadget->stickers = [$sticker];
+        $this->em()->save($gadget);
+        $gadgetId = $gadget->id;
+
+        $this->assertNotEmpty($this->rows('SELECT * FROM gadget_sticker'), 'precondition: the link exists');
+
+        // Deletion never touches junctions under additive m2m: removing a source's links is an explicit,
+        // separate operation. So deleting the owner leaves its junction rows in place (orphaned).
+        /** @var Gadget $loaded */
+        $loaded = Gadget::on($this->db)->first();
+
+        $this->em()->save($loaded->delete());
+
+        $this->assertSame([], $this->rows('SELECT * FROM gadget'), 'The owner itself should be deleted');
+        $this->assertSame(
+            [['gadget_id' => $gadgetId, 'sticker_id' => $sticker->id]],
+            $this->rows('SELECT gadget_id, sticker_id FROM gadget_sticker'),
+            'Deleting the owner must leave its junction rows untouched'
+        );
+    }
+
+    public function testAssigningAManyToManyWhileDeletingTheOwnerWritesNoJunctionRow()
+    {
+        $gadget = (new Gadget())->setNew();
+        $gadget->name = 'Spanner';
+        $this->em()->save($gadget);
+
+        // Assign a brand-new link and delete the owner in the same save. The delete path must not touch the
+        // junction at all — additive would otherwise attach a link to a row that is about to vanish.
+        $sticker = (new Sticker())->setNew();
+        $sticker->label = 'fragile';
+        $gadget->sticker = [$sticker];
+
+        $this->db->resetCalls();
+        $this->em()->save($gadget->delete());
+
+        $junctionWrites = array_filter($this->db->calls, fn ($call) => $call['table'] === 'gadget_sticker');
+        $this->assertSame(
+            [],
+            $junctionWrites,
+            'Deleting the owner must not write any junction row for an assigned link'
+        );
+        $this->assertSame([], $this->rows('SELECT * FROM gadget_sticker'), 'No junction row should exist');
+    }
+
+    public function testDeletingAModelAlsoDeletesAChildExplicitlyMarkedDeleted()
+    {
+        $workshop = (new Workshop())->setNew();
+        $workshop->name = 'Acme';
+        $gadget = (new Gadget())->setNew();
+        $gadget->name = 'Spanner';
+        $workshop->gadgets = [$gadget];
+        $this->em()->save($workshop);
+
+        $this->assertNotEmpty($this->rows('SELECT * FROM gadget'), 'precondition: the child exists');
+
+        // Mark a child deleted, assign it to its (also deleted) parent and save the parent. Both deletions
+        // are explicit, so both must happen in one save — the child before the parent.
+        /** @var Workshop $loadedWorkshop */
+        $loadedWorkshop = Workshop::on($this->db)->first();
+        /** @var Gadget $loadedGadget */
+        $loadedGadget = Gadget::on($this->db)->first();
+        $loadedWorkshop->gadgets = [$loadedGadget->delete()];
+
+        $this->em()->save($loadedWorkshop->delete());
+
+        $this->assertSame([], $this->rows('SELECT * FROM gadget'), 'The explicitly deleted child should be gone');
+        $this->assertSame([], $this->rows('SELECT * FROM workshop'), 'The parent should be gone');
+    }
+
+    public function testCascadeInsertEmitsOneInsertPerRowAndNoUpdates()
+    {
+        $spanner = (new Gadget())->setNew();
+        $spanner->name = 'Spanner';
+        $wrench = (new Gadget())->setNew();
+        $wrench->name = 'Wrench';
+
+        $workshop = (new Workshop())->setNew();
+        $workshop->name = 'Acme';
+        $workshop->gadgets = [$spanner, $wrench];
+
+        $this->em()->save($workshop);
+
+        $methods = array_column($this->db->calls, 'method');
+        $tables = array_column($this->db->calls, 'table');
+
+        $this->assertSame(['insert', 'insert', 'insert'], $methods, 'Three inserts: parent + two children');
+        $this->assertSame(['workshop', 'gadget', 'gadget'], $tables, 'Parent should be inserted before children');
+    }
+
+    public function testManyToManyEmitsOneInsertPerEnd()
+    {
+        $gadget = (new Gadget())->setNew();
+        $gadget->name = 'Spanner';
+
+        $sticker = (new Sticker())->setNew();
+        $sticker->label = 'fragile';
+        $gadget->stickers = [$sticker];
+
+        $this->em()->save($gadget);
+
+        $this->assertSame(
+            ['gadget', 'sticker', 'gadget_sticker'],
+            array_column($this->db->calls, 'table'),
+            'Gadget, sticker, and one junction row — three inserts in this order'
+        );
+        $this->assertSame(['insert', 'insert', 'insert'], array_column($this->db->calls, 'method'));
+    }
+
+    public function testUpdatingOnlyAChildDoesNotReWriteTheParent()
+    {
+        $workshop = (new Workshop())->setNew();
+        $workshop->name = 'Acme';
+        $gadget = (new Gadget())->setNew();
+        $gadget->name = 'Spanner';
+        $workshop->gadgets = [$gadget];
+        $this->em()->save($workshop);
+
+        $this->db->resetCalls();
+        $gadget->name = 'Wrench';
+        $this->em()->save($gadget);
+
+        $this->assertCount(1, $this->db->calls, 'Only the child should be written');
+        $this->assertSame('update', $this->db->calls[0]['method']);
+        $this->assertSame('gadget', $this->db->calls[0]['table']);
+    }
+
+    public function testNoWritesIfRelationIsReassignedButOwnColumnsAreUnchanged()
+    {
+        // Loaded parent with no column changes; we only swap its many-to-many targets. The parent
+        // row's own data is identical, so persist() should be a no-op — no UPDATE on the parent.
+        $gadget = (new Gadget())->setNew();
+        $gadget->name = 'Spanner';
+        $this->em()->save($gadget);
+
+        $loaded = Gadget::on($this->db)->first();
+        $this->assertInstanceOf(Gadget::class, $loaded);
+
+        $sticker = (new Sticker())->setNew();
+        $sticker->label = 'fragile';
+        $loaded->stickers = [$sticker];
+
+        $this->db->resetCalls();
+        $this->em()->save($loaded);
+
+        $tables = array_column($this->db->calls, 'table');
+        $this->assertNotContains(
+            'gadget',
+            $tables,
+            'The parent gadget row was not modified, so it must not be re-written'
+        );
+    }
+
+    public function testSavingACyclicGraphThrows()
+    {
+        $workshop = (new Workshop())->setNew();
+        $workshop->name = 'Acme';
+
+        $gadget = (new Gadget())->setNew();
+        $gadget->name = 'Spanner';
+
+        // Build a cycle: the workshop owns the gadget and the gadget points back at the same workshop
+        // instance. Cascading would otherwise recurse forever, so the guard must abort the save.
+        $workshop->gadgets = [$gadget];
+        $gadget->workshop = $workshop;
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('loop detected');
+
+        $this->em()->save($workshop);
+    }
+
+    public function testSavingTheModelsOfAMarkDeletedQueryHardDeletesTheRows()
+    {
+        $a = (new Workshop())->setNew();
+        $a->name = 'Acme';
+        $this->em()->save($a);
+        $b = (new Workshop())->setNew();
+        $b->name = 'Globex';
+        $this->em()->save($b);
+
+        $models = iterator_to_array(Workshop::on($this->db)->deleteAll(), false);
+
+        // A mark-deleted query yields each row loaded (not new) and flagged for deletion.
+        $this->assertCount(2, $models);
+        foreach ($models as $model) {
+            $this->assertFalse($model->isNew(), 'A model from a mark-deleted query should be loaded, not new');
+            $this->assertTrue(
+                $model->isMarkedForDeletion(),
+                'A model from a mark-deleted query should be flagged for deletion'
+            );
+            $this->em()->save($model);
+        }
+
+        $this->assertSame(
+            [],
+            $this->rows('SELECT * FROM workshop'),
+            'Saving the models of a mark-deleted query should remove every matched row'
+        );
+    }
+
+    public function testMarkDeletedQueryThatEagerLoadsARelationDeletesOnlyTheRootAndLeavesTheRelationIntact()
+    {
+        $workshop = (new Workshop())->setNew();
+        $workshop->name = 'Acme';
+        $gadget = (new Gadget())->setNew();
+        $gadget->name = 'Spanner';
+        $gadget->workshop = $workshop;
+        $this->em()->save($gadget);
+        $workshopId = $workshop->id;
+
+        foreach (iterator_to_array(Gadget::on($this->db)->with('workshop')->deleteAll(), false) as $model) {
+            $this->em()->save($model);
+        }
+
+        $this->assertSame([], $this->rows('SELECT * FROM gadget'), 'The mark-deleted root should be removed');
+        $this->assertSame(
+            [['id' => $workshopId, 'name' => 'Acme']],
+            $this->rows('SELECT id, name FROM workshop'),
+            'An eagerly-loaded relation of a mark-deleted model must be left intact'
+        );
+    }
+
+    public function testSavingTheModelsOfAMarkDeletedQuerySoftDeletesRowsThatHaveADeletedColumn()
+    {
+        $first = (new GadgetTag())->setNew();
+        $first->gadget_id = 1;
+        $first->tag_id = 1;
+        $this->em()->save($first);
+        $second = (new GadgetTag())->setNew();
+        $second->gadget_id = 1;
+        $second->tag_id = 2;
+        $this->em()->save($second);
+
+        foreach (iterator_to_array(GadgetTag::on($this->db)->deleteAll(), false) as $model) {
+            $this->em()->save($model);
+        }
+
+        $this->assertSame(
+            [
+                ['gadget_id' => 1, 'tag_id' => 1, 'deleted' => 'y'],
+                ['gadget_id' => 1, 'tag_id' => 2, 'deleted' => 'y'],
+            ],
+            $this->rows('SELECT gadget_id, tag_id, deleted FROM gadget_tag ORDER BY tag_id'),
+            'Saving the models of a mark-deleted query should soft-delete rows that have a deleted column'
+        );
+    }
+}
