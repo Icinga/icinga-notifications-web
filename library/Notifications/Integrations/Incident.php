@@ -113,7 +113,7 @@ class Incident
             return $this;
         }
 
-        (new EntityManager($this->db))->save($existing->markDeleted());
+        (new EntityManager($this->db))->save($existing->delete());
         $this->addRoleChangedHistory($contact->id, 'subscriber', null);
 
         return $this;
@@ -297,7 +297,7 @@ class Incident
             $existing->role = $role;
             (new EntityManager($this->db))->save($existing);
         } else {
-            $incidentContact = new IncidentContact();
+            $incidentContact = (new IncidentContact())->setNew();
             $incidentContact->incident_id = $this->incident->id;
             $incidentContact->contact_id = $contact->id;
             $incidentContact->role = $role;
@@ -320,7 +320,7 @@ class Incident
      */
     private function addRoleChangedHistory(int $contactId, ?string $oldRole, ?string $newRole): void
     {
-        $history = new IncidentHistory();
+        $history = (new IncidentHistory())->setNew();
         $history->incident_id = $this->incident->id;
         $history->contact_id = $contactId;
         $history->type = 'recipient_role_changed';
