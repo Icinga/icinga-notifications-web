@@ -20,6 +20,7 @@ use ipl\Orm\Relations;
  * @property string $name
  * @property DateTime $changed_at
  * @property bool $deleted
+ * @property string $external_uuid
  *
  * @property Query|Contact $contact
  * @property Query|ContactgroupMember $contactgroup_member
