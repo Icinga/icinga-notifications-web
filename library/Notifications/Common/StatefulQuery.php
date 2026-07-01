@@ -40,6 +40,10 @@ class StatefulQuery extends Query
      */
     private function markLoaded(Model $model): void
     {
+        if ($model->isNew() !== null) {
+            return;
+        }
+
         $model->setNew(false);
 
         foreach ($model as $value) {

@@ -153,6 +153,10 @@ class EntityManager
      */
     protected function saveGraph(Model $model): void
     {
+        if ($model->isNew() === null) {
+            throw new RuntimeException('setNew() must be called on a model before saving it');
+        }
+
         if ($model->isNew() && $model->isMarkedForDeletion()) {
             return;
         }

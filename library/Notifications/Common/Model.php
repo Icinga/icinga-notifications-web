@@ -42,16 +42,10 @@ abstract class Model extends \ipl\Orm\Model
     /**
      * Get whether this entity is newly created and does not yet exist in the database
      *
-     * @return bool
-     *
-     * @throws RuntimeException If $isNew was not explicitly set to a bool value with {@see setNew()}
+     * @return ?bool
      */
-    public function isNew(): bool
+    public function isNew(): ?bool
     {
-        if ($this->isNew === null) {
-            throw new RuntimeException('$isNew must be set explicitly before calling isNew()');
-        }
-
         return $this->isNew;
     }
 
