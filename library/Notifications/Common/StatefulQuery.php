@@ -9,12 +9,15 @@ use Generator;
 use ipl\Orm\Query;
 
 /**
- * Ensures models loaded from the db are not marked as new
+ * Mark models loaded from the db as not new, and can flag every result for deletion
  */
 class StatefulQuery extends Query
 {
+    /** @var bool Whether all yielded models should be marked for deletion */
+    protected bool $deleteAll = false;
+
     /**
-     * Mark yielded models as loaded so subsequent changes are tracked as updates
+     * Mark each yielded model as loaded, and for deletion when {@see self::deleteAll()} was set
      *
      * @inheritDoc
      *
@@ -25,10 +28,27 @@ class StatefulQuery extends Query
         foreach (parent::yieldResults() as $key => $model) {
             if ($model instanceof Model) {
                 $this->markLoaded($model);
+                if ($this->deleteAll) {
+                    $model->delete();
+                }
             }
 
             yield $key => $model;
         }
+    }
+
+    /**
+     * Mark each model as deleted when yielded by {@see self::yieldResults()}
+     *
+     * This only affects the root models themselves, not their eager-loaded relations
+     *
+     * @return $this
+     */
+    public function deleteAll(): static
+    {
+        $this->deleteAll = true;
+
+        return $this;
     }
 
     /**

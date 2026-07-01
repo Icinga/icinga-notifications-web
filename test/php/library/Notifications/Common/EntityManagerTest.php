@@ -1375,4 +1375,80 @@ class EntityManagerTest extends TestCase
 
         $this->em()->save($workshop);
     }
+
+    public function testSavingTheModelsOfAMarkDeletedQueryHardDeletesTheRows()
+    {
+        $a = (new Workshop())->setNew();
+        $a->name = 'Acme';
+        $this->em()->save($a);
+        $b = (new Workshop())->setNew();
+        $b->name = 'Globex';
+        $this->em()->save($b);
+
+        $models = iterator_to_array(Workshop::on($this->db)->deleteAll(), false);
+
+        // A mark-deleted query yields each row loaded (not new) and flagged for deletion.
+        $this->assertCount(2, $models);
+        foreach ($models as $model) {
+            $this->assertFalse($model->isNew(), 'A model from a mark-deleted query should be loaded, not new');
+            $this->assertTrue(
+                $model->isMarkedForDeletion(),
+                'A model from a mark-deleted query should be flagged for deletion'
+            );
+            $this->em()->save($model);
+        }
+
+        $this->assertSame(
+            [],
+            $this->rows('SELECT * FROM workshop'),
+            'Saving the models of a mark-deleted query should remove every matched row'
+        );
+    }
+
+    public function testMarkDeletedQueryThatEagerLoadsARelationDeletesOnlyTheRootAndLeavesTheRelationIntact()
+    {
+        $workshop = (new Workshop())->setNew();
+        $workshop->name = 'Acme';
+        $gadget = (new Gadget())->setNew();
+        $gadget->name = 'Spanner';
+        $gadget->workshop = $workshop;
+        $this->em()->save($gadget);
+        $workshopId = $workshop->id;
+
+        foreach (iterator_to_array(Gadget::on($this->db)->with('workshop')->deleteAll(), false) as $model) {
+            $this->em()->save($model);
+        }
+
+        $this->assertSame([], $this->rows('SELECT * FROM gadget'), 'The mark-deleted root should be removed');
+        $this->assertSame(
+            [['id' => $workshopId, 'name' => 'Acme']],
+            $this->rows('SELECT id, name FROM workshop'),
+            'An eagerly-loaded relation of a mark-deleted model must be left intact'
+        );
+    }
+
+    public function testSavingTheModelsOfAMarkDeletedQuerySoftDeletesRowsThatHaveADeletedColumn()
+    {
+        $first = (new GadgetTag())->setNew();
+        $first->gadget_id = 1;
+        $first->tag_id = 1;
+        $this->em()->save($first);
+        $second = (new GadgetTag())->setNew();
+        $second->gadget_id = 1;
+        $second->tag_id = 2;
+        $this->em()->save($second);
+
+        foreach (iterator_to_array(GadgetTag::on($this->db)->deleteAll(), false) as $model) {
+            $this->em()->save($model);
+        }
+
+        $this->assertSame(
+            [
+                ['gadget_id' => 1, 'tag_id' => 1, 'deleted' => 'y'],
+                ['gadget_id' => 1, 'tag_id' => 2, 'deleted' => 'y'],
+            ],
+            $this->rows('SELECT gadget_id, tag_id, deleted FROM gadget_tag ORDER BY tag_id'),
+            'Saving the models of a mark-deleted query should soft-delete rows that have a deleted column'
+        );
+    }
 }
