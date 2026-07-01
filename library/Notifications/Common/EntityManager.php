@@ -14,7 +14,6 @@ use ipl\Orm\Relation\BelongsToMany;
 use ipl\Orm\Relation\Junction;
 use ipl\Orm\Resolver;
 use ipl\Sql\Connection;
-use ipl\Sql\ExpressionInterface;
 use ipl\Sql\Select;
 use PDO;
 use RuntimeException;
@@ -67,11 +66,11 @@ class EntityManager
     private SplObjectStorage $activeSaves;
 
     /**
-     * Cache of writable column maps populated by {@see self::writableColumns()}, keyed by model class
+     * Cache of real column maps populated by {@see self::realColumnMap()}, keyed by model class
      *
      * @var array<class-string, array<string, string>>
      */
-    private array $writableColumnCache = [];
+    private array $realColumnCache = [];
 
     /**
      * Create a new EntityManager for the given database connection
@@ -422,7 +421,7 @@ class EntityManager
             }
         }
 
-        if (empty(array_intersect_key($model->getModifiedProperties(), $this->writableColumns($model)))) {
+        if (empty(array_intersect_key($model->getModifiedProperties(), $this->realColumnMap($model)))) {
             // Only relations changed; there is nothing to update on this row
             $model->clearModifiedProperties();
 
@@ -461,7 +460,7 @@ class EntityManager
     protected function stampChangedAt(Model $model): void
     {
         $column = $model->getChangedAtColumn();
-        if (isset($this->writableColumns($model)[$column])) {
+        if (isset($this->realColumnMap($model)[$column])) {
             $model->$column = $this->now();
         }
     }
@@ -489,7 +488,7 @@ class EntityManager
      */
     protected function extract(Model $model, Behaviors $behaviors, ?array $only = null): array
     {
-        $columns = $this->writableColumns($model);
+        $columns = $this->realColumnMap($model);
         $data = [];
 
         // Restrict to the given property set (e.g. the modified set) or fall back to all set properties.
@@ -701,42 +700,22 @@ class EntityManager
     }
 
     /**
-     * Get the model's writable columns as a property => column map
-     *
-     * Expression columns are omitted as they cannot be written to. The result is memoized in
-     * {@see $writableColumnCache} by class, since the column set never changes once a Model
-     * class is defined; repeated calls within the same save graph reuse the cached map.
+     * Get the model's real columns from {@see Model::getRealColumnMap()} and cache them per model class
      *
      * @param Model $model
      *
      * @return array<string, string>
      */
-    protected function writableColumns(Model $model): array
+    protected function realColumnMap(Model $model): array
     {
         $class = get_class($model);
-        if (isset($this->writableColumnCache[$class])) {
-            return $this->writableColumnCache[$class];
+        if (isset($this->realColumnCache[$class])) {
+            return $this->realColumnCache[$class];
         }
 
-        $columns = [];
+        $columns = $model->getRealColumnMap();
 
-        foreach ((array) $model->getKeyName() as $key) {
-            $columns[$key] = $key;
-        }
-
-        foreach ($model->getColumns() as $alias => $column) {
-            if ($column instanceof ExpressionInterface) {
-                continue;
-            }
-
-            if (is_int($alias)) {
-                $columns[$column] = $column;
-            } else {
-                $columns[$alias] = $column;
-            }
-        }
-
-        $this->writableColumnCache[$class] = $columns;
+        $this->realColumnCache[$class] = $columns;
 
         return $columns;
     }

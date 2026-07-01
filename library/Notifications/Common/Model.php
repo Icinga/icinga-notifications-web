@@ -6,7 +6,7 @@
 namespace Icinga\Module\Notifications\Common;
 
 use ipl\Sql\Connection;
-use RuntimeException;
+use ipl\Sql\ExpressionInterface;
 
 /**
  * Base class for all module models that tracks the changes made to a model
@@ -141,6 +141,35 @@ abstract class Model extends \ipl\Orm\Model
     public function isMarkedForDeletion(): bool
     {
         return $this->markedForDeletion;
+    }
+
+    /**
+     * Get the model's real columns as a property => column map
+     *
+     * "Real" means that the column maps to an actual table column, and can be written to by the {@see EntityManager}
+     *
+     * @return array<string, string>
+     */
+    public function getRealColumnMap(): array
+    {
+        $columns = [];
+        foreach ((array) $this->getKeyName() as $key) {
+            $columns[$key] = $key;
+        }
+
+        foreach ($this->getColumns() as $alias => $column) {
+            if ($column instanceof ExpressionInterface) {
+                continue;
+            }
+
+            if (is_int($alias)) {
+                $columns[$column] = $column;
+            } else {
+                $columns[$alias] = $column;
+            }
+        }
+
+        return $columns;
     }
 
     /**
