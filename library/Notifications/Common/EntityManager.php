@@ -42,9 +42,10 @@ use SplObjectStorage;
  * Limitations:
  * - Saving two separate model instances that map to the same db row will result in the second save overwriting the
  *   changes of the first
- * - ManyToMany links no longer present after a save are soft- or hard deleted according to what
- *   {@see Model::isSoftDeletable()} returns. This only works if the relation was declared using its model class
- *   which must have a mapping for the `deleted` column, relations that use the table name will always use hard delete.
+ * - ManyToMany relations are additive: assigning targets inserts the missing junction links (reviving
+ *   soft-deleted ones when the junction is declared by a soft-deletable model class) but never removes links
+ *   absent from the assigned set. Detaching a link is a separate, explicit operation, mark the junction row
+ *   deleted and save it (e.g. via a {@see Model::delete()} query on the junction model).
  * - {@see self::saveGraph()} does not detect cycles, passing a cyclic graph like:
  *   ```
  *   $parent->children = [$child];
@@ -203,7 +204,6 @@ class EntityManager
 
         if ($model->isMarkedForDeletion()) {
             // Delete path
-            $this->saveManyToMany($model, $manyToMany, $set);
             $this->saveDeletedChildren($children, $set);
             $this->delete($model);
             $this->saveChangedParents($dependencies, $set);
@@ -329,7 +329,7 @@ class EntityManager
     }
 
     /**
-     * Save targets of the given many-to-many relations and sync each junction
+     * Save targets of the given many-to-many relations and attach each junction
      *
      * @param Model $model The source model
      * @param array<string, BelongsToMany> $manyToMany The many-to-many relations to persist, keyed by name
@@ -350,7 +350,7 @@ class EntityManager
                 $targets[] = $target;
             }
 
-            $this->syncJunction($relation, $model, $targets);
+            $this->attachJunction($relation, $model, $targets);
         }
     }
 
@@ -529,14 +529,10 @@ class EntityManager
     }
 
     /**
-     * Sync the junction so it links the given source to exactly the given targets
+     * Insert a junction link for each target that isn't linked yet, never removing existing links
      *
-     * Assignment is authoritative, the stored set is replaced by the given one. Links absent from $targets
-     * are deleted, new ones inserted, existing ones remain.
-     *
-     * Inserts and deletes are soft-delete aware and stamp the {@see Model::getChangedAtColumn()} column if possible.
-     * For this to work the relation must be declared using the junction model.
-     * Relations that use the table name will always use a generic {@see Junction} instance.
+     * A soft-deletable junction model is handled by {@see self::attachSoftDeleteJunction()}; otherwise links
+     * use a generic {@see Junction}.
      *
      * @param BelongsToMany $relation
      * @param Model $source
@@ -544,7 +540,7 @@ class EntityManager
      *
      * @return void
      */
-    protected function syncJunction(BelongsToMany $relation, Model $source, array $targets): void
+    protected function attachJunction(BelongsToMany $relation, Model $source, array $targets): void
     {
         [$sourceToJunction, $junctionToTarget] = iterator_to_array($relation->setSource($source)->resolve(), false);
 
@@ -569,7 +565,7 @@ class EntityManager
         }
 
         if (! $junction instanceof Junction && $junction->isSoftDeletable()) {
-            $this->syncSoftDeleteJunction($junction, $sourceColumns, $junctionColumn, $desired);
+            $this->attachSoftDeleteJunction($junction, $sourceColumns, $junctionColumn, $desired);
 
             return;
         }
@@ -577,35 +573,25 @@ class EntityManager
         $table = $junction->getTableName();
         $stored = $this->fetchJunctionRows($table, $sourceColumns, $junctionColumn);
 
-        foreach ($stored as $identity => $value) {
-            if (! isset($desired[$identity])) {
-                $this->db->delete(
-                    $table,
-                    $this->createCondition(array_merge($sourceColumns, [$junctionColumn => $value]))
-                );
+        foreach ($desired as $key => $value) {
+            if (! isset($stored[$key])) {
+                $this->db->insert($table, array_merge($sourceColumns, [$junctionColumn => $value]));
             }
-        }
-
-        $missing = [];
-        foreach ($desired as $identity => $value) {
-            if (! isset($stored[$identity])) {
-                $missing[] = array_merge($sourceColumns, [$junctionColumn => $value]);
-            }
-        }
-
-        foreach ($missing as $row) {
-            $this->db->insert($table, $row);
         }
     }
 
     /**
-     * Read the target value of the links currently stored for the given source, keyed by that value
+     * Read the identities of the links currently stored for the given source
+     *
+     * The identity of a link is its target-side value as a string, matching the keys built in
+     * {@see self::attachJunction()}. Only membership is needed to skip links that already exist, so the
+     * values themselves are not returned.
      *
      * @param string $table
      * @param array<string, mixed> $sourceColumns
      * @param string $junctionColumn The junction's target-side column to read back
      *
-     * @return array<string, mixed>
+     * @return array<string, true> The stored target identities, as a set keyed by identity
      */
     private function fetchJunctionRows(string $table, array $sourceColumns, string $junctionColumn): array
     {
@@ -616,25 +602,18 @@ class EntityManager
 
         $stored = [];
         foreach ($this->db->select($select)->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            $value = $row[$junctionColumn];
-            $stored[(string) $value] = $value;
+            $stored[(string) $row[$junctionColumn]] = true;
         }
 
         return $stored;
     }
 
     /**
-     * Sync a soft-delete junction to exactly the desired links
+     * Insert missing links and revive soft-deleted ones for a soft-delete junction, never removing links
      *
-     * Links no longer desired but still active are soft-deleted; desired links that are currently
-     * soft-deleted are revived; desired links not stored at all are inserted; active links that remain
-     * desired are left untouched. Every soft-delete, revival and insert stamps the
-     * {@see Model::getChangedAtColumn()} column.
-     *
-     * The `deleted` and {@see Model::getChangedAtColumn()} columns are written using their schema-wide storage
-     * forms directly (the `'y'`/`'n'` enum and a millisecond timestamp), rather than routing through the junction
-     * model's behaviors — the same way {@see self::persist()} stamps it as a fixed convention. Every
-     * soft-delete junction in the schema carries both columns, so neither is treated as optional.
+     * Each insert and revival stamps the {@see Model::getChangedAtColumn()} column and writes `deleted` in its
+     * `'y'`/`'n'` storage form directly, the same fixed convention {@see self::persist()} uses, rather than
+     * through the junction model's behaviors.
      *
      * @param Model $junction A junction model
      * @param array<string, mixed> $sourceColumns
@@ -643,7 +622,7 @@ class EntityManager
      *
      * @return void
      */
-    private function syncSoftDeleteJunction(
+    private function attachSoftDeleteJunction(
         Model $junction,
         array $sourceColumns,
         string $junctionColumn,
@@ -658,33 +637,14 @@ class EntityManager
 
         $stored = [];
         foreach ($this->db->select($select)->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            $stored[(string) $row[$junctionColumn]] = [
-                'value' => $row[$junctionColumn],
-                'deleted' => $row['deleted'] === 'y',
-            ];
-        }
-
-        // Soft-delete links that are no longer desired but still active.
-        foreach ($stored as $identity => $link) {
-            if (! isset($desired[$identity]) && ! $link['deleted']) {
-                $this->delete(
-                    $this->makeJunctionLink(
-                        get_class($junction),
-                        $sourceColumns,
-                        $junctionColumn,
-                        $link['value'],
-                        false
-                    )
-                        ->markDeleted()
-                );
-            }
+            $stored[(string) $row[$junctionColumn]] = $row['deleted'] === 'y';
         }
 
         foreach ($desired as $identity => $value) {
             // In case the link exists, but is marked as deleted, marking the model as `new` ensures the `delete`
             // flag of the existing row is updated and no insert with an existing PK is attempted
             $isNew = ! isset($stored[$identity]);
-            if (! $isNew && ! $stored[$identity]['deleted']) {
+            if (! $isNew && ! $stored[$identity]) {
                 continue;
             }
 

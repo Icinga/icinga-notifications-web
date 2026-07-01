@@ -23,6 +23,7 @@ use Tests\Icinga\Module\Notifications\Lib\EntityManager\Tag;
 use Tests\Icinga\Module\Notifications\Lib\EntityManager\TickingEntityManager;
 use Tests\Icinga\Module\Notifications\Lib\EntityManager\Trinket;
 use Tests\Icinga\Module\Notifications\Lib\EntityManager\Workshop;
+use ipl\Stdlib\Filter;
 
 class EntityManagerTest extends TestCase
 {
@@ -138,7 +139,7 @@ class EntityManagerTest extends TestCase
     {
         $workshop = (new Workshop())->setNew();
         $workshop->name = 'Acme';
-        $this->em()->save($workshop->markDeleted());
+        $this->em()->save($workshop->delete());
 
         $this->assertEmpty($this->db->calls, 'Marking a never-saved model deleted and saving should issue no writes');
         $this->assertSame(
@@ -156,7 +157,7 @@ class EntityManagerTest extends TestCase
         $gadgetTag->gadget_id = 1;
         $gadgetTag->tag_id = 1;
 
-        $this->em()->save($gadgetTag->markDeleted());
+        $this->em()->save($gadgetTag->delete());
 
         $this->assertEmpty($this->db->calls, 'Marking a never-saved soft-delete model deleted should issue no writes');
         $this->assertSame(
@@ -174,7 +175,7 @@ class EntityManagerTest extends TestCase
         $workshop->name = 'Acme';
         $this->em()->save($workshop);
 
-        $this->em()->save($workshop->markDeleted());
+        $this->em()->save($workshop->delete());
 
         $this->assertSame(
             [],
@@ -192,7 +193,7 @@ class EntityManagerTest extends TestCase
         $gadgetTag->tag_id = 1;
         $this->em()->save($gadgetTag); // changed_at -> 1000
 
-        $this->em()->save($gadgetTag->markDeleted()); // soft-deleted, changed_at -> 2000
+        $this->em()->save($gadgetTag->delete()); // soft-deleted, changed_at -> 2000
 
         $this->assertSame(
             [['gadget_id' => 1, 'tag_id' => 1, 'deleted' => 'y', 'changed_at' => 2000]],
@@ -296,7 +297,7 @@ class EntityManagerTest extends TestCase
 
         $sticker = (new Sticker())->setNew();
         $sticker->label = 'fragile';
-        $gadget->stickers = [$sticker];
+        $gadget->sticker = [$sticker];
 
         $this->em()->save($gadget);
 
@@ -362,7 +363,7 @@ class EntityManagerTest extends TestCase
         );
     }
 
-    public function testManyToManyReassignmentReplacesThePreviousLinks()
+    public function testReassigningAManyToManyAddsWithoutRemoving()
     {
         $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
@@ -379,30 +380,25 @@ class EntityManagerTest extends TestCase
         /** @var Gadget $loaded */
         $loaded = Gadget::on($this->db)->first();
         $loaded->stickers = [$heavy];
-        $loaded->stickers = array_merge($loaded->stickers, [$heavy]);
         $this->em()->save($loaded);
 
         $this->assertSame(
-            [['gadget_id' => $gadget->id, 'sticker_id' => $heavy->id]],
-            $this->rows('SELECT gadget_id, sticker_id FROM gadget_sticker'),
-            'The reassigned set should replace the previous links'
-        );
-        $this->assertSame(
-            2,
-            (int) $this->rows('SELECT COUNT(*) AS c FROM sticker')[0]['c'],
-            'Reconciling the junction must not delete the target rows'
+            [
+                ['gadget_id' => $gadget->id, 'sticker_id' => $fragile->id],
+                ['gadget_id' => $gadget->id, 'sticker_id' => $heavy->id],
+            ],
+            $this->rows('SELECT gadget_id, sticker_id FROM gadget_sticker ORDER BY sticker_id'),
+            'Assigning a new target should add its link without removing the previously linked one'
         );
     }
 
-    public function testManyToManyAssigningAnEmptySetClearsTheLinks()
+    public function testAssigningAnEmptySetToAManyToManyLeavesLinksIntact()
     {
         $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
-
         $sticker = (new Sticker())->setNew();
         $sticker->label = 'fragile';
         $gadget->stickers = [$sticker];
-
         $this->em()->save($gadget);
 
         /** @var Gadget $loaded */
@@ -411,34 +407,9 @@ class EntityManagerTest extends TestCase
         $this->em()->save($loaded);
 
         $this->assertSame(
-            [],
+            [['gadget_id' => $gadget->id, 'sticker_id' => $sticker->id]],
             $this->rows('SELECT gadget_id, sticker_id FROM gadget_sticker'),
-            'Assigning an empty set should remove all links'
-        );
-    }
-
-    public function testManyToManyAssigningNullClearsTheLinks()
-    {
-        $gadget = (new Gadget())->setNew();
-        $gadget->name = 'Spanner';
-
-        $sticker = (new Sticker())->setNew();
-        $sticker->label = 'fragile';
-        $gadget->stickers = [$sticker];
-
-        $this->em()->save($gadget);
-
-        // Null collapses to the empty set on the way through asTraversable(), so it clears all links
-        // just like assigning [] does.
-        /** @var Gadget $loaded */
-        $loaded = Gadget::on($this->db)->first();
-        $loaded->stickers = null;
-        $this->em()->save($loaded);
-
-        $this->assertSame(
-            [],
-            $this->rows('SELECT gadget_id, sticker_id FROM gadget_sticker'),
-            'Assigning null to a many-to-many relation should remove all links'
+            'Assigning an empty set must leave the existing link intact'
         );
     }
 
@@ -486,43 +457,8 @@ class EntityManagerTest extends TestCase
         );
     }
 
-    public function testManyToManyDeclaredByTableNameHardDeletesEvenWithDeletedColumn()
+    public function testExplicitlyDetachingASoftDeleteJunctionMarksItDeletedAndStampsChangedAt()
     {
-        // A junction declared by table name resolves to a generic ipl-orm Junction, which the
-        // EntityManager never treats as soft-delete: only a junction *model* that reports
-        // isSoftDelete() can opt in. So even though the table carries a `deleted` column, the
-        // generic Junction discards that metadata and the orphaned link is hard-deleted.
-        $db = new RecordingConnection(['db' => 'sqlite', 'dbname' => ':memory:']);
-        $db->exec(
-            'CREATE TABLE gadget (id INTEGER PRIMARY KEY AUTOINCREMENT, workshop_id INTEGER, name VARCHAR NOT NULL);'
-            . 'CREATE TABLE sticker (id INTEGER PRIMARY KEY AUTOINCREMENT, label VARCHAR NOT NULL);'
-            . 'CREATE TABLE gadget_sticker ('
-            . 'gadget_id INTEGER NOT NULL, sticker_id INTEGER NOT NULL, deleted INTEGER NOT NULL DEFAULT 0);'
-        );
-
-        $gadget = (new Gadget())->setNew();
-        $gadget->name = 'Spanner';
-        $sticker = (new Sticker())->setNew();
-        $sticker->label = 'fragile';
-        $gadget->stickers = [$sticker];
-        (new TickingEntityManager($db))->save($gadget);
-
-        /** @var Gadget $loaded */
-        $loaded = Gadget::on($db)->first();
-        $loaded->stickers = [];
-        (new TickingEntityManager($db))->save($loaded);
-
-        $this->assertSame(
-            [],
-            $db->prepexec('SELECT gadget_id, sticker_id, deleted FROM gadget_sticker')->fetchAll(PDO::FETCH_ASSOC),
-            'A table-name junction is a generic Junction, so the orphan should be hard-deleted despite the column'
-        );
-    }
-
-    public function testSoftDeleteJunctionMarksRemovedLinkDeletedAndStampsChangedAt()
-    {
-        // The tags relation goes through a junction model with a `deleted` column, so an orphaned link
-        // is marked deleted = 'y' (the row stays) and changed_at is stamped, rather than hard-deleted.
         $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
 
@@ -534,10 +470,12 @@ class EntityManagerTest extends TestCase
 
         $this->em()->save($gadget); // two links inserted -> changed_at 1000, 2000
 
-        /** @var Gadget $loaded */
-        $loaded = Gadget::on($this->db)->first();
-        $loaded->tags = [$first];
-        $this->em()->save($loaded); // orphaned link soft-deleted -> changed_at 3000
+        foreach (GadgetTag::on($this->db)->filter(Filter::all(
+            Filter::equal('gadget_id', $gadget->id),
+            Filter::equal('tag_id', $second->id)
+        ))->deleteAll() as $link) {
+            $this->em()->save($link); // soft-deleted -> changed_at 3000
+        }
 
         $this->assertSame(
             [
@@ -545,11 +483,11 @@ class EntityManagerTest extends TestCase
                 ['tag_id' => 2, 'deleted' => 'y', 'changed_at' => 3000],
             ],
             $this->rows('SELECT tag_id, deleted, changed_at FROM gadget_tag ORDER BY tag_id'),
-            'The removed link should be soft-deleted and re-stamped; the kept link should be left untouched'
+            'Explicitly detaching a soft-delete junction link should mark it deleted and re-stamp changed_at'
         );
     }
 
-    public function testSoftDeleteJunctionRevivesAReAddedLinkInsteadOfDuplicating()
+    public function testReAddingAnExplicitlyDetachedSoftDeleteLinkRevivesItInsteadOfDuplicating()
     {
         $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
@@ -559,20 +497,24 @@ class EntityManagerTest extends TestCase
         $gadget->tags = [$tag];
         $this->em()->save($gadget); // link created, changed_at -> 1000
 
-        /** @var Gadget $removed */
-        $removed = Gadget::on($this->db)->first();
-        $removed->tags = [];
-        $this->em()->save($removed); // link soft-deleted, changed_at -> 2000
+        // Explicitly detach the link (soft-delete the junction row), changed_at -> 2000.
+        foreach (GadgetTag::on($this->db)->filter(Filter::all(
+            Filter::equal('gadget_id', $gadget->id),
+            Filter::equal('tag_id', $tag->id)
+        ))->deleteAll() as $link) {
+            $this->em()->save($link);
+        }
 
+        // Re-adding the target revives the existing row rather than inserting a duplicate, changed_at -> 3000.
         /** @var Gadget $readded */
         $readded = Gadget::on($this->db)->first();
         $readded->tags = [$tag];
-        $this->em()->save($readded); // link revived, changed_at -> 3000
+        $this->em()->save($readded);
 
         $this->assertSame(
             [['tag_id' => 1, 'deleted' => 'n', 'changed_at' => 3000]],
             $this->rows('SELECT tag_id, deleted, changed_at FROM gadget_tag'),
-            'Re-adding should revive the existing row rather than insert a duplicate'
+            'Re-adding an explicitly detached link should revive the existing row rather than insert a duplicate'
         );
     }
 
@@ -583,12 +525,12 @@ class EntityManagerTest extends TestCase
 
         $tag = (new Tag())->setNew();
         $tag->name = 'sharp';
-        $gadget->tags = [$tag];
+        $gadget->tag = [$tag];
         $this->em()->save($gadget);
 
         /** @var Gadget $loaded */
         $loaded = Gadget::on($this->db)->first();
-        $loaded->tags = [$tag];
+        $loaded->tag = [$tag];
 
         $this->db->resetCalls();
         $this->em()->save($loaded);
@@ -744,7 +686,7 @@ class EntityManagerTest extends TestCase
 
         // Reassign only the relation — no own-column changes. The parent row's data
         // hasn't actually moved, so neither its `changed_at` nor its row should change.
-        $loaded->notes = [];
+        $loaded->stamped_note = [];
 
         $this->db->resetCalls();
         $this->em()->save($loaded);
@@ -813,7 +755,7 @@ class EntityManagerTest extends TestCase
         $trinket->name = 'Amulet';
         $this->em()->save($trinket);
 
-        $this->em()->save($trinket->markDeleted());
+        $this->em()->save($trinket->delete());
 
         $this->assertSame([], $this->rows('SELECT id FROM trinket'));
     }
@@ -846,10 +788,10 @@ class EntityManagerTest extends TestCase
         $loaded = Workshop::on($this->db)->first();
 
         // Replace the (still-Closure) relation without first triggering its loader.
-        $loaded->gadgets = [(new Gadget())->setNew()];
+        $loaded->gadget = [(new Gadget())->setNew()];
 
         $this->assertArrayHasKey(
-            'gadgets',
+            'gadget',
             $loaded->getModifiedProperties(),
             'Reassigning a relation should mark it modified so saveGraph cascades the new value'
         );
@@ -898,7 +840,7 @@ class EntityManagerTest extends TestCase
         $loaded = Gadget::on($this->db)->with('workshop')->first();
         $loaded->workshop->name = 'Globex';
 
-        $this->em()->save($loaded->markDeleted());
+        $this->em()->save($loaded->delete());
 
         $this->assertSame([], $this->rows('SELECT * FROM gadget'), 'The deleted model should be gone');
         $this->assertSame(
@@ -935,7 +877,7 @@ class EntityManagerTest extends TestCase
         $w = (new Workshop())->setNew();
         $w->name = 'Acme';
         $this->em()->save($w);
-        $this->em()->save($w->markDeleted());
+        $this->em()->save($w->delete());
 
         $this->assertTrue($w->isNew(), 'A deleted model should be treated as new again');
         $this->assertFalse($w->isModified(), 'Modified state should be cleared');
@@ -952,7 +894,7 @@ class EntityManagerTest extends TestCase
         $this->em()->save($w);
         $oldId = $w->id;
 
-        $this->em()->save($w->markDeleted());
+        $this->em()->save($w->delete());
 
         $this->assertFalse($w->hasProperty('id'), 'The auto-increment key should be cleared on delete');
 
@@ -974,7 +916,7 @@ class EntityManagerTest extends TestCase
         $p->label = 'A';
         $this->em()->save($p);
 
-        $this->em()->save($p->markDeleted());
+        $this->em()->save($p->delete());
 
         $this->assertFalse($p->hasProperty('left_id'), 'Each part of a compound key should be cleared');
         $this->assertFalse($p->hasProperty('right_id'), 'Each part of a compound key should be cleared');
@@ -988,7 +930,7 @@ class EntityManagerTest extends TestCase
         $trinket->name = 'Amulet';
         $this->em()->save($trinket);
 
-        $this->em()->save($trinket->markDeleted());
+        $this->em()->save($trinket->delete());
 
         $this->assertFalse($trinket->hasProperty('id'), 'The application-assigned key should be cleared on delete');
     }
@@ -1036,7 +978,7 @@ class EntityManagerTest extends TestCase
         $b->label = 'B';
         $this->em()->save($b);
 
-        $this->em()->save($b->markDeleted());
+        $this->em()->save($b->delete());
 
         $this->assertSame(
             [['left_id' => 1, 'right_id' => 1, 'label' => 'A']],
@@ -1144,7 +1086,7 @@ class EntityManagerTest extends TestCase
         $id = $workshop->id;
 
         $this->db->resetCalls();
-        $this->em()->save($workshop->markDeleted());
+        $this->em()->save($workshop->delete());
 
         $this->assertSame(
             [['method' => 'delete', 'table' => 'workshop', 'condition' => ['id = ?' => $id]]],
@@ -1164,10 +1106,10 @@ class EntityManagerTest extends TestCase
         // entirely: a deleted parent must not persist its children, whose foreign key is about to vanish.
         $orphan = (new Gadget())->setNew();
         $orphan->name = 'Spanner';
-        $workshop->gadgets = [$orphan];
+        $workshop->gadget = [$orphan];
 
         $this->db->resetCalls();
-        $this->em()->save($workshop->markDeleted());
+        $this->em()->save($workshop->delete());
 
         $this->assertSame(
             [['method' => 'delete', 'table' => 'workshop', 'condition' => ['id = ?' => $id]]],
@@ -1191,7 +1133,7 @@ class EntityManagerTest extends TestCase
         $gadget->workshop = $workshop;
 
         $this->db->resetCalls();
-        $this->em()->save($gadget->markDeleted());
+        $this->em()->save($gadget->delete());
 
         $this->assertSame(
             [['method' => 'delete', 'table' => 'gadget', 'condition' => ['id = ?' => $id]]],
@@ -1201,7 +1143,7 @@ class EntityManagerTest extends TestCase
         $this->assertTrue($workshop->isNew(), 'The assigned parent should never be persisted');
     }
 
-    public function testDeletingAModelHonorsAnExplicitlyClearedManyToManyInTheSameSave()
+    public function testDeletingAModelLeavesItsJunctionRowsUntouched()
     {
         $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
@@ -1209,44 +1151,47 @@ class EntityManagerTest extends TestCase
         $sticker->label = 'fragile';
         $gadget->stickers = [$sticker];
         $this->em()->save($gadget);
+        $gadgetId = $gadget->id;
 
         $this->assertNotEmpty($this->rows('SELECT * FROM gadget_sticker'), 'precondition: the link exists');
 
-        // Clear the many-to-many and delete its owner in one save. The unset is an explicit request, so the
-        // junction must be synced to empty even though the owning row is being deleted.
+        // Deletion never touches junctions under additive m2m: removing a source's links is an explicit,
+        // separate operation. So deleting the owner leaves its junction rows in place (orphaned).
         /** @var Gadget $loaded */
         $loaded = Gadget::on($this->db)->first();
-        $loaded->stickers = [];
 
-        $this->em()->save($loaded->markDeleted());
+        $this->em()->save($loaded->delete());
 
-        $this->assertSame([], $this->rows('SELECT * FROM gadget_sticker'), 'The junction should be synced to empty');
         $this->assertSame([], $this->rows('SELECT * FROM gadget'), 'The owner itself should be deleted');
+        $this->assertSame(
+            [['gadget_id' => $gadgetId, 'sticker_id' => $sticker->id]],
+            $this->rows('SELECT gadget_id, sticker_id FROM gadget_sticker'),
+            'Deleting the owner must leave its junction rows untouched'
+        );
     }
 
-    public function testDeletingAModelSoftDeletesAnExplicitlyClearedSoftJunctionInTheSameSave()
+    public function testAssigningAManyToManyWhileDeletingTheOwnerWritesNoJunctionRow()
     {
         $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
-        $tag = (new Tag())->setNew();
-        $tag->name = 'sharp';
-        $gadget->tags = [$tag];
         $this->em()->save($gadget);
 
-        // Clear a soft-delete junction and delete its owner in one save. The cleared link must be marked
-        // deleted (not removed), in the same save as the owner's deletion — the daemon needs that signal.
-        /** @var Gadget $loaded */
-        $loaded = Gadget::on($this->db)->first();
-        $loaded->tags = [];
+        // Assign a brand-new link and delete the owner in the same save. The delete path must not touch the
+        // junction at all — additive would otherwise attach a link to a row that is about to vanish.
+        $sticker = (new Sticker())->setNew();
+        $sticker->label = 'fragile';
+        $gadget->sticker = [$sticker];
 
-        $this->em()->save($loaded->markDeleted());
+        $this->db->resetCalls();
+        $this->em()->save($gadget->delete());
 
+        $junctionWrites = array_filter($this->db->calls, fn ($call) => $call['table'] === 'gadget_sticker');
         $this->assertSame(
-            [['gadget_id' => $gadget->id, 'tag_id' => $tag->id, 'deleted' => 'y']],
-            $this->rows('SELECT gadget_id, tag_id, deleted FROM gadget_tag'),
-            'The cleared soft-junction row should be marked deleted, not removed'
+            [],
+            $junctionWrites,
+            'Deleting the owner must not write any junction row for an assigned link'
         );
-        $this->assertSame([], $this->rows('SELECT * FROM gadget'), 'The owner itself should be deleted');
+        $this->assertSame([], $this->rows('SELECT * FROM gadget_sticker'), 'No junction row should exist');
     }
 
     public function testDeletingAModelAlsoDeletesAChildExplicitlyMarkedDeleted()
@@ -1266,9 +1211,9 @@ class EntityManagerTest extends TestCase
         $loadedWorkshop = Workshop::on($this->db)->first();
         /** @var Gadget $loadedGadget */
         $loadedGadget = Gadget::on($this->db)->first();
-        $loadedWorkshop->gadgets = [$loadedGadget->markDeleted()];
+        $loadedWorkshop->gadgets = [$loadedGadget->delete()];
 
-        $this->em()->save($loadedWorkshop->markDeleted());
+        $this->em()->save($loadedWorkshop->delete());
 
         $this->assertSame([], $this->rows('SELECT * FROM gadget'), 'The explicitly deleted child should be gone');
         $this->assertSame([], $this->rows('SELECT * FROM workshop'), 'The parent should be gone');
