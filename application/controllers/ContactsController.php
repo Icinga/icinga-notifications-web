@@ -10,6 +10,7 @@ use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\Contact;
+use Icinga\Module\Notifications\Repository\ContactRepository;
 use Icinga\Module\Notifications\View\ContactRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Web\Form\ContactForm;
@@ -129,9 +130,10 @@ class ContactsController extends CompatController
     {
         $this->addTitleTab($this->translate('Create Contact'));
 
-        $form = (new ContactForm($this->db))
+        $form = (new ContactForm())
             ->on(Form::ON_SUBMIT, function (ContactForm $form) {
-                $form->addContact();
+                $contact = $form->getContact();
+                Database::get()->transaction(fn (Connection $db) => (new ContactRepository($db))->create($contact));
                 Notification::success($this->translate('New contact has successfully been added'));
                 $this->switchToSingleColumnLayout();
             })->handleRequest($this->getServerRequest());

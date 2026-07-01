@@ -7,9 +7,7 @@ namespace Icinga\Module\Notifications\Forms;
 
 use DateTime;
 use DateTimeZone;
-use Icinga\Exception\Http\HttpNotFoundException;
-use Icinga\Module\Notifications\Model\Rotation;
-use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
+use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Schedule;
 use Icinga\Web\Session;
 use IntlTimeZone;
@@ -17,7 +15,6 @@ use ipl\Html\Attributes;
 use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
-use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
 use ipl\Validator\CallbackValidator;
 use ipl\Web\Common\CsrfCounterMeasure;
@@ -29,21 +26,13 @@ class ScheduleForm extends CompatForm
 {
     use CsrfCounterMeasure;
 
+    protected Schedule $schedule;
+
     protected ?string $submitLabel = null;
 
     protected bool $showRemoveButton = false;
 
     protected bool $showTimezoneSuggestionInput = false;
-
-    private Connection $db;
-
-    private ?int $scheduleId = null;
-
-    public function __construct(Connection $db)
-    {
-        $this->db = $db;
-        $this->applyDefaultElementDecorators();
-    }
 
     public function setSubmitLabel(string $label): static
     {
@@ -86,93 +75,44 @@ class ScheduleForm extends CompatForm
         return $csrf !== null && $csrf->isValid() && $btn !== null && $btn->getName() === 'delete';
     }
 
-    public function loadSchedule(int $id): void
+    /**
+     * Get whether the duplicate button was pressed
+     *
+     * @return bool
+     */
+    public function hasBeenDuplicated(): bool
     {
-        $this->scheduleId = $id;
+        return $this->getPressedSubmitElement()?->getName() === 'duplicate';
+    }
+
+    public function __construct()
+    {
+        $this->schedule = new Schedule();
+
+        $this->applyDefaultElementDecorators();
+    }
+
+    public function setSchedule(Schedule $schedule): static
+    {
+        $this->schedule = $schedule;
         $this->populate($this->fetchDbValues());
+
+        return $this;
     }
 
-    public function addSchedule(): int
+    public function getSchedule(): Schedule
     {
-        return $this->db->transaction(function (Connection $db) {
-            $db->insert('schedule', [
-                'name'       => $this->getValue('name'),
-                'changed_at' => (int) (new DateTime())->format("Uv"),
-                'timezone'   => $this->getValue('timezone')
-            ]);
-
-            return $db->lastInsertId();
-        });
-    }
-
-    public function editSchedule(int $id): void
-    {
-        $this->db->beginTransaction();
-
-        $values = $this->getValues();
-        $storedValues = $this->fetchDbValues();
-
-        if ($values === $storedValues) {
-            return;
+        // TODO: ! $this->schedule->isNew() &&
+        if (! $this->hasChanges()) {
+            return $this->schedule;
         }
 
-        $this->db->update('schedule', [
-            'name'          => $values['name'],
-            'changed_at'    => (int) (new DateTime())->format("Uv")
-        ], ['id = ?' => $id]);
-
-        $this->db->commitTransaction();
-    }
-
-    public function removeSchedule(int $id): void
-    {
-        $this->db->beginTransaction();
-
-        $rotations = Rotation::on($this->db)
-            ->columns(['id', 'schedule_id', 'priority', 'timeperiod.id'])
-            ->filter(Filter::equal('schedule_id', $id))
-            ->orderBy('priority', SORT_DESC);
-
-        /** @var Rotation $rotation */
-        foreach ($rotations as $rotation) {
-            $rotation->delete();
+        $this->schedule->name = $this->getValue('name');
+        if ($this->showTimezoneSuggestionInput) {
+            $this->schedule->timezone = $this->getValue('timezone');
         }
 
-        $markAsDeleted = ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'];
-
-        $escalationIds = $this->db->fetchCol(
-            RuleEscalationRecipient::on($this->db)
-                ->columns('rule_escalation_id')
-                ->filter(Filter::equal('schedule_id', $id))
-                ->assembleSelect()
-        );
-
-        $this->db->update('rule_escalation_recipient', $markAsDeleted, ['schedule_id = ?' => $id]);
-
-        if (! empty($escalationIds)) {
-            $escalationIdsWithOtherRecipients = $this->db->fetchCol(
-                RuleEscalationRecipient::on($this->db)
-                    ->columns('rule_escalation_id')
-                    ->filter(Filter::all(
-                        Filter::equal('rule_escalation_id', $escalationIds),
-                        Filter::unequal('schedule_id', $id)
-                    ))->assembleSelect()
-            );
-
-            $toRemoveEscalations = array_diff($escalationIds, $escalationIdsWithOtherRecipients);
-
-            if (! empty($toRemoveEscalations)) {
-                $this->db->update(
-                    'rule_escalation',
-                    $markAsDeleted + ['position' => null],
-                    ['id IN (?)' => $toRemoveEscalations]
-                );
-            }
-        }
-
-        $this->db->update('schedule', $markAsDeleted, ['id = ?' => $id]);
-
-        $this->db->commitTransaction();
+        return $this->schedule;
     }
 
     protected function assemble(): void
@@ -192,7 +132,25 @@ class ScheduleForm extends CompatForm
         $this->addElement('text', 'name', [
             'required'      => true,
             'label'         => $this->translate('Schedule Name'),
-            'placeholder'   => $this->translate('e.g. working hours, on call, etc ...')
+            'placeholder'   => $this->translate('e.g. working hours, on call, etc ...'),
+            'validators'    => [
+                new CallbackValidator(function ($value, $validator) {
+                    $schedules = Schedule::on(Database::get())
+                        ->columns('id')
+                        ->filter(Filter::equal('name', $value));
+                    if (! $this->hasBeenDuplicated()) {
+                        $schedules->filter(Filter::unequal('id', $this->schedule->id));
+                    }
+
+                    if ($schedules->first() !== null) {
+                        $validator->addMessage($this->translate('A rotation with this name already exists'));
+
+                        return false;
+                    }
+
+                    return true;
+                })
+            ]
         ]);
 
         if ($this->showTimezoneSuggestionInput) {
@@ -237,6 +195,7 @@ class ScheduleForm extends CompatForm
             'label' => $this->getSubmitLabel()
         ]);
 
+        $additionalButtons = [];
         if ($this->showRemoveButton) {
             $removeBtn = $this->createElement('submit', 'delete', [
                 'label' => $this->translate('Delete'),
@@ -244,9 +203,16 @@ class ScheduleForm extends CompatForm
                 'formnovalidate' => true
             ]);
             $this->registerElement($removeBtn);
-
-            $this->getElement('submit')->prependWrapper((new HtmlDocument())->setHtmlContent($removeBtn));
+            $additionalButtons[] = $removeBtn;
         }
+
+        $duplicateBtn = $this->createElement('submit', 'duplicate', [
+            'label' => $this->translate('Duplicate')
+        ]);
+        $this->registerElement($duplicateBtn);
+        $additionalButtons[] = $duplicateBtn;
+
+        $this->getElement('submit')->prependWrapper((new HtmlDocument())->setHtmlContent(...$additionalButtons));
 
         $this->addCsrfCounterMeasure(Session::getSession()->getId());
     }
@@ -255,21 +221,29 @@ class ScheduleForm extends CompatForm
      * Fetch the values from the database
      *
      * @return string[]
-     *
-     * @throws HttpNotFoundException
      */
     private function fetchDbValues(): array
     {
-        /** @var ?Schedule $schedule */
-        $schedule = Schedule::on($this->db)
-            ->columns('name')
-            ->filter(Filter::equal('id', $this->scheduleId))
-            ->first();
+        return $this->showTimezoneSuggestionInput
+            ? ['name' => $this->schedule->name, 'timezone' => $this->schedule->timezone]
+            : ['name' => $this->schedule->name];
+    }
 
-        if ($schedule === null) {
-            throw new HttpNotFoundException($this->translate('Schedule not found'));
-        }
+    /**
+     * Check if the user changed something
+     *
+     * @return bool
+     */
+    private function hasChanges(): bool
+    {
+        $values = $this->getValues();
+        $storedValues = $this->fetchDbValues();
 
-        return ['name' => $schedule->name];
+        return $values !== $storedValues;
+    }
+
+    public function hasBeenSubmitted()
+    {
+        return parent::hasBeenSubmitted() || ($this->hasBeenSent() && $this->hasBeenDuplicated());
     }
 }

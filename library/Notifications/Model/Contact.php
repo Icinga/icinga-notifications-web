@@ -23,6 +23,7 @@ use ipl\Orm\Relations;
  *
  * @property Query|Channel $channel
  * @property Query|Incident $incident
+ * @property Query|Rotation $rotation
  * @property Query|IncidentContact $incident_contact
  * @property Query|IncidentHistory $incident_history
  * @property Query|RotationMember $rotation_member
@@ -88,6 +89,9 @@ class Contact extends Model
 
         $relations->belongsToMany('incident', Incident::class)
             ->through('incident_contact')
+            ->setJoinType('LEFT');
+        $relations->belongsToMany('rotation', Rotation::class)
+            ->through('rotation_member')
             ->setJoinType('LEFT');
 
         $relations->hasMany('incident_contact', IncidentContact::class);

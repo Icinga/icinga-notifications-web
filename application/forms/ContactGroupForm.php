@@ -13,6 +13,7 @@ use Icinga\Module\Notifications\Model\Contactgroup;
 use Icinga\Module\Notifications\Model\Rotation;
 use Icinga\Module\Notifications\Model\RotationMember;
 use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
+use Icinga\Module\Notifications\Repository\RotationRepository;
 use Icinga\Web\Session;
 use ipl\Html\FormElement\SubmitElement;
 use ipl\Html\HtmlDocument;
@@ -356,7 +357,7 @@ class ContactGroupForm extends CompatForm
 
                 /** @var Rotation $rotation */
                 foreach ($rotations as $rotation) {
-                    $rotation->delete();
+                    (new RotationRepository($this->db))->delete($rotation);
                 }
             }
         }

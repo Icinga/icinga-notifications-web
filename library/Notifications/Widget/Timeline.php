@@ -328,7 +328,7 @@ class Timeline extends BaseHtmlElement implements EntryProvider
             $dragInitiator,
             (new Link(
                 [new HtmlElement('span', null, Text::create($rotation->getName())), new Icon('cog')],
-                Links::rotationSettings($rotation->getId(), $rotation->getScheduleId())
+                Links::rotationSettings($rotation->getId())
             ))->openInModal()
         );
 

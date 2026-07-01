@@ -5,14 +5,12 @@
 
 namespace Icinga\Module\Notifications\Web\Form;
 
-use DateTime;
-use Icinga\Exception\Http\HttpNotFoundException;
+use ArrayIterator;
+use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\AvailableChannelType;
 use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\Contact;
-use Icinga\Module\Notifications\Model\Rotation;
-use Icinga\Module\Notifications\Model\RotationMember;
-use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
+use Icinga\Module\Notifications\Model\ContactAddress;
 use Icinga\Web\Session;
 use ipl\Html\Attributes;
 use ipl\Html\Contract\FormSubmitElement;
@@ -20,7 +18,7 @@ use ipl\Html\FormDecoration\DescriptionDecorator;
 use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
-use ipl\Sql\Connection;
+use ipl\Orm\ResultSet;
 use ipl\Stdlib\Filter;
 use ipl\Validator\CallbackValidator;
 use ipl\Validator\EmailAddressValidator;
@@ -28,7 +26,6 @@ use ipl\Validator\StringLengthValidator;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
 use ipl\Web\Url;
-use Ramsey\Uuid\Uuid;
 
 class ContactForm extends CompatForm
 {
@@ -37,14 +34,39 @@ class ContactForm extends CompatForm
     /** @var string Emitted in case the contact should be deleted */
     public const ON_REMOVE = 'on_remove';
 
-    private Connection $db;
+    private ?Contact $contact = null;
 
-    /** @var ?string Contact ID */
-    private ?string $contactId = null;
-
-    public function __construct(Connection $db)
+    /**
+     * Set the contact to populate the form with
+     *
+     * @param Contact $contact
+     *
+     * @return $this
+     */
+    public function setContact(Contact $contact): static
     {
-        $this->db = $db;
+        $this->contact = $contact;
+        $this->populate($this->contactToFormData());
+
+        return $this;
+    }
+
+    /**
+     * Get the contact as it's currently configured
+     *
+     * @return Contact
+     */
+    public function getContact(): Contact
+    {
+        if ($this->contact === null) {
+            $this->contact = new Contact();
+        }
+
+        return $this->contact;
+    }
+
+    public function __construct()
+    {
         $this->applyDefaultElementDecorators();
 
         $this->on(self::ON_SENT, function () {
@@ -52,6 +74,11 @@ class ContactForm extends CompatForm
                 $this->emit(self::ON_REMOVE, [$this]);
             }
         });
+    }
+
+    protected function onSuccess()
+    {
+        $this->applyChanges();
     }
 
     /**
@@ -113,10 +140,10 @@ class ContactForm extends CompatForm
                 'validators' => [
                     new StringLengthValidator(['max' => 254]),
                     new CallbackValidator(function ($value, $validator) {
-                        $contact = Contact::on($this->db)
+                        $contact = Contact::on(Database::get())
                             ->filter(Filter::equal('username', $value));
-                        if ($this->contactId) {
-                            $contact->filter(Filter::unequal('id', $this->contactId));
+                        if ($this->contact !== null) {
+                            $contact->filter(Filter::unequal('id', $this->contact->id));
                         }
 
                         if ($contact->first() !== null) {
@@ -137,11 +164,11 @@ class ContactForm extends CompatForm
             ->getDecorators()
             ->replaceDecorator('Description', DescriptionDecorator::class, ['class' => 'description']);
 
-        $channelQuery = Channel::on($this->db)
+        $channelQuery = Channel::on(Database::get())
             ->columns(['id', 'name', 'type']);
 
-        $availableTypes = $this->db->fetchPairs(
-            AvailableChannelType::on($this->db)->columns(['type', 'name'])->assembleSelect()
+        $availableTypes = Database::get()->fetchPairs(
+            AvailableChannelType::on(Database::get())->columns(['type', 'name'])->assembleSelect()
         );
 
         $channelNames = [];
@@ -186,12 +213,12 @@ class ContactForm extends CompatForm
             'submit',
             'submit',
             [
-                'label' => $this->contactId === null ?
+                'label' => $this->contact === null ?
                     $this->translate('Create Contact') :
                     $this->translate('Save Changes')
             ]
         );
-        if ($this->contactId !== null) {
+        if ($this->contact !== null) {
             /** @var FormSubmitElement $deleteButton */
             $deleteButton = $this->createElement(
                 'submit',
@@ -209,242 +236,48 @@ class ContactForm extends CompatForm
     }
 
     /**
-     * Load the contact with given id
-     *
-     * @param int $id
-     *
-     * @return $this
-     *
-     * @throws HttpNotFoundException
-     */
-    public function loadContact(int $id): static
-    {
-        $this->contactId = $id;
-
-        $this->populate($this->fetchDbValues());
-
-        return $this;
-    }
-
-    /**
-     * Add the new contact
-     */
-    public function addContact(): void
-    {
-        $contactInfo = $this->getValues();
-        $changedAt = (int) (new DateTime())->format("Uv");
-        $this->db->beginTransaction();
-        $this->db->insert(
-            'contact',
-            $contactInfo['contact'] + ['changed_at' => $changedAt, 'external_uuid' => Uuid::uuid4()->toString()]
-        );
-        $this->contactId = $this->db->lastInsertId();
-
-        foreach (array_filter($contactInfo['contact_address']) as $type => $address) {
-            $address = [
-                'contact_id' => $this->contactId,
-                'type'       => $type,
-                'address'    => $address,
-                'changed_at' => $changedAt
-            ];
-
-            $this->db->insert('contact_address', $address);
-        }
-
-        $this->db->commitTransaction();
-    }
-
-    /**
-     * Edit the contact
-     *
-     * @return void
-     */
-    public function editContact(): void
-    {
-        $this->db->beginTransaction();
-
-        $values = $this->getValues();
-        $storedValues = $this->fetchDbValues();
-
-        $changedAt = (int) (new DateTime())->format("Uv");
-        if ($storedValues['contact'] !== $values['contact']) {
-            $this->db->update(
-                'contact',
-                $values['contact'] + ['changed_at' => $changedAt],
-                ['id = ?' => $this->contactId]
-            );
-        }
-
-        $storedAddresses = $storedValues['contact_address_with_id'];
-        foreach ($values['contact_address'] as $type => $address) {
-            if ($address === null) {
-                if (isset($storedAddresses[$type])) {
-                    $this->db->update(
-                        'contact_address',
-                        ['changed_at' => $changedAt, 'deleted' => 'y'],
-                        ['id = ?' => $storedAddresses[$type][0], 'deleted = ?' => 'n']
-                    );
-                }
-            } elseif (! isset($storedAddresses[$type])) {
-                $address = [
-                    'contact_id' => $this->contactId,
-                    'type'       => $type,
-                    'address'    => $address,
-                    'changed_at' => $changedAt
-                ];
-
-                $this->db->insert('contact_address', $address);
-            } elseif ($storedAddresses[$type][1] !== $address) {
-                $this->db->update(
-                    'contact_address',
-                    ['address' => $address, 'changed_at' => $changedAt],
-                    [
-                        'id = ?'         => $storedAddresses[$type][0],
-                        'contact_id = ?' => $this->contactId
-                    ]
-                );
-            }
-        }
-
-        $this->db->commitTransaction();
-    }
-
-    /**
-     * Remove the contact
-     */
-    public function removeContact(): void
-    {
-        $this->db->beginTransaction();
-
-        $markAsDeleted = ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'];
-        $updateCondition = ['contact_id = ?' => $this->contactId, 'deleted = ?' => 'n'];
-
-        $rotationAndMemberIds = $this->db->fetchPairs(
-            RotationMember::on($this->db)
-                ->columns(['id', 'rotation_id'])
-                ->filter(Filter::equal('contact_id', $this->contactId))
-                ->assembleSelect()
-        );
-
-        $rotationMemberIds = array_keys($rotationAndMemberIds);
-        $rotationIds = array_values($rotationAndMemberIds);
-
-        $this->db->update('rotation_member', $markAsDeleted + ['position' => null], $updateCondition);
-
-        if (! empty($rotationMemberIds)) {
-            $this->db->update(
-                'timeperiod_entry',
-                $markAsDeleted,
-                ['rotation_member_id IN (?)' => $rotationMemberIds, 'deleted = ?' => 'n']
-            );
-        }
-
-        if (! empty($rotationIds)) {
-            $rotationIdsWithOtherMembers = $this->db->fetchCol(
-                RotationMember::on($this->db)
-                    ->columns('rotation_id')
-                    ->filter(
-                        Filter::all(
-                            Filter::equal('rotation_id', $rotationIds),
-                            Filter::unequal('contact_id', $this->contactId)
-                        )
-                    )->assembleSelect()
-            );
-
-            $toRemoveRotations = array_diff($rotationIds, $rotationIdsWithOtherMembers);
-
-            if (! empty($toRemoveRotations)) {
-                $rotations = Rotation::on($this->db)
-                    ->columns(['id', 'schedule_id', 'priority', 'timeperiod.id'])
-                    ->filter(Filter::equal('id', $toRemoveRotations));
-
-                /** @var Rotation $rotation */
-                foreach ($rotations as $rotation) {
-                    $rotation->delete();
-                }
-            }
-        }
-
-        $escalationIds = $this->db->fetchCol(
-            RuleEscalationRecipient::on($this->db)
-                ->columns('rule_escalation_id')
-                ->filter(Filter::equal('contact_id', $this->contactId))
-                ->assembleSelect()
-        );
-
-        $this->db->update('rule_escalation_recipient', $markAsDeleted, $updateCondition);
-
-        if (! empty($escalationIds)) {
-            $escalationIdsWithOtherRecipients = $this->db->fetchCol(
-                RuleEscalationRecipient::on($this->db)
-                    ->columns('rule_escalation_id')
-                    ->filter(Filter::all(
-                        Filter::equal('rule_escalation_id', $escalationIds),
-                        Filter::unequal('contact_id', $this->contactId)
-                    ))->assembleSelect()
-            );
-
-            $toRemoveEscalations = array_diff($escalationIds, $escalationIdsWithOtherRecipients);
-
-            if (! empty($toRemoveEscalations)) {
-                $this->db->update(
-                    'rule_escalation',
-                    $markAsDeleted + ['position' => null],
-                    ['id IN (?)' => $toRemoveEscalations]
-                );
-            }
-        }
-
-        $this->db->update('contactgroup_member', $markAsDeleted, $updateCondition);
-        $this->db->update('contact_address', $markAsDeleted, $updateCondition);
-
-        $this->db->update('contact', $markAsDeleted + ['username' => null], ['id = ?' => $this->contactId]);
-
-        $this->db->commitTransaction();
-    }
-
-    /**
-     * Get the contact name
-     *
-     * @return string
-     */
-    public function getContactName(): string
-    {
-        return $this->getElement('contact')->getValue('full_name');
-    }
-
-    /**
-     * Fetch the values from the database
+     * Transform the current contact into form data
      *
      * @return array
-     *
-     * @throws HttpNotFoundException
      */
-    private function fetchDbValues(): array
+    private function contactToFormData(): array
     {
-        /** @var ?Contact $contact */
-        $contact = Contact::on($this->db)
-            ->filter(Filter::equal('id', $this->contactId))
-            ->first();
-
-        if ($contact === null) {
-            throw new HttpNotFoundException(t('Contact not found'));
-        }
-
         $values['contact'] = [
-            'full_name'          => $contact->full_name,
-            'username'           => $contact->username,
-            'default_channel_id' => (string) $contact->default_channel_id
+            'full_name'          => $this->contact->full_name,
+            'username'           => $this->contact->username,
+            'default_channel_id' => (string) $this->contact->default_channel_id
         ];
 
         $values['contact_address'] = [];
-        $values['contact_address_with_id'] = []; //TODO: only used in editContact(), find better solution
-        foreach ($contact->contact_address as $contactInfo) {
+        foreach ($this->contact->contact_address as $contactInfo) {
             $values['contact_address'][$contactInfo->type] = $contactInfo->address;
-            $values['contact_address_with_id'][$contactInfo->type] = [$contactInfo->id, $contactInfo->address];
         }
 
         return $values;
+    }
+
+    /**
+     * Apply the user's changes to the contact
+     *
+     * @return void
+     */
+    private function applyChanges(): void
+    {
+        $contact = $this->getContact();
+
+        $contact->full_name = $this->getElement('contact')->getValue('full_name');
+        $contact->username = $this->getElement('contact')->getValue('username');
+        $contact->default_channel_id = (int) $this->getElement('contact')->getValue('default_channel_id');
+
+        $addresses = [];
+        foreach ($this->getElement('contact_address')->getValues() as $type => $address) {
+            $addresses[] = new ContactAddress([
+                'type' => $type,
+                'address' => $address
+            ]);
+        }
+
+        $contact->contact_address = new ResultSet(new ArrayIterator($addresses));
     }
 
     /**

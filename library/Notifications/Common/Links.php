@@ -117,9 +117,9 @@ abstract class Links
         return Url::fromPath('notifications/schedule/add-rotation', ['schedule' => $scheduleId]);
     }
 
-    public static function rotationSettings(int $id, int $scheduleId): Url
+    public static function rotationSettings(int $id): Url
     {
-        return Url::fromPath('notifications/schedule/edit-rotation', ['id' => $id, 'schedule' => $scheduleId]);
+        return Url::fromPath('notifications/schedule/edit-rotation', ['id' => $id]);
     }
 
     public static function moveRotation(): Url
