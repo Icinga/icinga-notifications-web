@@ -89,6 +89,8 @@ class EntityManager
      * @param Model $model
      *
      * @return void
+     *
+     * @throws RuntimeException
      */
     public function save(Model $model): void
     {
@@ -105,11 +107,13 @@ class EntityManager
      * Delete the given model's row and reset it to a fresh state
      *
      * Soft-deletes via the configured behavior when the model is soft-deletable, otherwise hard-deletes
-     * the row. Does nothing if the model is new or has no primary key value.
+     * the row. Does nothing if the model is new.
      *
      * @param Model $model
      *
      * @return void
+     *
+     * @throws RuntimeException If the given model has no (complete) primary key value
      */
     protected function delete(Model $model): void
     {
