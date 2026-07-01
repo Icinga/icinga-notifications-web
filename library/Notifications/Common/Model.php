@@ -123,7 +123,7 @@ abstract class Model extends \ipl\Orm\Model
      *
      * @return $this
      */
-    public function markDeleted(): static
+    public function delete(): static
     {
         $this->markedForDeletion = true;
         if ($this->isSoftDeletable()) {

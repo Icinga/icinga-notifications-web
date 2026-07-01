@@ -36,7 +36,7 @@ use SplObjectStorage;
  * properties changed since the model was loaded ({@see Model::getModifiedProperties()}). Set relations are cascaded
  * (parents first, then the model, then children and many-to-many links), all within a single transaction.
  *
- * Calling {@see Model::markDeleted()} on a model and passing it to {@see self::save()} will soft or hard delete the
+ * Calling {@see Model::delete()} on a model and passing it to {@see self::save()} will soft or hard delete the
  * model according to the value of {@see Model::isSoftDeletable()}
  *
  * Limitations:
