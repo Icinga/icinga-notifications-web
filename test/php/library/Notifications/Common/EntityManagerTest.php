@@ -470,10 +470,14 @@ class EntityManagerTest extends TestCase
 
         $this->em()->save($gadget); // two links inserted -> changed_at 1000, 2000
 
-        foreach (GadgetTag::on($this->db)->filter(Filter::all(
-            Filter::equal('gadget_id', $gadget->id),
-            Filter::equal('tag_id', $second->id)
-        ))->deleteAll() as $link) {
+        foreach (
+            GadgetTag::on($this->db)->filter(
+                Filter::all(
+                    Filter::equal('gadget_id', $gadget->id),
+                    Filter::equal('tag_id', $second->id)
+                )
+            )->deleteAll() as $link
+        ) {
             $this->em()->save($link); // soft-deleted -> changed_at 3000
         }
 
@@ -498,10 +502,14 @@ class EntityManagerTest extends TestCase
         $this->em()->save($gadget); // link created, changed_at -> 1000
 
         // Explicitly detach the link (soft-delete the junction row), changed_at -> 2000.
-        foreach (GadgetTag::on($this->db)->filter(Filter::all(
-            Filter::equal('gadget_id', $gadget->id),
-            Filter::equal('tag_id', $tag->id)
-        ))->deleteAll() as $link) {
+        foreach (
+            GadgetTag::on($this->db)->filter(
+                Filter::all(
+                    Filter::equal('gadget_id', $gadget->id),
+                    Filter::equal('tag_id', $tag->id)
+                )
+            )->deleteAll() as $link
+        ) {
             $this->em()->save($link);
         }
 
