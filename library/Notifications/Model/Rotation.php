@@ -86,6 +86,10 @@ class Rotation extends Model
             ->through(RotationMember::class)
             ->setTargetForeignKey('contact_id')
             ->setJoinType('LEFT');
+        $relations->belongsToMany('contactgroup', Contactgroup::class)
+            ->through(RotationMember::class)
+            ->setTargetForeignKey('contactgroup_id')
+            ->setJoinType('LEFT');
     }
 
     public function createBehaviors(Behaviors $behaviors): void

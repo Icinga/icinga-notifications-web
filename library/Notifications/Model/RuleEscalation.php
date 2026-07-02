@@ -97,6 +97,10 @@ class RuleEscalation extends Model
             ->through(RuleEscalationRecipient::class)
             ->setTargetForeignKey('contact_id')
             ->setJoinType('LEFT');
+        $relations->belongsToMany('contactgroup', Contactgroup::class)
+            ->through(RuleEscalationRecipient::class)
+            ->setTargetForeignKey('contactgroup_id')
+            ->setJoinType('LEFT');
         $relations->belongsToMany('schedule', Schedule::class)
             ->through(RuleEscalationRecipient::class)
             ->setTargetForeignKey('schedule_id')

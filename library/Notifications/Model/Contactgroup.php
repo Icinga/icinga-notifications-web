@@ -82,7 +82,7 @@ class Contactgroup extends Model
             ->through(ContactgroupMember::class)
             ->setJoinType('LEFT');
         $relations->belongsToMany('rotation', Rotation::class)
-            ->through('rotation_member')
+            ->through(RotationMember::class)
             ->setJoinType('LEFT');
         $relations->belongsToMany('rule_escalation', RuleEscalation::class)
             ->through(RuleEscalationRecipient::class)

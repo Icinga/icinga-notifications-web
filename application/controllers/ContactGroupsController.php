@@ -8,10 +8,12 @@ namespace Icinga\Module\Notifications\Controllers;
 use Icinga\Module\Notifications\Common\ConfigurationTabs;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
+use Icinga\Module\Notifications\Data\NotificationConfigProvider;
 use Icinga\Module\Notifications\Forms\ContactGroupForm;
 use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Contactgroup;
+use Icinga\Module\Notifications\Repository\ContactGroupRepository;
 use Icinga\Module\Notifications\View\ContactgroupRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
@@ -20,6 +22,7 @@ use Icinga\Web\Notification;
 use ipl\Html\Form;
 use ipl\Html\HtmlString;
 use ipl\Html\TemplateString;
+use ipl\Sql\Connection;
 use ipl\Sql\Expression;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
@@ -144,10 +147,15 @@ class ContactGroupsController extends CompatController
 
     public function addAction(): void
     {
-        $form = (new ContactGroupForm(Database::get()))
+        $this->setTitle($this->translate('Create Contact Group'));
+
+        (new ContactGroupForm(new NotificationConfigProvider()))
             ->setAction((string) Links::contactGroupsAdd()->with(['showCompact' => true, '_disableLayout' => 1]))
+            ->on(Form::ON_REQUEST, function ($_, ContactGroupForm $form) {
+                $this->addContent($form);
+            })
             ->on(Form::ON_SENT, function (ContactGroupForm $form) {
-                if (! $form->hasBeenSubmitted()) {
+                if (! $form->hasBeenSubmitted() && ! $form->hasBeenDuplicated()) {
                     foreach ($form->getPartUpdates() as $update) {
                         if (! is_array($update)) {
                             $update = [$update];
@@ -155,20 +163,21 @@ class ContactGroupsController extends CompatController
 
                         $this->addPart(...$update);
                     }
+                } else {
+                    $this->addPart($form, $this->content->getAttribute('id')->getValue());
                 }
             })
             ->on(Form::ON_SUBMIT, function (ContactGroupForm $form) {
-                $groupIdentifier = $form->addGroup();
-
+                $group = $form->getContactGroup();
+                $groupId = Database::get()->transaction(
+                    fn(Connection $db) => (new ContactGroupRepository($db))->create($group)
+                );
                 Notification::success($this->translate('New contact group has been successfully added'));
                 $this->sendExtraUpdates(['#col1']);
                 $this->getResponse()->setHeader('X-Icinga-Container', 'col2');
-                $this->redirectNow(Links::contactGroup($groupIdentifier));
+                $this->redirectNow(Links::contactGroup($groupId));
             })
             ->handleRequest($this->getServerRequest());
-
-        $this->addContent($form);
-        $this->setTitle($this->translate('Create Contact Group'));
     }
 
     public function completeAction(): void
