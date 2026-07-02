@@ -23,6 +23,8 @@ use ipl\Orm\Relations;
  * @property string $external_uuid
  *
  * @property Query|Contact $contact
+ * @property Query|Rotation $rotation
+ * @property Query|RuleEscalation $rule_escalation
  * @property Query|ContactgroupMember $contactgroup_member
  * @property Query|RuleEscalationRecipient $rule_escalation_recipient
  * @property Query|IncidentHistory $incident_history
@@ -78,6 +80,12 @@ class Contactgroup extends Model
         $relations
             ->belongsToMany('contact', Contact::class)
             ->through(ContactgroupMember::class)
+            ->setJoinType('LEFT');
+        $relations->belongsToMany('rotation', Rotation::class)
+            ->through('rotation_member')
+            ->setJoinType('LEFT');
+        $relations->belongsToMany('rule_escalation', RuleEscalation::class)
+            ->through(RuleEscalationRecipient::class)
             ->setJoinType('LEFT');
     }
 }
