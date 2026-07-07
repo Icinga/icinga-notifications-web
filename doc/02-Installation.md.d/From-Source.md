@@ -14,6 +14,6 @@ Make sure you use `notifications` as the module name. The following requirements
 - [Icinga Notifications](https://github.com/Icinga/icinga-notifications)
 - [Icinga Web](https://github.com/Icinga/icingaweb2) (≥2.12)
 - [Icinga PHP Library (ipl)](https://github.com/Icinga/icinga-php-library) (≥0.19)
-- [Icinga PHP Thirdparty](https://github.com/Icinga/icinga-php-thirdparty) (≥0.14)
+- [Icinga PHP Thirdparty](https://github.com/Icinga/icinga-php-thirdparty) (≥0.15)
 
 <!-- {% include "02-Installation.md" %} -->
