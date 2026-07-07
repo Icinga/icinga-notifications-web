@@ -3,6 +3,10 @@
 Please make sure to always read our [Upgrading](https://icinga.com/docs/icinga-notifications-web/latest/doc/05-Upgrading/)
 documentation before switching to a new version.
 
+## 0.3.0 (2026-07-07)
+
+This release ensures compatiblity with PHP 8.5 and icinga-php-thirdparty 1.0.
+
 ## 0.2.0 (2025-11-19)
 
 With Icinga Notifications 0.2.0 we changed how event rule filters are configured and processed.
