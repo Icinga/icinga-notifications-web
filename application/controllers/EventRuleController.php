@@ -13,7 +13,7 @@ use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Common\SourceHookLocator;
-use Icinga\Module\Notifications\Forms\EventRuleConfigElements\NotificationConfigProvider;
+use Icinga\Module\Notifications\Data\NotificationConfigProvider;
 use Icinga\Module\Notifications\Forms\EventRuleConfigForm;
 use Icinga\Module\Notifications\Forms\EventRuleForm;
 use Icinga\Module\Notifications\Forms\SourceForm;

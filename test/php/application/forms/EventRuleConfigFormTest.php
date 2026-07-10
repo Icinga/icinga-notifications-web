@@ -7,7 +7,7 @@ namespace Tests\Icinga\Module\Notifications\Forms;
 
 use ArrayIterator;
 use DateTime;
-use Icinga\Module\Notifications\Forms\EventRuleConfigElements\ConfigProviderInterface;
+use Icinga\Module\Notifications\Form\ConfigProviderInterface;
 use Icinga\Module\Notifications\Forms\EventRuleConfigForm;
 use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\Contact;

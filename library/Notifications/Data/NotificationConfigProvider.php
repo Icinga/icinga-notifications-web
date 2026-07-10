@@ -3,9 +3,10 @@
 // SPDX-FileCopyrightText: 2025 Icinga GmbH <https://icinga.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-namespace Icinga\Module\Notifications\Forms\EventRuleConfigElements;
+namespace Icinga\Module\Notifications\Data;
 
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Form\ConfigProviderInterface;
 use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Contactgroup;
@@ -26,7 +27,6 @@ class NotificationConfigProvider implements ConfigProviderInterface
     {
         if ($this->contacts === null) {
             $this->contacts = Contact::on(Database::get())
-                ->columns(['id', 'full_name'])
                 ->execute();
         }
 
@@ -37,7 +37,6 @@ class NotificationConfigProvider implements ConfigProviderInterface
     {
         if ($this->contactGroups === null) {
             $this->contactGroups = Contactgroup::on(Database::get())
-                ->columns(['id', 'name'])
                 ->execute();
         }
 
@@ -48,7 +47,6 @@ class NotificationConfigProvider implements ConfigProviderInterface
     {
         if ($this->schedules === null) {
             $this->schedules = Schedule::on(Database::get())
-                ->columns(['id', 'name'])
                 ->execute();
         }
 
@@ -59,7 +57,6 @@ class NotificationConfigProvider implements ConfigProviderInterface
     {
         if ($this->channels === null) {
             $this->channels = Channel::on(Database::get())
-                ->columns(['id', 'name'])
                 ->execute();
         }
 

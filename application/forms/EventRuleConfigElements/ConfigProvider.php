@@ -5,6 +5,7 @@
 
 namespace Icinga\Module\Notifications\Forms\EventRuleConfigElements;
 
+use Icinga\Module\Notifications\Form\ConfigProviderInterface;
 use ipl\Html\Attributes;
 
 /**

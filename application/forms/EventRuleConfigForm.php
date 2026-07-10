@@ -6,7 +6,7 @@
 namespace Icinga\Module\Notifications\Forms;
 
 use DateTime;
-use Icinga\Module\Notifications\Forms\EventRuleConfigElements\ConfigProviderInterface;
+use Icinga\Module\Notifications\Form\ConfigProviderInterface;
 use Icinga\Module\Notifications\Forms\EventRuleConfigElements\Escalation;
 use Icinga\Module\Notifications\Forms\EventRuleConfigElements\EscalationRecipient;
 use Icinga\Module\Notifications\Model\Rule;
