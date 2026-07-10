@@ -1240,8 +1240,8 @@ class RotationConfigForm extends CompatForm
             $this->addHtml(new HtmlElement(
                 'p',
                 Attributes::create(['id' => 'first-handoff-description']),
-                DeferredText::create(function () {
-                    if (! $this->isValid()) {
+                DeferredText::create(function () use ($options) {
+                    if (! $options->isValid()) {
                         return '';
                     }
 
@@ -1266,8 +1266,8 @@ class RotationConfigForm extends CompatForm
                     }
                 }),
                 new HtmlElement('br'),
-                $this->displayTimezone !== $this->scheduleTimezone ? DeferredText::create(function () {
-                    if (! $this->isValid()) {
+                $this->displayTimezone !== $this->scheduleTimezone ? DeferredText::create(function () use ($options) {
+                    if (! $options->isValid()) {
                         return '';
                     }
 
