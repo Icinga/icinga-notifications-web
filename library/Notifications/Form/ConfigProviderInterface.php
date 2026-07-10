@@ -5,6 +5,7 @@
 
 namespace Icinga\Module\Notifications\Form;
 
+use Icinga\Module\Notifications\Model\AvailableChannelType;
 use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Contactgroup;
@@ -39,4 +40,39 @@ interface ConfigProviderInterface
      * @return iterable<Channel>
      */
     public function fetchChannels(): iterable;
+
+    /**
+     * Get a list of all available channel types
+     *
+     * @return iterable<AvailableChannelType>
+     */
+    public function fetchAvailableChannelTypes(): iterable;
+
+    /**
+     * Find a single contact by its username
+     *
+     * @param string $username
+     *
+     * @return ?Contact
+     */
+    public function findContactByUsername(string $username): ?Contact;
+
+    /**
+     * Find a single contact group by its name
+     *
+     * @param string $name
+     * @param ?int $excludeId Exclude a specific contact group ID from the search
+     *
+     * @return ?Contactgroup
+     */
+    public function findContactGroupByName(string $name, ?int $excludeId = null): ?Contactgroup;
+
+    /**
+     * Find contacts whose ID is part of the given set
+     *
+     * @param int[] $ids
+     *
+     * @return iterable<Contact>
+     */
+    public function findContactsByIds(array $ids): iterable;
 }
