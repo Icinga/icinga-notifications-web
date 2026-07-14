@@ -135,7 +135,7 @@ class ScheduleForm extends CompatForm
 
         /** @var Rotation $rotation */
         foreach ($rotations as $rotation) {
-            $rotation->delete();
+            $rotation->deleteRotation();
         }
 
         $markAsDeleted = ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'];

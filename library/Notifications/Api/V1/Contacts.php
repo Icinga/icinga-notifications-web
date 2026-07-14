@@ -810,7 +810,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
 
                 /** @var Rotation $rotation */
                 foreach ($rotations as $rotation) {
-                    $rotation->delete();
+                    $rotation->deleteRotation();
                 }
             }
         }

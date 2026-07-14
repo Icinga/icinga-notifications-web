@@ -110,7 +110,7 @@ class Rotation extends Model
      *
      * @return void
      */
-    public function delete(): void
+    public function deleteRotation(): void
     {
         $db = Database::get();
         $transactionStarted = false;

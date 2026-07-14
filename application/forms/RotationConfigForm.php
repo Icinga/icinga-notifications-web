@@ -574,7 +574,7 @@ class RotationConfigForm extends CompatForm
             ->filter(Filter::equal('id', $id))
             ->first();
 
-        $rotation->delete();
+        $rotation->deleteRotation();
 
         if ($transactionStarted) {
             $this->db->commitTransaction();
@@ -609,7 +609,7 @@ class RotationConfigForm extends CompatForm
 
         /** @var Rotation $rotation */
         foreach ($rotations as $rotation) {
-            $rotation->delete();
+            $rotation->deleteRotation();
         }
 
         if ($transactionStarted) {
