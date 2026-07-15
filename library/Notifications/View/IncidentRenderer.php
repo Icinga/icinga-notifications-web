@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\View;
 
 use Icinga\Module\Notifications\Common\Icons;
 use Icinga\Module\Notifications\Common\Links;
+use Icinga\Module\Notifications\Common\Severity;
 use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\Model\Objects;
 use Icinga\Module\Notifications\Model\Source;
@@ -35,16 +36,8 @@ class IncidentRenderer implements ItemRenderer
 
     public function assembleVisual($item, HtmlDocument $visual, string $layout): void
     {
-        $icon = match ($item->severity) {
-            'ok'    => Icons::OK,
-            'err'   => Icons::ERROR,
-            'crit'  => Icons::CRITICAL,
-            default => Icons::WARNING
-        };
-
-        $content = new Icon($icon, ['class' => ['severity-' . $item->severity]]);
-
-        if ($item->severity === 'ok' || $item->severity === 'err') {
+        $content = $item->severity->getIcon();
+        if ($item->severity === Severity::OK || $item->severity === Severity::ERROR) {
             $content->setStyle('fa-regular');
         }
 
@@ -77,7 +70,7 @@ class IncidentRenderer implements ItemRenderer
 
     public function assembleExtendedInfo($item, HtmlDocument $info, string $layout): void
     {
-        if ($item->severity !== 'ok' && $item->mute_reason !== null) {
+        if ($item->severity !== Severity::OK && $item->mute_reason !== null) {
             $info->addHtml(new Icon(Icons::MUTE, ['title' => $item->mute_reason]));
         }
 

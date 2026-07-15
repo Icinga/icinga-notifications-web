@@ -7,7 +7,9 @@ namespace Icinga\Module\Notifications\Model;
 
 use DateTime;
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Common\Severity;
 use ipl\Orm\Behavior\Binary;
+use ipl\Orm\Behavior\EnumCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Model;
@@ -23,7 +25,7 @@ use ipl\Sql\Select;
  * @property string $object_id
  * @property DateTime $started_at
  * @property ?DateTime $recovered_at
- * @property string $severity
+ * @property Severity $severity
  * @property ?string $mute_reason
  *
  * @property Query|Objects $object
@@ -97,6 +99,7 @@ class Incident extends Model
             'started_at',
             'recovered_at'
         ]));
+        $behaviors->add(new EnumCast(Severity::class, ['severity']));
     }
 
     public function createRelations(Relations $relations): void
