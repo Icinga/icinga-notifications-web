@@ -135,6 +135,7 @@ class EscalationCondition extends FieldsetElement
         $this->addElement('select', 'operator', [
             'required' => true,
             'options' => $operators,
+            'value' => array_key_first($operators),
             'disabled' => $selectedColumn === 'incident_age'
         ]);
 
