@@ -153,7 +153,10 @@ class IncidentQuickActions extends Form
             if ($incidentContact->contact_id !== null) {
                 Database::get()->update(
                     'incident_contact',
-                    ['role' => $roleName],
+                    [
+                        'role' => $roleName,
+                        'changed_at' => (int) (new DateTime())->format("Uv")
+                    ],
                     [
                         'contact_id = ?'    => $incidentContact->contact_id,
                         'incident_id = ?'   => $this->incident->id
@@ -163,7 +166,8 @@ class IncidentQuickActions extends Form
                 Database::get()->insert('incident_contact', [
                     'incident_id'   => $this->incident->id,
                     'contact_id'    => $this->currentUserId,
-                    'role'          => $roleName
+                    'role'          => $roleName,
+                    'changed_at'    => (int) (new DateTime())->format("Uv")
                 ]);
             }
 
