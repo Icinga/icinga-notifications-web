@@ -21,7 +21,7 @@ use ipl\Web\Filter\QueryString;
 use ipl\Web\Widget\Icon;
 
 /**
- * @phpstan-type ConditionData array{
+ * @phpstan-type ConditionValues array{
  *     column: string,
  *     operator: string,
  *     severity?: string,
@@ -53,7 +53,7 @@ class EscalationCondition extends FieldsetElement
      *
      * @param Condition $condition
      *
-     * @return ConditionData
+     * @return ConditionValues
      */
     public static function prepare(Condition $condition): array
     {

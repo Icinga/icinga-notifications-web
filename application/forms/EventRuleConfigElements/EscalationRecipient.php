@@ -5,6 +5,7 @@
 
 namespace Icinga\Module\Notifications\Forms\EventRuleConfigElements;
 
+use Icinga\Module\Notifications\Form\Data\EscalationRecipient as EscalationRecipientData;
 use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use ipl\Html\Attributes;
 use ipl\Html\FormElement\FieldsetElement;
@@ -13,17 +14,10 @@ use ipl\Html\HtmlElement;
 use ipl\Web\Widget\Icon;
 
 /**
- * @phpstan-type RecipientData array{
+ * @phpstan-type RecipientValues array{
  *     id: string,
  *     channel_id: string|null,
  *     recipient: string
- * }
- * @phpstan-type RecipientType array{
- *     id: int|null,
- *     channel_id: int|null,
- *     contact_id?: int,
- *     contactgroup_id?: int,
- *     schedule_id?: int
  * }
  */
 class EscalationRecipient extends FieldsetElement
@@ -52,14 +46,14 @@ class EscalationRecipient extends FieldsetElement
      *
      * @param RuleEscalationRecipient $recipient
      *
-     * @return array<RecipientData>
+     * @return RecipientValues
      */
     public static function prepare(RuleEscalationRecipient $recipient): array
     {
         if ($recipient->contact_id !== null) {
             $typeAndId = sprintf('contact:%u', $recipient->contact_id);
         } elseif ($recipient->contactgroup_id !== null) {
-            $typeAndId = sprintf('contactgroup:%u', $recipient->contactgroup_id);
+            $typeAndId = sprintf('contact_group:%u', $recipient->contactgroup_id);
         } else {
             $typeAndId = sprintf('schedule:%u', $recipient->schedule_id);
         }
@@ -72,31 +66,14 @@ class EscalationRecipient extends FieldsetElement
     }
 
     /**
-     * Check whether the recipient has changed, according to the given previous recipient
-     *
-     * @param RuleEscalationRecipient $previousRecipient
-     *
-     * @return bool
-     */
-    public function hasChanged(RuleEscalationRecipient $previousRecipient): bool
-    {
-        return self::prepare($previousRecipient) != $this->getValues();
-    }
-
-    /**
      * Get the recipient to store
      *
-     * @return RecipientType
+     * @return EscalationRecipientData
      */
-    public function getRecipient(): array
+    public function getRecipient(): EscalationRecipientData
     {
         $typeAndId = $this->getElement('recipient')->getValue();
         [$type, $id] = explode(':', $typeAndId, 2);
-        $typeIdColumn = match ($type) {
-            'contact' => 'contact_id',
-            'contactgroup' => 'contactgroup_id',
-            'schedule' => 'schedule_id'
-        };
 
         $recipientId = null;
         if ($this->getElement('id')->hasValue()) {
@@ -108,11 +85,12 @@ class EscalationRecipient extends FieldsetElement
             $channelId = (int) $this->getElement('channel_id')->getValue();
         }
 
-        return [
-            'id' => $recipientId,
-            $typeIdColumn => (int) $id,
-            'channel_id' => $channelId
-        ];
+        return new EscalationRecipientData(
+            $recipientId,
+            $type,
+            (int) $id,
+            $channelId
+        );
     }
 
     protected function assemble(): void
@@ -162,7 +140,7 @@ class EscalationRecipient extends FieldsetElement
 
         $contactgroups = [];
         foreach ($this->provider?->fetchContactGroups() ?? [] as $contactgroup) {
-            $contactgroups[sprintf('contactgroup:%u', $contactgroup->id)] = $contactgroup->name;
+            $contactgroups[sprintf('contact_group:%u', $contactgroup->id)] = $contactgroup->name;
         }
 
         $schedules = [];

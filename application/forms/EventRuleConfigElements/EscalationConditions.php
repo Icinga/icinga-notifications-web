@@ -18,7 +18,7 @@ use ipl\Web\Filter\QueryString;
 use ipl\Web\Widget\Icon;
 
 /**
- * @phpstan-import-type ConditionData from EscalationCondition
+ * @phpstan-import-type ConditionValues from EscalationCondition
  */
 class EscalationConditions extends FieldsetElement
 {
@@ -58,7 +58,7 @@ class EscalationConditions extends FieldsetElement
      *
      * @param string $query The query string
      *
-     * @return array<ConditionData>
+     * @return array<ConditionValues>
      */
     public static function prepare(string $query): array
     {

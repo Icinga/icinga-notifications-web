@@ -5,6 +5,7 @@
 
 namespace Icinga\Module\Notifications\Forms\EventRuleConfigElements;
 
+use Icinga\Module\Notifications\Form\Data\Escalation as EscalationData;
 use Icinga\Module\Notifications\Model\RuleEscalation;
 use ipl\Html\Attributes;
 use ipl\Html\FormElement\FieldsetElement;
@@ -13,13 +14,9 @@ use ipl\Html\HtmlElement;
 use ipl\Web\Widget\Icon;
 
 /**
- * @phpstan-import-type ConditionData from EscalationCondition
- * @phpstan-import-type RecipientType from EscalationRecipient
- * @phpstan-type EscalationType array{
- *     id: int|null,
- *     position: int,
- *     condition: string|null
- * }
+ * @phpstan-import-type ConditionValues from EscalationCondition
+ * @phpstan-import-type RecipientValues from EscalationRecipient
+ * @phpstan-type EscalationValues array{id: int, conditions: array<ConditionValues>, recipients: array<RecipientValues>}
  */
 class Escalation extends FieldsetElement
 {
@@ -64,7 +61,7 @@ class Escalation extends FieldsetElement
      *
      * @param RuleEscalation $escalation
      *
-     * @return array{id: int, conditions: array<ConditionData>, recipients: array<RecipientType>}
+     * @return EscalationValues
      */
     public static function prepare(RuleEscalation $escalation): array
     {
@@ -79,52 +76,23 @@ class Escalation extends FieldsetElement
     }
 
     /**
-     * Check whether the escalation position or conditions have changed, according to the given previous escalation
-     *
-     * @param RuleEscalation $previousEscalation
-     *
-     * @return bool
-     */
-    public function hasChanged(RuleEscalation $previousEscalation): bool
-    {
-        if ($previousEscalation->position !== (int) $this->getName()) {
-            return true;
-        }
-
-        if ($previousEscalation->condition !== $this->getElement('conditions')->getConditions()) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
      * Get the escalation to store
      *
-     * @return EscalationType
+     * @return EscalationData
      */
-    public function getEscalation(): array
+    public function getEscalation(): EscalationData
     {
         $escalationId = null;
         if ($this->getElement('id')->hasValue()) {
             $escalationId = (int) $this->getElement('id')->getValue();
         }
 
-        return [
-            'id' => $escalationId,
-            'position' => (int) $this->getName(),
-            'condition' => $this->getElement('conditions')->getConditions()
-        ];
-    }
-
-    /**
-     * Get the escalation recipients
-     *
-     * @return array<EscalationRecipient>
-     */
-    public function getRecipients(): array
-    {
-        return $this->getElement('recipients')->getRecipients();
+        return new EscalationData(
+            $escalationId,
+            (int) $this->getName(),
+            $this->getElement('conditions')->getConditions(),
+            $this->getElement('recipients')->getRecipients()
+        );
     }
 
     protected function assemble(): void

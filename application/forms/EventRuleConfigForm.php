@@ -5,19 +5,15 @@
 
 namespace Icinga\Module\Notifications\Forms;
 
-use DateTime;
 use Icinga\Module\Notifications\Form\ConfigProviderInterface;
-use Icinga\Module\Notifications\Forms\EventRuleConfigElements\Escalation;
-use Icinga\Module\Notifications\Forms\EventRuleConfigElements\EscalationRecipient;
+use Icinga\Module\Notifications\Form\Data\EscalationRule;
 use Icinga\Module\Notifications\Model\Rule;
-use Icinga\Module\Notifications\Model\RuleEscalation;
 use ipl\Html\Attributes;
 use ipl\Html\FormElement\SubmitButtonElement;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\Html\ValidHtml;
 use ipl\I18n\Translation;
-use ipl\Sql\Connection;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
 use ipl\Web\Url;
@@ -55,15 +51,51 @@ class EventRuleConfigForm extends CompatForm
         $this->applyDefaultElementDecorators();
     }
 
-    public function hasBeenSubmitted(): bool
+    /**
+     * Load the given escalation rule into the form
+     *
+     * @param Rule $rule
+     *
+     * @return void
+     */
+    public function setRule(Rule $rule): void
     {
-        $pressedButton = $this->getPressedSubmitElement();
+        $fields = [
+            'id' => $rule->id,
+            'name' => $rule->name,
+            'source' => $rule->source_id,
+            'object_filter' => $rule->object_filter
+        ];
 
-        if ($pressedButton && $pressedButton->getName() === 'save') {
-            return true;
+        $escalations = $rule->rule_escalation->orderBy('position', 'asc')->execute();
+        if ($escalations->hasResult()) {
+            $fields['escalations'] = EventRuleConfigElements\Escalations::prepare(
+                $escalations
+            );
         }
 
-        return false;
+        $this->populate($fields);
+    }
+
+    /**
+     * Get the rule as currently configured by the user
+     *
+     * @return EscalationRule
+     */
+    public function getRule(): EscalationRule
+    {
+        $id = $this->getValue('id');
+        if ($id !== null) {
+            $id = (int) $id;
+        }
+
+        return new EscalationRule(
+            $id,
+            $this->getValue('name'),
+            (int) $this->getValue('source'),
+            $this->getValue('object_filter'),
+            $this->getElement('escalations')->getEscalations($id)
+        );
     }
 
     protected function assemble(): void
@@ -106,7 +138,7 @@ class EventRuleConfigForm extends CompatForm
             'required'      => true
         ]);
 
-        $this->addElement('hidden', 'id', ['required' => true]);
+        $this->addElement('hidden', 'id');
 
         $name = $this->createElement('hidden', 'name', ['required' => true]);
         $this->registerElement($name);
@@ -226,7 +258,7 @@ class EventRuleConfigForm extends CompatForm
             ])
         ];
 
-        if ((int) $this->getValue('id') !== -1) {
+        if ($this->getValue('id') !== null) {
             $buttons[] = $this->createElement('submitButton', 'delete', [
                 'label' => $this->translate('Delete'),
                 'data-progress-label' => $this->translate('Deleting rule'),
@@ -237,199 +269,6 @@ class EventRuleConfigForm extends CompatForm
         }
 
         return $buttons;
-    }
-
-    /**
-     * Load the given event rule into the form
-     *
-     * @param Rule $rule
-     *
-     * @return void
-     */
-    public function load(Rule $rule): void
-    {
-        $fields = [
-            'id'                => $rule->id,
-            'name'              => $rule->name,
-            'source'            => $rule->source_id,
-            'object_filter'     => $rule->object_filter
-        ];
-
-        $escalations = $rule->rule_escalation->orderBy('position', 'asc')->execute();
-        if ($escalations->hasResult()) {
-            $fields['escalations'] = EventRuleConfigElements\Escalations::prepare(
-                $escalations
-            );
-        }
-
-        $this->populate($fields);
-    }
-
-    /**
-     * Check whether the name or object filter changed according to the given previous rule
-     *
-     * @param Rule $previousRule
-     *
-     * @return bool
-     */
-    protected function hasChanged(Rule $previousRule): bool
-    {
-        if ($previousRule->name !== $this->getValue('name')) {
-            return true;
-        }
-
-        if ($previousRule->source_id !== (int) $this->getValue('source')) {
-            return true;
-        }
-
-        if ($previousRule->object_filter !== $this->getValue('object_filter')) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Insert to or update event rule in the database and return the id of the event rule
-     *
-     * @param Connection $db
-     * @param ?Rule $previousRule
-     *
-     * @return int
-     */
-    public function storeInDatabase(Connection $db, ?Rule $previousRule): int
-    {
-        $db->beginTransaction();
-
-        $ruleId = (int) $this->getValue('id');
-        if ($previousRule === null) {
-            $db->insert('rule', [
-                'name'          => $this->getValue('name'),
-                'source_id'     => $this->getValue('source'),
-                'timeperiod_id' => null,
-                'object_filter' => $this->getValue('object_filter'),
-                'changed_at'    => (int) (new DateTime())->format("Uv"),
-                'deleted'       => 'n'
-            ]);
-
-            $ruleId = (int) $db->lastInsertId();
-        } elseif ($this->hasChanged($previousRule)) {
-            $db->update('rule', [
-                'name'          => $this->getValue('name'),
-                'source_id'     => $this->getValue('source'),
-                'object_filter' => $this->getValue('object_filter'),
-                'changed_at'    => (int) (new DateTime())->format("Uv")
-            ], ['id = ?' => $ruleId]);
-        }
-
-        $escalationsFromDb = [];
-        foreach ($previousRule?->rule_escalation ?? [] as $escalationFromDb) {
-            /** @var RuleEscalation $escalationFromDb */
-            $escalationsFromDb[$escalationFromDb->id] = $escalationFromDb;
-        }
-
-        $escalations = $this->getElement('escalations')->getEscalations();
-        $remainingDbEscalations = [];
-        $escalationConfigs = [];
-        foreach ($escalations as $index => $escalation) {
-            $config = $escalation->getEscalation();
-            $escalationConfigs[$index] = $config;
-            if ($config['id'] !== null) {
-                $remainingDbEscalations[$config['id']] = $escalationsFromDb[$config['id']];
-                unset($escalationsFromDb[$config['id']]);
-            }
-        }
-
-        $escalationsToRemove = array_keys($escalationsFromDb);
-        if (! empty($escalationsToRemove)) {
-            $db->update('rule_escalation_recipient', [
-                'changed_at' => (int) (new DateTime())->format("Uv"),
-                'deleted'    => 'y'
-            ], ['rule_escalation_id IN (?)' => $escalationsToRemove, 'deleted = ?' => 'n']);
-            $db->update('rule_escalation', [
-                'changed_at' => (int) (new DateTime())->format("Uv"),
-                'position'   => null,
-                'deleted'    => 'y'
-            ], ['id IN (?)' => $escalationsToRemove]);
-        }
-
-        $recipients = [];
-        foreach ($escalations as $index => $escalation) {
-            /** @var Escalation $escalation */
-            $config = $escalationConfigs[$index];
-            if ($config['id'] === null) {
-                $db->insert('rule_escalation', [
-                    'rule_id' => $ruleId,
-                    'position' => $config['position'],
-                    $db->quoteIdentifier('condition') => $config['condition'],
-                    'name' => null,
-                    'fallback_for' => null,
-                    'changed_at' => (int) (new DateTime())->format("Uv"),
-                    'deleted' => 'n'
-                ]);
-
-                $recipients[(int) $db->lastInsertId()] = [$escalation->getRecipients(), []];
-            } else {
-                $escalationFromDb = $remainingDbEscalations[$config['id']];
-
-                $recipientsFromDb = [];
-                foreach ($escalationFromDb->rule_escalation_recipient as $recipientFromDb) {
-                    $recipientsFromDb[$recipientFromDb->id] = $recipientFromDb;
-                }
-
-                $recipients[(int) $config['id']] = [$escalation->getRecipients(), $recipientsFromDb];
-
-                if ($escalation->hasChanged($escalationFromDb)) {
-                    $db->update('rule_escalation', [
-                        'position' => $config['position'],
-                        $db->quoteIdentifier('condition') => $config['condition'],
-                        'changed_at' => (int) (new DateTime())->format("Uv")
-                    ], ['id = ?' => $config['id'], 'rule_id = ?' => $ruleId]);
-                }
-            }
-        }
-
-        foreach ($recipients as $escalationId => [$escalationRecipients, $recipientsFromDb]) {
-            foreach ($escalationRecipients as $escalationRecipient) {
-                /** @var EscalationRecipient $escalationRecipient */
-                $config = $escalationRecipient->getRecipient();
-                if ($config['id'] === null) {
-                    unset($config['id']);
-                    $db->insert('rule_escalation_recipient', $config + [
-                        'rule_escalation_id' => $escalationId,
-                        'contact_id' => null,
-                        'contactgroup_id' => null,
-                        'schedule_id' => null,
-                        'changed_at' => (int) (new DateTime())->format("Uv"),
-                        'deleted'    => 'n'
-                    ]);
-                } else {
-                    if ($escalationRecipient->hasChanged($recipientsFromDb[$config['id']])) {
-                        $db->update('rule_escalation_recipient', $config + [
-                            'changed_at' => (int) (new DateTime())->format("Uv"),
-                            // Ensure unused fields are reset to null
-                            'contact_id' => null,
-                            'contactgroup_id' => null,
-                            'schedule_id' => null
-                        ], ['id = ?' => $config['id']]);
-                    }
-
-                    unset($recipientsFromDb[$config['id']]);
-                }
-            }
-
-            $recipientsToRemove = array_keys($recipientsFromDb);
-            if (! empty($recipientsToRemove)) {
-                $db->update('rule_escalation_recipient', [
-                    'changed_at' => (int) (new DateTime())->format("Uv"),
-                    'deleted'    => 'y'
-                ], ['id IN (?)' => $recipientsToRemove, 'deleted = ?' => 'n']);
-            }
-        }
-
-        $db->commitTransaction();
-
-        return $ruleId;
     }
 
     /**
@@ -445,37 +284,14 @@ class EventRuleConfigForm extends CompatForm
         return $csrf->isValid() && $btn !== null && $btn->getName() === 'delete';
     }
 
-    /**
-     * Remove the given event rule
-     *
-     * @param Connection $db
-     * @param Rule $rule
-     *
-     * @return void
-     */
-    public static function removeRule(Connection $db, Rule $rule): void
+    public function hasBeenSubmitted(): bool
     {
-        $escalationsToRemove = [];
-        /** @var RuleEscalation $escalation */
-        foreach ($rule->rule_escalation as $escalation) {
-            $escalationsToRemove[] = $escalation->id;
+        $pressedButton = $this->getPressedSubmitElement();
+
+        if ($pressedButton && $pressedButton->getName() === 'save') {
+            return true;
         }
 
-        if (! empty($escalationsToRemove)) {
-            $db->update('rule_escalation_recipient', [
-                'changed_at' => (int) (new DateTime())->format("Uv"),
-                'deleted'    => 'y'
-            ], ['rule_escalation_id IN (?)' => $escalationsToRemove, 'deleted = ?' => 'n']);
-        }
-
-        $db->update('rule_escalation', [
-            'changed_at' => (int) (new DateTime())->format("Uv"),
-            'position'   => null,
-            'deleted'    => 'y'
-        ], ['rule_id = ?' => $rule->id]);
-        $db->update('rule', [
-            'changed_at' => (int) (new DateTime())->format("Uv"),
-            'deleted'    => 'y'
-        ], ['id = ?' => $rule->id]);
+        return false;
     }
 }

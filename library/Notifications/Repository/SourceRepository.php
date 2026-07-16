@@ -104,8 +104,7 @@ final class SourceRepository
         $source->client_certificate_subject = null;
 
         foreach ($source->rule as $rule) {
-            //TODO: add repository for rule
-            EventRuleConfigForm::removeRule($this->db, $rule);
+            (new EscalationRuleRepository($this->db))->delete($rule->id);
         }
 
         $this->em->save($source);

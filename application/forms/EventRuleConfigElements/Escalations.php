@@ -5,6 +5,7 @@
 
 namespace Icinga\Module\Notifications\Forms\EventRuleConfigElements;
 
+use Icinga\Module\Notifications\Form\Data\Escalation as EscalationData;
 use Icinga\Module\Notifications\Model\RuleEscalation;
 use ipl\Html\Attributes;
 use ipl\Html\Contract\FormElement;
@@ -14,7 +15,7 @@ use ipl\Html\HtmlElement;
 use ipl\Web\Widget\Icon;
 
 /**
- * @phpstan-import-type EscalationData from Escalation
+ * @phpstan-import-type EscalationValues from Escalation
  */
 class Escalations extends FieldsetElement
 {
@@ -52,7 +53,7 @@ class Escalations extends FieldsetElement
      *
      * @param iterable<RuleEscalation> $escalations
      *
-     * @return array<EscalationData>
+     * @return array<EscalationValues>
      */
     public static function prepare(iterable $escalations): array
     {
@@ -67,14 +68,21 @@ class Escalations extends FieldsetElement
     /**
      * Get the escalations to store
      *
-     * @return array<Escalation>
+     * @param ?int $ruleId
+     *
+     * @return EscalationData[]
      */
-    public function getEscalations(): array
+    public function getEscalations(?int $ruleId): array
     {
         $escalations = [];
         foreach ($this->ensureAssembled()->getElements() as $element) {
             if ($element instanceof Escalation) {
-                $escalations[] = $element;
+                $escalation = $element->getEscalation();
+                if ($ruleId !== null) {
+                    $escalation->ruleId = $ruleId;
+                }
+
+                $escalations[] = $escalation;
             }
         }
 

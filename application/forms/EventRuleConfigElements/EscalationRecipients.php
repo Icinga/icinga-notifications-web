@@ -5,6 +5,7 @@
 
 namespace Icinga\Module\Notifications\Forms\EventRuleConfigElements;
 
+use Icinga\Module\Notifications\Form\Data\EscalationRecipient as EscalationRecipientData;
 use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use ipl\Html\Attributes;
 use ipl\Html\Contract\FormElement;
@@ -14,7 +15,7 @@ use ipl\Html\HtmlElement;
 use ipl\Web\Widget\Icon;
 
 /**
- * @phpstan-import-type RecipientData from EscalationRecipient
+ * @phpstan-import-type RecipientValues from EscalationRecipient
  */
 class EscalationRecipients extends FieldsetElement
 {
@@ -52,7 +53,7 @@ class EscalationRecipients extends FieldsetElement
      *
      * @param iterable<RuleEscalationRecipient> $recipients
      *
-     * @return array<RecipientData>
+     * @return array<RecipientValues>
      */
     public static function prepare(iterable $recipients): array
     {
@@ -67,14 +68,14 @@ class EscalationRecipients extends FieldsetElement
     /**
      * Get the recipients to store
      *
-     * @return array<EscalationRecipient>
+     * @return EscalationRecipientData[]
      */
     public function getRecipients(): array
     {
         $recipients = [];
         foreach ($this->ensureAssembled()->getElements() as $element) {
             if ($element instanceof EscalationRecipient) {
-                $recipients[] = $element;
+                $recipients[] = $element->getRecipient();
             }
         }
 
