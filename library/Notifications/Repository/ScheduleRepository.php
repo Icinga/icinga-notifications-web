@@ -161,8 +161,7 @@ final class ScheduleRepository
                 ))
                 ->first();
             if ($otherRecipients === null) {
-                $escalation->position = null;
-                $escalation->delete(); // TODO: EscalationRepository::delete(…)
+                (new EscalationRepository($this->db))->delete($escalation->id);
             }
         }
 

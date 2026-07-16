@@ -170,8 +170,7 @@ final class ContactGroupRepository
                 ))
                 ->first();
             if ($otherRecipient === null) {
-                $escalation->position = null;
-                $escalation->delete(); // TODO: EscalationRepository::delete(…)
+                (new EscalationRepository($this->db))->delete($escalation->id);
             }
         }
 
