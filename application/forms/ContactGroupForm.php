@@ -356,7 +356,7 @@ class ContactGroupForm extends CompatForm
 
                 /** @var Rotation $rotation */
                 foreach ($rotations as $rotation) {
-                    $rotation->delete();
+                    $rotation->deleteRotation();
                 }
             }
         }
