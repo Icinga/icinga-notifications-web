@@ -9,7 +9,6 @@ use Icinga\Module\Notifications\Common\Icons;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Common\Severity;
 use Icinga\Module\Notifications\Model\Incident;
-use Icinga\Module\Notifications\Model\Objects;
 use Icinga\Module\Notifications\Model\Source;
 use ipl\Html\Attributes;
 use ipl\Html\FormattedString;
@@ -58,6 +57,7 @@ class IncidentRenderer implements ItemRenderer
 
     public function assembleCaption($item, HtmlDocument $caption, string $layout): void
     {
+        $caption->addHtml(new Text(substr($item->message ?? '', 0, 1000)));
     }
 
     public function assembleExtendedInfo($item, HtmlDocument $info, string $layout): void
