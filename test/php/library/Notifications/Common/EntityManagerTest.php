@@ -89,9 +89,9 @@ class EntityManagerTest extends TestCase
             . 'CREATE TABLE trinket (id BLOB PRIMARY KEY, name VARCHAR NOT NULL);'
             . 'CREATE TABLE charm (id INTEGER PRIMARY KEY AUTOINCREMENT,
                 trinket_id BLOB NOT NULL, label VARCHAR NOT NULL);'
-            . 'CREATE TABLE pairing ('
-            . 'left_id INTEGER NOT NULL, right_id INTEGER NOT NULL, label VARCHAR NOT NULL,'
-            . ' PRIMARY KEY (left_id, right_id));'
+            . 'CREATE TABLE "values" ('
+            . '"order" INTEGER NOT NULL, "group" INTEGER NOT NULL, "insert" VARCHAR NOT NULL,'
+            . ' PRIMARY KEY ("order", "group"));'
             . 'CREATE TABLE tag (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR NOT NULL);'
             . 'CREATE TABLE gadget_tag ('
             . 'gadget_id INTEGER NOT NULL, tag_id INTEGER NOT NULL,'
@@ -302,40 +302,42 @@ class EntityManagerTest extends TestCase
 
     public function testCompoundKeyIsWrittenScopedAndClearedAcrossItsLifecycle()
     {
-        // Two rows sharing left_id but differing in right_id: every WHERE has to include *both* key
-        // columns to target exactly one of them.
+        // Two rows sharing `order` but differing in `group`: every WHERE has to include *both* key
+        // columns to target exactly one of them. The Pairing fixture's table (`values`), key columns
+        // (`order`/`group`) and plain column (`insert`) are all SQL reserved keywords, so this also
+        // proves the EntityManager quotes table names, INSERT/UPDATE columns and the compound key WHERE.
         $a = (new Pairing())->setNew();
-        $a->left_id = 1;
-        $a->right_id = 1;
-        $a->label = 'A';
+        $a->order = 1;
+        $a->group = 1;
+        $a->insert = 'A';
         $this->em()->save($a);
 
         $b = (new Pairing())->setNew();
-        $b->left_id = 1;
-        $b->right_id = 2;
-        $b->label = 'B';
+        $b->order = 1;
+        $b->group = 2;
+        $b->insert = 'B';
         $this->em()->save($b);
 
         $this->assertFalse($b->isNew(), 'A saved compound-key model should no longer be new');
         $this->assertFalse($b->isModified(), 'A saved compound-key model should carry no pending changes');
-        $this->assertSame(1, $b->left_id, 'left_id should not be overwritten by a lastInsertId fetch');
-        $this->assertSame(2, $b->right_id, 'right_id should not be overwritten by a lastInsertId fetch');
+        $this->assertSame(1, $b->order, 'order should not be overwritten by a lastInsertId fetch');
+        $this->assertSame(2, $b->group, 'group should not be overwritten by a lastInsertId fetch');
 
         $this->db->resetCalls();
-        $b->label = 'B2';
+        $b->insert = 'B2';
         $this->em()->save($b);
         $this->assertSame(
-            ['left_id = ?' => 1, 'right_id = ?' => 2],
+            ['order = ?' => 1, 'group = ?' => 2],
             $this->db->calls[0]['condition'],
             'Both key columns should scope the UPDATE'
         );
 
         $this->em()->save($b->delete());
-        $this->assertFalse($b->hasProperty('left_id'), 'Each part of a compound key should be cleared on delete');
-        $this->assertFalse($b->hasProperty('right_id'), 'Each part of a compound key should be cleared on delete');
+        $this->assertFalse($b->hasProperty('order'), 'Each part of a compound key should be cleared on delete');
+        $this->assertFalse($b->hasProperty('group'), 'Each part of a compound key should be cleared on delete');
         $this->assertSame(
-            [['left_id' => 1, 'right_id' => 1, 'label' => 'A']],
-            $this->rows('SELECT left_id, right_id, label FROM pairing'),
+            [['order' => 1, 'group' => 1, 'insert' => 'A']],
+            $this->rows('SELECT "order", "group", "insert" FROM "values"'),
             'Only the row matching all key columns should be updated then deleted; the sibling stays intact'
         );
     }
