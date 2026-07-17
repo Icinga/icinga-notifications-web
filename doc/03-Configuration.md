@@ -36,6 +36,21 @@ If you just installed Icinga Notifications Web, remember to activate it on your 
 | notifications/view/contacts      | Allow to view contacts                         |
 | notifications/api                | Allow to modify configuration via API          |
 
+## General Configuration
+
+There is currently one configurable option: the maximum number of characters of the incident
+message shown in the incident detail view (default: 10000). It cannot be adjusted in the UI
+directly, but has to be set in the configuration file `/etc/icingaweb2/modules/notifications/config.ini`.
+
+### Example
+
+Setting the incident message character limit to 2500.
+
+```
+[settings]
+incident_message_character_limit = 2500
+```
+
 ## Database Configuration
 
 Connection configuration for the database, which both,
