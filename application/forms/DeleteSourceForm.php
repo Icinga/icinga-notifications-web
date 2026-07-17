@@ -5,60 +5,14 @@
 
 namespace Icinga\Module\Notifications\Forms;
 
-use DateTime;
-use Icinga\Exception\Http\HttpNotFoundException;
-use Icinga\Module\Notifications\Common\Database;
-use Icinga\Module\Notifications\Model\Rule;
-use Icinga\Module\Notifications\Model\Source;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
-use ipl\Sql\Connection;
-use ipl\Stdlib\Filter;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
-use RuntimeException;
 
 class DeleteSourceForm extends CompatForm
 {
     use CsrfCounterMeasure;
-
-    /** @var ?Source The source to delete */
-    protected ?Source $source = null;
-
-    /**
-     * Load the source with the given ID from the database
-     *
-     * @param int $id
-     *
-     * @return $this
-     *
-     * @throws HttpNotFoundException
-     */
-    public function loadSource(int $id): static
-    {
-        $source = Source::on(Database::get())
-            ->columns(['id', 'name', 'locked'])
-            ->filter(Filter::equal('id', $id))
-            ->first();
-        /** @var ?Source $source */
-        if ($source === null) {
-            throw new HttpNotFoundException($this->translate('Source not found'));
-        }
-
-        $this->source = $source;
-
-        return $this;
-    }
-
-    /**
-     * Get this source's name
-     *
-     * @return string
-     */
-    public function getSourceName(): string
-    {
-        return $this->source->name;
-    }
 
     protected function assemble(): void
     {
@@ -94,32 +48,5 @@ class DeleteSourceForm extends CompatForm
             'label' => $this->translate('Understood. Delete this source.'),
             'class' => 'btn-remove'
         ]);
-    }
-
-    /**
-     * Delete the source and all associated event rules from the database
-     *
-     * @param Connection $db
-     *
-     * @return void
-     */
-    public function removeSource(Connection $db): void
-    {
-        if ($this->source->locked) {
-            throw new RuntimeException('Source is locked');
-        }
-
-        $rules = Rule::on($db)
-            ->columns('id')
-            ->filter(Filter::equal('source_id', $this->source->id));
-        foreach ($rules as $rule) {
-            EventRuleConfigForm::removeRule($db, $rule);
-        }
-
-        $db->update(
-            'source',
-            ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y', 'listener_username' => null],
-            ['id = ?' => $this->source->id]
-        );
     }
 }
