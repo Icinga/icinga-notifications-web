@@ -108,7 +108,11 @@ class IncidentDetail extends BaseHtmlElement
         $isEmpty = empty($this->incident->message);
         $message = new HtmlElement(
             'div',
-            Attributes::create(['class' => ['message', $isEmpty ? 'empty' : '']]),
+            Attributes::create([
+                'class' => ['message', $isEmpty ? 'empty' : '', 'collapsible'],
+                'id' => 'persist-collapse-state',
+                'data-visible-height' => 100
+            ]),
             $isEmpty
                 ? new EmptyState($this->translate('No message available'))
                 : Text::create(substr($this->incident->message, 0, 10000))
