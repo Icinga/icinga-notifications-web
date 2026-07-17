@@ -163,7 +163,7 @@ class EntityManager
         }
 
         $this->ensureOlderThanBaseline($model);
-        $this->db->delete($model->getTableName(), $condition);
+        $this->db->delete($this->db->quoteIdentifier($model->getTableName()), $condition);
         foreach ((array) $model->getKeyName() as $k) {
             unset($model->$k);
         }
@@ -376,8 +376,8 @@ class EntityManager
         }
 
         $select = (new Select())
-            ->from($childModel->getTableName())
-            ->columns($columns)
+            ->from($this->db->quoteIdentifier($childModel->getTableName()))
+            ->columns(array_map($this->db->quoteIdentifier(...), $columns))
             ->where($this->createCondition($condition));
 
         foreach ($this->db->select($select)->fetchAll(PDO::FETCH_ASSOC) as $row) {
@@ -534,7 +534,7 @@ class EntityManager
         // Insert case
         if ($model->isNew()) {
             $this->stampChangedAt($model);
-            $this->db->insert($model->getTableName(), $this->extract($model, $behaviors));
+            $this->db->insert($this->db->quoteIdentifier($model->getTableName()), $this->extract($model, $behaviors));
 
             $keyName = $model->getKeyName();
             if (is_string($keyName) && ! $model->hasProperty($keyName)) {
@@ -583,7 +583,7 @@ class EntityManager
         $this->stampChangedAt($model);
         $data = $this->extract($model, $behaviors, $model->getModifiedProperties());
 
-        $this->db->update($model->getTableName(), $data, $condition);
+        $this->db->update($this->db->quoteIdentifier($model->getTableName()), $data, $condition);
 
         $model->clearModifiedProperties();
     }
@@ -609,7 +609,7 @@ class EntityManager
 
         $currentMax = $this->db->select(
             (new Select())
-                ->from($model->getTableName())
+                ->from($this->db->quoteIdentifier($model->getTableName()))
                 ->columns([$column => new Expression("MAX($column)")])
         )->fetchColumn();
 
@@ -687,7 +687,7 @@ class EntityManager
                 continue;
             }
 
-            $data[$property] = $behaviors->persistProperty($model->$property, $property);
+            $data[$this->db->quoteIdentifier($property)] = $behaviors->persistProperty($model->$property, $property);
         }
 
         return $data;
@@ -777,13 +777,19 @@ class EntityManager
 
         foreach ($desired as $identity => $value) {
             if (! array_key_exists($identity, $stored)) {
-                $this->db->insert($table, array_merge($sourceColumns, [$junctionColumn => $value]));
+                $this->db->insert(
+                    $this->db->quoteIdentifier($table),
+                    $this->quoteColumns(array_merge($sourceColumns, [$junctionColumn => $value]))
+                );
             }
         }
 
         $removals = $replace ? array_diff_key($stored, $desired) : array_intersect_key($toDetach, $stored);
         foreach ($removals as $value) {
-            $this->db->delete($table, $this->createCondition(array_merge($sourceColumns, [$junctionColumn => $value])));
+            $this->db->delete(
+                $this->db->quoteIdentifier($table),
+                $this->createCondition(array_merge($sourceColumns, [$junctionColumn => $value]))
+            );
         }
     }
 
@@ -817,8 +823,8 @@ class EntityManager
         }
 
         $select = (new Select())
-            ->from($junction->getTableName())
-            ->columns($columns)
+            ->from($this->db->quoteIdentifier($junction->getTableName()))
+            ->columns(array_map($this->db->quoteIdentifier(...), $columns))
             ->where($this->createCondition($sourceColumns));
 
         $stored = [];
@@ -909,8 +915,8 @@ class EntityManager
     private function fetchJunctionRows(string $table, array $sourceColumns, string $junctionColumn): array
     {
         $select = (new Select())
-            ->from($table)
-            ->columns($junctionColumn)
+            ->from($this->db->quoteIdentifier($table))
+            ->columns($this->db->quoteIdentifier($junctionColumn))
             ->where($this->createCondition($sourceColumns));
 
         $stored = [];
@@ -986,10 +992,27 @@ class EntityManager
     {
         $condition = [];
         foreach ($columns as $column => $value) {
-            $condition[$column . ' = ?'] = $value;
+            $condition[$this->db->quoteIdentifier($column) . ' = ?'] = $value;
         }
 
         return $condition;
+    }
+
+    /**
+     * Copy a column => value map with its keys quoted with ({@see Connection::quoteIdentifier()})
+     *
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    private function quoteColumns(array $data): array
+    {
+        $quoted = [];
+        foreach ($data as $column => $value) {
+            $quoted[$this->db->quoteIdentifier($column)] = $value;
+        }
+
+        return $quoted;
     }
 
     /**
