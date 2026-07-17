@@ -8,6 +8,7 @@ namespace Icinga\Module\Notifications\Hook;
 use Generator;
 use Icinga\Application\Hook;
 use Icinga\Application\Logger;
+use Icinga\Module\Notifications\Hook\V2\SourceHook;
 use Icinga\Module\Notifications\Model\Objects;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
@@ -20,6 +21,9 @@ use Throwable;
 
 /**
  * Base hook to prepare and render objects
+ *
+ * @deprecated For object name, use the db column `object.name`. To create object link, use
+ * {@see SourceHook::createObjectLink()} instead.
  */
 abstract class ObjectsRendererHook
 {

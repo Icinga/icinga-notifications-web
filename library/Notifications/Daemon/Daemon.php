@@ -8,7 +8,6 @@ namespace Icinga\Module\Notifications\Daemon;
 use Evenement\EventEmitter;
 use Icinga\Application\Logger;
 use Icinga\Module\Notifications\Common\Database;
-use Icinga\Module\Notifications\Hook\ObjectsRendererHook;
 use Icinga\Module\Notifications\Model\BrowserSession;
 use Icinga\Module\Notifications\Model\Daemon\Connection;
 use Icinga\Module\Notifications\Model\Daemon\Event;
@@ -263,7 +262,6 @@ class Daemon extends EventEmitter
         $notificationsToProcess = [];
         foreach ($notifications as $notification) {
             if ($notification->contact_id !== null && isset($connections[$notification->contact_id])) {
-                ObjectsRendererHook::register($notification->incident->object);
                 $notificationsToProcess[] = $notification;
 
                 ++$numOfNotifications;
@@ -273,8 +271,6 @@ class Daemon extends EventEmitter
         }
 
         if ($numOfNotifications > 0) {
-            ObjectsRendererHook::load(false);
-
             foreach ($notificationsToProcess as $notification) {
                 /** @var Incident $incident */
                 $incident = $notification->incident;
@@ -286,7 +282,7 @@ class Daemon extends EventEmitter
                         (object) [
                             'incident_id' => $notification->incident_id,
                             'severity'    => $incident->severity->getValue(),
-                            'title'       => ObjectsRendererHook::getObjectNameAsString($incident->object),
+                            'title'       => $incident->object->name,
                             'message'     => $notification->message
                         ]
                     )

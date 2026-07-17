@@ -7,7 +7,6 @@ namespace Icinga\Module\Notifications\Controllers;
 
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
-use Icinga\Module\Notifications\Hook\ObjectsRendererHook;
 use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\View\IncidentRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
@@ -18,8 +17,6 @@ use ipl\Web\Control\LimitControl;
 use ipl\Web\Control\SortControl;
 use ipl\Web\Filter\QueryString;
 use ipl\Web\Layout\MinimalItemLayout;
-use ipl\Web\Widget\ItemList;
-use ipl\Web\Widget\ListItem;
 
 class IncidentsController extends CompatController
 {
@@ -71,13 +68,7 @@ class IncidentsController extends CompatController
         $this->addControl($searchBar);
 
         $incidentList = (new ObjectList($incidents, new IncidentRenderer()))
-            ->setItemLayoutClass(MinimalItemLayout::class)
-            ->on(ItemList::ON_ITEM_ADD, function (ListItem $item, Incident $data) {
-                ObjectsRendererHook::register($data->object);
-            })
-            ->on(ItemList::ON_ASSEMBLED, function () {
-                ObjectsRendererHook::load();
-            });
+            ->setItemLayoutClass(MinimalItemLayout::class);
 
         $this->addContent($incidentList);
 

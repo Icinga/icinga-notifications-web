@@ -9,6 +9,8 @@ use EmptyIterator;
 use Icinga\Application\Hook;
 use Icinga\Module\Notifications\Common\SourceHookLocator;
 use Icinga\Module\Notifications\Hook\V2\SourceHook;
+use ipl\Html\Text;
+use ipl\Html\ValidHtml;
 use ipl\Stdlib\Filter\Chain;
 use ipl\Stdlib\Filter\Condition;
 use ipl\Web\Widget\Icon;
@@ -48,6 +50,11 @@ class TestSource implements SourceHook
     public function getColumnSuggestions(string $searchTerm): Traversable
     {
         return new EmptyIterator();
+    }
+
+    public function createObjectLink(array $idTags): ?ValidHtml
+    {
+        return new Text('test');
     }
 }
 

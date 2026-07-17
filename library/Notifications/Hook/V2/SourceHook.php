@@ -5,6 +5,7 @@
 
 namespace Icinga\Module\Notifications\Hook\V2;
 
+use ipl\Html\ValidHtml;
 use ipl\Stdlib\Filter\Chain;
 use ipl\Stdlib\Filter\Condition;
 use ipl\Web\Control\SearchBar\SearchException;
@@ -79,4 +80,13 @@ interface SourceHook
      * @return Traversable Provider for {@see SearchSuggestions::__construct}
      */
     public function getColumnSuggestions(string $searchTerm): Traversable;
+
+    /**
+     * Create the object link using the given ID tags
+     *
+     * @param array $idTags
+     *
+     * @return ?ValidHtml
+     */
+    public function createObjectLink(array $idTags): ?ValidHtml;
 }

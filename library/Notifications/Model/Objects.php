@@ -6,9 +6,7 @@
 namespace Icinga\Module\Notifications\Model;
 
 use Icinga\Module\Notifications\Common\Model;
-use Icinga\Module\Notifications\Hook\ObjectsRendererHook;
 use Icinga\Module\Notifications\Model\Behavior\IdTagAggregator;
-use ipl\Html\ValidHtml;
 use ipl\Orm\Behavior\Binary;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Query;
@@ -78,10 +76,5 @@ class Objects extends Model
         $relations->hasMany('tag', Tag::class);
 
         $relations->belongsTo('source', Source::class)->setJoinType('LEFT');
-    }
-
-    public function getName(): ValidHtml
-    {
-        return ObjectsRendererHook::getObjectName($this);
     }
 }

@@ -6,7 +6,7 @@
 namespace Icinga\Module\Notifications\Widget\Detail;
 
 use Icinga\Module\Notifications\Common\Auth;
-use Icinga\Module\Notifications\Hook\ObjectsRendererHook;
+use Icinga\Module\Notifications\Common\SourceHookLocator;
 use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\View\IncidentContactRenderer;
 use Icinga\Module\Notifications\View\IncidentHistoryRenderer;
@@ -21,6 +21,8 @@ use ipl\Html\ValidHtml;
 use ipl\I18n\Translation;
 use ipl\Stdlib\Filter;
 use ipl\Web\Layout\MinimalItemLayout;
+use ipl\Web\Url;
+use ipl\Web\Widget\Link;
 
 class IncidentDetail extends BaseHtmlElement
 {
@@ -71,10 +73,22 @@ class IncidentDetail extends BaseHtmlElement
     /** @return ValidHtml[] */
     protected function createRelatedObject(): array
     {
-        $objectUrl = ObjectsRendererHook::renderObjectLink($this->incident->object);
+        $object = $this->incident->object;
+        $objectUrl = SourceHookLocator::forType($object->source->type)
+            ?->createObjectLink($object->id_tags);
 
         if (! $objectUrl) {
-            return [];
+            if (! $object->url) {
+                return [];
+            }
+
+            $objUrl = Url::fromPath($object->url);
+
+            $objectUrl = new Link(
+                $object->name,
+                $objUrl->isExternal() ? $objUrl->getAbsoluteUrl() : $objUrl->getRelativeUrl(),
+                ['class' => 'subject', 'data-base-target' => '_next']
+            );
         }
 
         return [
