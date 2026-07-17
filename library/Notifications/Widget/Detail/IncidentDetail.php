@@ -6,6 +6,7 @@
 namespace Icinga\Module\Notifications\Widget\Detail;
 
 use Icinga\Application\ClassLoader;
+use Icinga\Application\Config;
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\SourceHookLocator;
 use Icinga\Module\Notifications\Model\Incident;
@@ -115,7 +116,14 @@ class IncidentDetail extends BaseHtmlElement
             ]),
             $isEmpty
                 ? new EmptyState($this->translate('No message available'))
-                : Text::create(substr($this->incident->message, 0, 10000))
+                : Text::create(
+                    substr(
+                        $this->incident->message,
+                        0,
+                        (int) Config::module('notifications')
+                            ->get('settings', 'incident_message_character_limit', 10000)
+                    )
+                )
         );
 
         if (! $isEmpty) {

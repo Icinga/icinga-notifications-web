@@ -87,3 +87,23 @@ Icinga DB Web installed. This is the integration required to configure Icinga 2 
       password: insecureinsecure
     ```
 4. Restart Icinga DB.
+
+## General Configuration
+
+The configuration file is located at `/etc/icingaweb2/modules/icingadb/config.ini` by default.
+The following settings can be configured, but currently only by adjusting the configuration file directly:
+
+### Available Settings and defaults
+
+| Option                            | Description                                                            | Default   |
+|-----------------------------------|------------------------------------------------------------------------|-----------|
+| incident_message_character_limit  | Sets the maximum number of characters to display in incident messages. | **10000** |
+
+### Example
+
+Setting the incident message character limit to 500000.
+
+```
+[settings]
+incident_message_character_limit = 500000
+```
