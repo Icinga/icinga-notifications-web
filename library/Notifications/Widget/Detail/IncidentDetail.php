@@ -23,6 +23,8 @@ use ipl\I18n\Translation;
 use ipl\Stdlib\Filter;
 use ipl\Web\Layout\MinimalItemLayout;
 use ipl\Web\Url;
+use ipl\Web\Widget\CopyToClipboard;
+use ipl\Web\Widget\EmptyState;
 use ipl\Web\Widget\Link;
 
 class IncidentDetail extends BaseHtmlElement
@@ -101,6 +103,27 @@ class IncidentDetail extends BaseHtmlElement
         ];
     }
 
+    protected function createMessage(): array
+    {
+        $isEmpty = empty($this->incident->message);
+        $message = new HtmlElement(
+            'div',
+            Attributes::create(['class' => ['message', $isEmpty ? 'empty' : '']]),
+            $isEmpty
+                ? new EmptyState($this->translate('No message available'))
+                : Text::create(substr($this->incident->message, 0, 10000))
+        );
+
+        if (! $isEmpty) {
+            CopyToClipboard::attachTo($message);
+        }
+
+        return [
+            new HtmlElement('h2', content: Text::create($this->translate('Message'))),
+            $message
+        ];
+    }
+
     /** @return ValidHtml[] */
     protected function createHistory(): array
     {
@@ -140,6 +163,7 @@ class IncidentDetail extends BaseHtmlElement
             $this->createContacts(),
             $this->createHistory(),
             $this->createRelatedObject(),
+            $this->createMessage(),
             $this->createSource(),
         ]);
     }
