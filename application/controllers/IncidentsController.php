@@ -11,17 +11,21 @@ use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\View\IncidentRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
+use ipl\Web\Common\Controls;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
 use ipl\Web\Control\LimitControl;
 use ipl\Web\Control\SortControl;
 use ipl\Web\Filter\QueryString;
+use ipl\Web\Layout\DetailedItemLayout;
+use ipl\Web\Layout\ItemLayout;
 use ipl\Web\Layout\MinimalItemLayout;
 
 class IncidentsController extends CompatController
 {
     use Auth;
     use SearchControls;
+    use Controls;
 
     public function indexAction(): void
     {
@@ -42,10 +46,14 @@ class IncidentsController extends CompatController
         );
 
         $paginationControl = $this->createPaginationControl($incidents);
+        $viewModeSwitcher = $this->createViewModeSwitcher($this->params);
         $searchBar = $this->createSearchBar($incidents, [
             $limitControl->getLimitParam(),
             $sortControl->getSortParam(),
         ]);
+
+        $this->applyViewModeLimit($limitControl, $paginationControl);
+        $this->handleControls($this->getServerRequest());
 
         if ($searchBar->hasBeenSent() && ! $searchBar->isValid()) {
             if ($searchBar->hasBeenSubmitted()) {
@@ -65,12 +73,17 @@ class IncidentsController extends CompatController
         $this->addControl($paginationControl);
         $this->addControl($sortControl);
         $this->addControl($limitControl);
+        $this->addControl($viewModeSwitcher);
         $this->addControl($searchBar);
 
-        $incidentList = (new ObjectList($incidents, new IncidentRenderer()))
-            ->setItemLayoutClass(MinimalItemLayout::class);
-
-        $this->addContent($incidentList);
+        $this->addContent(
+            (new ObjectList($incidents, new IncidentRenderer()))
+                ->setItemLayoutClass(match ($viewModeSwitcher->getViewMode()) {
+                    'minimal' => MinimalItemLayout::class,
+                    'detailed' => DetailedItemLayout::class,
+                    'common' => ItemLayout::class
+                })
+        );
 
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {
             $this->sendMultipartUpdate();
