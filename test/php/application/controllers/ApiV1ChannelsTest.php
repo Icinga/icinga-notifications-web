@@ -75,7 +75,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
     public function testGetEverything(Connection $db, Url $endpoint): void
     {
         // At first, there are none
-        $this->deleteDefaultEntities();
+        $this->deleteDefaultEntities($db);
 
         $response = $this->sendRequest(
             'GET',
@@ -88,7 +88,7 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         $this->assertJsonStringEqualsJsonString($this->jsonEncodeResults([]), $content);
 
         // Create new contact groups
-        $this->createDefaultEntities();
+        $this->createDefaultEntities($db);
 
         // There are two
         $response = $this->sendRequest(
@@ -288,18 +288,14 @@ class ApiV1ChannelsTest extends BaseApiV1TestCase
         );
     }
 
-    protected function deleteDefaultEntities(): void
+    protected function deleteDefaultEntities(Connection $db): void
     {
-        $db = $this->getConnection();
-
         self::deleteContacts($db);
         self::deleteChannels($db);
     }
 
-    protected function createDefaultEntities(): void
+    protected function createDefaultEntities(Connection $db): void
     {
-        $db = $this->getConnection();
-
         self::createChannels($db);
         self::createContacts($db);
     }
