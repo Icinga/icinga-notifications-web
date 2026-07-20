@@ -31,7 +31,7 @@ class ApiV1ContactGroupsTest extends BaseApiV1TestCase
     public function testGetEverything(Connection $db, Url $endpoint): void
     {
         // At first, there are none
-        self::deleteContactGroups($this->getConnection());
+        self::deleteContactGroups($db);
 
         $response = $this->sendRequest('GET', $endpoint, 'v1/contact-groups');
         $content = $response->getBody()->getContents();
@@ -40,7 +40,7 @@ class ApiV1ContactGroupsTest extends BaseApiV1TestCase
         $this->assertJsonStringEqualsJsonString($this->jsonEncodeResults([]), $content);
 
         // Create new contact groups
-        self::createContactGroups($this->getConnection());
+        self::createContactGroups($db);
 
         // Now there are two
         $response = $this->sendRequest('GET', $endpoint, 'v1/contact-groups');

@@ -118,7 +118,7 @@ SQL;
             $socket = sprintf('127.0.0.1:%d', $port);
             $configDir = sys_get_temp_dir() . "/notifications-api-test-backend-$port";
 
-            self::initializeIcingaWeb($name, $configDir);
+            self::initializeIcingaWeb($name, $configDir, $connection[0]->getConfig());
 
             if (self::fork()) {
                 $env = ['ICINGAWEB_CONFIGDIR' => $configDir];
@@ -155,17 +155,19 @@ SQL;
      *
      * @param string $driver
      * @param string $configDir
+     * @param \ipl\Sql\Config $connectionConfig
      *
      * @return void
      *
      * @internal Only the trait itself should access this method
      */
-    final protected static function initializeIcingaWeb(string $driver, string $configDir): void
-    {
+    final protected static function initializeIcingaWeb(
+        string $driver,
+        string $configDir,
+        \ipl\Sql\Config $connectionConfig
+    ): void {
         $oldConfigDir = Config::$configDir;
         Config::$configDir = $configDir;
-
-        $connectionConfig = self::getConnectionConfig($driver);
 
         Config::app(fromDisk: true)
             ->setSection('global', [
@@ -181,9 +183,9 @@ SQL;
                 'db' => $connectionConfig->db,
                 'host' => $connectionConfig->host,
                 'port' => $connectionConfig->port,
-                'dbname' => self::getEnvironmentVariable(strtoupper($driver) . '_ICINGAWEBDB'),
-                'username' => self::getEnvironmentVariable(strtoupper($driver) . '_ICINGAWEBDB_USER'),
-                'password' => self::getEnvironmentVariable(strtoupper($driver) . '_ICINGAWEBDB_PASSWORD')
+                'dbname' => self::getEnvVariable(strtoupper($driver) . '_ICINGAWEBDB'),
+                'username' => self::getEnvVariable(strtoupper($driver) . '_ICINGAWEBDB_USER'),
+                'password' => self::getEnvVariable(strtoupper($driver) . '_ICINGAWEBDB_PASSWORD')
             ])->setSection('notifications_db', [
                 'type' => 'db',
                 'db' => $connectionConfig->db,
@@ -314,11 +316,11 @@ SQL;
     {
         return new Connection([
             'db' => $driver,
-            'host' => self::getEnvironmentVariable(strtoupper($driver) . '_TESTDB_HOST'),
-            'port' => self::getEnvironmentVariable(strtoupper($driver) . '_TESTDB_PORT'),
-            'username' => self::getEnvironmentVariable(strtoupper($driver) . '_ICINGAWEBDB_USER'),
-            'password' => self::getEnvironmentVariable(strtoupper($driver) . '_ICINGAWEBDB_PASSWORD'),
-            'dbname' => self::getEnvironmentVariable(strtoupper($driver) . '_ICINGAWEBDB')
+            'host' => self::getEnvVariable(strtoupper($driver) . '_TESTDB_HOST'),
+            'port' => self::getEnvVariable(strtoupper($driver) . '_TESTDB_PORT'),
+            'username' => self::getEnvVariable(strtoupper($driver) . '_ICINGAWEBDB_USER'),
+            'password' => self::getEnvVariable(strtoupper($driver) . '_ICINGAWEBDB_PASSWORD'),
+            'dbname' => self::getEnvVariable(strtoupper($driver) . '_ICINGAWEBDB')
         ]);
     }
 
@@ -344,5 +346,26 @@ SQL;
         }
 
         return true;
+    }
+
+    /**
+     * Get the value of an environment variable
+     *
+     * @param string $name
+     *
+     * @return string
+     *
+     * @throws RuntimeException if the environment variable is not set
+     *
+     * @internal Only the trait itself should access this method
+     */
+    private static function getEnvVariable(string $name): string
+    {
+        $value = getenv($name);
+        if ($value === false) {
+            throw new RuntimeException("Environment variable $name is not set");
+        }
+
+        return $value;
     }
 }
