@@ -5,6 +5,7 @@
 
 namespace Icinga\Module\Notifications\Forms;
 
+use ipl\Html\Contract\Form;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\Web\Common\CalloutType;
@@ -77,5 +78,11 @@ class DeleteSourceForm extends CompatForm
             'label' => $this->translate('Understood. Delete this source.'),
             'class' => 'btn-remove'
         ]);
+    }
+
+    protected function onError()
+    {
+        // TODO: I feel like this should be the case in ipl-html already
+        $this->emit(Form::ON_SENT, [$this]);
     }
 }

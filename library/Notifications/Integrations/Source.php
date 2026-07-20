@@ -5,32 +5,39 @@
 
 namespace Icinga\Module\Notifications\Integrations;
 
+use Closure;
 use Icinga\Module\Notifications\Common\Database;
-use Icinga\Module\Notifications\Model\Source as SourceModel;
+use Icinga\Module\Notifications\Form\Data\Source as SourceData;
 use Icinga\Module\Notifications\Repository\SourceRepository;
-use ipl\Sql\Connection;
 use RuntimeException;
 
 /**
  * Utility class for integrations to manage their sources
  *
- * This class allows modifying the underlying source using the setter methods.
- *
  * Changes are in memory until persisted by {@see self::save()}.
  */
 final class Source
 {
+    /** @var ?string The plain text listener password */
+    private ?string $listenerPassword = null;
+
     /**
      * Create a new source-managing instance
      *
-     * This allows modifying the underlying source using the setter methods.
-     *
-     * @param SourceModel $source The source to work with
-     * @param Connection $db Database to operate on
+     * @param Closure $transactionWrapper Callback to execute a transaction
+     * @param SourceRepository $repository Repository to work with
+     * @param string $listenerUsername The source's listener username
+     * @param ?int $id The source ID, NULL for a new source
+     * @param ?string $type The source type, NULL for a new source
+     * @param ?string $name The source name, NULL for a new source
      */
     public function __construct(
-        private SourceModel $source,
-        private Connection $db
+        private Closure $transactionWrapper,
+        private SourceRepository $repository,
+        private string $listenerUsername,
+        private ?int $id,
+        private ?string $type,
+        private ?string $name
     ) {
     }
 
@@ -46,15 +53,18 @@ final class Source
      */
     public static function get(string $username): self
     {
-        $source = (new SourceRepository(Database::get()))
-            ->findByUsername($username);
+        $db = Database::get();
+        $repo = new SourceRepository($db);
+        $source = $repo->findByUsername($username);
 
-        if ($source === null) {
-            $source = (new SourceModel())->setNew();
-            $source->listener_username = $username;
-        }
-
-        return new self($source, Database::get());
+        return new self(
+            $db->transaction(...),
+            $repo,
+            $username,
+            $source->id ?? null,
+            $source->type ?? null,
+            $source->name ?? null
+        );
     }
 
     /**
@@ -64,7 +74,7 @@ final class Source
      */
     public function getName(): ?string
     {
-        return $this->source->name ?? null;
+        return $this->name ?? null;
     }
 
     /**
@@ -76,7 +86,7 @@ final class Source
      */
     public function setName(string $name): self
     {
-        $this->source->name = $name;
+        $this->name = $name;
 
         return $this;
     }
@@ -90,7 +100,7 @@ final class Source
      */
     public function setType(string $type): self
     {
-        $this->source->type = $type;
+        $this->type = $type;
 
         return $this;
     }
@@ -104,7 +114,7 @@ final class Source
      */
     public function setPassword(string $password): self
     {
-        $this->source->listener_password = $password;
+        $this->listenerPassword = $password;
 
         return $this;
     }
@@ -120,17 +130,28 @@ final class Source
      */
     public function save(): void
     {
-        if ($this->source->isNew() && (! isset($this->source->name) || ! isset($this->source->type))) {
+        if (! isset($this->name) || ! isset($this->type)) {
             throw new RuntimeException('Source must have a name and type');
         }
 
-        $this->source->locked = true;
+        $source = new SourceData(
+            id: $this->id,
+            type: $this->type,
+            name: $this->name,
+            listenerUsername: $this->listenerUsername,
+            listenerPassword: $this->listenerPassword,
+            clientCertificateSubject: null,
+            locked: true
+        );
 
-        $this->db->transaction(function () {
-            $this->source->isNew()
-                ? (new SourceRepository($this->db))->create($this->source)
-                : (new SourceRepository($this->db))->update($this->source);
-        });
+        // Only store plain text passwords until no longer necessary
+        $this->listenerPassword = null;
+
+        if (isset($source->id)) {
+            $this->wrapInTransaction(fn() => $this->repository->update($source));
+        } else {
+            $this->id = $this->wrapInTransaction(fn() => $this->repository->create($source));
+        }
     }
 
     /**
@@ -142,6 +163,22 @@ final class Source
      */
     public function delete(): void
     {
-        $this->db->transaction(fn () => (new SourceRepository($this->db))->delete($this->source));
+        if (! isset($this->id)) {
+            return;
+        }
+
+        $this->wrapInTransaction(fn() => $this->repository->delete($this->id));
+    }
+
+    /**
+     * Wrap and call the given callable in an active database transaction
+     *
+     * @param callable $callback
+     *
+     * @return mixed The callable's return value, or false on error
+     */
+    private function wrapInTransaction(callable $callback): mixed
+    {
+        return call_user_func($this->transactionWrapper, $callback);
     }
 }

@@ -6,18 +6,16 @@
 namespace Icinga\Module\Notifications\Repository;
 
 use Icinga\Module\Notifications\Common\EntityManager;
-use Icinga\Module\Notifications\Forms\EventRuleConfigForm;
+use Icinga\Module\Notifications\Form\Data\Source as SourceData;
 use Icinga\Module\Notifications\Model\Source;
+use InvalidArgumentException;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
 
-final class SourceRepository
+class SourceRepository
 {
     /** @var string The used password hash algorithm */
     public const HASH_ALGORITHM = PASSWORD_BCRYPT;
-
-    /** @var EntityManager The entity manager instance to use */
-    private EntityManager $em;
 
     /**
      * Create a `sourceRepository` instance
@@ -27,7 +25,6 @@ final class SourceRepository
     public function __construct(
         private Connection $db
     ) {
-        $this->em = new EntityManager($db);
     }
 
     /**
@@ -39,13 +36,9 @@ final class SourceRepository
      */
     public function find(int $id): ?Source
     {
-        /** @var ?Source $source */
-        $source = Source::on($this->db)
+        return Source::on($this->db)
             ->filter(Filter::equal('source.id', $id))
-            ->first()
-            ?->setNew(false);
-
-        return $source;
+            ->first();
     }
 
     /**
@@ -57,57 +50,68 @@ final class SourceRepository
      */
     public function findByUsername(string $username): ?Source
     {
-        /** @var ?Source $source */
-        $source = Source::on($this->db)
+        return Source::on($this->db)
             ->filter(Filter::equal('source.listener_username', $username))
-            ->first()
-            ?->setNew(false);
-
-        return $source;
+            ->first();
     }
 
     /**
      * Create a new source
      *
-     * @param Source $source
+     * @param SourceData $source
      *
-     * @return void
+     * @return int The source's ID
      */
-    public function create(Source $source): void
+    public function create(SourceData $source): int
     {
-        $this->upsert($source);
+        return $this->upsert($source, (new Source())->setNew());
     }
 
     /**
      * Update a source
      *
-     * @param Source $source
+     * @param SourceData $source
      *
      * @return void
      */
-    public function update(Source $source): void
+    public function update(SourceData $source): void
     {
-        $this->upsert($source);
+        if (! isset($source->id)) {
+            throw new InvalidArgumentException('Cannot update a source that does not have an ID');
+        }
+
+        $model = $this->find($source->id)?->setNew(false);
+        if ($model === null) {
+            throw new InvalidArgumentException('Cannot update a source that does not exist in the database');
+        }
+
+        $this->upsert($source, $model);
     }
 
     /**
      * Delete a source and dereference it from any rules
      *
-     * @param Source $source
+     * @param int $id
      *
      * @return void
      */
-    public function delete(Source $source): void
+    public function delete(int $id): void
     {
-        $source->delete();
-        $source->listener_username = null;
-        $source->client_certificate_subject = null;
+        $source = $this->find($id)?->setNew(false);
+        if ($source === null) {
+            throw new InvalidArgumentException('Cannot delete a source that does not exist in the database');
+        }
 
+        $source->client_certificate_subject = null;
+        $source->listener_username = null;
+        $source->delete();
+
+        $source->rule->query()->columns('id')->filter(Filter::equal('deleted', false));
         foreach ($source->rule as $rule) {
             (new EscalationRuleRepository($this->db))->delete($rule->id);
         }
 
-        $this->em->save($source);
+        (new EntityManager($this->db))->save($source);
     }
 
     /**
@@ -130,18 +134,31 @@ final class SourceRepository
      * This method centralizes the shared persistence logic required by both
      * the {@see self::create()} and {@see self::update()} operations to avoid code duplication.
      *
-     * @param Source $source The source to create or update.
+     * @param SourceData $source
+     * @param Source $model
+     *
+     * @return int The source's ID
      */
-    private function upsert(Source $source): void
+    private function upsert(SourceData $source, Source $model): int
     {
-        if (isset($source->listener_password)) {
+        $model->type = $source->type;
+        $model->name = $source->name;
+        $model->listener_username = $source->listenerUsername;
+        $model->client_certificate_subject = $source->clientCertificateSubject;
+        $model->locked = $source->locked;
+
+        if (isset($source->listenerPassword)) {
             try {
-                $source->listener_password_hash = self::hashPassword($source->listener_password);
+                $model->listener_password_hash = self::hashPassword($source->listenerPassword);
             } finally {
-                unset($source->listener_password);
+                $source->listenerPassword = null;
             }
+        } elseif (isset($source->clientCertificateSubject)) {
+            $model->listener_password_hash = null;
         }
 
-        $this->em->save($source);
+        (new EntityManager($this->db))->save($model);
+
+        return $model->id;
     }
 }

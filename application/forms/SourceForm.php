@@ -6,8 +6,10 @@
 namespace Icinga\Module\Notifications\Forms;
 
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Form\Data\Source as SourceData;
 use Icinga\Module\Notifications\Model\Source;
 use ipl\Html\Attributes;
+use ipl\Html\Contract\Form;
 use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
@@ -30,16 +32,58 @@ class SourceForm extends CompatForm
     /** @var string The type for sources with an integration */
     private const TYPE_INTEGRATED = 'integrated';
 
-    /** @var ?Source The source to load */
-    private ?Source $source = null;
+    /**
+     * Set the source to populate the form with
+     *
+     * @param Source $source
+     *
+     * @return $this
+     */
+    public function setSource(Source $source): static
+    {
+        $this->populate($this->prepareFormPopulate($source));
+
+        return $this;
+    }
+
+    /**
+     * Get the source as configured by the user
+     *
+     * @return SourceData
+     */
+    public function getSource(): SourceData
+    {
+        return new SourceData(
+            $this->getValue('id'),
+            $this->getValue('type', self::TYPE_GENERIC),
+            $this->getValue('name'),
+            $this->getElement('credentials')->getValue('listener_username') ?: null,
+            $this->getElement('credentials')->getValue('listener_password') ?: null,
+            $this->getElement('credentials')->getValue('client_certificate_subject') ?: null,
+            (bool) $this->getValue('locked')
+        );
+    }
+
+    public function __construct()
+    {
+        $this->applyDefaultElementDecorators();
+    }
 
     protected function assemble(): void
     {
         $this->addAttributes(Attributes::create(['class' => 'source-form']));
-        $this->applyDefaultElementDecorators();
         $this->addCsrfCounterMeasure();
 
-        if ($this->source?->locked) {
+        $this->addElement('hidden', 'id');
+        $sourceId = $this->getPopulatedValue('id') ?: null;
+        if ($sourceId !== null) {
+            $sourceId = (int) $sourceId;
+        }
+
+        $this->addElement('hidden', 'locked');
+        $locked = ($this->getPopulatedValue('locked') ?: null) !== null;
+
+        if ($locked) {
             $this->addHtml(new Callout(
                 CalloutType::Info,
                 $this->translate('This source is managed by an integration, so changes can only be applied through it.')
@@ -63,7 +107,7 @@ class SourceForm extends CompatForm
             [
                 'label'     => $this->translate('Source Name'),
                 'required'  => true,
-                'disabled'  => $this->source?->locked
+                'disabled'  => $locked
             ]
         );
         $this->addElement(
@@ -74,7 +118,7 @@ class SourceForm extends CompatForm
                 'required'  => true,
                 'label'     => $this->translate('Source Type'),
                 'value'     => self::TYPE_GENERIC,
-                'disabled'  => $this->source?->locked,
+                'disabled'  => $locked,
                 'class'     => 'autosubmit',
                 'options'   => [
                     self::TYPE_GENERIC    => $this->translate('Generic', 'notifications.source.type'),
@@ -101,9 +145,9 @@ class SourceForm extends CompatForm
                 'text',
                 'type',
                 [
-                    'required'      => true,
-                    'label'         => $this->translate('Source Identifier'),
-                    'disabled'  => $this->source?->locked
+                    'required'  => true,
+                    'label'     => $this->translate('Source Identifier'),
+                    'disabled'  => $locked
                 ]
             );
         }
@@ -113,7 +157,7 @@ class SourceForm extends CompatForm
             'auth_type',
             [
                 'class' => 'autosubmit',
-                'disabled' => $this->source?->locked,
+                'disabled' => $locked,
                 'label' => $this->translate('Authentication Type'),
                 'value' => 'password',
                 'options' =>
@@ -124,11 +168,11 @@ class SourceForm extends CompatForm
             ]
         );
 
+        $this->addElement('fieldset', 'credentials', [
+            'label' => $this->translate('Source Credentials')
+        ]);
+        $credentials = $this->getElement('credentials');
         if ($this->getPopulatedValue('auth_type', 'password') === 'password') {
-            $this->addElement('fieldset', 'credentials', [
-                'label' => $this->translate('Source Credentials')
-            ]);
-            $credentials = $this->getElement('credentials');
             $credentials->addHtml(new HtmlElement(
                 'p',
                 Attributes::create(['class' => 'description']),
@@ -146,14 +190,14 @@ class SourceForm extends CompatForm
                 [
                     'required' => true,
                     'label' => $this->translate('Username'),
-                    'disabled'  => $this->source?->locked,
+                    'disabled' => $locked,
                     'validators' => [new CallbackValidator(
-                        function ($value, CallbackValidator $validator) {
+                        function ($value, CallbackValidator $validator) use ($sourceId) {
                             // Username must be unique
                             $source = Source::on(Database::get())
                                 ->filter(Filter::equal('listener_username', $value));
-                            if ($this->source !== null) {
-                                $source->filter(Filter::unequal('id', $this->source->id));
+                            if ($sourceId !== null) {
+                                $source->filter(Filter::unequal('id', $sourceId));
                             }
 
                             if ($source->first() !== null) {
@@ -167,13 +211,13 @@ class SourceForm extends CompatForm
                 ]
             );
 
-            if (! $this->source?->locked) {
+            if (! $locked) {
                 $credentials->addElement(
                     'password',
                     'listener_password',
                     [
-                        'required'      => $this->source?->listener_password_hash === null,
-                        'label'         => $this->source?->listener_password_hash !== null
+                        'required'      => $sourceId === null,
+                        'label'         => $sourceId !== null
                             ? $this->translate('New Password')
                             : $this->translate('Password'),
                         'autocomplete'  => 'new-password',
@@ -185,7 +229,7 @@ class SourceForm extends CompatForm
                     'listener_password_dupe',
                     [
                         'ignore'        => true,
-                        'required'      => $this->source?->listener_password_hash === null,
+                        'required'      => $sourceId === null,
                         'label'         => $this->translate('Repeat Password'),
                         'autocomplete'  => 'new-password',
                         'validators' => [
@@ -203,11 +247,7 @@ class SourceForm extends CompatForm
                 );
             }
         } else {
-            $this->addElement('fieldset', 'certificate', [
-                'label' => $this->translate('Client Certificate')
-            ]);
-            $certificate = $this->getElement('certificate');
-            $certificate->addHtml(new HtmlElement(
+            $credentials->addHtml(new HtmlElement(
                 'p',
                 Attributes::create(['class' => 'description']),
                 Text::create($this->translate(
@@ -217,21 +257,21 @@ class SourceForm extends CompatForm
                 ))
             ));
 
-            $certificate->addElement(
+            $credentials->addElement(
                 'text',
                 'client_certificate_subject',
                 [
                     'required' => true,
                     'label' => $this->translate('Certificate Subject'),
-                    'disabled' => $this->source?->locked,
+                    'disabled' => $locked,
                     'placeholder' => 'CN=source.example.com,OU=Monitoring,O=Icinga,C=DE',
                     'validators' => [
                         ['name' => 'StringLength', 'options' => ['max' => 768]],
-                        new CallbackValidator(function ($value, CallbackValidator $validator) {
+                        new CallbackValidator(function ($value, CallbackValidator $validator) use ($sourceId) {
                             $source = Source::on(Database::get())
                                 ->filter(Filter::equal('client_certificate_subject', $value));
-                            if ($this->source !== null) {
-                                $source->filter(Filter::unequal('id', $this->source->id));
+                            if ($sourceId !== null) {
+                                $source->filter(Filter::unequal('id', $sourceId));
                             }
 
                             if ($source->first() !== null) {
@@ -248,22 +288,22 @@ class SourceForm extends CompatForm
             );
         }
 
-        if ($this->source === null || ! $this->source->locked) {
+        if (! $locked) {
             $this->addElement(
                 'submit',
                 'save',
                 [
-                    'label' => $this->source === null
+                    'label' => $sourceId === null
                         ? $this->translate('Add Source')
                         : $this->translate('Save Changes')
                 ]
             );
         }
 
-        if ($this->source !== null) {
+        if ($sourceId !== null) {
             $deleteButton = (new ButtonLink(
                 $this->translate('Delete'),
-                Url::fromPath('notifications/source/delete/', ['id' => $this->source->id])
+                Url::fromPath('notifications/source/delete/', ['id' => $sourceId])
             ))->openInModal();
 
             if ($this->hasElement('save')) {
@@ -281,61 +321,31 @@ class SourceForm extends CompatForm
     }
 
     /**
-     * Set the source to populate the form with
+     * Fetch the values from the database
      *
      * @param Source $source
      *
-     * @return $this
+     * @return array<string, string>
      */
-    public function setSource(Source $source): static
+    private function prepareFormPopulate(Source $source): array
     {
-        $this->source = $source;
-
-        $this->populate([
+        return [
+            'id' => $source->id,
+            'locked' => $source->locked ?: null,
             'name' => $source->name,
             'type' => $source->type,
             'source_type' => $source->type === self::TYPE_GENERIC ? self::TYPE_GENERIC : self::TYPE_INTEGRATED,
             'auth_type' => $source->listener_username === null ? 'certificate' : 'password',
             'credentials' => [
-                'listener_username' => $source->listener_username
-            ],
-            'certificate' => [
+                'listener_username' => $source->listener_username,
                 'client_certificate_subject' => $source->client_certificate_subject
             ]
-        ]);
-
-        return $this;
+        ];
     }
 
-    /**
-     * Get the source as configured by the user
-     *
-     * @return Source
-     */
-    public function getSource(): Source
+    protected function onError()
     {
-        if ($this->source === null) {
-            $this->source = (new Source())->setNew();
-        }
-
-        $this->source->name = $this->getValue('name');
-        $this->source->type = $this->getValue('type', self::TYPE_GENERIC);
-
-        if ($this->getValue('auth_type') === 'certificate') {
-            $this->source->client_certificate_subject = $this->getElement('certificate')
-                ->getValue('client_certificate_subject');
-            $this->source->listener_username = null;
-            $this->source->listener_password_hash = null;
-        } else {
-            $this->source->listener_username = $this->getElement('credentials')->getValue('listener_username');
-            $this->source->client_certificate_subject = null;
-
-            $pwd = $this->getElement('credentials')->getValue('listener_password');
-            if ($pwd) {
-                $this->source->listener_password = $pwd;
-            }
-        }
-
-        return $this->source;
+        // TODO: I feel like this should be the case in ipl-html already
+        $this->emit(Form::ON_SENT, [$this]);
     }
 }
