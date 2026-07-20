@@ -9,13 +9,12 @@ use Icinga\Application\Config;
 use Icinga\Web\Request;
 use Icinga\Web\Url;
 use ipl\Sql\Connection;
-use ipl\Sql\Test\SharedDatabases;
 use RuntimeException;
 
 /**
  * Data provider for API tests
  *
- * To use it, implement {@see ApiTestBackends::initializeNotificationsDb()}. The environment also needs to provide
+ * To use it, implement {@see DbTestBackends::initializeNotificationsDb()}. The environment also needs to provide
  * the following variables: (Replace * with the name of a supported database adapter)
  *
  *  Name                   | Description
@@ -32,40 +31,10 @@ use RuntimeException;
  */
 trait ApiTestBackends
 {
-    use SharedDatabases;
-
-    private const MYSQL_PROCEDURE_CALL = 'CALL DropEverything();';
-
-    private const MYSQL_DROP_PROCEDURE = <<<SQL
-DROP PROCEDURE IF EXISTS DropEverything;
-
-CREATE PROCEDURE DropEverything()
-BEGIN
-  DECLARE tlist TEXT;
-
-  SET SESSION group_concat_max_len = 32768;
-  SET FOREIGN_KEY_CHECKS = 0;
-
-  SELECT GROUP_CONCAT(CONCAT('`', table_schema, '`.`', table_name, '`') SEPARATOR ',')
-    INTO tlist
-  FROM information_schema.tables
-  WHERE table_schema = DATABASE();
-
-  IF tlist IS NOT NULL THEN
-    SET @tables = CONCAT('DROP TABLE IF EXISTS ', tlist);
-    PREPARE stmt FROM @tables;
-    EXECUTE stmt;
-    DEALLOCATE PREPARE stmt;
-  END IF;
-
-  SET FOREIGN_KEY_CHECKS = 1;
-END;
-SQL;
-
-    private const PGSQL_DROP_PROCEDURE = <<<SQL
-DROP SCHEMA public CASCADE;
-CREATE SCHEMA public;
-SQL;
+    use DbTestBackends {
+        setUpSchema as protected baseSetUpSchema;
+        tearDownSchema as protected baseTearDownSchema;
+    }
 
     /**
      * All backend endpoints
@@ -75,16 +44,6 @@ SQL;
      * @var array<string, array{0: Connection, 1: Url}>
      */
     private static array $backends = [];
-
-    /**
-     * Initialize the configuration for the API tests
-     *
-     * @param Connection $db
-     * @param string $driver
-     *
-     * @return void
-     */
-    abstract protected static function initializeNotificationsDb(Connection $db, string $driver): void;
 
     /**
      * Provide the endpoints for the API tests plus their accompanying database connections
@@ -217,46 +176,24 @@ SQL;
 
     final protected static function setUpSchema(Connection $db, string $driver): void
     {
+        self::baseSetUpSchema($db, $driver);
+
         $webSchema = self::getIcingaWebPath() . "/schema/$driver.schema.sql";
-
-        $notificationSchemaPath = getenv('ICINGA_NOTIFICATIONS_SCHEMA');
-        if (! $notificationSchemaPath) {
-            throw new RuntimeException('Environment variable ICINGA_NOTIFICATIONS_SCHEMA is not set');
-        }
-
-        $notificationSchema = $notificationSchemaPath . "/$driver/schema.sql";
-        if (! file_exists($notificationSchema)) {
-            throw new RuntimeException("Schema file $notificationSchema does not exist");
-        }
-
         $webDb = self::connectToIcingaWebDb($driver);
         $webDb->exec(file_get_contents($webSchema));
         self::initializeIcingaWebDb($webDb, $driver);
-
-        $statements = file_get_contents($notificationSchema);
-
-        if (preg_match('/\s*delimiter\s*(\S+)\s*$/im', $statements, $matches)) {
-            $statements = preg_replace('/\s*delimiter\s*(\S+)\s*$/im', '', $statements);
-            $statements = preg_replace('/' . preg_quote($matches[1], '/') . '$/m', ';', $statements);
-        }
-
-        $db->exec($statements);
-        static::initializeNotificationsDb($db, $driver);
     }
 
     final protected static function tearDownSchema(Connection $db, string $driver): void
     {
-        $webDb = self::connectToIcingaWebDb($driver);
+        self::baseTearDownSchema($db, $driver);
 
+        $webDb = self::connectToIcingaWebDb($driver);
         if ($driver === 'mysql') {
             $webDb->exec(self::MYSQL_DROP_PROCEDURE);
-            $db->exec(self::MYSQL_DROP_PROCEDURE);
-
             $webDb->exec(self::MYSQL_PROCEDURE_CALL);
-            $db->exec(self::MYSQL_PROCEDURE_CALL);
         } elseif ($driver === 'pgsql') {
             $webDb->exec(self::PGSQL_DROP_PROCEDURE);
-            $db->exec(self::PGSQL_DROP_PROCEDURE);
         }
     }
 
