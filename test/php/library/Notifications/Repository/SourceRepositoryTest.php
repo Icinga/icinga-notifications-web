@@ -175,6 +175,31 @@ class SourceRepositoryTest extends TestCase
         $this->assertEquals(42, $source->id, 'The generated id was not assigned to the source');
     }
 
+    public function testCreatePersistsClientCertificateSubject(): void
+    {
+        $source = new Source([
+            'type'                       => 'icingadb',
+            'name'                       => 'Icinga 2',
+            'client_certificate_subject' => 'CN=source.example.com'
+        ]);
+        $source->setNew();
+
+        $db = $this->getConnectionMock();
+        $db->expects($this->never())->method('update');
+        $db->expects($this->once())
+            ->method('insert')
+            ->willReturnCallback(function ($_, $data) {
+                $this->assertSame('CN=source.example.com', $data['client_certificate_subject']);
+                $this->assertArrayNotHasKey('listener_username', $data);
+                $this->assertArrayNotHasKey('listener_password_hash', $data);
+
+                return $this->createStub(PDOStatement::class);
+            });
+        $db->method('lastInsertId')->willReturn('1');
+
+        (new SourceRepository($db))->create($source);
+    }
+
     public function testCreateHashesPasswordBeforeInserting(): void
     {
         $source = new Source(['type' => 'icingadb', 'name' => 'Src']);
@@ -356,6 +381,50 @@ class SourceRepositoryTest extends TestCase
         $this->assertContains('source', $updatedTables, 'The source itself must be soft-deleted');
     }
 
+    /**
+     * Covers deleting a certificate-based source: {@see SourceRepository::delete()} must null the
+     * `client_certificate_subject` alongside the `listener_username`, so the soft-deleted row keeps no
+     * identity and frees the unique certificate subject for reuse.
+     *
+     * The fixture carries a non-null subject on purpose: the {@see EntityManager} only emits columns that
+     * actually change, so a source loaded without a subject would never surface it in the UPDATE.
+     *
+     * Three selects are expected: {@see SourceRepository::find()}, the lazy-loaded `rule` relation (no rows),
+     * and {@see EntityManager::stampChangedAt()}'s `MAX(changed_at)` read triggered by the save.
+     *
+     * @return void
+     */
+    public function testDeleteNullsClientCertificateSubject(): void
+    {
+        $db = $this->getConnectionMock();
+        $db->expects($this->exactly(3))
+            ->method('select')
+            ->willReturnOnConsecutiveCalls(
+                $this->selectResult([
+                    [
+                        'id'                         => 5,
+                        'type'                       => 'icingadb',
+                        'name'                       => 'Icinga 2',
+                        'client_certificate_subject' => 'CN=source.example.com',
+                        'deleted'                    => 'n',
+                        'locked'                     => 'n'
+                    ]
+                ]),
+                $this->selectResult([]), // no rules
+                $this->selectResult([['changed_at' => 0]]) // EntityManager::stampChangedAt()'s MAX(changed_at)
+            );
+        $db->expects($this->once())
+            ->method('update')
+            ->willReturnCallback(function ($_, $data) {
+                $this->assertSame('y', $data['deleted']);
+                $this->assertNull($data['client_certificate_subject']);
+
+                return $this->createStub(PDOStatement::class);
+            });
+
+        $repo = new SourceRepository($db);
+        $repo->delete($repo->find(5));
+    }
 
     public function testCreateClearsPlaintextPasswordAfterHashing(): void
     {

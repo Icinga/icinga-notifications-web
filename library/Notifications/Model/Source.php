@@ -29,6 +29,7 @@ use Throwable;
  *                                      database). The repository hashes it and assigns the result to
  *                                      {@see self::$listener_password_hash} before saving the source to the database.
  *                                      See the usage in {@see SourceRepository::upsert()}.
+ * @property ?string $client_certificate_subject The subject of the TLS client certificate
  * @property DateTime $changed_at
  * @property bool $deleted
  * @property bool $locked
@@ -58,6 +59,7 @@ class Source extends Model
             'name',
             'listener_username',
             'listener_password_hash',
+            'client_certificate_subject',
             'changed_at',
             'deleted',
             'locked'
