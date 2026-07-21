@@ -11,20 +11,21 @@ use ipl\Web\Widget\Icon;
  * Incident severity levels
  *
  * Each case maps to the backing string stored in the `severity` type column of the `incident` and `incident_history`
- * tables. Register {@see \ipl\Orm\Behavior\EnumCast} on a model to have those columns hydrated automatically as enum
- * instances.
+ * tables. Declaration order reflects increasing acuity. Register {@see \ipl\Orm\Behavior\EnumCast} on a model to have
+ * those columns hydrated automatically as enum instances.
  */
 enum Severity: string
 {
     case OK        = 'ok';
-    case CRITICAL  = 'crit';
-    case WARNING   = 'warning';
-    case ERROR     = 'err';
     case DEBUG     = 'debug';
     case INFO      = 'info';
+    case NOTICE    = 'notice';
+    case WARNING   = 'warning';
+    case ERROR     = 'err';
+    case CRITICAL  = 'crit';
     case ALERT     = 'alert';
     case EMERGENCY = 'emerg';
-    case NOTICE    = 'notice';
+
 
     /**
      * Get the backing string value
