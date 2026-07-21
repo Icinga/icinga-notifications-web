@@ -6,63 +6,73 @@
 namespace Tests\Icinga\Module\Notifications\Repository;
 
 use DateTime;
+use Icinga\Module\Notifications\Form\Data\Source as SourceData;
+use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Model\Source;
 use Icinga\Module\Notifications\Repository\SourceRepository;
+use Icinga\Module\Notifications\Test\DbTestBackends;
+use InvalidArgumentException;
 use ipl\Sql\Connection;
-use PDO;
-use PDOStatement;
-use PHPUnit\Framework\MockObject\MockObject;
+use ipl\Sql\Select;
+use ipl\Sql\Test\SharedDatabases\TransactionIsolation;
+use ipl\Stdlib\Filter;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Tests for {@see SourceRepository}.
  *
- * No real database is used. A {@see Connection} mock is used and the statements the repository is expected to issue
- * are anticipated and verified. ORM-driven SELECT queries are served by returning real {@see PDOStatement}s (backed
- * by an in-memory SQLite database) whose rows the ORM hydrates into models.
- *
- * {@see SourceRepository} delegates writes to {@see \Icinga\Module\Notifications\Common\EntityManager}, which wraps
- * every save in a transaction. The mock's `transaction()` is wired to invoke the callback so that the EntityManager's
- * insert/update calls reach the mock's expectations.
- *
- * What these tests do not cover:
- * - The actual interaction with a production database.
- * - The rendered SQL of the issued statements (the connection is mocked before rendering happens).
+ * These run against real databases — once for MySQL and once for PostgreSQL (see {@see DbTestBackends} /
+ * `#[DataProvider('sharedDatabases')]`). Each test performs an operation and reads the result back to verify what
+ * was persisted. The schema is created once per driver and not reset between tests, so each test creates the sources
+ * (and, where needed, rules) it operates on, using a distinct `listener_username` per test to avoid clashing on its
+ * unique constraint.
  */
+#[TransactionIsolation]
 class SourceRepositoryTest extends TestCase
 {
-    /**
-     * Build a real PDOStatement yielding the given rows.
-     *
-     * The ORM's Hydrator consumes the PDOStatement returned by the mocked `select()`. Feeding it a
-     * real statement (even one backed by an in-memory SQLite) gives the Hydrator a genuine cursor to
-     * iterate and lets it map column values to model properties normally.
-     *
-     * @param list<array<string, mixed>> $rows
-     *
-     * @return PDOStatement
-     */
-    private function selectResult(array $rows): PDOStatement
+    use DbTestBackends;
+
+    protected static function initializeNotificationsDb(Connection $db): void
     {
-        $columns = empty($rows) ? ['id'] : array_keys($rows[0]);
-
-        $pdo = new PDO('sqlite::memory:');
-        $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
-        $pdo->exec('CREATE TABLE result (' . implode(', ', array_map(fn($c) => '"' . $c . '"', $columns)) . ')');
-
-        if (! empty($rows)) {
-            $insert = $pdo->prepare(
-                'INSERT INTO result VALUES (' . implode(', ', array_fill(0, count($columns), '?')) . ')'
-            );
-            foreach ($rows as $row) {
-                $insert->execute(array_values($row));
-            }
-        }
-
-        return $pdo->query('SELECT * FROM result');
+        // A source has no prerequisites of its own
     }
 
-    public function testWhetherTheUsedHashAlgorithmIsStillTheDefault(): void
+    /**
+     * Insert a source row directly (bypassing the repository) and return its id
+     *
+     * @param Connection $db
+     * @param string $username
+     * @param array<string, mixed> $overrides
+     *
+     * @return int
+     */
+    private function insertSource(Connection $db, string $username, array $overrides = []): int
+    {
+        $db->insert('source', array_merge([
+            'type'              => 'icingadb',
+            'name'              => 'Icinga 2',
+            'listener_username' => $username,
+            'changed_at'        => (int) (new DateTime())->format('Uv')
+        ], $overrides));
+
+        return (int) $db->lastInsertId();
+    }
+
+    /**
+     * Load a source row directly by id
+     *
+     * @param Connection $db
+     * @param int $id
+     *
+     * @return ?Source
+     */
+    private function loadSource(Connection $db, int $id): ?Source
+    {
+        return Source::on($db)->filter(Filter::equal('source.id', $id))->first();
+    }
+
+    public function testTheUsedHashAlgorithmIsStillPhpsDefault(): void
     {
         $this->assertSame(
             PASSWORD_DEFAULT,
@@ -71,396 +81,377 @@ class SourceRepositoryTest extends TestCase
         );
     }
 
-    public function testFindHydratesTheSource(): void
+    #[DataProvider('sharedDatabases')]
+    public function testFindReturnsTheSource(Connection $db): void
     {
-        $db = $this->getConnectionMock();
-        $db->expects($this->once())
-            ->method('select')
-            ->willReturn($this->selectResult([
-                [
-                    'id'               => 5,
-                    'type'             => 'icingadb',
-                    'name'             => 'Icinga 2',
-                    'listener_username' => 'listener',
-                    'deleted'          => 'n',
-                    'locked'           => 'n'
-                ]
-            ]));
+        $id = $this->insertSource($db, 'find-me', ['type' => 'icingadb', 'name' => 'Icinga 2']);
 
-        $source = (new SourceRepository($db))->find(5);
+        $source = (new SourceRepository($db))->find($id);
 
         $this->assertNotNull($source, 'find() did not return the source');
-        $this->assertEquals(5, $source->id);
+        $this->assertEquals($id, $source->id);
         $this->assertSame('icingadb', $source->type);
         $this->assertSame('Icinga 2', $source->name);
-        $this->assertSame('listener', $source->listener_username);
+        $this->assertSame('find-me', $source->listener_username);
         $this->assertFalse($source->deleted, 'The deleted flag should be cast to a bool');
         $this->assertFalse($source->locked, 'The locked flag should be cast to a bool');
     }
 
-    public function testFindReturnsNullIfSourceDoesNotExist(): void
+    #[DataProvider('sharedDatabases')]
+    public function testFindReturnsNullIfTheSourceDoesNotExist(Connection $db): void
     {
-        $db = $this->getConnectionMock();
-        $db->expects($this->once())
-            ->method('select')
-            ->willReturn($this->selectResult([]));
-
         $this->assertNull((new SourceRepository($db))->find(404));
     }
 
-    public function testFindByUsernameHydratesTheSource(): void
+    #[DataProvider('sharedDatabases')]
+    public function testFindByUsernameReturnsTheSource(Connection $db): void
     {
-        $db = $this->getConnectionMock();
-        $db->expects($this->once())
-            ->method('select')
-            ->willReturn($this->selectResult([
-                [
-                    'id'               => 5,
-                    'type'             => 'icingadb',
-                    'name'             => 'Icinga 2',
-                    'listener_username' => 'alice',
-                    'deleted'          => 'n',
-                    'locked'           => 'n'
-                ]
-            ]));
+        $id = $this->insertSource($db, 'by-name');
 
-        $source = (new SourceRepository($db))->findByUsername('alice');
+        $source = (new SourceRepository($db))->findByUsername('by-name');
 
         $this->assertNotNull($source, 'findByUsername() did not return the source');
-        $this->assertEquals(5, $source->id);
-        $this->assertSame('alice', $source->listener_username);
+        $this->assertEquals($id, $source->id);
+        $this->assertSame('by-name', $source->listener_username);
     }
 
-    public function testFindByUsernameReturnsNullIfNotFound(): void
+    #[DataProvider('sharedDatabases')]
+    public function testFindByUsernameReturnsNullIfNotFound(Connection $db): void
     {
-        $db = $this->getConnectionMock();
-        $db->expects($this->once())
-            ->method('select')
-            ->willReturn($this->selectResult([]));
-
         $this->assertNull((new SourceRepository($db))->findByUsername('nobody'));
     }
 
-    public function testCreateInsertsSourceAndAssignsId(): void
+    #[DataProvider('sharedDatabases')]
+    public function testCreateStoresTheSource(Connection $db): void
     {
-        $start = (int) (new DateTime())->format('Uv');
+        $sourceId = (new SourceRepository($db))->create(new SourceData(
+            null,
+            'icingadb',
+            'Icinga 2',
+            'create-plain',
+            null,
+            null,
+            false
+        ));
 
-        $source = new Source([
-            'type'              => 'icingadb',
-            'name'              => 'Icinga 2',
-            'listener_username' => 'listener'
-        ]);
-        $source->setNew();
-
-        $db = $this->getConnectionMock();
-        $db->expects($this->never())->method('update');
-        $db->expects($this->once())
-            ->method('insert')
-            ->willReturnCallback(function ($table, $data) use ($start) {
-                $this->assertSame('source', $table);
-                $this->assertArrayHasKey('changed_at', $data);
-                $this->assertGreaterThanOrEqual($start, $data['changed_at']);
-                unset($data['changed_at']);
-                $this->assertSame(
-                    ['type' => 'icingadb', 'name' => 'Icinga 2', 'listener_username' => 'listener'],
-                    $data
-                );
-
-                return $this->createStub(PDOStatement::class);
-            });
-        $db->expects($this->once())->method('lastInsertId')->willReturn('42');
-
-        (new SourceRepository($db))->create($source);
-
-        $this->assertEquals(42, $source->id, 'The generated id was not assigned to the source');
+        $stored = $this->loadSource($db, $sourceId);
+        $this->assertNotNull($stored, 'The created source was not found');
+        $this->assertSame('icingadb', $stored->type);
+        $this->assertSame('Icinga 2', $stored->name);
+        $this->assertFalse($stored->deleted);
+        $this->assertFalse($stored->locked);
     }
 
-    public function testCreatePersistsClientCertificateSubject(): void
+    #[DataProvider('sharedDatabases')]
+    public function testCreateStoresALockedSource(Connection $db): void
     {
-        $source = new Source([
-            'type'                       => 'icingadb',
-            'name'                       => 'Icinga 2',
+        $sourceId = (new SourceRepository($db))->create(new SourceData(
+            null,
+            'icingadb',
+            'Managed',
+            'create-locked',
+            null,
+            null,
+            true
+        ));
+
+        $stored = $this->loadSource($db, $sourceId);
+        $this->assertNotNull($stored);
+        $this->assertTrue($stored->locked, 'The locked flag should have been persisted');
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testCreateHashesThePasswordBeforeStoring(Connection $db): void
+    {
+        $sourceId = (new SourceRepository($db))->create(new SourceData(
+            null,
+            'icingadb',
+            'Src',
+            'create-hash',
+            'mysecret',
+            null,
+            false
+        ));
+
+        $stored = $this->loadSource($db, $sourceId);
+        $this->assertNotNull($stored->listener_password_hash, 'A password hash should have been stored');
+        $this->assertNotSame('mysecret', $stored->listener_password_hash, 'The password must not be stored in clear');
+        $this->assertTrue(
+            password_verify('mysecret', $stored->listener_password_hash),
+            'The stored hash must verify against the given password'
+        );
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testCreateClearsThePlaintextPasswordAfterHashing(Connection $db): void
+    {
+        $data = new SourceData(
+            null,
+            'icingadb',
+            'Src',
+            'create-clear',
+            'mysecret',
+            null,
+            false
+        );
+
+        (new SourceRepository($db))->create($data);
+
+        $this->assertNull($data->listenerPassword, 'The plaintext password must be cleared after hashing');
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testUpdateChangesTheSource(Connection $db): void
+    {
+        $id = $this->insertSource($db, 'update-name', ['name' => 'Old Name']);
+
+        (new SourceRepository($db))->update(new SourceData(
+            $id,
+            'icingadb',
+            'Renamed',
+            'update-name',
+            null,
+            null,
+            false
+        ));
+
+        $stored = $this->loadSource($db, $id);
+        $this->assertSame('Renamed', $stored->name);
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testUpdateThrowsWhenTheSourceHasNoId(Connection $db): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        (new SourceRepository($db))->update(new SourceData(
+            null,
+            'icingadb',
+            'Src',
+            'update-noid',
+            null,
+            null,
+            false
+        ));
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testUpdateThrowsWhenTheSourceDoesNotExist(Connection $db): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        (new SourceRepository($db))->update(new SourceData(
+            999,
+            'icingadb',
+            'Src',
+            'update-missing',
+            null,
+            null,
+            false
+        ));
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testUpdateHashesThePasswordBeforeStoring(Connection $db): void
+    {
+        $id = $this->insertSource($db, 'update-hash');
+
+        (new SourceRepository($db))->update(new SourceData(
+            $id,
+            'icingadb',
+            'Src',
+            'update-hash',
+            'newsecret',
+            null,
+            false
+        ));
+
+        $stored = $this->loadSource($db, $id);
+        $this->assertTrue(
+            password_verify('newsecret', $stored->listener_password_hash),
+            'The stored hash must verify against the new password'
+        );
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testUpdateClearsThePlaintextPasswordAfterHashing(Connection $db): void
+    {
+        $id = $this->insertSource($db, 'update-clear');
+        $data = new SourceData(
+            $id,
+            'icingadb',
+            'Src',
+            'update-clear',
+            'newsecret',
+            null,
+            false
+        );
+
+        (new SourceRepository($db))->update($data);
+
+        $this->assertNull($data->listenerPassword, 'The plaintext password must be cleared after hashing');
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testDeleteSoftDeletesTheSource(Connection $db): void
+    {
+        $id = $this->insertSource($db, 'doomed');
+
+        (new SourceRepository($db))->delete($id);
+
+        // It's only soft-deleted: the row still exists, flagged deleted with its username freed
+        $stored = $this->loadSource($db, $id);
+        $this->assertNotNull($stored, 'The source row should still exist');
+        $this->assertTrue($stored->deleted, 'The source should be soft-deleted, not removed');
+        $this->assertNull($stored->listener_username, 'The unique listener_username should be nulled on deletion');
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testDeleteThrowsWhenTheSourceDoesNotExist(Connection $db): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        (new SourceRepository($db))->delete(999);
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testDeleteSoftDeletesLinkedRules(Connection $db): void
+    {
+        $sourceId = $this->insertSource($db, 'with-rule');
+        $db->insert('rule', [
+            'name' => 'Linked Rule', 'source_id' => $sourceId, 'changed_at' => (int) (new DateTime())->format('Uv')
+        ]);
+        $ruleId = (int) $db->lastInsertId();
+
+        (new SourceRepository($db))->delete($sourceId);
+
+        // The linked rule is soft-deleted along with the source
+        $rule = Rule::on($db)->filter(Filter::equal('id', $ruleId))->first();
+        $this->assertNotNull($rule, 'The rule row should still exist');
+        $this->assertTrue($rule->deleted, 'The linked rule must be soft-deleted with the source');
+
+        $this->assertTrue($this->loadSource($db, $sourceId)->deleted, 'The source itself must be soft-deleted');
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testCreatePersistsClientCertificateSubject(Connection $db): void
+    {
+        $sourceId = (new SourceRepository($db))->create(
+            new SourceData(
+                null,
+                'icingadb',
+                'Icinga 2',
+                null,
+                null,
+                'CN=source.example.com',
+                false
+            )
+        );
+
+        $source = $this->loadSource($db, $sourceId);
+        $this->assertNotNull($source, 'The created source was not found');
+        $this->assertNull($source->listener_username, 'The unique listener_username is not null');
+        $this->assertSame(
+            'CN=source.example.com',
+            $source->client_certificate_subject,
+            'The client certificate subject is not persisted'
+        );
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testDeleteNullsClientCertificateSubject(Connection $db): void
+    {
+        $id = $this->insertSource($db, '', [
+            'listener_username' => null,
             'client_certificate_subject' => 'CN=source.example.com'
         ]);
-        $source->setNew();
 
-        $db = $this->getConnectionMock();
-        $db->expects($this->never())->method('update');
-        $db->expects($this->once())
-            ->method('insert')
-            ->willReturnCallback(function ($_, $data) {
-                $this->assertSame('CN=source.example.com', $data['client_certificate_subject']);
-                $this->assertArrayNotHasKey('listener_username', $data);
-                $this->assertArrayNotHasKey('listener_password_hash', $data);
+        (new SourceRepository($db))->delete($id);
 
-                return $this->createStub(PDOStatement::class);
-            });
-        $db->method('lastInsertId')->willReturn('1');
-
-        (new SourceRepository($db))->create($source);
+        $source = $this->loadSource($db, $id);
+        $this->assertNotNull($source, 'The source row should still exist');
+        $this->assertNull(
+            $source->client_certificate_subject,
+            'The client certificate subject should be nulled on deletion'
+        );
     }
 
-    public function testCreateHashesPasswordBeforeInserting(): void
+    #[DataProvider('sharedDatabases')]
+    public function testUpdateNullsListenerConfigOnSwitchToClientCertificateSubject(Connection $db): void
     {
-        $source = new Source(['type' => 'icingadb', 'name' => 'Src']);
-        $source->listener_password = 'mysecret';
-        $source->setNew();
+        $sourceId = (new SourceRepository($db))->create(
+            new SourceData(
+                null,
+                'icingadb',
+                'Icinga 2',
+                'icingadb',
+                'icingadb',
+                null,
+                false
+            )
+        );
 
-        $db = $this->getConnectionMock();
-        $db->expects($this->once())
-            ->method('insert')
-            ->willReturnCallback(function ($_, $data) {
-                $this->assertArrayHasKey('listener_password_hash', $data);
-                $this->assertNotSame('mysecret', $data['listener_password_hash']);
-                $this->assertTrue(
-                    password_verify('mysecret', $data['listener_password_hash']),
-                    'The insert data must carry a valid bcrypt hash of the password'
-                );
+        (new SourceRepository($db))->update(
+            new SourceData(
+                $sourceId,
+                'icingadb',
+                'Icinga 2',
+                null,
+                null,
+                'CN=source.example.com',
+                false
+            )
+        );
 
-                return $this->createStub(PDOStatement::class);
-            });
-        $db->method('lastInsertId')->willReturn('1');
-
-        (new SourceRepository($db))->create($source);
+        $source = $db->select(
+            (new Select())
+                ->from('source')
+                ->columns(['listener_username', 'listener_password_hash', 'client_certificate_subject'])
+                ->where(['id = ?' => $sourceId])
+        )->fetch();
+        $this->assertNull($source['listener_username'], 'The unique listener_username is not null');
+        $this->assertNull($source['listener_password_hash'], 'The unique listener_password_hash is not null');
+        $this->assertNotNull(
+            $source['client_certificate_subject'],
+            'The unique client_certificate_subject is still null'
+        );
     }
 
-    public function testUpdateUpdatesTheSource(): void
+    #[DataProvider('sharedDatabases')]
+    public function testUpdateNullsClientCertificateSubjectOnSwitchToListenerConfig(Connection $db): void
     {
-        $start = (int) (new DateTime())->format('Uv');
+        $sourceId = (new SourceRepository($db))->create(
+            new SourceData(
+                null,
+                'icingadb',
+                'Icinga 2',
+                null,
+                null,
+                'CN=source.example.com',
+                false
+            )
+        );
 
-        $source = new Source([
-            'id'   => 5,
-            'type' => 'icingadb',
-            'name' => 'Old Name'
-        ]);
-        $source->setNew(false);
-        $source->name = 'Renamed';
+        (new SourceRepository($db))->update(
+            new SourceData(
+                $sourceId,
+                'icingadb',
+                'Icinga 2',
+                'icingadb',
+                'icingadb',
+                null,
+                false
+            )
+        );
 
-        $db = $this->getConnectionMock();
-        $db->expects($this->never())->method('insert');
-        $db->expects($this->once())
-            ->method('update')
-            ->willReturnCallback(function ($table, $data, $where) use ($start) {
-                $this->assertSame('source', $table);
-                $this->assertSame(['id = ?' => 5], $where);
-                $this->assertArrayHasKey('changed_at', $data);
-                $this->assertGreaterThanOrEqual($start, $data['changed_at']);
-                unset($data['changed_at']);
-                $this->assertSame(['name' => 'Renamed'], $data);
-
-                return $this->createStub(PDOStatement::class);
-            });
-
-        (new SourceRepository($db))->update($source);
-    }
-
-    public function testUpdateHashesPasswordBeforeUpdating(): void
-    {
-        $source = new Source(['id' => 5, 'type' => 'icingadb', 'name' => 'Src']);
-        $source->setNew(false);
-        $source->listener_password = 'newsecret';
-
-        $db = $this->getConnectionMock();
-        $db->expects($this->never())->method('insert');
-        $db->expects($this->once())
-            ->method('update')
-            ->willReturnCallback(function ($_, $data) {
-                $this->assertArrayHasKey('listener_password_hash', $data);
-                $this->assertTrue(
-                    password_verify('newsecret', $data['listener_password_hash']),
-                    'The update data must carry a valid bcrypt hash of the new password'
-                );
-
-                return $this->createStub(PDOStatement::class);
-            });
-
-        (new SourceRepository($db))->update($source);
-    }
-
-    /**
-     * Covers deleting a source that has no rules, so only the source row itself is soft-deleted.
-     *
-     * Three selects are expected: one for {@see SourceRepository::find()}, one for the lazy-loaded
-     * `rule` relation that {@see SourceRepository::delete()} iterates (returns no rows, so
-     * {@see \Icinga\Module\Notifications\Forms\EventRuleConfigForm::removeRule()} is never called), and
-     * one for {@see EntityManager::stampChangedAt()}'s `MAX(changed_at)` read, which fires when the
-     * source itself is persisted via {@see EntityManager::save()}. The latter is unrelated to the rule
-     * cascade this test covers, but is triggered as a side effect of every `EntityManager::save()` call
-     * on a model with a `changed_at` column.
-     *
-     * @return void
-     */
-    public function testDeleteMarksSourceDeleted(): void
-    {
-        $start = (int) (new DateTime())->format('Uv');
-
-        $db = $this->getConnectionMock();
-        $db->expects($this->exactly(3))
-            ->method('select')
-            ->willReturnOnConsecutiveCalls(
-                $this->selectResult([
-                    [
-                        'id'               => 5,
-                        'type'             => 'icingadb',
-                        'name'             => 'Icinga 2',
-                        'listener_username' => 'u',
-                        'deleted'          => 'n',
-                        'locked'           => 'n'
-                    ]
-                ]),
-                $this->selectResult([]), // no rules — EventRuleConfigForm::removeRule is never called
-                $this->selectResult([['changed_at' => 0]]) // EntityManager::stampChangedAt()'s MAX(changed_at)
-            );
-        $db->expects($this->once())
-            ->method('update')
-            ->willReturnCallback(function ($table, $data, $where) use ($start) {
-                $this->assertSame('source', $table);
-                $this->assertSame(['id = ?' => '5'], $where);
-                $this->assertSame('y', $data['deleted']);
-                $this->assertNull($data['listener_username']);
-                $this->assertArrayHasKey('changed_at', $data);
-                $this->assertGreaterThanOrEqual($start, $data['changed_at']);
-
-                return $this->createStub(PDOStatement::class);
-            });
-
-        $repo = new SourceRepository($db);
-        $repo->delete($repo->find(5));
-    }
-
-    /**
-     * Covers deleting a source that has a linked rule: {@see EventRuleConfigForm::removeRule()} must be
-     * called for each rule, soft-deleting the rule and its escalations before the source itself is deleted.
-     *
-     * Four selects are expected: one for {@see SourceRepository::find()}, one for the lazy-loaded `rule`
-     * relation (returns one rule), one for the lazy-loaded `rule_escalation` relation inside
-     * {@see EventRuleConfigForm::removeRule()} (returns no escalations to keep the test focused), and one
-     * for {@see EntityManager::stampChangedAt()}'s `MAX(changed_at)` read, which fires when the source
-     * itself is persisted via {@see EntityManager::save()}. The latter is unrelated to the rule/escalation
-     * cascade this test actually covers, but is triggered as a side effect of every `EntityManager::save()`
-     * call on a model with a `changed_at` column.
-     *
-     * @return void
-     */
-    public function testDeleteRemovesLinkedRules(): void
-    {
-        $db = $this->getConnectionMock();
-        $db->expects($this->exactly(4))
-            ->method('select')
-            ->willReturnOnConsecutiveCalls(
-                $this->selectResult([
-                    [
-                        'id'               => 5,
-                        'type'             => 'icingadb',
-                        'name'             => 'Icinga 2',
-                        'listener_username' => 'u',
-                        'deleted'          => 'n',
-                        'locked'           => 'n'
-                    ]
-                ]),
-                $this->selectResult([
-                    ['id' => 7]
-                ]),
-                $this->selectResult([]), // no escalations
-                $this->selectResult([['changed_at' => 0]]) // EntityManager::stampChangedAt()'s MAX(changed_at)
-            );
-
-        $updatedTables = [];
-        $db->expects($this->exactly(3))
-            ->method('update')
-            ->willReturnCallback(function ($table) use (&$updatedTables) {
-                $updatedTables[] = $table;
-
-                return $this->createStub(PDOStatement::class);
-            });
-
-        $repo = new SourceRepository($db);
-        $repo->delete($repo->find(5));
-
-        $this->assertContains('rule', $updatedTables, 'The linked rule must be soft-deleted');
-        $this->assertContains('source', $updatedTables, 'The source itself must be soft-deleted');
-    }
-
-    /**
-     * Covers deleting a certificate-based source: {@see SourceRepository::delete()} must null the
-     * `client_certificate_subject` alongside the `listener_username`, so the soft-deleted row keeps no
-     * identity and frees the unique certificate subject for reuse.
-     *
-     * The fixture carries a non-null subject on purpose: the {@see EntityManager} only emits columns that
-     * actually change, so a source loaded without a subject would never surface it in the UPDATE.
-     *
-     * Three selects are expected: {@see SourceRepository::find()}, the lazy-loaded `rule` relation (no rows),
-     * and {@see EntityManager::stampChangedAt()}'s `MAX(changed_at)` read triggered by the save.
-     *
-     * @return void
-     */
-    public function testDeleteNullsClientCertificateSubject(): void
-    {
-        $db = $this->getConnectionMock();
-        $db->expects($this->exactly(3))
-            ->method('select')
-            ->willReturnOnConsecutiveCalls(
-                $this->selectResult([
-                    [
-                        'id'                         => 5,
-                        'type'                       => 'icingadb',
-                        'name'                       => 'Icinga 2',
-                        'client_certificate_subject' => 'CN=source.example.com',
-                        'deleted'                    => 'n',
-                        'locked'                     => 'n'
-                    ]
-                ]),
-                $this->selectResult([]), // no rules
-                $this->selectResult([['changed_at' => 0]]) // EntityManager::stampChangedAt()'s MAX(changed_at)
-            );
-        $db->expects($this->once())
-            ->method('update')
-            ->willReturnCallback(function ($_, $data) {
-                $this->assertSame('y', $data['deleted']);
-                $this->assertNull($data['client_certificate_subject']);
-
-                return $this->createStub(PDOStatement::class);
-            });
-
-        $repo = new SourceRepository($db);
-        $repo->delete($repo->find(5));
-    }
-
-    public function testCreateClearsPlaintextPasswordAfterHashing(): void
-    {
-        $source = new Source(['type' => 'icingadb', 'name' => 'Src']);
-        $source->listener_password = 'mysecret';
-        $source->setNew();
-
-        $db = $this->getConnectionMock();
-        $db->method('insert')->willReturn($this->createStub(PDOStatement::class));
-        $db->method('lastInsertId')->willReturn('1');
-
-        (new SourceRepository($db))->create($source);
-
-        $this->assertFalse(isset($source->listener_password), 'listener_password must be unset after hashing');
-    }
-
-    public function testUpdateClearsPlaintextPasswordAfterHashing(): void
-    {
-        $source = new Source(['id' => 5, 'type' => 'icingadb', 'name' => 'Src']);
-        $source->setNew(false);
-        $source->listener_password = 'newsecret';
-
-        $db = $this->getConnectionMock();
-        $db->method('update')->willReturn($this->createStub(PDOStatement::class));
-
-        (new SourceRepository($db))->update($source);
-
-        $this->assertFalse(isset($source->listener_password), 'listener_password must be unset after hashing');
-    }
-
-    private function getConnectionMock(): Connection&MockObject
-    {
-        $db = $this->createMock(Connection::class);
-        $db->method('transaction')->willReturnCallback(fn(callable $cb) => $cb());
-        $db->method('quoteIdentifier')->willReturnCallback(fn($s) => $s);
-
-        return $db;
+        $source = $db->select(
+            (new Select())
+                ->from('source')
+                ->columns(['listener_username', 'listener_password_hash', 'client_certificate_subject'])
+                ->where(['id = ?' => $sourceId])
+        )->fetch();
+        $this->assertNotNull($source['listener_username'], 'The unique listener_username is still null');
+        $this->assertNotNull($source['listener_password_hash'], 'The unique listener_password_hash is still null');
+        $this->assertNull($source['client_certificate_subject'], 'The unique client_certificate_subject is not null');
     }
 }
