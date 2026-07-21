@@ -103,17 +103,17 @@ class SeverityTest extends TestCase
         $this->assertSame(
             [
                 Severity::OK,
-                Severity::CRITICAL,
-                Severity::WARNING,
-                Severity::ERROR,
                 Severity::DEBUG,
                 Severity::INFO,
+                Severity::NOTICE,
+                Severity::WARNING,
+                Severity::ERROR,
+                Severity::CRITICAL,
                 Severity::ALERT,
-                Severity::EMERGENCY,
-                Severity::NOTICE
+                Severity::EMERGENCY
             ],
             Severity::cases(),
-            'A Severity case was added or removed — update the test providers and this assertion'
+            'A Severity case was added, removed, or reordered — update the test providers and this assertion'
         );
     }
 }
