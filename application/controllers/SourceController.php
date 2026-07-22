@@ -64,11 +64,8 @@ class SourceController extends CompatController
 
     public function deleteAction(): void
     {
-        if ($this->source->locked) {
-            throw new RuntimeException('Source is locked');
-        }
-
         $form = (new DeleteSourceForm())
+            ->setLocked($this->source->locked)
             ->setCsrfCounterMeasureId(Session::getSession()->getId())
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->on(Form::ON_SUBMIT, function (): never {
