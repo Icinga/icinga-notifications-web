@@ -7,12 +7,31 @@ namespace Icinga\Module\Notifications\Forms;
 
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
+use ipl\Web\Common\CalloutType;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
+use ipl\Web\Widget\Callout;
 
 class DeleteSourceForm extends CompatForm
 {
     use CsrfCounterMeasure;
+
+    /** @var bool Whether the source is locked */
+    protected bool $locked = false;
+
+    /**
+     * Set whether the source is locked
+     *
+     * @param bool $locked
+     *
+     * @return $this
+     */
+    public function setLocked(bool $locked = true): static
+    {
+        $this->locked = $locked;
+
+        return $this;
+    }
 
     protected function assemble(): void
     {
@@ -43,6 +62,16 @@ class DeleteSourceForm extends CompatForm
                 ))
             )
         ));
+
+        if ($this->locked) {
+            $this->addHtml(new Callout(
+                CalloutType::Warning,
+                $this->translate(
+                    'This source is managed by an integration and may cause malfunction if deleted without'
+                    . ' disabling the integration first.'
+                )
+            ));
+        }
 
         $this->addElement('submit', 'delete', [
             'label' => $this->translate('Understood. Delete this source.'),

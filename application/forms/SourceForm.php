@@ -38,6 +38,14 @@ class SourceForm extends CompatForm
         $this->addAttributes(Attributes::create(['class' => 'source-form']));
         $this->applyDefaultElementDecorators();
         $this->addCsrfCounterMeasure();
+
+        if ($this->source?->locked) {
+            $this->addHtml(new Callout(
+                CalloutType::Info,
+                $this->translate('This source is managed by an integration, so changes can only be applied through it.')
+            ));
+        }
+
         $this->addHtml(new HtmlElement(
             'p',
             Attributes::create(['class' => 'description']),
@@ -142,67 +150,67 @@ class SourceForm extends CompatForm
             ]
         );
 
-        if ($this->source?->locked) {
-            $this->prependHtml(new Callout(
-                CalloutType::Info,
-                $this->translate('This source is managed by an integration, so changes can only be applied through it.')
-            ));
+        if (! $this->source?->locked) {
+            $credentials->addElement(
+                'password',
+                'listener_password',
+                [
+                    'required'      => $this->source === null,
+                    'label'         => $this->source !== null
+                        ? $this->translate('New Password')
+                        : $this->translate('Password'),
+                    'autocomplete'  => 'new-password',
+                    'validators'    => [['name' => 'StringLength', 'options' => ['min' => 16]]]
+                ]
+            );
+            $credentials->addElement(
+                'password',
+                'listener_password_dupe',
+                [
+                    'ignore'        => true,
+                    'required'      => $this->source === null,
+                    'label'         => $this->translate('Repeat Password'),
+                    'autocomplete'  => 'new-password',
+                    'validators'    => [new CallbackValidator(function (string $value, CallbackValidator $validator) {
+                        if ($value !== $this->getElement('credentials')->getValue('listener_password')) {
+                            $validator->addMessage($this->translate('Passwords do not match'));
 
-            return;
+                            return false;
+                        }
+
+                        return true;
+                    })]
+                ]
+            );
+
+            $this->addElement(
+                'submit',
+                'save',
+                [
+                    'label' => $this->source === null
+                        ? $this->translate('Add Source')
+                        : $this->translate('Save Changes')
+                ]
+            );
         }
 
-        $credentials->addElement(
-            'password',
-            'listener_password',
-            [
-                'required'      => $this->source === null,
-                'label'         => $this->source !== null
-                    ? $this->translate('New Password')
-                    : $this->translate('Password'),
-                'autocomplete'  => 'new-password',
-                'validators'    => [['name' => 'StringLength', 'options' => ['min' => 16]]]
-            ]
-        );
-        $credentials->addElement(
-            'password',
-            'listener_password_dupe',
-            [
-                'ignore'        => true,
-                'required'      => $this->source === null,
-                'label'         => $this->translate('Repeat Password'),
-                'autocomplete'  => 'new-password',
-                'validators'    => [new CallbackValidator(function (string $value, CallbackValidator $validator) {
-                    if ($value !== $this->getElement('credentials')->getValue('listener_password')) {
-                        $validator->addMessage($this->translate('Passwords do not match'));
-
-                        return false;
-                    }
-
-                    return true;
-                })]
-            ]
-        );
-
-        $this->addElement(
-            'submit',
-            'save',
-            [
-                'label' => $this->source === null ?
-                    $this->translate('Add Source') :
-                    $this->translate('Save Changes')
-            ]
-        );
-
         if ($this->source !== null) {
-            $this->getElement('save')->prependWrapper(
-                (new HtmlDocument())
-                    ->addHtml(
-                        (new ButtonLink(
-                            $this->translate('Delete'),
-                            Url::fromPath('notifications/source/delete/', ['id' => $this->source->id])
-                        ))->openInModal()
-                    )
-            );
+            $deleteButton = (new ButtonLink(
+                $this->translate('Delete'),
+                Url::fromPath('notifications/source/delete/', ['id' => $this->source->id])
+            ))->openInModal();
+
+            if ($this->hasElement('save')) {
+                $this->getElement('save')->prependWrapper(
+                    (new HtmlDocument())->addHtml($deleteButton)
+                );
+            } else {
+                $this->addHtml(new HtmlElement(
+                    'div',
+                    new Attributes(['class' => ['control-group', 'form-controls']]),
+                    $deleteButton
+                ));
+            }
         }
     }
 
