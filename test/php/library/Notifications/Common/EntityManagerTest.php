@@ -725,6 +725,44 @@ class EntityManagerTest extends TestCase
         );
     }
 
+    public function testDetachingALoadedTargetDoesNotReviveALinkSoftDeletedOutOfBand()
+    {
+        $gadget = (new Gadget())->setNew();
+        $gadget->name = 'Spanner';
+        $sharp = (new Badge())->setNew();
+        $sharp->name = 'sharp';
+        $heavy = (new Badge())->setNew();
+        $heavy->name = 'heavy';
+        $gadget->badge = Collection::create([$sharp, $heavy]);
+        $this->em()->save($gadget);                         // two links inserted -> changed_at 1000, 2000
+
+        // Load the gadget and materialize its membership while both links are still live, so the loaded
+        // "heavy" instance lands in the collection's base, then detach it.
+        $loaded = Gadget::on($this->db)->first()->setNew(false);
+        foreach ($loaded->badge as $badge) {
+            if ((int) $badge->id === $heavy->id) {
+                $loaded->badge->detach($badge);
+            }
+        }
+
+        // Out of band (as a second repository would), soft-delete heavy's link before this save runs.
+        $this->db->prepexec(
+            "UPDATE gadget_badge SET deleted = 'y', changed_at = 7777 WHERE gadget_id = ? AND badge_id = ?",
+            [$gadget->id, $heavy->id]
+        );
+
+        $this->em()->save($loaded);
+
+        $this->assertSame(
+            [
+                ['badge_id' => $sharp->id, 'deleted' => 'n', 'changed_at' => 1000],
+                ['badge_id' => $heavy->id, 'deleted' => 'y', 'changed_at' => 7777],
+            ],
+            $this->rows('SELECT badge_id, deleted, changed_at FROM gadget_badge ORDER BY badge_id'),
+            'A detached, already soft-deleted link must stay deleted - not be revived by the merge-mode save'
+        );
+    }
+
     public function testSoftDeleteHasManyChildrenAreSoftDeletedOnSyncAndDetach()
     {
         // stamped_note is a HasMany child carrying a `deleted` column, so removing a note keeps its row and
