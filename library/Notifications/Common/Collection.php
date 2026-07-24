@@ -189,7 +189,11 @@ class Collection implements IteratorAggregate, Countable
             return array_values($this->attach);
         }
 
-        return array_values(array_merge($this->base ?? [], $this->attach));
+        $members = array_filter($this->base ?? [], function ($model) {
+            return $model->isModified();
+        });
+
+        return array_values(array_merge($members, $this->attach));
     }
 
     /**
@@ -200,6 +204,17 @@ class Collection implements IteratorAggregate, Countable
     public function getDetachments(): array
     {
         return array_values($this->detach);
+    }
+
+    /**
+     * Get the members that must be part of the relation after a save and were explicitly attached by
+     * {@see self::attach()} or {@see self::sync()}
+     *
+     * @return array
+     */
+    public function getAttachments(): array
+    {
+        return array_values($this->attach);
     }
 
     /**

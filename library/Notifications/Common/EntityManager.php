@@ -470,16 +470,15 @@ class EntityManager
             }
 
             $attach = [];
-            foreach ($collection->getMembersToSave() as $target) {
-                // Models are marked as new when they are hard deleted, so cache the value before saving
-                $isDeleted = $target->isMarkedForDeletion();
+            foreach ($collection->getAttachments() as $attachment) {
+                if (! $attachment->isMarkedForDeletion()) {
+                    $attach[] = $attachment;
+                }
+            }
 
+            foreach ($collection->getMembersToSave() as $target) {
                 if ($target->isMutable()) {
                     $this->saveGraph($target);
-                }
-
-                if (! $isDeleted) {
-                    $attach[] = $target;
                 }
             }
 
