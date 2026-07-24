@@ -108,81 +108,147 @@ class SourceForm extends CompatForm
             );
         }
 
-        $this->addElement('fieldset', 'credentials', [
-            'label' => $this->translate('Source Credentials')
-        ]);
-        $credentials = $this->getElement('credentials');
-        $credentials->addHtml(new HtmlElement(
-            'p',
-            Attributes::create(['class' => 'description']),
-            Text::create($this->translate(
-                'These credentials will be used by the source to authenticate'
-                . ' against Icinga Notifications when submitting events. You will need to add this to the'
-                . ' source\'s configuration as well.'
-                . ' Consult the documentation of your source for configuration details.'
-            ))
-        ));
-
-        $credentials->addElement(
-            'text',
-            'listener_username',
+        $this->addElement(
+            'select',
+            'auth_type',
             [
-                'required' => true,
-                'label' => $this->translate('Username'),
-                'disabled'  => $this->source?->locked,
-                'validators' => [new CallbackValidator(
-                    function ($value, CallbackValidator $validator) {
-                        // Username must be unique
-                        $source = Source::on(Database::get())
-                            ->filter(Filter::equal('listener_username', $value));
-                        if ($this->source !== null) {
-                            $source->filter(Filter::unequal('id', $this->source->id));
-                        }
-
-                        if ($source->first() !== null) {
-                            $validator->addMessage($this->translate('This username is already in use.'));
-                            return false;
-                        }
-
-                        return true;
-                    }
-                )]
+                'class' => 'autosubmit',
+                'disabled' => $this->source?->locked,
+                'label' => $this->translate('Authentication Type'),
+                'value' => 'password',
+                'options' =>
+                    [
+                        'password' => $this->translate('Username and password'),
+                        'certificate' => $this->translate('Client certificate')
+                    ]
             ]
         );
 
-        if (! $this->source?->locked) {
-            $credentials->addElement(
-                'password',
-                'listener_password',
-                [
-                    'required'      => $this->source === null,
-                    'label'         => $this->source !== null
-                        ? $this->translate('New Password')
-                        : $this->translate('Password'),
-                    'autocomplete'  => 'new-password',
-                    'validators'    => [['name' => 'StringLength', 'options' => ['min' => 16]]]
-                ]
-            );
-            $credentials->addElement(
-                'password',
-                'listener_password_dupe',
-                [
-                    'ignore'        => true,
-                    'required'      => $this->source === null,
-                    'label'         => $this->translate('Repeat Password'),
-                    'autocomplete'  => 'new-password',
-                    'validators'    => [new CallbackValidator(function (string $value, CallbackValidator $validator) {
-                        if ($value !== $this->getElement('credentials')->getValue('listener_password')) {
-                            $validator->addMessage($this->translate('Passwords do not match'));
+        if ($this->getPopulatedValue('auth_type', 'password') === 'password') {
+            $this->addElement('fieldset', 'credentials', [
+                'label' => $this->translate('Source Credentials')
+            ]);
+            $credentials = $this->getElement('credentials');
+            $credentials->addHtml(new HtmlElement(
+                'p',
+                Attributes::create(['class' => 'description']),
+                Text::create($this->translate(
+                    'These credentials will be used by the source to authenticate'
+                    . ' against Icinga Notifications when submitting events. You will need to add this to the'
+                    . ' source\'s configuration as well.'
+                    . ' Consult the documentation of your source for configuration details.'
+                ))
+            ));
 
-                            return false;
+            $credentials->addElement(
+                'text',
+                'listener_username',
+                [
+                    'required' => true,
+                    'label' => $this->translate('Username'),
+                    'disabled'  => $this->source?->locked,
+                    'validators' => [new CallbackValidator(
+                        function ($value, CallbackValidator $validator) {
+                            // Username must be unique
+                            $source = Source::on(Database::get())
+                                ->filter(Filter::equal('listener_username', $value));
+                            if ($this->source !== null) {
+                                $source->filter(Filter::unequal('id', $this->source->id));
+                            }
+
+                            if ($source->first() !== null) {
+                                $validator->addMessage($this->translate('This username is already in use.'));
+                                return false;
+                            }
+
+                            return true;
                         }
-
-                        return true;
-                    })]
+                    )]
                 ]
             );
 
+            if (! $this->source?->locked) {
+                $credentials->addElement(
+                    'password',
+                    'listener_password',
+                    [
+                        'required'      => $this->source?->listener_password_hash === null,
+                        'label'         => $this->source?->listener_password_hash !== null
+                            ? $this->translate('New Password')
+                            : $this->translate('Password'),
+                        'autocomplete'  => 'new-password',
+                        'validators'    => [['name' => 'StringLength', 'options' => ['min' => 16]]]
+                    ]
+                );
+                $credentials->addElement(
+                    'password',
+                    'listener_password_dupe',
+                    [
+                        'ignore'        => true,
+                        'required'      => $this->source?->listener_password_hash === null,
+                        'label'         => $this->translate('Repeat Password'),
+                        'autocomplete'  => 'new-password',
+                        'validators' => [
+                            new CallbackValidator(function (string $value, CallbackValidator $validator) {
+                                if ($value !== $this->getElement('credentials')->getValue('listener_password')) {
+                                    $validator->addMessage($this->translate('Passwords do not match'));
+
+                                    return false;
+                                }
+
+                                return true;
+                            })
+                        ]
+                    ]
+                );
+            }
+        } else {
+            $this->addElement('fieldset', 'certificate', [
+                'label' => $this->translate('Client Certificate')
+            ]);
+            $certificate = $this->getElement('certificate');
+            $certificate->addHtml(new HtmlElement(
+                'p',
+                Attributes::create(['class' => 'description']),
+                Text::create($this->translate(
+                    'The source will authenticate using a TLS client certificate when submitting events'
+                    . ' over HTTPS. Enter the subject of the certificate the source will present.'
+                    . ' Icinga Notifications uses it to identify the source.'
+                ))
+            ));
+
+            $certificate->addElement(
+                'text',
+                'client_certificate_subject',
+                [
+                    'required' => true,
+                    'label' => $this->translate('Certificate Subject'),
+                    'disabled' => $this->source?->locked,
+                    'placeholder' => 'CN=source.example.com,OU=Monitoring,O=Icinga,C=DE',
+                    'validators' => [
+                        ['name' => 'StringLength', 'options' => ['max' => 768]],
+                        new CallbackValidator(function ($value, CallbackValidator $validator) {
+                            $source = Source::on(Database::get())
+                                ->filter(Filter::equal('client_certificate_subject', $value));
+                            if ($this->source !== null) {
+                                $source->filter(Filter::unequal('id', $this->source->id));
+                            }
+
+                            if ($source->first() !== null) {
+                                $validator->addMessage(
+                                    $this->translate('This certificate subject is already in use.')
+                                );
+                                return false;
+                            }
+
+                            return true;
+                        })
+                    ]
+                ]
+            );
+        }
+
+        if ($this->source === null || ! $this->source->locked) {
             $this->addElement(
                 'submit',
                 'save',
@@ -229,8 +295,12 @@ class SourceForm extends CompatForm
             'name' => $source->name,
             'type' => $source->type,
             'source_type' => $source->type === self::TYPE_GENERIC ? self::TYPE_GENERIC : self::TYPE_INTEGRATED,
+            'auth_type' => $source->listener_username === null ? 'certificate' : 'password',
             'credentials' => [
                 'listener_username' => $source->listener_username
+            ],
+            'certificate' => [
+                'client_certificate_subject' => $source->client_certificate_subject
             ]
         ]);
 
@@ -250,10 +320,20 @@ class SourceForm extends CompatForm
 
         $this->source->name = $this->getValue('name');
         $this->source->type = $this->getValue('type', self::TYPE_GENERIC);
-        $this->source->listener_username = $this->getElement('credentials')->getValue('listener_username');
-        $pwd = $this->getElement('credentials')->getValue('listener_password');
-        if ($pwd) {
-            $this->source->listener_password = $pwd;
+
+        if ($this->getValue('auth_type') === 'certificate') {
+            $this->source->client_certificate_subject = $this->getElement('certificate')
+                ->getValue('client_certificate_subject');
+            $this->source->listener_username = null;
+            $this->source->listener_password_hash = null;
+        } else {
+            $this->source->listener_username = $this->getElement('credentials')->getValue('listener_username');
+            $this->source->client_certificate_subject = null;
+
+            $pwd = $this->getElement('credentials')->getValue('listener_password');
+            if ($pwd) {
+                $this->source->listener_password = $pwd;
+            }
         }
 
         return $this->source;

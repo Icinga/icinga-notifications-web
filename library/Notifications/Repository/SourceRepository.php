@@ -101,6 +101,7 @@ final class SourceRepository
     {
         $source->delete();
         $source->listener_username = null;
+        $source->client_certificate_subject = null;
 
         foreach ($source->rule as $rule) {
             //TODO: add repository for rule
