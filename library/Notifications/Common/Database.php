@@ -22,28 +22,6 @@ use PDO;
 
 final class Database
 {
-    /**
-     * @var string[] Tables with a deleted flag
-     *
-     * The filter `deleted=n` is automatically added to these tables.
-     */
-    private const TABLES_WITH_DELETED_FLAG = [
-        'channel',
-        'contact',
-        'contact_address',
-        'contactgroup',
-        'contactgroup_member',
-        'rotation',
-        'rotation_member',
-        'rule',
-        'rule_escalation',
-        'rule_escalation_recipient',
-        'schedule',
-        'source',
-        'timeperiod',
-        'timeperiod_entry',
-    ];
-
     /** @var ?Connection Database connection */
     private static ?Connection $instance = null;
 
@@ -145,35 +123,6 @@ final class Database
         }
 
         $db->getQueryBuilder()
-            ->on(QueryBuilder::ON_ASSEMBLE_SELECT, function (Select $select) {
-                $from = $select->getFrom();
-                $baseTableName = reset($from);
-
-                if (! in_array($baseTableName, self::TABLES_WITH_DELETED_FLAG, true)) {
-                    return;
-                }
-
-                $baseTableAlias = key($from);
-                if (! is_string($baseTableAlias)) {
-                    $baseTableAlias = $baseTableName;
-                }
-
-                $condition = 'deleted = ?';
-                $where = $select->getWhere();
-
-                if ($where && self::hasCondition($baseTableAlias, $condition, $where)) {
-                    return;
-                }
-
-                // getNextChangedAt() wants MAX(changed_at) of all rows, deleted or not
-                foreach ($select->getColumns() as $column) {
-                    if ($column instanceof Expression && str_contains($column->getStatement(), 'MAX(changed_at)')) {
-                        return;
-                    }
-                }
-
-                $select->where([$baseTableAlias . '.' . $condition => 'n']);
-            })
             ->on(QueryBuilder::ON_ASSEMBLE_INSERT, function (Insert $insert) use ($db): void {
                 $columns = $insert->getColumns();
                 $pos = array_search('changed_at', $columns);
@@ -260,32 +209,5 @@ final class Database
         }
 
         $select->groupBy($groupBy);
-    }
-
-    /**
-     * Check if the given condition is part of the where clause with value 'y'
-     *
-     * @param string $baseTable
-     * @param string $conditionToFind
-     * @param array<int|string, int|string> $where
-     *
-     * @return bool
-     */
-    private static function hasCondition(string $baseTable, string $conditionToFind, array $where): bool
-    {
-        foreach ($where as $condition => $value) {
-            if (is_array($value)) {
-                $found = self::hasCondition($baseTable, $conditionToFind, $value);
-            } else {
-                $found = ($condition === $conditionToFind || $condition === $baseTable . '.' . $conditionToFind)
-                    && $value === 'y';
-            }
-
-            if ($found) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }
