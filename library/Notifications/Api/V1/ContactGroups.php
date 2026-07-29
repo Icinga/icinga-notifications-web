@@ -619,6 +619,10 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
      */
     private function addContactgroup(array $requestBody): void
     {
+        if (! empty($requestBody['name'])) {
+            $this->assertUniqueName($requestBody['name']);
+        }
+
         Database::get()->insert('contactgroup', [
             'name'          => $requestBody['name'],
             'external_uuid' => $requestBody['id'],
@@ -634,6 +638,10 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
 
     private function updateContactgroup(array $requestBody, int $contactgroupId): void
     {
+        if (! empty($requestBody['name'])) {
+            $this->assertUniqueName($requestBody['name'], $contactgroupId);
+        }
+
         $storedValues = $this->fetchDbValues($contactgroupId);
 
         $changedAt = (int) (new DateTime())->format("Uv");
@@ -772,7 +780,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
         $user = Database::get()->fetchOne($stmt);
 
         if ($user) {
-            throw new HttpException(422, sprintf('Username %s already exists', $name));
+            throw new HttpException(422, sprintf('Name %s already exists', $name));
         }
     }
 
