@@ -22,11 +22,11 @@ use Icinga\Module\Notifications\Repository\ScheduleRepository;
 use Icinga\Module\Notifications\Test\DbTestBackends;
 use InvalidArgumentException;
 use ipl\Sql\Connection;
-use ipl\Sql\Test\SharedDatabases\SchemaGroup;
 use ipl\Sql\Test\SharedDatabases\TransactionIsolation;
 use ipl\Stdlib\Filter;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Tests\Icinga\Module\Notifications\Lib\DatabaseUtils;
 
 /**
  * Tests for {@see ScheduleRepository}.
@@ -40,6 +40,7 @@ use PHPUnit\Framework\TestCase;
 #[TransactionIsolation]
 class ScheduleRepositoryTest extends TestCase
 {
+    use DatabaseUtils;
     use DbTestBackends;
 
     /** @var int Id of the contact seeded per test */
@@ -72,19 +73,6 @@ class ScheduleRepositoryTest extends TestCase
     }
 
     /**
-     * Load a schedule row directly, bypassing the repository's `deleted` filter
-     *
-     * @param Connection $db
-     * @param int $id
-     *
-     * @return ?Schedule
-     */
-    private function loadSchedule(Connection $db, int $id): ?Schedule
-    {
-        return Schedule::on($db)->filter(Filter::equal('schedule.id', $id))->first();
-    }
-
-    /**
      * Fetch the non-deleted rotations of the given schedule, ordered by priority
      *
      * @param Connection $db
@@ -97,7 +85,6 @@ class ScheduleRepositoryTest extends TestCase
         return iterator_to_array(
             Rotation::on($db)
                 ->filter(Filter::equal('schedule_id', $scheduleId))
-                ->filter(Filter::equal('deleted', false))
                 ->orderBy('priority')
         );
     }
@@ -115,7 +102,6 @@ class ScheduleRepositoryTest extends TestCase
         $members = [];
         $query = RotationMember::on($db)
             ->filter(Filter::equal('rotation_id', $rotationId))
-            ->filter(Filter::equal('deleted', false))
             ->orderBy('position');
         foreach ($query as $member) {
             $members[] = $member->contact_id !== null
@@ -258,7 +244,6 @@ class ScheduleRepositoryTest extends TestCase
             $entries = iterator_to_array(
                 TimeperiodEntry::on($db)
                     ->filter(Filter::equal('timeperiod.owned_by_rotation_id', $rotation->id))
-                    ->filter(Filter::equal('deleted', false))
             );
             $this->assertNotEmpty($entries, 'A regenerated rotation should have timeperiod entries');
             foreach ($entries as $entry) {
@@ -325,9 +310,9 @@ class ScheduleRepositoryTest extends TestCase
         $this->assertNull($repository->find($id), 'A deleted schedule must not be found anymore');
 
         // But it's only soft-deleted: the row still exists, flagged deleted
-        $schedule = $this->loadSchedule($db, $id);
+        $schedule = $this->loadRawEntity($db, $id, Schedule::class);
         $this->assertNotNull($schedule, 'The schedule row should still exist');
-        $this->assertTrue($schedule->deleted, 'The schedule should be soft-deleted, not removed');
+        $this->assertSame('y', $schedule->deleted, 'The schedule should be soft-deleted, not removed');
     }
 
     #[DataProvider('sharedDatabases')]
@@ -408,7 +393,6 @@ class ScheduleRepositoryTest extends TestCase
             $entries = iterator_to_array(
                 TimeperiodEntry::on($db)
                     ->filter(Filter::equal('timeperiod.owned_by_rotation_id', $rotation->id))
-                    ->filter(Filter::equal('deleted', false))
             );
             $this->assertNotEmpty($entries, 'A copied rotation should have timeperiod entries');
             foreach ($entries as $entry) {
@@ -435,8 +419,9 @@ class ScheduleRepositoryTest extends TestCase
         $repository->delete($scheduleId);
 
         $this->assertNull($repository->find($scheduleId), 'The schedule should be deleted');
-        $this->assertTrue(
-            Rotation::on($db)->filter(Filter::equal('id', $rotationId))->first()->deleted,
+        $this->assertSame(
+            'y',
+            $this->loadRawEntity($db, $rotationId, Rotation::class)->deleted,
             'The schedule\'s rotation should be soft-deleted'
         );
         $this->assertNull(
