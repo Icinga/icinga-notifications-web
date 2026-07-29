@@ -22,12 +22,12 @@ use Icinga\Module\Notifications\Repository\RotationRepository;
 use Icinga\Module\Notifications\Test\DbTestBackends;
 use InvalidArgumentException;
 use ipl\Sql\Connection;
-use ipl\Sql\Test\SharedDatabases\SchemaGroup;
 use ipl\Sql\Test\SharedDatabases\TransactionIsolation;
 use ipl\Stdlib\Filter;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use Tests\Icinga\Module\Notifications\Lib\DatabaseUtils;
 
 /**
  * Tests for {@see ContactRepository}.
@@ -45,6 +45,7 @@ use RuntimeException;
 #[TransactionIsolation]
 class ContactRepositoryTest extends TestCase
 {
+    use DatabaseUtils;
     use DbTestBackends;
 
     /** @var int Id of the channel seeded per test (auto-increment drifts across rolled-back transactions) */
@@ -65,19 +66,6 @@ class ContactRepositoryTest extends TestCase
     }
 
     /**
-     * Load a contact row directly, bypassing the repository's `deleted` filter
-     *
-     * @param Connection $db
-     * @param int $id
-     *
-     * @return ?Contact
-     */
-    private function loadContact(Connection $db, int $id): ?Contact
-    {
-        return Contact::on($db)->filter(Filter::equal('id', $id))->first();
-    }
-
-    /**
      * Get the contact's non-deleted addresses as a type => address map
      *
      * @param Connection $db
@@ -89,8 +77,7 @@ class ContactRepositoryTest extends TestCase
     {
         $addresses = [];
         $query = ContactAddress::on($db)
-            ->filter(Filter::equal('contact_id', $contactId))
-            ->filter(Filter::equal('deleted', false));
+            ->filter(Filter::equal('contact_id', $contactId));
         foreach ($query as $address) {
             $addresses[$address->type] = $address->address;
         }
@@ -241,9 +228,9 @@ class ContactRepositoryTest extends TestCase
         $this->assertNull($repository->find($id), 'A deleted contact must not be found anymore');
 
         // But it's only soft-deleted: the row still exists, flagged deleted
-        $contact = $this->loadContact($db, $id);
+        $contact = $this->loadRawEntity($db, $id, Contact::class);
         $this->assertNotNull($contact, 'The contact row should still exist');
-        $this->assertTrue($contact->deleted, 'The contact should be soft-deleted, not removed');
+        $this->assertSame('y', $contact->deleted, 'The contact should be soft-deleted, not removed');
 
         // Its addresses are soft-deleted too
         $this->assertSame([], $this->addressesByType($db, $id), 'The contact\'s addresses should be soft-deleted');
@@ -266,8 +253,8 @@ class ContactRepositoryTest extends TestCase
         $repository->delete($id);
 
         // The unique username must be nulled on deletion so the same web user can be re-added later
-        $contact = $this->loadContact($db, $id);
-        $this->assertTrue($contact->deleted);
+        $contact = $this->loadRawEntity($db, $id, Contact::class);
+        $this->assertSame('y', $contact->deleted);
         $this->assertNull($contact->username, 'The unique username must be nulled on deletion so it can be reused');
     }
 
@@ -286,7 +273,6 @@ class ContactRepositoryTest extends TestCase
         $liveMembership = ContactgroupMember::on($db)
             ->filter(Filter::equal('contactgroup_id', $groupId))
             ->filter(Filter::equal('contact_id', $id))
-            ->filter(Filter::equal('deleted', false))
             ->first();
         $this->assertNull($liveMembership, 'The contact\'s group membership must be soft-deleted on deletion');
     }
@@ -308,8 +294,7 @@ class ContactRepositoryTest extends TestCase
         $this->createRotation($db, $scheduleId, 2, [['contact', $c1], ['contact', $c2]]);
 
         $rotations = $this->rotationsOf($db, $scheduleId);
-        $soleId = (int) $rotations[0]->id;
-        $sharedId = (int) $rotations[1]->id;
+        $soleId = $rotations[0]->id;
 
         $repository->delete($c1);
 
@@ -320,24 +305,21 @@ class ContactRepositoryTest extends TestCase
         // The solely-owned rotation is gone; the shared one survives and is renumbered to close the freed slot —
         // it moves up from priority 2 to 1 now that the priority-1 rotation below it was removed
         $this->assertSame(1, $shared->priority, 'The surviving rotation must move up to close the freed priority');
-        $this->assertTrue(
-            Rotation::on($db)->filter(Filter::equal('id', $soleId))->first()->deleted,
+        $this->assertSame(
+            'y',
+            $this->loadRawEntity($db, $soleId, Rotation::class)->deleted,
             'The solely-owned rotation should be soft-deleted'
         );
 
         // C1's membership in the shared rotation must be SOFT-deleted (row kept, flagged), not physically removed
-        $c1Membership = RotationMember::on($db)
-            ->filter(Filter::equal('rotation_id', $sharedId))
-            ->filter(Filter::equal('contact_id', $c1))
-            ->first();
+        $c1Membership = $this->loadRawEntity($db, ['contact_id' => $c1], RotationMember::class);
         $this->assertNotNull($c1Membership, 'The membership row must still exist (soft-deleted, not hard-deleted)');
-        $this->assertTrue($c1Membership->deleted, 'The membership must be soft-deleted');
+        $this->assertSame('y', $c1Membership->deleted, 'The membership must be soft-deleted');
 
         // C2 remains an active member of the shared rotation
         $c2Membership = RotationMember::on($db)
             ->filter(Filter::equal('rotation_id', $shared->id))
             ->filter(Filter::equal('contact_id', $c2))
-            ->filter(Filter::equal('deleted', false))
             ->first();
         $this->assertNotNull($c2Membership, 'C2 should remain an active member of the shared rotation');
     }
@@ -413,7 +395,6 @@ class ContactRepositoryTest extends TestCase
         return iterator_to_array(
             Rotation::on($db)
                 ->filter(Filter::equal('schedule_id', $scheduleId))
-                ->filter(Filter::equal('deleted', false))
                 ->orderBy('priority')
         );
     }

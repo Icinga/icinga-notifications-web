@@ -14,12 +14,12 @@ use Icinga\Module\Notifications\Repository\EscalationRepository;
 use Icinga\Module\Notifications\Test\DbTestBackends;
 use InvalidArgumentException;
 use ipl\Sql\Connection;
-use ipl\Sql\Test\SharedDatabases\SchemaGroup;
 use ipl\Sql\Test\SharedDatabases\TransactionIsolation;
 use ipl\Stdlib\Filter;
 use LogicException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Tests\Icinga\Module\Notifications\Lib\DatabaseUtils;
 
 /**
  * Tests for {@see EscalationRepository}.
@@ -37,6 +37,7 @@ use PHPUnit\Framework\TestCase;
 #[TransactionIsolation]
 class EscalationRepositoryTest extends TestCase
 {
+    use DatabaseUtils;
     use DbTestBackends;
 
     /** @var int Id of the contact seeded per test, used as the recipient */
@@ -132,7 +133,6 @@ class EscalationRepositoryTest extends TestCase
         return iterator_to_array(
             RuleEscalationRecipient::on($db)
                 ->filter(Filter::equal('rule_escalation_id', $escalationId))
-                ->filter(Filter::equal('deleted', false))
         );
     }
 
@@ -218,9 +218,9 @@ class EscalationRepositoryTest extends TestCase
         $this->assertNull($repository->find($id), 'A deleted escalation must not be found anymore');
 
         // But it's only soft-deleted: the row still exists, flagged deleted with its position freed
-        $escalation = RuleEscalation::on($db)->filter(Filter::equal('id', $id))->first();
+        $escalation = $this->loadRawEntity($db, $id, RuleEscalation::class);
         $this->assertNotNull($escalation, 'The escalation row should still exist');
-        $this->assertTrue($escalation->deleted, 'The escalation should be soft-deleted, not removed');
+        $this->assertSame('y', $escalation->deleted, 'The escalation should be soft-deleted, not removed');
         $this->assertNull($escalation->position, 'The freed position should be nulled');
 
         $this->assertCount(0, $this->recipientsOf($db, $id), 'The recipients should be soft-deleted too');

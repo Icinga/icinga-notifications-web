@@ -15,11 +15,11 @@ use Icinga\Module\Notifications\Repository\EscalationRuleRepository;
 use Icinga\Module\Notifications\Test\DbTestBackends;
 use InvalidArgumentException;
 use ipl\Sql\Connection;
-use ipl\Sql\Test\SharedDatabases\SchemaGroup;
 use ipl\Sql\Test\SharedDatabases\TransactionIsolation;
 use ipl\Stdlib\Filter;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Tests\Icinga\Module\Notifications\Lib\DatabaseUtils;
 
 /**
  * Tests for {@see EscalationRuleRepository}.
@@ -40,6 +40,7 @@ use PHPUnit\Framework\TestCase;
 #[TransactionIsolation]
 class EscalationRuleRepositoryTest extends TestCase
 {
+    use DatabaseUtils;
     use DbTestBackends;
 
     /** @var int Id of the source seeded per test, referenced by the rule */
@@ -106,7 +107,6 @@ class EscalationRuleRepositoryTest extends TestCase
         return iterator_to_array(
             RuleEscalation::on($db)
                 ->filter(Filter::equal('rule_id', $ruleId))
-                ->filter(Filter::equal('deleted', 'n'))
                 ->orderBy('position')
         );
     }
@@ -234,9 +234,9 @@ class EscalationRuleRepositoryTest extends TestCase
         $this->assertNull($repository->find($id), 'A deleted rule must not be found anymore');
 
         // It's only soft-deleted though: the row still exists, flagged deleted
-        $rule = Rule::on($db)->filter(Filter::equal('id', $id))->first();
+        $rule = $this->loadRawEntity($db, $id, Rule::class);
         $this->assertNotNull($rule, 'The rule row should still exist');
-        $this->assertTrue($rule->deleted, 'The rule should be soft-deleted, not removed');
+        $this->assertSame('y', $rule->deleted, 'The rule should be soft-deleted, not removed');
 
         $this->assertCount(0, $this->escalationsOf($db, $id), 'The rule\'s escalations should be soft-deleted too');
     }
