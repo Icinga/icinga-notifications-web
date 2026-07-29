@@ -131,8 +131,8 @@ class IncidentHistoryRenderer implements ItemRenderer
 
                 break;
             case "notified":
-                if ($item->contactgroup_id) {
-                    if ($item->notification_state === 'sent') {
+                if (isset($item->contactgroup->name) && isset($item->contact->full_name)) {
+                    if (isset($item->channel->type)) {
                         $message = sprintf(
                             $this->translate('Contact %s notified via %s as member of contact group %s'),
                             $item->contact->full_name,
@@ -141,15 +141,13 @@ class IncidentHistoryRenderer implements ItemRenderer
                         );
                     } else {
                         $message = sprintf(
-                            $this->translate('Contact %s notified via %s as member of contact group %s (%s)'),
+                            $this->translate('Contact %s notified as member of contact group %s'),
                             $item->contact->full_name,
-                            $item->channel->type,
-                            $item->contactgroup->name,
-                            IncidentHistory::translateNotificationState($item->notification_state)
+                            $item->contactgroup->name
                         );
                     }
-                } elseif ($item->schedule_id) {
-                    if ($item->notfication_state === 'sent') {
+                } elseif (isset($item->schedule->name) && isset($item->contact->full_name)) {
+                    if (isset($item->channel->type)) {
                         $message = sprintf(
                             $this->translate('Contact %s notified via %s as member of schedule %s'),
                             $item->contact->full_name,
@@ -158,29 +156,44 @@ class IncidentHistoryRenderer implements ItemRenderer
                         );
                     } else {
                         $message = sprintf(
-                            $this->translate('Contact %s notified via %s as member of schedule %s (%s)'),
+                            $this->translate('Contact %s notified as member of schedule %s'),
                             $item->contact->full_name,
-                            $item->schedule->name,
-                            $item->channel->type,
-                            IncidentHistory::translateNotificationState($item->notification_state)
+                            $item->schedule->name
                         );
                     }
-                } elseif ($item->notification_state === 'sent') {
-                    $message = sprintf(
-                        $this->translate('Contact %s notified via %s'),
-                        $item->contact->full_name,
-                        $item->channel->type
-                    );
-                } else {
-                    $message = new FormattedString(
-                        $this->translate('Contact %s notified via %s %s'),
-                        [
+                } elseif (isset($item->contact->full_name)) {
+                    if (isset($item->channel->type)) {
+                        $message = sprintf(
+                            $this->translate('Contact %s notified via %s'),
                             $item->contact->full_name,
-                            $item->channel->type,
+                            $item->channel->type
+                        );
+                    } else {
+                        $message = sprintf(
+                            $this->translate('Contact %s notified'),
+                            $item->contact->full_name
+                        );
+                    }
+                } else {
+                    if (isset($item->channel->type)) {
+                        $message = sprintf(
+                            $this->translate('Unknown recipient notified via %s'),
+                            $item->channel->type
+                        );
+                    } else {
+                        $message = $this->translate('Unknown recipient notified');
+                    }
+                }
+
+                if ($item->notification_state !== 'sent') {
+                    $message = new FormattedString(
+                        '%s (%s)',
+                        [
+                            $message,
                             Html::tag(
                                 'span',
                                 ['class' => 'state-text'],
-                                sprintf('(%s)', IncidentHistory::translateNotificationState($item->notification_state))
+                                IncidentHistory::translateNotificationState($item->notification_state)
                             )
                         ]
                     );
@@ -199,24 +212,20 @@ class IncidentHistoryRenderer implements ItemRenderer
                 $newRole = $item->new_recipient_role;
                 $message = '';
                 if ($newRole === 'manager' || (! $newRole && $item->old_recipient_role === 'manager')) {
-                    if ($item->contact_id) {
-                        $message = sprintf(
-                            $this->translate('Contact %s %s managing this incident'),
-                            $item->contact->full_name,
-                            ! $item->new_recipient_role ? 'stopped' : 'started'
-                        );
-                    } elseif ($item->contactgroup_id) {
-                        $message = sprintf(
-                            $this->translate('Contact group %s %s managing this incident'),
-                            $item->contactgroup->name,
-                            ! $item->new_recipient_role ? 'stopped' : 'started'
-                        );
+                    if (isset($item->contact->full_name)) {
+                        $message = ! $newRole
+                            ? sprintf(
+                                $this->translate('Contact %s stopped managing this incident'),
+                                $item->contact->full_name
+                            )
+                            : sprintf(
+                                $this->translate('Contact %s started managing this incident'),
+                                $item->contact->full_name
+                            );
                     } else {
-                        $message = sprintf(
-                            $this->translate('Schedule %s %s managing this incident'),
-                            $item->schedule->name,
-                            ! $item->new_recipient_role ? 'stopped' : 'started'
-                        );
+                        $message = ! $newRole
+                            ? $this->translate('Unknown recipient stopped managing this incident')
+                            : $this->translate('Unknown recipient started managing this incident');
                     }
                 } elseif (
                     $newRole === 'subscriber'
@@ -224,38 +233,49 @@ class IncidentHistoryRenderer implements ItemRenderer
                         ! $newRole && $item->old_recipient_role === 'subscriber'
                     )
                 ) {
-                    if ($item->contact_id) {
-                        $message = sprintf(
-                            $this->translate('Contact %s %s this incident'),
-                            $item->contact->full_name,
-                            ! $item->new_recipient_role ? 'unsubscribed from' : 'subscribed to'
-                        );
-                    } elseif ($item->contactgroup_id) {
-                        $message = sprintf(
-                            $this->translate('Contact group %s %s this incident'),
-                            $item->contactgroup->name,
-                            ! $item->new_recipient_role ? 'unsubscribed from' : 'subscribed to'
-                        );
+                    if (isset($item->contact->full_name)) {
+                        $message = ! $newRole
+                            ? sprintf(
+                                $this->translate('Contact %s unsubscribed from this incident'),
+                                $item->contact->full_name
+                            )
+                            : sprintf(
+                                $this->translate('Contact %s subscribed to this incident'),
+                                $item->contact->full_name
+                            );
                     } else {
-                        $message = sprintf(
-                            $this->translate('Schedule %s %s this incident'),
-                            $item->schedule->name,
-                            ! $item->new_recipient_role ? 'unsubscribed from' : 'subscribed to'
-                        );
+                        $message = ! $newRole
+                            ? $this->translate('Unknown recipient unsubscribed from this incident')
+                            : $this->translate('Unknown recipient subscribed to this incident');
                     }
                 }
 
                 break;
             case 'rule_matched':
-                $message = sprintf($this->translate('Rule %s matched on this incident'), $item->rule->name);
+                if (isset($item->rule->name)) {
+                    $message = sprintf($this->translate('Rule %s matched on this incident'), $item->rule->name);
+                } else {
+                    $message = $this->translate('Unknown rule matched on this incident');
+                }
 
                 break;
             case 'escalation_triggered':
-                $message = sprintf(
-                    $this->translate('Rule %s reached escalation %s'),
-                    $item->rule->name,
-                    $item->rule_escalation->name
-                );
+                if (isset($item->rule->name)) {
+                    if (isset($item->rule_escalation->name)) {
+                        $message = sprintf(
+                            $this->translate('Rule %s reached escalation %s'),
+                            $item->rule->name,
+                            $item->rule_escalation->name
+                        );
+                    } else {
+                        $message = sprintf(
+                            $this->translate('Rule %s reached unknown escalation'),
+                            $item->rule->name
+                        );
+                    }
+                } else {
+                    $message = $this->translate('Unknown rule reached escalation');
+                }
 
                 break;
             case 'muted':
