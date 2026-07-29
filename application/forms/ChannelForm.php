@@ -5,15 +5,15 @@
 
 namespace Icinga\Module\Notifications\Forms;
 
-use DateTime;
 use Icinga\Exception\ConfigurationError;
-use Icinga\Exception\Http\HttpNotFoundException;
+use Icinga\Module\Notifications\Form\Data\Channel as ChannelData;
 use Icinga\Module\Notifications\Model\AvailableChannelType;
 use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use Icinga\Web\Session;
 use ipl\Html\Attributes;
+use ipl\Html\Contract\Form;
 use ipl\Html\Contract\FormSubmitElement;
 use ipl\Html\FormElement\BaseFormElement;
 use ipl\Html\FormElement\FieldsetElement;
@@ -26,7 +26,6 @@ use ipl\Stdlib\Filter;
 use ipl\Validator\EmailAddressValidator;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
-use Ramsey\Uuid\Uuid;
 
 /**
  * @phpstan-type ChannelOptionConfig array{
@@ -47,15 +46,49 @@ class ChannelForm extends CompatForm
 
     private Connection $db;
 
-    /** @var ?int Channel ID */
-    private ?int $channelId = null;
-
     /** @var array<string, mixed> */
     private array $defaultChannelOptions = [];
 
     public function __construct(Connection $db)
     {
         $this->db = $db;
+    }
+
+    /**
+     * Set the channel to populate the form with
+     *
+     * @param Channel $channel
+     *
+     * @return $this
+     */
+    public function setChannel(Channel $channel): static
+    {
+        $this->populate($this->channelToFormData($channel));
+
+        return $this;
+    }
+
+    /**
+     * Get the channel as it's currently configured
+     *
+     * @return ChannelData
+     */
+    public function getChannel(): ChannelData
+    {
+        $id = $this->getValue('id') ?: null;
+        if ($id !== null) {
+            $id = (int) $id;
+        }
+
+        /** @var array<string, mixed> $config */
+        $config = $this->hasElement('config') ? $this->getElement('config')->getValue() : [];
+
+        return new ChannelData(
+            $id,
+            $this->getValue('name'),
+            $this->getValue('type'),
+            $this->filterConfig($config)
+        );
     }
 
     /**
@@ -73,6 +106,12 @@ class ChannelForm extends CompatForm
 
         $this->addAttributes(['class' => 'channel-form']);
         $this->addCsrfCounterMeasure(Session::getSession()->getId());
+
+        $this->addElement('hidden', 'id');
+        $channelId = $this->getPopulatedValue('id') ?: null;
+        if ($channelId !== null) {
+            $channelId = (int) $channelId;
+        }
 
         $this->addElement(
             'text',
@@ -122,22 +161,22 @@ class ChannelForm extends CompatForm
             'submit',
             'submit',
             [
-                'label' => $this->channelId === null ?
+                'label' => $channelId === null ?
                     $this->translate('Add Channel') :
                     $this->translate('Save Changes')
             ]
         );
 
-        if ($this->channelId !== null) {
+        if ($channelId !== null) {
             $isInUse = Contact::on($this->db)
                 ->columns([new Expression('1')])
-                ->filter(Filter::equal('default_channel_id', $this->channelId))
+                ->filter(Filter::equal('default_channel_id', $channelId))
                 ->first();
 
             if ($isInUse === null) {
                 $isInUse = RuleEscalationRecipient::on($this->db)
                     ->columns([new Expression('1')])
-                    ->filter(Filter::equal('channel_id', $this->channelId))
+                    ->filter(Filter::equal('channel_id', $channelId))
                     ->first();
             }
 
@@ -188,86 +227,6 @@ class ChannelForm extends CompatForm
         }
 
         return parent::hasBeenSubmitted();
-    }
-
-    /**
-     * Load the channel with given id
-     *
-     * @param int $id
-     *
-     * @return $this
-     *
-     * @throws HttpNotFoundException
-     */
-    public function loadChannel(int $id): static
-    {
-        $this->channelId = $id;
-        $this->populate($this->fetchDbValues());
-
-        return $this;
-    }
-
-    /**
-     * Add the new channel
-     */
-    public function addChannel(): void
-    {
-        $channel = $this->getValues();
-        $channel['config'] = json_encode($this->filterConfig($channel['config']), JSON_FORCE_OBJECT);
-        $channel['changed_at'] = (int) (new DateTime())->format("Uv");
-        $channel['external_uuid'] = Uuid::uuid4()->toString();
-
-        $this->db->transaction(function (Connection $db) use ($channel): void {
-            $db->insert('channel', $channel);
-        });
-    }
-
-    /**
-     * Edit the channel
-     *
-     * @return void
-     */
-    public function editChannel(): void
-    {
-        $this->db->beginTransaction();
-
-        $channel = $this->getValues();
-        $storedValues = $this->fetchDbValues();
-
-        $channel['config'] = json_encode($this->filterConfig($channel['config']), JSON_FORCE_OBJECT);
-        $storedValues['config'] = json_encode($storedValues['config'], JSON_FORCE_OBJECT);
-
-        if (! empty(array_diff_assoc($channel, $storedValues))) {
-            $channel['changed_at'] = (int) (new DateTime())->format("Uv");
-
-            $this->db->update('channel', $channel, ['id = ?' => $this->channelId]);
-        }
-
-        $this->db->commitTransaction();
-    }
-
-    /**
-     * Remove the channel
-     */
-    public function removeChannel(): void
-    {
-        $this->db->transaction(function (Connection $db): void {
-            $db->update(
-                'channel',
-                ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'],
-                ['id = ?' => $this->channelId]
-            );
-        });
-    }
-
-    /**
-     * Get the channel name
-     *
-     * @return string
-     */
-    public function getChannelName(): string
-    {
-        return $this->getValue('name');
     }
 
     /**
@@ -442,27 +401,19 @@ class ChannelForm extends CompatForm
     }
 
     /**
-     * Fetch the values from the database
+     * Transform the given channel into form data
      *
-     * @return array
+     * @param Channel $channel
      *
-     * @throws HttpNotFoundException
+     * @return array<string, mixed>
      */
-    private function fetchDbValues(): array
+    private function channelToFormData(Channel $channel): array
     {
-        /** @var Channel $channel */
-        $channel = Channel::on($this->db)
-            ->filter(Filter::equal('id', $this->channelId))
-            ->first();
-
-        if ($channel === null) {
-            throw new HttpNotFoundException($this->translate('Channel not found'));
-        }
-
         return [
+            'id'        => $channel->id,
             'name'      => $channel->name,
             'type'      => $channel->type,
-            'config'    => json_decode($channel->config, true) ?? []
+            'config'    => json_decode($channel->config ?? '', true) ?? []
         ];
     }
 
@@ -480,5 +431,11 @@ class ChannelForm extends CompatForm
         }
 
         return $this;
+    }
+
+    protected function onError()
+    {
+        // TODO: I feel like this should be the case in ipl-html already
+        $this->emit(Form::ON_SENT, [$this]);
     }
 }

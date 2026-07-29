@@ -10,12 +10,14 @@ use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\ChannelForm;
 use Icinga\Module\Notifications\Model\AvailableChannelType;
 use Icinga\Module\Notifications\Model\Channel;
+use Icinga\Module\Notifications\Repository\ChannelRepository;
 use Icinga\Module\Notifications\View\ChannelRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Web\Notification;
 use Icinga\Web\Widget\Tabs;
 use ipl\Html\Contract\Form;
+use ipl\Sql\Connection;
 use ipl\Sql\Expression;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
@@ -105,21 +107,27 @@ class ChannelsController extends CompatController
 
     public function addAction(): void
     {
-        $this->addTitleTab(t('Add Channel'));
-        $form = (new ChannelForm(Database::get()))
+        (new ChannelForm(Database::get()))
+            ->on(Form::ON_REQUEST, function ($_, ChannelForm $form) {
+                $this->addTitleTab(t('Add Channel'));
+                $this->addContent($form);
+            })
             ->on(Form::ON_SUBMIT, function (ChannelForm $form) {
-                $form->addChannel();
+                $channel = $form->getChannel();
+                Database::get()->transaction(fn(Connection $db) => (new ChannelRepository($db))->create($channel));
                 Notification::success(
                     sprintf(
                         t('New channel %s has successfully been added'),
-                        $form->getValue('name')
+                        $channel->name
                     )
                 );
                 $this->switchToSingleColumnLayout();
-            })
-            ->handleRequest($this->getServerRequest());
-
-        $this->addContent($form);
+            })->on(Form::ON_SENT, function (ChannelForm $form) {
+                // TODO: I feel this should be part of CompatForm or CompatController (e.g. $this->sendForm())
+                if (! $this->getResponse()->isRedirect()) {
+                    $this->addPart($form, $this->content->getAttribute('id')->getValue());
+                }
+            })->handleRequest($this->getServerRequest());
     }
 
     public function completeAction(): void
