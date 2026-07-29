@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Widget\Detail;
 
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\EscalationConditionDescriber;
+use Icinga\Module\Notifications\Common\NotificationTransmissionReason;
 use Icinga\Module\Notifications\Model\NotificationHistory;
 use Icinga\Module\Notifications\View\IncidentRenderer;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
@@ -122,17 +123,24 @@ class NotificationHistoryDetail extends BaseHtmlElement
 
     protected function createReason(): array
     {
-        return [
-            new HtmlElement('h2', content: Text::create($this->translate('Trigger Chain'))),
+        $triggerChain = new HtmlElement(
+            'div',
+            Attributes::create(['class' => 'trigger-chain']),
             new HtmlElement(
-                'div',
-                Attributes::create(['class' => 'trigger-chain']),
-                new HtmlElement(
-                    'span',
-                    Attributes::create(['class' => 'item']),
-                    Text::create($this->notificationHistory->reason->getLabel())
-                ),
-                //TODO: in case MUTE, UNMUTE, notifiaction is snet with rule<escalation triggered>, fix chain down below
+                'span',
+                Attributes::create(['class' => 'item']),
+                Text::create($this->notificationHistory->reason->getLabel())
+            )
+        );
+
+        if (
+            ! in_array(
+                $this->notificationHistory->reason,
+                [NotificationTransmissionReason::MUTED, NotificationTransmissionReason::UNMUTED],
+                true
+            )
+        ) {
+            $triggerChain->addHtml(
                 new HtmlElement(
                     'span',
                     Attributes::create(['class' => 'item']),
@@ -151,7 +159,43 @@ class NotificationHistoryDetail extends BaseHtmlElement
                     Attributes::create(['class' => 'item']),
                     $this->notificationHistory->state->getIcon()
                 )
-            )
+            );
+        }
+
+        $query = $this->notificationHistory->skipped
+            ->with([
+                'contactgroup',
+                'schedule',
+                'rule',
+                'rule_escalation'
+            ]);
+        $skip = [];
+        foreach ($query as $skipped) {
+            $skip[] = new HtmlElement('li', Attributes::create(['class' => 'popup-item']), Text::create(
+                sprintf(
+                    'Rule: %s, Escalation: %s, Schedule: %s, Contactgroup: %s',
+                    $skipped->rule->name,
+                    $skipped->rule_escalation->position,
+                    $skipped->schedule->name,
+                    $skipped->contactgroup->name
+                )
+            ));
+        }
+
+        if (! empty($skip)) {
+            $triggerChain->addHtml(
+                new HtmlElement(
+                    'ul',
+                    Attributes::create(['class' => 'skipped']),
+                    Text::create(sprintf($this->translate('(%s Skipped)'), count($skip))),
+                    new HtmlElement('div', Attributes::create(['class' => ['popup']]), ...$skip)
+                )
+            );
+        }
+
+        return [
+            new HtmlElement('h2', content: Text::create($this->translate('Trigger Chain'))),
+            $triggerChain
         ];
     }
 
