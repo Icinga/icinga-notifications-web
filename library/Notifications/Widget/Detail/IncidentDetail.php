@@ -19,8 +19,8 @@ use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\Html\ValidHtml;
 use ipl\I18n\Translation;
-use ipl\Stdlib\Filter;
 use ipl\Web\Layout\MinimalItemLayout;
+use ipl\Web\Widget\EmptyState;
 
 class IncidentDetail extends BaseHtmlElement
 {
@@ -62,7 +62,7 @@ class IncidentDetail extends BaseHtmlElement
             || ! $this->getAuth()->hasPermission('notifications/config/contacts');
 
         return [
-            Html::tag('h2', t('Subscribers')),
+            Html::tag('h2', $this->translate('Subscribers')),
             (new ObjectList($contacts, (new IncidentContactRenderer())->disableContactLink($disableContactLink)))
                 ->setItemLayoutClass(MinimalItemLayout::class)
                 ->setDetailActionsDisabled($disableContactLink)
@@ -79,7 +79,7 @@ class IncidentDetail extends BaseHtmlElement
         }
 
         return [
-            new HtmlElement('h2', null, Text::create(t('Related Object'))),
+            new HtmlElement('h2', null, Text::create($this->translate('Related Object'))),
             $objectUrl
         ];
     }
@@ -98,7 +98,7 @@ class IncidentDetail extends BaseHtmlElement
             ]);
 
         return [
-            Html::tag('h2', t('Incident History')),
+            Html::tag('h2', $this->translate('Incident History')),
             (new ObjectList($query, new IncidentHistoryRenderer()))
                 ->setItemLayoutClass(MinimalItemLayout::class)
                 ->setDetailActionsDisabled()
@@ -108,11 +108,18 @@ class IncidentDetail extends BaseHtmlElement
     /** @return ValidHtml[] */
     protected function createSource(): array
     {
+        if (! isset($this->incident->object->source->name)) {
+            return [
+                Html::tag('h2', $this->translate('Event Source')),
+                new EmptyState($this->translate('No source information available'))
+            ];
+        }
+
         $list = new HtmlElement('ul', Attributes::create(['class' => 'source-list']));
         $list->addHtml(new HtmlElement('li', null, new EventSourceBadge($this->incident->object->source)));
 
         return [
-            Html::tag('h2', t('Event Source')),
+            Html::tag('h2', $this->translate('Event Source')),
             $list
         ];
     }
