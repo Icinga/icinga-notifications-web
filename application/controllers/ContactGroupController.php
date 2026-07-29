@@ -42,13 +42,7 @@ class ContactGroupController extends CompatController
         $this->controls->addAttributes(Attributes::create(['class' => 'contactgroup-detail']));
 
         $this->addControl(new ObjectHeader($group));
-
-        $contacts = Contact::on(Database::get())
-            ->filter(Filter::all(
-                Filter::equal('contactgroup_member.contactgroup_id', $group->id),
-            ));
-
-        $this->addControl($this->createPaginationControl($contacts));
+        $this->addControl($this->createPaginationControl($group->contact));
         $this->addControl($this->createLimitControl());
 
         $this->addContent(
@@ -61,7 +55,7 @@ class ContactGroupController extends CompatController
         );
 
         $this->addContent(
-            (new ObjectList($contacts, new ContactRenderer()))
+            (new ObjectList($group->contact, new ContactRenderer()))
                 ->setItemLayoutClass(MinimalItemLayout::class)
         );
 
