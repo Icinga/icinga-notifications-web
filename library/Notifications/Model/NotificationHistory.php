@@ -41,6 +41,7 @@ use ipl\Sql\Select;
  * @property Query|Contactgroup $contactgroup
  * @property Query|Channel $channel
  * @property Query|Schedule $schedule
+ * @property Query|SkippedNotificationHistory $skipped
  */
 class NotificationHistory extends Model
 {
@@ -110,6 +111,8 @@ class NotificationHistory extends Model
         $relations->belongsTo('contactgroup', Contactgroup::class)->setJoinType('LEFT');
         $relations->belongsTo('channel', Channel::class)->setJoinType('LEFT');
         $relations->belongsTo('schedule', Schedule::class)->setJoinType('LEFT');
+        $relations->hasMany('skipped', SkippedNotificationHistory::class)
+            ->setJoinType('LEFT');
     }
 
     public static function on(Connection $db): Query
