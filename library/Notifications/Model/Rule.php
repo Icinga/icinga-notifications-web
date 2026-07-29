@@ -26,6 +26,7 @@ use ipl\Orm\Relations;
  * @property Query|RuleEscalation $rule_escalation
  * @property Query|Incident $incident
  * @property Query|IncidentHistory $incident_history
+ * @property Query|NotificationHistory $notification_history
  */
 class Rule extends Model
 {
@@ -89,5 +90,7 @@ class Rule extends Model
             ->setJoinType('LEFT');
 
         $relations->hasMany('incident_history', IncidentHistory::class)->setJoinType('LEFT');
+        $relations->hasMany('notification_history', NotificationHistory::class)
+            ->setJoinType('LEFT');
     }
 }
