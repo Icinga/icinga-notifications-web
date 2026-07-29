@@ -25,6 +25,7 @@ use Icinga\Module\Notifications\Model\Contactgroup;
 use Icinga\Module\Notifications\Model\Rotation;
 use Icinga\Module\Notifications\Model\RotationMember;
 use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
+use Icinga\Module\Notifications\Repository\RotationRepository;
 use Icinga\Util\Json;
 use ipl\Sql\Select;
 use ipl\Stdlib\Filter;
@@ -515,16 +516,8 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
             );
 
             $toRemoveRotations = array_diff($rotationIds, $rotationIdsWithOtherMembers);
-
-            if (! empty($toRemoveRotations)) {
-                $rotations = Rotation::on(Database::get())
-                    ->columns(['id', 'schedule_id', 'priority', 'timeperiod.id'])
-                    ->filter(Filter::equal('id', $toRemoveRotations));
-
-                /** @var Rotation $rotation */
-                foreach ($rotations as $rotation) {
-                    $rotation->deleteRotation();
-                }
+            foreach ($toRemoveRotations as $rotationId) {
+                (new RotationRepository(Database::get()))->delete($rotationId);
             }
         }
 

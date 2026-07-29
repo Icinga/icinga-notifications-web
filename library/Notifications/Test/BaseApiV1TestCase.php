@@ -34,7 +34,7 @@ class BaseApiV1TestCase extends TestCase
      */
     protected const UUID_INCOMPLETE = '3817d973-398e-41d7-9cd2-61cdb7ef41';
 
-    protected static function initializeNotificationsDb(Connection $db, string $driver): void
+    protected static function initializeNotificationsDb(Connection $db): void
     {
         $db->insert('available_channel_type', [
             'type' => 'email',

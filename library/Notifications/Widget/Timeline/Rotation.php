@@ -45,16 +45,6 @@ class Rotation
     }
 
     /**
-     * Get the schedule ID of the rotation
-     *
-     * @return int
-     */
-    public function getScheduleId(): int
-    {
-        return $this->model->schedule_id;
-    }
-
-    /**
      * Get the name of the rotation
      *
      * @return string
@@ -186,7 +176,7 @@ class Rotation
                         ->setMember($member)
                         ->setStart($recurrence)
                         ->setEnd($recurrenceEnd)
-                        ->setUrl(Links::rotationSettings($this->getId(), $this->getScheduleId()))
+                        ->setUrl(Links::rotationSettings($this->getId()))
                         ->setScheduleTimezone(new DateTimeZone($timeperiodEntry->timezone));
 
                     yield $occurrence;
@@ -196,7 +186,7 @@ class Rotation
                     ->setMember($member)
                     ->setStart($timeperiodEntry->start_time)
                     ->setEnd($timeperiodEntry->end_time)
-                    ->setUrl(Links::rotationSettings($this->getId(), $this->getScheduleId()))
+                    ->setUrl(Links::rotationSettings($this->getId()))
                     ->setScheduleTimezone(new DateTimeZone($timeperiodEntry->timezone));
 
                 yield $entry;

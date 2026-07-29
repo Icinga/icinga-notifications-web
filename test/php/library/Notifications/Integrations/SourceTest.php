@@ -6,68 +6,142 @@
 namespace Tests\Icinga\Module\Notifications\Integrations;
 
 use Icinga\Module\Notifications\Integrations\Source;
-use Icinga\Module\Notifications\Model\Source as SourceModel;
-use ipl\Sql\Connection;
-use PDOStatement;
-use PHPUnit\Framework\MockObject\MockObject;
+use Icinga\Module\Notifications\Repository\SourceRepository;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use Tests\Icinga\Module\Notifications\Lib\CallableInterface;
 
-/**
- * Tests for {@see Source}.
- *
- * These tests cover the save/delete routing of {@see Source}. All low-level database interactions
- * (insert data, password hashing, update WHERE clause, soft-delete details) are covered in
- * {@see \Tests\Icinga\Module\Notifications\Repository\SourceRepositoryTest}.
- */
 class SourceTest extends TestCase
 {
     public function testGetNameReturnsNullWhenNotSet(): void
     {
-        $this->assertNull((new Source(new SourceModel(), $this->createStub(Connection::class)))->getName());
+        $this->assertNull((new Source(
+            fn() => null,
+            $this->createStub(SourceRepository::class),
+            '',
+            null,
+            null,
+            null
+        ))->getName());
     }
 
     public function testGetNameReturnsSetName(): void
     {
-        $source = (new Source(new SourceModel(), $this->createStub(Connection::class)))->setName('My Source');
+        $source = (new Source(
+            fn() => null,
+            $this->createStub(SourceRepository::class),
+            '',
+            null,
+            null,
+            null
+        ))->setName('My Source');
 
         $this->assertSame('My Source', $source->getName());
     }
 
     public function testSaveCallsInsertForNewSource(): void
     {
-        $db = $this->getConnectionMock();
-        $db->expects($this->once())
-            ->method('insert')
-            ->willReturnCallback(function ($_, $data) {
-                $this->assertSame('y', $data['locked']);
+        $db = $this->createMock(SourceRepository::class);
+        $db->expects($this->once())->method('create')->with(
+            new \Icinga\Module\Notifications\Form\Data\Source(
+                null,
+                'icingadb',
+                'N',
+                'icingadb',
+                null,
+                null,
+                true
+            )
+        )->willReturn(5);
 
-                return $this->createStub(PDOStatement::class);
+        $transactionWrapper = $this->createMock(CallableInterface::class);
+        $transactionWrapper
+            ->expects($this->once())
+            ->method('__invoke')
+            ->willReturnCallback(function ($callback) {
+                $callback();
             });
-        $db->expects($this->never())->method('update');
 
-        (new Source((new SourceModel())->setNew(), $db))
+        (new Source(
+            $transactionWrapper(...),
+            $db,
+            'icingadb',
+            null,
+            null,
+            null
+        ))
             ->setName('N')
             ->setType('icingadb')
             ->save();
     }
 
-    public function testSaveCallsUpdateForExistingSource(): void
+    public function testSaveInternallySetsTheIdSoThatDeleteWorks(): void
     {
-        $db = $this->getConnectionMock();
-        $db->expects($this->never())->method('insert');
-        $db->expects($this->once())
-            ->method('update')
-            ->willReturnCallback(function ($_, $data) {
-                $this->assertSame('y', $data['locked']);
+        $db = $this->createMock(SourceRepository::class);
+        $db->expects($this->once())->method('create')->with(
+            new \Icinga\Module\Notifications\Form\Data\Source(
+                null,
+                'icingadb',
+                'N',
+                'icingadb',
+                null,
+                null,
+                true
+            )
+        )->willReturn(5);
+        $db->expects($this->once())->method('delete')->with(5);
 
-                return $this->createStub(PDOStatement::class);
+        $transactionWrapper = $this->createMock(CallableInterface::class);
+        $transactionWrapper
+            ->method('__invoke')
+            ->willReturnCallback(function ($callback) {
+                return $callback();
             });
 
-        $model = new SourceModel(['id' => 5, 'type' => 'icingadb', 'name' => 'N', 'listener_username' => 'u']);
-        $model->setNew(false);
+        $source = new Source(
+            $transactionWrapper(...),
+            $db,
+            'icingadb',
+            null,
+            'icingadb',
+            'N'
+        );
 
-        (new Source($model, $db))->setName('Updated')->save();
+        $source->save();
+        $source->delete();
+    }
+
+    public function testSaveCallsUpdateForExistingSource(): void
+    {
+        $db = $this->createMock(SourceRepository::class);
+        $db->expects($this->once())->method('update')->with(
+            new \Icinga\Module\Notifications\Form\Data\Source(
+                5,
+                'icingadb',
+                'Updated',
+                'u',
+                null,
+                null,
+                true
+            )
+        );
+
+        $transactionWrapper = $this->createMock(CallableInterface::class);
+        $transactionWrapper
+            ->expects($this->once())
+            ->method('__invoke')
+            ->willReturnCallback(function ($callback) {
+                $callback();
+            });
+
+        (new Source(
+            $transactionWrapper(...),
+            $db,
+            'u',
+            5,
+            'icingadb',
+            'N'
+        ))->setName('Updated')->save();
     }
 
     public function testSaveThrowsForNewSourceWithoutNameAndType(): void
@@ -75,7 +149,14 @@ class SourceTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Source must have a name and type');
 
-        (new Source((new SourceModel())->setNew(), $this->createStub(Connection::class)))->save();
+        (new Source(
+            fn() => null,
+            $this->createStub(SourceRepository::class),
+            '',
+            null,
+            null,
+            null
+        ))->save();
     }
 
     public function testSaveThrowsForNewSourceWithoutName(): void
@@ -83,7 +164,14 @@ class SourceTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Source must have a name and type');
 
-        (new Source((new SourceModel())->setNew(), $this->createStub(Connection::class)))->setType('icingadb')->save();
+        (new Source(
+            fn() => null,
+            $this->createStub(SourceRepository::class),
+            '',
+            null,
+            null,
+            null
+        ))->setType('icingadb')->save();
     }
 
     public function testSaveThrowsForNewSourceWithoutType(): void
@@ -91,43 +179,13 @@ class SourceTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Source must have a name and type');
 
-        (new Source((new SourceModel())->setNew(), $this->createStub(Connection::class)))->setName('N')->save();
-    }
-
-    public function testDeleteMarksSourceAsDeleted(): void
-    {
-        $model = new SourceModel([
-            'id'                => 5,
-            'listener_username' => 'u',
-            'deleted'           => 'n'
-        ]);
-        $model->setNew(false);
-        $model->rule = new class {
-            public function columns(string $_): array
-            {
-                return [];
-            }
-        };
-
-        $db = $this->getConnectionMock();
-        $db->expects($this->once())
-            ->method('update')
-            ->willReturnCallback(function ($_, $data) {
-                $this->assertSame('y', $data['deleted']);
-                $this->assertNull($data['listener_username']);
-
-                return $this->createStub(PDOStatement::class);
-            });
-
-        (new Source($model, $db))->delete();
-    }
-
-    private function getConnectionMock(): Connection&MockObject
-    {
-        $db = $this->createMock(Connection::class);
-        $db->method('transaction')->willReturnCallback(fn(callable $cb) => $cb());
-        $db->method('quoteIdentifier')->willReturnCallback(fn($s) => $s);
-
-        return $db;
+        (new Source(
+            fn() => null,
+            $this->createStub(SourceRepository::class),
+            '',
+            null,
+            null,
+            null
+        ))->setName('N')->save();
     }
 }

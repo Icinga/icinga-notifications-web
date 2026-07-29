@@ -7,19 +7,19 @@ namespace Icinga\Module\Notifications\Controllers;
 
 use Icinga\Application\Logger;
 use Icinga\Exception\ConfigurationError;
-use Icinga\Exception\Http\HttpNotFoundException;
 use Icinga\Exception\MissingParameterException;
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Common\SourceHookLocator;
-use Icinga\Module\Notifications\Forms\EventRuleConfigElements\NotificationConfigProvider;
+use Icinga\Module\Notifications\Data\NotificationConfigProvider;
 use Icinga\Module\Notifications\Forms\EventRuleConfigForm;
 use Icinga\Module\Notifications\Forms\EventRuleForm;
 use Icinga\Module\Notifications\Forms\SourceForm;
 use Icinga\Module\Notifications\Hook\V2\SourceHook;
 use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Model\Source;
+use Icinga\Module\Notifications\Repository\EscalationRuleRepository;
 use Icinga\Module\Notifications\Util\RuleSerializer;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
@@ -27,6 +27,7 @@ use ipl\Html\Attributes;
 use ipl\Html\Contract\Form;
 use ipl\Html\Html;
 use ipl\Html\Text;
+use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
 use ipl\Stdlib\Filter\Condition;
 use ipl\Stdlib\Seq;
@@ -72,16 +73,21 @@ class EventRuleController extends CompatController
 
         $eventRuleConfig
             ->on(Form::ON_SUBMIT, function (EventRuleConfigForm $form) use ($ruleId) {
-                if ($ruleId !== -1) {
-                    $rule = $this->fetchRule($ruleId);
+                $rule = $form->getRule();
+
+                if ($ruleId === -1) {
+                    $ruleId = Database::get()->transaction(
+                        fn(Connection $db) => (new EscalationRuleRepository($db))->create($rule)
+                    );
                 } else {
-                    $rule = null;
+                    Database::get()->transaction(
+                        fn(Connection $db) => (new EscalationRuleRepository($db))->update($rule)
+                    );
                 }
 
-                $ruleId = $form->storeInDatabase(Database::get(), $rule);
                 Notification::success(sprintf(
                     $this->translate('Successfully saved event rule %s'),
-                    $form->getValue('name')
+                    $rule->name
                 ));
                 $this->sendExtraUpdates(['#col1']);
                 $this->redirectNow(Links::eventRule($ruleId));
@@ -89,7 +95,7 @@ class EventRuleController extends CompatController
             ->on(Form::ON_SENT, function (EventRuleConfigForm $form) use ($ruleId) {
                 if ($form->hasBeenRemoved()) {
                     Database::get()->transaction(
-                        fn() => $form::removeRule(Database::get(), $this->fetchRule($ruleId))
+                        fn(Connection $db) => (new EscalationRuleRepository($db))->delete($ruleId)
                     );
                     Notification::success(sprintf(
                         $this->translate('Successfully deleted event rule %s'),
@@ -141,9 +147,12 @@ class EventRuleController extends CompatController
 
                     $this->getResponse()->setHeader('X-Icinga-Location-Query', $this->params->toString());
                 } elseif ($ruleId !== -1) {
-                    $rule = $this->fetchRule($ruleId);
+                    $rule = (new EscalationRuleRepository(Database::get()))->find($ruleId);
+                    if ($rule === null) {
+                        $this->httpNotFound(t('Rule not found'));
+                    }
 
-                    $form->load($rule);
+                    $form->setRule($rule);
 
                     $this->session->set('name', $rule->name);
                     $this->session->set('source', $rule->source_id);
@@ -151,7 +160,7 @@ class EventRuleController extends CompatController
                 } else {
                     $name = $this->params->getRequired('name');
                     $source = (int) $this->params->getRequired('source');
-                    $form->populate(['id' => $ruleId, 'name' => $name, 'source' => $source]);
+                    $form->populate(['name' => $name, 'source' => $source]);
 
                     $this->session->set('name', $name);
                     $this->session->set('source', $source);
@@ -443,28 +452,5 @@ class EventRuleController extends CompatController
         $this->setTitle($this->translate('Edit Event Rule'));
 
         $this->addContent($eventRuleForm);
-    }
-
-    /**
-     * Fetch the rule with the given ID
-     *
-     * @param int $ruleId
-     *
-     * @return Rule
-     *
-     * @throws HttpNotFoundException
-     */
-    private function fetchRule(int $ruleId): Rule
-    {
-        $query = Rule::on(Database::get())
-            ->filter(Filter::equal('id', $ruleId));
-
-        /* @var ?Rule $rule */
-        $rule = $query->first();
-        if ($rule === null) {
-            $this->httpNotFound(t('Rule not found'));
-        }
-
-        return $rule;
     }
 }

@@ -13,12 +13,15 @@ use Icinga\Module\Notifications\Forms\MoveRotationForm;
 use Icinga\Module\Notifications\Forms\RotationConfigForm;
 use Icinga\Module\Notifications\Forms\ScheduleForm;
 use Icinga\Module\Notifications\Model\Schedule;
+use Icinga\Module\Notifications\Repository\RotationRepository;
+use Icinga\Module\Notifications\Repository\ScheduleRepository;
 use Icinga\Module\Notifications\Widget\Detail\ScheduleDetail;
 use Icinga\Module\Notifications\Widget\TimezoneWarning;
 use Icinga\Web\Session;
 use ipl\Html\Attributes;
 use ipl\Html\Contract\Form;
 use ipl\Html\Html;
+use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Url;
@@ -41,11 +44,7 @@ class ScheduleController extends CompatController
     {
         $id = (int) $this->params->getRequired('id');
 
-        $query = Schedule::on(Database::get())
-            ->filter(Filter::equal('schedule.id', $id));
-
-        /** @var ?Schedule $schedule */
-        $schedule = $query->first();
+        $schedule = (new ScheduleRepository(Database::get()))->find($id);
         if ($schedule === null) {
             $this->httpNotFound(t('Schedule not found'));
         }
@@ -113,20 +112,36 @@ class ScheduleController extends CompatController
         $this->setTitle($this->translate('Edit Schedule'));
         $scheduleId = (int) $this->params->getRequired('id');
 
-        $form = new ScheduleForm(Database::get());
-        $form->setShowRemoveButton();
-        $form->loadSchedule($scheduleId);
-        $form->setSubmitLabel($this->translate('Save Changes'));
-        $form->setAction($this->getRequest()->getUrl()->getAbsoluteUrl());
-        $form->on(Form::ON_SUBMIT, function ($form) use ($scheduleId) {
-            $form->editSchedule($scheduleId);
+        $schedule = (new ScheduleRepository(Database::get()))->find($scheduleId);
+        if ($schedule === null) {
+            $this->httpNotFound(t('Schedule not found'));
+        }
+
+        $form = new ScheduleForm();
+        $form->setSchedule($schedule);
+        $form->setAction($this->getRequest()->getUrl()->setParam('showCompact')->getAbsoluteUrl());
+        $form->on(Form::ON_SUBMIT, function (ScheduleForm $form) {
+            $schedule = $form->getSchedule();
+
+            $scheduleId = $schedule->id;
+            if ($form->hasBeenDuplicated()) {
+                $scheduleId = Database::get()->transaction(function (Connection $db) use ($schedule) {
+                    return (new ScheduleRepository($db))->duplicate($schedule);
+                });
+            } else {
+                Database::get()->transaction(function (Connection $db) use ($schedule) {
+                    (new ScheduleRepository($db))->update($schedule);
+                });
+            }
 
             $this->sendExtraUpdates(['#col1']);
             $this->redirectNow(Links::schedule($scheduleId));
         });
-        $form->on(Form::ON_SENT, function ($form) use ($scheduleId) {
+        $form->on(Form::ON_SENT, function (ScheduleForm $form) use ($scheduleId) {
             if ($form->hasBeenRemoved()) {
-                $form->removeSchedule($scheduleId);
+                Database::get()->transaction(function (Connection $db) use ($scheduleId) {
+                    (new ScheduleRepository($db))->delete($scheduleId);
+                });
 
                 $this->redirectNow('__CLOSE__');
             }
@@ -140,11 +155,13 @@ class ScheduleController extends CompatController
     public function addAction(): void
     {
         $this->setTitle($this->translate('Create Schedule'));
-        $form = (new ScheduleForm(Database::get()))
-            ->setShowTimezoneSuggestionInput()
+        $form = (new ScheduleForm())
             ->setAction($this->getRequest()->getUrl()->setParam('showCompact')->getAbsoluteUrl())
             ->on(Form::ON_SUBMIT, function (ScheduleForm $form) {
-                $scheduleId = $form->addSchedule();
+                $schedule = $form->getSchedule();
+                $scheduleId = Database::get()->transaction(function (Connection $db) use ($schedule) {
+                    return (new ScheduleRepository($db))->create($schedule);
+                });
 
                 $this->sendExtraUpdates(['#col1']);
                 $this->getResponse()->setHeader('X-Icinga-Container', 'col2');
@@ -166,7 +183,7 @@ class ScheduleController extends CompatController
             $this->addContent(new TimezoneWarning($scheduleTimezone));
         }
 
-        $form = new RotationConfigForm($scheduleId, Database::get(), $displayTimezone, $scheduleTimezone);
+        $form = new RotationConfigForm($scheduleId, $displayTimezone, $scheduleTimezone);
         $form->setAction($this->getRequest()->getUrl()->setParam('showCompact')->getAbsoluteUrl());
         $form->setSuggestionUrl(Url::fromPath('notifications/suggest/recipient'));
         $form->on(Form::ON_SENT, function ($form) {
@@ -181,7 +198,10 @@ class ScheduleController extends CompatController
             }
         });
         $form->on(Form::ON_SUBMIT, function (RotationConfigForm $form) use ($scheduleId) {
-            $form->addRotation();
+            $rotation = $form->getRotation();
+            Database::get()->transaction(function (Connection $db) use ($rotation) {
+                (new RotationRepository($db))->create($rotation);
+            });
             $this->sendExtraUpdates(['#col1']);
             $this->closeModalAndRefreshRelatedView(Links::schedule($scheduleId));
         });
@@ -196,37 +216,58 @@ class ScheduleController extends CompatController
     public function editRotationAction(): void
     {
         $id = (int) $this->params->getRequired('id');
-        $scheduleId = (int) $this->params->getRequired('schedule');
-        $scheduleTimezone = $this->getScheduleTimezone($scheduleId);
-        $displayTimezone = $this->getDisplayTimezoneFromSession($scheduleId, $scheduleTimezone);
         $this->setTitle($this->translate('Edit Rotation'));
 
-        if ($displayTimezone !== $scheduleTimezone) {
-            $this->addContent(new TimezoneWarning($scheduleTimezone));
+        $rotation = (new RotationRepository(Database::get()))->find($id);
+        if ($rotation === null) {
+            $this->httpNotFound(t('Rotation not found'));
         }
 
-        $form = new RotationConfigForm($scheduleId, Database::get(), $displayTimezone, $scheduleTimezone);
+        $displayTimezone = $this->getDisplayTimezoneFromSession($rotation->schedule_id, $rotation->schedule->timezone);
+        if ($displayTimezone !== $rotation->schedule->timezone) {
+            $this->addContent(new TimezoneWarning($rotation->schedule->timezone));
+        }
+
+        $form = new RotationConfigForm($rotation->schedule_id, $displayTimezone, $rotation->schedule->timezone);
         $form->disableModeSelection();
-        $form->setShowRemoveButton();
-        $form->loadRotation($id);
+        $form->setRotation($rotation);
         $form->setSubmitLabel($this->translate('Save Changes'));
         $form->setAction($this->getRequest()->getUrl()->setParam('showCompact')->getAbsoluteUrl());
         $form->setSuggestionUrl(Url::fromPath('notifications/suggest/recipient'));
-        $form->on(Form::ON_SUBMIT, function (RotationConfigForm $form) use ($id, $scheduleId) {
-            $form->editRotation($id);
+        $form->on(Form::ON_SUBMIT, function (RotationConfigForm $form) {
+            // TODO: The rotation may not be changed by the user but the repository implementation
+            //       right now doesn't detect this and tries to generate rules for no members
+            $rotation = $form->getRotation();
+
+            if ($form->hasBeenDuplicated()) {
+                Database::get()->transaction(function (Connection $db) use ($rotation) {
+                    (new RotationRepository($db))->create($rotation);
+                });
+            } else {
+                Database::get()->transaction(function (Connection $db) use ($rotation) {
+                    (new RotationRepository($db))->update($rotation);
+                });
+            }
+
             $this->sendExtraUpdates(['#col1']);
-            $this->closeModalAndRefreshRelatedView(Links::schedule($scheduleId));
+            $this->closeModalAndRefreshRelatedView(Links::schedule($rotation->scheduleId));
         });
-        $form->on(Form::ON_SENT, function (RotationConfigForm $form) use ($id, $scheduleId) {
+        $form->on(Form::ON_SENT, function (RotationConfigForm $form) {
             if ($form->hasBeenRemoved()) {
-                $form->removeRotation($id);
+                $rotation = $form->getRotation();
+                Database::get()->transaction(function (Connection $db) use ($rotation) {
+                    (new RotationRepository($db))->delete($rotation->id);
+                });
                 $this->sendExtraUpdates(['#col1']);
-                $this->closeModalAndRefreshRelatedView(Links::schedule($scheduleId));
+                $this->closeModalAndRefreshRelatedView(Links::schedule($rotation->scheduleId));
             } elseif ($form->hasBeenWiped()) {
-                $form->wipeRotation();
+                $rotation = $form->getRotation();
+                Database::get()->transaction(function (Connection $db) use ($rotation) {
+                    (new RotationRepository($db))->wipe($rotation);
+                });
                 $this->sendExtraUpdates(['#col1']);
-                $this->closeModalAndRefreshRelatedView(Links::schedule($scheduleId));
-            } elseif (! $form->hasBeenSubmitted()) {
+                $this->closeModalAndRefreshRelatedView(Links::schedule($rotation->scheduleId));
+            } elseif (! $form->hasBeenSubmitted() && ! $form->hasBeenDuplicated()) {
                 foreach ($form->getPartUpdates() as $update) {
                     if (! is_array($update)) {
                         $update = [$update];
@@ -247,11 +288,19 @@ class ScheduleController extends CompatController
     public function moveRotationAction(): void
     {
         $this->assertHttpMethod('POST');
+        $scheduleId = (int) $this->params->getRequired('schedule');
 
-        $form = new MoveRotationForm(Database::get());
-        $form->on(Form::ON_SUBMIT, function (MoveRotationForm $form) {
+        $form = new MoveRotationForm();
+        $form->on(Form::ON_SUBMIT, function (MoveRotationForm $form) use ($scheduleId) {
+            $rotationId = (int) $form->getValue('rotation');
+            $newPriority = (int) $form->getValue('priority');
+
+            Database::get()->transaction(function () use ($rotationId, $newPriority) {
+                (new RotationRepository(Database::get()))->move($rotationId, $newPriority);
+            });
+
             $this->sendExtraUpdates(['#col1']);
-            $this->redirectNow(Links::schedule($form->getScheduleId()));
+            $this->redirectNow(Links::schedule($scheduleId));
         });
 
         $form->handleRequest($this->getServerRequest());

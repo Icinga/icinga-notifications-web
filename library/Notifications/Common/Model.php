@@ -176,6 +176,27 @@ abstract class Model extends \ipl\Orm\Model
     }
 
     /**
+     * Restore a soft deleted model
+     *
+     * @return $this
+     *
+     * @throws LogicException Either in case the model is new or not soft deletable
+     */
+    public function restore(): static
+    {
+        if ($this->isNew()) {
+            throw new LogicException('Restore failed. Model is marked as new');
+        } elseif (! $this->isSoftDeletable()) {
+            throw new LogicException('Model is not soft deletable and cannot be restored');
+        }
+
+        $this->markedForDeletion = false;
+        $this->{static::DELETED} = false;
+
+        return $this;
+    }
+
+    /**
      * Get whether the model is marked for deletion on the next {@see EntityManager::save()}
      *
      * @return bool

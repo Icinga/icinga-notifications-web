@@ -7,9 +7,8 @@ namespace Icinga\Module\Notifications\Forms;
 
 use DateTime;
 use DateTimeZone;
-use Icinga\Exception\Http\HttpNotFoundException;
-use Icinga\Module\Notifications\Model\Rotation;
-use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
+use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Form\Data\Schedule as ScheduleData;
 use Icinga\Module\Notifications\Model\Schedule;
 use Icinga\Web\Session;
 use IntlTimeZone;
@@ -17,7 +16,6 @@ use ipl\Html\Attributes;
 use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
-use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
 use ipl\Validator\CallbackValidator;
 use ipl\Web\Common\CsrfCounterMeasure;
@@ -29,55 +27,6 @@ class ScheduleForm extends CompatForm
 {
     use CsrfCounterMeasure;
 
-    protected ?string $submitLabel = null;
-
-    protected bool $showRemoveButton = false;
-
-    protected bool $showTimezoneSuggestionInput = false;
-
-    private Connection $db;
-
-    private ?int $scheduleId = null;
-
-    public function __construct(Connection $db)
-    {
-        $this->db = $db;
-        $this->applyDefaultElementDecorators();
-    }
-
-    public function setSubmitLabel(string $label): static
-    {
-        $this->submitLabel = $label;
-
-        return $this;
-    }
-
-    public function getSubmitLabel(): string
-    {
-        return $this->submitLabel ?? $this->translate('Create Schedule');
-    }
-
-    public function setShowRemoveButton(bool $state = true): static
-    {
-        $this->showRemoveButton = $state;
-
-        return $this;
-    }
-
-    /**
-     * Set whether to show the timezone dropdown or not
-     *
-     * @param bool $state If true, the timezone dropdown will be shown (defaults to true)
-     *
-     * @return $this
-     */
-    public function setShowTimezoneSuggestionInput(bool $state = true): static
-    {
-        $this->showTimezoneSuggestionInput = $state;
-
-        return $this;
-    }
-
     public function hasBeenRemoved(): bool
     {
         $btn = $this->getPressedSubmitElement();
@@ -86,98 +35,46 @@ class ScheduleForm extends CompatForm
         return $csrf !== null && $csrf->isValid() && $btn !== null && $btn->getName() === 'delete';
     }
 
-    public function loadSchedule(int $id): void
+    /**
+     * Get whether the duplicate button was pressed
+     *
+     * @return bool
+     */
+    public function hasBeenDuplicated(): bool
     {
-        $this->scheduleId = $id;
-        $this->populate($this->fetchDbValues());
+        return $this->getPressedSubmitElement()?->getName() === 'duplicate';
     }
 
-    public function addSchedule(): int
+    public function __construct()
     {
-        return $this->db->transaction(function (Connection $db) {
-            $db->insert('schedule', [
-                'name'       => $this->getValue('name'),
-                'changed_at' => (int) (new DateTime())->format("Uv"),
-                'timezone'   => $this->getValue('timezone')
-            ]);
-
-            return $db->lastInsertId();
-        });
+        $this->applyDefaultElementDecorators();
     }
 
-    public function editSchedule(int $id): void
+    public function setSchedule(Schedule $schedule): static
     {
-        $this->db->beginTransaction();
+        $this->populate($this->prepareFormPopulate($schedule));
 
-        $values = $this->getValues();
-        $storedValues = $this->fetchDbValues();
-
-        if ($values === $storedValues) {
-            return;
-        }
-
-        $this->db->update('schedule', [
-            'name'          => $values['name'],
-            'changed_at'    => (int) (new DateTime())->format("Uv")
-        ], ['id = ?' => $id]);
-
-        $this->db->commitTransaction();
+        return $this;
     }
 
-    public function removeSchedule(int $id): void
+    public function getSchedule(): ScheduleData
     {
-        $this->db->beginTransaction();
-
-        $rotations = Rotation::on($this->db)
-            ->columns(['id', 'schedule_id', 'priority', 'timeperiod.id'])
-            ->filter(Filter::equal('schedule_id', $id))
-            ->orderBy('priority', SORT_DESC);
-
-        /** @var Rotation $rotation */
-        foreach ($rotations as $rotation) {
-            $rotation->deleteRotation();
-        }
-
-        $markAsDeleted = ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'];
-
-        $escalationIds = $this->db->fetchCol(
-            RuleEscalationRecipient::on($this->db)
-                ->columns('rule_escalation_id')
-                ->filter(Filter::equal('schedule_id', $id))
-                ->assembleSelect()
+        return new ScheduleData(
+            $this->getValue('id'),
+            $this->getValue('name'),
+            $this->getValue('timezone')
         );
-
-        $this->db->update('rule_escalation_recipient', $markAsDeleted, ['schedule_id = ?' => $id]);
-
-        if (! empty($escalationIds)) {
-            $escalationIdsWithOtherRecipients = $this->db->fetchCol(
-                RuleEscalationRecipient::on($this->db)
-                    ->columns('rule_escalation_id')
-                    ->filter(Filter::all(
-                        Filter::equal('rule_escalation_id', $escalationIds),
-                        Filter::unequal('schedule_id', $id)
-                    ))->assembleSelect()
-            );
-
-            $toRemoveEscalations = array_diff($escalationIds, $escalationIdsWithOtherRecipients);
-
-            if (! empty($toRemoveEscalations)) {
-                $this->db->update(
-                    'rule_escalation',
-                    $markAsDeleted + ['position' => null],
-                    ['id IN (?)' => $toRemoveEscalations]
-                );
-            }
-        }
-
-        $this->db->update('schedule', $markAsDeleted, ['id = ?' => $id]);
-
-        $this->db->commitTransaction();
     }
 
     protected function assemble(): void
     {
-        if (! $this->showRemoveButton) {
+        $this->addElement('hidden', 'id');
+        $scheduleId = $this->getPopulatedValue('id') ?: null;
+        if ($scheduleId !== null) {
+            $scheduleId = (int) $scheduleId;
+        }
+
+        if ($scheduleId === null) {
             $this->addHtml(new HtmlElement(
                 'p',
                 new Attributes(['class' => 'description']),
@@ -192,52 +89,71 @@ class ScheduleForm extends CompatForm
         $this->addElement('text', 'name', [
             'required'      => true,
             'label'         => $this->translate('Schedule Name'),
-            'placeholder'   => $this->translate('e.g. working hours, on call, etc ...')
+            'placeholder'   => $this->translate('e.g. working hours, on call, etc ...'),
+            'validators'    => [
+                new CallbackValidator(function ($value, $validator) use ($scheduleId) {
+                    $schedules = Schedule::on(Database::get())
+                        ->columns('id')
+                        ->filter(Filter::equal('name', $value));
+                    if ($scheduleId !== null && ! $this->hasBeenDuplicated()) {
+                        $schedules->filter(Filter::unequal('id', $scheduleId));
+                    }
+
+                    if ($schedules->first() !== null) {
+                        $validator->addMessage($this->translate('A schedule with this name already exists'));
+
+                        return false;
+                    }
+
+                    return true;
+                })
+            ]
         ]);
 
-        if ($this->showTimezoneSuggestionInput) {
-            $this->addElement(
-                'suggestion',
-                'timezone',
-                [
-                    'suggestionsUrl' => Url::fromPath('notifications/suggest/timezone', [
-                        'showCompact'    => true,
-                        '_disableLayout' => 1
-                    ]),
-                    'label'          => $this->translate('Schedule Timezone'),
-                    'value'          => date_default_timezone_get(),
-                    'validators'     => [
-                        new CallbackValidator(function ($value, $validator) {
-                            // https://github.com/php/php-src/issues/11874#issuecomment-1666223477
-                            $timezones = IntlTimeZone::createEnumeration() ?: [];
+        $this->addElement(
+            'suggestion',
+            'timezone',
+            [
+                'required'       => true,
+                'suggestionsUrl' => Url::fromPath('notifications/suggest/timezone', [
+                    'showCompact'    => true,
+                    '_disableLayout' => 1
+                ]),
+                'label'          => $this->translate('Schedule Timezone'),
+                'value'          => date_default_timezone_get(),
+                'validators'     => [
+                    new CallbackValidator(function ($value, $validator) {
+                        // https://github.com/php/php-src/issues/11874#issuecomment-1666223477
+                        $timezones = IntlTimeZone::createEnumeration() ?: [];
 
-                            foreach ($timezones as $tz) {
-                                try {
-                                    if (
-                                        (new DateTime('now', new DateTimeZone($tz)))->getTimezone()->getLocation()
-                                        && $value === $tz
-                                    ) {
-                                        return true;
-                                    }
-                                } catch (Throwable) {
-                                    continue;
+                        foreach ($timezones as $tz) {
+                            try {
+                                if (
+                                    (new DateTime('now', new DateTimeZone($tz)))->getTimezone()->getLocation()
+                                    && $value === $tz
+                                ) {
+                                    return true;
                                 }
+                            } catch (Throwable) {
+                                continue;
                             }
+                        }
 
-                            $validator->addMessage($this->translate('Invalid timezone'));
+                        $validator->addMessage($this->translate('Invalid timezone'));
 
-                            return false;
-                        })
-                    ]
+                        return false;
+                    })
                 ]
-            );
-        }
+            ]
+        );
 
         $this->addElement('submit', 'submit', [
-            'label' => $this->getSubmitLabel()
+            'label' => $scheduleId === null
+                ? $this->translate('Create Schedule')
+                : $this->translate('Save Changes')
         ]);
 
-        if ($this->showRemoveButton) {
+        if ($scheduleId !== null) {
             $removeBtn = $this->createElement('submit', 'delete', [
                 'label' => $this->translate('Delete'),
                 'class' => 'btn-remove',
@@ -245,7 +161,15 @@ class ScheduleForm extends CompatForm
             ]);
             $this->registerElement($removeBtn);
 
-            $this->getElement('submit')->prependWrapper((new HtmlDocument())->setHtmlContent($removeBtn));
+            $duplicateBtn = $this->createElement('submit', 'duplicate', [
+                'label' => $this->translate('Duplicate')
+            ]);
+            $this->registerElement($duplicateBtn);
+
+            $this->getElement('submit')->prependWrapper((new HtmlDocument())->setHtmlContent(
+                $removeBtn,
+                $duplicateBtn
+            ));
         }
 
         $this->addCsrfCounterMeasure(Session::getSession()->getId());
@@ -254,22 +178,21 @@ class ScheduleForm extends CompatForm
     /**
      * Fetch the values from the database
      *
-     * @return string[]
+     * @param Schedule $schedule
      *
-     * @throws HttpNotFoundException
+     * @return array<string, string>
      */
-    private function fetchDbValues(): array
+    private function prepareFormPopulate(Schedule $schedule): array
     {
-        /** @var ?Schedule $schedule */
-        $schedule = Schedule::on($this->db)
-            ->columns('name')
-            ->filter(Filter::equal('id', $this->scheduleId))
-            ->first();
+        return [
+            'id' => $schedule->id,
+            'name' => $schedule->name,
+            'timezone' => $schedule->timezone
+        ];
+    }
 
-        if ($schedule === null) {
-            throw new HttpNotFoundException($this->translate('Schedule not found'));
-        }
-
-        return ['name' => $schedule->name];
+    public function hasBeenSubmitted()
+    {
+        return parent::hasBeenSubmitted() || ($this->hasBeenSent() && $this->hasBeenDuplicated());
     }
 }

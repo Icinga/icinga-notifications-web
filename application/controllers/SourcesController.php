@@ -101,18 +101,25 @@ class SourcesController extends CompatController
 
     public function addAction(): void
     {
-        $form = (new SourceForm())
+        (new SourceForm())
             ->setCsrfCounterMeasureId(Session::getSession()->getId())
+            ->on(Form::ON_REQUEST, function ($_, SourceForm $form) {
+                $this->addTitleTab($this->translate('Add Source'));
+                $this->addContent($form);
+            })
             ->on(Form::ON_SUBMIT, function (SourceForm $form) {
                 $source = $form->getSource();
                 Database::get()->transaction(fn (Connection $db) => (new SourceRepository($db))->create($source));
                 Notification::success(sprintf(t('Added new source %s successfully'), $source->name));
                 $this->switchToSingleColumnLayout();
             })
+            ->on(Form::ON_SENT, function (SourceForm $form) {
+                // TODO: I feel this should be part of CompatForm or CompatController (e.g. $this->sendForm())
+                if (! $this->getResponse()->isRedirect()) {
+                    $this->addPart($form, $this->content->getAttribute('id')->getValue());
+                }
+            })
             ->handleRequest($this->getServerRequest());
-
-        $this->addTitleTab($this->translate('Add Source'));
-        $this->addContent($form);
     }
 
     public function completeAction(): void
