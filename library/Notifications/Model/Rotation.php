@@ -15,6 +15,7 @@ use ipl\Orm\Behaviors;
 use ipl\Orm\Contract\RetrieveBehavior;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
+use ipl\Stdlib\Filter;
 
 /**
  * Rotation
@@ -111,5 +112,10 @@ class Rotation extends Model
                 }
             }
         });
+    }
+
+    public function createVisibilityFilter(Filter\Chain $filter): void
+    {
+        $filter->add(Filter::equal('deleted', 'n'));
     }
 }

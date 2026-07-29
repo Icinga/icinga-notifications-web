@@ -13,6 +13,7 @@ use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
+use ipl\Stdlib\Filter;
 
 /**
  * @property int $id
@@ -113,5 +114,10 @@ class Contact extends Model
         $relations->belongsToMany('contactgroup', Contactgroup::class)
             ->through(ContactgroupMember::class)
             ->setJoinType('LEFT');
+    }
+
+    public function createVisibilityFilter(Filter\Chain $filter): void
+    {
+        $filter->add(Filter::equal('deleted', 'n'));
     }
 }

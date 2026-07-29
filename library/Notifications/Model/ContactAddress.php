@@ -12,6 +12,7 @@ use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
+use ipl\Stdlib\Filter;
 
 /**
  * @property int $id
@@ -55,5 +56,10 @@ class ContactAddress extends Model
     public function createRelations(Relations $relations): void
     {
         $relations->belongsTo('contact', Contact::class);
+    }
+
+    public function createVisibilityFilter(Filter\Chain $filter): void
+    {
+        $filter->add(Filter::equal('deleted', 'n'));
     }
 }

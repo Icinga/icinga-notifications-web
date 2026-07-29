@@ -448,7 +448,10 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
             (new Select())
                 ->from('contactgroup')
                 ->columns('id')
-                ->where(['external_uuid = ?' => $identifier])
+                ->where([
+                    'external_uuid = ?' => $identifier,
+                    'deleted = ?' => 'n'
+                ])
         );
 //
 //        if ($group === false) {
@@ -771,7 +774,10 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
         $stmt = (new Select())
             ->from('contactgroup')
             ->columns('1')
-            ->where(['name = ?' => $name]);
+            ->where([
+                'name = ?' => $name,
+                'deleted = ?' => 'n'
+            ]);
 
         if ($contactgroupId) {
             $stmt->where(['id != ?' => $contactgroupId]);

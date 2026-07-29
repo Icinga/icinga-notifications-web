@@ -108,7 +108,8 @@ class Channels extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
                 'name',
                 'type',
                 'config'
-            ]);
+            ])
+            ->where(['ch.deleted = ?' => 'n']);
 
         if ($identifier === null) {
             return $this->getPlural($queryFilter, $stmt);
@@ -192,7 +193,10 @@ class Channels extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
             (new Select())
                 ->from('channel')
                 ->columns('id')
-                ->where(['external_uuid = ?' => $channelIdentifier])
+                ->where([
+                    'external_uuid = ?' => $channelIdentifier,
+                    'deleted = ?' => 'n'
+                ])
         );
 
         return $channel->id ?? false;
@@ -212,7 +216,10 @@ class Channels extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
             (new Select())
                 ->from('channel')
                 ->columns('type')
-                ->where(['id = ?' => $channelId])
+                ->where([
+                    'id = ?' => $channelId,
+                    'deleted = ?' => 'n'
+                ])
         );
 
         return $channel->type;

@@ -46,7 +46,6 @@ class ContactGroupController extends CompatController
         $contacts = Contact::on(Database::get())
             ->filter(Filter::all(
                 Filter::equal('contactgroup_member.contactgroup_id', $group->id),
-                Filter::equal('contactgroup_member.deleted', 'n')
             ));
 
         $this->addControl($this->createPaginationControl($contacts));

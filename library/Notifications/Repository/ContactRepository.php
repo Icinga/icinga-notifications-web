@@ -43,7 +43,6 @@ final class ContactRepository
     {
         return Contact::on($this->db)
             ->filter(Filter::equal('id', $id))
-            ->filter(Filter::equal('deleted', false))
             ->first();
     }
 
@@ -121,10 +120,6 @@ final class ContactRepository
         $model->username = $contact->username;
         $model->default_channel_id = $contact->channelId;
 
-        $model->contact_address
-            ->query()
-            ->filter(Filter::equal('deleted', false));
-
         $requiredAddresses = $contact->addresses;
         foreach ($model->contact_address as $contactAddress) {
             if (isset($requiredAddresses[$contactAddress->type])) {
@@ -168,14 +163,12 @@ final class ContactRepository
         $model->rotation
             ->query()
             ->withColumns(['schedule.timezone'])
-            ->filter(Filter::equal('deleted', false))
             ->orderBy('priority', SORT_DESC); // Important, MUST BE DESC to not open gaps when deleting one below
-        $model->rule_escalation->query()->columns('id')->filter(Filter::equal('deleted', false));
+        $model->rule_escalation->query()->columns('id');
 
         foreach ($model->rotation as $rotation) {
             $rotation->member
                 ->query()
-                ->filter(Filter::equal('deleted', 'n'))
                 ->columns(['id', 'contact_id', 'contactgroup_id', 'position']);
 
             $otherMembers = [];
@@ -220,10 +213,7 @@ final class ContactRepository
             $otherRecipient = $escalation->rule_escalation_recipient
                 ->query()
                 ->columns([new Expression('1')])
-                ->filter(Filter::all(
-                    Filter::unequal('contact_id', $id),
-                    Filter::equal('deleted', 'n')
-                ))
+                ->filter(Filter::unequal('contact_id', $id))
                 ->first();
             if ($otherRecipient === null) {
                 (new EscalationRepository($this->db))->delete($escalation->id);

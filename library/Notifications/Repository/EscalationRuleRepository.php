@@ -35,7 +35,6 @@ final class EscalationRuleRepository
     {
         return Rule::on($this->db)
             ->filter(Filter::equal('id', $id))
-            ->filter(Filter::equal('deleted', false))
             ->first();
     }
 
@@ -98,10 +97,7 @@ final class EscalationRuleRepository
             }
         }
 
-        $model->rule_escalation
-            ->query()
-            ->columns('id')
-            ->filter(Filter::equal('deleted', false));
+        $model->rule_escalation->query()->columns('id');
         foreach ($model->rule_escalation as $escalationModel) {
             if (! in_array($escalationModel->id, $escalationsToKeep, true)) {
                 $escalationRepository->delete($escalationModel->id);
@@ -136,10 +132,7 @@ final class EscalationRuleRepository
 
         $escalationRepository = new EscalationRepository($this->db);
 
-        $escalations = $rule->rule_escalation
-            ->query()
-            ->columns('id')
-            ->filter(Filter::equal('deleted', false));
+        $escalations = $rule->rule_escalation->query()->columns('id');
         foreach ($escalations as $escalation) {
             $escalationRepository->delete($escalation->id);
         }

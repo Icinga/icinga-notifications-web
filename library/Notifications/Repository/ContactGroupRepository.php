@@ -43,7 +43,6 @@ final class ContactGroupRepository
     {
         return Contactgroup::on($this->db)
             ->filter(Filter::equal('id', $id))
-            ->filter(Filter::equal('deleted', false))
             ->first();
     }
 
@@ -115,14 +114,12 @@ final class ContactGroupRepository
         $model->rotation
             ->query()
             ->withColumns(['schedule.timezone'])
-            ->filter(Filter::equal('deleted', false))
             ->orderBy('priority', SORT_DESC); // Important, MUST BE DESC to not open gaps when deleting one below
-        $model->rule_escalation->query()->columns('id')->filter(Filter::equal('deleted', false));
+        $model->rule_escalation->query()->columns('id');
 
         foreach ($model->rotation as $rotation) {
             $rotation->member
                 ->query()
-                ->filter(Filter::equal('deleted', false))
                 ->columns(['id', 'contact_id', 'contactgroup_id', 'position']);
 
             $otherMembers = [];
@@ -167,10 +164,7 @@ final class ContactGroupRepository
             $otherRecipient = $escalation->rule_escalation_recipient
                 ->query()
                 ->columns([new Expression('1')])
-                ->filter(Filter::all(
-                    Filter::unequal('contactgroup_id', $id),
-                    Filter::equal('deleted', false)
-                ))
+                ->filter(Filter::unequal('contactgroup_id', $id))
                 ->first();
             if ($otherRecipient === null) {
                 (new EscalationRepository($this->db))->delete($escalation->id);
