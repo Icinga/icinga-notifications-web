@@ -306,7 +306,7 @@ YAML;
             'v1/contact-groups',
             json: [
                 'id' => BaseApiV1TestCase::GROUP_UUID_3,
-                'name' => 'Test'
+                'name' => 'Test3'
             ]
         );
         $content = $response->getBody()->getContents();
@@ -332,7 +332,7 @@ YAML;
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
             'id' => BaseApiV1TestCase::GROUP_UUID_3,
-            'name' => 'Test',
+            'name' => 'Test3',
             'users' => []
         ]), $content);
     }
@@ -451,7 +451,7 @@ YAML;
             'v1/contact-groups',
             json: [
                 'id' => BaseApiV1TestCase::GROUP_UUID_3,
-                'name' => 'Test',
+                'name' => 'Test3',
                 'users' => [BaseApiV1TestCase::CONTACT_UUID]
             ]
         );
@@ -478,7 +478,7 @@ YAML;
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
             'id' => BaseApiV1TestCase::GROUP_UUID_3,
-            'name' => 'Test',
+            'name' => 'Test3',
             'users' => [BaseApiV1TestCase::CONTACT_UUID]
         ]), $content);
     }
@@ -535,7 +535,7 @@ YAML;
             'v1/contact-groups/',
             json: [
                 'id' => [BaseApiV1TestCase::GROUP_UUID_3],
-                'name' => 'Test',
+                'name' => 'Test3',
                 'users' => []
             ]
         );
@@ -596,7 +596,7 @@ YAML;
             'v1/contact-groups',
             json: [
                 'id' => BaseApiV1TestCase::GROUP_UUID_3,
-                'name' => 'Test',
+                'name' => 'Test3',
                 'users' => [BaseApiV1TestCase::CONTACT_UUID_3]
             ]
         );
@@ -862,7 +862,7 @@ YAML;
             'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID_3,
             json: [
                 'id' => BaseApiV1TestCase::GROUP_UUID_3,
-                'name' => 'Test'
+                'name' => 'Test3'
             ]
         );
         $content = $response->getBody()->getContents();
@@ -888,7 +888,7 @@ YAML;
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
             'id' => BaseApiV1TestCase::GROUP_UUID_3,
-            'name' => 'Test',
+            'name' => 'Test3',
             'users' => []
         ]), $content);
     }
@@ -959,7 +959,7 @@ YAML;
             'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID_3,
             json: [
                 'id' => BaseApiV1TestCase::GROUP_UUID_3,
-                'name' => 'Test',
+                'name' => 'Test3',
                 'users' => [BaseApiV1TestCase::CONTACT_UUID]
             ]
         );
@@ -986,7 +986,7 @@ YAML;
         $this->assertSame(200, $response->getStatusCode(), $content);
         $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
             'id' => BaseApiV1TestCase::GROUP_UUID_3,
-            'name' => 'Test',
+            'name' => 'Test3',
             'users' => [BaseApiV1TestCase::CONTACT_UUID]
         ]), $content);
     }
@@ -1043,7 +1043,7 @@ YAML;
             'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID_3,
             json: [
                 'id' => [BaseApiV1TestCase::GROUP_UUID_3],
-                'name' => 'Test',
+                'name' => 'Test3',
                 'users' => []
             ]
         );
