@@ -53,14 +53,15 @@ class IncidentDetail extends BaseHtmlElement
         $contacts = [];
         $query = $this->incident->incident_contact
             ->with('contact')
-            ->filter(Filter::equal('contact.deleted', 'n'))
             ->orderBy('role', SORT_DESC);
 
         foreach ($query as $incident_contact) {
-            $contact = $incident_contact->contact;
-            $contact->role = $incident_contact->role;
+            if (isset($incident_contact->contact->id)) {
+                $contact = $incident_contact->contact;
+                $contact->role = $incident_contact->role;
 
-            $contacts[] = $contact;
+                $contacts[] = $contact;
+            }
         }
 
         $disableContactLink = ! $this->getAuth()->hasPermission('notifications/view/contacts')

@@ -12,6 +12,7 @@ use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
+use ipl\Stdlib\Filter;
 
 /**
  * RotationMember
@@ -65,5 +66,10 @@ class RotationMember extends Model
             ->setJoinType('LEFT');
         $relations->belongsTo('contactgroup', Contactgroup::class)
             ->setJoinType('LEFT');
+    }
+
+    public function createVisibilityFilter(Filter\Chain $filter): void
+    {
+        $filter->add(Filter::equal('deleted', 'n'));
     }
 }

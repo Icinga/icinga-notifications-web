@@ -12,6 +12,7 @@ use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
+use ipl\Stdlib\Filter;
 use Recurr\Frequency;
 use Recurr\Rule;
 
@@ -77,6 +78,11 @@ class TimeperiodEntry extends Model
     {
         $relations->belongsTo('timeperiod', Timeperiod::class);
         $relations->belongsTo('member', RotationMember::class);
+    }
+
+    public function createVisibilityFilter(Filter\Chain $filter): void
+    {
+        $filter->add(Filter::equal('deleted', 'n'));
     }
 
     /**

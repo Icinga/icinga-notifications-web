@@ -39,7 +39,6 @@ final class ScheduleRepository
     {
         return Schedule::on($this->db)
             ->filter(Filter::equal('schedule.id', $id))
-            ->filter(Filter::equal('schedule.deleted', false))
             ->first();
     }
 
@@ -87,15 +86,10 @@ final class ScheduleRepository
 
             $rotations = $model->rotation
                 ->query()
-                ->filter(Filter::equal('deleted', false))
                 ->orderBy('priority', SORT_ASC);
             foreach ($rotations as $rotation) {
-                $currentMembers = $rotation->member
-                    ->filter(Filter::equal('deleted', false))
-                    ->orderBy('position', SORT_ASC);
-
                 $members = [];
-                foreach ($currentMembers as $member) {
+                foreach ($rotation->member->orderBy('position', SORT_ASC) as $member) {
                     if ($member->contact_id !== null) {
                         $members[] = ['contact', $member->contact_id];
                     } else {
@@ -139,26 +133,19 @@ final class ScheduleRepository
 
         $rotations = $schedule->rotation->query()
             ->columns('id')
-            ->filter(Filter::equal('deleted', false))
             ->orderBy('priority', SORT_DESC);
         foreach ($rotations as $rotation) {
             (new RotationRepository($this->db))->delete($rotation->id);
         }
 
-        $schedule->rule_escalation
-            ->query()
-            ->columns('id')
-            ->filter(Filter::equal('deleted', false));
+        $schedule->rule_escalation->query()->columns('id');
         foreach ($schedule->rule_escalation as $escalation) {
             $schedule->rule_escalation->detach($escalation);
 
             $otherRecipients = $escalation->rule_escalation_recipient
                 ->query()
                 ->columns([new Expression('1')])
-                ->filter(Filter::all(
-                    Filter::unequal('schedule_id', $schedule->id),
-                    Filter::equal('deleted', 'n')
-                ))
+                ->filter(Filter::unequal('schedule_id', $schedule->id))
                 ->first();
             if ($otherRecipients === null) {
                 (new EscalationRepository($this->db))->delete($escalation->id);
@@ -188,16 +175,9 @@ final class ScheduleRepository
 
         $rotationRepository = new RotationRepository($this->db);
 
-        $rotations = $original->rotation
-            ->filter(Filter::equal('deleted', false))
-            ->orderBy('priority', SORT_ASC);
-        foreach ($rotations as $rotation) {
-            $currentMembers = $rotation->member
-                ->filter(Filter::equal('deleted', false))
-                ->orderBy('position', SORT_ASC);
-
+        foreach ($original->rotation->orderBy('priority', SORT_ASC) as $rotation) {
             $members = [];
-            foreach ($currentMembers as $member) {
+            foreach ($rotation->member->orderBy('position', SORT_ASC) as $member) {
                 if ($member->contact_id !== null) {
                     $members[] = ['contact', $member->contact_id];
                 } else {

@@ -51,7 +51,6 @@ final class RotationRepository
         $rotation  = Rotation::on($this->db)
             ->withColumns('schedule.timezone')
             ->filter(Filter::equal('rotation.id', $id))
-            ->filter(Filter::equal('rotation.deleted', false))
             ->first();
 
         if ($rotation === null) {
@@ -84,7 +83,6 @@ final class RotationRepository
             $previousShift = TimeperiodEntry::on($this->db)
                 ->columns('until_time')
                 ->filter(Filter::all(
-                    Filter::equal('deleted', false),
                     Filter::equal('timeperiod.rotation.schedule_id', $rotation->schedule_id),
                     Filter::equal('timeperiod.rotation.priority', $rotation->priority),
                     Filter::unequal('timeperiod.owned_by_rotation_id', $rotation->id),
@@ -103,7 +101,6 @@ final class RotationRepository
             $newerRotation = Rotation::on($this->db)
                 ->columns(['first_handoff', 'options', 'mode', 'schedule.timezone'])
                 ->filter(Filter::all(
-                    Filter::equal('deleted', false),
                     Filter::equal('schedule_id', $rotation->schedule_id),
                     Filter::equal('priority', $rotation->priority),
                     Filter::greaterThan('first_handoff', $rotation->first_handoff)
@@ -204,7 +201,6 @@ final class RotationRepository
             $rotationsToMove = Rotation::on($this->db)
                 ->columns(['id', 'priority'])
                 ->filter(Filter::equal('schedule_id', $rotation->scheduleId))
-                ->filter(Filter::equal('deleted', false))
                 ->orderBy('priority', SORT_DESC);
 
             $entityManager = new EntityManager($this->db);
@@ -244,8 +240,7 @@ final class RotationRepository
             $versions = Rotation::on($this->db)
                 ->columns(['id', 'name'])
                 ->filter(Filter::equal('schedule_id', $rotation->scheduleId))
-                ->filter(Filter::equal('priority', $rotation->priority))
-                ->filter(Filter::equal('deleted', false));
+                ->filter(Filter::equal('priority', $rotation->priority));
             foreach ($versions as $version) {
                 $version->setNew(false);
                 $version->name = $rotation->name;
@@ -254,7 +249,6 @@ final class RotationRepository
 
             $firstHandoff = $createStmt->current();
             $timeperiodEntries = TimeperiodEntry::on($this->db)
-                ->filter(Filter::equal('deleted', false))
                 ->filter(Filter::equal('timeperiod.owned_by_rotation_id', $rotation->id));
 
             foreach ($timeperiodEntries as $timeperiodEntry) {
@@ -303,7 +297,6 @@ final class RotationRepository
         } else {
             $entries = TimeperiodEntry::on($this->db)
                 ->columns('id')
-                ->filter(Filter::equal('deleted', false))
                 ->filter(Filter::equal('timeperiod.owned_by_rotation_id', $rotation->id));
             foreach ($entries as $entry) {
                 $entityManager->save($entry->setNew(false)->delete());
@@ -345,7 +338,6 @@ final class RotationRepository
         $model = Rotation::on($this->db)
             ->withColumns(['timeperiod.id'])
             ->filter(Filter::equal('id', $id))
-            ->filter(Filter::equal('deleted', false))
             ->first()?->setNew(false);
         if ($model === null) {
             throw new RuntimeException('Cannot delete a rotation that does not exist in the database');
@@ -358,7 +350,7 @@ final class RotationRepository
         $model->timeperiod->timeperiod_entry = [];
         $model->timeperiod->delete();
 
-        $model->member->query()->columns(['id', 'position'])->filter(Filter::equal('deleted', false));
+        $model->member->query()->columns(['id', 'position']);
         foreach ($model->member as $member) {
             $member->position = null;
             $member->delete();
@@ -379,7 +371,6 @@ final class RotationRepository
                 ->columns([new Expression('1')])
                 ->filter(Filter::equal('schedule_id', $model->schedule_id))
                 ->filter(Filter::equal('priority', $freedPriority))
-                ->filter(Filter::equal('deleted', false))
                 ->first();
 
             $requirePriorityUpdate = $versions === null;
@@ -390,7 +381,6 @@ final class RotationRepository
                 ->columns(['id', 'priority'])
                 ->filter(Filter::equal('schedule_id', $model->schedule_id))
                 ->filter(Filter::greaterThan('priority', $freedPriority))
-                ->filter(Filter::equal('deleted', false))
                 ->orderBy('priority', SORT_ASC);
 
             foreach ($siblings as $sibling) {
@@ -413,8 +403,7 @@ final class RotationRepository
         $siblings = Rotation::on($this->db)
             ->columns('id')
             ->filter(Filter::equal('schedule_id', $rotation->scheduleId))
-            ->filter(Filter::equal('priority', $rotation->priority))
-            ->filter(Filter::equal('deleted', false));
+            ->filter(Filter::equal('priority', $rotation->priority));
         foreach ($siblings as $sibling) {
             $this->delete($sibling->id);
         }
@@ -432,7 +421,6 @@ final class RotationRepository
     {
         $model = Rotation::on($this->db)
             ->filter(Filter::equal('id', $id))
-            ->filter(Filter::equal('deleted', false))
             ->first()?->setNew(false);
         if ($model === null) {
             throw new RuntimeException('Cannot move a rotation that does not exist in the database');
@@ -452,7 +440,6 @@ final class RotationRepository
                 ->filter(Filter::equal('schedule_id', $model->schedule_id))
                 ->filter(Filter::greaterThanOrEqual('priority', $newPriority))
                 ->filter(Filter::lessThan('priority', $freedPriority))
-                ->filter(Filter::equal('deleted', false))
                 ->orderBy('priority', SORT_DESC);
             foreach ($siblings as $sibling) {
                 $sibling->setNew(false);
@@ -465,7 +452,6 @@ final class RotationRepository
                 ->filter(Filter::equal('schedule_id', $model->schedule_id))
                 ->filter(Filter::lessThanOrEqual('priority', $newPriority))
                 ->filter(Filter::greaterThan('priority', $freedPriority))
-                ->filter(Filter::equal('deleted', false))
                 ->orderBy('priority', SORT_ASC);
             foreach ($siblings as $sibling) {
                 $sibling->setNew(false);

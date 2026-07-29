@@ -37,7 +37,6 @@ final class ChannelRepository
     {
         return Channel::on($this->db)
             ->filter(Filter::equal('id', $id))
-            ->filter(Filter::equal('deleted', false))
             ->first();
     }
 

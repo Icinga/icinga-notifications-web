@@ -13,6 +13,7 @@ use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
+use ipl\Stdlib\Filter;
 use ipl\Web\Widget\Icon;
 
 /**
@@ -103,5 +104,10 @@ class Channel extends Model
             'email'      => new Icon('at'),
             default      => new Icon('envelope')
         };
+    }
+
+    public function createVisibilityFilter(Filter\Chain $filter): void
+    {
+        $filter->add(Filter::equal('deleted', 'n'));
     }
 }
