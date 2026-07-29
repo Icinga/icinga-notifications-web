@@ -28,6 +28,7 @@ use ipl\Stdlib\Filter;
  * @property Query<RuleEscalation>|Collection<RuleEscalation> $rule_escalation
  * @property Query<Incident>|Collection<Incident> $incident
  * @property Query<IncidentHistory>|Collection<IncidentHistory> $incident_history
+ * @property Query<NotificationHistory>|Collection<NotificationHistory> $notification_history
  */
 class Rule extends Model
 {
@@ -92,6 +93,8 @@ class Rule extends Model
             ->setJoinType('LEFT');
 
         $relations->hasMany('incident_history', IncidentHistory::class)->setJoinType('LEFT');
+        $relations->hasMany('notification_history', NotificationHistory::class)
+            ->setJoinType('LEFT');
     }
 
     public function createVisibilityFilter(Filter\Chain $filter): void

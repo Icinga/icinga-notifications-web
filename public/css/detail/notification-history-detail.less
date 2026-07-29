@@ -1,0 +1,58 @@
+.notification-history-detail {
+  .message {
+    padding: 0.5em;
+  }
+
+  .channel {
+    display: flex;
+    align-items: baseline;
+    column-gap: 0.25em;
+  }
+
+  .trigger-chain {
+    display: flex;
+    margin-top: 1em;
+
+    @arrow-height-and-width: 1.75em;
+    .item {
+      display: flex;
+      align-items: center;
+      position: relative;
+      padding: 0.5em;
+
+      &:hover {
+        cursor: pointer;
+      }
+
+
+      &:not(:last-child):after {
+        content: "";
+        display: block;
+        position: absolute;
+        // 1px border. Half width because transform is applied after positioning
+        right: ~"calc((-@{arrow-height-and-width} / 2) - 1px)";
+        width: @arrow-height-and-width;
+        height: @arrow-height-and-width;
+        border-top: 1px solid @gray-light;
+        border-right: 1px solid @gray-light;
+        transform: rotate(45deg);
+      }
+    }
+
+    .item:not(:first-child) {
+      padding-left: 2em;
+    }
+  }
+
+  // style
+  .message {
+    background-color: @gray-lighter;
+    .rounded-corners();
+  }
+
+  .trigger-chain {
+    .item {
+      .notification-icon-ball-state();
+    }
+  }
+}
