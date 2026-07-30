@@ -44,6 +44,7 @@ class AvailableChannelType extends Model
     public function createRelations(Relations $relations): void
     {
         $relations->hasMany('channel', Channel::class)
-            ->setForeignKey('type');
+            ->setForeignKey('type')
+            ->setJoinType('LEFT');
     }
 }

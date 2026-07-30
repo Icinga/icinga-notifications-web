@@ -96,8 +96,10 @@ class Source extends Model
 
     public function createRelations(Relations $relations): void
     {
-        $relations->hasMany('object', Objects::class);
-        $relations->hasMany('rule', Rule::class);
+        $relations->hasMany('object', Objects::class)
+            ->setJoinType('LEFT');
+        $relations->hasMany('rule', Rule::class)
+            ->setJoinType('LEFT');
     }
 
     /**
