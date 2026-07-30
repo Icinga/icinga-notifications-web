@@ -89,7 +89,8 @@ class Channel extends Model
             ->setJoinType('LEFT')
             ->setForeignKey('default_channel_id');
         $relations->belongsTo('available_channel_type', AvailableChannelType::class)
-            ->setCandidateKey('type');
+            ->setCandidateKey('type')
+            ->setJoinType('LEFT');
     }
 
     /**

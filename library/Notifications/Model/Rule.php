@@ -83,7 +83,8 @@ class Rule extends Model
     public function createRelations(Relations $relations): void
     {
         $relations->belongsTo('source', Source::class);
-        $relations->hasMany('rule_escalation', RuleEscalation::class);
+        $relations->hasMany('rule_escalation', RuleEscalation::class)
+            ->setJoinType('LEFT');
 
         $relations
             ->belongsToMany('incident', Incident::class)
