@@ -17,6 +17,7 @@ use ipl\Html\Contract\Form;
 use ipl\Html\Contract\FormSubmitElement;
 use ipl\Html\FormElement\BaseFormElement;
 use ipl\Html\FormElement\FieldsetElement;
+use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
 use ipl\I18n\GettextTranslator;
 use ipl\I18n\StaticTranslator;
@@ -52,6 +53,8 @@ class ChannelForm extends CompatForm
     public function __construct(Connection $db)
     {
         $this->db = $db;
+
+        $this->applyDefaultElementDecorators();
     }
 
     /**
@@ -200,8 +203,7 @@ class ChannelForm extends CompatForm
 
             $this->registerElement($deleteButton);
             $this->getElement('submit')
-                ->getWrapper()
-                ->prepend($deleteButton);
+                ->prependWrapper((new HtmlDocument())->addHtml($deleteButton));
         }
     }
 

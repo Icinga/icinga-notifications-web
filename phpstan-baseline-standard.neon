@@ -25,12 +25,6 @@ parameters:
 			path: application/forms/ChannelForm.php
 
 		-
-			message: '#^Cannot call method prepend\(\) on ipl\\Html\\Contract\\Wrappable\|null\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: application/forms/ChannelForm.php
-
-		-
 			message: '#^Argument of an invalid type array\|null supplied for foreach, only iterables are supported\.$#'
 			identifier: foreach.nonIterable
 			count: 1
