@@ -7,8 +7,10 @@ namespace Icinga\Module\Notifications\Controllers;
 
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Forms\ChannelForm;
+use Icinga\Module\Notifications\Repository\ChannelRepository;
 use Icinga\Web\Notification;
 use ipl\Html\Contract\Form;
+use ipl\Sql\Connection;
 use ipl\Web\Compat\CompatController;
 
 class ChannelController extends CompatController
@@ -20,29 +22,47 @@ class ChannelController extends CompatController
 
     public function indexAction(): void
     {
-        $channelId = $this->params->getRequired('id');
-        $form = (new ChannelForm(Database::get()))
-            ->loadChannel($channelId)
+        (new ChannelForm(Database::get()))
+            ->on(Form::ON_REQUEST, function ($_, ChannelForm $form) {
+                $channel = (new ChannelRepository(Database::get()))
+                    ->find((int) $this->params->getRequired('id'));
+                if ($channel === null) {
+                    $this->httpNotFound($this->translate('Channel not found'));
+                }
+
+                $form->setChannel($channel);
+
+                $this->addTitleTab(sprintf($this->translate('Channel: %s'), $channel->name));
+
+                $this->addContent($form);
+            })
             ->on(Form::ON_SUBMIT, function (ChannelForm $form) {
+                $channel = $form->getChannel();
+
                 if ($form->getPressedSubmitElement()->getName() === 'delete') {
-                    $form->removeChannel();
+                    Database::get()->transaction(
+                        fn(Connection $db) => (new ChannelRepository($db))->delete($channel->id)
+                    );
                     Notification::success(sprintf(
-                        t('Deleted channel "%s" successfully'),
-                        $form->getValue('name')
+                        $this->translate('Deleted channel "%s" successfully'),
+                        $channel->name
                     ));
                 } else {
-                    $form->editChannel();
+                    Database::get()->transaction(
+                        fn(Connection $db) => (new ChannelRepository($db))->update($channel)
+                    );
                     Notification::success(sprintf(
-                        t('Channel "%s" has successfully been saved'),
-                        $form->getValue('name')
+                        $this->translate('Channel "%s" has successfully been saved'),
+                        $channel->name
                     ));
                 }
 
                 $this->redirectNow('__CLOSE__');
+            })->on(Form::ON_SENT, function (ChannelForm $form) {
+                // TODO: I feel this should be part of CompatForm or CompatController (e.g. $this->sendForm())
+                if (! $this->getResponse()->isRedirect()) {
+                    $this->addPart($form, $this->content->getAttribute('id')->getValue());
+                }
             })->handleRequest($this->getServerRequest());
-
-        $this->addTitleTab(sprintf(t('Channel: %s'), $form->getChannelName()));
-
-        $this->addContent($form);
     }
 }

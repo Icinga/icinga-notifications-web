@@ -16,6 +16,7 @@ use ipl\Web\Widget\Icon;
 
 /**
  * @property int $id
+ * @property string $external_uuid
  * @property string $name
  * @property string $type
  * @property ?string $config
