@@ -105,6 +105,29 @@ class ContactRepositoryTest extends TestCase
     }
 
     #[DataProvider('sharedDatabases')]
+    public function testFindByUsernameFindsTheContactOfTheGivenUser(Connection $db): void
+    {
+        $repository = new ContactRepository($db);
+        $id = $repository->create(new ContactData(null, 'John Doe', 'finder', self::$channelId, []));
+
+        $contact = $repository->findByUsername('finder');
+        $this->assertNotNull($contact, 'The contact of the given user was not found');
+        $this->assertEquals($id, $contact->id);
+
+        $this->assertNull($repository->findByUsername('nobody'), 'A user without a contact must not match one');
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testFindByUsernameIgnoresDeletedContacts(Connection $db): void
+    {
+        $repository = new ContactRepository($db);
+        $id = $repository->create(new ContactData(null, 'John Doe', 'doomed', self::$channelId, []));
+        $db->update('contact', ['deleted' => 'y'], ['id = ?' => $id]);
+
+        $this->assertNull($repository->findByUsername('doomed'), 'A deleted contact must not be found anymore');
+    }
+
+    #[DataProvider('sharedDatabases')]
     public function testCreateStoresTheContactWithAddresses(Connection $db): void
     {
         $repository = new ContactRepository($db);

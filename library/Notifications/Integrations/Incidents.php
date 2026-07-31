@@ -9,6 +9,8 @@ use Countable;
 use Generator;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Incident as IncidentModel;
+use Icinga\Module\Notifications\Repository\ContactRepository;
+use Icinga\User;
 use ipl\Orm\Query;
 use ipl\Orm\ResultSet;
 use ipl\Sql\Connection;
@@ -56,6 +58,30 @@ class Incidents implements IteratorAggregate, Countable
     public static function find(array $tags): static
     {
         return new static($tags, Database::get());
+    }
+
+    /**
+     * Get whether the given user can manage incidents
+     *
+     * @param User $user
+     *
+     * @return bool
+     */
+    public static function canManage(User $user): bool
+    {
+        return (new ContactRepository(Database::get()))->findByUsername($user->getUsername()) !== null;
+    }
+
+    /**
+     * Get whether the given user can subscribe to incidents
+     *
+     * @param User $user
+     *
+     * @return bool
+     */
+    public static function canSubscribe(User $user): bool
+    {
+        return (new ContactRepository(Database::get()))->findByUsername($user->getUsername()) !== null;
     }
 
     /**
