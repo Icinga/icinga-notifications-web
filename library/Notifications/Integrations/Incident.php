@@ -124,7 +124,7 @@ class Incident
      *
      * @return Generator<int, array{
      *     name: string,
-     *     full_name: string,
+     *     username: ?string,
      *     role: 'manager'|'subscriber',
      *     roleChangedAt: DateTime}>
      */
@@ -133,7 +133,7 @@ class Incident
         foreach ($this->resolveRecipients(['manager', 'subscriber']) as $recipient) {
             yield [
                 'name'          => $recipient['name'],
-                'full_name'     => $recipient['full_name'],
+                'username'      => $recipient['username'],
                 'role'          => $recipient['role'],
                 'roleChangedAt' => $recipient['roleChangedAt'],
             ];
@@ -146,7 +146,7 @@ class Incident
      * @return Generator<int, array{
      *     type: 'contact'|'contactgroup'|'schedule',
      *     name: string,
-     *     full_name: ?string,
+     *     username: ?string,
      *     roleChangedAt: DateTime}>
      */
     public function getRecipients(): Generator
@@ -155,7 +155,7 @@ class Incident
             yield [
                 'type'          => $recipient['type'],
                 'name'          => $recipient['name'],
-                'full_name'     => $recipient['full_name'],
+                'username'      => $recipient['username'],
                 'roleChangedAt' => $recipient['roleChangedAt']
             ];
         }
@@ -220,7 +220,7 @@ class Incident
      *     type: 'contact'|'contactgroup'|'schedule',
      *     id: int,
      *     name: string,
-     *     full_name: ?string,
+     *     username: ?string,
      *     role: 'manager'|'subscriber'|'recipient',
      *     roleChangedAt: DateTime
      * }>
@@ -245,8 +245,8 @@ class Incident
                 $recipients[] = [
                     'type'      => 'contact',
                     'id'        => $entry->contact_id,
-                    'name'      => $entry->contact->username,
-                    'full_name' => $entry->contact->full_name,
+                    'name'      => $entry->contact->full_name,
+                    'username'  => $entry->contact->username,
                     'role'      => $entry->role,
                     'roleChangedAt' => $entry->changed_at
                 ];
@@ -255,7 +255,7 @@ class Incident
                     'type'      => 'contactgroup',
                     'id'        => $entry->contactgroup_id,
                     'name'      => $entry->contactgroup->name,
-                    'full_name' => null,
+                    'username'  => null,
                     'role'      => $entry->role,
                     'roleChangedAt' => $entry->changed_at
                 ];
@@ -264,7 +264,7 @@ class Incident
                     'type'      => 'schedule',
                     'id'        => $entry->schedule_id,
                     'name'      => $entry->schedule->name,
-                    'full_name' => null,
+                    'username'  => null,
                     'role'      => $entry->role,
                     'roleChangedAt' => $entry->changed_at
                 ];

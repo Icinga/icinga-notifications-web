@@ -23,7 +23,7 @@ use Tests\Icinga\Module\Notifications\Lib\EntityManager\RecordingConnection;
  * yields the active subscribers (roles `manager` and `subscriber`), {@see Incident::getRecipients()} the
  * configured recipients (role `recipient`). Both are polymorphic — a recipient may be a contact, contact
  * group or schedule — and yield a uniform shape carrying a `type` discriminator, the display `name` and a
- * nullable `full_name`. Subscribers additionally carry their `role` and the `roleChangedAt` time their
+ * nullable `username`. Subscribers additionally carry their `role` and the `roleChangedAt` time their
  * current role was last changed; deleted contact groups and schedules are omitted from both.
  */
 class IncidentTest extends TestCase
@@ -69,7 +69,7 @@ class IncidentTest extends TestCase
         $incident->addManager('uname');
 
         $this->assertSame(
-            [['name' => 'uname', 'full_name' => 'Uname Example', 'role' => 'manager']],
+            [['name' => 'Uname Example', 'username' => 'uname', 'role' => 'manager']],
             $this->withoutRoleChangedAt($incident->getSubscribers())
         );
         $this->assertSame(
@@ -98,7 +98,7 @@ class IncidentTest extends TestCase
         $incident->removeManager('uname');
 
         $this->assertSame(
-            [['name' => 'uname', 'full_name' => 'Uname Example', 'role' => 'subscriber']],
+            [['name' => 'Uname Example', 'username' => 'uname', 'role' => 'subscriber']],
             $this->withoutRoleChangedAt($incident->getSubscribers())
         );
         $this->assertSame(
@@ -117,7 +117,7 @@ class IncidentTest extends TestCase
         $incident->addSubscriber('uname');
 
         $this->assertSame(
-            [['name' => 'uname', 'full_name' => 'Uname Example', 'role' => 'subscriber']],
+            [['name' => 'Uname Example', 'username' => 'uname', 'role' => 'subscriber']],
             $this->withoutRoleChangedAt($incident->getSubscribers())
         );
         $this->assertSame(
@@ -151,7 +151,7 @@ class IncidentTest extends TestCase
         $this->seedIncidentContact($id, $this->seedContact('bob'), 'recipient');
 
         $this->assertSame(
-            [['name' => 'alice', 'full_name' => 'Alice Example', 'role' => 'manager']],
+            [['name' => 'Alice Example', 'username' => 'alice', 'role' => 'manager']],
             $this->withoutRoleChangedAt($this->incident($id)->getSubscribers())
         );
     }
@@ -164,7 +164,7 @@ class IncidentTest extends TestCase
         $this->seedIncidentContact($id, null, 'subscriber');
 
         $this->assertSame(
-            [['name' => 'alice', 'full_name' => 'Alice Example', 'role' => 'manager']],
+            [['name' => 'Alice Example', 'username' => 'alice', 'role' => 'manager']],
             $this->withoutRoleChangedAt($this->incident($id)->getSubscribers())
         );
     }
@@ -188,7 +188,7 @@ class IncidentTest extends TestCase
         );
 
         $this->assertSame(
-            [['name' => 'alice', 'full_name' => 'Alice Example', 'role' => 'subscriber']],
+            [['name' => 'Alice Example', 'username' => 'alice', 'role' => 'subscriber']],
             $this->withoutRoleChangedAt($this->incident($id)->getSubscribers())
         );
     }
@@ -207,7 +207,7 @@ class IncidentTest extends TestCase
 
         unset($subscribers[0]['roleChangedAt']);
         $this->assertSame(
-            ['name' => 'alice', 'full_name' => 'Alice Example', 'role' => 'manager'],
+            ['name' => 'Alice Example', 'username' => 'alice', 'role' => 'manager'],
             $subscribers[0],
             'Apart from roleChangedAt the entry carries the uniform recipient shape'
         );
@@ -222,9 +222,9 @@ class IncidentTest extends TestCase
 
         $this->assertSame(
             [
-                ['type' => 'contact', 'name' => 'alice', 'full_name' => 'Alice Example'],
-                ['type' => 'contactgroup', 'name' => 'windows-admins', 'full_name' => null],
-                ['type' => 'schedule', 'name' => 'On-Call', 'full_name' => null],
+                ['type' => 'contact', 'name' => 'Alice Example', 'username' => 'alice'],
+                ['type' => 'contactgroup', 'name' => 'windows-admins', 'username' => null],
+                ['type' => 'schedule', 'name' => 'On-Call', 'username' => null],
             ],
             $this->withoutRoleChangedAt($this->sortedByTypeAndName($this->incident($id)->getRecipients()))
         );
@@ -238,7 +238,7 @@ class IncidentTest extends TestCase
         $this->seedIncidentContact($id, $this->seedContact('carol'), 'recipient');
 
         $this->assertSame(
-            [['type' => 'contact', 'name' => 'carol', 'full_name' => 'Carol Example']],
+            [['type' => 'contact', 'name' => 'Carol Example', 'username' => 'carol']],
             $this->withoutRoleChangedAt($this->incident($id)->getRecipients())
         );
     }
@@ -262,7 +262,7 @@ class IncidentTest extends TestCase
         );
 
         $this->assertSame(
-            [['type' => 'contact', 'name' => 'alice', 'full_name' => 'Alice Example']],
+            [['type' => 'contact', 'name' => 'Alice Example', 'username' => 'alice']],
             $this->withoutRoleChangedAt($this->incident($id)->getRecipients())
         );
     }
@@ -473,7 +473,7 @@ class IncidentTest extends TestCase
      * Insert a contact with the given username and return its generated id.
      *
      * The full name defaults to a distinct value derived from the username (e.g. "Alice Example" for
-     * "alice"), so the readers' username/full_name pairing can be asserted unambiguously.
+     * "alice"), so the readers' name/username pairing can be asserted unambiguously.
      */
     private function seedContact(string $username, bool $deleted = false): int
     {
