@@ -6,6 +6,7 @@
 namespace Icinga\Module\Notifications\Model;
 
 use DateTime;
+use Icinga\Module\Notifications\Common\Collection;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Model;
 use Icinga\Module\Notifications\Common\Severity;
@@ -28,12 +29,12 @@ use ipl\Sql\Select;
  * @property Severity $severity
  * @property ?string $mute_reason
  *
- * @property Query|Objects $object
- * @property Query|Contact $contact
- * @property Query|IncidentContact $incident_contact
- * @property Query|IncidentHistory $incident_history
- * @property Query|Rule $rule
- * @property Query|RuleEscalation $rule_escalation
+ * @property Query<Objects>|Objects $object
+ * @property Query<Contact>|Collection<Contact> $contact
+ * @property Query<IncidentContact>|Collection<IncidentContact> $incident_contact
+ * @property Query<IncidentHistory>|Collection<IncidentHistory> $incident_history
+ * @property Query<Rule>|Collection<Rule> $rule
+ * @property Query<RuleEscalation>|Collection<RuleEscalation> $rule_escalation
  */
 class Incident extends Model
 {

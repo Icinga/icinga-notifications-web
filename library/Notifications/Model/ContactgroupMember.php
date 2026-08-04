@@ -21,8 +21,8 @@ use ipl\Orm\Relations;
  * @param DateTime $changed_at
  * @param bool $deleted
  *
- * @property Query|Contactgroup $contactgroup
- * @property Query|Contact $contact
+ * @property Query<Contactgroup>|Contactgroup $contactgroup
+ * @property Query<Contact>|Contact $contact
  */
 class ContactgroupMember extends Model
 {

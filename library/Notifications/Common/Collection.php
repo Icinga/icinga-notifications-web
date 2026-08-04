@@ -26,6 +26,8 @@ use Traversable;
  *
  * Members may also be edited in place and will be cascaded by {@see EntityManager::save()} if they have
  * been modified.
+ *
+ * @template TModel of Model
  */
 class Collection implements IteratorAggregate, Countable
 {
@@ -34,21 +36,21 @@ class Collection implements IteratorAggregate, Countable
      *
      * Drained into {@see self::$base} once on first read, so the query is not run eagerly.
      *
-     * @var ?Query
+     * @var ?Query<TModel>
      */
     private ?Query $source = null;
 
     /**
      * Stored members once {@see self::$source} has been read, cached for repeated reads
      *
-     * @var ?array<string, Model>
+     * @var ?array<string, TModel>
      */
     private ?array $base = null;
 
-    /** @var array<string, Model> Models whose links/rows must exist after the next {@see EntityManager::save()} */
+    /** @var array<string, TModel> Models whose links/rows must exist after the next {@see EntityManager::save()} */
     private array $attach = [];
 
-    /** @var array<string, Model> Models whose links/rows must be removed on the next {@see EntityManager::save()} */
+    /** @var array<string, TModel> Models whose links/rows must be removed on the next {@see EntityManager::save()} */
     private array $detach = [];
 
     /** @var bool Whether {@see self::sync()} requested a replace (remove whatever is not in {@see self::$attach}) */
@@ -57,9 +59,9 @@ class Collection implements IteratorAggregate, Countable
     /**
      * Create a collection whose members are merged with existing ones on the next save
      *
-     * @param iterable $values
+     * @param Traversable<int, TModel> $values
      *
-     * @return static
+     * @return static<TModel>
      */
     public static function create(iterable $values): static
     {
@@ -74,9 +76,9 @@ class Collection implements IteratorAggregate, Countable
     /**
      * Create a collection from members who are treated as already existing db rows
      *
-     * @param Query $source
+     * @param Query<TModel> $source
      *
-     * @return static
+     * @return static<TModel>
      */
     public static function fromLoaded(Query $source): static
     {
@@ -96,7 +98,7 @@ class Collection implements IteratorAggregate, Countable
      * Traverse the collection and modify models in place, or pass a modified {@see Model} to {@see self::attach()}
      * if changes should be persisted.
      *
-     * @return Query
+     * @return Query<TModel>
      *
      * @throws LogicException If the collection was not created from a query, or the query has already been read
      */
@@ -112,7 +114,7 @@ class Collection implements IteratorAggregate, Countable
     /**
      * Additively register the given model as a member of this relation
      *
-     * @param Model $model
+     * @param TModel $model
      *
      * @return $this
      */
@@ -134,7 +136,7 @@ class Collection implements IteratorAggregate, Countable
     /**
      * Register the given model to be removed from this relation
      *
-     * @param Model $model
+     * @param TModel $model
      *
      * @return $this
      */
@@ -152,7 +154,7 @@ class Collection implements IteratorAggregate, Countable
      *
      * Anything currently stored that is not in $models is removed on save.
      *
-     * @param iterable<Model> $models
+     * @param Traversable<int, TModel> $models
      *
      * @return $this
      */
@@ -181,7 +183,7 @@ class Collection implements IteratorAggregate, Countable
     /**
      * Get the members to persist on save: staged attachments plus in-place-modified loaded members
      *
-     * @return Model[]
+     * @return array<int, TModel>
      */
     public function getMembersToSave(): array
     {
@@ -199,7 +201,7 @@ class Collection implements IteratorAggregate, Countable
     /**
      * Get the models to delete/unlink on save
      *
-     * @return Model[]
+     * @return array<int, TModel>
      */
     public function getDetachments(): array
     {
@@ -210,7 +212,7 @@ class Collection implements IteratorAggregate, Countable
      * Get the members that must be part of the relation after a save and were explicitly attached by
      * {@see self::attach()} or {@see self::sync()}
      *
-     * @return array
+     * @return array<int, TModel>
      */
     public function getAttachments(): array
     {
@@ -250,7 +252,7 @@ class Collection implements IteratorAggregate, Countable
     }
 
     /**
-     * @return Traversable<Model>
+     * @return Traversable<int, TModel>
      */
     public function getIterator(): Traversable
     {
@@ -265,7 +267,7 @@ class Collection implements IteratorAggregate, Countable
     /**
      * The staged members: base merged with attachments, minus detachments
      *
-     * @return Model[]
+     * @return array<int, TModel>
      */
     private function all(): array
     {
@@ -294,7 +296,7 @@ class Collection implements IteratorAggregate, Countable
     /**
      * The stored members, read from the source query once and cached
      *
-     * @return array<string, Model>
+     * @return array<string, TModel>
      */
     private function materializeBase(): array
     {
@@ -313,7 +315,7 @@ class Collection implements IteratorAggregate, Countable
     /**
      * Return the primary key of the model, or an object hash if it is not set
      *
-     * @param Model $model
+     * @param TModel $model
      *
      * @return string
      */

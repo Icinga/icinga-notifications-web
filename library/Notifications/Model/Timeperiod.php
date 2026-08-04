@@ -6,6 +6,7 @@
 namespace Icinga\Module\Notifications\Model;
 
 use DateTime;
+use Icinga\Module\Notifications\Common\Collection;
 use Icinga\Module\Notifications\Common\Model;
 use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
@@ -21,8 +22,8 @@ use ipl\Orm\Relations;
  * @property DateTime $changed_at
  * @property bool $deleted
  *
- * @property Query|Rotation $rotation
- * @property Query|TimeperiodEntry $timeperiod_entry
+ * @property Query<Rotation>|Rotation $rotation
+ * @property Query<TimeperiodEntry>|Collection<TimeperiodEntry> $timeperiod_entry
  */
 class Timeperiod extends Model
 {

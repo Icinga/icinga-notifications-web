@@ -20,10 +20,10 @@ use ipl\Orm\Relations;
  * @property string $role
  * @property DateTime $changed_at
  *
- * @property Query|Incident $incident
- * @property Query|Contact $contact
- * @property Query|Contactgroup $contactgroup
- * @property Query|Schedule $schedule
+ * @property Query<Incident>|Incident $incident
+ * @property Query<Contact>|Contact $contact
+ * @property Query<Contactgroup>|Contactgroup $contactgroup
+ * @property Query<Schedule>|Schedule $schedule
  */
 class IncidentContact extends Model
 {

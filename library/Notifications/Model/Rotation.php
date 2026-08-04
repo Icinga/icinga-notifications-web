@@ -6,6 +6,7 @@
 namespace Icinga\Module\Notifications\Model;
 
 use DateTime;
+use Icinga\Module\Notifications\Common\Collection;
 use Icinga\Module\Notifications\Common\Model;
 use Icinga\Util\Json;
 use ipl\Orm\Behavior\BoolCast;
@@ -29,9 +30,11 @@ use ipl\Orm\Relations;
  * @property DateTime $changed_at
  * @property bool $deleted
  *
- * @property Query|Schedule $schedule
- * @property Query|RotationMember $member
- * @property Query|Timeperiod $timeperiod
+ * @property Query<Schedule>|Schedule $schedule
+ * @property Query<RotationMember>|Collection<RotationMember> $member
+ * @property Query<Timeperiod>|Timeperiod $timeperiod
+ * @property Query<Contact>|Collection<Contact> $contact
+ * @property Query<Contactgroup>|Collection<Contactgroup> $contactgroup
  */
 class Rotation extends Model
 {

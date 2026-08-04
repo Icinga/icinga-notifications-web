@@ -23,11 +23,11 @@ use ipl\Orm\Relations;
  * @property DateTime $changed_at
  * @property bool $deleted
  *
- * @property Query|RuleEscalation $rule_escalation
- * @property Query|Contact $contact
- * @property Query|Schedule $schedule
- * @property Query|Contactgroup $contactgroup
- * @property Query|Channel $channel
+ * @property Query<RuleEscalation>|RuleEscalation $rule_escalation
+ * @property Query<Contact>|Contact $contact
+ * @property Query<Schedule>|Schedule $schedule
+ * @property Query<Contactgroup>|Contactgroup $contactgroup
+ * @property Query<Channel>|Channel $channel
  */
 class RuleEscalationRecipient extends Model
 {

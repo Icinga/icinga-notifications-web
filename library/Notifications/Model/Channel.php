@@ -6,6 +6,7 @@
 namespace Icinga\Module\Notifications\Model;
 
 use DateTime;
+use Icinga\Module\Notifications\Common\Collection;
 use Icinga\Module\Notifications\Common\Model;
 use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
@@ -23,10 +24,10 @@ use ipl\Web\Widget\Icon;
  * @property DateTime $changed_at
  * @property bool $deleted
  *
- * @property Query|IncidentHistory $incident_history
- * @property Query|RuleEscalationRecipient $rule_escalation_recipient
- * @property Query|Contact $contact
- * @property Query|AvailableChannelType $available_channel_type
+ * @property Query<IncidentHistory>|Collection<IncidentHistory> $incident_history
+ * @property Query<RuleEscalationRecipient>|Collection<RuleEscalationRecipient> $rule_escalation_recipient
+ * @property Query<Contact>|Collection<Contact> $contact
+ * @property Query<AvailableChannelType>|AvailableChannelType $available_channel_type
  */
 class Channel extends Model
 {

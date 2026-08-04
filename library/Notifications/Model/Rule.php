@@ -6,6 +6,7 @@
 namespace Icinga\Module\Notifications\Model;
 
 use DateTime;
+use Icinga\Module\Notifications\Common\Collection;
 use Icinga\Module\Notifications\Common\Model;
 use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
@@ -22,10 +23,10 @@ use ipl\Orm\Relations;
  * @property DateTime $changed_at
  * @property bool $deleted
  *
- * @property Query|Source $source
- * @property Query|RuleEscalation $rule_escalation
- * @property Query|Incident $incident
- * @property Query|IncidentHistory $incident_history
+ * @property Query<Source>|Source $source
+ * @property Query<RuleEscalation>|Collection<RuleEscalation> $rule_escalation
+ * @property Query<Incident>|Collection<Incident> $incident
+ * @property Query<IncidentHistory>|Collection<IncidentHistory> $incident_history
  */
 class Rule extends Model
 {

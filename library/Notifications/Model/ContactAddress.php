@@ -21,7 +21,7 @@ use ipl\Orm\Relations;
  * @property DateTime $changed_at
  * @property bool $deleted
  *
- * @property Query|Contact $contact
+ * @property Query<Contact>|Contact $contact
  */
 class ContactAddress extends Model
 {

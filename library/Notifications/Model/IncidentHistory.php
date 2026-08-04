@@ -38,13 +38,13 @@ use ipl\Sql\Select;
  * @property ?string $notification_state
  * @property ?DateTime $sent_at
  *
- * @property Query|Incident $incident
- * @property Query|Contact $contact
- * @property Query|Contactgroup $contactgroup
- * @property Query|Schedule $schedule
- * @property Query|Rule $rule
- * @property Query|RuleEscalation $rule_escalation
- * @property Query|Channel $channel
+ * @property Query<Incident>|Incident $incident
+ * @property Query<Contact>|Contact $contact
+ * @property Query<Contactgroup>|Contactgroup $contactgroup
+ * @property Query<Schedule>|Schedule $schedule
+ * @property Query<Rule>|Rule $rule
+ * @property Query<RuleEscalation>|RuleEscalation $rule_escalation
+ * @property Query<Channel>|Channel $channel
  */
 class IncidentHistory extends Model
 {
