@@ -48,6 +48,21 @@ final class ContactRepository
     }
 
     /**
+     * Fetch the contact with the given username
+     *
+     * @param string $username
+     *
+     * @return ?Contact
+     */
+    public function findByUsername(string $username): ?Contact
+    {
+        return Contact::on($this->db)
+            ->filter(Filter::equal('username', $username))
+            ->filter(Filter::equal('deleted', false))
+            ->first();
+    }
+
+    /**
      * Store a new contact
      *
      * The given contact is assigned an ID after successful creation.
