@@ -100,7 +100,7 @@ class IncidentController extends CompatController
         );
 
         $paginationControl = $this->createPaginationControl($notificationHistory);
-        $viewModeSwitcher = $this->createViewModeSwitcher($this->params);
+        $viewModeSwitcher = $this->createViewModeSwitcher();
 
         $searchBar = $this->createSearchBar(
             $notificationHistory,
@@ -112,7 +112,6 @@ class IncidentController extends CompatController
             ]
         );
 
-        $this->applyViewModeLimit($limitControl, $paginationControl);
         $this->handleControls($this->getServerRequest());
 
         if ($searchBar->hasBeenSent() && ! $searchBar->isValid()) {
