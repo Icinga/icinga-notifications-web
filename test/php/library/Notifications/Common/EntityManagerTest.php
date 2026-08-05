@@ -352,7 +352,7 @@ class EntityManagerTest extends TestCase
 
         $charm = (new Charm())->setNew();
         $charm->label = 'rune';
-        $trinket->charm = Collection::create([$charm]);
+        $trinket->charm = Collection::create(Charm::class, [$charm]);
 
         $this->em()->save($trinket);
 
@@ -412,13 +412,13 @@ class EntityManagerTest extends TestCase
         $sharp = (new Tag())->setNew();
         $sharp->name = 'sharp';
 
-        $spanner->sticker = Collection::create([$shared]);
-        $spanner->tag = Collection::create([$sharp]);
-        $wrench->sticker = Collection::create([$shared]);
+        $spanner->sticker = Collection::create(Sticker::class, [$shared]);
+        $spanner->tag = Collection::create(Tag::class, [$sharp]);
+        $wrench->sticker = Collection::create(Sticker::class, [$shared]);
 
         $workshop = (new Workshop())->setNew();
         $workshop->name = 'Acme';
-        $workshop->gadget = Collection::create([$spanner, $wrench]);
+        $workshop->gadget = Collection::create(Gadget::class, [$spanner, $wrench]);
 
         $this->em()->save($workshop);
 
@@ -490,7 +490,7 @@ class EntityManagerTest extends TestCase
         $fragile->label = 'fragile';
         $heavy = (new Sticker())->setNew();
         $heavy->label = 'heavy';
-        $gadget->sticker = Collection::create([$fragile, $heavy]);
+        $gadget->sticker = Collection::create(Sticker::class, [$fragile, $heavy]);
         $this->em()->save($gadget);
 
         $loaded = Gadget::on($this->db)->first()->setNew(false);
@@ -548,7 +548,7 @@ class EntityManagerTest extends TestCase
         $gadget->name = 'Spanner';
         $fragile = (new Sticker())->setNew();
         $fragile->label = 'fragile';
-        $gadget->sticker = Collection::create([$fragile]);
+        $gadget->sticker = Collection::create(Sticker::class, [$fragile]);
         $this->em()->save($gadget);
 
         $this->assertFalse($fragile->isNew(), 'The target should be persisted');
@@ -559,7 +559,7 @@ class EntityManagerTest extends TestCase
         );
 
         $loaded = Gadget::on($this->db)->first()->setNew(false);
-        $loaded->sticker = Collection::create([$fragile]);
+        $loaded->sticker = Collection::create(Sticker::class, [$fragile]);
         $this->db->resetCalls();
         $this->em()->save($loaded);
         $this->assertSame(
@@ -571,7 +571,7 @@ class EntityManagerTest extends TestCase
         $heavy = (new Sticker())->setNew();
         $heavy->label = 'heavy';
         $loaded = Gadget::on($this->db)->first()->setNew(false);
-        $loaded->sticker = Collection::create([$heavy]);
+        $loaded->sticker = Collection::create(Sticker::class, [$heavy]);
         $this->em()->save($loaded);
         $this->assertSame(
             [['sticker_id' => $heavy->id]],
@@ -603,11 +603,11 @@ class EntityManagerTest extends TestCase
         $gadget->name = 'Spanner';
         $sticker = (new Sticker())->setNew();
         $sticker->label = 'fragile';
-        $gadget->sticker = Collection::create([$sticker]);
+        $gadget->sticker = Collection::create(Sticker::class, [$sticker]);
         (new TickingEntityManager($db))->save($gadget);
 
         $loaded = Gadget::on($db)->first()->setNew(false);
-        $loaded->sticker = Collection::create([$sticker]);
+        $loaded->sticker = Collection::create(Sticker::class, [$sticker]);
 
         $db->resetCalls();
         (new TickingEntityManager($db))->save($loaded);
@@ -634,11 +634,11 @@ class EntityManagerTest extends TestCase
         $sharp->name = 'sharp';
         $heavy = (new Tag())->setNew();
         $heavy->name = 'heavy';
-        $gadget->tag = Collection::create([$sharp, $heavy]);
+        $gadget->tag = Collection::create(Tag::class, [$sharp, $heavy]);
         $this->em()->save($gadget);                     // two links inserted -> changed_at 1000, 2000
 
         $loaded = Gadget::on($this->db)->first()->setNew(false);
-        $loaded->tag = Collection::create([$sharp, $heavy]);
+        $loaded->tag = Collection::create(Tag::class, [$sharp, $heavy]);
         $this->db->resetCalls();
         $this->em()->save($loaded);
         $this->assertSame([], $this->writesTo('gadget_tag'), 'Re-saving an unchanged active link should write nothing');
@@ -658,7 +658,7 @@ class EntityManagerTest extends TestCase
         );
 
         $readded = Gadget::on($this->db)->first()->setNew(false);
-        $readded->tag = Collection::create([$sharp, $heavy]);
+        $readded->tag = Collection::create(Tag::class, [$sharp, $heavy]);
         $this->em()->save($readded);                    // revived -> changed_at 4000
 
         $this->assertSame(
@@ -679,7 +679,7 @@ class EntityManagerTest extends TestCase
         $sharp->name = 'sharp';
         $heavy = (new Badge())->setNew();
         $heavy->name = 'heavy';
-        $gadget->badge = Collection::create([$sharp, $heavy]);
+        $gadget->badge = Collection::create(Badge::class, [$sharp, $heavy]);
         $this->em()->save($gadget);                     // two links inserted -> changed_at 1000, 2000
 
         $heavyLinkId = GadgetBadge::on($this->db)
@@ -690,7 +690,7 @@ class EntityManagerTest extends TestCase
         // Sync the membership down to just "sharp"; reconcile must soft-delete heavy's link scoped by its
         // surrogate id, not by gadget_id/badge_id
         $loaded = Gadget::on($this->db)->first()->setNew(false);
-        $loaded->badge = Collection::create([$sharp]);
+        $loaded->badge = Collection::create(Badge::class, [$sharp]);
         $this->em()->save($loaded);                     // heavy soft-deleted -> changed_at 3000
 
         $this->assertSame(
@@ -704,7 +704,7 @@ class EntityManagerTest extends TestCase
 
         // Re-add heavy; reconcile must revive the tombstoned row, again scoped by its surrogate id
         $readded = Gadget::on($this->db)->first()->setNew(false);
-        $readded->badge = Collection::create([$sharp, $heavy]);
+        $readded->badge = Collection::create(Badge::class, [$sharp, $heavy]);
         $this->em()->save($readded);                    // heavy revived -> changed_at 4000
 
         $this->assertSame(
@@ -733,7 +733,7 @@ class EntityManagerTest extends TestCase
         $sharp->name = 'sharp';
         $heavy = (new Badge())->setNew();
         $heavy->name = 'heavy';
-        $gadget->badge = Collection::create([$sharp, $heavy]);
+        $gadget->badge = Collection::create(Badge::class, [$sharp, $heavy]);
         $this->em()->save($gadget);                         // two links inserted -> changed_at 1000, 2000
 
         // Load the gadget and materialize its membership while both links are still live, so the loaded
@@ -773,11 +773,11 @@ class EntityManagerTest extends TestCase
         $first->text = 'first';
         $second = (new StampedNote())->setNew();
         $second->text = 'second';
-        $stamped->stamped_note = Collection::create([$first, $second]);
+        $stamped->stamped_note = Collection::create(StampedNote::class, [$first, $second]);
         $this->em()->save($stamped);
 
         $loaded = Stamped::on($this->db)->first()->setNew(false);
-        $loaded->stamped_note = (new Collection())->sync([]);
+        $loaded->stamped_note = (new Collection(StampedNote::class))->sync([]);
         $this->em()->save($loaded);
         $this->assertSame(
             [
@@ -790,7 +790,7 @@ class EntityManagerTest extends TestCase
 
         $third = (new StampedNote())->setNew();
         $third->text = 'third';
-        $loaded->stamped_note = Collection::create([$third]);
+        $loaded->stamped_note = Collection::create(StampedNote::class, [$third]);
         $this->em()->save($loaded);
         $this->assertSame(
             'n',
@@ -799,7 +799,7 @@ class EntityManagerTest extends TestCase
         );
 
         // Detaching soft-deletes the child rather than removing it, since a HasMany link is the child row itself.
-        $loaded->stamped_note = (new Collection())->detach($third);
+        $loaded->stamped_note = (new Collection(StampedNote::class))->detach($third);
         $this->em()->save($loaded);
         $this->assertSame(
             'y',
@@ -864,7 +864,7 @@ class EntityManagerTest extends TestCase
         // Reassigning only a relation leaves the parent row's own data untouched, so it is neither
         // re-stamped nor re-written.
         $loaded = Stamped::on($this->db)->first()->setNew(false);
-        $loaded->stamped_note = new Collection();
+        $loaded->stamped_note = new Collection(StampedNote::class);
         $this->db->resetCalls();
         $this->em()->save($loaded);
         $this->assertSame(
@@ -887,7 +887,7 @@ class EntityManagerTest extends TestCase
         $gadget->name = 'Spanner';
         $sticker = (new Sticker())->setNew();
         $sticker->label = 'fragile';
-        $gadget->sticker = Collection::create([$sticker]);
+        $gadget->sticker = Collection::create(Sticker::class, [$sticker]);
         $this->em()->save($gadget);
         $gadgetId = $gadget->id;
 
@@ -922,7 +922,7 @@ class EntityManagerTest extends TestCase
 
         /** @var Model $loadedWorkshop */
         $loadedWorkshop = Workshop::on($this->db)->filter(Filter::equal('name', 'Globex'))->first()->setNew(false);
-        $loadedWorkshop->gadget = Collection::create([$orphan]);
+        $loadedWorkshop->gadget = Collection::create(Gadget::class, [$orphan]);
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('should not carry attachments');
@@ -944,7 +944,7 @@ class EntityManagerTest extends TestCase
 
         /** @var Model $loaded */
         $loaded = Gadget::on($this->db)->first()->setNew(false);
-        $loaded->sticker = Collection::create([$late]);
+        $loaded->sticker = Collection::create(Sticker::class, [$late]);
 
         $this->db->resetCalls();
         $this->em()->save($loaded->delete());
@@ -978,7 +978,7 @@ class EntityManagerTest extends TestCase
         $gadget->workshop = $workshop;
         $tag = (new Tag())->setNew();
         $tag->name = 'sharp';
-        $gadget->tag = Collection::create([$tag]);
+        $gadget->tag = Collection::create(Tag::class, [$tag]);
         $this->em()->save($gadget);                     // link inserted -> changed_at 1000
         $gadgetId = $gadget->id;
         $workshopId = $workshop->id;
@@ -994,7 +994,7 @@ class EntityManagerTest extends TestCase
         $loaded = Gadget::on($this->db)->with('workshop')->first()->setNew(false);
         $loaded->workshop->setNew(false);
         $loaded->workshop->name = 'Globex';
-        $loaded->tag = Collection::create([$tag->delete()]);
+        $loaded->tag = Collection::create(Tag::class, [$tag->delete()]);
         $this->em()->save($loaded->delete());
 
         $this->assertSame([], $this->rows('SELECT * FROM gadget'), 'The explicitly deleted gadget should be gone');
@@ -1017,13 +1017,13 @@ class EntityManagerTest extends TestCase
         $workshop->name = 'Acme';
         $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
-        $workshop->gadget = Collection::create([$gadget]);
+        $workshop->gadget = Collection::create(Gadget::class, [$gadget]);
         $this->em()->save($workshop);
         $this->assertNotEmpty($this->rows('SELECT * FROM gadget'), 'precondition: the child exists');
 
         $loadedWorkshop = Workshop::on($this->db)->first()->setNew(false);
         $loadedGadget = Gadget::on($this->db)->first()->setNew(false);
-        $loadedWorkshop->gadget = Collection::create([$loadedGadget->delete()]);
+        $loadedWorkshop->gadget = Collection::create(Gadget::class, [$loadedGadget->delete()]);
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('should not carry attachments');
@@ -1036,7 +1036,7 @@ class EntityManagerTest extends TestCase
         $stamped->name = 'Manual';
         $note = (new StampedNote())->setNew();
         $note->text = 'initial';
-        $stamped->stamped_note = Collection::create([$note]);
+        $stamped->stamped_note = Collection::create(StampedNote::class, [$note]);
         (new TickingEntityManager($this->db))->save($stamped);
         $this->em()->save($stamped);
 
@@ -1067,7 +1067,7 @@ class EntityManagerTest extends TestCase
         $loaded = Workshop::on($this->db)->first()->setNew(false);
 
         // Replace the (still-Closure) relation without first reading it, so its loader never runs.
-        $loaded->gadget = Collection::create([(new Gadget())->setNew()]);
+        $loaded->gadget = Collection::create(Gadget::class, [(new Gadget())->setNew()]);
 
         $this->assertTrue(
             $loaded->gadget->hasPendingChanges(),
@@ -1081,7 +1081,7 @@ class EntityManagerTest extends TestCase
         $workshop->name = 'Acme';
         $gadget = (new Gadget())->setNew();
         $gadget->name = 'Spanner';
-        $workshop->gadget = Collection::create([$gadget]);
+        $workshop->gadget = Collection::create(Gadget::class, [$gadget]);
         $this->em()->save($workshop);
 
         $this->db->resetCalls();
@@ -1127,7 +1127,7 @@ class EntityManagerTest extends TestCase
         $workshop->name = 'Acme';
 
         // A gadget without a name violates the NOT NULL constraint and fails mid-cascade.
-        $workshop->gadget = Collection::create([(new Gadget())->setNew()]);
+        $workshop->gadget = Collection::create(Gadget::class, [(new Gadget())->setNew()]);
 
         try {
             $this->em()->save($workshop);
@@ -1151,7 +1151,7 @@ class EntityManagerTest extends TestCase
         $gadget->name = 'Spanner';
 
         // Build a cycle: the workshop owns the gadget and the gadget points back at the same instance.
-        $workshop->gadget = Collection::create([$gadget]);
+        $workshop->gadget = Collection::create(Gadget::class, [$gadget]);
         $gadget->workshop = $workshop;
 
         $this->expectException(RuntimeException::class);
@@ -1216,7 +1216,7 @@ class EntityManagerTest extends TestCase
         $gadget->name = 'Spanner';
         $sharp = (new Tag())->setNew();
         $sharp->name = 'sharp';
-        $gadget->tag = Collection::create([$sharp]);
+        $gadget->tag = Collection::create(Tag::class, [$sharp]);
         (new TickingEntityManager($this->db))->save($gadget);   // link (gadget, sharp) stamped
 
         // The state Actor A sees: the newest junction changed_at across the gadget's links
@@ -1227,13 +1227,13 @@ class EntityManagerTest extends TestCase
         $heavy = (new Tag())->setNew();
         $heavy->name = 'heavy';
         $editedByB = Gadget::on($this->db)->first()->setNew(false);
-        $editedByB->tag = (new Collection())->attach($heavy);
+        $editedByB->tag = (new Collection(Tag::class))->attach($heavy);
         (new TickingEntityManager($this->db))->save($editedByB);
 
         // Actor A submits, syncing the gadget's tags down to just "sharp"; reconcile hits B's newer link
         $em = new TickingEntityManager($this->db, $baseline);
         $editedByA = Gadget::on($this->db)->first()->setNew(false);
-        $editedByA->tag = (new Collection())->sync([$sharp]);
+        $editedByA->tag = (new Collection(Tag::class))->sync([$sharp]);
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('has changed after baseline');
@@ -1246,7 +1246,7 @@ class EntityManagerTest extends TestCase
         $stamped->name = 'Manual';
         $first = (new StampedNote())->setNew();
         $first->text = 'first';
-        $stamped->stamped_note = Collection::create([$first]);
+        $stamped->stamped_note = Collection::create(StampedNote::class, [$first]);
         (new TickingEntityManager($this->db))->save($stamped);  // note "first" stamped
 
         // The state Actor A sees: the newest note changed_at
@@ -1257,13 +1257,13 @@ class EntityManagerTest extends TestCase
         $second = (new StampedNote())->setNew();
         $second->text = 'second';
         $editedByB = Stamped::on($this->db)->first()->setNew(false);
-        $editedByB->stamped_note = (new Collection())->attach($second);
+        $editedByB->stamped_note = (new Collection(StampedNote::class))->attach($second);
         (new TickingEntityManager($this->db))->save($editedByB);
 
         // Actor A submits, syncing the notes down to just "first"; reconcile hits B's newer note
         $em = new TickingEntityManager($this->db, $baseline);
         $editedByA = Stamped::on($this->db)->first()->setNew(false);
-        $editedByA->stamped_note = (new Collection())->sync([$first]);
+        $editedByA->stamped_note = (new Collection(StampedNote::class))->sync([$first]);
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('has changed after baseline');
@@ -1282,7 +1282,7 @@ class EntityManagerTest extends TestCase
         $stamped->name = 'Manual';
         $note = (new StampedNote())->setNew();
         $note->text = 'original';
-        $stamped->stamped_note = Collection::create([$note]);
+        $stamped->stamped_note = Collection::create(StampedNote::class, [$note]);
         $this->em()->save($stamped);
 
         $loaded = Stamped::on($this->db)->first()->setNew(false);
@@ -1305,7 +1305,7 @@ class EntityManagerTest extends TestCase
         $stamped->name = 'Manual';
         $note = (new StampedNote())->setNew();
         $note->text = 'original';
-        $stamped->stamped_note = Collection::create([$note]);
+        $stamped->stamped_note = Collection::create(StampedNote::class, [$note]);
         $this->em()->save($stamped);
 
         $loaded = Stamped::on($this->db)->first()->setNew(false);
@@ -1330,7 +1330,7 @@ class EntityManagerTest extends TestCase
         $keep->text = 'keep';
         $drop = (new StampedNote())->setNew();
         $drop->text = 'drop';
-        $stamped->stamped_note = Collection::create([$keep, $drop]);
+        $stamped->stamped_note = Collection::create(StampedNote::class, [$keep, $drop]);
         $this->em()->save($stamped);
 
         // Detach one child and delete the owner in a single save; the detached child must still be removed.
@@ -1358,7 +1358,7 @@ class EntityManagerTest extends TestCase
         $first->text = 'first';
         $second = (new StampedNote())->setNew();
         $second->text = 'second';
-        $stamped->stamped_note = Collection::create([$first, $second]);
+        $stamped->stamped_note = Collection::create(StampedNote::class, [$first, $second]);
         $this->em()->save($stamped);
 
         // Sync the children down to nothing and delete the owner in a single save.
@@ -1391,6 +1391,6 @@ class EntityManagerTest extends TestCase
     public function testQueryThrowsWhenThereIsNoPendingQuery()
     {
         $this->expectException(LogicException::class);
-        (new Collection())->query();
+        (new Collection(Tag::class))->query();
     }
 }

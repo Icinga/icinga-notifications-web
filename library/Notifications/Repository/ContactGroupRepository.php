@@ -59,7 +59,10 @@ final class ContactGroupRepository
         $model = (new Contactgroup())->setNew();
         $model->name = $group->name;
         $model->external_uuid = Uuid::uuid4()->toString();
-        $model->contact = Collection::create(array_map(fn($id) => new Contact(['id' => $id]), $group->members));
+        $model->contact = Collection::create(
+            Contact::class,
+            array_map(fn($id) => new Contact(['id' => $id]), $group->members)
+        );
 
         (new EntityManager($this->db))->save($model);
 

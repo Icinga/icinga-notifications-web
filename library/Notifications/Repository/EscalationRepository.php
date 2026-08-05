@@ -71,7 +71,7 @@ final class EscalationRepository
             $recipients[] = $recipientModel;
         }
 
-        $model->rule_escalation_recipient = Collection::create($recipients);
+        $model->rule_escalation_recipient = Collection::create(RuleEscalationRecipient::class, $recipients);
 
         (new EntityManager($this->db))->save($model);
 

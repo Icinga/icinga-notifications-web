@@ -7,9 +7,11 @@ namespace Icinga\Module\Notifications\Common;
 
 use ArrayIterator;
 use Countable;
+use InvalidArgumentException;
 use ipl\Orm\Query;
 use IteratorAggregate;
 use LogicException;
+use RuntimeException;
 use Traversable;
 
 /**
@@ -28,6 +30,7 @@ use Traversable;
  * been modified.
  *
  * @template TModel of Model
+ * @implements IteratorAggregate<int, TModel>
  */
 class Collection implements IteratorAggregate, Countable
 {
@@ -56,16 +59,30 @@ class Collection implements IteratorAggregate, Countable
     /** @var bool Whether {@see self::sync()} requested a replace (remove whatever is not in {@see self::$attach}) */
     private bool $replace = false;
 
+    /** @param class-string<TModel> $memberType */
+    public function __construct(
+        private string $memberType
+    ) {
+        if (! is_a($this->memberType, Model::class, true)) {
+            throw new LogicException(
+                'Collection member type must be a subclass of ' . Model::class
+            );
+        }
+    }
+
     /**
      * Create a collection whose members are merged with existing ones on the next save
      *
-     * @param Traversable<int, TModel> $values
+     * @template TValue of Model
      *
-     * @return static<TModel>
+     * @param class-string<TValue> $memberType
+     * @param iterable<TValue> $values
+     *
+     * @return static<TValue>
      */
-    public static function create(iterable $values): static
+    public static function create(string $memberType, iterable $values): static
     {
-        $collection = new static();
+        $collection = new static($memberType);
         foreach ($values as $model) {
             $collection->attach($model);
         }
@@ -76,16 +93,30 @@ class Collection implements IteratorAggregate, Countable
     /**
      * Create a collection from members who are treated as already existing db rows
      *
-     * @param Query<TModel> $source
+     * @template TRow of Model
      *
-     * @return static<TModel>
+     * @param Query<TRow> $source
+     *
+     * @return static<TRow>
      */
     public static function fromLoaded(Query $source): static
     {
-        $collection = new static();
-        $collection->source = $source;
+        $collection = new static($source->getModel()::class);
+        $collection->setSource($source);
 
         return $collection;
+    }
+
+    /**
+     * Set the source to materialize the base from
+     *
+     * @param Query<TModel> $source
+     *
+     * @return void
+     */
+    private function setSource(Query $source): void
+    {
+        $this->source = $source;
     }
 
     /**
@@ -117,9 +148,12 @@ class Collection implements IteratorAggregate, Countable
      * @param TModel $model
      *
      * @return $this
+     * @throws InvalidArgumentException If the model is not of the correct type
      */
     public function attach(Model $model): static
     {
+        $this->assertMemberType($model);
+
         $id = $this->identify($model);
         unset($this->detach[$id]);
         if (! isset($this->base[$id])) {
@@ -139,9 +173,12 @@ class Collection implements IteratorAggregate, Countable
      * @param TModel $model
      *
      * @return $this
+     * @throws InvalidArgumentException If the model is not of the correct type
      */
     public function detach(Model $model): static
     {
+        $this->assertMemberType($model);
+
         $id = $this->identify($model);
         unset($this->attach[$id]);
         $this->detach[$id] = $model;
@@ -154,7 +191,7 @@ class Collection implements IteratorAggregate, Countable
      *
      * Anything currently stored that is not in $models is removed on save.
      *
-     * @param Traversable<int, TModel> $models
+     * @param iterable<TModel> $models
      *
      * @return $this
      */
@@ -318,6 +355,7 @@ class Collection implements IteratorAggregate, Countable
      * @param TModel $model
      *
      * @return string
+     * @throws RuntimeException In case the model's primary key is not a string or int
      */
     private function identify(Model $model): string
     {
@@ -325,11 +363,36 @@ class Collection implements IteratorAggregate, Countable
         foreach ((array) $model->getKeyName() as $column) {
             if (! $model->hasProperty($column) || $model->$column === null) {
                 return 'obj#' . spl_object_id($model);
+            } elseif (! is_string($model->$column) && ! is_int($model->$column)) {
+                throw new RuntimeException(sprintf(
+                    'Primary key column %s of model %s must be a string or int, got %s',
+                    $column,
+                    get_class($model),
+                    get_debug_type($model->$column)
+                ));
             }
 
-            $values[] = $model->$column;
+            $values[] = (string) $model->$column;
         }
 
         return 'pk#' . implode('|', $values);
+    }
+
+    /**
+     * Assert the given model is of the expected type
+     *
+     * @param Model $model
+     *
+     * @return void
+     */
+    private function assertMemberType(Model $model): void
+    {
+        if (! is_a($model, $this->memberType)) {
+            throw new InvalidArgumentException(sprintf(
+                'Collection of %s is incompatible with type %s',
+                $this->memberType,
+                get_class($model)
+            ));
+        }
     }
 }

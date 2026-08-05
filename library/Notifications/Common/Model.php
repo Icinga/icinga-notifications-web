@@ -236,6 +236,7 @@ abstract class Model extends \ipl\Orm\Model
                 if ($value instanceof Query) {
                     // Queries are accepted since the only justifiable reason
                     // to expect them is when a closure is being resolved
+                    /** @var Query<Model> $value */
                     if (! $this->isAToOneRelation($value, $key)) {
                         $value = Collection::fromLoaded($value);
                     }
@@ -266,7 +267,7 @@ abstract class Model extends \ipl\Orm\Model
      * In the far future this should be easier to detect as the model
      * should not be responsible for collection transformation anymore.
      *
-     * @param Query $query
+     * @param Query<*> $query
      * @param string $relationName
      *
      * @return bool
