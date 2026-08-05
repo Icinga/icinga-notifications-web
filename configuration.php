@@ -52,6 +52,16 @@ if ($configLandingPage !== null) {
     );
 }
 
+$section->add(
+    N_('Notification History'),
+    [
+        'icon'          => 'paper-plane',
+        'description'   => $this->translate('Notification History'),
+        'url'           => 'notifications/notification-history-list',
+        'priority'      => 40
+    ]
+);
+
 $this->providePermission(
     'notifications/config/schedules',
     $this->translate('Allow to configure schedules')

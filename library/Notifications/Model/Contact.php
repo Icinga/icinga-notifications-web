@@ -33,6 +33,7 @@ use ipl\Orm\Relations;
  * @property Query|RuleEscalationRecipient $rule_escalation_recipient
  * @property Query|ContactgroupMember $contactgroup_member
  * @property Query|Contactgroup $contactgroup
+ * @property Query|NotificationHistory $notification_history
  */
 class Contact extends Model
 {
@@ -111,6 +112,8 @@ class Contact extends Model
 
         $relations->belongsToMany('contactgroup', Contactgroup::class)
             ->through(ContactgroupMember::class)
+            ->setJoinType('LEFT');
+        $relations->hasMany('notification_history', NotificationHistory::class)
             ->setJoinType('LEFT');
     }
 }

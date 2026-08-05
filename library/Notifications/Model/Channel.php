@@ -27,6 +27,7 @@ use ipl\Web\Widget\Icon;
  * @property Query|RuleEscalationRecipient $rule_escalation_recipient
  * @property Query|Contact $contact
  * @property Query|AvailableChannelType $available_channel_type
+ * @property Query|NotificationHistory $notification_history
  */
 class Channel extends Model
 {
@@ -88,6 +89,8 @@ class Channel extends Model
             ->setForeignKey('default_channel_id');
         $relations->belongsTo('available_channel_type', AvailableChannelType::class)
             ->setCandidateKey('type');
+        $relations->hasMany('notification_history', NotificationHistory::class)
+            ->setJoinType('LEFT');
     }
 
     /**

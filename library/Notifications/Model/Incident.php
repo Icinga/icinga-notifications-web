@@ -32,6 +32,7 @@ use ipl\Sql\Select;
  * @property Query|Contact $contact
  * @property Query|IncidentContact $incident_contact
  * @property Query|IncidentHistory $incident_history
+ * @property Query|NotificationHistory $notification_history
  * @property Query|Rule $rule
  * @property Query|RuleEscalation $rule_escalation
  */
@@ -111,6 +112,9 @@ class Incident extends Model
 
         $relations->hasMany('incident_contact', IncidentContact::class);
         $relations->hasMany('incident_history', IncidentHistory::class);
+
+        $relations->hasMany('notification_history', NotificationHistory::class)
+            ->setJoinType('LEFT');
 
         $relations
             ->belongsToMany('rule', Rule::class)

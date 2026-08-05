@@ -30,6 +30,8 @@ use ipl\Orm\Relations;
  * @property Query|Schedule $schedule
  * @property Query|RuleEscalationRecipient $rule_escalation_recipient
  * @property Query|IncidentHistory $incident_history
+ * @property Query|NotificationHistory $notification_history
+ * @property Query|SkippedNotificationHistory $skipped_notification_history
  */
 class RuleEscalation extends Model
 {
@@ -109,6 +111,10 @@ class RuleEscalation extends Model
         $relations->hasMany('rule_escalation_recipient', RuleEscalationRecipient::class)
             ->setJoinType('LEFT');
         $relations->hasMany('incident_history', IncidentHistory::class)
+            ->setJoinType('LEFT');
+        $relations->hasMany('notification_history', NotificationHistory::class)
+            ->setJoinType('LEFT');
+        $relations->hasMany('skipped_notification_history', SkippedNotificationHistory::class)
             ->setJoinType('LEFT');
     }
 }

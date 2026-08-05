@@ -28,6 +28,8 @@ use ipl\Orm\Relations;
  * @property Query|ContactgroupMember $contactgroup_member
  * @property Query|RuleEscalationRecipient $rule_escalation_recipient
  * @property Query|IncidentHistory $incident_history
+ * @property Query|NotificationHistory $notification_history
+ * @property Query|SkippedNotificationHistory $skipped_notification_history
  */
 class Contactgroup extends Model
 {
@@ -86,6 +88,10 @@ class Contactgroup extends Model
             ->setJoinType('LEFT');
         $relations->belongsToMany('rule_escalation', RuleEscalation::class)
             ->through(RuleEscalationRecipient::class)
+            ->setJoinType('LEFT');
+        $relations->hasMany('notification_history', NotificationHistory::class)
+            ->setJoinType('LEFT');
+        $relations->hasMany('skipped_notification_history', SkippedNotificationHistory::class)
             ->setJoinType('LEFT');
     }
 }

@@ -44,3 +44,23 @@
     margin-right: 0;
   }
 }
+
+.notification-icon-ball-state {
+  .icon-ball {
+    &.sent {
+      background-color: @state-ok;
+    }
+
+    &.failed {
+      background-color: @state-critical;
+    }
+
+    &.pending {
+      background-color: @state-pending;
+    }
+
+    &.suppressed {
+      // no color required in this case
+    }
+  }
+}
