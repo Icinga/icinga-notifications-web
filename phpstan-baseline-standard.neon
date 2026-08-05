@@ -187,24 +187,6 @@ parameters:
 			path: library/Notifications/Web/Control/SearchBar/ObjectSuggestions.php
 
 		-
-			message: '#^Cannot access property \$address on mixed\.$#'
-			identifier: property.nonObject
-			count: 2
-			path: library/Notifications/Web/Form/ContactForm.php
-
-		-
-			message: '#^Cannot access property \$id on mixed\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: library/Notifications/Web/Form/ContactForm.php
-
-		-
-			message: '#^Cannot access property \$type on mixed\.$#'
-			identifier: property.nonObject
-			count: 2
-			path: library/Notifications/Web/Form/ContactForm.php
-
-		-
 			message: '#^Method Icinga\\Module\\Notifications\\Widget\\Calendar\:\:getModeStart\(\) should return DateTime but returns DateTime\|false\.$#'
 			identifier: return.type
 			count: 2
