@@ -14,11 +14,13 @@ trait DatabaseUtils
     /**
      * Load a database row directly, bypassing the model's `deleted` filter
      *
+     * @template TModel of Model
+     *
      * @param Connection $db
      * @param int|int[] $id
-     * @param class-string<Model> $class
+     * @param class-string<TModel> $class
      *
-     * @return ?Model
+     * @return ?TModel
      */
     private function loadRawEntity(Connection $db, int|array $id, string $class): ?Model
     {
