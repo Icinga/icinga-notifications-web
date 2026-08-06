@@ -245,7 +245,7 @@ class ContactRepositoryTest extends TestCase
     }
 
     #[DataProvider('sharedDatabases')]
-    public function testDeleteNullsTheUsername(Connection $db): void
+    public function testDeleteNullsTheUsernameAndExternalUUID(Connection $db): void
     {
         $repository = new ContactRepository($db);
         $id = $repository->create(new ContactData(null, 'Named', 'named', self::$channelId, []));
@@ -256,6 +256,7 @@ class ContactRepositoryTest extends TestCase
         $contact = $this->loadRawEntity($db, $id, Contact::class);
         $this->assertSame('y', $contact->deleted);
         $this->assertNull($contact->username, 'The unique username must be nulled on deletion so it can be reused');
+        $this->assertNull($contact->external_uuid, 'The contact\'s external_uuid should be cleared on deletion');
     }
 
     #[DataProvider('sharedDatabases')]
