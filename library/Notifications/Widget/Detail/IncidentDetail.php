@@ -5,8 +5,9 @@
 
 namespace Icinga\Module\Notifications\Widget\Detail;
 
+use Icinga\Application\Config;
 use Icinga\Module\Notifications\Common\Auth;
-use Icinga\Module\Notifications\Hook\ObjectsRendererHook;
+use Icinga\Module\Notifications\Common\SourceHookLocator;
 use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\View\IncidentContactRenderer;
 use Icinga\Module\Notifications\View\IncidentHistoryRenderer;
@@ -21,6 +22,10 @@ use ipl\Html\ValidHtml;
 use ipl\I18n\Translation;
 use ipl\Stdlib\Filter;
 use ipl\Web\Layout\MinimalItemLayout;
+use ipl\Web\Url;
+use ipl\Web\Widget\CopyToClipboard;
+use ipl\Web\Widget\EmptyState;
+use ipl\Web\Widget\Link;
 
 class IncidentDetail extends BaseHtmlElement
 {
@@ -71,15 +76,59 @@ class IncidentDetail extends BaseHtmlElement
     /** @return ValidHtml[] */
     protected function createRelatedObject(): array
     {
-        $objectUrl = ObjectsRendererHook::renderObjectLink($this->incident->object);
+        $object = $this->incident->object;
+        $objectUrl = SourceHookLocator::forType($object->source->type)
+            ?->createObjectLink($object->id_tags);
 
         if (! $objectUrl) {
-            return [];
+            if (! $object->url) {
+                return [];
+            }
+
+            $objUrl = Url::fromPath($object->url);
+
+            $objectUrl = new Link(
+                $object->name,
+                $objUrl->isExternal() ? $objUrl->getAbsoluteUrl() : $objUrl->getRelativeUrl(),
+                ['class' => 'subject', 'data-base-target' => '_next']
+            );
         }
 
         return [
             new HtmlElement('h2', null, Text::create(t('Related Object'))),
             $objectUrl
+        ];
+    }
+
+    protected function createMessage(): array
+    {
+        $isEmpty = $this->incident->message === null || $this->incident->message === '';
+        $message = new HtmlElement(
+            'div',
+            Attributes::create([
+                'class' => ['message', $isEmpty ? 'empty' : '', 'collapsible'],
+                'id' => 'persist-collapse-state',
+                'data-visible-height' => 100
+            ]),
+            $isEmpty
+                ? new EmptyState($this->translate('No message available'))
+                : Text::create(
+                    substr(
+                        $this->incident->message,
+                        0,
+                        (int) Config::module('notifications')
+                            ->get('settings', 'incident_message_character_limit', 10000)
+                    )
+                )
+        );
+
+        if (! $isEmpty) {
+            CopyToClipboard::attachTo($message);
+        }
+
+        return [
+            new HtmlElement('h2', content: Text::create($this->translate('Message'))),
+            $message
         ];
     }
 
@@ -122,6 +171,7 @@ class IncidentDetail extends BaseHtmlElement
             $this->createContacts(),
             $this->createHistory(),
             $this->createRelatedObject(),
+            $this->createMessage(),
             $this->createSource(),
         ]);
     }

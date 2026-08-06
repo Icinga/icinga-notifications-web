@@ -161,7 +161,7 @@ class IncidentsTest extends TestCase
         );
         $db->exec(
             'CREATE TABLE incident (id INTEGER PRIMARY KEY AUTOINCREMENT, object_id BLOB, started_at INTEGER,'
-            . ' recovered_at INTEGER, severity VARCHAR, mute_reason VARCHAR);'
+            . ' recovered_at INTEGER, severity VARCHAR, mute_reason VARCHAR, message VARCHAR);'
         );
 
         return $db;

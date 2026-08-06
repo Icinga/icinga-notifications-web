@@ -43,7 +43,8 @@ class IncidentTest extends TestCase
         $this->db = new RecordingConnection(['db' => 'sqlite', 'dbname' => ':memory:']);
         $this->db->exec(
             'CREATE TABLE incident (id INTEGER PRIMARY KEY AUTOINCREMENT,'
-            . ' object_id BLOB, started_at INTEGER, recovered_at INTEGER, severity VARCHAR, mute_reason VARCHAR);'
+            . ' object_id BLOB, started_at INTEGER, recovered_at INTEGER, severity VARCHAR, mute_reason VARCHAR,'
+            . ' message VARCHAR);'
             . 'CREATE TABLE contact (id INTEGER PRIMARY KEY AUTOINCREMENT, full_name VARCHAR, username VARCHAR,'
             . ' default_channel_id INTEGER, changed_at INTEGER, deleted VARCHAR, external_uuid VARCHAR);'
             . 'CREATE TABLE contactgroup (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR, changed_at INTEGER,'

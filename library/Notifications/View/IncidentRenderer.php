@@ -9,13 +9,13 @@ use Icinga\Module\Notifications\Common\Icons;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Common\Severity;
 use Icinga\Module\Notifications\Model\Incident;
-use Icinga\Module\Notifications\Model\Objects;
 use Icinga\Module\Notifications\Model\Source;
 use ipl\Html\Attributes;
 use ipl\Html\FormattedString;
 use ipl\Html\Html;
 use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
+use ipl\Html\Text;
 use ipl\I18n\Translation;
 use ipl\Web\Common\ItemRenderer;
 use ipl\Web\Widget\Ball;
@@ -48,24 +48,16 @@ class IncidentRenderer implements ItemRenderer
     {
         $title->addHtml(Html::tag('span', [], sprintf('#%d:', $item->id)));
 
-        if ($layout === 'header') {
-            $content = new HtmlElement('span', Attributes::create(['class' => 'subject']));
-        } else {
-            $content = new Link(null, Links::incident($item->id), ['class' => 'subject']);
-        }
-
-        /** @var Objects $obj */
-        $obj = $item->object;
-        $name = $obj->getName();
-
-        $content->addAttributes($name->getAttributes());
-        $content->addFrom($name);
-
-        $title->addHtml($content);
+        $title->addHtml(
+            $layout === 'header'
+            ? new HtmlElement('span', Attributes::create(['class' => 'subject']), new Text($item->object->name))
+            : new Link($item->object->name, Links::incident($item->id), ['class' => 'subject'])
+        );
     }
 
     public function assembleCaption($item, HtmlDocument $caption, string $layout): void
     {
+        $caption->addHtml(new Text(substr($item->message ?? '', 0, 1000)));
     }
 
     public function assembleExtendedInfo($item, HtmlDocument $info, string $layout): void
