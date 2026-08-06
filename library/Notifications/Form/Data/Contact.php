@@ -13,13 +13,19 @@ readonly class Contact
      * @param ?string $username The Icinga Web user associated with the contact
      * @param int $channelId Id of the default channel for the contact
      * @param array<string, string> $addresses Type identifiers as keys and addresses as values
+     * @param ?int[] $groups Ids of the contact groups the contact is a member of,
+     *                       NULL to leave existing memberships untouched
+     * @param ?string $externalUuid How external systems reference the contact, NULL to generate one.
+     *                              Only honored when the contact is created
      */
     public function __construct(
         public ?int $id,
         public string $fullName,
         public ?string $username,
         public int $channelId,
-        public array $addresses
+        public array $addresses,
+        public ?array $groups = null,
+        public ?string $externalUuid = null
     ) {
     }
 }
