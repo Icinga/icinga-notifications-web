@@ -232,16 +232,13 @@ class Incident
             ->filter(
                 Filter::all(
                     Filter::equal('incident_id', $this->incident->id),
-                    Filter::equal('role', $roles),
-                    Filter::unequal('contact.deleted', true),
-                    Filter::unequal('contactgroup.deleted', true),
-                    Filter::unequal('schedule.deleted', true),
+                    Filter::equal('role', $roles)
                 )
             );
 
         $recipients = [];
         foreach ($entries as $entry) {
-            if ($entry->contact_id !== null) {
+            if (isset($entry->contact->id)) {
                 $recipients[] = [
                     'type'      => 'contact',
                     'id'        => $entry->contact_id,
@@ -250,7 +247,7 @@ class Incident
                     'role'      => $entry->role,
                     'roleChangedAt' => $entry->changed_at
                 ];
-            } elseif ($entry->contactgroup_id !== null) {
+            } elseif (isset($entry->contactgroup->id)) {
                 $recipients[] = [
                     'type'      => 'contactgroup',
                     'id'        => $entry->contactgroup_id,
@@ -259,7 +256,7 @@ class Incident
                     'role'      => $entry->role,
                     'roleChangedAt' => $entry->changed_at
                 ];
-            } elseif ($entry->schedule_id !== null) {
+            } elseif (isset($entry->schedule->id)) {
                 $recipients[] = [
                     'type'      => 'schedule',
                     'id'        => $entry->schedule_id,

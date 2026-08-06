@@ -388,10 +388,7 @@ class EventRuleController extends CompatController
         if ($ruleId !== -1) {
             $source = Rule::on(Database::get())
                 ->columns(['id' => 'source.id', 'type' => 'source.type'])
-                ->filter(Filter::all(
-                    Filter::equal('id', $ruleId),
-                    Filter::equal('deleted', 'n')
-                ))
+                ->filter(Filter::equal('id', $ruleId))
                 ->first();
         } elseif (isset($this->session->source)) {
             /** @var ?Source $source */

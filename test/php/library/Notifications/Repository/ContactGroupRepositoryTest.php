@@ -22,12 +22,12 @@ use Icinga\Module\Notifications\Repository\RotationRepository;
 use Icinga\Module\Notifications\Test\DbTestBackends;
 use InvalidArgumentException;
 use ipl\Sql\Connection;
-use ipl\Sql\Test\SharedDatabases\SchemaGroup;
 use ipl\Sql\Test\SharedDatabases\TransactionIsolation;
 use ipl\Stdlib\Filter;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use Tests\Icinga\Module\Notifications\Lib\DatabaseUtils;
 
 /**
  * Tests for {@see ContactGroupRepository}.
@@ -41,6 +41,7 @@ use RuntimeException;
 #[TransactionIsolation]
 class ContactGroupRepositoryTest extends TestCase
 {
+    use DatabaseUtils;
     use DbTestBackends;
 
     /** @var int[] Ids of the three contacts seeded per test, in insertion order */
@@ -71,19 +72,6 @@ class ContactGroupRepositoryTest extends TestCase
     }
 
     /**
-     * Load a group row directly, bypassing the repository's `deleted` filter
-     *
-     * @param Connection $db
-     * @param int $id
-     *
-     * @return ?Contactgroup
-     */
-    private function loadGroup(Connection $db, int $id): ?Contactgroup
-    {
-        return Contactgroup::on($db)->filter(Filter::equal('id', $id))->first();
-    }
-
-    /**
      * Get the group's current (non-deleted) member contact ids, sorted
      *
      * @param Connection $db
@@ -95,8 +83,7 @@ class ContactGroupRepositoryTest extends TestCase
     {
         $members = [];
         $query = ContactgroupMember::on($db)
-            ->filter(Filter::equal('contactgroup_id', $groupId))
-            ->filter(Filter::equal('deleted', false));
+            ->filter(Filter::equal('contactgroup_id', $groupId));
         foreach ($query as $member) {
             $members[] = (int) $member->contact_id;
         }
@@ -172,9 +159,9 @@ class ContactGroupRepositoryTest extends TestCase
         $this->assertNull($repository->find($id), 'A deleted group must not be found anymore');
 
         // But it's only soft-deleted: the row still exists, flagged deleted
-        $group = $this->loadGroup($db, $id);
+        $group = $this->loadRawEntity($db, $id, ContactGroup::class);
         $this->assertNotNull($group, 'The group row should still exist');
-        $this->assertTrue($group->deleted, 'The group should be soft-deleted, not removed');
+        $this->assertSame('y', $group->deleted, 'The group should be soft-deleted, not removed');
 
         $this->assertSame([], $this->membersOf($db, $id), 'The memberships should be soft-deleted too');
     }
@@ -221,7 +208,11 @@ class ContactGroupRepositoryTest extends TestCase
         $repository->delete($groupId);
 
         $this->assertNull($repository->find($groupId), 'The group should have been deleted');
-        $this->assertTrue($this->loadGroup($db, $groupId)->deleted, 'The group should be soft-deleted');
+        $this->assertSame(
+            'y',
+            $this->loadRawEntity($db, $groupId, Contactgroup::class)->deleted,
+            'The group should be soft-deleted'
+        );
     }
 
     #[DataProvider('sharedDatabases')]
@@ -271,7 +262,6 @@ class ContactGroupRepositoryTest extends TestCase
         return iterator_to_array(
             Rotation::on($db)
                 ->filter(Filter::equal('schedule_id', $scheduleId))
-                ->filter(Filter::equal('deleted', false))
                 ->orderBy('priority')
         );
     }
@@ -312,8 +302,7 @@ class ContactGroupRepositoryTest extends TestCase
     {
         $ids = [];
         $query = RotationMember::on($db)
-            ->filter(Filter::equal('rotation_id', $rotationId))
-            ->filter(Filter::equal('deleted', false));
+            ->filter(Filter::equal('rotation_id', $rotationId));
         foreach ($query as $member) {
             $ids[] = (int) $member->contactgroup_id;
         }

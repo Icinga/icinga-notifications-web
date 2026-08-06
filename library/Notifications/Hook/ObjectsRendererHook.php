@@ -94,7 +94,9 @@ abstract class ObjectsRendererHook
      */
     final public static function register(Objects $obj): void
     {
-        self::$objectIdTags[$obj->source->type][$obj->id] = $obj->id_tags;
+        if (isset($obj->source->type)) {
+            self::$objectIdTags[$obj->source->type][$obj->id] = $obj->id_tags;
+        }
     }
 
     /**
@@ -204,7 +206,7 @@ abstract class ObjectsRendererHook
     final public static function getObjectName(Objects $obj): BaseHtmlElement
     {
         $objId = $obj->id;
-        if (! isset(self::$objectNameHtmls[$objId])) {
+        if (! isset(self::$objectNameHtmls[$objId]) && isset($obj->source->type)) {
             self::prepare([$obj->source->type => [$objId => $obj->id_tags]]);
         }
 

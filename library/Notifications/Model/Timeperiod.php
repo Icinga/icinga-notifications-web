@@ -13,6 +13,7 @@ use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
+use ipl\Stdlib\Filter;
 
 /**
  * Timeperiod
@@ -59,5 +60,10 @@ class Timeperiod extends Model
             ->setJoinType('LEFT');
         $relations->hasMany('timeperiod_entry', TimeperiodEntry::class)
             ->setJoinType('LEFT');
+    }
+
+    public function createVisibilityFilter(Filter\Chain $filter): void
+    {
+        $filter->add(Filter::equal('deleted', 'n'));
     }
 }

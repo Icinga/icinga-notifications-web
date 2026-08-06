@@ -203,7 +203,6 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
     public function get(?string $identifier, string $queryFilter): ResponseInterface
     {
         $stmt = (new Select())
-            ->distinct()
             ->from('contact co')
             ->columns([
                 'contact_id'      => 'co.id',
@@ -212,7 +211,6 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
                 'username',
                 'default_channel' => 'ch.external_uuid',
             ])
-            ->joinLeft('contact_address ca', 'ca.contact_id = co.id')
             ->joinLeft('channel ch', 'ch.id = co.default_channel_id')
             ->where(['co.deleted = ?' => 'n']);
 
@@ -531,7 +529,10 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
             (new Select())
                 ->from('contact_address')
                 ->columns(['type', 'address'])
-                ->where(['contact_id = ?' => $contactId])
+                ->where([
+                    'contact_id = ?' => $contactId,
+                    'deleted = ?' => 'n'
+                ])
         );
 
         return $addresses;
@@ -551,7 +552,10 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
             (new Select())
                 ->from('contact')
                 ->columns('id')
-                ->where(['external_uuid = ?' => $identifier])
+                ->where([
+                    'external_uuid = ?' => $identifier,
+                    'deleted = ?' => 'n'
+                ])
         );
 
 //        if ($contact === false) {

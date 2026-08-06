@@ -16,12 +16,12 @@ use Icinga\Module\Notifications\Model\TimeperiodEntry;
 use Icinga\Module\Notifications\Repository\RotationRepository;
 use Icinga\Module\Notifications\Test\DbTestBackends;
 use ipl\Sql\Connection;
-use ipl\Sql\Test\SharedDatabases\SchemaGroup;
 use ipl\Sql\Test\SharedDatabases\TransactionIsolation;
 use ipl\Stdlib\Filter;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use Tests\Icinga\Module\Notifications\Lib\DatabaseUtils;
 
 /**
  * Tests for {@see RotationRepository}.
@@ -38,6 +38,7 @@ use RuntimeException;
 #[TransactionIsolation]
 class RotationRepositoryTest extends TestCase
 {
+    use DatabaseUtils;
     use DbTestBackends;
 
     /** @var int Id of the contact seeded per test, used as a rotation member */
@@ -114,7 +115,6 @@ class RotationRepositoryTest extends TestCase
         return iterator_to_array(
             Rotation::on($db)
                 ->filter(Filter::equal('schedule_id', $scheduleId))
-                ->filter(Filter::equal('deleted', false))
                 ->orderBy('priority')
         );
     }
@@ -145,7 +145,6 @@ class RotationRepositoryTest extends TestCase
         $members = iterator_to_array(
             RotationMember::on($db)
                 ->filter(Filter::equal('rotation_id', $rotation->id))
-                ->filter(Filter::equal('deleted', false))
         );
         $this->assertCount(1, $members);
         $this->assertEquals(self::$contactId, $members[0]->contact_id);
@@ -154,14 +153,12 @@ class RotationRepositoryTest extends TestCase
         // The timeperiod and at least one entry
         $timeperiod = Timeperiod::on($db)
             ->filter(Filter::equal('owned_by_rotation_id', $rotation->id))
-            ->filter(Filter::equal('deleted', false))
             ->first();
         $this->assertNotNull($timeperiod, 'The rotation\'s timeperiod was not created');
 
         $entries = iterator_to_array(
             TimeperiodEntry::on($db)
                 ->filter(Filter::equal('timeperiod_id', $timeperiod->id))
-                ->filter(Filter::equal('deleted', false))
         );
         $this->assertNotEmpty($entries, 'The timeperiod should have at least one entry');
 
@@ -218,7 +215,6 @@ class RotationRepositoryTest extends TestCase
         $members = iterator_to_array(
             RotationMember::on($db)
                 ->filter(Filter::equal('rotation_id', $rotations[0]->id))
-                ->filter(Filter::equal('deleted', false))
         );
         $this->assertCount(1, $members);
         $this->assertEquals(self::$contactId, $members[0]->contact_id);
@@ -227,14 +223,12 @@ class RotationRepositoryTest extends TestCase
         // The timeperiod and at least one entry
         $timeperiod = Timeperiod::on($db)
             ->filter(Filter::equal('owned_by_rotation_id', $rotations[0]->id))
-            ->filter(Filter::equal('deleted', false))
             ->first();
         $this->assertNotNull($timeperiod, 'The rotation\'s timeperiod was not created');
 
         $entries = iterator_to_array(
             TimeperiodEntry::on($db)
                 ->filter(Filter::equal('timeperiod_id', $timeperiod->id))
-                ->filter(Filter::equal('deleted', false))
         );
         $this->assertNotEmpty($entries, 'The timeperiod should have at least one entry');
 
@@ -260,21 +254,17 @@ class RotationRepositoryTest extends TestCase
         $this->assertCount(0, $this->rotationsOf($db, $scheduleId), 'The rotation should no longer be listed');
 
         // The row still exists but is soft-deleted with its priority freed
-        $rotation = Rotation::on($db)->filter(Filter::equal('id', $id))->first();
+        $rotation = $this->loadRawEntity($db, $id, Rotation::class);
         $this->assertNotNull($rotation);
-        $this->assertTrue($rotation->deleted, 'The rotation should be soft-deleted');
+        $this->assertSame('y', $rotation->deleted, 'The rotation should be soft-deleted');
         $this->assertNull($rotation->priority, 'The freed priority should be nulled');
 
         // Its timeperiod is soft-deleted too
-        $timeperiod = Timeperiod::on($db)
-            ->filter(Filter::equal('owned_by_rotation_id', $id))
-            ->first();
-        $this->assertTrue($timeperiod->deleted, 'The rotation\'s timeperiod should be soft-deleted');
+        $timeperiod = $this->loadRawEntity($db, ['owned_by_rotation_id' => $id], Timeperiod::class);
+        $this->assertSame('y', $timeperiod->deleted, 'The rotation\'s timeperiod should be soft-deleted');
 
-        $timeperiodEntries = TimeperiodEntry::on($db)
-            ->filter(Filter::equal('timeperiod_id', $timeperiod->id))
-            ->filter(Filter::equal('deleted', false));
-        $this->assertCount(0, $timeperiodEntries, 'The timeperiod entries should be soft-deleted');
+        $timeperiodEntry = $this->loadRawEntity($db, ['timeperiod_id' => $timeperiod->id], TimeperiodEntry::class);
+        $this->assertSame('y', $timeperiodEntry->deleted, 'The timeperiod entries should be soft-deleted');
     }
 
     #[DataProvider('sharedDatabases')]

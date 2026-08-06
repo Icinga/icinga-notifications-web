@@ -367,10 +367,6 @@ class EntityManager
         $isSoftDeletable = $childModel->isSoftDeletable();
         $changedAtColumn = $childModel->getChangedAtColumn();
         $columns = $keyColumns;
-        if ($isSoftDeletable) {
-            $columns[] = $childModel::DELETED;
-        }
-
         if ($changedAtColumn !== null) {
             $columns[] = $changedAtColumn;
         }
@@ -379,12 +375,11 @@ class EntityManager
             ->from($this->db->quoteIdentifier($childModel->getTableName()))
             ->columns(array_map($this->db->quoteIdentifier(...), $columns))
             ->where($this->createCondition($condition));
+        if ($isSoftDeletable) {
+            $select->where([sprintf('%s = ?', $this->db->quoteIdentifier($childModel::DELETED)) => 'n']);
+        }
 
         foreach ($this->db->select($select)->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            if ($isSoftDeletable && $row[$childModel::DELETED] === 'y') {
-                continue;
-            }
-
             // Rebuild the stored child in its in-memory form, so its identity is comparable to the desired
             // set and delete() re-persists it identically; then let delete() pick hard vs soft
             $orphan = new $targetClass();

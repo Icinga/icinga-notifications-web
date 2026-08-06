@@ -74,7 +74,8 @@ class Objects extends Model
 
     public function createRelations(Relations $relations): void
     {
-        $relations->hasMany('incident', Incident::class);
+        $relations->hasMany('incident', Incident::class)
+            ->setJoinType('LEFT');
 
         $relations->hasMany('object_id_tag', ObjectIdTag::class);
         $relations->hasMany('tag', Tag::class);

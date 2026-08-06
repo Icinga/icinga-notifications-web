@@ -12,6 +12,7 @@ use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
+use ipl\Stdlib\Filter;
 
 /**
  * Contactgroup Member
@@ -56,5 +57,10 @@ class ContactgroupMember extends Model
     {
         $relations->belongsTo('contactgroup', Contactgroup::class);
         $relations->belongsTo('contact', Contact::class);
+    }
+
+    public function createVisibilityFilter(Filter\Chain $filter): void
+    {
+        $filter->add(Filter::equal('deleted', 'n'));
     }
 }

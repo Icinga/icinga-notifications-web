@@ -9,6 +9,7 @@ use Icinga\Module\Notifications\Common\Model;
 use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
+use ipl\Stdlib\Filter;
 
 /**
  * Soft-delete junction model linking {@see Gadget} and {@see Badge} through a surrogate primary key.
@@ -39,6 +40,11 @@ class GadgetBadge extends Model
     {
         $behaviors->add(new MillisecondTimestamp(['changed_at']));
         $behaviors->add(new BoolCast(['deleted']));
+    }
+
+    public function createVisibilityFilter(Filter\Chain $filter): void
+    {
+        $filter->add(Filter::equal('deleted', 'n'));
     }
 
     public function isSoftDeletable(): bool
