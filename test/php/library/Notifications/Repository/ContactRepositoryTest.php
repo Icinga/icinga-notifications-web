@@ -66,6 +66,27 @@ class ContactRepositoryTest extends TestCase
     }
 
     /**
+     * Get the ids of the contact groups the contact is currently (non-deleted) a member of, sorted
+     *
+     * @param Connection $db
+     * @param int $contactId
+     *
+     * @return list<int>
+     */
+    private function groupsOf(Connection $db, int $contactId): array
+    {
+        $groups = [];
+        $query = ContactgroupMember::on($db)
+            ->filter(Filter::equal('contact_id', $contactId))
+            ->orderBy('contactgroup_id');
+        foreach ($query as $member) {
+            $groups[] = (int) $member->contactgroup_id;
+        }
+
+        return $groups;
+    }
+
+    /**
      * Get the contact's non-deleted addresses as a type => address map
      *
      * @param Connection $db
@@ -158,6 +179,95 @@ class ContactRepositoryTest extends TestCase
 
         $this->assertNull($repository->find($first)->username, 'The first contact\'s username must be null');
         $this->assertNull($repository->find($second)->username, 'The second contact\'s username must be null');
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testCreateStoresTheGivenExternalUuid(Connection $db): void
+    {
+        // The V1 API lets clients choose the UUID a contact is referenced by, so a given one must win
+        // over a generated one
+        $uuid = '00000000-0000-4000-8000-0000000000e1';
+        $id = (new ContactRepository($db))->create(new ContactData(
+            null,
+            'Chosen',
+            'chosen',
+            self::$channelId,
+            [],
+            externalUuid: $uuid
+        ));
+
+        $this->assertSame($uuid, (new ContactRepository($db))->find($id)->external_uuid);
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testCreateStoresTheGroupMemberships(Connection $db): void
+    {
+        $repository = new ContactRepository($db);
+        $groupRepository = new ContactGroupRepository($db);
+        $groupId = $groupRepository->create(new ContactGroupData(null, 'Group'));
+
+        $id = $repository->create(new ContactData(null, 'Member', 'member', self::$channelId, [], [$groupId]));
+
+        $this->assertSame([$groupId], $this->groupsOf($db, $id), 'The contact was not linked to the group');
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testUpdatePerformsADifferentialGroupUpdate(Connection $db): void
+    {
+        $repository = new ContactRepository($db);
+        $groupRepository = new ContactGroupRepository($db);
+        $dropped = $groupRepository->create(new ContactGroupData(null, 'Dropped'));
+        $retained = $groupRepository->create(new ContactGroupData(null, 'Retained'));
+        $added = $groupRepository->create(new ContactGroupData(null, 'Added'));
+
+        $id = $repository->create(
+            new ContactData(null, 'Member', 'member', self::$channelId, [], [$dropped, $retained])
+        );
+
+        $repository->update(new ContactData(
+            $id,
+            'Member',
+            'member',
+            self::$channelId,
+            [],
+            [$retained, $added]
+        ));
+
+        $this->assertSame(
+            [$retained, $added],
+            $this->groupsOf($db, $id),
+            'The membership set was not synced (kept, added, removed)'
+        );
+
+        // A membership that is re-established must revive the soft-deleted link instead of inserting a
+        // second one, as (contactgroup_id, contact_id) is the primary key of contactgroup_member
+        $repository->update(new ContactData(
+            $id,
+            'Member',
+            'member',
+            self::$channelId,
+            [],
+            [$dropped, $retained, $added]
+        ));
+
+        $this->assertSame(
+            [$dropped, $retained, $added],
+            $this->groupsOf($db, $id),
+            'A dropped membership was not revived'
+        );
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testUpdateLeavesGroupMembershipsUntouchedIfNotGiven(Connection $db): void
+    {
+        // The contact form doesn't manage memberships, hence NULL must not be mistaken for "no groups"
+        $repository = new ContactRepository($db);
+        $groupId = (new ContactGroupRepository($db))->create(new ContactGroupData(null, 'Group'));
+        $id = $repository->create(new ContactData(null, 'Member', 'member', self::$channelId, [], [$groupId]));
+
+        $repository->update(new ContactData($id, 'Member Renamed', 'member', self::$channelId, []));
+
+        $this->assertSame([$groupId], $this->groupsOf($db, $id), 'The memberships should have been left alone');
     }
 
     #[DataProvider('sharedDatabases')]
