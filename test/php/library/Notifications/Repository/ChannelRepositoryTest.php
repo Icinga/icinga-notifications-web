@@ -201,6 +201,7 @@ class ChannelRepositoryTest extends TestCase
         $stored = $this->loadRawEntity($db, $id, Channel::class);
         $this->assertNotNull($stored, 'The channel row should still exist');
         $this->assertSame('y', $stored->deleted, 'The channel should be soft-deleted, not removed');
+        $this->assertNull($stored->external_uuid, 'The channel\'s external uuid should be cleared on deletion');
     }
 
     #[DataProvider('sharedDatabases')]
