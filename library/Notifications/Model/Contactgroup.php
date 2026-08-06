@@ -22,7 +22,7 @@ use ipl\Stdlib\Filter;
  * @property string $name
  * @property DateTime $changed_at
  * @property bool $deleted
- * @property string $external_uuid
+ * @property ?string $external_uuid
  *
  * @property Query<Contact>|Collection<Contact> $contact
  * @property Query<Rotation>|Collection<Rotation> $rotation

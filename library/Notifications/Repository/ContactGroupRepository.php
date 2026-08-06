@@ -109,6 +109,7 @@ final class ContactGroupRepository
         }
 
         $model->contact = [];
+        $model->external_uuid = null;
         $model->delete();
 
         $model->rotation
