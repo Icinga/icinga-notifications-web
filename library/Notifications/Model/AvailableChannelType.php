@@ -5,6 +5,7 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use Icinga\Module\Notifications\Common\Collection;
 use Icinga\Module\Notifications\Common\Model;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
@@ -16,7 +17,7 @@ use ipl\Orm\Relations;
  * @property string $author
  * @property string $config_attrs
  *
- * @property Query|Channel $channel
+ * @property Query<Channel>|Collection<Channel> $channel
  */
 class AvailableChannelType extends Model
 {

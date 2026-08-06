@@ -9,6 +9,7 @@ use Icinga\Module\Notifications\Common\Model;
 use ipl\Orm\Behavior\Binary;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Contract\RewriteFilterBehavior;
+use ipl\Orm\Query;
 use ipl\Orm\Relations;
 use ipl\Stdlib\Filter;
 use ipl\Stdlib\Filter\Condition;
@@ -19,6 +20,8 @@ use ipl\Stdlib\Filter\Condition;
  * @property string $object_id
  * @property string $tag
  * @property string $value
+ *
+ * @property Query<Objects>|Objects $object
  */
 class ObjectIdTag extends Model
 {

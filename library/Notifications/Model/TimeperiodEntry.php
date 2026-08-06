@@ -27,8 +27,8 @@ use Recurr\Rule;
  * @property string $timezone
  * @property ?string $rrule
  *
- * @property Query|Timeperiod $timeperiod
- * @property Query|RotationMember $member
+ * @property Query<Timeperiod>|Timeperiod $timeperiod
+ * @property Query<RotationMember>|RotationMember $member
  */
 class TimeperiodEntry extends Model
 {

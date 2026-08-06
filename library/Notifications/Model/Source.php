@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Model;
 
 use DateTime;
 use Icinga\Application\Logger;
+use Icinga\Module\Notifications\Common\Collection;
 use Icinga\Module\Notifications\Common\Model;
 use Icinga\Module\Notifications\Common\SourceHookLocator;
 use Icinga\Module\Notifications\Hook\V2\SourceHook;
@@ -34,8 +35,8 @@ use Throwable;
  * @property bool $deleted
  * @property bool $locked
  *
- * @property Query|Objects $object
- * @property Query|Rule $rule
+ * @property Query<Objects>|Collection<Objects> $object
+ * @property Query<Rule>|Collection<Rule> $rule
  */
 class Source extends Model
 {

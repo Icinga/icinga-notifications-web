@@ -7,9 +7,11 @@ namespace Icinga\Module\Notifications\Common;
 
 use ArrayIterator;
 use Countable;
+use InvalidArgumentException;
 use ipl\Orm\Query;
 use IteratorAggregate;
 use LogicException;
+use RuntimeException;
 use Traversable;
 
 /**
@@ -26,6 +28,9 @@ use Traversable;
  *
  * Members may also be edited in place and will be cascaded by {@see EntityManager::save()} if they have
  * been modified.
+ *
+ * @template TModel of Model
+ * @implements IteratorAggregate<int, TModel>
  */
 class Collection implements IteratorAggregate, Countable
 {
@@ -34,36 +39,50 @@ class Collection implements IteratorAggregate, Countable
      *
      * Drained into {@see self::$base} once on first read, so the query is not run eagerly.
      *
-     * @var ?Query
+     * @var ?Query<TModel>
      */
     private ?Query $source = null;
 
     /**
      * Stored members once {@see self::$source} has been read, cached for repeated reads
      *
-     * @var ?array<string, Model>
+     * @var ?array<string, TModel>
      */
     private ?array $base = null;
 
-    /** @var array<string, Model> Models whose links/rows must exist after the next {@see EntityManager::save()} */
+    /** @var array<string, TModel> Models whose links/rows must exist after the next {@see EntityManager::save()} */
     private array $attach = [];
 
-    /** @var array<string, Model> Models whose links/rows must be removed on the next {@see EntityManager::save()} */
+    /** @var array<string, TModel> Models whose links/rows must be removed on the next {@see EntityManager::save()} */
     private array $detach = [];
 
     /** @var bool Whether {@see self::sync()} requested a replace (remove whatever is not in {@see self::$attach}) */
     private bool $replace = false;
 
+    /** @param class-string<TModel> $memberType */
+    public function __construct(
+        private string $memberType
+    ) {
+        if (! is_a($this->memberType, Model::class, true)) {
+            throw new LogicException(
+                'Collection member type must be a subclass of ' . Model::class
+            );
+        }
+    }
+
     /**
      * Create a collection whose members are merged with existing ones on the next save
      *
-     * @param iterable $values
+     * @template TValue of Model
      *
-     * @return static
+     * @param class-string<TValue> $memberType
+     * @param iterable<TValue> $values
+     *
+     * @return static<TValue>
      */
-    public static function create(iterable $values): static
+    public static function create(string $memberType, iterable $values): static
     {
-        $collection = new static();
+        $collection = new static($memberType);
         foreach ($values as $model) {
             $collection->attach($model);
         }
@@ -74,16 +93,30 @@ class Collection implements IteratorAggregate, Countable
     /**
      * Create a collection from members who are treated as already existing db rows
      *
-     * @param Query $source
+     * @template TRow of Model
      *
-     * @return static
+     * @param Query<TRow> $source
+     *
+     * @return static<TRow>
      */
     public static function fromLoaded(Query $source): static
     {
-        $collection = new static();
-        $collection->source = $source;
+        $collection = new static($source->getModel()::class);
+        $collection->setSource($source);
 
         return $collection;
+    }
+
+    /**
+     * Set the source to materialize the base from
+     *
+     * @param Query<TModel> $source
+     *
+     * @return void
+     */
+    private function setSource(Query $source): void
+    {
+        $this->source = $source;
     }
 
     /**
@@ -96,7 +129,7 @@ class Collection implements IteratorAggregate, Countable
      * Traverse the collection and modify models in place, or pass a modified {@see Model} to {@see self::attach()}
      * if changes should be persisted.
      *
-     * @return Query
+     * @return Query<TModel>
      *
      * @throws LogicException If the collection was not created from a query, or the query has already been read
      */
@@ -112,12 +145,15 @@ class Collection implements IteratorAggregate, Countable
     /**
      * Additively register the given model as a member of this relation
      *
-     * @param Model $model
+     * @param TModel $model
      *
      * @return $this
+     * @throws InvalidArgumentException If the model is not of the correct type
      */
     public function attach(Model $model): static
     {
+        $this->assertMemberType($model);
+
         $id = $this->identify($model);
         unset($this->detach[$id]);
         if (! isset($this->base[$id])) {
@@ -134,12 +170,15 @@ class Collection implements IteratorAggregate, Countable
     /**
      * Register the given model to be removed from this relation
      *
-     * @param Model $model
+     * @param TModel $model
      *
      * @return $this
+     * @throws InvalidArgumentException If the model is not of the correct type
      */
     public function detach(Model $model): static
     {
+        $this->assertMemberType($model);
+
         $id = $this->identify($model);
         unset($this->attach[$id]);
         $this->detach[$id] = $model;
@@ -152,7 +191,7 @@ class Collection implements IteratorAggregate, Countable
      *
      * Anything currently stored that is not in $models is removed on save.
      *
-     * @param iterable<Model> $models
+     * @param iterable<TModel> $models
      *
      * @return $this
      */
@@ -181,7 +220,7 @@ class Collection implements IteratorAggregate, Countable
     /**
      * Get the members to persist on save: staged attachments plus in-place-modified loaded members
      *
-     * @return Model[]
+     * @return array<int, TModel>
      */
     public function getMembersToSave(): array
     {
@@ -199,7 +238,7 @@ class Collection implements IteratorAggregate, Countable
     /**
      * Get the models to delete/unlink on save
      *
-     * @return Model[]
+     * @return array<int, TModel>
      */
     public function getDetachments(): array
     {
@@ -210,7 +249,7 @@ class Collection implements IteratorAggregate, Countable
      * Get the members that must be part of the relation after a save and were explicitly attached by
      * {@see self::attach()} or {@see self::sync()}
      *
-     * @return array
+     * @return array<int, TModel>
      */
     public function getAttachments(): array
     {
@@ -250,7 +289,7 @@ class Collection implements IteratorAggregate, Countable
     }
 
     /**
-     * @return Traversable<Model>
+     * @return Traversable<int, TModel>
      */
     public function getIterator(): Traversable
     {
@@ -265,7 +304,7 @@ class Collection implements IteratorAggregate, Countable
     /**
      * The staged members: base merged with attachments, minus detachments
      *
-     * @return Model[]
+     * @return array<int, TModel>
      */
     private function all(): array
     {
@@ -294,7 +333,7 @@ class Collection implements IteratorAggregate, Countable
     /**
      * The stored members, read from the source query once and cached
      *
-     * @return array<string, Model>
+     * @return array<string, TModel>
      */
     private function materializeBase(): array
     {
@@ -313,9 +352,10 @@ class Collection implements IteratorAggregate, Countable
     /**
      * Return the primary key of the model, or an object hash if it is not set
      *
-     * @param Model $model
+     * @param TModel $model
      *
      * @return string
+     * @throws RuntimeException In case the model's primary key is not a string or int
      */
     private function identify(Model $model): string
     {
@@ -323,11 +363,36 @@ class Collection implements IteratorAggregate, Countable
         foreach ((array) $model->getKeyName() as $column) {
             if (! $model->hasProperty($column) || $model->$column === null) {
                 return 'obj#' . spl_object_id($model);
+            } elseif (! is_string($model->$column) && ! is_int($model->$column)) {
+                throw new RuntimeException(sprintf(
+                    'Primary key column %s of model %s must be a string or int, got %s',
+                    $column,
+                    get_class($model),
+                    get_debug_type($model->$column)
+                ));
             }
 
-            $values[] = $model->$column;
+            $values[] = (string) $model->$column;
         }
 
         return 'pk#' . implode('|', $values);
+    }
+
+    /**
+     * Assert the given model is of the expected type
+     *
+     * @param Model $model
+     *
+     * @return void
+     */
+    private function assertMemberType(Model $model): void
+    {
+        if (! is_a($model, $this->memberType)) {
+            throw new InvalidArgumentException(sprintf(
+                'Collection of %s is incompatible with type %s',
+                $this->memberType,
+                get_class($model)
+            ));
+        }
     }
 }

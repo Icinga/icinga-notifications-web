@@ -24,9 +24,9 @@ use ipl\Orm\Relations;
  * @property DateTime $changed_at
  * @property bool $deleted
  *
- * @property Query|Rotation $rotation
- * @property Query|Contact $contact
- * @property Query|Contactgroup $contactgroup
+ * @property Query<Rotation>|Rotation $rotation
+ * @property Query<Contact>|Contact $contact
+ * @property Query<Contactgroup>|Contactgroup $contactgroup
  */
 class RotationMember extends Model
 {

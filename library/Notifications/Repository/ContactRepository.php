@@ -87,7 +87,7 @@ final class ContactRepository
             ]))->setNew();
         }
 
-        $model->contact_address = Collection::create($addresses);
+        $model->contact_address = Collection::create(ContactAddress::class, $addresses);
 
         (new EntityManager($this->db))->save($model);
 

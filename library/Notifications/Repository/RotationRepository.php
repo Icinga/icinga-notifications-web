@@ -145,7 +145,7 @@ final class RotationRepository
         $model->first_handoff = $rotation->firstHandoff->format('Y-m-d');
         $model->actual_handoff = max($firstHandoff, new DateTime());
         $model->timeperiod = (new Timeperiod())->setNew();
-        $model->timeperiod->timeperiod_entry = new Collection();
+        $model->timeperiod->timeperiod_entry = Collection::create(TimeperiodEntry::class, []);
 
         $knownMembers = [];
         foreach ($rules as $position => [$rrule, $shiftDuration]) {
@@ -184,7 +184,7 @@ final class RotationRepository
             $model->timeperiod->timeperiod_entry->attach($entry->setNew());
         }
 
-        $model->member = Collection::create($knownMembers);
+        $model->member = Collection::create(RotationMember::class, $knownMembers);
 
         (new EntityManager($this->db))->save($model);
     }

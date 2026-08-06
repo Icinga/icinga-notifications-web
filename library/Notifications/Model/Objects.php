@@ -5,6 +5,7 @@
 
 namespace Icinga\Module\Notifications\Model;
 
+use Icinga\Module\Notifications\Common\Collection;
 use Icinga\Module\Notifications\Common\Model;
 use Icinga\Module\Notifications\Hook\ObjectsRendererHook;
 use Icinga\Module\Notifications\Model\Behavior\IdTagAggregator;
@@ -22,9 +23,10 @@ use ipl\Orm\Relations;
  * @property string $name
  * @property ?string $url
  *
- * @property Query|Incident $incident
- * @property Query|Tag $tag
- * @property Query|Source $source
+ * @property Query<Incident>|Collection<Incident> $incident
+ * @property Query<ObjectIdTag>|Collection<ObjectIdTag> $object_id_tag
+ * @property Query<Tag>|Collection<Tag> $tag
+ * @property Query<Source>|Source $source
  * @property array<string, string> $id_tags
  */
 class Objects extends Model

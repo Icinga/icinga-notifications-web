@@ -6,6 +6,7 @@
 namespace Icinga\Module\Notifications\Model;
 
 use DateTime;
+use Icinga\Module\Notifications\Common\Collection;
 use Icinga\Module\Notifications\Common\Model;
 use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
@@ -22,12 +23,12 @@ use ipl\Orm\Relations;
  * @property bool $deleted
  * @property string $external_uuid
  *
- * @property Query|Contact $contact
- * @property Query|Rotation $rotation
- * @property Query|RuleEscalation $rule_escalation
- * @property Query|ContactgroupMember $contactgroup_member
- * @property Query|RuleEscalationRecipient $rule_escalation_recipient
- * @property Query|IncidentHistory $incident_history
+ * @property Query<Contact>|Collection<Contact> $contact
+ * @property Query<Rotation>|Collection<Rotation> $rotation
+ * @property Query<RuleEscalation>|Collection<RuleEscalation> $rule_escalation
+ * @property Query<ContactgroupMember>|Collection<ContactgroupMember> $contactgroup_member
+ * @property Query<RuleEscalationRecipient>|Collection<RuleEscalationRecipient> $rule_escalation_recipient
+ * @property Query<IncidentHistory>|Collection<IncidentHistory> $incident_history
  */
 class Contactgroup extends Model
 {

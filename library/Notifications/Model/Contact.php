@@ -6,6 +6,7 @@
 namespace Icinga\Module\Notifications\Model;
 
 use DateTime;
+use Icinga\Module\Notifications\Common\Collection;
 use Icinga\Module\Notifications\Common\Model;
 use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
@@ -22,17 +23,17 @@ use ipl\Orm\Relations;
  * @property bool $deleted
  * @property string $external_uuid
  *
- * @property Query|Channel $channel
- * @property Query|Incident $incident
- * @property Query|Rotation $rotation
- * @property Query|RuleEscalation $rule_escalation
- * @property Query|IncidentContact $incident_contact
- * @property Query|IncidentHistory $incident_history
- * @property Query|RotationMember $rotation_member
- * @property Query|ContactAddress $contact_address
- * @property Query|RuleEscalationRecipient $rule_escalation_recipient
- * @property Query|ContactgroupMember $contactgroup_member
- * @property Query|Contactgroup $contactgroup
+ * @property Query<Channel>|Channel $channel
+ * @property Query<Incident>|Collection<Incident> $incident
+ * @property Query<Rotation>|Collection<Rotation> $rotation
+ * @property Query<RuleEscalation>|Collection<RuleEscalation> $rule_escalation
+ * @property Query<IncidentContact>|Collection<IncidentContact> $incident_contact
+ * @property Query<IncidentHistory>|Collection<IncidentHistory> $incident_history
+ * @property Query<RotationMember>|Collection<RotationMember> $rotation_member
+ * @property Query<ContactAddress>|Collection<ContactAddress> $contact_address
+ * @property Query<RuleEscalationRecipient>|Collection<RuleEscalationRecipient> $rule_escalation_recipient
+ * @property Query<ContactgroupMember>|Collection<ContactgroupMember> $contactgroup_member
+ * @property Query<Contactgroup>|Collection<Contactgroup> $contactgroup
  */
 class Contact extends Model
 {
