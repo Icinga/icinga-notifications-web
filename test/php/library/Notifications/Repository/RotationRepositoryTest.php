@@ -215,7 +215,6 @@ class RotationRepositoryTest extends TestCase
         $members = iterator_to_array(
             RotationMember::on($db)
                 ->filter(Filter::equal('rotation_id', $rotations[0]->id))
-                ->filter(Filter::equal('deleted', false))
         );
         $this->assertCount(1, $members);
         $this->assertEquals(self::$contactId, $members[0]->contact_id);
@@ -224,14 +223,12 @@ class RotationRepositoryTest extends TestCase
         // The timeperiod and at least one entry
         $timeperiod = Timeperiod::on($db)
             ->filter(Filter::equal('owned_by_rotation_id', $rotations[0]->id))
-            ->filter(Filter::equal('deleted', false))
             ->first();
         $this->assertNotNull($timeperiod, 'The rotation\'s timeperiod was not created');
 
         $entries = iterator_to_array(
             TimeperiodEntry::on($db)
                 ->filter(Filter::equal('timeperiod_id', $timeperiod->id))
-                ->filter(Filter::equal('deleted', false))
         );
         $this->assertNotEmpty($entries, 'The timeperiod should have at least one entry');
 

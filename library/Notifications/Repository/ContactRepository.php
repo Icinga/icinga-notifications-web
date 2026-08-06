@@ -57,7 +57,6 @@ final class ContactRepository
     {
         return Contact::on($this->db)
             ->filter(Filter::equal('username', $username))
-            ->filter(Filter::equal('deleted', false))
             ->first();
     }
 

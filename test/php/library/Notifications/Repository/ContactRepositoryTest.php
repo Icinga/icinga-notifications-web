@@ -371,8 +371,7 @@ class ContactRepositoryTest extends TestCase
     {
         $ids = [];
         $query = RotationMember::on($db)
-            ->filter(Filter::equal('rotation_id', $rotationId))
-            ->filter(Filter::equal('deleted', false));
+            ->filter(Filter::equal('rotation_id', $rotationId));
         foreach ($query as $member) {
             $ids[] = (int) $member->contact_id;
         }

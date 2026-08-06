@@ -244,7 +244,6 @@ class ScheduleRepositoryTest extends TestCase
             $entries = iterator_to_array(
                 TimeperiodEntry::on($db)
                     ->filter(Filter::equal('timeperiod.owned_by_rotation_id', $rotation->id))
-                    ->filter(Filter::equal('deleted', false))
             );
             $this->assertNotEmpty($entries, 'A regenerated rotation should have timeperiod entries');
             foreach ($entries as $entry) {

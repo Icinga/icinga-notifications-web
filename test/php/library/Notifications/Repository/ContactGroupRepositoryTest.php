@@ -262,7 +262,6 @@ class ContactGroupRepositoryTest extends TestCase
         return iterator_to_array(
             Rotation::on($db)
                 ->filter(Filter::equal('schedule_id', $scheduleId))
-                ->filter(Filter::equal('deleted', false))
                 ->orderBy('priority')
         );
     }
@@ -303,8 +302,7 @@ class ContactGroupRepositoryTest extends TestCase
     {
         $ids = [];
         $query = RotationMember::on($db)
-            ->filter(Filter::equal('rotation_id', $rotationId))
-            ->filter(Filter::equal('deleted', false));
+            ->filter(Filter::equal('rotation_id', $rotationId));
         foreach ($query as $member) {
             $ids[] = (int) $member->contactgroup_id;
         }
