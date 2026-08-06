@@ -2042,6 +2042,46 @@ YAML;
     }
 
     #[DataProvider('apiTestBackends')]
+    public function testDeleteFreesTheIdentifier(Connection $db, Url $endpoint): void
+    {
+        $response = $this->sendRequest('DELETE', $endpoint, 'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID);
+        $this->assertSame(204, $response->getStatusCode(), $response->getBody()->getContents());
+
+        // A deleted contact must not occupy its identifier anymore, so it can be used for a new one
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contacts',
+            json: [
+                'id' => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name' => 'Test (recreated)',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com']
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(201, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeSuccessMessage('Contact created successfully'),
+            $content
+        );
+
+        $response = $this->sendRequest('GET', $endpoint, 'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID);
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(200, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
+            'id' => BaseApiV1TestCase::CONTACT_UUID,
+            'full_name' => 'Test (recreated)',
+            'username' => null,
+            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+            'groups' => [],
+            'addresses' => ['email' => 'test@example.com']
+        ]), $content);
+    }
+
+    #[DataProvider('apiTestBackends')]
     public function testDeleteWithFilter(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest('DELETE', $endpoint, 'v1/contacts', ['name~*']);

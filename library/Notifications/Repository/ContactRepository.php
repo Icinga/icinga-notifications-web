@@ -156,6 +156,7 @@ final class ContactRepository
 
         $model->contact_address = [];
         $model->contactgroup = []; // TODO: Unsure whether this is it or whether the manager should implicitly clean up
+        $model->external_uuid = null;
         $model->username = null;
         $model->delete();
 
