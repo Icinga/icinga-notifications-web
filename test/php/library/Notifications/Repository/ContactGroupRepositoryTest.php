@@ -208,11 +208,10 @@ class ContactGroupRepositoryTest extends TestCase
         $repository->delete($groupId);
 
         $this->assertNull($repository->find($groupId), 'The group should have been deleted');
-        $this->assertSame(
-            'y',
-            $this->loadRawEntity($db, $groupId, Contactgroup::class)->deleted,
-            'The group should be soft-deleted'
-        );
+
+        $group = $this->loadRawEntity($db, $groupId, Contactgroup::class);
+        $this->assertSame('y', $group->deleted, 'The group should be soft-deleted');
+        $this->assertNull($group->external_uuid, 'The group\'s external uuid should be cleared on deletion');
     }
 
     #[DataProvider('sharedDatabases')]
