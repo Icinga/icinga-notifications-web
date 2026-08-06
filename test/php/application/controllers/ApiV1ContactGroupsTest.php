@@ -1207,6 +1207,41 @@ YAML;
     }
 
     #[DataProvider('apiTestBackends')]
+    public function testDeleteFreesTheIdentifier(Connection $db, Url $endpoint): void
+    {
+        $response = $this->sendRequest('DELETE', $endpoint, 'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID);
+        $this->assertSame(204, $response->getStatusCode(), $response->getBody()->getContents());
+
+        // A deleted Contact Group must not occupy its identifier anymore, so it can be used for a new one
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contact-groups',
+            json: [
+                'id' => BaseApiV1TestCase::GROUP_UUID,
+                'name' => 'Test (recreated)'
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(201, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeSuccessMessage('Contact Group created successfully'),
+            $content
+        );
+
+        $response = $this->sendRequest('GET', $endpoint, 'v1/contact-groups/' . BaseApiV1TestCase::GROUP_UUID);
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(200, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
+            'id' => BaseApiV1TestCase::GROUP_UUID,
+            'name' => 'Test (recreated)',
+            'users' => []
+        ]), $content);
+    }
+
+    #[DataProvider('apiTestBackends')]
     public function testDeleteWithFilter(Connection $db, Url $endpoint): void
     {
         $response = $this->sendRequest('DELETE', $endpoint, 'v1/contact-groups', ['name~*']);

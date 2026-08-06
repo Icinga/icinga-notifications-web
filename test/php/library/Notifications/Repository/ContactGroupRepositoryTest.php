@@ -115,6 +115,17 @@ class ContactGroupRepositoryTest extends TestCase
     }
 
     #[DataProvider('sharedDatabases')]
+    public function testCreateStoresTheGivenExternalUuid(Connection $db): void
+    {
+        // The V1 API lets clients choose the UUID a group is referenced by, so a given one must win
+        // over a generated one
+        $uuid = '00000000-0000-4000-8000-0000000000e1';
+        $id = (new ContactGroupRepository($db))->create(new ContactGroupData(null, 'Group A', [], $uuid));
+
+        $this->assertSame($uuid, (new ContactGroupRepository($db))->find($id)->external_uuid);
+    }
+
+    #[DataProvider('sharedDatabases')]
     public function testUpdateSyncsNameAndMembers(Connection $db): void
     {
         $repository = new ContactGroupRepository($db);
@@ -208,11 +219,10 @@ class ContactGroupRepositoryTest extends TestCase
         $repository->delete($groupId);
 
         $this->assertNull($repository->find($groupId), 'The group should have been deleted');
-        $this->assertSame(
-            'y',
-            $this->loadRawEntity($db, $groupId, Contactgroup::class)->deleted,
-            'The group should be soft-deleted'
-        );
+
+        $group = $this->loadRawEntity($db, $groupId, Contactgroup::class);
+        $this->assertSame('y', $group->deleted, 'The group should be soft-deleted');
+        $this->assertNull($group->external_uuid, 'The group\'s external uuid should be cleared on deletion');
     }
 
     #[DataProvider('sharedDatabases')]

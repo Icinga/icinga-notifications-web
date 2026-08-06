@@ -13,6 +13,7 @@ use Icinga\Module\Notifications\Form\Data\Contact as ContactData;
 use Icinga\Module\Notifications\Form\Data\Rotation;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\ContactAddress;
+use Icinga\Module\Notifications\Model\Contactgroup;
 use InvalidArgumentException;
 use ipl\Sql\Connection;
 use ipl\Sql\Expression;
@@ -75,7 +76,7 @@ final class ContactRepository
         $model->full_name = $contact->fullName;
         $model->username = $contact->username;
         $model->default_channel_id = $contact->channelId;
-        $model->external_uuid = Uuid::uuid4()->toString();
+        $model->external_uuid = $contact->externalUuid ?? Uuid::uuid4()->toString();
 
         $addresses = [];
         foreach ($contact->addresses as $type => $address) {
@@ -87,13 +88,20 @@ final class ContactRepository
 
         $model->contact_address = Collection::create(ContactAddress::class, $addresses);
 
+        if ($contact->groups !== null) {
+            $model->contactgroup = Collection::create(
+                Contactgroup::class,
+                array_map(fn($id) => new Contactgroup(['id' => $id]), $contact->groups)
+            );
+        }
+
         (new EntityManager($this->db))->save($model);
 
         return $model->id;
     }
 
     /**
-     * Update the given contact and perform a differential update on the associated addresses
+     * Update the given contact and perform a differential update on the associated addresses and groups
      *
      * @param ContactData $contact
      *
@@ -136,6 +144,10 @@ final class ContactRepository
             ]))->setNew());
         }
 
+        if ($contact->groups !== null) {
+            $model->contactgroup = array_map(fn($id) => new Contactgroup(['id' => $id]), $contact->groups);
+        }
+
         (new EntityManager($this->db))->save($model);
     }
 
@@ -156,6 +168,7 @@ final class ContactRepository
 
         $model->contact_address = [];
         $model->contactgroup = []; // TODO: Unsure whether this is it or whether the manager should implicitly clean up
+        $model->external_uuid = null;
         $model->username = null;
         $model->delete();
 

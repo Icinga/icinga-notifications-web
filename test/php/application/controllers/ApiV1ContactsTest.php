@@ -8,6 +8,7 @@ namespace Tests\Icinga\Module\Notifications\Controllers;
 use Icinga\Module\Notifications\Test\BaseApiV1TestCase;
 use Icinga\Web\Url;
 use ipl\Sql\Connection;
+use ipl\Sql\Select;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 class ApiV1ContactsTest extends BaseApiV1TestCase
@@ -2039,6 +2040,91 @@ YAML;
 
         $this->assertSame(204, $response->getStatusCode(), $content);
         $this->assertEmpty($content);
+    }
+
+    #[DataProvider('apiTestBackends')]
+    public function testDeleteFreesTheIdentifier(Connection $db, Url $endpoint): void
+    {
+        $response = $this->sendRequest('DELETE', $endpoint, 'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID);
+        $this->assertSame(204, $response->getStatusCode(), $response->getBody()->getContents());
+
+        // A deleted contact must not occupy its identifier anymore, so it can be used for a new one
+        $response = $this->sendRequest(
+            'POST',
+            $endpoint,
+            'v1/contacts',
+            json: [
+                'id' => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name' => 'Test (recreated)',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+                'addresses' => ['email' => 'test@example.com']
+            ]
+        );
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(201, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString(
+            $this->jsonEncodeSuccessMessage('Contact created successfully'),
+            $content
+        );
+
+        $response = $this->sendRequest('GET', $endpoint, 'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID);
+        $content = $response->getBody()->getContents();
+
+        $this->assertSame(200, $response->getStatusCode(), $content);
+        $this->assertJsonStringEqualsJsonString($this->jsonEncodeResult([
+            'id' => BaseApiV1TestCase::CONTACT_UUID,
+            'full_name' => 'Test (recreated)',
+            'username' => null,
+            'default_channel' => BaseApiV1TestCase::CHANNEL_UUID,
+            'groups' => [],
+            'addresses' => ['email' => 'test@example.com']
+        ]), $content);
+    }
+
+    #[DataProvider('apiTestBackends')]
+    public function testPutRestampsDroppedAddresses(Connection $db, Url $endpoint): void
+    {
+        $addresses = $db->fetchPairs(
+            (new Select())
+                ->from('contact_address ca')
+                ->columns(['ca.id', 'ca.changed_at'])
+                ->joinLeft('contact co', 'co.id = ca.contact_id')
+                ->where(['co.external_uuid = ?' => BaseApiV1TestCase::CONTACT_UUID])
+        );
+        $this->assertCount(1, $addresses, 'The contact should have exactly one seeded address');
+
+        // The default channel is a webhook one, hence no address is required at all
+        $response = $this->sendRequest(
+            'PUT',
+            $endpoint,
+            'v1/contacts/' . BaseApiV1TestCase::CONTACT_UUID,
+            json: [
+                'id' => BaseApiV1TestCase::CONTACT_UUID,
+                'full_name' => 'Test',
+                'default_channel' => BaseApiV1TestCase::CHANNEL_UUID_2,
+                'addresses' => []
+            ]
+        );
+
+        $this->assertSame(204, $response->getStatusCode(), $response->getBody()->getContents());
+
+        // A soft-deleted address must carry a fresh changed_at, otherwise the daemon never learns it's gone
+        $dropped = $db->fetchPairs(
+            (new Select())
+                ->from('contact_address')
+                ->columns(['id', 'changed_at'])
+                ->where(['id IN (?)' => array_keys($addresses), 'deleted = ?' => 'y'])
+        );
+
+        $this->assertSame(array_keys($addresses), array_keys($dropped), 'The address should be soft-deleted');
+        foreach ($dropped as $id => $changedAt) {
+            $this->assertGreaterThan(
+                $addresses[$id],
+                $changedAt,
+                'The changed_at of a soft-deleted address must have been bumped'
+            );
+        }
     }
 
     #[DataProvider('apiTestBackends')]

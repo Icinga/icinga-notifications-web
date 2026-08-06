@@ -97,6 +97,8 @@ final class ChannelRepository
             throw new InvalidArgumentException('Cannot delete a channel that does not exist in the database');
         }
 
+        $model->external_uuid = null;
+
         (new EntityManager($this->db))->save($model->delete());
     }
 

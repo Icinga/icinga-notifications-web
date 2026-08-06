@@ -57,7 +57,7 @@ final class ContactGroupRepository
     {
         $model = (new Contactgroup())->setNew();
         $model->name = $group->name;
-        $model->external_uuid = Uuid::uuid4()->toString();
+        $model->external_uuid = $group->externalUuid ?? Uuid::uuid4()->toString();
         $model->contact = Collection::create(
             Contact::class,
             array_map(fn($id) => new Contact(['id' => $id]), $group->members)
@@ -109,6 +109,7 @@ final class ContactGroupRepository
         }
 
         $model->contact = [];
+        $model->external_uuid = null;
         $model->delete();
 
         $model->rotation
