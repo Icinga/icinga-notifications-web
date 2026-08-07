@@ -14,6 +14,7 @@ use Icinga\User;
 use ipl\Orm\Query;
 use ipl\Orm\ResultSet;
 use ipl\Sql\Connection;
+use ipl\Sql\Expression;
 use ipl\Stdlib\Filter;
 use IteratorAggregate;
 
@@ -92,6 +93,27 @@ class Incidents implements IteratorAggregate, Countable
     public function hasIncident(): bool
     {
         return $this->incidents()->hasResult();
+    }
+
+    /**
+     * Get the given user's current incident roles
+     *
+     * Returns a generator that yields {@see Incident} as key and the user's role as string.
+     * The role can either be 'manager', 'recipient' or 'subscriber'.
+     *
+     * @param User $user
+     *
+     * @return Generator<mixed, Incident, 'manager|recipient|subscriber', void>
+     * @phpstan-return Generator<Incident, 'manager|recipient|subscriber', mixed, void>
+     */
+    public function getRoles(User $user): Generator
+    {
+        $incidents = $this->buildQuery()
+            ->withColumns(['role' => 'incident_contact.role'])
+            ->filter(Filter::equal('contact.username', $user->getUsername()));
+        foreach ($incidents as $incident) {
+            yield new Incident($incident, $this->db) => $incident->role;
+        }
     }
 
     /**
