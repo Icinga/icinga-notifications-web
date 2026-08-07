@@ -18,6 +18,9 @@ use ipl\Sql\Expression;
 use ipl\Stdlib\Filter;
 use IteratorAggregate;
 
+/**
+ * @implements IteratorAggregate<int, Incident>
+ */
 class Incidents implements IteratorAggregate, Countable
 {
     /** @var array<string, ?string> Required tags keyed by name; a null value requires the tag's absence */
@@ -92,7 +95,13 @@ class Incidents implements IteratorAggregate, Countable
      */
     public function hasIncident(): bool
     {
-        return $this->incidents()->hasResult();
+        if ($this->results !== null) {
+            return $this->incidents()->hasResult();
+        }
+
+        return $this->buildQuery()
+            ->columns([new Expression('1')])
+            ->first() !== null;
     }
 
     /**
@@ -119,7 +128,8 @@ class Incidents implements IteratorAggregate, Countable
     /**
      * Yield an interaction wrapper for each of the object's incidents
      *
-     * @return Generator<Incident>
+     * @return Generator<mixed, mixed, Incident, void>
+     * @phpstan-return Generator<mixed, Incident, mixed, void>
      */
     public function getIterator(): Generator
     {
@@ -130,9 +140,12 @@ class Incidents implements IteratorAggregate, Countable
 
     public function count(): int
     {
-        return $this->buildQuery()->count();
+        return $this->incidents()->count();
     }
 
+    /**
+     * @return ResultSet<IncidentModel>
+     */
     private function incidents(): ResultSet
     {
         if ($this->results === null) {
