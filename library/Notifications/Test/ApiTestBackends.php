@@ -87,6 +87,20 @@ trait ApiTestBackends
                     $env['ICINGAWEB_LIBDIR'] = $libDir;
                 }
 
+                if (ini_get('xdebug.mode') === 'debug') {
+                    if (($ideConfig = getenv('PHP_IDE_CONFIG'))) {
+                        $env['PHP_IDE_CONFIG'] = $ideConfig;
+                    }
+
+                    $env['XDEBUG_MODE'] = 'debug';
+                    $env['XDEBUG_CONFIG'] = sprintf(
+                        '%s client_host=%s client_port=%s',
+                        getenv('XDEBUG_CONFIG') ?: '',
+                        ini_get('xdebug.client_host'),
+                        ini_get('xdebug.client_port')
+                    );
+                }
+
                 pcntl_exec(
                     readlink('/proc/self/exe'),
                     ['-q', '-S', $socket, '-t', "$webPath/public", "$webPath/public/index.php"],
