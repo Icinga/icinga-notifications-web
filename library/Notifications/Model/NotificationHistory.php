@@ -24,8 +24,8 @@ use ipl\Sql\Select;
  *
  * @property int $id
  * @property ?int $incident_id
- * @property int $rule_id
- * @property int $rule_escalation_id
+ * @property ?int $rule_id
+ * @property ?int $rule_escalation_id
  * @property int $contact_id
  * @property ?int $contactgroup_id
  * @property int $channel_id
@@ -104,8 +104,8 @@ class NotificationHistory extends Model
 
     public function createRelations(Relations $relations): void
     {
-        $relations->belongsTo('rule', Rule::class);
-        $relations->belongsTo('rule_escalation', RuleEscalation::class);
+        $relations->belongsTo('rule', Rule::class)->setJoinType('LEFT');
+        $relations->belongsTo('rule_escalation', RuleEscalation::class)->setJoinType('LEFT');
         $relations->belongsTo('contact', Contact::class);
 
         $relations->belongsTo('incident', Incident::class)->setJoinType('LEFT');
