@@ -6,6 +6,7 @@
 namespace Icinga\Module\Notifications\Model;
 
 use DateTime;
+use Icinga\Module\Notifications\Common\Collection;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Model;
 use Icinga\Module\Notifications\Common\NotificationTransmissionReason;
@@ -34,14 +35,14 @@ use ipl\Sql\Select;
  * @property NotificationTransmissionState $state
  * @property DateTime $triggered_at
  *
- * @property Query|Incident $incident
- * @property Query|Rule $rule
- * @property Query|RuleEscalation $rule_escalation
- * @property Query|Contact $contact
- * @property Query|Contactgroup $contactgroup
- * @property Query|Channel $channel
- * @property Query|Schedule $schedule
- * @property Query|SkippedNotificationHistory $skipped
+ * @property Query<Incident>|Incident $incident
+ * @property Query<Rule>|Rule $rule
+ * @property Query<RuleEscalation>|RuleEscalation $rule_escalation
+ * @property Query<Contact>|Contact $contact
+ * @property Query<ContactGroup>|Contactgroup $contactgroup
+ * @property Query<Channel>|Channel $channel
+ * @property Query<Schedule>|Schedule $schedule
+ * @property Query<SkippedNotificationHistory>|Collection<SkippedNotificationHistory> $skipped
  */
 class NotificationHistory extends Model
 {
