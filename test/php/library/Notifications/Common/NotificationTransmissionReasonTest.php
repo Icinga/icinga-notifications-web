@@ -24,7 +24,12 @@ class NotificationTransmissionReasonTest extends TestCase
             'opened' => [NotificationTransmissionReason::OPENED, 'opened'],
             'closed' => [NotificationTransmissionReason::CLOSED, 'closed'],
             'muted' => [NotificationTransmissionReason::MUTED, 'muted'],
-            'unmuted' => [NotificationTransmissionReason::UNMUTED, 'unmuted']
+            'unmuted' => [NotificationTransmissionReason::UNMUTED, 'unmuted'],
+            'recipient_role_changed' => [
+                NotificationTransmissionReason::RECIPIENT_ROLE_CHANGED,
+                'recipient_role_changed'
+            ],
+            'notified' => [NotificationTransmissionReason::NOTIFIED, 'notified']
         ];
     }
 
@@ -57,6 +62,11 @@ class NotificationTransmissionReasonTest extends TestCase
         $this->assertSame('Incident closed', NotificationTransmissionReason::CLOSED->getLabel());
         $this->assertSame('Incident muted', NotificationTransmissionReason::MUTED->getLabel());
         $this->assertSame('Incident unmuted', NotificationTransmissionReason::UNMUTED->getLabel());
+        $this->assertSame(
+            'Recipient role changed',
+            NotificationTransmissionReason::RECIPIENT_ROLE_CHANGED->getLabel()
+        );
+        $this->assertSame('Notified', NotificationTransmissionReason::NOTIFIED->getLabel());
     }
 
     public function testAllCasesAreCovered(): void
@@ -65,10 +75,12 @@ class NotificationTransmissionReasonTest extends TestCase
             [
                 NotificationTransmissionReason::INCIDENT_SEVERITY_CHANGED,
                 NotificationTransmissionReason::ESCALATION_TRIGGERED,
-                NotificationTransmissionReason::OPENED,
                 NotificationTransmissionReason::CLOSED,
+                NotificationTransmissionReason::OPENED,
                 NotificationTransmissionReason::MUTED,
-                NotificationTransmissionReason::UNMUTED
+                NotificationTransmissionReason::UNMUTED,
+                NotificationTransmissionReason::RECIPIENT_ROLE_CHANGED,
+                NotificationTransmissionReason::NOTIFIED
             ],
             NotificationTransmissionReason::cases(),
             'A NotificationTransmissionReason case was added or removed — update the test providers and this assertion'

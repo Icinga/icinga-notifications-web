@@ -13,12 +13,14 @@ namespace Icinga\Module\Notifications\Common;
  */
 enum NotificationTransmissionReason: string
 {
-    case OPENED = 'opened';
     case INCIDENT_SEVERITY_CHANGED = 'incident_severity_changed';
     case ESCALATION_TRIGGERED = 'escalation_triggered';
+    case CLOSED = 'closed';
+    case OPENED = 'opened';
     case MUTED = 'muted';
     case UNMUTED = 'unmuted';
-    case CLOSED = 'closed';
+    case RECIPIENT_ROLE_CHANGED = 'recipient_role_changed';
+    case NOTIFIED = 'notified';
 
     /**
      * Get the backing string value
@@ -43,7 +45,9 @@ enum NotificationTransmissionReason: string
             self::ESCALATION_TRIGGERED          => t('Escalation triggered'),
             self::MUTED                         => t('Incident muted'),
             self::UNMUTED                       => t('Incident unmuted'),
-            self::CLOSED                        => t('Incident closed')
+            self::CLOSED                        => t('Incident closed'),
+            self::RECIPIENT_ROLE_CHANGED        => t('Recipient role changed'),
+            self::NOTIFIED                      => t('Notified')
         };
     }
 }
