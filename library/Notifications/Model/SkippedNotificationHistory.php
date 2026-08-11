@@ -25,12 +25,12 @@ use ipl\Orm\Relations;
  * @property ?int $schedule_id
  * @property DateTime $triggered_at
  *
- * @property Query|Incident $incident
- * @property Query|Rule $rule
- * @property Query|RuleEscalation $rule_escalation
- * @property Query|Contactgroup $contactgroup
- * @property Query|Channel $channel
- * @property Query|Schedule $schedule
+ * @property Query<Incident>|Incident $incident
+ * @property Query<Rule>|Rule $rule
+ * @property Query<RuleEscalation>|RuleEscalation $rule_escalation
+ * @property Query<ContactGroup>|Contactgroup $contactgroup
+ * @property Query<Channel>|Channel $channel
+ * @property Query<Schedule>|Schedule $schedule
  */
 class SkippedNotificationHistory extends Model
 {
