@@ -6,8 +6,6 @@
 namespace Tests\Icinga\Module\Notifications\Common;
 
 use Icinga\Module\Notifications\Common\NotificationTransmissionReason;
-use ipl\I18n\NoopTranslator;
-use ipl\I18n\StaticTranslator;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 

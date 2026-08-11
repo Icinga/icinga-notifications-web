@@ -46,6 +46,7 @@ class NotificationHistoryController extends CompatController
         if ($notificationHistory === null) {
             $this->httpNotFound(t('Notification History not found'));
         }
+
         $this->controls->addAttributes(Attributes::create(['class' => 'notification-history-detail']));
         $this->addControl(new ObjectHeader($notificationHistory));
         $this->addContent(new NotificationHistoryDetail($notificationHistory));

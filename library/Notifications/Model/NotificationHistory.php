@@ -116,6 +116,9 @@ class NotificationHistory extends Model
             ->setJoinType('LEFT');
     }
 
+    /**
+     * @inheritDoc
+     */
     public static function on(Connection $db): Query
     {
         $query = parent::on($db);

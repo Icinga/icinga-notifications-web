@@ -19,7 +19,6 @@ enum NotificationTransmissionState: string
     case SENT = 'sent';
     case FAILED = 'failed';
     case PENDING = 'pending';
-    case SUPPRESSED = 'suppressed';
 
     /**
      * Get the backing string value
@@ -42,7 +41,6 @@ enum NotificationTransmissionState: string
             self::SENT       => t('Successfully sent notification'),
             self::FAILED     => t('Failed to send notification'),
             self::PENDING    => t('Pending notification'),
-            self::SUPPRESSED => t('Suppressed notification')
         };
     }
 
@@ -60,7 +58,6 @@ enum NotificationTransmissionState: string
                     self::SENT       => 'sent',
                     self::FAILED     => 'failed',
                     self::PENDING    => 'pending',
-                    self::SUPPRESSED => 'suppressed'
                 }
             ]));
     }

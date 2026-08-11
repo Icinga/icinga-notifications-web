@@ -6,8 +6,6 @@
 namespace Tests\Icinga\Module\Notifications\Common;
 
 use Icinga\Module\Notifications\Common\NotificationTransmissionState;
-use ipl\I18n\NoopTranslator;
-use ipl\I18n\StaticTranslator;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -19,7 +17,6 @@ class NotificationTransmissionStateTest extends TestCase
             'sent' => [NotificationTransmissionState::SENT, 'sent'],
             'failed' => [NotificationTransmissionState::FAILED, 'failed'],
             'pending' => [NotificationTransmissionState::PENDING, 'pending'],
-            'suppressed' => [NotificationTransmissionState::SUPPRESSED, 'suppressed']
         ];
     }
 
@@ -49,7 +46,6 @@ class NotificationTransmissionStateTest extends TestCase
         );
         $this->assertSame('Failed to send notification', NotificationTransmissionState::FAILED->getLabel());
         $this->assertSame('Pending notification', NotificationTransmissionState::PENDING->getLabel());
-        $this->assertSame('Suppressed notification', NotificationTransmissionState::SUPPRESSED->getLabel());
     }
 
     public static function iconClassProvider(): array
@@ -58,7 +54,6 @@ class NotificationTransmissionStateTest extends TestCase
             'sent' => [NotificationTransmissionState::SENT, 'sent'],
             'failed' => [NotificationTransmissionState::FAILED, 'failed'],
             'pending' => [NotificationTransmissionState::PENDING, 'pending'],
-            'suppressed' => [NotificationTransmissionState::SUPPRESSED, 'suppressed']
         ];
     }
 
@@ -83,7 +78,6 @@ class NotificationTransmissionStateTest extends TestCase
                 NotificationTransmissionState::SENT,
                 NotificationTransmissionState::FAILED,
                 NotificationTransmissionState::PENDING,
-                NotificationTransmissionState::SUPPRESSED
             ],
             NotificationTransmissionState::cases(),
             'A NotificationTransmissionState case was added or removed — update the test providers and this assertion'
