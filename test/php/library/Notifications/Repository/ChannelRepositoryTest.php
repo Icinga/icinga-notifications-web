@@ -16,6 +16,7 @@ use ipl\Sql\Test\SharedDatabases\TransactionIsolation;
 use ipl\Stdlib\Filter;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Tests\Icinga\Module\Notifications\Lib\DatabaseUtils;
 
 /**
  * Tests for {@see ChannelRepository}.
@@ -31,6 +32,7 @@ use PHPUnit\Framework\TestCase;
 #[TransactionIsolation]
 class ChannelRepositoryTest extends TestCase
 {
+    use DatabaseUtils;
     use DbTestBackends;
 
     protected static function initializeNotificationsDb(Connection $db): void
@@ -67,7 +69,7 @@ class ChannelRepositoryTest extends TestCase
     }
 
     /**
-     * Load a channel row directly, bypassing the repository's `deleted` filter
+     * Load a channel row directly
      *
      * @param Connection $db
      * @param int $id
@@ -93,7 +95,6 @@ class ChannelRepositoryTest extends TestCase
         $this->assertSame('Support', $channel->name);
         $this->assertSame('email', $channel->type);
         $this->assertSame('{"sender_mail":"noreply@example.com"}', $channel->config);
-        $this->assertFalse($channel->deleted, 'The deleted flag should be cast to a bool');
     }
 
     #[DataProvider('sharedDatabases')]
@@ -125,7 +126,6 @@ class ChannelRepositoryTest extends TestCase
         $this->assertSame('Support', $stored->name);
         $this->assertSame('email', $stored->type);
         $this->assertSame('{"sender_mail":"noreply@example.com"}', $stored->config);
-        $this->assertFalse($stored->deleted);
         $this->assertNotEmpty($stored->external_uuid, 'The channel should have been assigned an external uuid');
     }
 
@@ -198,9 +198,10 @@ class ChannelRepositoryTest extends TestCase
         (new ChannelRepository($db))->delete($id);
 
         // It's only soft-deleted: the row still exists, flagged deleted
-        $stored = $this->loadChannel($db, $id);
+        $stored = $this->loadRawEntity($db, $id, Channel::class);
         $this->assertNotNull($stored, 'The channel row should still exist');
-        $this->assertTrue($stored->deleted, 'The channel should be soft-deleted, not removed');
+        $this->assertSame('y', $stored->deleted, 'The channel should be soft-deleted, not removed');
+        $this->assertNull($stored->external_uuid, 'The channel\'s external uuid should be cleared on deletion');
     }
 
     #[DataProvider('sharedDatabases')]

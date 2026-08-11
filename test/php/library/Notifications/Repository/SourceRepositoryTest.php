@@ -18,6 +18,7 @@ use ipl\Sql\Test\SharedDatabases\TransactionIsolation;
 use ipl\Stdlib\Filter;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Tests\Icinga\Module\Notifications\Lib\DatabaseUtils;
 
 /**
  * Tests for {@see SourceRepository}.
@@ -31,6 +32,7 @@ use PHPUnit\Framework\TestCase;
 #[TransactionIsolation]
 class SourceRepositoryTest extends TestCase
 {
+    use DatabaseUtils;
     use DbTestBackends;
 
     protected static function initializeNotificationsDb(Connection $db): void
@@ -300,9 +302,9 @@ class SourceRepositoryTest extends TestCase
         (new SourceRepository($db))->delete($id);
 
         // It's only soft-deleted: the row still exists, flagged deleted with its username freed
-        $stored = $this->loadSource($db, $id);
+        $stored = $this->loadRawEntity($db, $id, Source::class);
         $this->assertNotNull($stored, 'The source row should still exist');
-        $this->assertTrue($stored->deleted, 'The source should be soft-deleted, not removed');
+        $this->assertSame('y', $stored->deleted, 'The source should be soft-deleted, not removed');
         $this->assertNull($stored->listener_username, 'The unique listener_username should be nulled on deletion');
     }
 
@@ -326,11 +328,15 @@ class SourceRepositoryTest extends TestCase
         (new SourceRepository($db))->delete($sourceId);
 
         // The linked rule is soft-deleted along with the source
-        $rule = Rule::on($db)->filter(Filter::equal('id', $ruleId))->first();
+        $rule = $this->loadRawEntity($db, $ruleId, Rule::class);
         $this->assertNotNull($rule, 'The rule row should still exist');
-        $this->assertTrue($rule->deleted, 'The linked rule must be soft-deleted with the source');
+        $this->assertSame('y', $rule->deleted, 'The linked rule must be soft-deleted with the source');
 
-        $this->assertTrue($this->loadSource($db, $sourceId)->deleted, 'The source itself must be soft-deleted');
+        $this->assertSame(
+            'y',
+            $this->loadRawEntity($db, $sourceId, Source::class)->deleted,
+            'The source itself must be soft-deleted'
+        );
     }
 
     #[DataProvider('sharedDatabases')]
@@ -368,7 +374,7 @@ class SourceRepositoryTest extends TestCase
 
         (new SourceRepository($db))->delete($id);
 
-        $source = $this->loadSource($db, $id);
+        $source = $this->loadRawEntity($db, $id, Source::class);
         $this->assertNotNull($source, 'The source row should still exist');
         $this->assertNull(
             $source->client_certificate_subject,

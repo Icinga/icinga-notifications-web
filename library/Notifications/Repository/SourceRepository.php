@@ -106,7 +106,7 @@ class SourceRepository
         $source->listener_username = null;
         $source->delete();
 
-        $source->rule->query()->columns('id')->filter(Filter::equal('deleted', false));
+        $source->rule->query()->columns('id');
         foreach ($source->rule as $rule) {
             (new EscalationRuleRepository($this->db))->delete($rule->id);
         }

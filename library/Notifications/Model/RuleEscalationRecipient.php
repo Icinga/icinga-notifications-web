@@ -12,6 +12,7 @@ use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
+use ipl\Stdlib\Filter;
 
 /**
  * @property int $id
@@ -80,10 +81,10 @@ class RuleEscalationRecipient extends Model
     public function createRelations(Relations $relations): void
     {
         $relations->belongsTo('rule_escalation', RuleEscalation::class);
-        $relations->belongsTo('contact', Contact::class);
-        $relations->belongsTo('schedule', Schedule::class);
-        $relations->belongsTo('contactgroup', Contactgroup::class);
-        $relations->belongsTo('channel', Channel::class);
+        $relations->belongsTo('contact', Contact::class)->setJoinType('LEFT');
+        $relations->belongsTo('schedule', Schedule::class)->setJoinType('LEFT');
+        $relations->belongsTo('contactgroup', Contactgroup::class)->setJoinType('LEFT');
+        $relations->belongsTo('channel', Channel::class)->setJoinType('LEFT');
     }
 
     /**
@@ -99,5 +100,10 @@ class RuleEscalationRecipient extends Model
             (bool) $this->schedule_id     => $this->schedule->first(),
             default                       => null
         };
+    }
+
+    public function createVisibilityFilter(Filter\Chain $filter): void
+    {
+        $filter->add(Filter::equal('deleted', 'n'));
     }
 }

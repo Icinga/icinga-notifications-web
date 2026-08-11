@@ -5,7 +5,6 @@
 
 namespace Icinga\Module\Notifications\Api\V1;
 
-use DateTime;
 use Icinga\Exception\Http\HttpBadRequestException;
 use Icinga\Exception\Http\HttpException;
 use Icinga\Exception\Http\HttpNotFoundException;
@@ -21,14 +20,10 @@ use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Parameter\QueryPar
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Response\Example\ResponseExample;
 use Icinga\Module\Notifications\Api\OpenApiDescriptionElement\Schema\SchemaUUID;
 use Icinga\Module\Notifications\Common\Database;
-use Icinga\Module\Notifications\Model\Contactgroup;
-use Icinga\Module\Notifications\Model\Rotation;
-use Icinga\Module\Notifications\Model\RotationMember;
-use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
-use Icinga\Module\Notifications\Repository\RotationRepository;
+use Icinga\Module\Notifications\Form\Data\ContactGroup as ContactGroupData;
+use Icinga\Module\Notifications\Repository\ContactGroupRepository;
 use Icinga\Util\Json;
 use ipl\Sql\Select;
-use ipl\Stdlib\Filter;
 use OpenApi\Attributes as OA;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -358,7 +353,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
         }
 
         if (! $emptyIdentifier) {
-            $this->removeContactgroup($groupId);
+            (new ContactGroupRepository(Database::get()))->delete($groupId);
         }
 
         $this->addContactgroup($requestBody);
@@ -409,7 +404,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
         }
 
         Database::get()->beginTransaction();
-        $this->removeContactgroup($contactgroupId);
+        (new ContactGroupRepository(Database::get()))->delete($contactgroupId);
         Database::get()->commitTransaction();
 
         return $this->createResponse(204);
@@ -448,7 +443,10 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
             (new Select())
                 ->from('contactgroup')
                 ->columns('id')
-                ->where(['external_uuid = ?' => $identifier])
+                ->where([
+                    'external_uuid = ?' => $identifier,
+                    'deleted = ?' => 'n'
+                ])
         );
 //
 //        if ($group === false) {
@@ -465,101 +463,6 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
 //            ->fetchCol('SELECT id FROM contactgroup WHERE external_uuid = ?', [$identifier]);
 //
 //        return $group[0] ?? null;
-    }
-
-    /**
-     * Remove the Contact Group with the given id and all its references
-     *
-     * @param int $id
-     *
-     * @return void
-     */
-    private function removeContactgroup(int $id): void
-    {
-        $markAsDeleted = ['changed_at' => (int) (new DateTime())->format("Uv"), 'deleted' => 'y'];
-        $markEntityAsDeleted = array_merge(
-            $markAsDeleted,
-            ['external_uuid' => substr_replace(Uuid::uuid4()->toString(), '0', 14, 1)]
-        );
-        $updateCondition = ['contactgroup_id = ?' => $id, 'deleted = ?' => 'n'];
-
-        $rotationAndMemberIds = Database::get()->fetchPairs(
-            RotationMember::on(Database::get())
-                ->columns(['id', 'rotation_id'])
-                ->filter(Filter::equal('contactgroup_id', $id))
-                ->assembleSelect()
-        );
-
-        $rotationMemberIds = array_keys($rotationAndMemberIds);
-        $rotationIds = array_values($rotationAndMemberIds);
-
-        Database::get()->update('rotation_member', $markAsDeleted + ['position' => null], $updateCondition);
-
-        if (! empty($rotationMemberIds)) {
-            Database::get()->update(
-                'timeperiod_entry',
-                $markAsDeleted,
-                ['rotation_member_id IN (?)' => $rotationMemberIds, 'deleted = ?' => 'n']
-            );
-        }
-
-        if (! empty($rotationIds)) {
-            $rotationIdsWithOtherMembers = Database::get()->fetchCol(
-                RotationMember::on(Database::get())
-                    ->columns('rotation_id')
-                    ->filter(
-                        Filter::all(
-                            Filter::equal('rotation_id', $rotationIds),
-                            Filter::unequal('contactgroup_id', $id)
-                        )
-                    )->assembleSelect()
-            );
-
-            $toRemoveRotations = array_diff($rotationIds, $rotationIdsWithOtherMembers);
-            foreach ($toRemoveRotations as $rotationId) {
-                (new RotationRepository(Database::get()))->delete($rotationId);
-            }
-        }
-
-        $escalationIds = Database::get()->fetchCol(
-            RuleEscalationRecipient::on(Database::get())
-                ->columns('rule_escalation_id')
-                ->filter(Filter::equal('contactgroup_id', $id))
-                ->assembleSelect()
-        );
-
-        Database::get()->update('rule_escalation_recipient', $markAsDeleted, $updateCondition);
-
-        if (! empty($escalationIds)) {
-            $escalationIdsWithOtherRecipients = Database::get()->fetchCol(
-                RuleEscalationRecipient::on(Database::get())
-                    ->columns('rule_escalation_id')
-                    ->filter(
-                        Filter::all(
-                            Filter::equal('rule_escalation_id', $escalationIds),
-                            Filter::unequal('contactgroup_id', $id)
-                        )
-                    )->assembleSelect()
-            );
-
-            $toRemoveEscalations = array_diff($escalationIds, $escalationIdsWithOtherRecipients);
-
-            if (! empty($toRemoveEscalations)) {
-                Database::get()->update(
-                    'rule_escalation',
-                    $markAsDeleted + ['position' => null],
-                    ['id IN (?)' => $toRemoveEscalations]
-                );
-            }
-        }
-
-        Database::get()->update('contactgroup_member', $markAsDeleted, $updateCondition);
-
-        Database::get()->update(
-            'contactgroup',
-            $markEntityAsDeleted,
-            ['id = ?' => $id, 'deleted = ?' => 'n']
-        );
     }
 
     /**
@@ -623,130 +526,58 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
             $this->assertUniqueName($requestBody['name']);
         }
 
-        Database::get()->insert('contactgroup', [
-            'name'          => $requestBody['name'],
-            'external_uuid' => $requestBody['id'],
-            'changed_at'    => (int) (new DateTime())->format("Uv"),
-        ]);
-
-        $id = Database::get()->lastInsertId();
-
-        if (! empty($requestBody['users'])) {
-            $this->addUsers($id, $requestBody['users']);
-        }
+        (new ContactGroupRepository(Database::get()))->create($this->createContactGroupData($requestBody));
     }
 
+    /**
+     * Update the Contact Group with the given id with the given data
+     *
+     * @param requestBody $requestBody
+     * @param int $contactgroupId
+     *
+     * @return void
+     *
+     * @throws HttpException
+     */
     private function updateContactgroup(array $requestBody, int $contactgroupId): void
     {
         if (! empty($requestBody['name'])) {
             $this->assertUniqueName($requestBody['name'], $contactgroupId);
         }
 
-        $storedValues = $this->fetchDbValues($contactgroupId);
-
-        $changedAt = (int) (new DateTime())->format("Uv");
-
-        if ($requestBody['name'] !== $storedValues['group_name']) {
-            Database::get()->update(
-                'contactgroup',
-                ['name' => $requestBody['name'], 'changed_at' => $changedAt],
-                ['id = ?' => $contactgroupId]
-            );
-        }
-
-        $storedContacts = [];
-        if (! empty($storedValues['group_members'])) {
-            $storedContacts = explode(',', $storedValues['group_members']);
-        }
-
-        $newContacts = [];
-        if (! empty($requestBody['users'])) {
-            foreach ($requestBody['users'] as $identifier) {
-                $contactId = Contacts::getContactId($identifier);
-                if ($contactId === null) {
-                    throw new HttpException(422, sprintf('User with identifier %s not found', $identifier));
-                }
-                $newContacts[] = $contactId;
-            }
-        }
-
-        $toDelete = array_diff($storedContacts, $newContacts);
-        $toAdd = array_diff($newContacts, $storedContacts);
-
-        if (! empty($toDelete)) {
-            Database::get()->update(
-                'contactgroup_member',
-                ['changed_at' => $changedAt, 'deleted' => 'y'],
-                [
-                    'contactgroup_id = ?'   => $contactgroupId,
-                    'contact_id IN (?)'     => $toDelete,
-                    'deleted = ?'           => 'n'
-                ]
-            );
-        }
-
-        if (! empty($toAdd)) {
-            $contactsMarkedAsDeleted = Database::get()->fetchCol(
-                (new Select())
-                    ->from('contactgroup_member')
-                    ->columns(['contact_id'])
-                    ->where([
-                        'contactgroup_id = ?'   => $contactgroupId,
-                        'deleted = ?'           => 'y',
-                        'contact_id IN (?)'     => $toAdd
-                    ])
-            );
-
-            $toAdd = array_diff($toAdd, $contactsMarkedAsDeleted);
-            foreach ($toAdd as $contactId) {
-                Database::get()->insert(
-                    'contactgroup_member',
-                    [
-                        'contactgroup_id'   => $contactgroupId,
-                        'contact_id'        => $contactId,
-                        'changed_at'        => $changedAt
-                    ]
-                );
-            }
-
-            if (! empty($contactsMarkedAsDeleted)) {
-                Database::get()->update(
-                    'contactgroup_member',
-                    ['changed_at' => $changedAt, 'deleted' => 'n'],
-                    [
-                        'contactgroup_id = ?'   => $contactgroupId,
-                        'contact_id IN (?)'     => $contactsMarkedAsDeleted
-                    ]
-                );
-            }
-        }
+        (new ContactGroupRepository(Database::get()))
+            ->update($this->createContactGroupData($requestBody, $contactgroupId));
     }
 
     /**
-     * Add the given users as contactgroup_member with the given id
+     * Transform the given request body into what the {@see ContactGroupRepository} expects
      *
-     * @param int $contactgroupId
-     * @param string[] $users
+     * @param requestBody $requestBody
+     * @param ?int $contactgroupId The id of the Contact Group to update, NULL to create a new one
      *
-     * @return void
+     * @return ContactGroupData
      *
-     * @throws HttpException
+     * @throws HttpException If a referenced user does not exist
      */
-    private function addUsers(int $contactgroupId, array $users): void
+    private function createContactGroupData(array $requestBody, ?int $contactgroupId = null): ContactGroupData
     {
-        foreach ($users as $identifier) {
+        $members = [];
+        foreach ($requestBody['users'] ?? [] as $identifier) {
             $contactId = Contacts::getContactId($identifier);
 
             if ($contactId === null) {
                 throw new HttpException(422, sprintf('User with identifier %s not found', $identifier));
             }
 
-            Database::get()->insert('contactgroup_member', [
-                'contactgroup_id' => $contactgroupId,
-                'contact_id'      => $contactId,
-                'changed_at'      => (int) (new DateTime())->format("Uv"),
-            ]);
+            $members[] = $contactId;
         }
+
+        return new ContactGroupData(
+            id: $contactgroupId,
+            name: $requestBody['name'],
+            members: $members,
+            externalUuid: $requestBody['id']
+        );
     }
 
     public function prepareRow(stdClass $row): void
@@ -771,7 +602,10 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
         $stmt = (new Select())
             ->from('contactgroup')
             ->columns('1')
-            ->where(['name = ?' => $name]);
+            ->where([
+                'name = ?' => $name,
+                'deleted = ?' => 'n'
+            ]);
 
         if ($contactgroupId) {
             $stmt->where(['id != ?' => $contactgroupId]);
@@ -782,37 +616,5 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
         if ($user) {
             throw new HttpException(422, sprintf('Name %s already exists', $name));
         }
-    }
-
-    /**
-     * Fetch the values from the database
-     *
-     * @param int $contactgroupId
-     *
-     * @return array
-     *
-     * @throws HttpNotFoundException
-     */
-    private function fetchDbValues(int $contactgroupId): array
-    {
-        $query = Contactgroup::on(Database::get())
-            ->columns(['id', 'name'])
-            ->filter(Filter::equal('id', $contactgroupId));
-
-        /** @var ?Contactgroup $group */
-        $group = $query->first();
-        if ($group === null) {
-            throw new HttpNotFoundException('Contact group not found');
-        }
-
-        $groupMembers = [];
-        foreach ($group->contactgroup_member as $contact) {
-            $groupMembers[] = $contact->contact_id;
-        }
-
-        return [
-            'group_name'        => $group->name,
-            'group_members'     => implode(',', $groupMembers)
-        ];
     }
 }

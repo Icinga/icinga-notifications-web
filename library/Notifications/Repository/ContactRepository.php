@@ -13,6 +13,7 @@ use Icinga\Module\Notifications\Form\Data\Contact as ContactData;
 use Icinga\Module\Notifications\Form\Data\Rotation;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\ContactAddress;
+use Icinga\Module\Notifications\Model\Contactgroup;
 use InvalidArgumentException;
 use ipl\Sql\Connection;
 use ipl\Sql\Expression;
@@ -43,7 +44,6 @@ final class ContactRepository
     {
         return Contact::on($this->db)
             ->filter(Filter::equal('id', $id))
-            ->filter(Filter::equal('deleted', false))
             ->first();
     }
 
@@ -58,7 +58,6 @@ final class ContactRepository
     {
         return Contact::on($this->db)
             ->filter(Filter::equal('username', $username))
-            ->filter(Filter::equal('deleted', false))
             ->first();
     }
 
@@ -77,7 +76,7 @@ final class ContactRepository
         $model->full_name = $contact->fullName;
         $model->username = $contact->username;
         $model->default_channel_id = $contact->channelId;
-        $model->external_uuid = Uuid::uuid4()->toString();
+        $model->external_uuid = $contact->externalUuid ?? Uuid::uuid4()->toString();
 
         $addresses = [];
         foreach ($contact->addresses as $type => $address) {
@@ -89,13 +88,20 @@ final class ContactRepository
 
         $model->contact_address = Collection::create(ContactAddress::class, $addresses);
 
+        if ($contact->groups !== null) {
+            $model->contactgroup = Collection::create(
+                Contactgroup::class,
+                array_map(fn($id) => new Contactgroup(['id' => $id]), $contact->groups)
+            );
+        }
+
         (new EntityManager($this->db))->save($model);
 
         return $model->id;
     }
 
     /**
-     * Update the given contact and perform a differential update on the associated addresses
+     * Update the given contact and perform a differential update on the associated addresses and groups
      *
      * @param ContactData $contact
      *
@@ -121,10 +127,6 @@ final class ContactRepository
         $model->username = $contact->username;
         $model->default_channel_id = $contact->channelId;
 
-        $model->contact_address
-            ->query()
-            ->filter(Filter::equal('deleted', false));
-
         $requiredAddresses = $contact->addresses;
         foreach ($model->contact_address as $contactAddress) {
             if (isset($requiredAddresses[$contactAddress->type])) {
@@ -140,6 +142,10 @@ final class ContactRepository
                 'type' => $type,
                 'address' => $address
             ]))->setNew());
+        }
+
+        if ($contact->groups !== null) {
+            $model->contactgroup = array_map(fn($id) => new Contactgroup(['id' => $id]), $contact->groups);
         }
 
         (new EntityManager($this->db))->save($model);
@@ -162,20 +168,19 @@ final class ContactRepository
 
         $model->contact_address = [];
         $model->contactgroup = []; // TODO: Unsure whether this is it or whether the manager should implicitly clean up
+        $model->external_uuid = null;
         $model->username = null;
         $model->delete();
 
         $model->rotation
             ->query()
             ->withColumns(['schedule.timezone'])
-            ->filter(Filter::equal('deleted', false))
             ->orderBy('priority', SORT_DESC); // Important, MUST BE DESC to not open gaps when deleting one below
-        $model->rule_escalation->query()->columns('id')->filter(Filter::equal('deleted', false));
+        $model->rule_escalation->query()->columns('id');
 
         foreach ($model->rotation as $rotation) {
             $rotation->member
                 ->query()
-                ->filter(Filter::equal('deleted', 'n'))
                 ->columns(['id', 'contact_id', 'contactgroup_id', 'position']);
 
             $otherMembers = [];
@@ -220,10 +225,7 @@ final class ContactRepository
             $otherRecipient = $escalation->rule_escalation_recipient
                 ->query()
                 ->columns([new Expression('1')])
-                ->filter(Filter::all(
-                    Filter::unequal('contact_id', $id),
-                    Filter::equal('deleted', 'n')
-                ))
+                ->filter(Filter::unequal('contact_id', $id))
                 ->first();
             if ($otherRecipient === null) {
                 (new EscalationRepository($this->db))->delete($escalation->id);

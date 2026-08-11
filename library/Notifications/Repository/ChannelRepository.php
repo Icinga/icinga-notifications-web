@@ -37,7 +37,6 @@ final class ChannelRepository
     {
         return Channel::on($this->db)
             ->filter(Filter::equal('id', $id))
-            ->filter(Filter::equal('deleted', false))
             ->first();
     }
 
@@ -97,6 +96,8 @@ final class ChannelRepository
         if ($model === null) {
             throw new InvalidArgumentException('Cannot delete a channel that does not exist in the database');
         }
+
+        $model->external_uuid = null;
 
         (new EntityManager($this->db))->save($model->delete());
     }

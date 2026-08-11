@@ -13,11 +13,12 @@ use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
+use ipl\Stdlib\Filter;
 use ipl\Web\Widget\Icon;
 
 /**
  * @property int $id
- * @property string $external_uuid
+ * @property ?string $external_uuid
  * @property string $name
  * @property string $type
  * @property ?string $config
@@ -88,7 +89,8 @@ class Channel extends Model
             ->setJoinType('LEFT')
             ->setForeignKey('default_channel_id');
         $relations->belongsTo('available_channel_type', AvailableChannelType::class)
-            ->setCandidateKey('type');
+            ->setCandidateKey('type')
+            ->setJoinType('LEFT');
     }
 
     /**
@@ -103,5 +105,10 @@ class Channel extends Model
             'email'      => new Icon('at'),
             default      => new Icon('envelope')
         };
+    }
+
+    public function createVisibilityFilter(Filter\Chain $filter): void
+    {
+        $filter->add(Filter::equal('deleted', 'n'));
     }
 }

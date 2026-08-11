@@ -13,6 +13,7 @@ use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
+use ipl\Stdlib\Filter;
 
 /**
  * @property int $id
@@ -82,7 +83,8 @@ class Rule extends Model
     public function createRelations(Relations $relations): void
     {
         $relations->belongsTo('source', Source::class);
-        $relations->hasMany('rule_escalation', RuleEscalation::class);
+        $relations->hasMany('rule_escalation', RuleEscalation::class)
+            ->setJoinType('LEFT');
 
         $relations
             ->belongsToMany('incident', Incident::class)
@@ -90,5 +92,10 @@ class Rule extends Model
             ->setJoinType('LEFT');
 
         $relations->hasMany('incident_history', IncidentHistory::class)->setJoinType('LEFT');
+    }
+
+    public function createVisibilityFilter(Filter\Chain $filter): void
+    {
+        $filter->add(Filter::equal('deleted', 'n'));
     }
 }

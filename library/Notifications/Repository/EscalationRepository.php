@@ -38,7 +38,6 @@ final class EscalationRepository
     {
         return RuleEscalation::on($this->db)
             ->filter(Filter::equal('id', $id))
-            ->filter(Filter::equal('deleted', false))
             ->first();
     }
 
@@ -104,7 +103,6 @@ final class EscalationRepository
             }
         }
 
-        $model->rule_escalation_recipient->query()->filter(Filter::equal('deleted', false));
         foreach ($model->rule_escalation_recipient as $recipientModel) {
             if (isset($recipientsToKeep[$recipientModel->id])) {
                 $recipient = $recipientsToKeep[$recipientModel->id];

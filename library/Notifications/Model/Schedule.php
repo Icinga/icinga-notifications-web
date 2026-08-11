@@ -13,6 +13,7 @@ use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
+use ipl\Stdlib\Filter;
 
 /**
  * @property int $id
@@ -75,13 +76,20 @@ class Schedule extends Model
 
     public function createRelations(Relations $relations): void
     {
-        $relations->hasMany('rotation', Rotation::class);
+        $relations->hasMany('rotation', Rotation::class)
+            ->setJoinType('LEFT');
         $relations->hasMany('rule_escalation_recipient', RuleEscalationRecipient::class)
             ->setJoinType('LEFT');
-        $relations->hasMany('incident_history', IncidentHistory::class);
+        $relations->hasMany('incident_history', IncidentHistory::class)
+            ->setJoinType('LEFT');
 
         $relations->belongsToMany('rule_escalation', RuleEscalation::class)
             ->through(RuleEscalationRecipient::class)
             ->setJoinType('LEFT');
+    }
+
+    public function createVisibilityFilter(Filter\Chain $filter): void
+    {
+        $filter->add(Filter::equal('deleted', 'n'));
     }
 }

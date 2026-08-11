@@ -111,14 +111,17 @@ class Incident extends Model
         $relations->belongsTo('object', Objects::class);
 
         $relations->belongsToMany('contact', Contact::class)
-            ->through(IncidentContact::class);
+            ->through(IncidentContact::class)
+            ->setJoinType('LEFT');
 
-        $relations->hasMany('incident_contact', IncidentContact::class);
+        $relations->hasMany('incident_contact', IncidentContact::class)
+            ->setJoinType('LEFT');
         $relations->hasMany('incident_history', IncidentHistory::class);
 
         $relations
             ->belongsToMany('rule', Rule::class)
-            ->through('incident_rule');
+            ->through('incident_rule')
+            ->setJoinType('LEFT');
 
         $relations
             ->belongsToMany('rule_escalation', RuleEscalation::class)

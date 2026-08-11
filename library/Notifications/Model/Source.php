@@ -17,6 +17,7 @@ use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
+use ipl\Stdlib\Filter;
 use ipl\Web\Widget\Icon;
 use Throwable;
 
@@ -95,8 +96,10 @@ class Source extends Model
 
     public function createRelations(Relations $relations): void
     {
-        $relations->hasMany('object', Objects::class);
-        $relations->hasMany('rule', Rule::class);
+        $relations->hasMany('object', Objects::class)
+            ->setJoinType('LEFT');
+        $relations->hasMany('rule', Rule::class)
+            ->setJoinType('LEFT');
     }
 
     /**
@@ -131,5 +134,10 @@ class Source extends Model
         self::$icons[$this->type] = $icon;
 
         return $icon;
+    }
+
+    public function createVisibilityFilter(Filter\Chain $filter): void
+    {
+        $filter->add(Filter::equal('deleted', 'n'));
     }
 }

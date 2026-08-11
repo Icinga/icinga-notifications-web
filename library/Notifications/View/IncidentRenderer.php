@@ -68,11 +68,17 @@ class IncidentRenderer implements ItemRenderer
 
         /** @var Source $source */
         $source = $item->object->source;
-        $info->addHtml(
-            (new Ball(Ball::SIZE_BIG))
-                ->addAttributes(Attributes::create(['class' => 'source-icon', 'title' => $source->name]))
-                ->addHtml($source->getIcon())
-        );
+        if (isset($source->name)) {
+            $info->addHtml(
+                (new Ball(Ball::SIZE_BIG))
+                    ->addAttributes(Attributes::create(['class' => 'source-icon', 'title' => $source->name]))
+                    ->addHtml($source->getIcon())
+            );
+        } else {
+            $info->addHtml(new Icon('circle-question', [
+                'title' => $this->translate('No source information available')
+            ]));
+        }
 
         if ($item->recovered_at !== null) {
             $info->addHtml(FormattedString::create(
