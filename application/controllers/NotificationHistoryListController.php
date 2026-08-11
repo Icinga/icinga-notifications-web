@@ -76,7 +76,7 @@ class NotificationHistoryListController extends CompatController
 
         $this->addContent(
             (new ObjectList($notificationHistory, new NotificationHistoryRenderer()))
-                ->setItemLayoutClass(match ($viewModeSwitcher->getViewMode()) {
+                ->setItemLayoutClass(match ($viewModeSwitcher->getViewMode()->getName()) {
                     'minimal' => MinimalItemLayout::class,
                     'detailed' => DetailedItemLayout::class,
                     'common' => ItemLayout::class
