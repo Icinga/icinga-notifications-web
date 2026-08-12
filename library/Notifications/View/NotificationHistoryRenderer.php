@@ -48,6 +48,7 @@ class NotificationHistoryRenderer implements ItemRenderer
 
     public function assembleCaption($item, HtmlDocument $caption, string $layout): void
     {
+        //TODO: this is nullable
         $caption->addHtml(Text::create($item->message));
     }
 
@@ -79,6 +80,7 @@ class NotificationHistoryRenderer implements ItemRenderer
                 $this->translate('Notification via %s (%s) %s for contact %s as member of contact group %s'),
                 $item->channel->name,
                 $item->channel->type,
+                //TODO: this doesn't work...
                 $this->translate($item->state->getValue()),
                 $item->contact->full_name,
                 $item->contactgroup->name

@@ -5,6 +5,7 @@
 
 namespace Icinga\Module\Notifications\Controllers;
 
+use Icinga\Module\Icingadb\Web\Control\ViewModeSwitcher;
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\NotificationHistory;
@@ -29,7 +30,7 @@ class NotificationHistoryListController extends CompatController
 
     public function indexAction(): void
     {
-        $this->addTitleTab(t('Notifications History'));
+        $this->addTitleTab(t('Notification History'));
 
         $notificationHistory = NotificationHistory::on(Database::get())
             ->with(['channel', 'contact', 'contactgroup', 'schedule']);
@@ -103,6 +104,7 @@ class NotificationHistoryListController extends CompatController
         $editor = $this->createSearchEditor(NotificationHistory::on(Database::get()), [
             LimitControl::DEFAULT_LIMIT_PARAM,
             SortControl::DEFAULT_SORT_PARAM,
+            ViewModeSwitcher::DEFAULT_VIEW_MODE_PARAM
         ]);
 
         $this->getDocument()->add($editor);

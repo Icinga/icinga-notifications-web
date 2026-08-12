@@ -171,15 +171,31 @@ class NotificationHistoryDetail extends BaseHtmlElement
             ]);
         $skip = [];
         foreach ($query as $skipped) {
-            $skip[] = new HtmlElement('li', Attributes::create(['class' => 'popup-item']), Text::create(
-                sprintf(
-                    'Rule: %s, Escalation: %s, Schedule: %s, Contactgroup: %s',
+            if (isset($skipped->contactgroup_id)) {
+                //TODO: add fallback in case rule_escalation->name is null
+                $text = sprintf(
+                    $this->translate('Rule: %s, Escalation: %s, ContactGroup: %s'),
                     $skipped->rule->name,
-                    $skipped->rule_escalation->position,
-                    $skipped->schedule->name,
+                    $skipped->rule_escalation->name,
                     $skipped->contactgroup->name
-                )
-            ));
+                );
+            } elseif (isset($skipped->schedule_id)) {
+                $text = sprintf(
+                    $this->translate('Rule: %s, Escalation: %s, Schedule: %s'),
+                    $skipped->rule->name,
+                    $skipped->rule_escalation->name,
+                    $skipped->schedule->name
+                );
+            } else {
+                $text = sprintf(
+                    $this->translate('Rule: %s, Escalation: %s, Contact: %s'),
+                    $skipped->rule->name,
+                    $skipped->rule_escalation->name,
+                    $this->notificationHistory->contact->full_name
+                );
+            }
+
+            $skip[] = new HtmlElement('li', Attributes::create(['class' => 'popup-item']), Text::create($text));
         }
 
         if (! empty($skip)) {

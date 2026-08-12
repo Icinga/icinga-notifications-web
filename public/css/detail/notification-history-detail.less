@@ -4,6 +4,7 @@
 .notification-history-detail {
   .message {
     padding: 0.5em;
+    .monospace-font();
   }
 
   .channel {
@@ -22,10 +23,6 @@
       align-items: center;
       position: relative;
       padding: 0.5em;
-
-      &:hover {
-        cursor: pointer;
-      }
 
       &:has(~ .item):after {
         content: "";
@@ -50,6 +47,9 @@
       position: relative;
       margin-left: 0.5em;
       padding: 0;
+      &:hover {
+        cursor: pointer;
+      }
 
       .popup {
         list-style: none;
