@@ -186,6 +186,24 @@ class IncidentsTest extends TestCase
     }
 
     #[DataProvider('sharedDatabases')]
+    public function testGetRolesYieldsOnlyTheRoleForTheGivenUser(Connection $db): void
+    {
+        $this->db = $db;
+
+        $incidentId = $this->seedIncident(1, ['host' => 'a']);
+        $this->seedRole($incidentId, $this->seedContact('jane'), 'manager');
+        $this->seedRole($incidentId, $this->seedContact('jdoe'), 'subscriber');
+        $this->seedRole($incidentId, $this->seedContact('bob'), 'recipient');
+
+        $roles = [];
+        foreach ((new Incidents(['host' => 'a'], $db))->getRoles(new User('jdoe')) as $incident => $role) {
+            $roles[] = [$this->incidentId($incident), $role];
+        }
+
+        $this->assertSame([[$incidentId, 'subscriber']], $roles);
+    }
+
+    #[DataProvider('sharedDatabases')]
     public function testIteratingAfterHasIncidentYieldsAllMatchesFromTheSameInstance(Connection $db): void
     {
         $this->db = $db;
