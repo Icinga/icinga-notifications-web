@@ -117,9 +117,12 @@ class Incidents implements IteratorAggregate, Countable
      */
     public function getRoles(User $user): Generator
     {
+        $filter = Filter::equal('incident_contact.contact.username', $user->getUsername());
+        $filter->metaData()->set('forceOptimization', false);
+
         $incidents = $this->buildQuery()
             ->withColumns(['role' => 'incident_contact.role'])
-            ->filter(Filter::equal('contact.username', $user->getUsername()));
+            ->filter($filter);
         foreach ($incidents as $incident) {
             yield new Incident($incident, $this->db) => $incident->role;
         }
