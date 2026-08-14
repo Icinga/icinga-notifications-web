@@ -8,10 +8,13 @@ namespace Tests\Icinga\Module\Notifications\Integrations;
 use DateTime;
 use Icinga\Module\Notifications\Integrations\Incident;
 use Icinga\Module\Notifications\Model\Incident as IncidentModel;
+use Icinga\User;
 use InvalidArgumentException;
 use ipl\Stdlib\Filter;
 use PDO;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 use Tests\Icinga\Module\Notifications\Lib\EntityManager\RecordingConnection;
 
 /**
@@ -25,6 +28,10 @@ use Tests\Icinga\Module\Notifications\Lib\EntityManager\RecordingConnection;
  * group or schedule — and yield a uniform shape carrying a `type` discriminator, the display `name` and a
  * nullable `username`. Subscribers additionally carry their `role` and the `roleChangedAt` time their
  * current role was last changed; deleted contact groups and schedules are omitted from both.
+ *
+ * An incident is addressed by the id of the object it belongs to, which is derived from the complete set of
+ * id tags its source hands over. Tags are never resolved at query time, so a partial set identifies a
+ * different object.
  */
 class IncidentTest extends TestCase
 {
@@ -59,6 +66,85 @@ class IncidentTest extends TestCase
             . ' old_severity VARCHAR, new_recipient_role VARCHAR, old_recipient_role VARCHAR, message VARCHAR,'
             . ' notification_state VARCHAR, sent_at INTEGER);'
         );
+    }
+
+    /**
+     * The id must be byte for byte what the daemon derives for the same object, as it is the only thing
+     * relating an incident to a host or service. This pins it to a value taken from
+     * `icinga-notifications/internal/object/object.go::ID()`, so that a change on either side has to be a
+     * deliberate one — there is no shared contract the two implementations could be tested against.
+     */
+    public function testGetObjectIdMatchesTheIdTheDaemonDerives(): void
+    {
+        $tags = ['host' => 'icinga2', 'environment' => '340a621d95cda5e127c60923df7ebc580dfa4e7d', 'service' => 'http'];
+
+        $this->assertSame(
+            strtolower('976404D61D1D19A083031B21CA6784641E85F14C5A55FC1D46C48BD75F5CCADB'),
+            $this->objectId($tags)
+        );
+    }
+
+    /**
+     * The daemon hashes the tags in sorted order, so a source may hand them over in any order and still
+     * address the same object.
+     */
+    public function testGetObjectIdIsIndependentOfTheTagOrder(): void
+    {
+        $tags = ['host' => 'icinga2', 'service' => 'http', 'environment' => 'production'];
+
+        $this->assertSame($this->objectId($tags), $this->objectId(array_reverse($tags, true)));
+    }
+
+    /**
+     * Objects differing in a single tag must not collide, which is what makes the complete set of id tags
+     * a requirement rather than a convention.
+     */
+    public function testGetObjectIdDiffersPerTagSet(): void
+    {
+        $this->assertNotSame(
+            $this->objectId(['host' => 'icinga2']),
+            $this->objectId(['host' => 'icinga2', 'service' => 'http'])
+        );
+    }
+
+    #[DataProvider('roles')]
+    public function testGetRoleReturnsTheUsersRoleInTheIncident(string $role): void
+    {
+        $id = $this->seedIncident();
+        $this->seedIncidentContact($id, $this->seedContact('jdoe'), $role);
+
+        $this->assertSame($role, $this->incident($id)->getRole(new User('jdoe')));
+    }
+
+    /**
+     * Every role an `incident_contact` row may carry, including `recipient` — a configured recipient is not
+     * subscribed, and the role has to come back as itself so a consumer offers them to subscribe rather than
+     * to unsubscribe.
+     *
+     * @return array<array{string}>
+     */
+    public static function roles(): array
+    {
+        return [['manager'], ['subscriber'], ['recipient']];
+    }
+
+    public function testGetRoleReturnsNullForAUserWithoutAnEntry(): void
+    {
+        $id = $this->seedIncident();
+        $this->seedIncidentContact($id, $this->seedContact('jane'), 'manager');
+
+        $this->assertNull($this->incident($id)->getRole(new User('jdoe')));
+    }
+
+    /**
+     * The role is scoped to the incident it is read from — an entry the contact holds in another incident
+     * must not leak into it, or a consumer would offer the wrong action.
+     */
+    public function testGetRoleIgnoresEntriesOfOtherIncidents(): void
+    {
+        $this->seedIncidentContact($this->seedIncident(), $this->seedContact('jdoe'), 'manager');
+
+        $this->assertNull($this->incident($this->seedIncident())->getRole(new User('jdoe')));
     }
 
     public function testAddManagerAddsTheContactAsManagerByUsername(): void
@@ -458,6 +544,23 @@ class IncidentTest extends TestCase
 
         $this->assertSame([], $this->storedContactRoles());
         $this->assertSame([], $this->storedRoleHistory());
+    }
+
+    /**
+     * Derive the object id the given tags identify.
+     *
+     * The derivation is not public, as it is an implementation detail of how an incident is looked up, and
+     * it is handed a fixed source id because resolving the real one would need the configured database.
+     *
+     * @param array<string, string> $tags
+     */
+    private function objectId(array $tags): string
+    {
+        //TODO: Drop the source id argument once it is no longer used to generate object ids
+        /** @var string $objectId */
+        $objectId = (new ReflectionMethod(Incident::class, 'getObjectId'))->invoke(null, $tags, 5);
+
+        return $objectId;
     }
 
     /**

@@ -7,11 +7,14 @@ namespace Icinga\Module\Notifications\Integrations;
 
 use DateTime;
 use Generator;
+use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\EntityManager;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Incident as IncidentModel;
 use Icinga\Module\Notifications\Model\IncidentContact;
 use Icinga\Module\Notifications\Model\IncidentHistory;
+use Icinga\Module\Notifications\Repository\ContactRepository;
+use Icinga\User;
 use InvalidArgumentException;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
@@ -26,6 +29,70 @@ class Incident
 
     /** @var Connection The database connection to use */
     private Connection $db;
+
+    /**
+     * Get the incident for the given set of id tags
+     *
+     * @param array $tags The complete set of id tags
+     *
+     * @return ?static
+     */
+    public static function find(array $tags): ?static
+    {
+        $db = Database::get();
+        /** @var IncidentModel $incident */
+        $incident = IncidentModel::on($db)
+            ->filter(
+                Filter::all(
+                    Filter::unlike('recovered_at', '*'),
+                    Filter::equal('object_id', static::getObjectId($tags))
+                )
+            )->first();
+
+        return $incident !== null ? new static($incident, $db) : null;
+    }
+
+    // TODO: This must always mirror icinga-notifications/internal/object/object.go::ID()
+    private static function getObjectId(array $tags, ?int $sourceId = null): string
+    {
+        //TODO: Remove the source id and the hack once the source id is no longer used to generate object ids
+        $sourceId ??= \Closure::bind(fn() => $this->id, Source::get('icinga'), Source::class)();
+
+        $data = pack('J', $sourceId);
+        //TODO: When the source id is dropped the equivalent daemon bug should be fixed and the null bytes removed
+        $data .= str_repeat(chr(0), count($tags) * 2);
+
+        ksort($tags, SORT_STRING);
+        foreach ($tags as $key => $value) {
+            $data .= "$key\00$value\00";
+        }
+
+        return hash('sha256', $data);
+    }
+
+    /**
+     * Get whether the given user can manage incidents
+     *
+     * @param User $user
+     *
+     * @return bool
+     */
+    public static function canManage(User $user): bool
+    {
+        return (new ContactRepository(Database::get()))->findByUsername($user->getUsername()) !== null;
+    }
+
+    /**
+     * Get whether the given user can subscribe to incidents
+     *
+     * @param User $user
+     *
+     * @return bool
+     */
+    public static function canSubscribe(User $user): bool
+    {
+        return (new ContactRepository(Database::get()))->findByUsername($user->getUsername()) !== null;
+    }
 
     /**
      * Create a new wrapper for the given model
@@ -117,6 +184,20 @@ class Incident
         $this->addRoleChangedHistory($contact->id, 'subscriber', null);
 
         return $this;
+    }
+
+    public function getRole(User $user): ?string
+    {
+        return IncidentContact::on($this->db)
+            ->columns('role')
+            ->filter(
+                Filter::all(
+                    Filter::equal('incident_id', $this->incident->id),
+                    Filter::equal('contact.username', $user->getUsername())
+                )
+            )
+            ->first()
+            ?->role;
     }
 
     /**
