@@ -31,8 +31,7 @@ class NotificationHistoryController extends CompatController
                 'schedule',
                 'channel',
                 'incident',
-                'rule',
-                'rule_escalation',
+                'incident_history',
                 'incident.object',
                 'incident.object.source'
             ])

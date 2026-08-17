@@ -5,31 +5,24 @@
 
 namespace Icinga\Module\Notifications\Model;
 
-use DateTime;
 use Icinga\Module\Notifications\Common\Model;
-use ipl\Orm\Behavior\MillisecondTimestamp;
-use ipl\Orm\Behaviors;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
 
 /**
- * NotificationHistory
+ * SkippedNotificationHistory
  *
  * @property int $id
  * @property int $notification_history_id
- * @property int $event_id
  * @property int $rule_id
  * @property int $rule_escalation_id
  * @property ?int $contactgroup_id
- * @property int $channel_id
  * @property ?int $schedule_id
- * @property DateTime $triggered_at
  *
- * @property Query<Incident>|Incident $incident
+ * @property Query<NotificationHistory>|NotificationHistory $notification_history
  * @property Query<Rule>|Rule $rule
  * @property Query<RuleEscalation>|RuleEscalation $rule_escalation
- * @property Query<ContactGroup>|Contactgroup $contactgroup
- * @property Query<Channel>|Channel $channel
+ * @property Query<Contactgroup>|Contactgroup $contactgroup
  * @property Query<Schedule>|Schedule $schedule
  */
 class SkippedNotificationHistory extends Model
@@ -57,12 +50,11 @@ class SkippedNotificationHistory extends Model
 
     public function createRelations(Relations $relations): void
     {
+        $relations->belongsTo('notification_history', NotificationHistory::class);
         $relations->belongsTo('rule', Rule::class);
         $relations->belongsTo('rule_escalation', RuleEscalation::class);
-        $relations->belongsTo('notification_history', NotificationHistory::class);
 
         $relations->belongsTo('contactgroup', Contactgroup::class)->setJoinType('LEFT');
-        $relations->belongsTo('channel', Channel::class)->setJoinType('LEFT');
         $relations->belongsTo('schedule', Schedule::class)->setJoinType('LEFT');
     }
 }

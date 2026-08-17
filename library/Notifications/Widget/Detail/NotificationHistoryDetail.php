@@ -6,8 +6,10 @@
 namespace Icinga\Module\Notifications\Widget\Detail;
 
 use Icinga\Module\Notifications\Common\Auth;
+use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\EscalationConditionDescriber;
-use Icinga\Module\Notifications\Common\NotificationTransmissionReason;
+use Icinga\Module\Notifications\Common\IncidentHistoryType;
+use Icinga\Module\Notifications\Model\IncidentHistory;
 use Icinga\Module\Notifications\Model\NotificationHistory;
 use Icinga\Module\Notifications\View\IncidentRenderer;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
@@ -16,6 +18,7 @@ use ipl\Html\BaseHtmlElement;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\I18n\Translation;
+use ipl\Stdlib\Filter;
 use ipl\Web\Widget\CopyToClipboard;
 use ipl\Web\Widget\Time;
 
@@ -97,8 +100,6 @@ class NotificationHistoryDetail extends BaseHtmlElement
                 ))
             )
         ];
-
-        //TODO: maybe change the icon of type webhook, it looks like mail
     }
 
     protected function createTime(): array
@@ -109,12 +110,8 @@ class NotificationHistoryDetail extends BaseHtmlElement
         ];
     }
 
-    protected function createIncident(): ?array
+    protected function createIncident(): array
     {
-        if ($this->notificationHistory->incident_id === null) {
-            return null;
-        }
-
         return [
             new HtmlElement('h2', content: Text::create($this->translate('Related Incident'))),
             new ObjectList([$this->notificationHistory->incident], new IncidentRenderer())
@@ -129,38 +126,17 @@ class NotificationHistoryDetail extends BaseHtmlElement
             new HtmlElement(
                 'span',
                 Attributes::create(['class' => 'item']),
-                Text::create($this->notificationHistory->reason->getLabel())
+                Text::create($this->resolveReason()->getLabel())
             )
         );
 
-        if (
-            ! in_array(
-                $this->notificationHistory->reason,
-                [NotificationTransmissionReason::MUTED, NotificationTransmissionReason::UNMUTED],
-                true
+        $triggerChain->addHtml(
+            new HtmlElement(
+                'span',
+                Attributes::create(['class' => 'item']),
+                $this->notificationHistory->state->getIcon()
             )
-        ) {
-            $triggerChain->addHtml(
-                new HtmlElement(
-                    'span',
-                    Attributes::create(['class' => 'item']),
-                    Text::create(sprintf($this->translate('Rule %s matched'), $this->notificationHistory->rule->name))
-                ),
-                new HtmlElement(
-                    'span',
-                    Attributes::create(['class' => 'item']),
-                    Text::create(sprintf(
-                        $this->translate('Escalation triggered (%s)'),
-                        EscalationConditionDescriber::describe($this->notificationHistory->rule_escalation->condition)
-                    ))
-                ),
-                new HtmlElement(
-                    'span',
-                    Attributes::create(['class' => 'item']),
-                    $this->notificationHistory->state->getIcon()
-                )
-            );
-        }
+        );
 
         $query = $this->notificationHistory->skipped
             ->with([
@@ -171,26 +147,28 @@ class NotificationHistoryDetail extends BaseHtmlElement
             ]);
         $skip = [];
         foreach ($query as $skipped) {
+            $escalation = $skipped->rule_escalation->name
+                ?? EscalationConditionDescriber::describe($skipped->rule_escalation->condition);
+
             if (isset($skipped->contactgroup_id)) {
-                //TODO: add fallback in case rule_escalation->name is null
                 $text = sprintf(
                     $this->translate('Rule: %s, Escalation: %s, ContactGroup: %s'),
                     $skipped->rule->name,
-                    $skipped->rule_escalation->name,
+                    $escalation,
                     $skipped->contactgroup->name
                 );
             } elseif (isset($skipped->schedule_id)) {
                 $text = sprintf(
                     $this->translate('Rule: %s, Escalation: %s, Schedule: %s'),
                     $skipped->rule->name,
-                    $skipped->rule_escalation->name,
+                    $escalation,
                     $skipped->schedule->name
                 );
             } else {
                 $text = sprintf(
                     $this->translate('Rule: %s, Escalation: %s, Contact: %s'),
                     $skipped->rule->name,
-                    $skipped->rule_escalation->name,
+                    $escalation,
                     $this->notificationHistory->contact->full_name
                 );
             }
@@ -213,6 +191,19 @@ class NotificationHistoryDetail extends BaseHtmlElement
             new HtmlElement('h2', content: Text::create($this->translate('Trigger Chain'))),
             $triggerChain
         ];
+    }
+
+    protected function resolveReason(): IncidentHistoryType
+    {
+        /** @var ?IncidentHistory $entry */
+        $entry = IncidentHistory::on(Database::get())
+            ->filter(Filter::all(
+                Filter::equal('incident_id', $this->notificationHistory->incident_id),
+                Filter::equal('event_id', $this->notificationHistory->event_id)
+            ))
+            ->first();
+
+        return $entry?->type ?? $this->notificationHistory->incident_history->type;
     }
 
     protected function assemble(): void

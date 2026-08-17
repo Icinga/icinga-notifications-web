@@ -5,6 +5,7 @@
 
 namespace Icinga\Module\Notifications\View;
 
+use Icinga\Module\Notifications\Common\NotificationTransmissionState;
 use Icinga\Module\Notifications\Model\NotificationHistory;
 use ipl\Html\Attributes;
 use ipl\Html\HtmlDocument;
@@ -48,7 +49,6 @@ class NotificationHistoryRenderer implements ItemRenderer
 
     public function assembleCaption($item, HtmlDocument $caption, string $layout): void
     {
-        //TODO: this is nullable
         $caption->addHtml(Text::create($item->message));
     }
 
@@ -75,31 +75,51 @@ class NotificationHistoryRenderer implements ItemRenderer
      */
     protected function buildMessage(NotificationHistory $item): string
     {
-        return match (true) {
-            (bool) $item->contactgroup_id => sprintf(
-                $this->translate('Notification via %s (%s) %s for contact %s as member of contact group %s'),
+        if (isset($item->contactgroup_id)) {
+            $format = match ($item->state) {
+                NotificationTransmissionState::SENT => $this->translate(
+                    'Sent notification via %s (%s) to contact %s as member of contact group %s'
+                ),
+                NotificationTransmissionState::FAILED => $this->translate(
+                    'Failed to send notification via %s (%s) to contact %s as member of contact group %s'
+                )
+            };
+
+            return sprintf(
+                $format,
                 $item->channel->name,
                 $item->channel->type,
-                //TODO: this doesn't work...
-                $this->translate($item->state->getValue()),
                 $item->contact->full_name,
                 $item->contactgroup->name
-            ),
-            (bool) $item->schedule_id => sprintf(
-                $this->translate('Notification via %s (%s) %s for contact %s as member of schedule %s'),
+            );
+        }
+
+        if (isset($item->schedule_id)) {
+            $format = match ($item->state) {
+                NotificationTransmissionState::SENT => $this->translate(
+                    'Sent notification via %s (%s) to contact %s as member of schedule %s'
+                ),
+                NotificationTransmissionState::FAILED => $this->translate(
+                    'Failed to send notification via %s (%s) to contact %s as member of schedule %s'
+                )
+            };
+
+            return sprintf(
+                $format,
                 $item->channel->name,
                 $item->channel->type,
-                $this->translate($item->state->getValue()),
                 $item->contact->full_name,
                 $item->schedule->name
-            ),
-            default => sprintf(
-                $this->translate('Notification via %s (%s) %s for contact %s'),
-                $item->channel->name,
-                $item->channel->type,
-                $this->translate($item->state->getValue()),
-                $item->contact->full_name
+            );
+        }
+
+        $format = match ($item->state) {
+            NotificationTransmissionState::SENT => $this->translate('Sent notification via %s (%s) to contact %s'),
+            NotificationTransmissionState::FAILED => $this->translate(
+                'Failed to send notification via %s (%s) to contact %s'
             )
         };
+
+        return sprintf($format, $item->channel->name, $item->channel->type, $item->contact->full_name);
     }
 }

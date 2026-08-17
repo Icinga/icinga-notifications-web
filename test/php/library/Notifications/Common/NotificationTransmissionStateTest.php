@@ -16,7 +16,6 @@ class NotificationTransmissionStateTest extends TestCase
         return [
             'sent' => [NotificationTransmissionState::SENT, 'sent'],
             'failed' => [NotificationTransmissionState::FAILED, 'failed'],
-            'pending' => [NotificationTransmissionState::PENDING, 'pending'],
         ];
     }
 
@@ -45,7 +44,6 @@ class NotificationTransmissionStateTest extends TestCase
             NotificationTransmissionState::SENT->getLabel()
         );
         $this->assertSame('Failed to send notification', NotificationTransmissionState::FAILED->getLabel());
-        $this->assertSame('Pending notification', NotificationTransmissionState::PENDING->getLabel());
     }
 
     public static function iconClassProvider(): array
@@ -53,7 +51,6 @@ class NotificationTransmissionStateTest extends TestCase
         return [
             'sent' => [NotificationTransmissionState::SENT, 'sent'],
             'failed' => [NotificationTransmissionState::FAILED, 'failed'],
-            'pending' => [NotificationTransmissionState::PENDING, 'pending'],
         ];
     }
 
@@ -77,7 +74,6 @@ class NotificationTransmissionStateTest extends TestCase
             [
                 NotificationTransmissionState::SENT,
                 NotificationTransmissionState::FAILED,
-                NotificationTransmissionState::PENDING,
             ],
             NotificationTransmissionState::cases(),
             'A NotificationTransmissionState case was added or removed — update the test providers and this assertion'

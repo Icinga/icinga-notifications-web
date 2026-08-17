@@ -9,7 +9,6 @@ use DateTime;
 use Icinga\Module\Notifications\Common\Collection;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Model;
-use Icinga\Module\Notifications\Common\NotificationTransmissionReason;
 use Icinga\Module\Notifications\Common\NotificationTransmissionState;
 use ipl\Orm\Behavior\EnumCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
@@ -23,25 +22,25 @@ use ipl\Sql\Select;
  * NotificationHistory
  *
  * @property int $id
- * @property ?int $incident_id
- * @property ?int $rule_id
- * @property ?int $rule_escalation_id
+ * @property int $incident_history_id
+ * @property string $event_id
  * @property int $contact_id
  * @property ?int $contactgroup_id
- * @property int $channel_id
  * @property ?int $schedule_id
- * @property ?string $message
- * @property NotificationTransmissionReason $reason
+ * @property int $channel_id
+ * @property int $incident_id
+ * @property string $message
  * @property NotificationTransmissionState $state
  * @property DateTime $triggered_at
+ * @property int $source_id
  *
+ * @property Query<IncidentHistory>|IncidentHistory $incident_history
  * @property Query<Incident>|Incident $incident
- * @property Query<Rule>|Rule $rule
- * @property Query<RuleEscalation>|RuleEscalation $rule_escalation
  * @property Query<Contact>|Contact $contact
- * @property Query<ContactGroup>|Contactgroup $contactgroup
+ * @property Query<Contactgroup>|Contactgroup $contactgroup
  * @property Query<Channel>|Channel $channel
  * @property Query<Schedule>|Schedule $schedule
+ * @property Query<Source>|Source $source
  * @property Query<SkippedNotificationHistory>|Collection<SkippedNotificationHistory> $skipped
  */
 class NotificationHistory extends Model
@@ -59,34 +58,33 @@ class NotificationHistory extends Model
     public function getColumns(): array
     {
         return [
-            'incident_id',
-            'rule_id',
-            'rule_escalation_id',
+            'incident_history_id',
+            'event_id',
             'contact_id',
             'contactgroup_id',
-            'channel_id',
             'schedule_id',
+            'channel_id',
+            'incident_id',
             'message',
-            'reason',
             'state',
-            'triggered_at'
+            'triggered_at',
+            'source_id'
         ];
     }
 
     public function getColumnDefinitions(): array
     {
         return [
-            'incident_id'           => t('Incident Id'),
-            'rule_id'               => t('Rule Id'),
-            'rule_escalation_id'    => t('Rule Escalation Id'),
+            'incident_history_id'   => t('Incident History Id'),
             'contact_id'            => t('Contact Id'),
             'contactgroup_id'       => t('Contact Group Id'),
-            'channel_id'            => t('Channel ID'),
             'schedule_id'           => t('Schedule Id'),
+            'channel_id'            => t('Channel ID'),
+            'incident_id'           => t('Incident Id'),
             'message'               => t('Message'),
-            'reason'                => t('Reason'),
             'state'                 => t('State'),
-            'triggered_at'          => t('Triggered At')
+            'triggered_at'          => t('Triggered At'),
+            'source_id'             => t('Source Id')
         ];
     }
 
@@ -94,7 +92,6 @@ class NotificationHistory extends Model
     {
         $behaviors->add(new MillisecondTimestamp(['triggered_at']));
         $behaviors->add(new EnumCast(NotificationTransmissionState::class, ['state']));
-        $behaviors->add(new EnumCast(NotificationTransmissionReason::class, ['reason']));
     }
 
     public function getDefaultSort(): array
@@ -104,14 +101,15 @@ class NotificationHistory extends Model
 
     public function createRelations(Relations $relations): void
     {
-        $relations->belongsTo('rule', Rule::class)->setJoinType('LEFT');
-        $relations->belongsTo('rule_escalation', RuleEscalation::class)->setJoinType('LEFT');
+        $relations->belongsTo('incident_history', IncidentHistory::class);
+        $relations->belongsTo('incident', Incident::class);
         $relations->belongsTo('contact', Contact::class);
+        $relations->belongsTo('channel', Channel::class);
+        $relations->belongsTo('source', Source::class);
 
-        $relations->belongsTo('incident', Incident::class)->setJoinType('LEFT');
         $relations->belongsTo('contactgroup', Contactgroup::class)->setJoinType('LEFT');
-        $relations->belongsTo('channel', Channel::class)->setJoinType('LEFT');
         $relations->belongsTo('schedule', Schedule::class)->setJoinType('LEFT');
+
         $relations->hasMany('skipped', SkippedNotificationHistory::class)
             ->setJoinType('LEFT');
     }

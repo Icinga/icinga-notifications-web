@@ -6,12 +6,12 @@
 namespace Icinga\Module\Notifications\Common;
 
 /**
- * Notification transmission reason
+ * Incident history entry types
  *
- * Each case maps to the backing string stored as the reason a notification was triggered.
+ * Each case maps to the backing string stored in the `type` column of the `incident_history` table.
  * Register {@see \ipl\Orm\Behavior\EnumCast} on a model to have those columns hydrated automatically as enum instances.
  */
-enum NotificationTransmissionReason: string
+enum IncidentHistoryType: string
 {
     case INCIDENT_SEVERITY_CHANGED = 'incident_severity_changed';
     case ESCALATION_TRIGGERED = 'escalation_triggered';
@@ -21,6 +21,7 @@ enum NotificationTransmissionReason: string
     case UNMUTED = 'unmuted';
     case RECIPIENT_ROLE_CHANGED = 'recipient_role_changed';
     case NOTIFIED = 'notified';
+    case RULE_MATCHED = 'rule_matched';
 
     /**
      * Get the backing string value
@@ -47,7 +48,8 @@ enum NotificationTransmissionReason: string
             self::UNMUTED                       => t('Incident unmuted'),
             self::CLOSED                        => t('Incident closed'),
             self::RECIPIENT_ROLE_CHANGED        => t('Recipient role changed'),
-            self::NOTIFIED                      => t('Notified')
+            self::NOTIFIED                      => t('Notified'),
+            self::RULE_MATCHED                  => t('Rule matched')
         };
     }
 }

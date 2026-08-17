@@ -5,7 +5,9 @@
 
 namespace Icinga\Module\Notifications\View;
 
+use Icinga\Module\Notifications\Common\EscalationConditionDescriber;
 use Icinga\Module\Notifications\Common\Icons;
+use Icinga\Module\Notifications\Common\IncidentHistoryType;
 use Icinga\Module\Notifications\Model\IncidentHistory;
 use Icinga\Module\Notifications\Widget\IconBall;
 use ipl\Html\Attributes;
@@ -26,7 +28,7 @@ class IncidentHistoryRenderer implements ItemRenderer
     public function assembleAttributes($item, Attributes $attributes, string $layout): void
     {
         $classes = ['incident-history'];
-        if ($item->type === 'notified') {
+        if ($item->type === IncidentHistoryType::NOTIFIED) {
             $classes[] = 'notification-state';
             if ($item->notification_state === 'suppressed') {
                 $classes[] = 'suppressed';
@@ -40,20 +42,21 @@ class IncidentHistoryRenderer implements ItemRenderer
 
     public function assembleVisual($item, HtmlDocument $visual, string $layout): void
     {
-        if ($item->type === 'incident_severity_changed') {
+        if ($item->type === IncidentHistoryType::INCIDENT_SEVERITY_CHANGED) {
             $content = $item->new_severity->getIcon();
         } else {
-            $content = new IconBall(match ($item->type) {
-                'opened'                    => Icons::OPENED,
-                'muted'                     => Icons::MUTE,
-                'unmuted'                   => Icons::UNMUTE,
-                'recipient_role_changed'    => $this->getRoleIcon($item),
-                'closed'                    => Icons::CLOSED,
-                'rule_matched'              => Icons::RULE_MATCHED,
-                'escalation_triggered'      => Icons::TRIGGERED,
-                'notified'                  => Icons::NOTIFIED,
-                default                     => Icons::UNDEFINED
-            });
+            $content = new IconBall(
+                match ($item->type) {
+                    IncidentHistoryType::OPENED => Icons::OPENED,
+                    IncidentHistoryType::MUTED => Icons::MUTE,
+                    IncidentHistoryType::UNMUTED => Icons::UNMUTE,
+                    IncidentHistoryType::RECIPIENT_ROLE_CHANGED => $this->getRoleIcon($item),
+                    IncidentHistoryType::CLOSED => Icons::CLOSED,
+                    IncidentHistoryType::RULE_MATCHED => Icons::RULE_MATCHED,
+                    IncidentHistoryType::ESCALATION_TRIGGERED => Icons::TRIGGERED,
+                    IncidentHistoryType::NOTIFIED => Icons::NOTIFIED
+                }
+            );
         }
 
         $visual->addHtml($content);
@@ -119,18 +122,18 @@ class IncidentHistoryRenderer implements ItemRenderer
     protected function buildMessage(IncidentHistory $item): ValidHtml
     {
         switch ($item->type) {
-            case 'opened':
+            case IncidentHistoryType::OPENED:
                 $message = sprintf(
                     $this->translate('Incident opened at severity %s'),
                     $item->new_severity->getLabel()
                 );
 
                 break;
-            case 'closed':
+            case IncidentHistoryType::CLOSED:
                 $message = $this->translate('Incident closed');
 
                 break;
-            case "notified":
+            case IncidentHistoryType::NOTIFIED:
                 if (isset($item->contactgroup->name) && isset($item->contact->full_name)) {
                     if (isset($item->channel->type)) {
                         $message = sprintf(
@@ -200,7 +203,7 @@ class IncidentHistoryRenderer implements ItemRenderer
                 }
 
                 break;
-            case 'incident_severity_changed':
+            case IncidentHistoryType::INCIDENT_SEVERITY_CHANGED:
                 $message = sprintf(
                     $this->translate('Incident severity changed from %s to %s'),
                     $item->old_severity->getLabel(),
@@ -208,7 +211,7 @@ class IncidentHistoryRenderer implements ItemRenderer
                 );
 
                 break;
-            case 'recipient_role_changed':
+            case IncidentHistoryType::RECIPIENT_ROLE_CHANGED:
                 $newRole = $item->new_recipient_role;
                 $message = '';
                 if ($newRole === 'manager' || (! $newRole && $item->old_recipient_role === 'manager')) {
@@ -251,7 +254,7 @@ class IncidentHistoryRenderer implements ItemRenderer
                 }
 
                 break;
-            case 'rule_matched':
+            case IncidentHistoryType::RULE_MATCHED:
                 if (isset($item->rule->name)) {
                     $message = sprintf($this->translate('Rule %s matched on this incident'), $item->rule->name);
                 } else {
@@ -259,13 +262,15 @@ class IncidentHistoryRenderer implements ItemRenderer
                 }
 
                 break;
-            case 'escalation_triggered':
+            case IncidentHistoryType::ESCALATION_TRIGGERED:
                 if (isset($item->rule->name)) {
-                    if (isset($item->rule_escalation->name)) {
+                    if (isset($item->rule_escalation->id)) {
                         $message = sprintf(
                             $this->translate('Rule %s reached escalation %s'),
                             $item->rule->name,
+                            // An escalation is only named optionally, its condition describes it otherwise
                             $item->rule_escalation->name
+                                ?? EscalationConditionDescriber::describe($item->rule_escalation->condition)
                         );
                     } else {
                         $message = sprintf(
@@ -278,16 +283,14 @@ class IncidentHistoryRenderer implements ItemRenderer
                 }
 
                 break;
-            case 'muted':
+            case IncidentHistoryType::MUTED:
                 $message = $this->translate('Notifications for this incident have been muted');
 
                 break;
-            case 'unmuted':
+            case IncidentHistoryType::UNMUTED:
                 $message = $this->translate('Notifications for this incident have been unmuted');
 
                 break;
-            default:
-                $message = '';
         }
 
         $messageFromDb = $item->message ? ': ' . $item->message : '';
