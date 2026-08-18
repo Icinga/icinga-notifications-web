@@ -26,6 +26,8 @@ use ipl\Stdlib\Filter;
  * @property Query<RuleEscalationRecipient>|Collection<RuleEscalationRecipient> $rule_escalation_recipient
  * @property Query<IncidentHistory>|Collection<IncidentHistory> $incident_history
  * @property Query<RuleEscalation>|Collection<RuleEscalation> $rule_escalation
+ * @property Query<NotificationHistory>|Collection<NotificationHistory> $notification_history
+ * @property Query<SkippedNotificationHistory>|Collection<SkippedNotificationHistory> $skipped_notification_history
  */
 class Schedule extends Model
 {
@@ -85,6 +87,10 @@ class Schedule extends Model
 
         $relations->belongsToMany('rule_escalation', RuleEscalation::class)
             ->through(RuleEscalationRecipient::class)
+            ->setJoinType('LEFT');
+        $relations->hasMany('notification_history', NotificationHistory::class)
+            ->setJoinType('LEFT');
+        $relations->hasMany('skipped_notification_history', SkippedNotificationHistory::class)
             ->setJoinType('LEFT');
     }
 

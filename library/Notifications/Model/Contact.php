@@ -35,6 +35,7 @@ use ipl\Stdlib\Filter;
  * @property Query<RuleEscalationRecipient>|Collection<RuleEscalationRecipient> $rule_escalation_recipient
  * @property Query<ContactgroupMember>|Collection<ContactgroupMember> $contactgroup_member
  * @property Query<Contactgroup>|Collection<Contactgroup> $contactgroup
+ * @property Query<NotificationHistory>|Collection<NotificationHistory> $notification_history
  */
 class Contact extends Model
 {
@@ -116,6 +117,8 @@ class Contact extends Model
 
         $relations->belongsToMany('contactgroup', Contactgroup::class)
             ->through(ContactgroupMember::class)
+            ->setJoinType('LEFT');
+        $relations->hasMany('notification_history', NotificationHistory::class)
             ->setJoinType('LEFT');
     }
 

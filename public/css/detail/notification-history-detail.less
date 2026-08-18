@@ -1,0 +1,118 @@
+// SPDX-FileCopyrightText: 2026 Icinga GmbH <https://icinga.com>
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+.notification-history-detail {
+  .message {
+    padding: 0.5em;
+    .monospace-font();
+  }
+
+  .channel {
+    display: flex;
+    align-items: baseline;
+    column-gap: 0.25em;
+  }
+
+  .trigger-chain {
+    display: flex;
+    margin-top: 1em;
+
+    @arrow-height-and-width: 1.75em;
+    .item {
+      display: flex;
+      align-items: center;
+      position: relative;
+      padding: 0.5em;
+
+      &:has(~ .item):after {
+        content: "";
+        display: block;
+        position: absolute;
+        // 1px border. Half width because transform is applied after positioning
+        right: ~"calc((-@{arrow-height-and-width} / 2) - 1px)";
+        width: @arrow-height-and-width;
+        height: @arrow-height-and-width;
+        border-top: 1px solid @gray-light;
+        border-right: 1px solid @gray-light;
+        transform: rotate(45deg);
+      }
+    }
+
+    .item:not(:first-child) {
+      padding-left: 2em;
+    }
+
+    .skipped {
+      color: @default-text-color-light;
+      position: relative;
+      margin-left: 0.5em;
+      padding: 0;
+      &:hover {
+        cursor: pointer;
+      }
+
+      .popup {
+        list-style: none;
+        position: absolute;
+        padding: 0 0.5em;
+        right: 0;
+        top: 3em;
+        z-index: 1;
+        width: max-content;
+        display: none;
+
+        &:before {
+          content: '';
+          position: absolute;
+          display: inline-block;
+          width: 1.5em;
+          height: 1.5em;
+          right: 1.5em;
+          top: ~"calc(-0.75em - 1px)";
+          border-left: 1px solid @gray-light;
+          border-top: 1px solid @gray-light;
+          transform: rotate(45deg);
+        }
+
+        .popup-item {
+          padding: .5em 0;
+
+          &:not(:last-child) {
+            border-bottom: 1px solid @gray-light;
+          }
+        }
+      }
+
+      &:hover .popup {
+        display: flex;
+        flex-direction: column;
+      }
+    }
+  }
+
+  // style
+  .message {
+    background-color: @gray-lighter;
+    .rounded-corners();
+  }
+
+  .trigger-chain {
+    .item {
+      .notification-icon-ball-state();
+    }
+
+    .skipped .popup {
+      border: 1px solid @gray-light;
+      background-color: @body-bg-color;
+      border-radius: .25em;
+
+      &:before {
+        background-color: @body-bg-color;
+      }
+
+      .popup-item:not(:last-child) {
+          border-bottom: 1px solid @gray-light;
+      }
+    }
+  }
+}

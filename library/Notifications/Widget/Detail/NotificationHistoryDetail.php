@@ -1,0 +1,265 @@
+<?php
+
+// SPDX-FileCopyrightText: 2026 Icinga GmbH <https://icinga.com>
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+namespace Icinga\Module\Notifications\Widget\Detail;
+
+use Icinga\Module\Notifications\Common\Auth;
+use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Common\EscalationConditionDescriber;
+use Icinga\Module\Notifications\Common\IncidentHistoryType;
+use Icinga\Module\Notifications\Model\IncidentHistory;
+use Icinga\Module\Notifications\Model\NotificationHistory;
+use Icinga\Module\Notifications\Model\Rule;
+use Icinga\Module\Notifications\Model\RuleEscalation;
+use Icinga\Module\Notifications\View\IncidentRenderer;
+use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
+use ipl\Html\Attributes;
+use ipl\Html\BaseHtmlElement;
+use ipl\Html\HtmlElement;
+use ipl\Html\Text;
+use ipl\I18n\Translation;
+use ipl\Stdlib\Filter;
+use ipl\Web\Widget\CopyToClipboard;
+use ipl\Web\Widget\Time;
+
+class NotificationHistoryDetail extends BaseHtmlElement
+{
+    use Auth;
+    use Translation;
+
+    protected NotificationHistory $notificationHistory;
+
+    protected $defaultAttributes = [
+        'class'                         => 'notification-history-detail',
+        'data-pdfexport-page-breaks-at' => 'h2'
+    ];
+
+    protected $tag = 'div';
+
+    public function __construct(NotificationHistory $notificationHistory)
+    {
+        $this->notificationHistory = $notificationHistory;
+    }
+
+    protected function createMessage(): array
+    {
+        $message = new HtmlElement(
+            'div',
+            Attributes::create([
+                'class' => ['message', 'collapsible'],
+                'data-visible-height' => 100
+            ]),
+            Text::create($this->notificationHistory->message)
+        );
+
+        CopyToClipboard::attachTo($message);
+
+        return [
+            new HtmlElement('h2', content: Text::create($this->translate('Message'))),
+            $message
+        ];
+    }
+
+    protected function createRecipient(): array
+    {
+        $recipient = match (true) {
+            (bool) $this->notificationHistory->contactgroup_id => sprintf(
+                $this->translate('Contact %s of Contactgroup %s'),
+                $this->notificationHistory->contact->full_name,
+                $this->notificationHistory->contactgroup->name
+            ),
+            (bool) $this->notificationHistory->schedule_id => sprintf(
+                $this->translate('Contact %s of Schedule %s'),
+                $this->notificationHistory->contact->full_name,
+                $this->notificationHistory->schedule->name
+            ),
+            (bool) $this->notificationHistory->contact_id => sprintf(
+                $this->translate('Contact %s'),
+                $this->notificationHistory->contact->full_name
+            )
+        };
+
+        return [
+            new HtmlElement('h2', content: Text::create($this->translate('Recipient'))),
+            $recipient
+        ];
+    }
+
+    protected function createChannel(): array
+    {
+        return [
+            new HtmlElement('h2', content: Text::create($this->translate('Channel'))),
+            new HtmlElement(
+                'div',
+                Attributes::create(['class' => 'channel']),
+                $this->notificationHistory->channel->getIcon(),
+                Text::create(sprintf(
+                    '%s (%s)',
+                    $this->notificationHistory->channel->name,
+                    $this->notificationHistory->channel->type
+                ))
+            )
+        ];
+    }
+
+    protected function createTime(): array
+    {
+        return [
+            new HtmlElement('h2', content: Text::create($this->translate('Triggered at'))),
+            new Time($this->notificationHistory->triggered_at)
+        ];
+    }
+
+    protected function createIncident(): array
+    {
+        return [
+            new HtmlElement('h2', content: Text::create($this->translate('Related Incident'))),
+            new ObjectList([$this->notificationHistory->incident], new IncidentRenderer())
+        ];
+    }
+
+    protected function createReason(): array
+    {
+        [$reason, $rule, $ruleEscalation] = $this->resolveTriggerChain();
+        $triggerChain = new HtmlElement(
+            'div',
+            Attributes::create(['class' => 'trigger-chain']),
+            new HtmlElement(
+                'span',
+                Attributes::create(['class' => 'item']),
+                Text::create($reason->getLabel())
+            )
+        );
+
+        if ($rule !== null) {
+            $triggerChain->addHtml(
+                new HtmlElement(
+                    'span',
+                    Attributes::create(['class' => 'item']),
+                    Text::create(sprintf($this->translate('Rule %s matched'), $rule->name))
+                ),
+                new HtmlElement(
+                    'span',
+                    Attributes::create(['class' => 'item']),
+                    Text::create(sprintf(
+                        $this->translate('Escalation triggered (%s)'),
+                        EscalationConditionDescriber::describe($ruleEscalation?->condition)
+                    ))
+                )
+            );
+        }
+
+        $triggerChain->addHtml(
+            new HtmlElement(
+                'span',
+                Attributes::create(['class' => 'item']),
+                $this->notificationHistory->state->getIcon()
+            )
+        );
+
+        $query = $this->notificationHistory->skipped
+            ->with([
+                'contactgroup',
+                'schedule',
+                'rule',
+                'rule_escalation'
+            ]);
+        $skip = [];
+        foreach ($query as $skipped) {
+            $escalation = $skipped->rule_escalation->name
+                ?? EscalationConditionDescriber::describe($skipped->rule_escalation->condition);
+
+            if (isset($skipped->contactgroup_id)) {
+                $text = sprintf(
+                    $this->translate('Rule: %s, Escalation: %s, ContactGroup: %s'),
+                    $skipped->rule->name,
+                    $escalation,
+                    $skipped->contactgroup->name
+                );
+            } elseif (isset($skipped->schedule_id)) {
+                $text = sprintf(
+                    $this->translate('Rule: %s, Escalation: %s, Schedule: %s'),
+                    $skipped->rule->name,
+                    $escalation,
+                    $skipped->schedule->name
+                );
+            } else {
+                $text = sprintf(
+                    $this->translate('Rule: %s, Escalation: %s, Contact: %s'),
+                    $skipped->rule->name,
+                    $escalation,
+                    $this->notificationHistory->contact->full_name
+                );
+            }
+
+            $skip[] = new HtmlElement('li', Attributes::create(['class' => 'popup-item']), Text::create($text));
+        }
+
+        if (! empty($skip)) {
+            $triggerChain->addHtml(
+                new HtmlElement(
+                    'ul',
+                    Attributes::create(['class' => 'skipped']),
+                    Text::create(sprintf($this->translate('(%s Skipped)'), count($skip))),
+                    new HtmlElement('div', Attributes::create(['class' => ['popup']]), ...$skip)
+                )
+            );
+        }
+
+        return [
+            new HtmlElement('h2', content: Text::create($this->translate('Trigger Chain'))),
+            $triggerChain
+        ];
+    }
+
+    /**
+     * Get the root cause and the matching rule and escalation that triggered the notification
+     *
+     * @return array{IncidentHistoryType, ?Rule, ?RuleEscalation}
+     */
+    protected function resolveTriggerChain(): array
+    {
+        $reason = $this->notificationHistory->incident_history->type;
+        $rule = null;
+        $ruleEscalation = null;
+
+        $triggeredBy = $this->notificationHistory->incident_history->triggered_by_id;
+        while ($triggeredBy !== null) {
+            $node = IncidentHistory::on(Database::get())
+                ->with(['rule', 'rule_escalation'])
+                ->filter(Filter::equal('id', $triggeredBy))
+                ->first();
+
+            if ($node === null) {
+                break;
+            }
+
+            if ($node->rule_id !== null) {
+                $rule = $node->rule;
+            }
+
+            if ($node->rule_escalation_id !== null) {
+                $ruleEscalation = $node->rule_escalation;
+            }
+
+            $reason = $node->type;
+            $triggeredBy = $node->triggered_by_id;
+        }
+
+        return [$reason, $rule, $ruleEscalation];
+    }
+
+    protected function assemble(): void
+    {
+        $this->add([
+            $this->createMessage(),
+            $this->createRecipient(),
+            $this->createChannel(),
+            $this->createTime(),
+            $this->createReason(),
+            $this->createIncident()
+        ]);
+    }
+}

@@ -5,11 +5,12 @@
 
 namespace Icinga\Module\Notifications\Widget\Detail;
 
-use Icinga\Exception\NotImplementedError;
 use Icinga\Module\Notifications\Model\Contactgroup;
 use Icinga\Module\Notifications\Model\Incident;
+use Icinga\Module\Notifications\Model\NotificationHistory;
 use Icinga\Module\Notifications\View\ContactgroupRenderer;
 use Icinga\Module\Notifications\View\IncidentRenderer;
+use Icinga\Module\Notifications\View\NotificationHistoryRenderer;
 use ipl\Html\BaseHtmlElement;
 use ipl\Orm\Model;
 use ipl\Web\Layout\HeaderItemLayout;
@@ -19,7 +20,7 @@ use ipl\Web\Layout\HeaderItemLayout;
  *
  * Create a header
  *
- * @template Item of Incident|Contactgroup
+ * @template Item of Incident|Contactgroup|NotificationHistory
  */
 class ObjectHeader extends BaseHtmlElement
 {
@@ -42,7 +43,8 @@ class ObjectHeader extends BaseHtmlElement
     {
         $renderer = match (true) {
             $this->object instanceof Incident     => new IncidentRenderer(),
-            $this->object instanceof Contactgroup => new ContactgroupRenderer()
+            $this->object instanceof Contactgroup => new ContactgroupRenderer(),
+            $this->object instanceof NotificationHistory => new NotificationHistoryRenderer()
         };
 
         $layout = new HeaderItemLayout($this->object, $renderer);
