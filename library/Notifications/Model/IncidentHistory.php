@@ -40,6 +40,7 @@ use ipl\Sql\Select;
  * @property ?string $notification_state
  * @property ?DateTime $sent_at
  * @property ?string $event_id
+ * @property ?int $triggered_by_id
  *
  * @property Query<Incident>|Incident $incident
  * @property Query<Contact>|Contact $contact
@@ -49,6 +50,7 @@ use ipl\Sql\Select;
  * @property Query<RuleEscalation>|RuleEscalation $rule_escalation
  * @property Query<Channel>|Channel $channel
  * @property Query<NotificationHistory>|Collection<NotificationHistory> $notification_history
+ * @property Query<IncidentHistory>|IncidentHistory $triggered_by
  */
 class IncidentHistory extends Model
 {
@@ -81,7 +83,8 @@ class IncidentHistory extends Model
             'message',
             'notification_state',
             'sent_at',
-            'event_id'
+            'event_id',
+            'triggered_by_id'
         ];
     }
 
@@ -140,6 +143,9 @@ class IncidentHistory extends Model
         $relations->belongsTo('rule_escalation', RuleEscalation::class)->setJoinType('LEFT');
         $relations->belongsTo('channel', Channel::class)->setJoinType('LEFT');
         $relations->hasMany('notification_history', NotificationHistory::class)->setJoinType('LEFT');
+        $relations->belongsTo('triggered_by', self::class)
+            ->setCandidateKey('triggered_by_id')
+            ->setJoinType('LEFT');
     }
 
     /**

@@ -11,6 +11,8 @@ use Icinga\Module\Notifications\Common\EscalationConditionDescriber;
 use Icinga\Module\Notifications\Common\IncidentHistoryType;
 use Icinga\Module\Notifications\Model\IncidentHistory;
 use Icinga\Module\Notifications\Model\NotificationHistory;
+use Icinga\Module\Notifications\Model\Rule;
+use Icinga\Module\Notifications\Model\RuleEscalation;
 use Icinga\Module\Notifications\View\IncidentRenderer;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use ipl\Html\Attributes;
@@ -120,15 +122,34 @@ class NotificationHistoryDetail extends BaseHtmlElement
 
     protected function createReason(): array
     {
+        [$reason, $rule, $ruleEscalation] = $this->resolveTriggerChain();
         $triggerChain = new HtmlElement(
             'div',
             Attributes::create(['class' => 'trigger-chain']),
             new HtmlElement(
                 'span',
                 Attributes::create(['class' => 'item']),
-                Text::create($this->resolveReason()->getLabel())
+                Text::create($reason->getLabel())
             )
         );
+
+        if ($rule !== null) {
+            $triggerChain->addHtml(
+                new HtmlElement(
+                    'span',
+                    Attributes::create(['class' => 'item']),
+                    Text::create(sprintf($this->translate('Rule %s matched'), $rule->name))
+                ),
+                new HtmlElement(
+                    'span',
+                    Attributes::create(['class' => 'item']),
+                    Text::create(sprintf(
+                        $this->translate('Escalation triggered (%s)'),
+                        EscalationConditionDescriber::describe($ruleEscalation?->condition)
+                    ))
+                )
+            );
+        }
 
         $triggerChain->addHtml(
             new HtmlElement(
@@ -193,17 +214,41 @@ class NotificationHistoryDetail extends BaseHtmlElement
         ];
     }
 
-    protected function resolveReason(): IncidentHistoryType
+    /**
+     * Get the root cause and the matching rule and escalation that triggered the notification
+     *
+     * @return array{IncidentHistoryType, ?Rule, ?RuleEscalation}
+     */
+    protected function resolveTriggerChain(): array
     {
-        /** @var ?IncidentHistory $entry */
-        $entry = IncidentHistory::on(Database::get())
-            ->filter(Filter::all(
-                Filter::equal('incident_id', $this->notificationHistory->incident_id),
-                Filter::equal('event_id', $this->notificationHistory->event_id)
-            ))
-            ->first();
+        $reason = $this->notificationHistory->incident_history->type;
+        $rule = null;
+        $ruleEscalation = null;
 
-        return $entry?->type ?? $this->notificationHistory->incident_history->type;
+        $triggeredBy = $this->notificationHistory->incident_history->triggered_by_id;
+        while ($triggeredBy !== null) {
+            $node = IncidentHistory::on(Database::get())
+                ->with(['rule', 'rule_escalation'])
+                ->filter(Filter::equal('id', $triggeredBy))
+                ->first();
+
+            if ($node === null) {
+                break;
+            }
+
+            if ($node->rule_id !== null) {
+                $rule = $node->rule;
+            }
+
+            if ($node->rule_escalation_id !== null) {
+                $ruleEscalation = $node->rule_escalation;
+            }
+
+            $reason = $node->type;
+            $triggeredBy = $node->triggered_by_id;
+        }
+
+        return [$reason, $rule, $ruleEscalation];
     }
 
     protected function assemble(): void
