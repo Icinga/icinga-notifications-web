@@ -12,6 +12,7 @@ use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Incident as IncidentModel;
 use Icinga\Module\Notifications\Model\IncidentContact;
 use Icinga\Module\Notifications\Model\IncidentHistory;
+use Icinga\User;
 use InvalidArgumentException;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
@@ -37,6 +38,27 @@ class Incident
     {
         $this->incident = $incident;
         $this->db = $db;
+    }
+
+    /**
+     * Get the given user's role for the incident, null if the user has no role
+     *
+     * @param User $user
+     *
+     * @return ?string
+     */
+    public function getRole(User $user): ?string
+    {
+        return IncidentContact::on($this->db)
+            ->columns('role')
+            ->filter(
+                Filter::all(
+                    Filter::equal('incident_id', $this->incident->id),
+                    Filter::equal('contact.username', $user->getUsername())
+                )
+            )
+            ->first()
+            ?->role;
     }
 
     /**
