@@ -34,7 +34,7 @@ use Tests\Icinga\Module\Notifications\Lib\DatabaseUtils;
  *
  * Each test runs inside its own transaction which is rolled back afterwards, so its writes don't leak into the next
  * test. A source, channel and contact are seeded per test in {@see self::initializeNotificationsDb()} and their ids
- * captured into {@see self::$sourceId}, {@see self::$channelId} and {@see self::$contactId} (the ids can't be assumed
+ * captured into {@see self::$channelId} and {@see self::$contactId} (the ids can't be assumed
  * as rolled-back transactions still advance the auto-increment).
  */
 #[TransactionIsolation]
@@ -42,9 +42,6 @@ class EscalationRuleRepositoryTest extends TestCase
 {
     use DatabaseUtils;
     use DbTestBackends;
-
-    /** @var int Id of the source seeded per test, referenced by the rule */
-    private static int $sourceId;
 
     /** @var int Id of the channel seeded per test */
     private static int $channelId;
@@ -67,7 +64,6 @@ class EscalationRuleRepositoryTest extends TestCase
         $db->insert('source', [
             'type' => 'icinga2', 'name' => 'Test Source', 'listener_username' => 'test-source', 'changed_at' => $now
         ]);
-        self::$sourceId = (int) $db->lastInsertId();
         $db->insert('contact', [
             'full_name' => 'Test', 'username' => 'test', 'default_channel_id' => self::$channelId,
             'external_uuid' => '00000000-0000-0000-0000-0000000000a1', 'changed_at' => $now
@@ -125,7 +121,7 @@ class EscalationRuleRepositoryTest extends TestCase
         $id = $repository->create(new EscalationRule(
             null,
             'Create Rule',
-            self::$sourceId,
+            'icinga2',
             'host.name=foo',
             [
                 $this->escalation(null, 0, null),
@@ -136,7 +132,7 @@ class EscalationRuleRepositoryTest extends TestCase
         $rule = $repository->find($id);
         $this->assertNotNull($rule, 'The created rule was not found');
         $this->assertSame('Create Rule', $rule->name);
-        $this->assertEquals(self::$sourceId, $rule->source_id);
+        $this->assertEquals('icinga2', $rule->source_type);
         $this->assertSame('host.name=foo', $rule->object_filter);
         $this->assertFalse($rule->deleted);
 
@@ -163,7 +159,7 @@ class EscalationRuleRepositoryTest extends TestCase
         $id = $repository->create(new EscalationRule(
             null,
             'Update Rule',
-            self::$sourceId,
+            'icinga2',
             null,
             [
                 $this->escalation(null, 0, null),
@@ -179,7 +175,7 @@ class EscalationRuleRepositoryTest extends TestCase
         $repository->update(new EscalationRule(
             $id,
             'Renamed Rule',
-            self::$sourceId,
+            'icinga2',
             'service.name=bar',
             [
                 $this->escalation($keptId, 0, 'incident_severity>=warning'),
@@ -212,7 +208,7 @@ class EscalationRuleRepositoryTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        (new EscalationRuleRepository($db))->update(new EscalationRule(999, 'Nope', self::$sourceId, null, []));
+        (new EscalationRuleRepository($db))->update(new EscalationRule(999, 'Nope', 'icinga2', null, []));
     }
 
     #[DataProvider('sharedDatabases')]
@@ -223,7 +219,7 @@ class EscalationRuleRepositoryTest extends TestCase
         $id = $repository->create(new EscalationRule(
             null,
             'Delete Rule',
-            self::$sourceId,
+            'icinga2',
             null,
             [$this->escalation(null, 0, null)]
         ));
@@ -258,7 +254,7 @@ class EscalationRuleRepositoryTest extends TestCase
         $id = $repository->create(new EscalationRule(
             null,
             'Rule',
-            self::$sourceId,
+            'icinga2',
             null,
             [
                 $this->escalation(null, 0, 'first'),
@@ -276,7 +272,7 @@ class EscalationRuleRepositoryTest extends TestCase
         $repository->update(new EscalationRule(
             $id,
             'Rule',
-            self::$sourceId,
+            'icinga2',
             null,
             [$this->escalation($survivorId, 0, 'second')]
         ));
