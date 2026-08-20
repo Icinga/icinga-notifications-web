@@ -127,7 +127,7 @@ class EventRuleController extends CompatController
                         $this->addPart($form->prepareObjectFilterUpdate($this->session->get('object_filter')));
                         $this->addPart($form->prepareConfigUpdate(
                             $this->session->get('name'),
-                            $this->session->get('source')
+                            $this->session->get('source_type')
                         ));
                         $this->addPart(Html::tag('div', ['id' => 'event-rule-config-name'], [
                             Html::tag('h2', $this->session->get('name')),
@@ -140,7 +140,7 @@ class EventRuleController extends CompatController
                     } else {
                         $this->addPart($form->prepareConfigUpdate(
                             $this->session->get('name'),
-                            $this->session->get('source')
+                            $this->session->get('source_type')
                         ));
                         $this->addPart($form->prepareObjectFilterUpdate($this->session->get('object_filter')));
                     }
@@ -155,15 +155,15 @@ class EventRuleController extends CompatController
                     $form->setRule($rule);
 
                     $this->session->set('name', $rule->name);
-                    $this->session->set('source', $rule->source_id);
+                    $this->session->set('source_type', $rule->source_type);
                     $this->session->set('object_filter', $rule->object_filter ?? '');
                 } else {
                     $name = $this->params->getRequired('name');
-                    $source = (int) $this->params->getRequired('source');
-                    $form->populate(['name' => $name, 'source' => $source]);
+                    $source = $this->params->getRequired('source_type');
+                    $form->populate(['name' => $name, 'source_type' => $source]);
 
                     $this->session->set('name', $name);
-                    $this->session->set('source', $source);
+                    $this->session->set('source_type', $source);
                     $this->session->set('object_filter', '');
                 }
             })
@@ -384,35 +384,31 @@ class EventRuleController extends CompatController
 
     protected function resolveSourceHook(int $ruleId): ?SourceHook
     {
-        $source = null;
+        $type = null;
         if ($ruleId !== -1) {
-            $source = Rule::on(Database::get())
-                ->columns(['id' => 'source.id', 'type' => 'source.type'])
+            $type = Rule::on(Database::get())
+                ->columns(['source_type'])
                 ->filter(Filter::equal('id', $ruleId))
-                ->first();
-        } elseif (isset($this->session->source)) {
-            /** @var ?Source $source */
-            $source = Source::on(Database::get())
-                ->columns(['id', 'type'])
-                ->filter(Filter::equal('id', $this->session->source))
-                ->first();
+                ->first()?->source_type;
+        } elseif (isset($this->session->source_type)) {
+            $type = $this->session->source_type;
         }
 
-        if ($source === null) {
+        if ($type === null) {
             $this->httpNotFound($this->translate('Rule not found'));
         }
 
-        if ($source->type === SourceForm::TYPE_GENERIC) {
+        if ($type === SourceForm::TYPE_GENERIC) {
             return null;
         }
 
-        $hook = SourceHookLocator::forType($source->type);
+        $hook = SourceHookLocator::forType($type);
 
         if ($hook === null) {
             $this->httpNotFound(sprintf($this->translate(
                 'No source integration available. Either the module supporting sources of type "%s" is not'
                 . ' enabled or you have insufficient privileges. Please contact your system administrator.'
-            ), $source->type));
+            ), $type));
         }
 
         return $hook;
@@ -424,22 +420,26 @@ class EventRuleController extends CompatController
 
         $eventRuleForm = (new EventRuleForm())
             ->setCsrfCounterMeasureId(Session::getSession()->getId())
-            ->setAvailableSources(
-                Database::get()->fetchPairs(
-                    Source::on(Database::get())->columns(['id', 'name'])->assembleSelect()
+            ->setAvailableSourceTypes(
+                array_column(
+                    Database::get()->fetchAll(
+                        Source::on(Database::get())->columns(['type'])->assembleSelect()->distinct()
+                    ),
+                    'type',
+                    'type'
                 )
             )
             ->populate([
                 'name' => $this->session->get('name'),
-                'source' => $this->session->get('source')
+                'source_type' => $this->session->get('source_type')
             ])
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->on(Form::ON_SUBMIT, function ($form) use ($ruleId) {
                 $this->session->set('name', $form->getValue('name'));
 
-                $newSource = (int) $form->getValue('source');
-                if ($newSource !== $this->session->get('source')) {
-                    $this->session->set('source', $newSource);
+                $newSource = $form->getValue('source_type');
+                if ($newSource !== $this->session->get('source_type')) {
+                    $this->session->set('source_type', $newSource);
                     $this->session->set('object_filter', '');
                 }
 

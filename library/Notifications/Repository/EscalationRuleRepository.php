@@ -50,7 +50,7 @@ final class EscalationRuleRepository
         $model = (new Rule())->setNew();
 
         $model->name = $rule->name;
-        $model->source_id = $rule->sourceId;
+        $model->source_type = $rule->sourceType;
         $model->object_filter = $rule->objectFilter;
 
         (new EntityManager($this->db))->save($model);
@@ -82,7 +82,7 @@ final class EscalationRuleRepository
         }
 
         $model->name = $rule->name;
-        $model->source_id = $rule->sourceId;
+        $model->source_type = $rule->sourceType;
         $model->object_filter = $rule->objectFilter;
 
         (new EntityManager($this->db))->save($model);

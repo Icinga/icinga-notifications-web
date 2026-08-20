@@ -10,14 +10,14 @@ readonly class EscalationRule
     /**
      * @param ?int $id The primary database key value, NULL for new rules
      * @param string $name The name of the rule
-     * @param int $sourceId The source's ID the rule belongs to
+     * @param string $sourceType The source type the rule belongs to
      * @param ?string $objectFilter The object filter of the rule
      * @param Escalation[] $escalations
      */
     public function __construct(
         public ?int $id,
         public string $name,
-        public int $sourceId,
+        public string $sourceType,
         public ?string $objectFilter,
         public array $escalations
     ) {
