@@ -18,13 +18,13 @@ use ipl\Stdlib\Filter;
 /**
  * @property int $id
  * @property string $name
- * @property int $source_id
+ * @property string $source_type
  * @property ?int $timeperiod_id
  * @property ?string $object_filter
  * @property DateTime $changed_at
  * @property bool $deleted
  *
- * @property Query<Source>|Source $source
+ * @property Query<Source>|Collection<Source> $source
  * @property Query<RuleEscalation>|Collection<RuleEscalation> $rule_escalation
  * @property Query<Incident>|Collection<Incident> $incident
  * @property Query<IncidentHistory>|Collection<IncidentHistory> $incident_history
@@ -45,7 +45,7 @@ class Rule extends Model
     {
         return [
             'name',
-            'source_id',
+            'source_type',
             'timeperiod_id',
             'object_filter',
             'changed_at',
@@ -57,7 +57,7 @@ class Rule extends Model
     {
         return [
             'name'          => t('Name'),
-            'source_id'     => t('Source ID'),
+            'source_type'   => t('Source Type'),
             'timeperiod_id' => t('Timeperiod ID'),
             'object_filter' => t('Object Filter'),
             'changed_at'    => t('Changed At')
@@ -82,7 +82,9 @@ class Rule extends Model
 
     public function createRelations(Relations $relations): void
     {
-        $relations->belongsTo('source', Source::class);
+        $relations->hasMany('source', Source::class)
+            ->setCandidateKey('source_type')
+            ->setForeignKey('type');
         $relations->hasMany('rule_escalation', RuleEscalation::class)
             ->setJoinType('LEFT');
 
