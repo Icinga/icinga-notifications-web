@@ -20,6 +20,9 @@ class DeleteSourceForm extends CompatForm
     /** @var bool Whether the source is locked */
     protected bool $locked = false;
 
+    /** @var bool Whether the source is the last remaining one of its type */
+    protected bool $isLastOfItsType = false;
+
     /**
      * Set whether the source is locked
      *
@@ -30,6 +33,20 @@ class DeleteSourceForm extends CompatForm
     public function setLocked(bool $locked = true): static
     {
         $this->locked = $locked;
+
+        return $this;
+    }
+
+    /**
+     * Set whether the source is the last of its type
+     *
+     * @param bool $lastOfItsType
+     *
+     * @return $this
+     */
+    public function setLastOfItsType(bool $lastOfItsType = true): static
+    {
+        $this->isLastOfItsType = $lastOfItsType;
 
         return $this;
     }
@@ -51,9 +68,17 @@ class DeleteSourceForm extends CompatForm
             new HtmlElement(
                 'li',
                 null,
-                Text::create($this->translate(
-                    'Deleting a source also removes all related event rules and stops event processing for it.'
-                ))
+                Text::create(
+                    $this->isLastOfItsType
+                        ? $this->translate(
+                            'Deleting this source stops event processing for it. As it is the last source of its'
+                            . ' type, all event rules configured for that type are deleted as well.'
+                        )
+                        : $this->translate(
+                            'Deleting this source stops event processing for it. Event rules stay intact,'
+                            . ' as other sources of the same type remain.'
+                        )
+                )
             ),
             new HtmlElement(
                 'li',
