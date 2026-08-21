@@ -8,6 +8,7 @@ namespace Icinga\Module\Notifications\Model;
 use Icinga\Module\Notifications\Common\Collection;
 use Icinga\Module\Notifications\Common\Model;
 use Icinga\Module\Notifications\Model\Behavior\IdTagAggregator;
+use Icinga\Module\Notifications\Model\Behavior\SourceAggregator;
 use ipl\Orm\Behavior\Binary;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Query;
@@ -19,6 +20,7 @@ use ipl\Orm\Relations;
  * @property string $id
  * @property string $name
  * @property ?string $url
+ * @property Source[] $sources
  *
  * @property Query<Incident>|Collection<Incident> $incident
  * @property Query<ObjectIdTag>|Collection<ObjectIdTag> $object_id_tag
@@ -66,6 +68,7 @@ class Objects extends Model
     {
         $behaviors->add(new Binary(['id']));
         $behaviors->add(new IdTagAggregator());
+        $behaviors->add(new SourceAggregator());
     }
 
     public function createRelations(Relations $relations): void
