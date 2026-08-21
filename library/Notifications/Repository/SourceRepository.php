@@ -10,6 +10,7 @@ use Icinga\Module\Notifications\Form\Data\Source as SourceData;
 use Icinga\Module\Notifications\Model\Source;
 use InvalidArgumentException;
 use ipl\Sql\Connection;
+use ipl\Sql\Expression;
 use ipl\Stdlib\Filter;
 
 class SourceRepository
@@ -56,6 +57,25 @@ class SourceRepository
     }
 
     /**
+     * Get whether the given source is the only remaining one of its type
+     *
+     * @param Source $source
+     *
+     * @return bool
+     */
+    public function isLastOfItsType(Source $source): bool
+    {
+        return Source::on($this->db)
+            ->columns([new Expression('1')])
+            ->filter(
+                Filter::all(
+                    Filter::equal('type', $source->type),
+                    Filter::unequal('id', $source->id)
+                )
+            )->first() === null;
+    }
+
+    /**
      * Create a new source
      *
      * @param SourceData $source
@@ -89,7 +109,7 @@ class SourceRepository
     }
 
     /**
-     * Delete a source and dereference it from any rules
+     * Delete a source, if it is the last of its type all related rules are deleted as well
      *
      * @param int $id
      *
@@ -106,9 +126,10 @@ class SourceRepository
         $source->listener_username = null;
         $source->delete();
 
-        $source->rule->query()->columns('id');
-        foreach ($source->rule as $rule) {
-            (new EscalationRuleRepository($this->db))->delete($rule->id);
+        if ($this->isLastOfItsType($source)) {
+            foreach ($source->rule as $rule) {
+                (new EscalationRuleRepository($this->db))->delete($rule->id);
+            }
         }
 
         (new EntityManager($this->db))->save($source);

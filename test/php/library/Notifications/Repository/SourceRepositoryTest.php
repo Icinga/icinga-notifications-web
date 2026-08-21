@@ -317,20 +317,40 @@ class SourceRepositoryTest extends TestCase
     }
 
     #[DataProvider('sharedDatabases')]
-    public function testDeleteSoftDeletesLinkedRules(Connection $db): void
+    public function testDeleteSoftDeletesLinkedRulesOnlyIfTheSourceIsTheLastOfItsType(Connection $db): void
     {
-        $sourceId = $this->insertSource($db, 'with-rule');
+        $sourceId = $this->insertSource($db, 'icingadb1');
+        $sourceId2 = $this->insertSource($db, 'icingadb2');
         $db->insert('rule', [
-            'name' => 'Linked Rule', 'source_id' => $sourceId, 'changed_at' => (int) (new DateTime())->format('Uv')
+            'name' => 'Linked Rule', 'source_type' => 'icingadb', 'changed_at' => (int) (new DateTime())->format('Uv')
         ]);
         $ruleId = (int) $db->lastInsertId();
+        $db->insert('rule', [
+            'name' => 'Unaffected Rule', 'source_type' => 'test', 'changed_at' => (int) (new DateTime())->format('Uv')
+        ]);
+        $unaffectedRuleId = (int) $db->lastInsertId();
 
         (new SourceRepository($db))->delete($sourceId);
 
-        // The linked rule is soft-deleted along with the source
+        $rule = $this->loadRawEntity($db, $ruleId, Rule::class);
+        $this->assertSame('n', $rule->deleted, 'The rule must not be deleted if a source of its type still exists');
+
+        (new SourceRepository($db))->delete($sourceId2);
+
+        // The linked rule is soft-deleted along with last source of its type
         $rule = $this->loadRawEntity($db, $ruleId, Rule::class);
         $this->assertNotNull($rule, 'The rule row should still exist');
-        $this->assertSame('y', $rule->deleted, 'The linked rule must be soft-deleted with the source');
+        $this->assertSame(
+            'y',
+            $rule->deleted,
+            'The rule must be soft-deleted when the last source of its type is deleted'
+        );
+
+        $this->assertSame(
+            'n',
+            $this->loadRawEntity($db, $unaffectedRuleId, Rule::class)->deleted,
+            'Rules of other sources must not be affected'
+        );
 
         $this->assertSame(
             'y',

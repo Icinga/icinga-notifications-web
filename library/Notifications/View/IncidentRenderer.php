@@ -9,7 +9,6 @@ use Icinga\Module\Notifications\Common\Icons;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Common\Severity;
 use Icinga\Module\Notifications\Model\Incident;
-use Icinga\Module\Notifications\Model\Source;
 use ipl\Html\Attributes;
 use ipl\Html\FormattedString;
 use ipl\Html\Html;
@@ -66,14 +65,19 @@ class IncidentRenderer implements ItemRenderer
             $info->addHtml(new Icon(Icons::MUTE, ['title' => $item->mute_reason]));
         }
 
-        /** @var Source $source */
-        $source = $item->object->source;
-        if (isset($source->name)) {
-            $info->addHtml(
-                (new Ball(Ball::SIZE_BIG))
-                    ->addAttributes(Attributes::create(['class' => 'source-icon', 'title' => $source->name]))
-                    ->addHtml($source->getIcon())
-            );
+        if (! empty($item->object->sources)) {
+            $sourceTypes = [];
+            foreach ($item->object->sources as $source) {
+                $sourceTypes[$source->type] = $source->getIcon();
+            }
+
+            foreach ($sourceTypes as $type => $icon) {
+                $info->addHtml(
+                    (new Ball(Ball::SIZE_BIG))
+                        ->addAttributes(Attributes::create(['class' => 'source-icon', 'title' => $type]))
+                        ->addHtml($icon)
+                );
+            }
         } else {
             $info->addHtml(new Icon('circle-question', [
                 'title' => $this->translate('No source information available')

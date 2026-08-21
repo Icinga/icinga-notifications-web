@@ -70,14 +70,15 @@ class SourceController extends CompatController
             ->setCsrfCounterMeasureId(Session::getSession()->getId())
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->on(Form::ON_REQUEST, function ($_, DeleteSourceForm $form) use ($sourceId) {
-                $source = (new SourceRepository(Database::get()))
-                    ->find($sourceId);
+                $sourceRepository = new SourceRepository(Database::get());
+                $source = $sourceRepository->find($sourceId);
                 if ($source === null) {
                     $this->httpNotFound($this->translate('Source not found'));
                 }
 
                 $this->setTitle(sprintf($this->translate('Delete Source: %s'), $source->name));
-                $form->setLocked($source->locked);
+                $form->setLocked($source->locked)
+                    ->setLastOfItsType($sourceRepository->isLastOfItsType($source));
                 $this->addContent($form);
             })
             ->on(Form::ON_SUBMIT, function () use ($sourceId): never {

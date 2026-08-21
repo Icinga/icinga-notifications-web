@@ -30,7 +30,7 @@ use ReflectionProperty;
  *
  * The tests that execute a query run against real databases — once for MySQL and once for PostgreSQL (see
  * {@see DbTestBackends} / `#[DataProvider('sharedDatabases')]`). Each of them runs inside its own transaction which is
- * rolled back afterwards, so the incidents, objects and sources it seeds don't leak into the next test. The
+ * rolled back afterwards, so the incidents, objects it seeds don't leak into the next test. The
  * prerequisite channel a contact requires is seeded once per driver in {@see self::initializeNotificationsDb()} and
  * its id captured into {@see self::$channelId} (the id can't be assumed as rolled-back transactions still advance
  * the auto-increment).
@@ -47,7 +47,7 @@ class IncidentsTest extends TestCase
     private static int $channelId;
 
     /**
-     * Object ids seeded into the current test's database, keyed by source id and object id
+     * Object ids seeded into the current test's database, keyed by object id
      *
      * @var array<int, array<string, true>>
      */
@@ -114,8 +114,8 @@ class IncidentsTest extends TestCase
     {
         $this->db = $db;
 
-        $this->seedIncident(1, ['host' => 'a']);
-        $this->seedIncident(2, ['host' => 'b']);
+        $this->seedIncident(['host' => 'a']);
+        $this->seedIncident(['host' => 'b']);
 
         $incidents = iterator_to_array(new Incidents([], $db), false);
 
@@ -132,7 +132,7 @@ class IncidentsTest extends TestCase
 
         $this->assertFalse((new Incidents([], $db))->hasIncident());
 
-        $this->seedIncident(1, ['host' => 'a']);
+        $this->seedIncident(['host' => 'a']);
 
         $this->assertTrue((new Incidents([], $db))->hasIncident());
     }
@@ -142,9 +142,9 @@ class IncidentsTest extends TestCase
     {
         $this->db = $db;
 
-        $managed = $this->seedIncident(1, ['host' => 'a']);
-        $subscribed = $this->seedIncident(2, ['host' => 'b']);
-        $foreign = $this->seedIncident(3, ['host' => 'c']);
+        $managed = $this->seedIncident(['host' => 'a']);
+        $subscribed = $this->seedIncident(['host' => 'b']);
+        $foreign = $this->seedIncident(['host' => 'c']);
 
         $jdoe = $this->seedContact('jdoe');
         $this->seedRole($managed, $jdoe, 'manager');
@@ -169,7 +169,7 @@ class IncidentsTest extends TestCase
     {
         $this->db = $db;
 
-        $recovered = $this->seedIncident(1, ['host' => 'a'], 1_700_000_000_000);
+        $recovered = $this->seedIncident(['host' => 'a'], 1_700_000_000_000);
         $this->seedRole($recovered, $this->seedContact('jdoe'), 'manager');
 
         $this->assertSame([], iterator_to_array((new Incidents([], $db))->getRoles(new User('jdoe'))));
@@ -180,7 +180,7 @@ class IncidentsTest extends TestCase
     {
         $this->db = $db;
 
-        $this->seedRole($this->seedIncident(1, ['host' => 'a']), $this->seedContact('jane'), 'manager');
+        $this->seedRole($this->seedIncident(['host' => 'a']), $this->seedContact('jane'), 'manager');
 
         $this->assertSame([], iterator_to_array((new Incidents([], $db))->getRoles(new User('jdoe'))));
     }
@@ -190,7 +190,7 @@ class IncidentsTest extends TestCase
     {
         $this->db = $db;
 
-        $incidentId = $this->seedIncident(1, ['host' => 'a']);
+        $incidentId = $this->seedIncident(['host' => 'a']);
         $this->seedRole($incidentId, $this->seedContact('jane'), 'manager');
         $this->seedRole($incidentId, $this->seedContact('jdoe'), 'subscriber');
         $this->seedRole($incidentId, $this->seedContact('bob'), 'recipient');
@@ -208,8 +208,8 @@ class IncidentsTest extends TestCase
     {
         $this->db = $db;
 
-        $this->seedIncident(1, ['host' => 'a']);
-        $this->seedIncident(2, ['host' => 'b']);
+        $this->seedIncident(['host' => 'a']);
+        $this->seedIncident(['host' => 'b']);
 
         $incidents = new Incidents([], $db);
 
@@ -222,7 +222,7 @@ class IncidentsTest extends TestCase
     {
         $this->db = $db;
 
-        $this->seedIncident(1, ['host' => 'a']);
+        $this->seedIncident(['host' => 'a']);
 
         $this->assertEquals(1, (new Incidents([], $db))->count());
     }
@@ -234,8 +234,8 @@ class IncidentsTest extends TestCase
 
         // A recovered (closed) incident must never be yielded — the integration only deals with open
         // incidents (recovered_at IS NULL).
-        $this->seedIncident(1, ['host' => 'a']);
-        $this->seedIncident(2, ['host' => 'b'], 1_700_000_000_000);
+        $this->seedIncident(['host' => 'a']);
+        $this->seedIncident(['host' => 'b'], 1_700_000_000_000);
 
         $incidents = new Incidents([], $db);
 
@@ -248,9 +248,9 @@ class IncidentsTest extends TestCase
     {
         $this->db = $db;
 
-        $host = $this->seedIncident(1, ['host' => 'a']);
-        $service = $this->seedIncident(1, ['host' => 'a', 'service' => 'http']);
-        $this->seedIncident(1, ['host' => 'b']);
+        $host = $this->seedIncident(['host' => 'a']);
+        $service = $this->seedIncident(['host' => 'a', 'service' => 'http']);
+        $this->seedIncident(['host' => 'b']);
 
         // The host's incident and the one of its service, matched by the tag they have in common
         $this->assertSame(
@@ -340,7 +340,7 @@ class IncidentsTest extends TestCase
     }
 
     /**
-     * Insert an incident for the object identified by the given source and tags, creating the
+     * Insert an incident for the object identified by the given tags, creating the
      * object and object_id_tag rows it relates to so the joins in {@see Incidents::buildQuery()} resolve.
      *
      * @param array<string, string> $tags
@@ -348,11 +348,11 @@ class IncidentsTest extends TestCase
      *
      * @return int The id of the inserted incident
      */
-    private function seedIncident(int $sourceId, array $tags, ?int $recoveredAt = null): int
+    private function seedIncident(array $tags, ?int $recoveredAt = null): int
     {
-        $objectId = $this->objectId($sourceId, $tags);
+        $objectId = $this->objectId($tags);
 
-        $this->seedObject($sourceId, $tags, $objectId);
+        $this->seedObject($tags, $objectId);
 
         $now = (int) (new DateTime())->format('Uv');
 
@@ -398,10 +398,10 @@ class IncidentsTest extends TestCase
     }
 
     /**
-     * Derive a stable, unique object id for the given source and tags
+     * Derive a stable, unique object id for the given tags
      *
      * Stands in for the daemon's object hashing: the exact algorithm is irrelevant to these tests, it
-     * only has to be deterministic and collision-free across distinct (source, tags) combinations so
+     * only has to be deterministic and collision-free for distinct tags so
      * the seeded incident and object_id_tag rows share one id while distinct objects differ.
      *
      * The id is returned in the representation the current database expects for a binary literal, as
@@ -409,11 +409,11 @@ class IncidentsTest extends TestCase
      *
      * @param array<string, string> $tags
      */
-    private function objectId(int $sourceId, array $tags): string
+    private function objectId(array $tags): string
     {
         ksort($tags);
 
-        $hash = hash('sha256', $sourceId . "\0" . serialize($tags));
+        $hash = hash('sha256', serialize($tags));
 
         if ($this->db->getAdapter() instanceof Pgsql) {
             return sprintf('\\x%s', $hash);
@@ -426,33 +426,18 @@ class IncidentsTest extends TestCase
      * Insert the object row and the object_id_tag rows that represent the object for the given tags,
      * unless they already exist — the same object backs every incident sharing its id.
      *
-     * The source the object belongs to is created as well, once per test and source id.
-     *
      * @param array<string, string> $tags
      */
-    private function seedObject(int $sourceId, array $tags, string $objectId): void
+    private function seedObject(array $tags, string $objectId): void
     {
-        if (! isset($this->seededObjects[$sourceId])) {
-            $this->seededObjects[$sourceId] = [];
-
-            $this->db->insert('source', [
-                'id'                => $sourceId,
-                'type'              => 'test',
-                'name'              => 'test',
-                'listener_username' => sprintf('test_%d', $sourceId),
-                'changed_at'        => (int) (new DateTime())->format('Uv')
-            ]);
-        }
-
-        if (isset($this->seededObjects[$sourceId][$objectId])) {
+        if (isset($this->seededObjects[$objectId])) {
             return;
         }
 
-        $this->seededObjects[$sourceId][$objectId] = true;
+        $this->seededObjects[$objectId] = true;
 
         $this->db->insert('object', [
             'id'        => $objectId,
-            'source_id' => $sourceId,
             'name'      => implode(', ', $tags)
         ]);
 
