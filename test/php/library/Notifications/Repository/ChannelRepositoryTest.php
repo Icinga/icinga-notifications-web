@@ -59,7 +59,7 @@ class ChannelRepositoryTest extends TestCase
     private function insertChannel(Connection $db, string $uuid, array $overrides = []): int
     {
         $db->insert('channel', array_merge([
-            'external_uuid'  => $uuid,
+            'external_uuid'  => static::transformUUIDForDB($db, $uuid),
             'name'           => 'Mail',
             'type'           => 'email',
             'changed_at'     => (int) (new DateTime())->format('Uv')

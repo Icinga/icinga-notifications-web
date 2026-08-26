@@ -167,7 +167,9 @@ class ObjectSuggestions extends Suggestions
         $this->applyRestrictions($query);
 
         try {
-            return (new ObjectSuggestionsCursor($query->getDb(), $query->assembleSelect()->distinct()))
+            $modelBehaviors = $query->getResolver()->getBehaviors($model);
+            $select = $query->assembleSelect()->distinct();
+            return (new ObjectSuggestionsCursor($query->getDb(), $select, $modelBehaviors, $columnName))
                 ->setFetchMode(PDO::FETCH_COLUMN);
         } catch (InvalidColumnException $e) {
             throw new SearchException(sprintf(t('"%s" is not a valid column'), $e->getColumn()));

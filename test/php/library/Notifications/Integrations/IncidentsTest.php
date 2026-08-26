@@ -62,7 +62,7 @@ class IncidentsTest extends TestCase
             'type' => 'email', 'name' => 'Email', 'version' => '1', 'author' => 'Test', 'config_attrs' => ''
         ]);
         $db->insert('channel', [
-            'external_uuid' => '00000000-0000-0000-0000-0000000000c1',
+            'external_uuid' => static::transformUUIDForDB($db, '00000000-0000-0000-0000-0000000000c1'),
             'name'          => 'Test',
             'type'          => 'email',
             'changed_at'    => (int) (new DateTime())->format('Uv')
@@ -372,7 +372,10 @@ class IncidentsTest extends TestCase
     private function seedContact(string $username): int
     {
         $this->db->insert('contact', [
-            'external_uuid'      => sprintf('00000000-0000-0000-0000-%012x', crc32($username)),
+            'external_uuid'      => static::transformUUIDForDB(
+                $this->db,
+                sprintf('00000000-0000-0000-0000-%012x', crc32($username)),
+            ),
             'full_name'          => $username,
             'username'           => $username,
             'default_channel_id' => self::$channelId,

@@ -2090,7 +2090,7 @@ YAML;
                 ->from('contact_address ca')
                 ->columns(['ca.id', 'ca.changed_at'])
                 ->joinLeft('contact co', 'co.id = ca.contact_id')
-                ->where(['co.external_uuid = ?' => BaseApiV1TestCase::CONTACT_UUID])
+                ->where(['co.external_uuid = ?' => static::transformUUIDForDB($db, BaseApiV1TestCase::CONTACT_UUID)])
         );
         $this->assertCount(1, $addresses, 'The contact should have exactly one seeded address');
 
@@ -2161,10 +2161,12 @@ YAML;
 
         $db->delete('contact_address');
         $db->delete('contactgroup_member');
-        $db->delete(
-            'contactgroup',
-            "external_uuid NOT IN ('" . self::GROUP_UUID . "', '" . self::GROUP_UUID_2 . "')"
-        );
+        $db->delete('contactgroup', [
+            'external_uuid NOT IN (?)' => [
+                static::transformUUIDForDB($db, self::GROUP_UUID),
+                static::transformUUIDForDB($db, self::GROUP_UUID_2),
+            ]
+        ]);
         $db->delete('contact');
 
         self::createContacts($db);
