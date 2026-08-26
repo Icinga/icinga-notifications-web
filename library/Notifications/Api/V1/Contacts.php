@@ -213,7 +213,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
             return $this->getPlural($queryFilter, $stmt);
         }
 
-        $stmt->where(['co.external_uuid = ?' => $identifier]);
+        $stmt->where(['co.external_uuid = ?' => static::transformUUIDForDB(Database::get(), $identifier)]);
 
         /** @var stdClass|false $result */
         $result = Database::get()->fetchOne($stmt);
@@ -504,6 +504,8 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
 
     public function prepareRow(stdClass $row): void
     {
+        $row->id = static::getUUIDString($row->id);
+        $row->default_channel = static::getUUIDString($row->default_channel);
         $row->groups = ContactGroups::fetchGroupIdentifiers($row->contact_id);
         $row->addresses = self::fetchContactAddresses($row->contact_id) ?: new stdClass();
 
@@ -548,7 +550,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
                 ->from('contact')
                 ->columns('id')
                 ->where([
-                    'external_uuid = ?' => $identifier,
+                    'external_uuid = ?' => static::transformUUIDForDB(Database::get(), $identifier),
                     'deleted = ?' => 'n'
                 ])
         );
@@ -780,7 +782,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
      */
     public static function fetchUserIdentifiers(int $contactgroupId): array
     {
-        return Database::get()->fetchCol(
+        $contactsUUIDs = Database::get()->fetchCol(
             (new Select())
                 ->from('contactgroup_member cgm')
                 ->columns('co.external_uuid')
@@ -788,5 +790,7 @@ class Contacts extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
                 ->where(['cgm.contactgroup_id = ?' => $contactgroupId, 'cgm.deleted = ?' => 'n'])
                 ->groupBy('co.external_uuid')
         );
+
+        return array_map(static::getUUIDString(...), $contactsUUIDs);
     }
 }

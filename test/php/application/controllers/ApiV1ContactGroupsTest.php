@@ -1273,10 +1273,12 @@ YAML;
         $db = $this->getConnection();
 
         $db->delete('contactgroup_member');
-        $db->delete(
-            'contact',
-            "external_uuid NOT IN ('" . self::CONTACT_UUID . "', '" . self::CONTACT_UUID_2 . "')"
-        );
+        $db->delete('contact', [
+            'external_uuid NOT IN (?)' => [
+                static::transformUUIDForDB($db, self::CONTACT_UUID),
+                static::transformUUIDForDB($db, self::CONTACT_UUID_2),
+            ]
+        ]);
         $db->delete('contactgroup');
 
         self::createContactGroups($db);

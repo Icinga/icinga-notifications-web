@@ -57,17 +57,21 @@ class ScheduleRepositoryTest extends TestCase
             'type' => 'email', 'name' => 'Email', 'version' => '1', 'author' => 'Test', 'config_attrs' => ''
         ]);
         $db->insert('channel', [
-            'external_uuid' => '00000000-0000-0000-0000-0000000000c1', 'name' => 'Test', 'type' => 'email',
+            'external_uuid' => static::transformUUIDForDB($db, '00000000-0000-0000-0000-0000000000c1'),
+            'name' => 'Test', 'type' => 'email',
             'changed_at' => $now
         ]);
         $channelId = (int) $db->lastInsertId();
         $db->insert('contact', [
             'full_name' => 'Test', 'username' => 'test', 'default_channel_id' => $channelId,
-            'external_uuid' => '00000000-0000-0000-0000-0000000000a1', 'changed_at' => $now
+            'external_uuid' => static::transformUUIDForDB($db, '00000000-0000-0000-0000-0000000000a1'),
+            'changed_at' => $now
         ]);
         self::$contactId = (int) $db->lastInsertId();
         $db->insert('contactgroup', [
-            'name' => 'Test Group', 'external_uuid' => '00000000-0000-0000-0000-0000000000b1', 'changed_at' => $now
+            'name' => 'Test Group',
+            'external_uuid' => static::transformUUIDForDB($db, '00000000-0000-0000-0000-0000000000b1'),
+            'changed_at' => $now
         ]);
         self::$contactgroupId = (int) $db->lastInsertId();
     }

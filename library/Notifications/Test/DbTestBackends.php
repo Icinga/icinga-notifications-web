@@ -5,8 +5,10 @@
 
 namespace Icinga\Module\Notifications\Test;
 
+use ipl\Sql\Adapter\Pgsql;
 use ipl\Sql\Connection;
 use ipl\Sql\Test\SharedDatabases;
+use Ramsey\Uuid\Uuid;
 use RuntimeException;
 
 /**
@@ -61,6 +63,15 @@ SQL;
      * @return void
      */
     abstract protected static function initializeNotificationsDb(Connection $db): void;
+
+    protected static function transformUUIDForDB(Connection $db, string $uuid): string
+    {
+        if (! $db->getAdapter() instanceof Pgsql) {
+            return Uuid::fromString($uuid)->getBytes();
+        }
+
+        return $uuid;
+    }
 
     public static function setUpSchema(Connection $db, string $driver): void
     {

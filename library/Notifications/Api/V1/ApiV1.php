@@ -15,13 +15,16 @@ use Icinga\Module\Notifications\Api\Exception\InvalidFilterParameterException;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\HttpMethod;
 use Icinga\Util\Json;
+use ipl\Sql\Adapter\Pgsql;
 use ipl\Sql\Compat\FilterProcessor;
+use ipl\Sql\Connection;
 use ipl\Sql\Select;
 use ipl\Stdlib\Filter\Condition;
 use ipl\Web\Filter\QueryString;
 use OpenApi\Attributes as OA;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Ramsey\Uuid\Exception\InvalidArgumentException;
 use Ramsey\Uuid\Uuid;
 use stdClass;
 
@@ -101,6 +104,35 @@ abstract class ApiV1 extends ApiCore
     }
 
     /**
+     * Returns a valid UUID string representation of the given value.
+     *
+     * If the provided value conforms to the UUID string format, it is returned unchanged. Otherwise, it's
+     * treated as the UUID's binary representation and converted into an Uuid instance via Uuid::fromBytes,
+     * it then returns its string format.
+     *
+     * @param string $value
+     *
+     * @return string
+     */
+    protected static function getUUIDString(string $value): string
+    {
+        if (! UUID::isValid($value)) {
+            return Uuid::fromBytes($value)->toString();
+        }
+
+        return $value;
+    }
+
+    protected static function transformUUIDForDB(Connection $db, string $uuid): string
+    {
+        if (! $db->getAdapter() instanceof Pgsql) {
+            return Uuid::fromString($uuid)->getBytes();
+        }
+
+        return $uuid;
+    }
+
+    /**
      * Create a filter from the filter string.
      *
      * @param string $queryFilter
@@ -128,7 +160,11 @@ abstract class ApiV1 extends ApiCore
                         }
 
                         if ($column === 'id') {
-                            if (! Uuid::isValid($condition->getValue())) {
+                            try {
+                                $condition->setValue(
+                                    static::transformUUIDForDB(Database::get(), $condition->getValue())
+                                );
+                            } catch (InvalidArgumentException $_) {
                                 throw new HttpBadRequestException('The given filter id is not a valid UUID');
                             }
 

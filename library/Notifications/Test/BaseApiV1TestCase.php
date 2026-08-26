@@ -9,10 +9,12 @@ use DateTime;
 use GuzzleHttp\Client;
 use Icinga\Util\Json;
 use Icinga\Web\Url;
+use ipl\Sql\Adapter\Pgsql;
 use ipl\Sql\Connection;
 use ipl\Sql\Select;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
+use Ramsey\Uuid\Uuid;
 
 class BaseApiV1TestCase extends TestCase
 {
@@ -66,14 +68,14 @@ class BaseApiV1TestCase extends TestCase
     protected static function createChannels(Connection $db): void
     {
         $db->insert('channel', [
-            'external_uuid' => self::CHANNEL_UUID,
+            'external_uuid' => static::transformUUIDForDB($db, self::CHANNEL_UUID),
             'name' => 'Test',
             'type' => 'email',
             'changed_at' => (int) (new DateTime())->format("Uv"),
         ]);
 
         $db->insert('channel', [
-            'external_uuid' => self::CHANNEL_UUID_2,
+            'external_uuid' => static::transformUUIDForDB($db, self::CHANNEL_UUID_2),
             'name' => 'Test2',
             'type' => 'webhook',
             'changed_at' => (int) (new DateTime())->format("Uv"),
@@ -82,7 +84,12 @@ class BaseApiV1TestCase extends TestCase
 
     protected static function deleteChannels(Connection $db): void
     {
-        $db->delete('channel', "external_uuid in ('" . self::CHANNEL_UUID . "', '" . self::CHANNEL_UUID_2 . "')");
+        $db->delete('channel', [
+            'external_uuid IN (?)' => [
+                static::transformUUIDForDB($db, self::CHANNEL_UUID),
+                static::transformUUIDForDB($db, self::CHANNEL_UUID_2),
+            ],
+        ]);
     }
 
     protected static function createContacts(Connection $db): void
@@ -91,7 +98,7 @@ class BaseApiV1TestCase extends TestCase
             (new Select())
                 ->from('channel')
                 ->columns(['id'])
-                ->where('external_uuid = ?', self::CHANNEL_UUID)
+                ->where('external_uuid = ?', static::transformUUIDForDB($db, self::CHANNEL_UUID))
                 ->limit(1)
         )->fetchColumn();
 
@@ -99,7 +106,7 @@ class BaseApiV1TestCase extends TestCase
             (new Select())
                 ->from('channel')
                 ->columns(['type'])
-                ->where('external_uuid = ?', self::CHANNEL_UUID)
+                ->where('external_uuid = ?', static::transformUUIDForDB($db, self::CHANNEL_UUID))
                 ->limit(1)
         )->fetchColumn();
 
@@ -107,14 +114,14 @@ class BaseApiV1TestCase extends TestCase
             'full_name' => 'Test',
             'username' => 'test',
             'default_channel_id' => $channelId,
-            'external_uuid' => self::CONTACT_UUID,
+            'external_uuid' => static::transformUUIDForDB($db, self::CONTACT_UUID),
             'changed_at' => (int) (new DateTime())->format("Uv"),
         ]);
         $db->insert('contact', [
             'full_name' => 'Test2',
             'username' => 'test2',
             'default_channel_id' => $channelId,
-            'external_uuid' => self::CONTACT_UUID_2,
+            'external_uuid' => static::transformUUIDForDB($db, self::CONTACT_UUID_2),
             'changed_at' => (int) (new DateTime())->format("Uv"),
         ]);
 
@@ -122,7 +129,12 @@ class BaseApiV1TestCase extends TestCase
             (new Select())
                 ->from('contact')
                 ->columns('id')
-                ->where(['external_uuid IN (?)' => [self::CONTACT_UUID, self::CONTACT_UUID_2]])
+                ->where([
+                    'external_uuid IN (?)' => [
+                        static::transformUUIDForDB($db, self::CONTACT_UUID),
+                        static::transformUUIDForDB($db, self::CONTACT_UUID_2),
+                    ]
+                ])
         )->fetchAll(\PDO::FETCH_COLUMN);
 
         foreach ($contactIds as $contactId) {
@@ -138,26 +150,36 @@ class BaseApiV1TestCase extends TestCase
     protected static function deleteContacts(Connection $db): void
     {
         $db->delete('contact_address');
-        $db->delete('contact', "external_uuid in ('" . self::CONTACT_UUID . "', '" . self::CONTACT_UUID_2 . "')");
+        $db->delete('contact', [
+            'external_uuid IN (?)' => [
+                static::transformUUIDForDB($db, self::CONTACT_UUID),
+                static::transformUUIDForDB($db, self::CONTACT_UUID_2),
+            ]
+        ]);
     }
 
     protected static function createContactGroups(Connection $db): void
     {
         $db->insert('contactgroup', [
             'name' => 'Test',
-            'external_uuid' => self::GROUP_UUID,
+            'external_uuid' => static::transformUUIDForDB($db, self::GROUP_UUID),
             'changed_at' => (int) (new DateTime())->format("Uv"),
         ]);
         $db->insert('contactgroup', [
             'name' => 'Test2',
-            'external_uuid' => self::GROUP_UUID_2,
+            'external_uuid' => static::transformUUIDForDB($db, self::GROUP_UUID_2),
             'changed_at' => (int) (new DateTime())->format("Uv"),
         ]);
     }
 
     protected static function deleteContactGroups(Connection $db): void
     {
-        $db->delete('contactgroup', "external_uuid in ('" . self::GROUP_UUID . "', '" . self::GROUP_UUID_2 . "')");
+        $db->delete('contactgroup', [
+            'external_uuid IN (?)' => [
+                static::transformUUIDForDB($db, self::GROUP_UUID),
+                static::transformUUIDForDB($db, self::GROUP_UUID_2),
+            ],
+        ]);
     }
 
     protected function sendRequest(

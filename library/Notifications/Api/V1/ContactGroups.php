@@ -142,7 +142,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
             return $this->getPlural($queryFilter, $stmt);
         }
 
-        $stmt->where(['external_uuid = ?' => $identifier]);
+        $stmt->where(['external_uuid = ?' => static::transformUUIDForDB(Database::get(), $identifier)]);
 
         /** @var stdClass|false $result */
         $result = Database::get()->fetchOne($stmt);
@@ -419,7 +419,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
      */
     public static function fetchGroupIdentifiers(int $contactId): array
     {
-        return Database::get()->fetchCol(
+        $groupsUUIDs = Database::get()->fetchCol(
             (new Select())
                 ->from('contactgroup_member cgm')
                 ->columns('cg.external_uuid')
@@ -427,6 +427,8 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
                 ->where(['cgm.contact_id = ?' => $contactId, 'cgm.deleted = ?' => 'n'])
                 ->groupBy('cg.external_uuid')
         );
+
+        return array_map(static::getUUIDString(...), $groupsUUIDs);
     }
 
     /**
@@ -444,7 +446,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
                 ->from('contactgroup')
                 ->columns('id')
                 ->where([
-                    'external_uuid = ?' => $identifier,
+                    'external_uuid = ?' => static::transformUUIDForDB(Database::get(), $identifier),
                     'deleted = ?' => 'n'
                 ])
         );
@@ -582,6 +584,7 @@ class ContactGroups extends ApiV1 implements RequestHandlerInterface, EndpointIn
 
     public function prepareRow(stdClass $row): void
     {
+        $row->id = static::getUUIDString($row->id);
         $row->users = Contacts::fetchUserIdentifiers($row->contactgroup_id);
 
         unset($row->contactgroup_id);

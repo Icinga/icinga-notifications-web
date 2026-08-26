@@ -59,7 +59,8 @@ class ContactRepositoryTest extends TestCase
             'type' => 'email', 'name' => 'Email', 'version' => '1', 'author' => 'Test', 'config_attrs' => ''
         ]);
         $db->insert('channel', [
-            'external_uuid' => '00000000-0000-0000-0000-0000000000c1', 'name' => 'Test', 'type' => 'email',
+            'external_uuid' => static::transformUUIDForDB($db, '00000000-0000-0000-0000-0000000000c1'),
+            'name' => 'Test', 'type' => 'email',
             'changed_at' => $now
         ]);
         self::$channelId = (int) $db->lastInsertId();
@@ -196,7 +197,7 @@ class ContactRepositoryTest extends TestCase
             externalUuid: $uuid
         ));
 
-        $this->assertSame($uuid, (new ContactRepository($db))->find($id)->external_uuid);
+        $this->assertSame($uuid, (string) (new ContactRepository($db))->find($id)->external_uuid);
     }
 
     #[DataProvider('sharedDatabases')]

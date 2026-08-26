@@ -55,7 +55,8 @@ class ContactGroupRepositoryTest extends TestCase
             'type' => 'email', 'name' => 'Email', 'version' => '1', 'author' => 'Test', 'config_attrs' => ''
         ]);
         $db->insert('channel', [
-            'external_uuid' => '00000000-0000-0000-0000-0000000000c1', 'name' => 'Test', 'type' => 'email',
+            'external_uuid' => static::transformUUIDForDB($db, '00000000-0000-0000-0000-0000000000c1'),
+            'name' => 'Test', 'type' => 'email',
             'changed_at' => $now
         ]);
         $channelId = (int) $db->lastInsertId();
@@ -65,7 +66,8 @@ class ContactGroupRepositoryTest extends TestCase
         foreach ([1, 2, 3] as $i) {
             $db->insert('contact', [
                 'full_name' => "Contact $i", 'username' => "contact$i", 'default_channel_id' => $channelId,
-                'external_uuid' => sprintf('00000000-0000-0000-0000-00000000000%d', $i), 'changed_at' => $now
+                'external_uuid' => static::transformUUIDForDB($db, '00000000-0000-0000-0000-00000000000' . $i),
+                'changed_at' => $now
             ]);
             self::$contactIds[] = (int) $db->lastInsertId();
         }
@@ -122,7 +124,7 @@ class ContactGroupRepositoryTest extends TestCase
         $uuid = '00000000-0000-4000-8000-0000000000e1';
         $id = (new ContactGroupRepository($db))->create(new ContactGroupData(null, 'Group A', [], $uuid));
 
-        $this->assertSame($uuid, (new ContactGroupRepository($db))->find($id)->external_uuid);
+        $this->assertSame($uuid, (string) (new ContactGroupRepository($db))->find($id)->external_uuid);
     }
 
     #[DataProvider('sharedDatabases')]

@@ -10,10 +10,12 @@ use Icinga\Module\Notifications\Common\Collection;
 use Icinga\Module\Notifications\Common\Model;
 use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
+use ipl\Orm\Behavior\UUID;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
 use ipl\Stdlib\Filter;
+use Ramsey\Uuid\UuidInterface;
 
 /**
  * @property int $id
@@ -22,7 +24,7 @@ use ipl\Stdlib\Filter;
  * @property int $default_channel_id
  * @property DateTime $changed_at
  * @property bool $deleted
- * @property ?string $external_uuid
+ * @property ?UuidInterface $external_uuid
  *
  * @property Query<Channel>|Channel $channel
  * @property Query<Incident>|Collection<Incident> $incident
@@ -79,6 +81,7 @@ class Contact extends Model
     {
         $behaviors->add(new MillisecondTimestamp(['changed_at']));
         $behaviors->add(new BoolCast(['deleted']));
+        $behaviors->add(new UUID(['external_uuid']));
     }
 
     public function getDefaultSort(): array

@@ -115,7 +115,7 @@ class Channels extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
             return $this->getPlural($queryFilter, $stmt);
         }
 
-        $stmt->where(['external_uuid = ?' => $identifier]);
+        $stmt->where(['external_uuid = ?' => static::transformUUIDForDB(Database::get(), $identifier)]);
 
         /** @var stdClass|false $result */
         $result = Database::get()->fetchOne($stmt);
@@ -194,7 +194,7 @@ class Channels extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
                 ->from('channel')
                 ->columns('id')
                 ->where([
-                    'external_uuid = ?' => $channelIdentifier,
+                    'external_uuid = ?' => static::transformUUIDForDB(Database::get(), $channelIdentifier),
                     'deleted = ?' => 'n'
                 ])
         );
@@ -227,6 +227,7 @@ class Channels extends ApiV1 implements RequestHandlerInterface, EndpointInterfa
 
     public function prepareRow(stdClass $row): void
     {
+        $row->id = static::getUUIDString($row->id);
         $row->config = Json::decode($row->config, true);
         unset($row->channel_id);
     }
