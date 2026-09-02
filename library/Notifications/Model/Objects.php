@@ -8,6 +8,7 @@ namespace Icinga\Module\Notifications\Model;
 use Icinga\Module\Notifications\Common\Collection;
 use Icinga\Module\Notifications\Common\Model;
 use Icinga\Module\Notifications\Model\Behavior\IdTagAggregator;
+use Icinga\Module\Notifications\Model\Behavior\SourceAggregator;
 use ipl\Orm\Behavior\Binary;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Query;
@@ -17,14 +18,14 @@ use ipl\Orm\Relations;
  * Object
  *
  * @property string $id
- * @property int $source_id
  * @property string $name
  * @property ?string $url
+ * @property Source[] $sources
  *
  * @property Query<Incident>|Collection<Incident> $incident
  * @property Query<ObjectIdTag>|Collection<ObjectIdTag> $object_id_tag
  * @property Query<Tag>|Collection<Tag> $tag
- * @property Query<Source>|Source $source
+ * @property Query<Source>|Collection<Source> $source
  * @property array<string, string> $id_tags
  */
 class Objects extends Model
@@ -42,7 +43,6 @@ class Objects extends Model
     public function getColumns(): array
     {
         return [
-            'source_id',
             'name',
             'url'
         ];
@@ -68,6 +68,7 @@ class Objects extends Model
     {
         $behaviors->add(new Binary(['id']));
         $behaviors->add(new IdTagAggregator());
+        $behaviors->add(new SourceAggregator());
     }
 
     public function createRelations(Relations $relations): void
@@ -78,6 +79,8 @@ class Objects extends Model
         $relations->hasMany('object_id_tag', ObjectIdTag::class);
         $relations->hasMany('tag', Tag::class);
 
-        $relations->belongsTo('source', Source::class)->setJoinType('LEFT');
+        $relations->belongsToMany('source', Source::class)
+            ->through('object_source')
+            ->setJoinType('LEFT');
     }
 }
