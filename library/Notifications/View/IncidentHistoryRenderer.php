@@ -5,6 +5,7 @@
 
 namespace Icinga\Module\Notifications\View;
 
+use Icinga\Module\Notifications\Common\EscalationConditionDescriber;
 use Icinga\Module\Notifications\Common\Icons;
 use Icinga\Module\Notifications\Common\IncidentHistoryType;
 use Icinga\Module\Notifications\Model\IncidentHistory;
@@ -259,12 +260,13 @@ class IncidentHistoryRenderer implements ItemRenderer
                 break;
             case IncidentHistoryType::ESCALATION_TRIGGERED:
                 if (isset($item->rule->name)) {
-                    // TODO: No name is no reason to claim an unknown escalation, describe conditions instead
-                    if (isset($item->rule_escalation->name)) {
+                    if (isset($item->rule_escalation->id)) {
                         $message = sprintf(
                             $this->translate('Rule %s reached escalation %s'),
                             $item->rule->name,
+                            // An escalation is only named optionally, its condition describes it otherwise
                             $item->rule_escalation->name
+                                ?? EscalationConditionDescriber::describe($item->rule_escalation->condition)
                         );
                     } else {
                         $message = sprintf(
