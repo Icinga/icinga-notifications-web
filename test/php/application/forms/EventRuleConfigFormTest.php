@@ -48,7 +48,7 @@ class EventRuleConfigFormTest extends TestCase
         $requestStub->method('getUploadedFiles')->willReturn([]);
         $requestStub->method('getParsedBody')->willReturn([
             'id' => 1337,
-            'source' => 1338,
+            'source_type' => 'icinga2',
             'name' => 'Test'
         ]);
 

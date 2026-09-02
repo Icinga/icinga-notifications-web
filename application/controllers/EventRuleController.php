@@ -15,7 +15,6 @@ use Icinga\Module\Notifications\Common\SourceHookLocator;
 use Icinga\Module\Notifications\Data\NotificationConfigProvider;
 use Icinga\Module\Notifications\Forms\EventRuleConfigForm;
 use Icinga\Module\Notifications\Forms\EventRuleForm;
-use Icinga\Module\Notifications\Forms\SourceForm;
 use Icinga\Module\Notifications\Hook\V2\SourceHook;
 use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Model\Source;
@@ -127,7 +126,7 @@ class EventRuleController extends CompatController
                         $this->addPart($form->prepareObjectFilterUpdate($this->session->get('object_filter')));
                         $this->addPart($form->prepareConfigUpdate(
                             $this->session->get('name'),
-                            $this->session->get('source')
+                            $this->session->get('source_type')
                         ));
                         $this->addPart(Html::tag('div', ['id' => 'event-rule-config-name'], [
                             Html::tag('h2', $this->session->get('name')),
@@ -140,7 +139,7 @@ class EventRuleController extends CompatController
                     } else {
                         $this->addPart($form->prepareConfigUpdate(
                             $this->session->get('name'),
-                            $this->session->get('source')
+                            $this->session->get('source_type')
                         ));
                         $this->addPart($form->prepareObjectFilterUpdate($this->session->get('object_filter')));
                     }
@@ -155,15 +154,15 @@ class EventRuleController extends CompatController
                     $form->setRule($rule);
 
                     $this->session->set('name', $rule->name);
-                    $this->session->set('source', $rule->source_id);
+                    $this->session->set('source_type', $rule->source_type);
                     $this->session->set('object_filter', $rule->object_filter ?? '');
                 } else {
                     $name = $this->params->getRequired('name');
-                    $source = (int) $this->params->getRequired('source');
-                    $form->populate(['name' => $name, 'source' => $source]);
+                    $source = $this->params->getRequired('source_type');
+                    $form->populate(['name' => $name, 'source_type' => $source]);
 
                     $this->session->set('name', $name);
-                    $this->session->set('source', $source);
+                    $this->session->set('source_type', $source);
                     $this->session->set('object_filter', '');
                 }
             })
@@ -204,7 +203,6 @@ class EventRuleController extends CompatController
     {
         $ruleId = (int) $this->params->getRequired('id');
         $filter = $this->params->get('object_filter', $this->session->get('object_filter'));
-        $hook = $this->resolveSourceHook($ruleId);
 
         $parsedFilter = null;
         if ($filter) {
@@ -230,6 +228,8 @@ class EventRuleController extends CompatController
                 ));
             }
         }
+
+        $hook = $this->resolveSourceHook($ruleId, (bool) ($parsedFilter['assisted'] ?? false));
 
         $editor = (new SearchEditor())
             ->addAttributes(Attributes::create(['class' => 'event-rule-filter']))
@@ -317,11 +317,17 @@ class EventRuleController extends CompatController
             };
         }
 
-        $editor->on(Form::ON_SUBMIT, function (SearchEditor $form) use ($ruleId, $getJsonPaths) {
+        $assisted = $hook !== null;
+        $editor->on(Form::ON_SUBMIT, function (SearchEditor $form) use ($ruleId, $getJsonPaths, $assisted) {
             $filter = $form->getFilter();
             $this->session->set(
                 'object_filter',
-                (new RuleSerializer($filter, $getJsonPaths($filter), $form->getValue('filter_name')))->getJson()
+                (new RuleSerializer(
+                    $filter,
+                    $getJsonPaths($filter),
+                    $assisted,
+                    $form->getValue('filter_name')
+                ))->getJson()
             );
             $this->redirectNow(Links::eventRule($ruleId)->setParam('_filterOnly'));
         })->handleRequest($this->getServerRequest());
@@ -349,7 +355,7 @@ class EventRuleController extends CompatController
 
     public function suggestAction(): void
     {
-        $hook = $this->resolveSourceHook((int) $this->params->getRequired('id'));
+        $hook = $this->resolveSourceHook((int) $this->params->getRequired('id'), true);
         $requestData = SearchSuggestions::parseRequest($this->getServerRequest()) ?? [];
 
         $type = $requestData['term']['type'] ?? null;
@@ -382,37 +388,31 @@ class EventRuleController extends CompatController
         $this->getDocument()->addHtml($suggestions);
     }
 
-    protected function resolveSourceHook(int $ruleId): ?SourceHook
+    protected function resolveSourceHook(int $ruleId, bool $required): ?SourceHook
     {
-        $source = null;
-        if ($ruleId !== -1) {
-            $source = Rule::on(Database::get())
-                ->columns(['id' => 'source.id', 'type' => 'source.type'])
+        $type = $this->session->get('source_type');
+        if ($type === null && $ruleId !== -1) {
+            $type = Rule::on(Database::get())
+                ->columns(['source_type'])
                 ->filter(Filter::equal('id', $ruleId))
-                ->first();
-        } elseif (isset($this->session->source)) {
-            /** @var ?Source $source */
-            $source = Source::on(Database::get())
-                ->columns(['id', 'type'])
-                ->filter(Filter::equal('id', $this->session->source))
-                ->first();
+                ->first()?->source_type;
         }
 
-        if ($source === null) {
+        if ($type === null) {
             $this->httpNotFound($this->translate('Rule not found'));
         }
 
-        if ($source->type === SourceForm::TYPE_GENERIC) {
-            return null;
-        }
+        $hook = SourceHookLocator::forType($type);
 
-        $hook = SourceHookLocator::forType($source->type);
+        if (! $required) {
+            return $hook;
+        }
 
         if ($hook === null) {
             $this->httpNotFound(sprintf($this->translate(
                 'No source integration available. Either the module supporting sources of type "%s" is not'
                 . ' enabled or you have insufficient privileges. Please contact your system administrator.'
-            ), $source->type));
+            ), $type));
         }
 
         return $hook;
@@ -424,22 +424,22 @@ class EventRuleController extends CompatController
 
         $eventRuleForm = (new EventRuleForm())
             ->setCsrfCounterMeasureId(Session::getSession()->getId())
-            ->setAvailableSources(
-                Database::get()->fetchPairs(
-                    Source::on(Database::get())->columns(['id', 'name'])->assembleSelect()
+            ->setAvailableSourceTypes(
+                Database::get()->fetchCol(
+                    Source::on(Database::get())->columns(['type'])->assembleSelect()->distinct()
                 )
             )
             ->populate([
                 'name' => $this->session->get('name'),
-                'source' => $this->session->get('source')
+                'source_type' => $this->session->get('source_type')
             ])
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->on(Form::ON_SUBMIT, function ($form) use ($ruleId) {
                 $this->session->set('name', $form->getValue('name'));
 
-                $newSource = (int) $form->getValue('source');
-                if ($newSource !== $this->session->get('source')) {
-                    $this->session->set('source', $newSource);
+                $newSource = $form->getValue('source_type');
+                if ($newSource !== $this->session->get('source_type')) {
+                    $this->session->set('source_type', $newSource);
                     $this->session->set('object_filter', '');
                 }
 

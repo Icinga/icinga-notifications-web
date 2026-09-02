@@ -26,17 +26,22 @@ class RuleSerializer
     /** @var array<string, string[]> JSON paths keyed by column name */
     protected array $jsonPaths;
 
+    /** @var bool Whether the filter was created with a source integration */
+    protected bool $assisted;
+
     /**
      * Create an object that can be used to serialize a rule to JSON
      *
      * @param Filter\Rule $filter
      * @param array<string, string[]> $jsonPaths JSON paths keyed by column name
+     * @param bool $assisted Whether the filter was created with a source integration
      * @param ?string $filterName The name of the filter
      */
-    public function __construct(Filter\Rule $filter, array $jsonPaths, ?string $filterName = null)
+    public function __construct(Filter\Rule $filter, array $jsonPaths, bool $assisted, ?string $filterName = null)
     {
         $this->filter = $filter;
         $this->jsonPaths = $jsonPaths;
+        $this->assisted = $assisted;
         $this->filterName = $filterName;
     }
 
@@ -50,8 +55,9 @@ class RuleSerializer
     public function getJson(): ?string
     {
         $result = [
-            'version' => self::VERSION,
-            'qs'      => QueryString::render($this->filter),
+            'version'  => self::VERSION,
+            'qs'       => QueryString::render($this->filter),
+            'assisted' => $this->assisted,
         ];
 
         if ($this->filterName) {

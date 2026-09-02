@@ -26,12 +26,6 @@ class SourceForm extends CompatForm
 {
     use CsrfCounterMeasure;
 
-    /** @var string The generic source type */
-    public const TYPE_GENERIC = 'generic';
-
-    /** @var string The type for sources with an integration */
-    private const TYPE_INTEGRATED = 'integrated';
-
     /**
      * Set the source to populate the form with
      *
@@ -55,7 +49,7 @@ class SourceForm extends CompatForm
     {
         return new SourceData(
             $this->getValue('id'),
-            $this->getValue('type', self::TYPE_GENERIC),
+            $this->getValue('type'),
             $this->getValue('name'),
             $this->getElement('credentials')->getValue('listener_username') ?: null,
             $this->getElement('credentials')->getValue('listener_password') ?: null,
@@ -94,10 +88,10 @@ class SourceForm extends CompatForm
             'p',
             Attributes::create(['class' => 'description']),
             Text::create($this->translate(
-                'Sources are the most vital part of Icinga Notifications. They submit events that will be'
-                . ' processed to notify users about incidents. You can either configure sources that provide an'
-                . ' integration in Icinga Web, or use the generic type for sources that communicate directly with'
-                . ' the Icinga Notifications API.'
+                'Sources are the most vital part of Icinga Notifications.'
+                . ' They submit events that will be processed to notify users about incidents.'
+                . ' You configure here how they relate to event rules and their credentials they will present to'
+                . ' communicate with the Icinga Notifications API.'
             ))
         ));
 
@@ -110,47 +104,30 @@ class SourceForm extends CompatForm
                 'disabled'  => $locked
             ]
         );
-        $this->addElement(
-            'select',
-            'source_type',
-            [
-                'ignore'    => true,
-                'required'  => true,
-                'label'     => $this->translate('Source Type'),
-                'value'     => self::TYPE_GENERIC,
-                'disabled'  => $locked,
-                'class'     => 'autosubmit',
-                'options'   => [
-                    self::TYPE_GENERIC    => $this->translate('Generic', 'notifications.source.type'),
-                    self::TYPE_INTEGRATED => $this->translate('Integrated', 'notifications.source.type')
-                ]
-            ]
-        );
 
-        if ($this->getPopulatedValue('source_type') === self::TYPE_INTEGRATED) {
-            $this->addHtml(
-                new HtmlElement(
-                    'p',
-                    Attributes::create(['class' => 'description']),
-                    Text::create(
-                        $this->translate(
-                            'Enter the source identifier as stated in the integration\'s documentation.'
-                            . ' Note that integrated sources usually provide their own configuration interface for'
-                            . ' notifications, which is the recommended way to set them up.'
-                        )
+        $this->addHtml(
+            new HtmlElement(
+                'p',
+                Attributes::create(['class' => 'description']),
+                Text::create(
+                    $this->translate(
+                        'The source type is used to establish a link to event rules.'
+                        . ' Enter the value as stated in the source\'s documentation.'
+                        . ' Note that integrated sources usually provide their own configuration interface'
+                        . ' for notifications, which is the recommended way to set them up.'
                     )
                 )
-            );
-            $this->addElement(
-                'text',
-                'type',
-                [
-                    'required'  => true,
-                    'label'     => $this->translate('Source Identifier'),
-                    'disabled'  => $locked
-                ]
-            );
-        }
+            )
+        );
+        $this->addElement(
+            'text',
+            'type',
+            [
+                'required'  => true,
+                'label'     => $this->translate('Source Type'),
+                'disabled'  => $locked
+            ]
+        );
 
         $this->addElement(
             'select',
@@ -334,7 +311,6 @@ class SourceForm extends CompatForm
             'locked' => $source->locked ?: null,
             'name' => $source->name,
             'type' => $source->type,
-            'source_type' => $source->type === self::TYPE_GENERIC ? self::TYPE_GENERIC : self::TYPE_INTEGRATED,
             'auth_type' => $source->listener_username === null ? 'certificate' : 'password',
             'credentials' => [
                 'listener_username' => $source->listener_username,
