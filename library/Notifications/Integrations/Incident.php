@@ -8,35 +8,116 @@ namespace Icinga\Module\Notifications\Integrations;
 use DateTime;
 use Generator;
 use Icinga\Module\Notifications\Common\EntityManager;
+use Icinga\Module\Notifications\Integrations\Exception\IncidentNotFoundException;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Incident as IncidentModel;
 use Icinga\Module\Notifications\Model\IncidentContact;
 use Icinga\Module\Notifications\Model\IncidentHistory;
+use Icinga\User;
 use InvalidArgumentException;
+use ipl\Orm\Query;
 use ipl\Sql\Connection;
+use ipl\Sql\Expression;
 use ipl\Stdlib\Filter;
+use LogicException;
 
 /**
  * Manage an incident's recipients and read its state
  */
 class Incident
 {
-    /** @var IncidentModel The managed incident */
-    private IncidentModel $incident;
+    /** @var ?IncidentModel The managed incident, null if it wasn't fetched yet */
+    private ?IncidentModel $incident = null;
+
+    /** @var ?Query<IncidentModel> The query to lazy load the incident */
+    private ?Query $query = null;
 
     /** @var Connection The database connection to use */
     private Connection $db;
 
-    /**
-     * Create a new wrapper for the given model
-     *
-     * @param IncidentModel $incident
-     * @param Connection $db The connection to read and persist through
-     */
-    public function __construct(IncidentModel $incident, Connection $db)
+    private function __construct()
     {
-        $this->incident = $incident;
-        $this->db = $db;
+    }
+
+    /**
+     * Create an instance from a query that should return one incident
+     *
+     * If the query does not return an incident, calling any function on the created instance throws an
+     * {@see IncidentNotFoundException}
+     *
+     * @param Query<IncidentModel> $query
+     *
+     * @return static
+     */
+    public static function fromQuery(Query $query): static
+    {
+        $incident = new static();
+        $incident->query = $query;
+        $incident->db = $query->getDb();
+
+        return $incident;
+    }
+
+    /**
+     * Create an instance from an {@see IncidentModel}
+     *
+     * Instances created with this factory will never throw an {@see IncidentNotFoundException}
+     *
+     * @param IncidentModel $model
+     * @param Connection $db
+     *
+     * @return static
+     */
+    public static function fromModel(IncidentModel $model, Connection $db): static
+    {
+        $incident = new static();
+        $incident->incident = $model;
+        $incident->db = $db;
+
+        return $incident;
+    }
+
+    /**
+     * Get the given user's role for the incident, null if the user has no role, throws if no matching incident exists
+     *
+     * @param User $user
+     *
+     * @return 'manager'|'subscriber'|'recipient'|null
+     *
+     * @throws IncidentNotFoundException If the query passed to {@see static::fromQuery()} has no result
+     */
+    public function getRole(User $user): ?string
+    {
+        if ($this->incident === null) {
+            $incidentContactTable = (new IncidentContact())->getTableName();
+            $contactTable = (new Contact())->getTableName();
+            $query = $this->consumeQuery()
+                ->withColumns(['role' =>
+                    new Expression(
+                        "(SELECT ic.role FROM $incidentContactTable AS ic"
+                        . " JOIN $contactTable AS c ON ic.contact_id = c.id"
+                        . " WHERE c.username = ? AND c.deleted = 'n' AND ic.incident_id = %s)",
+                        ['id'],
+                        $user->getUsername()
+                    )
+                ]);
+
+            $this->incident = $query->first();
+            if ($this->incident === null) {
+                throw new IncidentNotFoundException('No matching incident was found');
+            }
+
+            return $this->incident->role;
+        } else {
+            return IncidentContact::on($this->db)
+                ->columns('role')
+                ->filter(Filter::all(
+                    Filter::equal('incident_id', $this->incident()->id),
+                    Filter::equal('contact.username', $user->getUsername())
+                ))
+                ->first()
+                ?->role;
+        }
     }
 
     /**
@@ -48,6 +129,7 @@ class Incident
      *
      * @return $this
      *
+     * @throws IncidentNotFoundException If the query passed to {@see static::fromQuery()} has no result
      * @throws InvalidArgumentException If no contact with that username exists
      */
     public function addManager(string $username): static
@@ -66,6 +148,7 @@ class Incident
      *
      * @return $this
      *
+     * @throws IncidentNotFoundException If the query passed to {@see static::fromQuery()} has no result
      * @throws InvalidArgumentException If no contact with that username exists
      */
     public function addSubscriber(string $username): static
@@ -84,6 +167,7 @@ class Incident
      *
      * @return $this
      *
+     * @throws IncidentNotFoundException If the query passed to {@see static::fromQuery()} has no result
      * @throws InvalidArgumentException If no contact with that username exists
      */
     public function removeManager(string $username): static
@@ -102,6 +186,7 @@ class Incident
      *
      * @return $this
      *
+     * @throws IncidentNotFoundException If the query passed to {@see static::fromQuery()} has no result
      * @throws InvalidArgumentException If no contact with that username exists
      */
     public function removeSubscriber(string $username): static
@@ -122,53 +207,65 @@ class Incident
     /**
      * Yield each active subscriber of the incident
      *
-     * @return Generator<int, array{
+     * @return array<int, array{
      *     name: string,
      *     username: ?string,
      *     role: 'manager'|'subscriber',
      *     roleChangedAt: DateTime}>
+     *
+     * @throws IncidentNotFoundException If the query passed to {@see static::fromQuery()} has no result
      */
-    public function getSubscribers(): Generator
+    public function getSubscribers(): array
     {
-        foreach ($this->resolveRecipients(['manager', 'subscriber']) as $recipient) {
-            yield [
-                'name'          => $recipient['name'],
-                'username'      => $recipient['username'],
-                'role'          => $recipient['role'],
-                'roleChangedAt' => $recipient['roleChangedAt'],
-            ];
-        }
+        return array_map(
+            function ($recipient) {
+                return [
+                    'name'          => $recipient['name'],
+                    'username'      => $recipient['username'],
+                    'role'          => $recipient['role'],
+                    'roleChangedAt' => $recipient['roleChangedAt']
+                ];
+            },
+            $this->resolveRecipients(['manager', 'subscriber'])
+        );
     }
 
     /**
      * Yield each configured recipient of the incident
      *
-     * @return Generator<int, array{
+     * @return array<int, array{
      *     type: 'contact'|'contactgroup'|'schedule',
      *     name: string,
      *     username: ?string,
      *     roleChangedAt: DateTime}>
+     *
+     * @throws IncidentNotFoundException If the query passed to {@see static::fromQuery()} has no result
      */
-    public function getRecipients(): Generator
+    public function getRecipients(): array
     {
-        foreach ($this->resolveRecipients(['recipient']) as $recipient) {
-            yield [
-                'type'          => $recipient['type'],
-                'name'          => $recipient['name'],
-                'username'      => $recipient['username'],
-                'roleChangedAt' => $recipient['roleChangedAt']
-            ];
-        }
+        return array_map(
+            function ($recipient) {
+                return [
+                    'type'          => $recipient['type'],
+                    'name'          => $recipient['name'],
+                    'username'      => $recipient['username'],
+                    'roleChangedAt' => $recipient['roleChangedAt']
+                ];
+            },
+            $this->resolveRecipients(['recipient'])
+        );
     }
 
     /**
      * Get whether the incident is muted
      *
      * @return bool
+     *
+     * @throws IncidentNotFoundException If the query passed to {@see static::fromQuery()} has no result
      */
     public function isMuted(): bool
     {
-        return $this->incident->mute_reason !== null;
+        return $this->incident()->mute_reason !== null;
     }
 
     /**
@@ -202,7 +299,7 @@ class Incident
         /** @var ?IncidentContact $entry */
         $entry = IncidentContact::on($this->db)
             ->filter(Filter::all(
-                Filter::equal('incident_id', $this->incident->id),
+                Filter::equal('incident_id', $this->incident()->id),
                 Filter::equal('contact_id', $contactId)
             ))
             ->first()
@@ -231,7 +328,7 @@ class Incident
             ->with(['contact', 'contactgroup', 'schedule'])
             ->filter(
                 Filter::all(
-                    Filter::equal('incident_id', $this->incident->id),
+                    Filter::equal('incident_id', $this->incident()->id),
                     Filter::equal('role', $roles)
                 )
             );
@@ -296,7 +393,7 @@ class Incident
             (new EntityManager($this->db))->save($existing);
         } else {
             $incidentContact = (new IncidentContact())->setNew();
-            $incidentContact->incident_id = $this->incident->id;
+            $incidentContact->incident_id = $this->incident()->id;
             $incidentContact->contact_id = $contact->id;
             $incidentContact->role = $role;
             (new EntityManager($this->db))->save($incidentContact);
@@ -319,12 +416,54 @@ class Incident
     private function addRoleChangedHistory(int $contactId, ?string $oldRole, ?string $newRole): void
     {
         $history = (new IncidentHistory())->setNew();
-        $history->incident_id = $this->incident->id;
+        $history->incident_id = $this->incident()->id;
         $history->contact_id = $contactId;
         $history->type = 'recipient_role_changed';
         $history->old_recipient_role = $oldRole;
         $history->new_recipient_role = $newRole;
         $history->time = new DateTime();
         (new EntityManager($this->db))->save($history);
+    }
+
+    /**
+     * Fetch the incident lazily and return it
+     *
+     * @return IncidentModel
+     *
+     * @throws IncidentNotFoundException
+     */
+    private function incident(): IncidentModel
+    {
+        if ($this->incident === null) {
+            $this->incident = $this->consumeQuery()->first();
+        }
+
+        if ($this->incident === null) {
+            throw new IncidentNotFoundException('No matching incident was found');
+        }
+
+        return $this->incident;
+    }
+
+    /**
+     * Single use getter for the query to lazy load the incident
+     *
+     * @return Query<IncidentModel>
+     *
+     * @throws LogicException If the query has already been consumed
+     */
+    private function consumeQuery(): Query
+    {
+        if ($this->query === null) {
+            throw new LogicException(
+                'Cannot fetch the incident again, the query has already been consumed.'
+                . 'An earlier call probably failed with an IncidentNotFoundException.'
+            );
+        }
+
+        $query = $this->query;
+        $this->query = null;
+
+        return $query;
     }
 }

@@ -10,15 +10,18 @@ use Icinga\Module\Notifications\Integrations\Incident;
 use Icinga\Module\Notifications\Integrations\Incidents;
 use Icinga\Module\Notifications\Model\Incident as IncidentModel;
 use Icinga\Module\Notifications\Test\DbTestBackends;
-use Icinga\User;
+use InvalidArgumentException;
 use ipl\Orm\Query;
 use ipl\Sql\Adapter\Pgsql;
 use ipl\Sql\Connection;
 use ipl\Sql\Test\SharedDatabases\TransactionIsolation;
 use ipl\Sql\Test\TestConnection;
+use ipl\Stdlib\Filter\All;
+use ipl\Stdlib\Filter\Any;
 use ipl\Stdlib\Filter\Chain;
 use ipl\Stdlib\Filter\Condition;
 use ipl\Stdlib\Filter\Equal;
+use ipl\Stdlib\Filter\Rule;
 use ipl\Stdlib\Filter\Unlike;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -30,10 +33,7 @@ use ReflectionProperty;
  *
  * The tests that execute a query run against real databases — once for MySQL and once for PostgreSQL (see
  * {@see DbTestBackends} / `#[DataProvider('sharedDatabases')]`). Each of them runs inside its own transaction which is
- * rolled back afterwards, so the incidents, objects it seeds don't leak into the next test. The
- * prerequisite channel a contact requires is seeded once per driver in {@see self::initializeNotificationsDb()} and
- * its id captured into {@see self::$channelId} (the id can't be assumed as rolled-back transactions still advance
- * the auto-increment).
+ * rolled back afterwards, so the incidents and objects it seeds don't leak into the next test.
  *
  * The tests that only assert on the filter {@see Incidents} constructs don't need a database at all and use a
  * {@see TestConnection} instead.
@@ -43,52 +43,28 @@ class IncidentsTest extends TestCase
 {
     use DbTestBackends;
 
-    /** @var int Id of the channel seeded per driver (auto-increment drifts across rolled-back transactions) */
-    private static int $channelId;
-
     /**
      * Object ids seeded into the current test's database, keyed by object id
      *
-     * @var array<int, array<string, true>>
+     * @var array<string, true>
      */
     private array $seededObjects = [];
 
     /** @var Connection The database of the current test, set by every test using the shared databases */
     private Connection $db;
 
+    /**
+     * Nothing has to exist before a test's transaction starts, every test seeds what it requires itself
+     */
     protected static function initializeNotificationsDb(Connection $db): void
     {
-        $db->insert('available_channel_type', [
-            'type' => 'email', 'name' => 'Email', 'version' => '1', 'author' => 'Test', 'config_attrs' => ''
-        ]);
-        $db->insert('channel', [
-            'external_uuid' => static::transformUUIDForDB($db, '00000000-0000-0000-0000-0000000000c1'),
-            'name'          => 'Test',
-            'type'          => 'email',
-            'changed_at'    => (int) (new DateTime())->format('Uv')
-        ]);
-
-        self::$channelId = (int) $db->lastInsertId();
-    }
-
-    /**
-     * Reset the set of seeded object ids so each test starts with a fresh, empty database
-     */
-    protected function setUp(): void
-    {
-        $this->seededObjects = [];
-
-        // The trait's own setUp() is not used as this class defines one, so the previous test's transaction
-        // has to be rolled back here
-        $this->rollbackChanges();
     }
 
     public function testBuildsAnEqualFilterForEachTagWithAValue(): void
     {
         $conditions = $this->conditions($this->builtFilter(['host' => 'icinga2', 'service' => 'http']));
 
-        $this->assertCount(3, $conditions);
-        $this->assertContains([Unlike::class, 'recovered_at', '*'], $conditions);
+        $this->assertCount(2, $conditions);
         $this->assertContains([Equal::class, 'incident.object.tag.host', 'icinga2'], $conditions);
         $this->assertContains([Equal::class, 'incident.object.tag.service', 'http'], $conditions);
     }
@@ -97,16 +73,38 @@ class IncidentsTest extends TestCase
     {
         $conditions = $this->conditions($this->builtFilter(['host' => 'icinga2', 'service' => null]));
 
-        $this->assertCount(3, $conditions);
+        $this->assertCount(2, $conditions);
         $this->assertContains([Equal::class, 'incident.object.tag.host', 'icinga2'], $conditions);
         // A null value requires the tag's absence, expressed as "no value matches the wildcard".
         $this->assertContains([Unlike::class, 'incident.object.tag.service', '*'], $conditions);
     }
 
-    public function testAlwaysFiltersOutRecoveredIncidents(): void
+    public function testObjectIdFor(): void
     {
-        // Even without any tags the query is constrained to open incidents (recovered_at IS NULL).
-        $this->assertSame([[Unlike::class, 'recovered_at', '*']], $this->conditions($this->builtFilter([])));
+        $tags1 = ['foo' => 'bar', 'baz' => 'qux'];
+        $tags2 = ['baz' => 'qux', 'foo' => 'bar'];
+
+        $id1 = self::invokeStatic('objectIdFor', $tags1);
+        $id2 = self::invokeStatic('objectIdFor', $tags2);
+
+        $this->assertSame($id1, $id2, 'The order of tags must not have an effect on the object id');
+        // object id from the daemon's object_test.go
+        $this->assertSame('4bfe8b2596005172c9db4d2b4b400a12b478b87a793ed9577e9d2d165fd07e7a', $id1);
+    }
+
+    public function testRejectsAnEmptyTagSet(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('A set of id tags must not be empty');
+        $this->conditions($this->builtFilter([]));
+    }
+
+    public function testRejectsAnEmptySet(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('At least one set of id tags is required');
+
+        $this->query(new TestConnection(), []);
     }
 
     #[DataProvider('sharedDatabases')]
@@ -117,104 +115,12 @@ class IncidentsTest extends TestCase
         $this->seedIncident(['host' => 'a']);
         $this->seedIncident(['host' => 'b']);
 
-        $incidents = iterator_to_array(new Incidents([], $db), false);
+        $incidents = iterator_to_array($this->incidents($db, [['host' => 'a'], ['host' => 'b']]), false);
 
         $this->assertCount(2, $incidents);
         foreach ($incidents as $incident) {
             $this->assertInstanceOf(Incident::class, $incident);
         }
-    }
-
-    #[DataProvider('sharedDatabases')]
-    public function testHasIncident(Connection $db): void
-    {
-        $this->db = $db;
-
-        $this->assertFalse((new Incidents([], $db))->hasIncident());
-
-        $this->seedIncident(['host' => 'a']);
-
-        $this->assertTrue((new Incidents([], $db))->hasIncident());
-    }
-
-    #[DataProvider('sharedDatabases')]
-    public function testGetRolesYieldsTheUsersRoleForEachIncidentTheyAreInvolvedIn(Connection $db): void
-    {
-        $this->db = $db;
-
-        $managed = $this->seedIncident(['host' => 'a']);
-        $subscribed = $this->seedIncident(['host' => 'b']);
-        $foreign = $this->seedIncident(['host' => 'c']);
-
-        $jdoe = $this->seedContact('jdoe');
-        $this->seedRole($managed, $jdoe, 'manager');
-        $this->seedRole($subscribed, $jdoe, 'subscriber');
-        $this->seedRole($foreign, $this->seedContact('jane'), 'recipient');
-
-        $roles = [];
-        foreach ((new Incidents([], $db))->getRoles(new User('jdoe')) as $incident => $role) {
-            $roles[$this->incidentId($incident)] = $role;
-        }
-
-        ksort($roles);
-
-        $expected = [$managed => 'manager', $subscribed => 'subscriber'];
-        ksort($expected);
-
-        $this->assertSame($expected, $roles, 'getRoles() did not yield the user\'s role for each of their incidents');
-    }
-
-    #[DataProvider('sharedDatabases')]
-    public function testGetRolesIgnoresClosedIncidents(Connection $db): void
-    {
-        $this->db = $db;
-
-        $recovered = $this->seedIncident(['host' => 'a'], 1_700_000_000_000);
-        $this->seedRole($recovered, $this->seedContact('jdoe'), 'manager');
-
-        $this->assertSame([], iterator_to_array((new Incidents([], $db))->getRoles(new User('jdoe'))));
-    }
-
-    #[DataProvider('sharedDatabases')]
-    public function testGetRolesYieldsNothingForAUserWithoutIncidents(Connection $db): void
-    {
-        $this->db = $db;
-
-        $this->seedRole($this->seedIncident(['host' => 'a']), $this->seedContact('jane'), 'manager');
-
-        $this->assertSame([], iterator_to_array((new Incidents([], $db))->getRoles(new User('jdoe'))));
-    }
-
-    #[DataProvider('sharedDatabases')]
-    public function testGetRolesYieldsOnlyTheRoleForTheGivenUser(Connection $db): void
-    {
-        $this->db = $db;
-
-        $incidentId = $this->seedIncident(['host' => 'a']);
-        $this->seedRole($incidentId, $this->seedContact('jane'), 'manager');
-        $this->seedRole($incidentId, $this->seedContact('jdoe'), 'subscriber');
-        $this->seedRole($incidentId, $this->seedContact('bob'), 'recipient');
-
-        $roles = [];
-        foreach ((new Incidents(['host' => 'a'], $db))->getRoles(new User('jdoe')) as $incident => $role) {
-            $roles[] = [$this->incidentId($incident), $role];
-        }
-
-        $this->assertSame([[$incidentId, 'subscriber']], $roles);
-    }
-
-    #[DataProvider('sharedDatabases')]
-    public function testIteratingAfterHasIncidentYieldsAllMatchesFromTheSameInstance(Connection $db): void
-    {
-        $this->db = $db;
-
-        $this->seedIncident(['host' => 'a']);
-        $this->seedIncident(['host' => 'b']);
-
-        $incidents = new Incidents([], $db);
-
-        $this->assertTrue($incidents->hasIncident());
-        $this->assertCount(2, iterator_to_array($incidents, false));
     }
 
     #[DataProvider('sharedDatabases')]
@@ -224,7 +130,7 @@ class IncidentsTest extends TestCase
 
         $this->seedIncident(['host' => 'a']);
 
-        $this->assertEquals(1, (new Incidents([], $db))->count());
+        $this->assertEquals(1, $this->incidents($db, [['host' => 'a']])->count());
     }
 
     #[DataProvider('sharedDatabases')]
@@ -237,7 +143,7 @@ class IncidentsTest extends TestCase
         $this->seedIncident(['host' => 'a']);
         $this->seedIncident(['host' => 'b'], 1_700_000_000_000);
 
-        $incidents = new Incidents([], $db);
+        $incidents = $this->incidents($db, [['host' => 'a'], ['host' => 'b']]);
 
         $this->assertEquals(1, $incidents->count());
         $this->assertCount(1, iterator_to_array($incidents, false));
@@ -255,22 +161,74 @@ class IncidentsTest extends TestCase
         // The host's incident and the one of its service, matched by the tag they have in common
         $this->assertSame(
             [$host, $service],
-            $this->incidentIds(new Incidents(['host' => 'a'], $db)),
+            $this->incidentIds($this->incidents($db, [['host' => 'a']])),
             'Not all incidents of the objects carrying the given tag were matched'
         );
 
         // Only the host's incident, as a null value requires the tag's absence
         $this->assertSame(
             [$host],
-            $this->incidentIds(new Incidents(['host' => 'a', 'service' => null], $db)),
+            $this->incidentIds($this->incidents($db, [['host' => 'a', 'service' => null]])),
             'A tag given as null did not exclude the objects carrying it'
         );
 
         // Only the service's incident, as its object is the only one carrying both tags
         $this->assertSame(
             [$service],
-            $this->incidentIds(new Incidents(['host' => 'a', 'service' => 'http'], $db)),
+            $this->incidentIds($this->incidents($db, [['host' => 'a', 'service' => 'http']])),
             'Not only the incidents of the object carrying all given tags were matched'
+        );
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testMatchesTheIncidentOfTheObjectCarryingExactlyTheGivenTags(Connection $db): void
+    {
+        $this->db = $db;
+
+        $host = $this->seedIncident(['host' => 'a']);
+        $service = $this->seedIncident(['host' => 'a', 'service' => 'http']);
+
+        $this->assertSame(
+            [$host],
+            $this->incidentIds($this->incidents($db, [['host' => 'a']], true)),
+            "The incident of the object carrying exactly the host's tags was not matched"
+        );
+
+        $this->assertSame(
+            [$service],
+            $this->incidentIds($this->incidents($db, [['host' => 'a', 'service' => 'http']], true)),
+            "The incident of the object carrying exactly the service's tags was not matched"
+        );
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testMatchesNoIncidentOfObjectsCarryingTagsBesidesTheGivenOnes(Connection $db): void
+    {
+        $this->db = $db;
+
+        $this->seedIncident(['host' => 'a', 'service' => 'http']);
+
+        $this->assertSame(
+            [],
+            $this->incidentIds($this->incidents($db, [['host' => 'a']], true)),
+            'The incident of an object carrying tags besides the given ones was matched'
+        );
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testMatchesTheIncidentsOfObjectsSatisfyingAnyGivenTagSet(Connection $db): void
+    {
+        $this->db = $db;
+
+        $host = $this->seedIncident(['host' => 'a']);
+        $service = $this->seedIncident(['host' => 'b', 'service' => 'http']);
+        $this->seedIncident(['host' => 'c']);
+
+        // An object only has to satisfy any of the tag sets, each of which identifies it completely
+        $this->assertSame(
+            [$host, $service],
+            $this->incidentIds($this->incidents($db, [['host' => 'a'], ['host' => 'b', 'service' => 'http']], true)),
+            'Not the incidents of the objects satisfying any of the given tag sets were matched'
         );
     }
 
@@ -285,28 +243,95 @@ class IncidentsTest extends TestCase
      */
     private function builtFilter(array $tags): Chain
     {
-        $incidents = new Incidents($tags, new TestConnection());
-
-        /** @var Query $query */
-        $query = (new ReflectionMethod($incidents, 'buildQuery'))->invoke($incidents);
-
-        return $query->getFilter();
+        return $this->query(new TestConnection(), [$tags])->getFilter();
     }
 
     /**
-     * Reduce a filter chain to a list of [operator class, column, value] triples for order-independent assertions
+     * Create an instance matching the incidents of the given tag sets, reading through the given database
+     *
+     * @param iterable<array<string, ?string>> $tagSets
+     * @param bool $exactMatches Whether an object must not have tags besides those given in a set,
+     *                           as {@see Incidents::getAll()} requires it
+     */
+    private function incidents(Connection $db, iterable $tagSets, bool $exactMatches = false): Incidents
+    {
+        return new Incidents($this->query($db, $tagSets, $exactMatches));
+    }
+
+    /**
+     * Assemble the query the factories of {@see Incidents} would pass to its constructor
+     *
+     * The constructor only accepts a query, which the factories build with the class' own helpers while
+     * reading through the singleton. The tests use those helpers as well, as what they assemble is what
+     * the assertions are about, but pass the database explicitly.
+     *
+     * @param iterable<array<string, ?string>> $tagSets
+     * @param bool $exactMatches Whether an object must not have tags besides those given in a set
+     *
+     * @return Query<IncidentModel>
+     */
+    private function query(Connection $db, iterable $tagSets, bool $exactMatches = false): Query
+    {
+        return self::invokeStatic('openIncidents', $db)->filter(self::invokeStatic(
+            $exactMatches ? 'tagSetFilterExactMatches' : 'tagSetFilterPartialMatches',
+            $tagSets
+        ));
+    }
+
+    /**
+     * Call the given private static method of {@see Incidents} with the given arguments
+     */
+    private static function invokeStatic(string $method, mixed ...$args): mixed
+    {
+        return (new ReflectionMethod(Incidents::class, $method))->invoke(null, ...$args);
+    }
+
+    /**
+     * Get the conditions of the tag set filters of the given query filter
+     *
+     * Asserts that the filter is an `All` of the recovered_at condition and an `Any` with one `All` per tag set,
+     * then returns the conditions of those sets as [operator class, column, value] triples for order-independent
+     * assertions. The recovered_at condition is not among them, it belongs to no tag set and is asserted here.
+     *
+     * @param int $tagSets The number of tag sets the filter is expected to consist of
      *
      * @return list<array{class-string, string|array<string>, mixed}>
      */
-    private function conditions(Chain $chain): array
+    private function conditions(Chain $filter, int $tagSets = 1): array
     {
+        $rules = iterator_to_array($filter, false);
+
+        $this->assertInstanceOf(All::class, $filter);
+        $this->assertCount(2, $rules, 'The filter is not an All of the recovered_at condition and the tag sets');
+        $this->assertSame([Unlike::class, 'recovered_at', '*'], $this->triple($rules[0]));
+        $this->assertInstanceOf(Any::class, $rules[1], 'The tag sets are not combined with OR');
+
+        $tagSetFilters = iterator_to_array($rules[1], false);
+
+        $this->assertCount($tagSets, $tagSetFilters, 'Not every tag set got its own filter');
+
         $conditions = [];
-        foreach ($chain as $rule) {
-            $this->assertInstanceOf(Condition::class, $rule);
-            $conditions[] = [$rule::class, $rule->getColumn(), $rule->getValue()];
+        foreach ($tagSetFilters as $tagSetFilter) {
+            $this->assertInstanceOf(All::class, $tagSetFilter, "A tag set's conditions are not combined with AND");
+
+            foreach ($tagSetFilter as $rule) {
+                $conditions[] = $this->triple($rule);
+            }
         }
 
         return $conditions;
+    }
+
+    /**
+     * Reduce the given rule to an [operator class, column, value] triple
+     *
+     * @return array{class-string, string|array<string>, mixed}
+     */
+    private function triple(Rule $rule): array
+    {
+        $this->assertInstanceOf(Condition::class, $rule);
+
+        return [$rule::class, $rule->getColumn(), $rule->getValue()];
     }
 
     /**
@@ -340,8 +365,9 @@ class IncidentsTest extends TestCase
     }
 
     /**
-     * Insert an incident for the object identified by the given tags, creating the
-     * object and object_id_tag rows it relates to so the joins in {@see Incidents::buildQuery()} resolve.
+     * Insert an incident for the object identified by the given tags, creating the object and
+     * object_id_tag rows it relates to so the incident's reference and the joins in the query of
+     * {@see self::query()} resolve.
      *
      * @param array<string, string> $tags
      * @param ?int $recoveredAt Recovery time in milliseconds; null leaves the incident open
@@ -367,45 +393,10 @@ class IncidentsTest extends TestCase
     }
 
     /**
-     * Insert a contact with the given username and return its id
-     */
-    private function seedContact(string $username): int
-    {
-        $this->db->insert('contact', [
-            'external_uuid'      => static::transformUUIDForDB(
-                $this->db,
-                sprintf('00000000-0000-0000-0000-%012x', crc32($username)),
-            ),
-            'full_name'          => $username,
-            'username'           => $username,
-            'default_channel_id' => self::$channelId,
-            'changed_at'         => (int) (new DateTime())->format('Uv')
-        ]);
-
-        return (int) $this->db->lastInsertId();
-    }
-
-    /**
-     * Make the given contact a recipient, subscriber or manager of the given incident
+     * Get the id of the object identified by the given tags
      *
-     * @param string $role One of `recipient`, `subscriber` or `manager`
-     */
-    private function seedRole(int $incidentId, int $contactId, string $role): void
-    {
-        $this->db->insert('incident_contact', [
-            'incident_id' => $incidentId,
-            'contact_id'  => $contactId,
-            'role'        => $role,
-            'changed_at'  => (int) (new DateTime())->format('Uv')
-        ]);
-    }
-
-    /**
-     * Derive a stable, unique object id for the given tags
-     *
-     * Stands in for the daemon's object hashing: the exact algorithm is irrelevant to these tests, it
-     * only has to be deterministic and collision-free for distinct tags so
-     * the seeded incident and object_id_tag rows share one id while distinct objects differ.
+     * The id is derived exactly the way {@see Incidents} derives the ids it looks incidents up by, as
+     * only then do the seeded rows match what the queries under test search for.
      *
      * The id is returned in the representation the current database expects for a binary literal, as
      * the tests seed the tables directly, i.e. without the ORM's Binary behavior in between.
@@ -414,15 +405,13 @@ class IncidentsTest extends TestCase
      */
     private function objectId(array $tags): string
     {
-        ksort($tags);
-
-        $hash = hash('sha256', serialize($tags));
+        $id = self::invokeStatic('objectIdFor', $tags);
 
         if ($this->db->getAdapter() instanceof Pgsql) {
-            return sprintf('\\x%s', $hash);
+            return sprintf('\\x%s', $id);
         }
 
-        return hex2bin($hash);
+        return hex2bin($id);
     }
 
     /**
@@ -440,8 +429,8 @@ class IncidentsTest extends TestCase
         $this->seededObjects[$objectId] = true;
 
         $this->db->insert('object', [
-            'id'        => $objectId,
-            'name'      => implode(', ', $tags)
+            'id'   => $objectId,
+            'name' => implode(', ', $tags)
         ]);
 
         foreach ($tags as $tag => $value) {
