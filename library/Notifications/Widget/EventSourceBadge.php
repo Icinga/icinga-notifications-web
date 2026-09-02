@@ -5,6 +5,7 @@
 
 namespace Icinga\Module\Notifications\Widget;
 
+use Icinga\Module\Notifications\Common\SourceHookLocator;
 use Icinga\Module\Notifications\Model\Source;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
@@ -34,7 +35,7 @@ class EventSourceBadge extends BaseHtmlElement
     {
         $this
             ->addAttributes(Attributes::create([
-                'title' => sprintf('%s (%s)', $this->source->name, $this->source->type)
+                'title' => sprintf('%s (%s)', $this->source->name, SourceHookLocator::labelFor($this->source->type))
             ]))
             ->addHtml(
                 (new Ball(Ball::SIZE_LARGE))

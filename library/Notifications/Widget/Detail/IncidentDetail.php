@@ -78,9 +78,13 @@ class IncidentDetail extends BaseHtmlElement
     protected function createRelatedObject(): array
     {
         $object = $this->incident->object;
-        $hook = isset($object->source->type)
-            ? SourceHookLocator::forType($object->source->type)
-            : null;
+        $hook = null;
+        foreach ($object->sources as $source) {
+            $hook = SourceHookLocator::forType($source->type);
+            if ($hook !== null) {
+                break;
+            }
+        }
 
         $objectUrl = $hook?->createObjectLink($object->id_tags);
         if ($objectUrl === null) {
@@ -160,9 +164,9 @@ class IncidentDetail extends BaseHtmlElement
     }
 
     /** @return ValidHtml[] */
-    protected function createSource(): array
+    protected function createSources(): array
     {
-        if (! isset($this->incident->object->source->name)) {
+        if (empty($this->incident->object->sources)) {
             return [
                 Html::tag('h2', $this->translate('Event Source')),
                 new EmptyState($this->translate('No source information available'))
@@ -170,10 +174,12 @@ class IncidentDetail extends BaseHtmlElement
         }
 
         $list = new HtmlElement('ul', Attributes::create(['class' => 'source-list']));
-        $list->addHtml(new HtmlElement('li', null, new EventSourceBadge($this->incident->object->source)));
+        foreach ($this->incident->object->sources as $source) {
+            $list->addHtml(new HtmlElement('li', null, new EventSourceBadge($source)));
+        }
 
         return [
-            Html::tag('h2', $this->translate('Event Source')),
+            Html::tag('h2', $this->translate('Event Sources')),
             $list
         ];
     }
@@ -185,7 +191,7 @@ class IncidentDetail extends BaseHtmlElement
             $this->createHistory(),
             $this->createRelatedObject(),
             $this->createMessage(),
-            $this->createSource(),
+            $this->createSources(),
         ]);
     }
 }
