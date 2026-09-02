@@ -5,7 +5,6 @@
 
 namespace Icinga\Module\Notifications\Controllers;
 
-use Icinga\Module\Icingadb\Web\Control\ViewModeSwitcher;
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\Incident;
@@ -17,6 +16,7 @@ use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
 use ipl\Web\Control\LimitControl;
 use ipl\Web\Control\SortControl;
+use ipl\Web\Control\ViewModeSwitcher;
 use ipl\Web\Filter\QueryString;
 use ipl\Web\Layout\DetailedItemLayout;
 use ipl\Web\Layout\ItemLayout;
