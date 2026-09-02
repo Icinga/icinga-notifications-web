@@ -28,7 +28,7 @@ use Tests\Icinga\Module\Notifications\Lib\DatabaseUtils;
  * `#[DataProvider('sharedDatabases')]`). Each test runs inside its own transaction which is rolled back afterwards,
  * so its writes don't leak into the next test. A source, channel and contact are seeded per test in
  * {@see self::initializeNotificationsDb()} to satisfy the rule's and the recipients' foreign keys, and their ids
- * captured into {@see self::$sourceId}, {@see self::$channelId} and {@see self::$contactId} (the ids can't be assumed
+ * captured into {@see self::$channelId} and {@see self::$contactId} (the ids can't be assumed
  * as rolled-back transactions still advance the auto-increment).
  *
  * Escalations are unique by `(rule_id, position)`, so each test creates its own throwaway rule and puts its
@@ -45,9 +45,6 @@ class EscalationRepositoryTest extends TestCase
 
     /** @var int Id of the channel seeded per test */
     private static int $channelId;
-
-    /** @var int Id of the source seeded per test, referenced by the rule */
-    private static int $sourceId;
 
     /** @var int Id of the contact group seeded per test, used as a recipient */
     private static int $contactgroupId;
@@ -71,7 +68,6 @@ class EscalationRepositoryTest extends TestCase
         $db->insert('source', [
             'type' => 'icinga2', 'name' => 'Test Source', 'listener_username' => 'test-source', 'changed_at' => $now
         ]);
-        self::$sourceId = (int) $db->lastInsertId();
         $db->insert('contact', [
             'full_name' => 'Test', 'username' => 'test', 'default_channel_id' => self::$channelId,
             'external_uuid' => static::transformUUIDForDB($db, '00000000-0000-0000-0000-0000000000a1'),
@@ -98,7 +94,7 @@ class EscalationRepositoryTest extends TestCase
     private function createRule(Connection $db): int
     {
         $db->insert('rule', [
-            'name' => 'Rule', 'source_id' => self::$sourceId, 'changed_at' => (int) (new DateTime())->format('Uv')
+            'name' => 'Rule', 'source_type' => 'icinga2', 'changed_at' => (int) (new DateTime())->format('Uv')
         ]);
 
         return (int) $db->lastInsertId();

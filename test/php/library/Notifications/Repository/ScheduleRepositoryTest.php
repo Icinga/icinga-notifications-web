@@ -153,8 +153,7 @@ class ScheduleRepositoryTest extends TestCase
     {
         $now = (int) (new DateTime())->format('Uv');
         $db->insert('source', ['type' => 'icinga2', 'name' => 'S', 'listener_username' => 'ls', 'changed_at' => $now]);
-        $sourceId = (int) $db->lastInsertId();
-        $db->insert('rule', ['name' => 'R', 'source_id' => $sourceId, 'changed_at' => $now]);
+        $db->insert('rule', ['name' => 'R', 'source_type' => 'icinga2', 'changed_at' => $now]);
         $ruleId = (int) $db->lastInsertId();
 
         return (new EscalationRepository($db))->create(new Escalation(
