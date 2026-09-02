@@ -31,6 +31,7 @@ use Ramsey\Uuid\UuidInterface;
  * @property Query<RuleEscalationRecipient>|Collection<RuleEscalationRecipient> $rule_escalation_recipient
  * @property Query<Contact>|Collection<Contact> $contact
  * @property Query<AvailableChannelType>|AvailableChannelType $available_channel_type
+ * @property Query<NotificationHistory>|Collection<NotificationHistory> $notification_history
  */
 class Channel extends Model
 {
@@ -93,6 +94,8 @@ class Channel extends Model
             ->setForeignKey('default_channel_id');
         $relations->belongsTo('available_channel_type', AvailableChannelType::class)
             ->setCandidateKey('type')
+            ->setJoinType('LEFT');
+        $relations->hasMany('notification_history', NotificationHistory::class)
             ->setJoinType('LEFT');
     }
 

@@ -12,6 +12,7 @@ use Icinga\Module\Notifications\Model\Contactgroup;
 use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\Model\IncidentContact;
 use Icinga\Module\Notifications\Model\IncidentHistory;
+use Icinga\Module\Notifications\Model\NotificationHistory;
 use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Model\Schedule;
 use Icinga\Module\Notifications\Model\Source;
@@ -25,7 +26,7 @@ use ipl\Web\Widget\ListItem;
  *
  * Create a list
  *
- * @template Item of Incident|IncidentHistory|IncidentContact|Source|Channel|Contact|Contactgroup|Rule|Schedule
+ * @template Item of Incident|IncidentHistory|NotificationHistory|IncidentContact|Source|Channel|Contact|Contactgroup|Rule|Schedule
  *
  * @extends ItemList<Item>
  */
@@ -44,14 +45,15 @@ class ObjectList extends ItemList
 
         if (! $this->getDetailActionsDisabled()) {
             $link = match (true) {
-                $data instanceof Incident       => Url::fromPath('notifications/incident'),
-                $data instanceof Schedule       => Url::fromPath('notifications/schedule'),
-                $data instanceof Rule           => Url::fromPath('notifications/event-rule'),
-                $data instanceof Contact        => Url::fromPath('notifications/contact'),
-                $data instanceof Contactgroup   => Url::fromPath('notifications/contact-group'),
-                $data instanceof Channel        => Url::fromPath('notifications/channel'),
-                $data instanceof Source         => Url::fromPath('notifications/source'),
-                default                         => null
+                $data instanceof Incident             => Url::fromPath('notifications/incident'),
+                $data instanceof Schedule             => Url::fromPath('notifications/schedule'),
+                $data instanceof Rule                 => Url::fromPath('notifications/event-rule'),
+                $data instanceof Contact              => Url::fromPath('notifications/contact'),
+                $data instanceof Contactgroup         => Url::fromPath('notifications/contact-group'),
+                $data instanceof Channel              => Url::fromPath('notifications/channel'),
+                $data instanceof Source               => Url::fromPath('notifications/source'),
+                $data instanceof NotificationHistory  => Url::fromPath('notifications/notification'),
+                default                               => null
             };
 
             if ($link !== null) {
