@@ -8,11 +8,14 @@ namespace Icinga\Module\Notifications\Controllers;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Forms\DeleteSourceForm;
 use Icinga\Module\Notifications\Forms\SourceForm;
+use Icinga\Module\Notifications\Model\Source;
 use Icinga\Module\Notifications\Repository\SourceRepository;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\Contract\Form;
 use ipl\Sql\Connection;
+use ipl\Sql\Expression;
+use ipl\Stdlib\Filter;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Url;
 use RuntimeException;
@@ -70,14 +73,23 @@ class SourceController extends CompatController
             ->setCsrfCounterMeasureId(Session::getSession()->getId())
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->on(Form::ON_REQUEST, function ($_, DeleteSourceForm $form) use ($sourceId) {
-                $source = (new SourceRepository(Database::get()))
-                    ->find($sourceId);
+                $source = (new SourceRepository(Database::get()))->find($sourceId);
                 if ($source === null) {
                     $this->httpNotFound($this->translate('Source not found'));
                 }
 
                 $this->setTitle(sprintf($this->translate('Delete Source: %s'), $source->name));
-                $form->setLocked($source->locked);
+                $form->setLocked($source->locked)
+                    ->setLastOfItsType(
+                        Source::on(Database::get())
+                            ->columns([new Expression('1')])
+                            ->filter(
+                                Filter::all(
+                                    Filter::equal('type', $source->type),
+                                    Filter::unequal('id', $source->id)
+                                )
+                            )->limit(1)->first() === null
+                    );
                 $this->addContent($form);
             })
             ->on(Form::ON_SUBMIT, function () use ($sourceId): never {

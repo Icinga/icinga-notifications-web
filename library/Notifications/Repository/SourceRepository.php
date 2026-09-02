@@ -7,6 +7,7 @@ namespace Icinga\Module\Notifications\Repository;
 
 use Icinga\Module\Notifications\Common\EntityManager;
 use Icinga\Module\Notifications\Form\Data\Source as SourceData;
+use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Model\Source;
 use InvalidArgumentException;
 use ipl\Sql\Connection;
@@ -89,7 +90,7 @@ class SourceRepository
     }
 
     /**
-     * Delete a source and dereference it from any rules
+     * Delete a source, if it is the last of its type all related rules are deleted as well
      *
      * @param int $id
      *
@@ -104,14 +105,21 @@ class SourceRepository
 
         $source->client_certificate_subject = null;
         $source->listener_username = null;
-        $source->delete();
 
-        $source->rule->query()->columns('id');
-        foreach ($source->rule as $rule) {
+        (new EntityManager($this->db))->save($source->delete());
+
+        $orphanRules = Rule::on($this->db)
+            ->columns('id')
+            ->filter(
+                Filter::all(
+                    Filter::equal('source_type', $source->type),
+                    Filter::unlike('source.id', '*')
+                )
+            );
+
+        foreach ($orphanRules as $rule) {
             (new EscalationRuleRepository($this->db))->delete($rule->id);
         }
-
-        (new EntityManager($this->db))->save($source);
     }
 
     /**
