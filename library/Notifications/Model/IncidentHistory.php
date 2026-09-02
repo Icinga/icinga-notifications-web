@@ -6,7 +6,9 @@
 namespace Icinga\Module\Notifications\Model;
 
 use DateTime;
+use Icinga\Module\Notifications\Common\Collection;
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Common\IncidentHistoryType;
 use Icinga\Module\Notifications\Common\Model;
 use Icinga\Module\Notifications\Common\Severity;
 use ipl\Orm\Behavior\EnumCast;
@@ -25,7 +27,7 @@ use ipl\Sql\Select;
  * @property ?int $rule_id
  * @property ?int $rule_escalation_id
  * @property DateTime $time
- * @property string $type
+ * @property IncidentHistoryType $type
  * @property ?int $contact_id
  * @property ?int $schedule_id
  * @property ?int $contactgroup_id
@@ -37,6 +39,7 @@ use ipl\Sql\Select;
  * @property ?string $message
  * @property ?string $notification_state
  * @property ?DateTime $sent_at
+ * @property ?string $event_id
  *
  * @property Query<Incident>|Incident $incident
  * @property Query<Contact>|Contact $contact
@@ -45,6 +48,7 @@ use ipl\Sql\Select;
  * @property Query<Rule>|Rule $rule
  * @property Query<RuleEscalation>|RuleEscalation $rule_escalation
  * @property Query<Channel>|Channel $channel
+ * @property Query<NotificationHistory>|Collection<NotificationHistory> $notification_history
  */
 class IncidentHistory extends Model
 {
@@ -76,7 +80,8 @@ class IncidentHistory extends Model
             'old_recipient_role',
             'message',
             'notification_state',
-            'sent_at'
+            'sent_at',
+            'event_id'
         ];
     }
 
@@ -103,6 +108,7 @@ class IncidentHistory extends Model
     {
         $behaviors->add(new MillisecondTimestamp(['time', 'sent_at']));
         $behaviors->add(new EnumCast(Severity::class, ['new_severity', 'old_severity']));
+        $behaviors->add(new EnumCast(IncidentHistoryType::class, ['type']));
     }
 
     public function getDefaultSort(): array
@@ -133,6 +139,7 @@ class IncidentHistory extends Model
         $relations->belongsTo('rule', Rule::class)->setJoinType('LEFT');
         $relations->belongsTo('rule_escalation', RuleEscalation::class)->setJoinType('LEFT');
         $relations->belongsTo('channel', Channel::class)->setJoinType('LEFT');
+        $relations->hasMany('notification_history', NotificationHistory::class)->setJoinType('LEFT');
     }
 
     /**
