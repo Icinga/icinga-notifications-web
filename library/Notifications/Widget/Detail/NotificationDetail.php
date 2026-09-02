@@ -147,11 +147,11 @@ class NotificationDetail extends BaseHtmlElement
     protected function assemble(): void
     {
         $this->add([
-            $this->createMessage(),
             $this->createRecipient(),
             $this->createChannel(),
             $this->createTransmission(),
-            $this->createIncident()
+            $this->createIncident(),
+            $this->createMessage()
         ]);
     }
 }

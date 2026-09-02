@@ -18,6 +18,7 @@ use ipl\Orm\Query;
 use ipl\Orm\Relation;
 use ipl\Orm\Relation\HasOne;
 use ipl\Orm\Resolver;
+use ipl\Stdlib\BaseFilter;
 use ipl\Stdlib\Filter;
 use ipl\Stdlib\Seq;
 use ipl\Web\Control\SearchBar\SearchException;
@@ -29,6 +30,7 @@ use Traversable;
 class ObjectSuggestions extends Suggestions
 {
     use Auth;
+    use BaseFilter;
 
     protected ?Model $model = null;
 
@@ -105,6 +107,10 @@ class ObjectSuggestions extends Suggestions
         $model = $this->getModel();
         $query = $model::on(Database::get());
         $query->limit(static::DEFAULT_LIMIT);
+
+        if ($this->hasBaseFilter()) {
+            $query->filter($this->getBaseFilter());
+        }
 
         if (str_contains($column, ' ')) {
             // $column may be a label
