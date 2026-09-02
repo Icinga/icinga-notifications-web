@@ -124,9 +124,9 @@ class EventRulesController extends CompatController
         $eventRuleForm = (new EventRuleForm())
             ->setIsNew()
             ->setCsrfCounterMeasureId(Session::getSession()->getId())
-            ->setAvailableSources(
-                Database::get()->fetchPairs(
-                    Source::on(Database::get())->columns(['id', 'name'])->assembleSelect()
+            ->setAvailableSourceTypes(
+                Database::get()->fetchCol(
+                    Source::on(Database::get())->columns(['type'])->assembleSelect()->distinct()
                 )
             )
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
@@ -134,7 +134,7 @@ class EventRulesController extends CompatController
                 $this->getResponse()->setHeader('X-Icinga-Container', 'col2');
                 $this->redirectNow(Links::eventRule(-1)->addParams([
                     'name' => $form->getValue('name'),
-                    'source' => $form->getValue('source')
+                    'source_type' => $form->getValue('source_type')
                 ]));
             })->handleRequest($this->getServerRequest());
 

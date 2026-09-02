@@ -6,11 +6,16 @@
 namespace Icinga\Module\Notifications\Common;
 
 use Icinga\Application\Hook;
+use Icinga\Application\Logger;
 use Icinga\Module\Notifications\Hook\V2\SourceHook;
 use ipl\Stdlib\Str;
+use Throwable;
 
 class SourceHookLocator
 {
+    /** @var array<string, string> */
+    private static array $labels = [];
+
     /**
      * Get the source hook responsible for the given source type
      *
@@ -34,5 +39,39 @@ class SourceHookLocator
         }
 
         return Hook::first('Notifications\\V2\\' . $name . 'Source');
+    }
+
+    /**
+     * Get the label for the given source type
+     *
+     * @param string $type
+     *
+     * @return string
+     */
+    public static function labelFor(string $type): string
+    {
+        if (array_key_exists($type, self::$labels)) {
+            return self::$labels[$type];
+        }
+
+        $label = $type;
+
+        $hook = static::forType($type);
+        if ($hook !== null) {
+            try {
+                $label = $hook->getSourceLabel();
+            } catch (Throwable $e) {
+                Logger::error(
+                    'Failed to retrieve the label from source hook "%s" for type "%s": %s',
+                    $hook::class,
+                    $type,
+                    $e
+                );
+            }
+        }
+
+        self::$labels[$type] = $label;
+
+        return $label;
     }
 }

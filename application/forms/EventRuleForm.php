@@ -5,6 +5,7 @@
 
 namespace Icinga\Module\Notifications\Forms;
 
+use Icinga\Module\Notifications\Common\SourceHookLocator;
 use ipl\Html\FormDecoration\DescriptionDecorator;
 use ipl\I18n\Translation;
 use ipl\Web\Common\CsrfCounterMeasure;
@@ -15,22 +16,25 @@ class EventRuleForm extends CompatForm
     use CsrfCounterMeasure;
     use Translation;
 
-    /** @var array<int, string> */
-    protected array $sources = [];
+    /** @var array<string, string> */
+    protected array $sourceTypes = [];
 
     /** @var bool Whether this form is for a new rule */
     protected bool $isNew = false;
 
     /**
-     * Set the sources to choose from
+     * Set the source types to choose from
      *
-     * @param array<int, string> $sources
+     * @param string[] $sourceTypes
      *
      * @return $this
      */
-    public function setAvailableSources(array $sources): static
+    public function setAvailableSourceTypes(array $sourceTypes): static
     {
-        $this->sources = $sources;
+        $this->sourceTypes = [];
+        foreach ($sourceTypes as $type) {
+            $this->sourceTypes[$type] = SourceHookLocator::labelFor($type);
+        }
 
         return $this;
     }
@@ -61,17 +65,17 @@ class EventRuleForm extends CompatForm
             ]
         );
 
-        $this->addElement('select', 'source', [
-            'label' => $this->translate('Source'),
+        $this->addElement('select', 'source_type', [
+            'label' => $this->translate('Source Type'),
             'required' => true,
-            'options' => ['' => ' - ' . $this->translate('Please choose') . ' - '] + $this->sources,
+            'options' => ['' => ' - ' . $this->translate('Please choose') . ' - '] + $this->sourceTypes,
             'disabledOptions' => [''],
             'value' => ''
         ]);
         if (! $this->isNew) {
-            $this->getElement('source')
+            $this->getElement('source_type')
                 ->setDescription($this->translate(
-                    'Choosing a different source will reset all filters of the rule'
+                    'Choosing a different source type will reset all filters of the rule'
                 ))
                 ->getDecorators()
                 ->replaceDecorator('Description', DescriptionDecorator::class, ['class' => 'description']);

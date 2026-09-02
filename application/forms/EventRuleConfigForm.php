@@ -63,7 +63,7 @@ class EventRuleConfigForm extends CompatForm
         $fields = [
             'id' => $rule->id,
             'name' => $rule->name,
-            'source' => $rule->source_id,
+            'source_type' => $rule->source_type,
             'object_filter' => $rule->object_filter
         ];
 
@@ -92,7 +92,7 @@ class EventRuleConfigForm extends CompatForm
         return new EscalationRule(
             $id,
             $this->getValue('name'),
-            (int) $this->getValue('source'),
+            $this->getValue('source_type'),
             $this->getValue('object_filter'),
             $this->getElement('escalations')->getEscalations($id)
         );
@@ -142,7 +142,7 @@ class EventRuleConfigForm extends CompatForm
 
         $name = $this->createElement('hidden', 'name', ['required' => true]);
         $this->registerElement($name);
-        $source = $this->createElement('hidden', 'source', ['required' => true]);
+        $source = $this->createElement('hidden', 'source_type', ['required' => true]);
         $this->registerElement($source);
 
         $this->addHtml(new HtmlElement(
@@ -209,17 +209,17 @@ class EventRuleConfigForm extends CompatForm
      * Get the element to update in case the config of the rule is changed
      *
      * @param string $newName
-     * @param int $newSource
+     * @param string $newSourceType
      *
      * @return ValidHtml
      */
-    public function prepareConfigUpdate(string $newName, int $newSource): ValidHtml
+    public function prepareConfigUpdate(string $newName, string $newSourceType): ValidHtml
     {
         return new HtmlElement(
             'div',
             Attributes::create(['id' => 'event-rule-config-form-name']),
             $this->createElement('hidden', 'name', ['required' => true, 'value' => $newName]),
-            $this->createElement('hidden', 'source', ['required' => true, 'value' => $newSource])
+            $this->createElement('hidden', 'source_type', ['required' => true, 'value' => $newSourceType])
         );
     }
 
