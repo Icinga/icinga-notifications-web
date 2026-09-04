@@ -40,6 +40,16 @@ $section->add(
     ]
 );
 
+$section->add(
+    N_('History'),
+    [
+        'icon'          => 'paper-plane',
+        'description'   => $this->translate('History'),
+        'url'           => 'notifications/history',
+        'priority'      => 20
+    ]
+);
+
 if ($configLandingPage !== null) {
     $section->add(
         N_('Configuration'),

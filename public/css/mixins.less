@@ -44,3 +44,15 @@
     margin-right: 0;
   }
 }
+
+.notification-icon-ball-state {
+  .icon-ball {
+    &.sent {
+      background-color: @state-ok;
+    }
+
+    &.failed {
+      background-color: @state-critical;
+    }
+  }
+}
