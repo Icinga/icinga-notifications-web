@@ -92,3 +92,100 @@
     margin-right: 0.5em;
   }
 }
+
+.initial-setup {
+  .step {
+    display: flex;
+    flex-wrap: wrap;
+    border: 2px solid;
+    .rounded-corners();
+    margin-top: 2em;
+    position: relative;
+    padding: 0.5em;
+
+    .main {
+      display: flex;
+      flex: 0 0 100%;
+
+      .setup-button {
+        align-self: center;
+      }
+
+      .visual {
+        display: flex;
+        align-items: center;
+        font-size: 2em;
+      }
+
+      header {
+        flex: 1;
+
+        .title {
+          font-size: 1.2em;
+          font-weight: bold;
+        }
+
+        .description {
+          font-size: 1em;
+          color: @text-color-light;
+        }
+      }
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      left: 1.5em;        /* align with center of .visual icon */
+      bottom: calc(-2em - 2px);       /* gap between steps - border */
+      width: 2px;
+      height: 2em;
+      background: @disabled-gray;
+    }
+
+    &:last-of-type::after {
+      display: none;      /* no line after last step */
+    }
+
+    &.completed {
+      border-color: @state-ok;
+      &::after {
+        background: @state-ok;
+      }
+
+      .visual {
+        color: @state-ok;
+      }
+    }
+
+    &.current {
+      border-color: @icinga-blue;
+    }
+
+    &.locked {
+      border-color: @disabled-gray;
+      color: @disabled-gray;
+    }
+  }
+
+  .integrations {
+      display: flex;
+      gap: 1em;
+      flex-wrap: wrap;
+
+    p {
+      flex-basis: 100%;
+      margin-bottom: 0;
+    }
+  }
+}
+
+i.initial-setup-icon {
+  font-size: 1.5em;
+  color: @color-warning;
+
+  float: right;
+
+  &:focus {
+    display: none;
+  }
+}
