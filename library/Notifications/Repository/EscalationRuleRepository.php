@@ -55,13 +55,6 @@ final class EscalationRuleRepository
 
         (new EntityManager($this->db))->save($model);
 
-        $escalationRepository = new EscalationRepository($this->db);
-        foreach ($rule->escalations as $escalation) {
-            // TODO: Once modals are used, this is obsolete
-            $escalation->ruleId = $model->id;
-            $escalationRepository->create($escalation);
-        }
-
         return $model->id;
     }
 
@@ -82,36 +75,14 @@ final class EscalationRuleRepository
         }
 
         $model->name = $rule->name;
-        $model->source_type = $rule->sourceType;
-        $model->object_filter = $rule->objectFilter;
+        if ($rule->sourceType !== $model->source_type) {
+            $model->source_type = $rule->sourceType;
+            $model->object_filter = null;
+        } elseif ($rule->objectFilter !== null) {
+            $model->object_filter = $rule->objectFilter ?: null;
+        }
 
         (new EntityManager($this->db))->save($model);
-
-        // TODO: Once modals are used, this is obsolete
-        $escalationRepository = new EscalationRepository($this->db);
-
-        $escalationsToKeep = [];
-        foreach ($rule->escalations as $escalation) {
-            if (isset($escalation->id)) {
-                $escalationsToKeep[] = $escalation->id;
-            }
-        }
-
-        $model->rule_escalation->query()->columns('id');
-        foreach ($model->rule_escalation as $escalationModel) {
-            if (! in_array($escalationModel->id, $escalationsToKeep, true)) {
-                $escalationRepository->delete($escalationModel->id);
-            }
-        }
-
-        foreach ($rule->escalations as $escalation) {
-            if (! isset($escalation->id)) {
-                $escalation->ruleId ??= $model->id;
-                $escalationRepository->create($escalation);
-            } else {
-                $escalationRepository->update($escalation);
-            }
-        }
     }
 
     /**
