@@ -11,6 +11,7 @@ use Icinga\Module\Notifications\Form\Data\EscalationRecipient;
 use Icinga\Module\Notifications\Form\Data\EscalationRule;
 use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Model\RuleEscalation;
+use Icinga\Module\Notifications\Repository\EscalationRepository;
 use Icinga\Module\Notifications\Repository\EscalationRuleRepository;
 use Icinga\Module\Notifications\Test\DbTestBackends;
 use InvalidArgumentException;
@@ -79,16 +80,18 @@ class EscalationRuleRepositoryTest extends TestCase
      * @param ?int $id
      * @param int $position
      * @param ?string $condition
+     * @param ?int $ruleId
      *
      * @return Escalation
      */
-    private function escalation(?int $id, int $position, ?string $condition): Escalation
+    private function escalation(?int $id, int $position, ?string $condition, ?int $ruleId): Escalation
     {
         return new Escalation(
             $id,
             $position,
             $condition,
-            [new EscalationRecipient(null, 'contact', self::$contactId, self::$channelId)]
+            [new EscalationRecipient(null, 'contact', self::$contactId, self::$channelId)],
+            $ruleId
         );
     }
 
@@ -124,11 +127,7 @@ class EscalationRuleRepositoryTest extends TestCase
             null,
             'Create Rule',
             'icinga2',
-            'host.name=foo',
-            [
-                $this->escalation(null, 0, null),
-                $this->escalation(null, 1, 'incident_severity>=crit')
-            ]
+            'host.name=foo'
         ));
 
         $rule = $repository->find($id);
@@ -137,24 +136,10 @@ class EscalationRuleRepositoryTest extends TestCase
         $this->assertEquals('icinga2', $rule->source_type);
         $this->assertSame('host.name=foo', $rule->object_filter);
         $this->assertFalse($rule->deleted);
-
-        $escalations = $this->escalationsOf($db, $id);
-        $this->assertCount(2, $escalations, 'Both escalations should have been created');
-        $this->assertSame(0, (int) $escalations[0]->position);
-        $this->assertNull($escalations[0]->condition);
-        $this->assertSame(1, (int) $escalations[1]->position);
-        $this->assertSame('incident_severity>=crit', $escalations[1]->condition);
-
-        // Each escalation has its recipient
-        foreach ($escalations as $escalation) {
-            $recipients = iterator_to_array($escalation->rule_escalation_recipient);
-            $this->assertCount(1, $recipients, 'The escalation should have one recipient');
-            $this->assertEquals(self::$contactId, $recipients[0]->contact_id);
-        }
     }
 
     #[DataProvider('sharedDatabases')]
-    public function testUpdateChangesTheRuleAndSyncsItsEscalations(Connection $db): void
+    public function testUpdateChangesTheRule(Connection $db): void
     {
         $repository = new EscalationRuleRepository($db);
 
@@ -162,47 +147,20 @@ class EscalationRuleRepositoryTest extends TestCase
             null,
             'Update Rule',
             'icinga2',
-            null,
-            [
-                $this->escalation(null, 0, null),
-                $this->escalation(null, 1, 'incident_age>=5m')
-            ]
+            null
         ));
 
-        $created = $this->escalationsOf($db, $id);
-        $this->assertCount(2, $created);
-        $keptId = (int) $created[0]->id;
-
-        // Rename the rule, set an object filter, keep the first escalation, drop the second and add a new one
+        // Rename the rule, set an object filter
         $repository->update(new EscalationRule(
             $id,
             'Renamed Rule',
             'icinga2',
-            'service.name=bar',
-            [
-                $this->escalation($keptId, 0, 'incident_severity>=warning'),
-                $this->escalation(null, 1, null)
-            ]
+            'service.name=bar'
         ));
 
         $rule = $repository->find($id);
         $this->assertSame('Renamed Rule', $rule->name);
         $this->assertSame('service.name=bar', $rule->object_filter);
-
-        $escalations = $this->escalationsOf($db, $id);
-        $this->assertCount(2, $escalations, 'The rule should still have two escalations');
-
-        $byId = [];
-        foreach ($escalations as $escalation) {
-            $byId[(int) $escalation->id] = $escalation;
-        }
-
-        // The kept escalation was updated in place
-        $this->assertArrayHasKey($keptId, $byId, 'The kept escalation must survive the update');
-        $this->assertSame('incident_severity>=warning', $byId[$keptId]->condition);
-
-        // The dropped escalation is gone, a brand-new one took the free position
-        $this->assertArrayNotHasKey((int) $created[1]->id, $byId, 'The dropped escalation must be removed');
     }
 
     #[DataProvider('sharedDatabases')]
@@ -210,7 +168,7 @@ class EscalationRuleRepositoryTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        (new EscalationRuleRepository($db))->update(new EscalationRule(999, 'Nope', 'icinga2', null, []));
+        (new EscalationRuleRepository($db))->update(new EscalationRule(999, 'Nope', 'icinga2', null));
     }
 
     #[DataProvider('sharedDatabases')]
@@ -222,9 +180,9 @@ class EscalationRuleRepositoryTest extends TestCase
             null,
             'Delete Rule',
             'icinga2',
-            null,
-            [$this->escalation(null, 0, null)]
+            null
         ));
+        (new EscalationRepository($db))->create($this->escalation(null, 0, null, $id));
 
         $repository->delete($id);
 
@@ -245,44 +203,5 @@ class EscalationRuleRepositoryTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
 
         (new EscalationRuleRepository($db))->delete(999);
-    }
-
-    #[DataProvider('sharedDatabases')]
-    public function testUpdateRemovingAnEarlierEscalationRenumbersTheSurvivor(Connection $db): void
-    {
-        $repository = new EscalationRuleRepository($db);
-
-        // A rule with escalations at positions 0 and 1
-        $id = $repository->create(new EscalationRule(
-            null,
-            'Rule',
-            'icinga2',
-            null,
-            [
-                $this->escalation(null, 0, 'first'),
-                $this->escalation(null, 1, 'second')
-            ]
-        ));
-
-        $created = $this->escalationsOf($db, $id);
-        $this->assertCount(2, $created);
-        $survivorId = (int) $created[1]->id; // the escalation at position 1
-
-        // Remove the escalation at position 0; the survivor (was position 1) keeps its id but is renumbered to 0 —
-        // exactly what the form does. This must not collide on `uk_rule_escalation_rule_id_position` (the survivor is
-        // moved into the slot the to-be-removed escalation still holds until it is deleted).
-        $repository->update(new EscalationRule(
-            $id,
-            'Rule',
-            'icinga2',
-            null,
-            [$this->escalation($survivorId, 0, 'second')]
-        ));
-
-        $escalations = $this->escalationsOf($db, $id);
-        $this->assertCount(1, $escalations, 'Only the survivor should remain');
-        $this->assertSame($survivorId, (int) $escalations[0]->id, 'The survivor must be kept (same id)');
-        $this->assertSame(0, (int) $escalations[0]->position, 'The survivor must be renumbered to position 0');
-        $this->assertSame('second', $escalations[0]->condition);
     }
 }

@@ -13,7 +13,6 @@ use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use InvalidArgumentException;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
-use LogicException;
 
 final class EscalationRepository
 {

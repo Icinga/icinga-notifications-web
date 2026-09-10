@@ -420,34 +420,58 @@ class EventRuleController extends CompatController
 
     public function editAction(): void
     {
-        $ruleId = (int) $this->params->getRequired('id');
+        $this->setTitle($this->translate('Edit Event Rule'));
 
-        $eventRuleForm = (new EventRuleForm())
+        (new EventRuleForm())
             ->setCsrfCounterMeasureId(Session::getSession()->getId())
             ->setAvailableSourceTypes(
                 Database::get()->fetchCol(
                     Source::on(Database::get())->columns(['type'])->assembleSelect()->distinct()
                 )
             )
-            ->populate([
-                'name' => $this->session->get('name'),
-                'source_type' => $this->session->get('source_type')
-            ])
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
-            ->on(Form::ON_SUBMIT, function ($form) use ($ruleId) {
-                $this->session->set('name', $form->getValue('name'));
-
-                $newSource = $form->getValue('source_type');
-                if ($newSource !== $this->session->get('source_type')) {
-                    $this->session->set('source_type', $newSource);
-                    $this->session->set('object_filter', '');
+            ->on(Form::ON_REQUEST, function ($_, EventRuleForm $form) {
+                $rule = (new EscalationRuleRepository(Database::get()))
+                    ->find((int) $this->params->getRequired('id'));
+                if ($rule === null) {
+                    $this->httpNotFound($this->translate('Rule not found'));
                 }
 
-                $this->redirectNow(Links::eventRule($ruleId)->setParam('_nameOnly'));
+                $form->setRule($rule);
+
+                $this->addContent($form);
+            })
+            ->on(Form::ON_SUBMIT, function (EventRuleForm $form) {
+                $rule = $form->getRule();
+
+                if ($form->hasBeenDeleted()) {
+                    $ruleName = Database::get()->transaction(
+                        fn(Connection $db) => (new EscalationRuleRepository(Database::get()))->delete($rule->id)
+                    )->name;
+
+                    Notification::success(sprintf(
+                        $this->translate('Deleted escalation rule "%s"'),
+                        $ruleName
+                    ));
+                    $this->switchToSingleColumnLayout();
+                } else {
+                    Database::get()->transaction(
+                        fn(Connection $db) => (new EscalationRuleRepository($db))->update($rule)
+                    );
+
+                    Notification::success(sprintf(
+                        $this->translate('Updated escalation rule "%s"'),
+                        $rule->name
+                    ));
+                    $this->closeModalAndRefreshRemainingViews(Links::eventRule($rule->id));
+                }
+            })->on(Form::ON_ERROR, function ($_, EventRuleForm $form) {
+                // TODO: I feel this should be part of CompatForm or CompatController (e.g. $this->sendForm())
+                $this->addPart($form, $this->content->getAttribute('id')->getValue());
+            })->on(Form::ON_SENT, function (EventRuleForm $form) {
+                if (! $form->hasBeenSubmitted()) {
+                    $this->addPart($form, $this->content->getAttribute('id')->getValue());
+                }
             })->handleRequest($this->getServerRequest());
-
-        $this->setTitle($this->translate('Edit Event Rule'));
-
-        $this->addContent($eventRuleForm);
     }
 }
