@@ -48,11 +48,11 @@ class RuleSerializer
     /**
      * Serialize the filter as Json
      *
-     * @return ?string The serialized filter, `null` for an empty chain
+     * @return string The serialized filter, `''` for an empty chain
      *
      * @throws JsonEncodeException
      */
-    public function getJson(): ?string
+    public function getJson(): string
     {
         $result = [
             'version'  => self::VERSION,
@@ -66,7 +66,7 @@ class RuleSerializer
 
         if ($this->filter instanceof Filter\Chain) {
             if ($this->filter->isEmpty()) {
-                return null;
+                return '';
             }
 
             $result['ast'] = $this->serializeChain($this->filter);
