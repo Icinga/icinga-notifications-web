@@ -57,11 +57,9 @@ class SourceController extends CompatController
                 ));
 
                 $this->switchToSingleColumnLayout();
-            })->on(Form::ON_SENT, function (SourceForm $form) {
+            })->on(Form::ON_ERROR, function ($_, SourceForm $form) {
                 // TODO: I feel this should be part of CompatForm or CompatController (e.g. $this->sendForm())
-                if (! $this->getResponse()->isRedirect()) {
-                    $this->addPart($form, $this->content->getAttribute('id')->getValue());
-                }
+                $this->addPart($form, $this->content->getAttribute('id')->getValue());
             })->handleRequest($this->getServerRequest());
     }
 
@@ -97,11 +95,9 @@ class SourceController extends CompatController
                 Notification::success($this->translate('Deleted source successfully'));
                 $this->switchToSingleColumnLayout();
             })
-            ->on(Form::ON_SENT, function (DeleteSourceForm $form) {
+            ->on(Form::ON_ERROR, function ($_, DeleteSourceForm $form) {
                 // TODO: I feel this should be part of CompatForm or CompatController (e.g. $this->sendForm())
-                if (! $this->getResponse()->isRedirect()) {
-                    $this->addPart($form, $this->content->getAttribute('id')->getValue());
-                }
+                $this->addPart($form, $this->content->getAttribute('id')->getValue());
             })
             ->handleRequest($this->getServerRequest());
     }

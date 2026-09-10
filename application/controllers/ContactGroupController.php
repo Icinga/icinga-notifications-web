@@ -92,14 +92,8 @@ class ContactGroupController extends CompatController
                     $this->switchToSingleColumnLayout();
                 } elseif (! $form->hasBeenSubmitted() && ! $form->hasBeenDuplicated()) {
                     foreach ($form->getPartUpdates() as $update) {
-                        if (! is_array($update)) {
-                            $update = [$update];
-                        }
-
                         $this->addPart(...$update);
                     }
-                } else {
-                    $this->addPart($form, $this->content->getAttribute('id')->getValue());
                 }
             })
             ->on(Form::ON_SUBMIT, function (ContactGroupForm $form) {
@@ -119,6 +113,10 @@ class ContactGroupController extends CompatController
                     Notification::success(sprintf(t('Successfully updated contact group %s'), $group->name));
                     $this->closeModalAndRefreshRemainingViews(Links::contactGroup($group->id));
                 }
+            })
+            ->on(Form::ON_ERROR, function ($_, ContactGroupForm $form) {
+                // TODO: I feel this should be part of CompatForm or CompatController (e.g. $this->sendForm())
+                $this->addPart($form, $this->content->getAttribute('id')->getValue());
             })
             ->handleRequest($this->getServerRequest());
     }
