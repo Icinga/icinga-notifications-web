@@ -5,9 +5,6 @@
 
 namespace Icinga\Module\Notifications\Controllers;
 
-use Icinga\Application\Logger;
-use Icinga\Exception\ConfigurationError;
-use Icinga\Exception\MissingParameterException;
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
@@ -15,34 +12,24 @@ use Icinga\Module\Notifications\Common\SourceHookLocator;
 use Icinga\Module\Notifications\Data\NotificationConfigProvider;
 use Icinga\Module\Notifications\Forms\EventRuleConfigForm;
 use Icinga\Module\Notifications\Forms\EventRuleForm;
-use Icinga\Module\Notifications\Hook\V2\SourceHook;
-use Icinga\Module\Notifications\Model\Rule;
+use Icinga\Module\Notifications\Forms\RuleFilterForm;
 use Icinga\Module\Notifications\Model\Source;
 use Icinga\Module\Notifications\Repository\EscalationRuleRepository;
-use Icinga\Module\Notifications\Util\RuleSerializer;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\Attributes;
 use ipl\Html\Contract\Form;
 use ipl\Html\Html;
-use ipl\Html\Text;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
-use ipl\Stdlib\Filter\Condition;
-use ipl\Stdlib\Seq;
-use ipl\Web\Common\CalloutType;
 use ipl\Web\Compat\CompatController;
-use ipl\Web\Control\SearchBar\SearchException;
 use ipl\Web\Control\SearchEditor;
 use ipl\Web\Filter\QueryString;
 use ipl\Web\FormElement\SearchSuggestions;
 use ipl\Web\Url;
-use ipl\Web\Widget\Callout;
 use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
-use JsonException;
 use Psr\Http\Message\ServerRequestInterface;
-use Throwable;
 
 class EventRuleController extends CompatController
 {
@@ -192,184 +179,63 @@ class EventRuleController extends CompatController
         $this->addContent($eventRuleConfig);
     }
 
-    /**
-     * searchEditorAction for editing filters
-     *
-     * @return void
-     *
-     * @throws MissingParameterException
-     */
     public function searchEditorAction(): void
     {
-        $ruleId = (int) $this->params->getRequired('id');
-        $filter = $this->params->get('object_filter', $this->session->get('object_filter'));
-
-        $parsedFilter = null;
-        if ($filter) {
-            try {
-                $parsedFilter = json_decode($filter, true, flags: JSON_THROW_ON_ERROR);
-            } catch (JsonException $e) {
-                Logger::error('Failed to parse rule filter configuration: %s (Error: %s)', $filter, $e);
-                throw new ConfigurationError($this->translate(
-                    'Failed to parse rule filter configuration. Please contact your system administrator.'
-                ));
-            }
-
-            $version = $parsedFilter['version'] ?? null;
-            if ($version !== RuleSerializer::VERSION) {
-                Logger::error(
-                    'Cannot load filter for rule with id %d: filter version \'%s\' is not supported (expected %d)',
-                    $ruleId,
-                    $version,
-                    RuleSerializer::VERSION
-                );
-                throw new ConfigurationError($this->translate(
-                    'Unsupported rule filter version. Please contact your system administrator.'
-                ));
-            }
-        }
-
-        $hook = $this->resolveSourceHook($ruleId, (bool) ($parsedFilter['assisted'] ?? false));
-
-        $editor = (new SearchEditor())
-            ->addAttributes(Attributes::create(['class' => 'event-rule-filter']))
-            ->setQueryString($parsedFilter['qs'] ?? '')
-            ->setAction(Url::fromRequest()->with('object_filter', $filter)->getAbsoluteUrl());
-
-        $filterNameElement = $editor->createElement('text', 'filter_name', [
-            'label' => $this->translate('Filter Name'),
-            'value' => $parsedFilter['filter_name'] ?? null,
-            'decorators' => [
-                'Label',
-                'LabelGroup' => [
-                    'name' => 'HtmlTag',
-                    'options' => [
-                        'tag' => 'div',
-                        'class' => 'control-label-group'
-                    ]
-                ],
-                'RenderElement',
-                'ControlGroup' => [
-                    'name' => 'HtmlTag',
-                    'options' => [
-                        'tag' => 'div',
-                        'class' => 'control-group filter-name'
-                    ]
-                ],
-            ]
-        ]);
-
-        $filterNameElement->applyDecoration();
-        $editor->registerElement($filterNameElement);
-        $editor->prependHtml($filterNameElement);
-
-        if ($hook !== null) {
-            $editor->setSuggestionUrl(
-                Url::fromPath(
-                    'notifications/event-rule/suggest',
-                    ['id' => $ruleId, '_disableLayout' => true, 'showCompact' => true]
-                )
-            )->on(
-                SearchEditor::ON_VALIDATE_COLUMN,
-                function (Condition $condition) use ($hook) {
-                    try {
-                        $hook->assertValidCondition($condition);
-                    } catch (SearchException $e) {
-                        throw $e;
-                    } catch (Throwable $e) {
-                        Logger::error(
-                            'Source hook %s failed to validate filter condition: %s',
-                            get_class($hook),
-                            $e
-                        );
-
-                        throw new SearchException($this->translate(
-                            'Failed to validate column. Please contact your system administrator.'
-                        ));
-                    }
-                }
-            )->getParser()->on(QueryString::ON_CONDITION, function (Condition $condition) use ($hook) {
-                try {
-                    $hook->enrichCondition($condition);
-                } catch (Throwable $e) {
-                    Logger::error(
-                        'Source hook %s failed to enrich filter condition: %s',
-                        get_class($hook),
-                        $e
-                    );
-                }
-            });
-            $getJsonPaths = function (Filter\Chain $filter) use ($hook) {
-                return $hook->getJsonPaths(
-                    ...Seq::unique(
-                        Seq::map($filter->yieldRules(), fn($r) => $r->getColumn())
-                    )
-                );
-            };
-        } else {
-            $getJsonPaths = function (Filter\Chain $filter) {
-                $jsonPaths = [];
-                foreach (Seq::unique(Seq::map($filter->yieldRules(), fn($r) => $r->getColumn())) as $path) {
-                    $jsonPaths[$path] = [$path];
-                }
-
-                return $jsonPaths;
-            };
-        }
-
-        $assisted = $hook !== null;
-        $editor->on(Form::ON_SUBMIT, function (SearchEditor $form) use ($ruleId, $getJsonPaths, $assisted) {
-            $filter = $form->getFilter();
-            $this->session->set(
-                'object_filter',
-                (new RuleSerializer(
-                    $filter,
-                    $getJsonPaths($filter),
-                    $assisted,
-                    $form->getValue('filter_name')
-                ))->getJson()
-            );
-            $this->redirectNow(Links::eventRule($ruleId)->setParam('_filterOnly'));
-        })->handleRequest($this->getServerRequest());
-
-        if ($hook === null) {
-            $this->getDocument()->addHtml(
-                (new Callout(
-                    CalloutType::Info,
-                    Text::create(
-                        $this->translate(
-                            'Please make sure columns are valid JSON paths, '
-                            . 'as no validation is available for this source. '
-                            . 'Refer to the source\'s documentation for available columns.'
-                        )
-                    )
-                ))
-                    ->addAttributes(Attributes::create(['class' => 'generic-source-hint']))
-            );
-        }
-
-        $this->getDocument()->addHtml($editor);
-
         $this->setTitle($this->translate('Adjust Filter'));
+
+        $form = (new RuleFilterForm())
+            ->setAction(Url::fromRequest()->getAbsoluteUrl())
+            ->on(Form::ON_REQUEST, function ($_, RuleFilterForm $form) {
+                $rule = (new EscalationRuleRepository(Database::get()))
+                    ->find((int) $this->params->getRequired('id'));
+                if ($rule === null) {
+                    $this->httpNotFound($this->translate('Rule not found'));
+                }
+
+                $form->setRule($rule);
+            })->on(Form::ON_SUBMIT, function (RuleFilterForm $form) {
+                $rule = $form->getRule();
+
+                Database::get()->transaction(
+                    fn(Connection $db) => (new EscalationRuleRepository(Database::get()))->update($rule)
+                );
+
+                Notification::success(sprintf(
+                    $this->translate('Updated filter for escalation rule "%s"'),
+                    $rule->name
+                ));
+                $this->redirectNow(Links::eventRule($rule->id));
+            })->handleRequest($this->getServerRequest());
+
+        $form->setSuggestionUrl(Url::fromPath(
+            'notifications/event-rule/suggest',
+            [
+                'source_type' => $form->getValue('source_type'),
+                '_disableLayout' => true,
+                'showCompact' => true
+            ]
+        ));
+
+        $this->getDocument()->addHtml($form);
     }
 
     public function suggestAction(): void
     {
-        $hook = $this->resolveSourceHook((int) $this->params->getRequired('id'), true);
+        $hook = SourceHookLocator::forType($this->params->getRequired('source_type'));
         $requestData = SearchSuggestions::parseRequest($this->getServerRequest()) ?? [];
 
         $type = $requestData['term']['type'] ?? null;
         $label = $requestData['term']['label'] ?? '';
         $failureMessage = null;
 
-        if ($type === 'column') {
+        $provider = [];
+        if ($type === 'column' && $hook !== null) {
             $provider = $hook->getColumnSuggestions($label);
-        } else {
+        } elseif ($type === 'value') {
             $column = $requestData['column'] ?? null;
             if ($column === null || $column === SearchEditor::FAKE_COLUMN) {
                 $failureMessage = $this->translate('Missing column name');
-                $provider = [];
-            } else {
+            } elseif ($hook !== null) {
                 /** @var Filter\Chain $searchFilter */
                 $searchFilter = QueryString::parse($requestData['searchFilter'] ?? '');
                 $provider = $hook->getValueSuggestions($column, $label, $searchFilter);
@@ -386,36 +252,6 @@ class EventRuleController extends CompatController
         }
 
         $this->getDocument()->addHtml($suggestions);
-    }
-
-    protected function resolveSourceHook(int $ruleId, bool $required): ?SourceHook
-    {
-        $type = $this->session->get('source_type');
-        if ($type === null && $ruleId !== -1) {
-            $type = Rule::on(Database::get())
-                ->columns(['source_type'])
-                ->filter(Filter::equal('id', $ruleId))
-                ->first()?->source_type;
-        }
-
-        if ($type === null) {
-            $this->httpNotFound($this->translate('Rule not found'));
-        }
-
-        $hook = SourceHookLocator::forType($type);
-
-        if (! $required) {
-            return $hook;
-        }
-
-        if ($hook === null) {
-            $this->httpNotFound(sprintf($this->translate(
-                'No source integration available. Either the module supporting sources of type "%s" is not'
-                . ' enabled or you have insufficient privileges. Please contact your system administrator.'
-            ), $type));
-        }
-
-        return $hook;
     }
 
     public function editAction(): void
