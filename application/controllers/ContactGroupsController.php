@@ -157,14 +157,8 @@ class ContactGroupsController extends CompatController
             ->on(Form::ON_SENT, function (ContactGroupForm $form) {
                 if (! $form->hasBeenSubmitted() && ! $form->hasBeenDuplicated()) {
                     foreach ($form->getPartUpdates() as $update) {
-                        if (! is_array($update)) {
-                            $update = [$update];
-                        }
-
                         $this->addPart(...$update);
                     }
-                } else {
-                    $this->addPart($form, $this->content->getAttribute('id')->getValue());
                 }
             })
             ->on(Form::ON_SUBMIT, function (ContactGroupForm $form) {
@@ -176,6 +170,10 @@ class ContactGroupsController extends CompatController
                 $this->sendExtraUpdates(['#col1']);
                 $this->getResponse()->setHeader('X-Icinga-Container', 'col2');
                 $this->redirectNow(Links::contactGroup($groupId));
+            })
+            ->on(Form::ON_ERROR, function ($_, ContactGroupForm $form) {
+                // TODO: I feel this should be part of CompatForm or CompatController (e.g. $this->sendForm())
+                $this->addPart($form, $this->content->getAttribute('id')->getValue());
             })
             ->handleRequest($this->getServerRequest());
     }

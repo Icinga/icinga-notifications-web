@@ -189,10 +189,6 @@ class ScheduleController extends CompatController
         $form->on(Form::ON_SENT, function ($form) {
             if (! $form->hasBeenSubmitted()) {
                 foreach ($form->getPartUpdates() as $update) {
-                    if (! is_array($update)) {
-                        $update = [$update];
-                    }
-
                     $this->addPart(...$update);
                 }
             }
@@ -269,10 +265,6 @@ class ScheduleController extends CompatController
                 $this->closeModalAndRefreshRelatedView(Links::schedule($rotation->scheduleId));
             } elseif (! $form->hasBeenSubmitted() && ! $form->hasBeenDuplicated()) {
                 foreach ($form->getPartUpdates() as $update) {
-                    if (! is_array($update)) {
-                        $update = [$update];
-                    }
-
                     $this->addPart(...$update);
                 }
             }

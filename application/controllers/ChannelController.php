@@ -58,11 +58,9 @@ class ChannelController extends CompatController
                 }
 
                 $this->redirectNow('__CLOSE__');
-            })->on(Form::ON_SENT, function (ChannelForm $form) {
+            })->on(Form::ON_ERROR, function ($_, ChannelForm $form) {
                 // TODO: I feel this should be part of CompatForm or CompatController (e.g. $this->sendForm())
-                if (! $this->getResponse()->isRedirect()) {
-                    $this->addPart($form, $this->content->getAttribute('id')->getValue());
-                }
+                $this->addPart($form, $this->content->getAttribute('id')->getValue());
             })->handleRequest($this->getServerRequest());
     }
 }

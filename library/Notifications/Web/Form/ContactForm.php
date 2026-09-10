@@ -298,7 +298,12 @@ class ContactForm extends CompatForm
 
     protected function onError()
     {
+        parent::onError();
+
         // TODO: I feel like this should be the case in ipl-html already
-        $this->emit(Form::ON_SENT, [$this]);
+        if (! $this->hasMessages()) {
+            // Trigger the event in case only validation failed
+            $this->emit(Form::ON_ERROR, [null, $this]);
+        }
     }
 }

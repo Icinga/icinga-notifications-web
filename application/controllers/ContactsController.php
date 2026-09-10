@@ -139,11 +139,9 @@ class ContactsController extends CompatController
                 Database::get()->transaction(fn(Connection $db) => (new ContactRepository($db))->create($contact));
                 Notification::success($this->translate('New contact has successfully been added'));
                 $this->switchToSingleColumnLayout();
-            })->on(Form::ON_SENT, function (ContactForm $form) {
+            })->on(Form::ON_ERROR, function ($_, ContactForm $form) {
                 // TODO: I feel this should be part of CompatForm or CompatController (e.g. $this->sendForm())
-                if (! $this->getResponse()->isRedirect()) {
-                    $this->addPart($form, $this->content->getAttribute('id')->getValue());
-                }
+                $this->addPart($form, $this->content->getAttribute('id')->getValue());
             })->handleRequest($this->getServerRequest());
     }
 
