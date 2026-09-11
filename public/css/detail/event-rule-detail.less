@@ -1,91 +1,172 @@
 // SPDX-FileCopyrightText: 2023 Icinga GmbH <https://icinga.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-.event-rule-config {
+.escalation-rule {
   @connectorHeight: .5em;
-  @connectorColor: @gray-lighter;
+  @connectorBg: @gray-lighter;
+  @connectorHoverBg: @gray-light;
+  @outlineBorderRadius: 2em;
+  @outlinePadding: .5em;
 
   // Style
 
-  .connector-line {
-    background-color: @connectorColor;
+  ol, ul {
+    padding: 0;
+    list-style-type: none;
   }
 
-  .dynamic-list:not(.empty, .escalations) {
-    padding: .5em;
-    border: 1px solid @connectorColor;
-    .rounded-corners();
+  .connector-line {
+    background-color: @connectorBg;
+  }
+
+  .title {
+    color: @text-color-light;
+    text-align: center;
+  }
+
+  .operator-label {
+    .monospace-font();
+    color: @text-color-light;
+  }
+
+  .outline {
+    .rounded-corners(@outlineBorderRadius);
+  }
+
+  .description {
+    @descriptionBorderRadius: @outlineBorderRadius - @outlinePadding;
+    .rounded-corners(calc(@descriptionBorderRadius - 1px));
+
+    &:has(.callout) .callout {
+      .rounded-corners(calc(@descriptionBorderRadius - 1px));
+    }
+  }
+
+  .outline,
+  .description {
+    padding: @outlinePadding;
+    border: 1px solid @connectorBg;
+  }
+
+  .outline {
+    .button-link {
+      display: none;
+    }
+
+    &:hover {
+      background-color: @connectorBg;
+
+      .connector-line {
+        background-color: @connectorHoverBg;
+      }
+
+      .description {
+        border-color: @connectorHoverBg
+      }
+
+      .button-link {
+        display: revert;
+      }
+    }
   }
 
   .add-button,
-  .filter-button,
-  .remove-button {
+  .filter-button {
     .event-rule-button();
-
-    &.animated.active {
-      .fa::before {
-        .animate(spin 2s infinite linear);
-
-        // fa spinner
-        content: '\f110';
-      }
-    }
-  }
-
-  .remove-button-disabled {
-    .event-rule-button(true);
-  }
-
-  .escalation-condition,
-  .escalation-recipient {
-    > :first-child,
-    > :first-child[type="hidden"] + * {
-      .rounded-corners(.25em);
-      border-top-right-radius: 0;
-      border-bottom-right-radius: 0;
-    }
-
-    > :last-child {
-      .rounded-corners(.25em);
-      border-top-left-radius: 0;
-      border-bottom-left-radius: 0;
-    }
-
-    > :not(:first-child, :first-child[type="hidden"] + *, :last-child) {
-      .rounded-corners(0);
-
-      * {
-        // nested inputs as well
-        .rounded-corners(0);
-      }
-    }
   }
 
   // Layout
 
-  display: flex;
+  @outlineGridColumns: minmax(0, 1fr) minmax(1em, 10em) minmax(0, 1fr);
+  @escalationsGridColumns: 3em minmax(1em, 4em) @outlineGridColumns;
+
+  display: grid;
+  grid-template-columns: minmax(1em, 4em) 20em minmax(1em, 4em) @escalationsGridColumns;
+  grid-template-areas:
+    ". object-filter-title . . . condition-title . recipients-title"
+    "c1 object-filter c2 escalations escalations escalations escalations escalations";
+
+  ol, ul {
+    margin: 0;
+  }
+
+  .object-filter-title {
+    grid-area: object-filter-title;
+  }
+
+  .condition-title {
+    grid-area: condition-title;
+  }
+
+  .recipients-title {
+    grid-area: recipients-title;
+  }
 
   .connector-line {
     height: @connectorHeight;
-    margin-top: 2.75em;
   }
 
   > .connector-line {
-    flex: 1 1 auto;
-    min-width: 1em;
+    margin-top: 2.75em;
+  }
+
+  .description {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .recipients ul {
+    width: 100%;
+    overflow: hidden;
+
+    li {
+      display: flex;
+      gap: .417em;
+      justify-content: center;
+      align-items: baseline;
+      white-space: nowrap;
+    }
+
+    .recipient-name {
+      .text-ellipsis();
+    }
+  }
+
+  .outline,
+  .description {
+    &:has(.callout) {
+      display: contents;
+
+      .callout {
+        justify-content: center;
+        align-items: center;
+      }
+    }
+  }
+
+  .outline > .connector-line {
+    align-self: center;
+  }
+
+  > .connector-line:nth-child(4) {
+    grid-area: c1;
+  }
+
+  > .connector-line:nth-child(6) {
+    grid-area: c2;
   }
 
   #object-filter-controls {
-    width: 20em;
     height: fit-content;
+    grid-area: object-filter;
   }
 
-  .set-wrapper:has(.dynamic-list.empty .add-button),
   > #object-filter-controls {
     padding: .75em 0;
   }
 
-  .dynamic-list.empty .add-button,
   > #object-filter-controls > .button-wrapper .filter-button {
     align-self: flex-start;
     flex-direction: column;
@@ -98,7 +179,6 @@
     }
   }
 
-  .dynamic-list.empty > .add-button-wrapper,
   > #object-filter-controls > .button-wrapper {
     display: flex;
 
@@ -109,7 +189,7 @@
       min-width: 1.25em;
       height: @connectorHeight;
       margin-top: 2em;
-      background-color: @connectorColor;
+      background-color: @connectorBg;
     }
 
     .add-button,
@@ -123,87 +203,74 @@
     min-width: 12em;
   }
 
-  > .escalations {
-    flex: 15 1 auto;
-  }
-
   .escalations {
+    position: relative;
+    grid-area: escalations;
     display: grid;
-    grid-template-columns: min-content minmax(1em, 4em) 1fr minmax(1em, 4em) 1fr;
+    grid-template-columns: @escalationsGridColumns;
+    grid-template-columns: subgrid;
 
-    .escalation {
+    > li {
       display: contents;
     }
 
-    .escalation > div:first-child {
+    > li > div:first-child {
       .vertical-line();
-
-      .remove-button {
-        margin-top: 2em;
-      }
     }
 
     // The first escalation isn't connected to anything on top of it
-    .escalation:first-child > div:first-child::before {
-      top: 2.75em;
+    > li:first-child {
+      > div:first-child::before {
+        top: 2.75em;
+      }
+
+      .connector-line {
+        margin-top: 2.75em;
+      }
+
+      .outline {
+        margin-top: 1.2em;
+        margin-bottom: 2em;
+
+        > .connector-line {
+          margin-top: 0;
+        }
+      }
     }
 
-    > .add-button-wrapper {
-      .vertical-line();
+    > li:not(:first-child) {
+      > div:first-child {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
 
-      .add-button {
+        .connector-line {
+          margin-left: 1.25em;
+        }
+      }
+
+      > .connector-line {
+        align-self: center;
+      }
+
+      .outline {
         margin-top: 2em;
+        margin-bottom: 2em;
       }
     }
 
-    .escalation .dynamic-list {
-      position: relative;
-      margin-bottom: 1em;
+    > li > .outline {
+      grid-column: ~"3 / 6";
+      display: grid;
+      grid-template-columns: @outlineGridColumns;
+      grid-template-columns: subgrid;
 
-      .dynamic-item {
-        display: grid;
-        align-items: baseline;
-        margin-bottom: .5em;
-        gap: 1px;
-
-        &.escalation-condition {
-          grid-template-columns: minmax(8em, 1fr) 0fr 4em minmax(8em, 1fr) min-content;
-
-          .age-inputs {
-            display: flex;
-            gap: 1px;
-
-            > * {
-              flex: 1 1 auto;
-              width: 0;
-            }
-          }
-        }
-
-        &.escalation-recipient {
-          grid-template-columns: minmax(8em, 1fr) minmax(8em, 1fr) min-content;
-        }
-
-        .remove-button,
-        .remove-button-disabled {
-          height: 100%;
-        }
-      }
-
-      .add-button {
-        width: 100%;
-
-        > .icon {
-          margin: 0 auto;
-        }
+      .button-link {
+        position: absolute;
+        align-self: center;
+        justify-self: center;
       }
     }
-  }
-
-  select:not([multiple]) + .spinner::before {
-    // ipl-web's Icon applies a min-width by default. Since the spinner element is part of a flex container,
-    // it will be larger than necessary, covering the select's dropdown arrow. This ensures it doesn't.
-    width: 1em;
   }
 
   .vertical-line() {
@@ -218,18 +285,25 @@
       content: "";
       width: @connectorHeight;
 
-      background-color: @connectorColor;
+      background-color: @connectorBg;
     }
   }
 }
 
-#layout.twocols:not(.wide-layout) {
-  .event-rule-config {
-    #object-filter-controls {
-      width: fit-content;
+// Based on font families set by icingaweb2/public/css/icinga/responsive.less
+#layout.default-layout,
+#layout.compact-layout,
+#layout.poor-layout,
+#layout.minimal-layout {
+  .escalation-rule {
+    @escalationsGridColumns: 3em 1em minmax(0, 1fr) 1em minmax(0, 1fr);
+    grid-template-columns: 1em min-content 1em @escalationsGridColumns;
+
+    .escalations {
+      grid-template-columns: @escalationsGridColumns;
+      grid-template-columns: subgrid;
     }
 
-    .dynamic-list.empty .add-button,
     > #object-filter-controls > .button-wrapper .filter-button {
       padding: .5em 1em;
       margin-top: .75em;
@@ -243,7 +317,7 @@
 
 // Other stuff
 
-.event-rule-and-save-forms {
+.event-rule-controls {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
@@ -255,17 +329,6 @@
 
     h2 {
       margin: 0;
-    }
-  }
-
-  #save-config {
-    display: flex;
-    flex-direction: row-reverse;
-    gap: .5em;
-    max-height: 2em;
-
-    .btn-remove {
-      .button(@body-bg-color, @color-critical, @color-critical-accentuated);
     }
   }
 }
@@ -281,5 +344,15 @@
     flex-grow: 1;
     max-width: 35em;
     .rounded-corners();
+  }
+}
+
+.rule-escalation-recipient-badge {
+  display: flex;
+  gap: .417em;
+
+  .badge {
+    .text-ellipsis();
+    max-width: 16em;
   }
 }

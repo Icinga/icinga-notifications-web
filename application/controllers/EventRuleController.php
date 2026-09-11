@@ -9,15 +9,13 @@ use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Common\SourceHookLocator;
-use Icinga\Module\Notifications\Data\NotificationConfigProvider;
-use Icinga\Module\Notifications\Forms\EventRuleConfigForm;
 use Icinga\Module\Notifications\Forms\EventRuleForm;
 use Icinga\Module\Notifications\Forms\RuleFilterForm;
 use Icinga\Module\Notifications\Model\Source;
 use Icinga\Module\Notifications\Repository\EscalationRuleRepository;
+use Icinga\Module\Notifications\Widget\EscalationRule;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
-use ipl\Html\Attributes;
 use ipl\Html\Contract\Form;
 use ipl\Html\Html;
 use ipl\Sql\Connection;
@@ -29,154 +27,39 @@ use ipl\Web\FormElement\SearchSuggestions;
 use ipl\Web\Url;
 use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
-use Psr\Http\Message\ServerRequestInterface;
 
 class EventRuleController extends CompatController
 {
     use Auth;
 
-    private Session\SessionNamespace $session;
-
     public function init(): void
     {
         $this->assertPermission('notifications/config/event-rules');
-        $this->session = Session::getSession()->getNamespace('notifications.event-rule');
     }
 
     public function indexAction(): void
     {
-        $this->controls->addAttributes(Attributes::create(['class' => 'event-rule-detail']));
-        $this->content->addAttributes(Attributes::create(['class' => 'event-rule-detail']));
-        $this->getTabs()->disableLegacyExtensions();
-
-        $ruleId = (int) $this->params->getRequired('id');
-
-        $multiPartUpdate = false;
-        $eventRuleConfig = (new EventRuleConfigForm(
-            new NotificationConfigProvider(),
-            Url::fromPath('notifications/event-rule/search-editor', ['id' => $ruleId])
-        ))->setCsrfCounterMeasureId(Session::getSession()->getId());
-
-        $eventRuleConfig
-            ->on(Form::ON_SUBMIT, function (EventRuleConfigForm $form) use ($ruleId) {
-                $rule = $form->getRule();
-
-                if ($ruleId === -1) {
-                    $ruleId = Database::get()->transaction(
-                        fn(Connection $db) => (new EscalationRuleRepository($db))->create($rule)
-                    );
-                } else {
-                    Database::get()->transaction(
-                        fn(Connection $db) => (new EscalationRuleRepository($db))->update($rule)
-                    );
-                }
-
-                Notification::success(sprintf(
-                    $this->translate('Successfully saved event rule %s'),
-                    $rule->name
-                ));
-                $this->sendExtraUpdates(['#col1']);
-                $this->redirectNow(Links::eventRule($ruleId));
-            })
-            ->on(Form::ON_SENT, function (EventRuleConfigForm $form) use ($ruleId) {
-                if ($form->hasBeenRemoved()) {
-                    Database::get()->transaction(
-                        fn(Connection $db) => (new EscalationRuleRepository($db))->delete($ruleId)
-                    );
-                    Notification::success(sprintf(
-                        $this->translate('Successfully deleted event rule %s'),
-                        $form->getValue('name')
-                    ));
-                    $this->switchToSingleColumnLayout();
-                }
-            })
-            ->on(Form::ON_REQUEST, function (
-                ServerRequestInterface $request,
-                EventRuleConfigForm $form
-            ) use (
-                $ruleId,
-                &$multiPartUpdate
-            ) {
-                $nameOnly = (bool) $this->params->shift('_nameOnly');
-                $filterOnly = (bool) $this->params->shift('_filterOnly');
-
-                if ($nameOnly || $filterOnly) {
-                    $multiPartUpdate = true;
-
-                    if ($nameOnly) {
-                        $this->addTitleTab(sprintf(
-                            $this->translate('Event Rule: %s'),
-                            $this->session->get('name')
-                        ));
-
-                        $this->addPart($this->tabs);
-                        $this->addPart($form->prepareObjectFilterUpdate($this->session->get('object_filter')));
-                        $this->addPart($form->prepareConfigUpdate(
-                            $this->session->get('name'),
-                            $this->session->get('source_type')
-                        ));
-                        $this->addPart(Html::tag('div', ['id' => 'event-rule-config-name'], [
-                            Html::tag('h2', $this->session->get('name')),
-                            (new Link(
-                                new Icon('edit'),
-                                Url::fromPath('notifications/event-rule/edit', ['id' => $ruleId]),
-                                ['class' => 'control-button']
-                            ))->openInModal()
-                        ]));
-                    } else {
-                        $this->addPart($form->prepareConfigUpdate(
-                            $this->session->get('name'),
-                            $this->session->get('source_type')
-                        ));
-                        $this->addPart($form->prepareObjectFilterUpdate($this->session->get('object_filter')));
-                    }
-
-                    $this->getResponse()->setHeader('X-Icinga-Location-Query', $this->params->toString());
-                } elseif ($ruleId !== -1) {
-                    $rule = (new EscalationRuleRepository(Database::get()))->find($ruleId);
-                    if ($rule === null) {
-                        $this->httpNotFound(t('Rule not found'));
-                    }
-
-                    $form->setRule($rule);
-
-                    $this->session->set('name', $rule->name);
-                    $this->session->set('source_type', $rule->source_type);
-                    $this->session->set('object_filter', $rule->object_filter ?? '');
-                } else {
-                    $name = $this->params->getRequired('name');
-                    $source = $this->params->getRequired('source_type');
-                    $form->populate(['name' => $name, 'source_type' => $source]);
-
-                    $this->session->set('name', $name);
-                    $this->session->set('source_type', $source);
-                    $this->session->set('object_filter', '');
-                }
-            })
-            ->handleRequest($this->getServerRequest());
-
-        if ($multiPartUpdate) {
-            return;
+        $rule = (new EscalationRuleRepository(Database::get()))
+            ->find((int) $this->params->getRequired('id'));
+        if ($rule === null) {
+            $this->httpNotFound($this->translate('Rule not found'));
         }
 
-        $this->addControl(Html::tag('div', ['class' => 'event-rule-and-save-forms'], [
-            Html::tag('div', ['class' => 'event-rule-form', 'id' => 'event-rule-config-name'], [
-                Html::tag('h2', $eventRuleConfig->getValue('name')),
+        $this->getTabs()->disableLegacyExtensions();
+        $this->addTitleTab(sprintf($this->translate('Event Rule: %s'), $rule->name));
+
+        $this->addControl(Html::tag('div', ['class' => 'event-rule-controls'], [
+            Html::tag('div', ['class' => 'event-rule-form'], [
+                Html::tag('h2', $rule->name),
                 (new Link(
                     new Icon('edit'),
-                    Url::fromPath('notifications/event-rule/edit', ['id' => $ruleId]),
+                    Url::fromPath('notifications/event-rule/edit', ['id' => $rule->id]),
                     ['class' => 'control-button']
                 ))->openInModal()
-            ]),
-            Html::tag(
-                'div',
-                ['id' => 'save-config', 'class' => 'icinga-controls'],
-                $eventRuleConfig->createExternalSubmitButtons()
-            )
+            ])
         ]));
 
-        $this->addTitleTab(sprintf($this->translate('Event Rule: %s'), $eventRuleConfig->getValue('name')));
-        $this->addContent($eventRuleConfig);
+        $this->addContent(new EscalationRule($rule));
     }
 
     public function searchEditorAction(): void
