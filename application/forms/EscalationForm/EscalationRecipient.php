@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: 2023 Icinga GmbH <https://icinga.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-namespace Icinga\Module\Notifications\Forms\EventRuleConfigElements;
+namespace Icinga\Module\Notifications\Forms\EscalationForm;
 
 use Icinga\Module\Notifications\Form\Data\EscalationRecipient as EscalationRecipientData;
 use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
@@ -24,7 +24,7 @@ class EscalationRecipient extends FieldsetElement
 {
     use ConfigProvider;
 
-    protected $defaultAttributes = ['class' => 'escalation-recipient'];
+    protected $defaultAttributes = ['class' => ['escalation-recipient', 'icinga-controls']];
 
     /** @var ?SubmitButtonElement The button to remove this recipient */
     protected ?SubmitButtonElement $removeButton = null;
