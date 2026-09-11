@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: 2025 Icinga GmbH <https://icinga.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-namespace Icinga\Module\Notifications\Forms\EventRuleConfigElements;
+namespace Icinga\Module\Notifications\Forms\EscalationForm;
 
 use Icinga\Module\Notifications\Form\Data\EscalationRecipient as EscalationRecipientData;
 use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
@@ -12,6 +12,7 @@ use ipl\Html\Contract\FormElement;
 use ipl\Html\FormElement\FieldsetElement;
 use ipl\Html\FormElement\SubmitButtonElement;
 use ipl\Html\HtmlElement;
+use ipl\Html\Text;
 use ipl\Web\Widget\Icon;
 
 /**
@@ -29,8 +30,11 @@ class EscalationRecipients extends FieldsetElement
         /** @var SubmitButtonElement $button */
         $button = $this->createElement('submitButton', 'add-button', [
             'title' => $this->translate('Add Recipient'),
-            'label' => new Icon('plus'),
-            'class' => ['add-button', 'animated']
+            'label' => [
+                new Icon('plus'),
+                new HtmlElement('span', content: Text::create($this->translate('Add Recipient')))
+            ],
+            'class' => ['add-button', 'animated', 'link-button']
         ]);
 
         $button->addWrapper(new HtmlElement('div', Attributes::create(['class' => 'add-button-wrapper'])));

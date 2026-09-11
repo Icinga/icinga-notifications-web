@@ -51,7 +51,7 @@ final class EscalationRepository
     public function create(Escalation $escalation): int
     {
         $model = (new RuleEscalation())->setNew();
-        $model->rule_id = $escalation->ruleId ?? throw new LogicException('Missing rule ID');
+        $model->rule_id = $escalation->ruleId;
         $model->position = $escalation->position;
         $model->condition = $escalation->condition;
 
