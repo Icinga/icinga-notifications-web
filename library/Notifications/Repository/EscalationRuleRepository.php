@@ -5,7 +5,10 @@
 
 namespace Icinga\Module\Notifications\Repository;
 
+use Icinga\Exception\NotImplementedError;
 use Icinga\Module\Notifications\Common\EntityManager;
+use Icinga\Module\Notifications\Form\Data\Escalation;
+use Icinga\Module\Notifications\Form\Data\EscalationRecipient;
 use Icinga\Module\Notifications\Form\Data\EscalationRule;
 use Icinga\Module\Notifications\Model\Rule;
 use InvalidArgumentException;
@@ -111,5 +114,63 @@ final class EscalationRuleRepository
         (new EntityManager($this->db))->save($rule->delete());
 
         return $rule;
+    }
+
+    /**
+     * Duplicate an escalation rule
+     *
+     * @param EscalationRule $rule
+     *
+     * @return int
+     */
+    public function duplicate(EscalationRule $rule): int
+    {
+        $original = $this->find($rule->id);
+        if ($original === null) {
+            throw new InvalidArgumentException(
+                'Cannot duplicate an escalation rule that does not exist in the database'
+            );
+        } elseif (isset($original->timeperiod_id)) {
+            throw new NotImplementedError(
+                'Duplicating escalation rules with time periods is not yet supported'
+            );
+        }
+
+        $ruleId = $this->create(new EscalationRule(
+            null,
+            $rule->name,
+            $rule->sourceType,
+            $rule->objectFilter ?? $original->object_filter
+        ));
+
+        $escalationRepository = new EscalationRepository($this->db);
+
+        foreach ($original->rule_escalation as $escalation) {
+            $recipients = [];
+            foreach ($escalation->rule_escalation_recipient as $recipient) {
+                [$recipientType, $recipientId] = match (true) {
+                    isset($recipient->contactgroup_id) => ['contact_group', $recipient->contactgroup_id],
+                    isset($recipient->schedule_id) => ['schedule', $recipient->schedule_id],
+                    default => ['contact', $recipient->contact_id]
+                };
+
+                $recipients[] = new EscalationRecipient(
+                    null,
+                    $recipientType,
+                    $recipientId,
+                    $recipient->channel_id
+                );
+            }
+
+            $escalationRepository->create(new Escalation(
+                null,
+                $escalation->position,
+                $escalation->condition,
+                $recipients,
+                $ruleId
+            ));
+        }
+
+        return $ruleId;
     }
 }

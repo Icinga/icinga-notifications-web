@@ -204,4 +204,51 @@ class EscalationRuleRepositoryTest extends TestCase
 
         (new EscalationRuleRepository($db))->delete(999);
     }
+
+    #[DataProvider('sharedDatabases')]
+    public function testDuplicateThrowsWhenTheOriginalDoesNotExist(Connection $db): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        (new EscalationRuleRepository($db))->duplicate(new EscalationRule(999, 'Copy', 'test', null));
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testDuplicateAlsoCopiesEscalations(Connection $db): void
+    {
+        $repository = new EscalationRuleRepository($db);
+        $originalId = $repository->create(new EscalationRule(null, 'Original', 'test', null));
+
+        (new EscalationRepository($db))->create($this->escalation(null, 1, 'incident_age>1h', $originalId));
+
+        // Create and directly remove an escalation to verify it is not revived by the duplication
+        $toRemove = (new EscalationRepository($db))->create($this->escalation(null, 0, null, $originalId));
+        (new EscalationRepository($db))->delete($toRemove);
+
+        $copyId = $repository->duplicate(new EscalationRule($originalId, 'Copy', 'test', null));
+        $this->assertNotSame($originalId, $copyId);
+
+        $copyEscalations = $this->escalationsOf($db, $copyId);
+        $this->assertCount(
+            1,
+            $copyEscalations,
+            'Only one escalation should be copied, the deleted one must not be revived'
+        );
+
+        $this->assertSame(
+            'incident_age>1h',
+            $copyEscalations[0]->condition,
+            'The copied escalation should have the same condition as the original'
+        );
+
+        // The copies are independent rows, not the originals
+        $originalIds = array_map(fn ($r) => (int) $r->id, $this->escalationsOf($db, $originalId));
+        foreach ($copyEscalations as $rotation) {
+            $this->assertNotContains((int) $rotation->id, $originalIds, 'A duplicated escalation must be a new row');
+        }
+
+        // Recipients are copied and mapped by type
+        $recipient = $copyEscalations[0]->rule_escalation_recipient->first();
+        $this->assertSame(self::$contactId, $recipient->contact_id);
+    }
 }
