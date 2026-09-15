@@ -5,12 +5,15 @@
 
 namespace Icinga\Module\Notifications\Forms;
 
+use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\SourceHookLocator;
 use Icinga\Module\Notifications\Form\Data\EscalationRule;
 use Icinga\Module\Notifications\Model\Rule;
 use ipl\Html\Contract\Form;
 use ipl\Html\FormDecoration\DescriptionDecorator;
 use ipl\Html\HtmlDocument;
+use ipl\Stdlib\Filter;
+use ipl\Validator\CallbackValidator;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
 
@@ -79,9 +82,17 @@ class EventRuleForm extends CompatForm
      */
     public function hasBeenDeleted(): bool
     {
-        $btn = $this->getPressedSubmitElement();
+        return $this->getPressedSubmitElement()?->getName() === 'delete';
+    }
 
-        return $btn !== null && $btn->getName() === 'delete';
+    /**
+     * Check if the duplicate button was pressed
+     *
+     * @return bool
+     */
+    public function hasBeenDuplicated(): bool
+    {
+        return $this->getPressedSubmitElement()?->getName() === 'duplicate';
     }
 
     protected function assemble(): void
@@ -99,8 +110,26 @@ class EventRuleForm extends CompatForm
             'text',
             'name',
             [
-                'label'     => $this->translate('Title'),
-                'required'  => true
+                'required'      => true,
+                'label'         => $this->translate('Title'),
+                'validators'    => [
+                    new CallbackValidator(function ($value, $validator) use ($ruleId) {
+                        $rules = Rule::on(Database::get())
+                            ->columns('id')
+                            ->filter(Filter::equal('name', $value));
+                        if ($ruleId !== null && ! $this->hasBeenDuplicated()) {
+                            $rules->filter(Filter::unequal('id', $ruleId));
+                        }
+
+                        if ($rules->first() !== null) {
+                            $validator->addMessage($this->translate('An event rule with this name already exists'));
+
+                            return false;
+                        }
+
+                        return true;
+                    })
+                ]
             ]
         );
 
@@ -132,11 +161,16 @@ class EventRuleForm extends CompatForm
                 'class' => 'btn-remove',
                 'formnovalidate' => true
             ]);
-
             $this->registerElement($deleteBtn);
 
+            $duplicateBtn = $this->createElement('submit', 'duplicate', [
+                'label' => $this->translate('Duplicate')
+            ]);
+            $this->registerElement($duplicateBtn);
+
             $this->getElement('btn_submit')->prependWrapper((new HtmlDocument())->setHtmlContent(
-                $deleteBtn
+                $deleteBtn,
+                $duplicateBtn
             ));
         }
     }
@@ -159,7 +193,9 @@ class EventRuleForm extends CompatForm
 
     public function hasBeenSubmitted()
     {
-        return parent::hasBeenSubmitted() || ($this->hasBeenSent() && $this->hasBeenDeleted());
+        return parent::hasBeenSubmitted() || (
+            $this->hasBeenSent() && ($this->hasBeenDeleted() || $this->hasBeenDuplicated())
+        );
     }
 
     protected function onError()

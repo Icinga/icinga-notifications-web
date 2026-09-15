@@ -161,6 +161,13 @@ class EventRuleController extends CompatController
                     );
 
                     $this->switchToSingleColumnLayout();
+                } elseif ($form->hasBeenDuplicated()) {
+                    $ruleId = Database::get()->transaction(
+                        fn(Connection $db) => (new EscalationRuleRepository(Database::get()))->duplicate($rule)
+                    );
+
+                    $this->sendExtraUpdates(['#col1']);
+                    $this->redirectNow(Links::eventRule($ruleId));
                 } else {
                     Database::get()->transaction(
                         fn(Connection $db) => (new EscalationRuleRepository($db))->update($rule)
