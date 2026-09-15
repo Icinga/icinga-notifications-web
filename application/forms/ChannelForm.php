@@ -270,8 +270,8 @@ class ChannelForm extends CompatForm
         if ($type === "child") {
             $configFieldset = $this->getElement('config');
         } else {
-          $configFieldset = new FieldsetElement('config');
-          $this->addElement($configFieldset);
+            $configFieldset = new FieldsetElement('config');
+            $this->addElement($configFieldset);
         }
 
 
@@ -296,7 +296,6 @@ class ChannelForm extends CompatForm
             $configFieldset->addElement($elem);
 
             if ($type !== "child" && ($elem->getTag() === 'select' || $elem->getTag() === 'checkbox')) {
-
                 $selectedOption = $elem->getValue();
                 $children = $elementConfig['children'];
 
@@ -311,7 +310,6 @@ class ChannelForm extends CompatForm
                 }
             }
         }
-
     }
 
     /**
@@ -349,11 +347,10 @@ class ChannelForm extends CompatForm
         if ($elementConfig['type'] === 'bool') {
             $options['checkedValue'] = 'checked';
             $options['uncheckedValue'] = 'unchecked';
-            $options['class']='autosubmit';
+            $options['class'] = 'autosubmit';
             if (isset($elementConfig['children'])) {
                 $options['children'] = $elementConfig['children'];
             }
-
         }
 
         if (isset($elementConfig['help'])) {
@@ -371,7 +368,7 @@ class ChannelForm extends CompatForm
             if ($elementConfig['type'] === 'options') {
                 $options['multiple'] = true;
             }
-            $options['class']='autosubmit';
+            $options['class'] = 'autosubmit';
             if (isset($elementConfig['children'])) {
                 $options['children'] = $elementConfig['children'];
             }
