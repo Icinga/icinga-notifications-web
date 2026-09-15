@@ -19,7 +19,7 @@ use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Module\Notifications\Widget\MemberSuggestions;
 use Icinga\Web\Notification;
-use ipl\Html\Form;
+use ipl\Html\Contract\Form;
 use ipl\Html\HtmlString;
 use ipl\Html\TemplateString;
 use ipl\Sql\Connection;
@@ -174,6 +174,11 @@ class ContactGroupsController extends CompatController
             ->on(Form::ON_ERROR, function ($_, ContactGroupForm $form) {
                 // TODO: I feel this should be part of CompatForm or CompatController (e.g. $this->sendForm())
                 $this->addPart($form, $this->content->getAttribute('id')->getValue());
+            })
+            ->on(Form::ON_SENT, function (ContactGroupForm $form) {
+                if (! $form->hasBeenSubmitted()) {
+                    $this->addPart($form, $this->content->getAttribute('id')->getValue());
+                }
             })
             ->handleRequest($this->getServerRequest());
     }

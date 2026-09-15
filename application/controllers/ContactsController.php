@@ -142,6 +142,10 @@ class ContactsController extends CompatController
             })->on(Form::ON_ERROR, function ($_, ContactForm $form) {
                 // TODO: I feel this should be part of CompatForm or CompatController (e.g. $this->sendForm())
                 $this->addPart($form, $this->content->getAttribute('id')->getValue());
+            })->on(Form::ON_SENT, function (ContactForm $form) {
+                if (! $form->hasBeenSubmitted()) {
+                    $this->addPart($form, $this->content->getAttribute('id')->getValue());
+                }
             })->handleRequest($this->getServerRequest());
     }
 
