@@ -158,7 +158,29 @@ class ChannelForm extends CompatForm
 
         /** @var string $selectedType */
         $selectedType = $this->getValue('type');
-        $this->createConfigElements($selectedType, $typesConfig[$selectedType]);
+        /** @var array<int, ChannelOptionConfig> $typeConfig */
+        $typeConfig = json_decode($typesConfig[$selectedType], true);
+        if (empty($typeConfig)) {
+            $this->prependHtml(
+                HtmlElement::create(
+                    'ul',
+                    Attributes::create(['class' => 'errors']),
+                    HtmlElement::create(
+                        'li',
+                        null,
+                        sprintf(
+                            $this->translate(
+                                'Could not decode options for type \'%s\'.'
+                                . ' Check if your database\'s character set is correctly configured.'
+                            ),
+                            $selectedType
+                        )
+                    )
+                )
+            );
+        } else {
+            $this->createConfigElements($selectedType, $typeConfig, false);
+        }
 
         $this->addElement(
             'submit',
@@ -232,55 +254,83 @@ class ChannelForm extends CompatForm
     }
 
     /**
-     * Create config elements for the given channel type
+     * Create config elements for the given configuration object type
      *
-     * @param string $type The channel type
-     * @param string $config The channel type config
+     * @param string $parent The name of the parent object
+     * @param array<int, ChannelOptionConfig> $elementsConfig The element's type config
+     * @param bool $isChild Whether the parent object is already a child
      */
-    protected function createConfigElements(string $type, string $config): void
+    protected function createConfigElements(string $parent, array $elementsConfig, bool $isChild): void
     {
-        /** @var array<int, ChannelOptionConfig>  $elementsConfig */
-        $elementsConfig = json_decode($config, true);
-
-        if (empty($elementsConfig)) {
-            $this->prependHtml(
-                HtmlElement::create(
-                    'ul',
-                    Attributes::create(['class' => 'errors']),
-                    HtmlElement::create(
-                        'li',
-                        null,
-                        sprintf(
-                            $this->translate(
-                                'Could not decode options for type \'%s\'.'
-                                . ' Check if your database\'s character set is correctly configured.'
-                            ),
-                            $type
-                        )
-                    )
-                )
-            );
-
-            return;
+        if ($this->hasElement('config')) {
+            $configFieldset = $this->getElement('config');
+        } else {
+            $configFieldset = new FieldsetElement('config');
+            $this->addElement($configFieldset);
         }
 
-        $configFieldset = new FieldsetElement('config');
-        $this->addElement($configFieldset);
+        $autosubmittedBy = $this->getRequest()->getHeader("x-icinga-autosubmittedby")[0] ?? null;
 
         foreach ($elementsConfig as $elementConfig) {
+            $elementType = $this->getElementType($elementConfig['type']);
+
             /** @var BaseFormElement $elem */
             $elem = $this->createElement(
-                $this->getElementType($elementConfig['type']),
+                $elementType,
                 $elementConfig['name'],
                 $this->getElementOptions($elementConfig)
             );
 
-            if ($type === "email" && $elem->getName() === "sender_mail") {
+            if ($parent === "email" && $elem->getName() === "sender_mail") {
                 $elem->getValidators()->add(new EmailAddressValidator());
             }
 
             $configFieldset->addElement($elem);
+            $hasChildren = isset($elementConfig['children']);
+            $hasAutosubmitted = ($autosubmittedBy !== null)
+                && $this->parseElementName($autosubmittedBy) === $elementConfig['name'];
+
+            if ($hasChildren && ! $isChild && ($elementType === 'select' || $elementType === 'checkbox')) {
+                $children = $elementConfig['children'];
+
+                $selectedOption = $elem->getValue();
+                if ($elementType === 'checkbox') {
+                    $selectedOption = $elem->isChecked();
+                }
+
+                $childrenToRender = [];
+                if ($selectedOption !== null) {
+                    foreach ($children as $child) {
+                        if ($hasAutosubmitted) {
+                            $configFieldset->clearPopulatedValue($child['name']);
+                        }
+
+                        $parents = $child["parent_values"];
+                        if (in_array($selectedOption, $parents, true)) {
+                            $childrenToRender[] = $child;
+                        }
+                    }
+
+                    $this->createConfigElements($selectedOption, $childrenToRender, true);
+                }
+            }
         }
+    }
+
+    /**
+     * Parse a nested name of a configuration element
+     *
+     * Example: "config[email]" => "email"
+     *
+     * @param string $elementName The string to parse
+     *
+     * @return ?string Name of the leaf or null if there is none
+     */
+    protected function parseElementName(string $elementName): ?string
+    {
+        preg_match('/config\[(.+)\]$/', $elementName, $matches);
+
+        return $matches[1] ?? null;
     }
 
     /**
@@ -318,6 +368,9 @@ class ChannelForm extends CompatForm
         if ($elementConfig['type'] === 'bool') {
             $options['checkedValue'] = 'checked';
             $options['uncheckedValue'] = 'unchecked';
+            if (isset($elementConfig['children'])) {
+                $options['class'] = 'autosubmit';
+            }
         }
 
         if (isset($elementConfig['help'])) {
@@ -334,6 +387,10 @@ class ChannelForm extends CompatForm
             $options['options'] = $elementConfig['options'];
             if ($elementConfig['type'] === 'options') {
                 $options['multiple'] = true;
+            }
+
+            if (isset($elementConfig['children'])) {
+                $options['class'] = 'autosubmit';
             }
         }
 
