@@ -117,6 +117,11 @@ class SourcesController extends CompatController
                 // TODO: I feel this should be part of CompatForm or CompatController (e.g. $this->sendForm())
                 $this->addPart($form, $this->content->getAttribute('id')->getValue());
             })
+            ->on(Form::ON_SENT, function (SourceForm $form) {
+                if (! $form->hasBeenSubmitted()) {
+                    $this->addPart($form, $this->content->getAttribute('id')->getValue());
+                }
+            })
             ->handleRequest($this->getServerRequest());
     }
 

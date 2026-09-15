@@ -60,6 +60,10 @@ class SourceController extends CompatController
             })->on(Form::ON_ERROR, function ($_, SourceForm $form) {
                 // TODO: I feel this should be part of CompatForm or CompatController (e.g. $this->sendForm())
                 $this->addPart($form, $this->content->getAttribute('id')->getValue());
+            })->on(Form::ON_SENT, function (SourceForm $form) {
+                if (! $form->hasBeenSubmitted()) {
+                    $this->addPart($form, $this->content->getAttribute('id')->getValue());
+                }
             })->handleRequest($this->getServerRequest());
     }
 
@@ -98,6 +102,11 @@ class SourceController extends CompatController
             ->on(Form::ON_ERROR, function ($_, DeleteSourceForm $form) {
                 // TODO: I feel this should be part of CompatForm or CompatController (e.g. $this->sendForm())
                 $this->addPart($form, $this->content->getAttribute('id')->getValue());
+            })
+            ->on(Form::ON_SENT, function (DeleteSourceForm $form) {
+                if (! $form->hasBeenSubmitted()) {
+                    $this->addPart($form, $this->content->getAttribute('id')->getValue());
+                }
             })
             ->handleRequest($this->getServerRequest());
     }
