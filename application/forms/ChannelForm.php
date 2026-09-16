@@ -99,7 +99,6 @@ class ChannelForm extends CompatForm
      */
     protected function assemble(): void
     {
-
         $query = AvailableChannelType::on($this->db)
             ->columns(['type', 'name', 'config_attrs'])
             ->execute();
@@ -159,10 +158,28 @@ class ChannelForm extends CompatForm
 
         /** @var string $selectedType */
         $selectedType = $this->getValue('type');
+        /** @var array $typesConfig */
         $typeConfig = json_decode($typesConfig[$selectedType], true);
+        if (empty($typeConfig)) {
+            $this->prependHtml(
+                HtmlElement::create(
+                    'ul',
+                    Attributes::create(['class' => 'errors']),
+                    HtmlElement::create(
+                        'li',
+                        null,
+                        sprintf(
+                            $this->translate(
+                                'Could not decode options for type \'%s\'.'
+                                . ' Check if your database\'s character set is correctly configured.'
+                            ),
+                        )
+                    )
+                )
+            );
+        }
 
-        $this->createConfigElements($selectedType, $typeConfig);
-
+        $this->createConfigElements($selectedType, $typeConfig, false);
 
         $this->addElement(
             'submit',
@@ -238,75 +255,51 @@ class ChannelForm extends CompatForm
     /**
      * Create config elements for the given configuration object type
      *
-     * @param string $type The configuration object type
-     * @param array<int, ChannelOptionConfig>  $elementsConfig The elements type config
+     * @param string $parent The name of the parent object
+     * @param array<int, ChannelOptionConfig> $elementsConfig The element's type config
+     * @param bool $isChild Whether the parent object is already a child
+     *
      */
-    protected function createConfigElements(string $type, array $elementsConfig): void
+    protected function createConfigElements(string $parent, array $elementsConfig, bool $isChild): void
     {
 
-
-        if (empty($elementsConfig)) {
-            $this->prependHtml(
-                HtmlElement::create(
-                    'ul',
-                    Attributes::create(['class' => 'errors']),
-                    HtmlElement::create(
-                        'li',
-                        null,
-                        sprintf(
-                            $this->translate(
-                                'Could not decode options for type \'%s\'.'
-                                . ' Check if your database\'s character set is correctly configured.'
-                            ),
-                            $type
-                        )
-                    )
-                )
-            );
-
-            return;
-        }
-
-        if ($type === "child") {
+        if ($this->hasElement('config')) {
             $configFieldset = $this->getElement('config');
         } else {
             $configFieldset = new FieldsetElement('config');
             $this->addElement($configFieldset);
         }
 
-
         foreach ($elementsConfig as $elementConfig) {
-            if ($type !== 'child') {
-                $elementName = $type . "_" . $elementConfig['name'];
-            } else {
-                $elementName = $elementConfig['name'];
-            }
+            $elementName = $parent . "_" . $elementConfig['name'];
+            $elementType = $this->getElementType($elementConfig['type']);
 
             /** @var BaseFormElement $elem */
             $elem = $this->createElement(
-                $this->getElementType($elementConfig['type']),
+                $elementType,
                 $elementName,
-                $this->getElementOptions($elementConfig)
+                $this-> getElementOptions($elementConfig)
             );
 
-            if ($type === "email" && $elem->getName() === "sender_mail") {
+            if ($parent === "email" && $elem->getName() === "sender_mail") {
                 $elem->getValidators()->add(new EmailAddressValidator());
             }
 
             $configFieldset->addElement($elem);
-
-            if ($type !== "child" && ($elem->getTag() === 'select' || $elem->getTag() === 'checkbox')) {
+            $hasChildren = isset($elementConfig['children']);
+            if ($hasChildren && ! $isChild && ($elementType === 'select' || $elementType === 'checkbox')) {
                 $selectedOption = $elem->getValue();
                 $children = $elementConfig['children'];
+                $childrenToRender = [];
 
-                if ($selectedOption !== null && $children !== null) {
+                if ($selectedOption !== null) {
                     foreach ($children as $child) {
                         $parents = $child["parent_values"];
-                        if (in_array($selectedOption, $parents)) {
-                            $child['name'] = $elem->getName() . "_" . $selectedOption . "_" . $child['name'];
-                            $this->createConfigElements("child", array($child));
+                        if (in_array($selectedOption, $parents, true)) {
+                            $childrenToRender[] = $child;
                         }
                     }
+                    $this->createConfigElements($selectedOption, $childrenToRender, true);
                 }
             }
         }
@@ -347,8 +340,8 @@ class ChannelForm extends CompatForm
         if ($elementConfig['type'] === 'bool') {
             $options['checkedValue'] = 'checked';
             $options['uncheckedValue'] = 'unchecked';
-            $options['class'] = 'autosubmit';
             if (isset($elementConfig['children'])) {
+                $options['class'] = 'autosubmit';
                 $options['children'] = $elementConfig['children'];
             }
         }
@@ -368,8 +361,8 @@ class ChannelForm extends CompatForm
             if ($elementConfig['type'] === 'options') {
                 $options['multiple'] = true;
             }
-            $options['class'] = 'autosubmit';
             if (isset($elementConfig['children'])) {
+                $options['class'] = 'autosubmit';
                 $options['children'] = $elementConfig['children'];
             }
         }
