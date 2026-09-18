@@ -192,14 +192,10 @@ class EscalationCondition extends HtmlDocument
         }
 
         if (isset($byOperator['!='])) {
-        if (isset($byOperator['!='])) {
-        	if (empty($severities)) {  
-        	    $severities = Severity::cases();  
-        	}
             $severities = array_map(
                 fn (string $v) => Severity::from($v),
                 array_diff(
-                    array_map(fn (Severity $s) => $s->getValue(), $severities),
+                    array_map(fn (Severity $s) => $s->getValue(), $severities ?: Severity::cases()),
                     array_map(fn (Filter\Condition $condition) => $condition->getValue(), $byOperator['!='])
                 )
             );

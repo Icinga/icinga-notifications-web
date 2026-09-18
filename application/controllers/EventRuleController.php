@@ -40,6 +40,9 @@ class EventRuleController extends CompatController
     {
         $rule = (new EscalationRuleRepository(Database::get()))
             ->find((int) $this->params->getRequired('id'));
+        if ($rule === null) {
+            $this->httpNotFound($this->translate('Rule not found'));
+        }
 
         $this->getTabs()->disableLegacyExtensions();
         $this->addTitleTab(sprintf($this->translate('Event Rule: %s'), $rule->name));
