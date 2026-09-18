@@ -168,6 +168,10 @@ class EventRuleController extends CompatController
                         fn(Connection $db) => (new EscalationRuleRepository(Database::get()))->delete($rule->id)
                     )->name;
 
+                    Notification::success(sprintf(
+                        $this->translate('Deleted escalation rule "%s"'),
+                        $ruleName
+                    ));
                     $this->switchToSingleColumnLayout();
                 } elseif ($form->hasBeenDuplicated()) {
                     $ruleId = Database::get()->transaction(
