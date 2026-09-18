@@ -249,7 +249,7 @@ class EscalationCondition extends HtmlDocument
             if ($days > 0 || $hours > 0) {
                 // Be lazy for edge cases…
                 $this->addPhrase(Text::create(sprintf($this->translate(
-                    'Incident was opened %1$d days, %2$d hours, %2$d minutes and %2$d seconds ago'
+                    'Incident was opened %1$d days, %2$d hours, %3$d minutes and %4$d seconds ago'
                 ), $days, $hours, $minutes, $seconds)));
             } else {
                 if ($minutes > 0) {
