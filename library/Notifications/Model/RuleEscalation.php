@@ -77,9 +77,8 @@ class RuleEscalation extends Model
 
     public function getDefaultSort(): array
     {
-        return ['position'];
+        return ['position asc'];
     }
-
 
     public function createBehaviors(Behaviors $behaviors): void
     {

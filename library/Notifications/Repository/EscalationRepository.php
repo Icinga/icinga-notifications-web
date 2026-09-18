@@ -51,7 +51,7 @@ final class EscalationRepository
     public function create(Escalation $escalation): int
     {
         $model = (new RuleEscalation())->setNew();
-        $model->rule_id = $escalation->ruleId ?? throw new LogicException('Missing rule ID');
+        $model->rule_id = $escalation->ruleId;
         $model->position = $escalation->position;
         $model->condition = $escalation->condition;
 
@@ -158,10 +158,24 @@ final class EscalationRepository
             throw new InvalidArgumentException('Cannot delete an escalation that does not exist');
         }
 
+        $entityManager = new EntityManager($this->db);
+        $freedPosition = $escalation->position;
+
         $escalation->position = null;
         $escalation->rule_escalation_recipient = [];
         $escalation->delete();
 
-        (new EntityManager($this->db))->save($escalation);
+        $entityManager->save($escalation);
+
+        $siblings = RuleEscalation::on($this->db)
+            ->columns(['id', 'position'])
+            ->filter(Filter::equal('rule_id', $escalation->rule_id))
+            ->filter(Filter::greaterThan('position', $freedPosition))
+            ->orderBy('position', SORT_ASC);
+        foreach ($siblings as $sibling) {
+            $sibling->setNew(false);
+            $sibling->position -= 1;
+            $entityManager->save($sibling);
+        }
     }
 }

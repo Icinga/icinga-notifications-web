@@ -5,7 +5,10 @@
 
 namespace Icinga\Module\Notifications\Repository;
 
+use Icinga\Exception\NotImplementedError;
 use Icinga\Module\Notifications\Common\EntityManager;
+use Icinga\Module\Notifications\Form\Data\Escalation;
+use Icinga\Module\Notifications\Form\Data\EscalationRecipient;
 use Icinga\Module\Notifications\Form\Data\EscalationRule;
 use Icinga\Module\Notifications\Model\Rule;
 use InvalidArgumentException;
@@ -55,13 +58,6 @@ final class EscalationRuleRepository
 
         (new EntityManager($this->db))->save($model);
 
-        $escalationRepository = new EscalationRepository($this->db);
-        foreach ($rule->escalations as $escalation) {
-            // TODO: Once modals are used, this is obsolete
-            $escalation->ruleId = $model->id;
-            $escalationRepository->create($escalation);
-        }
-
         return $model->id;
     }
 
@@ -82,36 +78,14 @@ final class EscalationRuleRepository
         }
 
         $model->name = $rule->name;
-        $model->source_type = $rule->sourceType;
-        $model->object_filter = $rule->objectFilter;
+        if ($rule->sourceType !== $model->source_type) {
+            $model->source_type = $rule->sourceType;
+            $model->object_filter = null;
+        } elseif ($rule->objectFilter !== null) {
+            $model->object_filter = $rule->objectFilter ?: null;
+        }
 
         (new EntityManager($this->db))->save($model);
-
-        // TODO: Once modals are used, this is obsolete
-        $escalationRepository = new EscalationRepository($this->db);
-
-        $escalationsToKeep = [];
-        foreach ($rule->escalations as $escalation) {
-            if (isset($escalation->id)) {
-                $escalationsToKeep[] = $escalation->id;
-            }
-        }
-
-        $model->rule_escalation->query()->columns('id');
-        foreach ($model->rule_escalation as $escalationModel) {
-            if (! in_array($escalationModel->id, $escalationsToKeep, true)) {
-                $escalationRepository->delete($escalationModel->id);
-            }
-        }
-
-        foreach ($rule->escalations as $escalation) {
-            if (! isset($escalation->id)) {
-                $escalation->ruleId ??= $model->id;
-                $escalationRepository->create($escalation);
-            } else {
-                $escalationRepository->update($escalation);
-            }
-        }
     }
 
     /**
@@ -119,11 +93,11 @@ final class EscalationRuleRepository
      *
      * @param int $id
      *
-     * @return void
+     * @return Rule The deleted rule
      *
      * @throws InvalidArgumentException if the rule does not exist
      */
-    public function delete(int $id): void
+    public function delete(int $id): Rule
     {
         $rule = $this->find($id)?->setNew(false);
         if ($rule === null) {
@@ -138,5 +112,65 @@ final class EscalationRuleRepository
         }
 
         (new EntityManager($this->db))->save($rule->delete());
+
+        return $rule;
+    }
+
+    /**
+     * Duplicate an escalation rule
+     *
+     * @param EscalationRule $rule
+     *
+     * @return int
+     */
+    public function duplicate(EscalationRule $rule): int
+    {
+        $original = $this->find($rule->id);
+        if ($original === null) {
+            throw new InvalidArgumentException(
+                'Cannot duplicate an escalation rule that does not exist in the database'
+            );
+        } elseif (isset($original->timeperiod_id)) {
+            throw new NotImplementedError(
+                'Duplicating escalation rules with time periods is not yet supported'
+            );
+        }
+
+        $ruleId = $this->create(new EscalationRule(
+            null,
+            $rule->name,
+            $rule->sourceType,
+            $rule->objectFilter ?? $original->object_filter
+        ));
+
+        $escalationRepository = new EscalationRepository($this->db);
+
+        foreach ($original->rule_escalation as $escalation) {
+            $recipients = [];
+            foreach ($escalation->rule_escalation_recipient as $recipient) {
+                [$recipientType, $recipientId] = match (true) {
+                    isset($recipient->contactgroup_id) => ['contact_group', $recipient->contactgroup_id],
+                    isset($recipient->schedule_id) => ['schedule', $recipient->schedule_id],
+                    default => ['contact', $recipient->contact_id]
+                };
+
+                $recipients[] = new EscalationRecipient(
+                    null,
+                    $recipientType,
+                    $recipientId,
+                    $recipient->channel_id
+                );
+            }
+
+            $escalationRepository->create(new Escalation(
+                null,
+                $escalation->position,
+                $escalation->condition,
+                $recipients,
+                $ruleId
+            ));
+        }
+
+        return $ruleId;
     }
 }

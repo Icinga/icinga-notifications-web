@@ -143,16 +143,6 @@ class EscalationRepositoryTest extends TestCase
     }
 
     #[DataProvider('sharedDatabases')]
-    public function testCreateThrowsWithoutARuleId(Connection $db): void
-    {
-        $this->expectException(LogicException::class);
-
-        (new EscalationRepository($db))->create(
-            new Escalation(null, 0, null, [new EscalationRecipient(null, 'contact', self::$contactId, null)])
-        );
-    }
-
-    #[DataProvider('sharedDatabases')]
     public function testCreateStoresTheEscalationWithRecipients(Connection $db): void
     {
         $ruleId = $this->createRule($db);

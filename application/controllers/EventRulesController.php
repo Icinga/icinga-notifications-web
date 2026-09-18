@@ -11,12 +11,15 @@ use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\EventRuleForm;
 use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Model\Source;
+use Icinga\Module\Notifications\Repository\EscalationRuleRepository;
 use Icinga\Module\Notifications\View\EventRuleRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
+use Icinga\Web\Notification;
 use Icinga\Web\Session;
-use ipl\Html\Form;
+use ipl\Html\Contract\Form;
 use ipl\Html\TemplateString;
+use ipl\Sql\Connection;
 use ipl\Sql\Expression;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
@@ -122,7 +125,6 @@ class EventRulesController extends CompatController
         $this->setTitle($this->translate('Create Event Rule'));
 
         $eventRuleForm = (new EventRuleForm())
-            ->setIsNew()
             ->setCsrfCounterMeasureId(Session::getSession()->getId())
             ->setAvailableSourceTypes(
                 Database::get()->fetchCol(
@@ -130,12 +132,24 @@ class EventRulesController extends CompatController
                 )
             )
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
-            ->on(Form::ON_SUBMIT, function ($form) {
+            ->on(Form::ON_SUBMIT, function (EventRuleForm $form) {
+                $rule = $form->getRule();
+
+                $ruleId = Database::get()->transaction(
+                    fn(Connection $db) => (new EscalationRuleRepository($db))->create($rule)
+                );
+
+                Notification::success(sprintf(
+                    $this->translate('Created escalation rule "%s"'),
+                    $rule->name
+                ));
+
+                $this->sendExtraUpdates(['#col1']);
                 $this->getResponse()->setHeader('X-Icinga-Container', 'col2');
-                $this->redirectNow(Links::eventRule(-1)->addParams([
-                    'name' => $form->getValue('name'),
-                    'source_type' => $form->getValue('source_type')
-                ]));
+                $this->redirectNow(Links::eventRule($ruleId));
+            })->on(Form::ON_ERROR, function ($_, EventRuleForm $form) {
+                // TODO: I feel this should be part of CompatForm or CompatController (e.g. $this->sendForm())
+                $this->addPart($form, $this->content->getAttribute('id')->getValue());
             })->handleRequest($this->getServerRequest());
 
         $this->addContent($eventRuleForm);

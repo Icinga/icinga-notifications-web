@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: 2025 Icinga GmbH <https://icinga.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-namespace Icinga\Module\Notifications\Forms\EventRuleConfigElements;
+namespace Icinga\Module\Notifications\Forms\EscalationForm;
 
 use Icinga\Module\Notifications\Web\FilterRenderer;
 use ipl\Html\Attributes;
@@ -35,7 +35,7 @@ class EscalationConditions extends FieldsetElement
                 new Icon('plus'),
                 new HtmlElement('span', content: Text::create($this->translate('Add Condition')))
             ],
-            'class' => ['add-button', 'animated']
+            'class' => ['add-button', 'animated', 'link-button']
         ]);
 
         $button->addWrapper(new HtmlElement('div', Attributes::create(['class' => 'add-button-wrapper'])));
