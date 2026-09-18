@@ -114,6 +114,10 @@ class EventRuleForm extends CompatForm
                 'label'         => $this->translate('Title'),
                 'validators'    => [
                     new CallbackValidator(function ($value, $validator) use ($ruleId) {
+                        if ($this->hasBeenDeleted()) {
+                            return true;
+                        }
+
                         $rules = Rule::on(Database::get())
                             ->columns('id')
                             ->filter(Filter::equal('name', $value));
