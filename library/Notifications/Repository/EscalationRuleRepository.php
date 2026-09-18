@@ -93,11 +93,11 @@ final class EscalationRuleRepository
      *
      * @param int $id
      *
-     * @return void
+     * @return Rule The deleted rule
      *
      * @throws InvalidArgumentException if the rule does not exist
      */
-    public function delete(int $id): void
+    public function delete(int $id): Rule
     {
         $rule = $this->find($id)?->setNew(false);
         if ($rule === null) {
@@ -112,6 +112,8 @@ final class EscalationRuleRepository
         }
 
         (new EntityManager($this->db))->save($rule->delete());
+
+        return $rule;
     }
 
     /**

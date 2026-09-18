@@ -14,6 +14,7 @@ use Icinga\Module\Notifications\Forms\RuleFilterForm;
 use Icinga\Module\Notifications\Model\Source;
 use Icinga\Module\Notifications\Repository\EscalationRuleRepository;
 use Icinga\Module\Notifications\Widget\EscalationRule;
+use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\Contract\Form;
 use ipl\Html\Html;
@@ -159,9 +160,9 @@ class EventRuleController extends CompatController
                 $rule = $form->getRule();
 
                 if ($form->hasBeenDeleted()) {
-                    Database::get()->transaction(
+                    $ruleName = Database::get()->transaction(
                         fn(Connection $db) => (new EscalationRuleRepository(Database::get()))->delete($rule->id)
-                    );
+                    )->name;
 
                     $this->switchToSingleColumnLayout();
                 } elseif ($form->hasBeenDuplicated()) {
@@ -169,6 +170,10 @@ class EventRuleController extends CompatController
                         fn(Connection $db) => (new EscalationRuleRepository(Database::get()))->duplicate($rule)
                     );
 
+                    Notification::success(sprintf(
+                        $this->translate('Created escalation rule "%s"'),
+                        $rule->name
+                    ));
                     $this->sendExtraUpdates(['#col1']);
                     $this->redirectNow(Links::eventRule($ruleId));
                 } else {
@@ -176,6 +181,10 @@ class EventRuleController extends CompatController
                         fn(Connection $db) => (new EscalationRuleRepository($db))->update($rule)
                     );
 
+                    Notification::success(sprintf(
+                        $this->translate('Updated escalation rule "%s"'),
+                        $rule->name
+                    ));
                     $this->sendExtraUpdates(['#col1']);
                     $this->closeModalAndRefreshRelatedView(Links::eventRule($rule->id));
                 }

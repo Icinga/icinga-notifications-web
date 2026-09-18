@@ -15,6 +15,7 @@ use Icinga\Module\Notifications\Repository\EscalationRuleRepository;
 use Icinga\Module\Notifications\View\EventRuleRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
+use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\Contract\Form;
 use ipl\Html\TemplateString;
@@ -132,9 +133,16 @@ class EventRulesController extends CompatController
             )
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->on(Form::ON_SUBMIT, function (EventRuleForm $form) {
+                $rule = $form->getRule();
+
                 $ruleId = Database::get()->transaction(
-                    fn(Connection $db) => (new EscalationRuleRepository($db))->create($form->getRule())
+                    fn(Connection $db) => (new EscalationRuleRepository($db))->create($rule)
                 );
+
+                Notification::success(sprintf(
+                    $this->translate('Created escalation rule "%s"'),
+                    $rule->name
+                ));
 
                 $this->sendExtraUpdates(['#col1']);
                 $this->getResponse()->setHeader('X-Icinga-Container', 'col2');
