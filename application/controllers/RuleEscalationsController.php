@@ -11,6 +11,7 @@ use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Data\NotificationConfigProvider;
 use Icinga\Module\Notifications\Forms\EscalationForm;
 use Icinga\Module\Notifications\Repository\EscalationRepository;
+use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\Contract\Form;
 use ipl\Sql\Connection;
@@ -43,6 +44,7 @@ class RuleEscalationsController extends CompatController
                     fn(Connection $db) => (new EscalationRepository($db))->create($escalation)
                 );
 
+                Notification::success($this->translate('Created escalation'));
                 $this->sendExtraUpdates(['#col1']);
                 $this->closeModalAndRefreshRelatedView(Links::eventRule($escalation->ruleId));
             })->handleRequest($this->getServerRequest());

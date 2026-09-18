@@ -11,6 +11,7 @@ use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Data\NotificationConfigProvider;
 use Icinga\Module\Notifications\Forms\EscalationForm;
 use Icinga\Module\Notifications\Repository\EscalationRepository;
+use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\Contract\Form;
 use ipl\Sql\Connection;
@@ -46,10 +47,14 @@ class RuleEscalationController extends CompatController
                     Database::get()->transaction(
                         fn(Connection $db) => (new EscalationRepository($db))->delete($escalation->id)
                     );
+
+                    Notification::success($this->translate('Deleted escalation'));
                 } else {
                     Database::get()->transaction(
                         fn(Connection $db) => (new EscalationRepository($db))->update($escalation)
                     );
+
+                    Notification::success($this->translate('Updated escalation'));
                 }
 
                 $this->sendExtraUpdates(['#col1']);
