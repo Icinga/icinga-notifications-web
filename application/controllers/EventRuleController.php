@@ -83,6 +83,10 @@ class EventRuleController extends CompatController
                     fn(Connection $db) => (new EscalationRuleRepository(Database::get()))->update($rule)
                 );
 
+                Notification::success(sprintf(
+                    $this->translate('Updated filter for escalation rule "%s"'),
+                    $rule->name
+                ));
                 $this->redirectNow(Links::eventRule($rule->id));
             })->handleRequest($this->getServerRequest());
 
