@@ -5,6 +5,7 @@
 
 namespace Icinga\Module\Notifications\Repository;
 
+use Icinga\Exception\NotImplementedError;
 use Icinga\Module\Notifications\Common\EntityManager;
 use Icinga\Module\Notifications\Form\Data\Escalation;
 use Icinga\Module\Notifications\Form\Data\EscalationRecipient;
@@ -127,9 +128,18 @@ final class EscalationRuleRepository
             throw new InvalidArgumentException(
                 'Cannot duplicate an escalation rule that does not exist in the database'
             );
+        } elseif (isset($original->timeperiod_id)) {
+            throw new NotImplementedError(
+                'Duplicating escalation rules with time periods is not yet supported'
+            );
         }
 
-        $ruleId = $this->create($rule);
+        $ruleId = $this->create(new EscalationRule(
+            null,
+            $rule->name,
+            $rule->sourceType,
+            $rule->objectFilter ?? $original->object_filter
+        ));
 
         $escalationRepository = new EscalationRepository($this->db);
 
