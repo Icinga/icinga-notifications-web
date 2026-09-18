@@ -158,7 +158,28 @@ class ChannelForm extends CompatForm
 
         /** @var string $selectedType */
         $selectedType = $this->getValue('type');
-        $this->createConfigElements($selectedType, $typesConfig[$selectedType]);
+        /** @var array<int, ChannelOptionConfig> $typeConfig */
+        $typeConfig = json_decode($typesConfig[$selectedType], true);
+        if (empty($typeConfig)) {
+            $this->prependHtml(
+                HtmlElement::create(
+                    'ul',
+                    Attributes::create(['class' => 'errors']),
+                    HtmlElement::create(
+                        'li',
+                        null,
+                        sprintf(
+                            $this->translate(
+                                'Could not decode options for type \'%s\'.'
+                                . ' Check if your database\'s character set is correctly configured.'
+                            ),
+                        )
+                    )
+                )
+            );
+        }
+
+        $this->createConfigElements($selectedType, $typeConfig, false);
 
         $this->addElement(
             'submit',
@@ -232,54 +253,54 @@ class ChannelForm extends CompatForm
     }
 
     /**
-     * Create config elements for the given channel type
+     * Create config elements for the given configuration object type
      *
-     * @param string $type The channel type
-     * @param string $config The channel type config
+     * @param string $parent The name of the parent object
+     * @param array<int, ChannelOptionConfig> $elementsConfig The element's type config
+     * @param bool $isChild Whether the parent object is already a child
      */
-    protected function createConfigElements(string $type, string $config): void
+    protected function createConfigElements(string $parent, array $elementsConfig, bool $isChild): void
     {
-        /** @var array<int, ChannelOptionConfig>  $elementsConfig */
-        $elementsConfig = json_decode($config, true);
-
-        if (empty($elementsConfig)) {
-            $this->prependHtml(
-                HtmlElement::create(
-                    'ul',
-                    Attributes::create(['class' => 'errors']),
-                    HtmlElement::create(
-                        'li',
-                        null,
-                        sprintf(
-                            $this->translate(
-                                'Could not decode options for type \'%s\'.'
-                                . ' Check if your database\'s character set is correctly configured.'
-                            ),
-                            $type
-                        )
-                    )
-                )
-            );
-
-            return;
+        if ($this->hasElement('config')) {
+            $configFieldset = $this->getElement('config');
+        } else {
+            $configFieldset = new FieldsetElement('config');
+            $this->addElement($configFieldset);
         }
 
-        $configFieldset = new FieldsetElement('config');
-        $this->addElement($configFieldset);
-
         foreach ($elementsConfig as $elementConfig) {
+            $elementName = $parent . "_" . $elementConfig['name'];
+            $elementType = $this->getElementType($elementConfig['type']);
+
             /** @var BaseFormElement $elem */
             $elem = $this->createElement(
-                $this->getElementType($elementConfig['type']),
-                $elementConfig['name'],
+                $elementType,
+                $elementName,
                 $this->getElementOptions($elementConfig)
             );
 
-            if ($type === "email" && $elem->getName() === "sender_mail") {
+            if ($parent === "email" && $elem->getName() === "sender_mail") {
                 $elem->getValidators()->add(new EmailAddressValidator());
             }
 
             $configFieldset->addElement($elem);
+            $hasChildren = isset($elementConfig['children']);
+            if ($hasChildren && ! $isChild && ($elementType === 'select' || $elementType === 'checkbox')) {
+                $selectedOption = $elem->getValue();
+                $children = $elementConfig['children'];
+                $childrenToRender = [];
+
+                if ($selectedOption !== null) {
+                    foreach ($children as $child) {
+                        $parents = $child["parent_values"];
+                        if (in_array($selectedOption, $parents, true)) {
+                            $childrenToRender[] = $child;
+                        }
+                    }
+
+                    $this->createConfigElements($selectedOption, $childrenToRender, true);
+                }
+            }
         }
     }
 
@@ -318,6 +339,9 @@ class ChannelForm extends CompatForm
         if ($elementConfig['type'] === 'bool') {
             $options['checkedValue'] = 'checked';
             $options['uncheckedValue'] = 'unchecked';
+            if (isset($elementConfig['children'])) {
+                $options['class'] = 'autosubmit';
+            }
         }
 
         if (isset($elementConfig['help'])) {
@@ -334,6 +358,10 @@ class ChannelForm extends CompatForm
             $options['options'] = $elementConfig['options'];
             if ($elementConfig['type'] === 'options') {
                 $options['multiple'] = true;
+            }
+
+            if (isset($elementConfig['children'])) {
+                $options['class'] = 'autosubmit';
             }
         }
 
