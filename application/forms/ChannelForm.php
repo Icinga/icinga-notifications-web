@@ -158,7 +158,7 @@ class ChannelForm extends CompatForm
 
         /** @var string $selectedType */
         $selectedType = $this->getValue('type');
-        /** @var array $typesConfig */
+        /** @var array<int, ChannelOptionConfig> $typeConfig */
         $typeConfig = json_decode($typesConfig[$selectedType], true);
         if (empty($typeConfig)) {
             $this->prependHtml(
@@ -258,11 +258,9 @@ class ChannelForm extends CompatForm
      * @param string $parent The name of the parent object
      * @param array<int, ChannelOptionConfig> $elementsConfig The element's type config
      * @param bool $isChild Whether the parent object is already a child
-     *
      */
     protected function createConfigElements(string $parent, array $elementsConfig, bool $isChild): void
     {
-
         if ($this->hasElement('config')) {
             $configFieldset = $this->getElement('config');
         } else {
@@ -278,7 +276,7 @@ class ChannelForm extends CompatForm
             $elem = $this->createElement(
                 $elementType,
                 $elementName,
-                $this-> getElementOptions($elementConfig)
+                $this->getElementOptions($elementConfig)
             );
 
             if ($parent === "email" && $elem->getName() === "sender_mail") {
@@ -299,6 +297,7 @@ class ChannelForm extends CompatForm
                             $childrenToRender[] = $child;
                         }
                     }
+
                     $this->createConfigElements($selectedOption, $childrenToRender, true);
                 }
             }
@@ -342,7 +341,6 @@ class ChannelForm extends CompatForm
             $options['uncheckedValue'] = 'unchecked';
             if (isset($elementConfig['children'])) {
                 $options['class'] = 'autosubmit';
-                $options['children'] = $elementConfig['children'];
             }
         }
 
@@ -361,9 +359,9 @@ class ChannelForm extends CompatForm
             if ($elementConfig['type'] === 'options') {
                 $options['multiple'] = true;
             }
+
             if (isset($elementConfig['children'])) {
                 $options['class'] = 'autosubmit';
-                $options['children'] = $elementConfig['children'];
             }
         }
 
@@ -384,7 +382,6 @@ class ChannelForm extends CompatForm
 
         return $options;
     }
-
 
     /**
      * Get the current locale based string from given locale map
