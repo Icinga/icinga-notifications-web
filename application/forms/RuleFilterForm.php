@@ -53,7 +53,7 @@ class RuleFilterForm extends SearchEditor
             try {
                 $parsedFilter = json_decode($rule->object_filter, true, flags: JSON_THROW_ON_ERROR);
             } catch (JsonException $e) {
-                Logger::error('Failed to parse rule filter configuration: %s (Error: %s)', $filter, $e);
+                Logger::error('Failed to parse rule filter configuration: %s (Error: %s)', $rule->object_filter, $e);
                 throw new ConfigurationError($this->translate(
                     'Failed to parse rule filter configuration. Please contact your system administrator.'
                 ));
