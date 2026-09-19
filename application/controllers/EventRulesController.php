@@ -9,6 +9,7 @@ use Icinga\Module\Notifications\Common\ConfigurationTabs;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\EventRuleForm;
+use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Model\Source;
 use Icinga\Module\Notifications\View\EventRuleRenderer;
@@ -16,6 +17,7 @@ use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use Icinga\Web\Session;
 use ipl\Html\Form;
+use ipl\Html\HtmlString;
 use ipl\Html\TemplateString;
 use ipl\Sql\Expression;
 use ipl\Web\Compat\CompatController;
@@ -96,11 +98,21 @@ class EventRulesController extends CompatController
 
             $emptyStateMessage = TemplateString::create(
                 $this->translate(
-                    'No event rules found. To add a new event rule, please {{#link}}configure a Source{{/link}} first.'
+                    'No event rules found.%1$s'
+                    . 'To add a new event rule, please {{#link}}complete the Setup{{/link}} first.'
                 ),
-                [
-                    'link' => (new ActionLink(null, Links::sourceAdd()))->setBaseTarget('_next')
-                ]
+                ['link' => (new ActionLink(null, Url::fromPath('notifications')))->setBaseTarget('_self')],
+                [HtmlString::create('<br>')]
+            );
+        } elseif (Contact::on(Database::get())->columns([new Expression('1')])->limit(1)->first() === null) {
+            $addButton->disable($this->translate('A contact is required to add an event rule'));
+            $emptyStateMessage = TemplateString::create(
+                $this->translate(
+                    'No event rules found.%1$s'
+                    . 'To add a new event rule, please {{#link}}create a Contact{{/link}} first.'
+                ),
+                ['link' => (new ActionLink(null, Links::contactAdd()))->setBaseTarget('_next')],
+                [HtmlString::create('<br>')]
             );
         } else {
             $addButton->openInModal();

@@ -5,6 +5,7 @@
 
 use Icinga\Application\Modules\Module;
 use Icinga\Authentication\Auth;
+use Icinga\Module\Notifications\Web\Navigation\Renderer\InitialSetupLink;
 
 /** @var Module $this */
 
@@ -12,7 +13,8 @@ $section = $this->menuSection(
     N_('Notifications'),
     [
         'icon' => 'bell-alt',
-        'priority' => 52
+        'priority' => 52,
+        'renderer' => new InitialSetupLink()
     ]
 );
 
