@@ -6,6 +6,7 @@
 namespace Icinga\Module\Notifications\Model;
 
 use DateTime;
+use Icinga\Module\Notifications\Common\Collection;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Model;
 use Icinga\Module\Notifications\Common\NotificationTransmissionState;
@@ -39,6 +40,7 @@ use ipl\Sql\Select;
  * @property Query<Contactgroup>|Contactgroup $contactgroup
  * @property Query<Channel>|Channel $channel
  * @property Query<Schedule>|Schedule $schedule
+ * @property Query<SkippedNotificationHistory>|Collection<SkippedNotificationHistory> $skipped
  */
 class NotificationHistory extends Model
 {
@@ -111,6 +113,9 @@ class NotificationHistory extends Model
 
         $relations->belongsTo('contactgroup', Contactgroup::class)->setJoinType('LEFT');
         $relations->belongsTo('schedule', Schedule::class)->setJoinType('LEFT');
+
+        $relations->hasMany('skipped', SkippedNotificationHistory::class)
+            ->setJoinType('LEFT');
     }
 
     public static function on(Connection $db): Query
