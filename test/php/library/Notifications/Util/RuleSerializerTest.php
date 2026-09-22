@@ -95,11 +95,11 @@ class RuleSerializerTest extends TestCase
         (new RuleSerializer($filter, [], true))->getJson();
     }
 
-    public function testGetJsonReturnsNullForEmptyChain()
+    public function testGetJsonReturnsTheEmptyStringForEmptyChain()
     {
         $result = (new RuleSerializer(Filter::all(), [], true))->getJson();
 
-        $this->assertNull($result);
+        $this->assertSame('', $result);
     }
 
     public function testGetJsonIncludesFilterNameWhenProvided()

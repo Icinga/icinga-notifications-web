@@ -67,6 +67,24 @@ abstract class Links
         return Url::fromPath('notifications/event-rule', ['id' => $id]);
     }
 
+    public static function eventRuleFilter(int $id): Url
+    {
+        return Url::fromPath('notifications/event-rule/search-editor', ['id' => $id]);
+    }
+
+    public static function escalationEdit(int $id): Url
+    {
+        return Url::fromPath('notifications/rule-escalation/edit', ['id' => $id]);
+    }
+
+    public static function escalationAdd(int $ruleId, int $position): Url
+    {
+        return Url::fromPath('notifications/rule-escalations/add', [
+            'rule' => $ruleId,
+            'position' => $position
+        ]);
+    }
+
     public static function schedules(): Url
     {
         return Url::fromPath('notifications/schedules');

@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: 2023 Icinga GmbH <https://icinga.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-namespace Icinga\Module\Notifications\Forms\EventRuleConfigElements;
+namespace Icinga\Module\Notifications\Forms\EscalationForm;
 
 use Icinga\Module\Notifications\Common\Severity;
 use ipl\Html\Attributes;
@@ -31,7 +31,7 @@ use ipl\Web\Widget\Icon;
  */
 class EscalationCondition extends FieldsetElement
 {
-    protected $defaultAttributes = ['class' => 'escalation-condition'];
+    protected $defaultAttributes = ['class' => ['escalation-condition', 'icinga-controls']];
 
     /** @var ?SubmitButtonElement The button to remove this condition */
     protected ?SubmitButtonElement $removeButton = null;
