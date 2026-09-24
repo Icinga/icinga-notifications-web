@@ -8,7 +8,7 @@ namespace Tests\Icinga\Module\Notifications\Repository;
 use DateTime;
 use Icinga\Module\Notifications\Form\Data\Escalation;
 use Icinga\Module\Notifications\Form\Data\EscalationRecipient;
-use Icinga\Module\Notifications\Form\Data\EscalationRule;
+use Icinga\Module\Notifications\Form\Data\Rule as RuleData;
 use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Model\RuleEscalation;
 use Icinga\Module\Notifications\Repository\EscalationRepository;
@@ -123,7 +123,7 @@ class EscalationRuleRepositoryTest extends TestCase
     {
         $repository = new EscalationRuleRepository($db);
 
-        $id = $repository->create(new EscalationRule(
+        $id = $repository->create(new RuleData(
             null,
             'Create Rule',
             'icinga2',
@@ -143,7 +143,7 @@ class EscalationRuleRepositoryTest extends TestCase
     {
         $repository = new EscalationRuleRepository($db);
 
-        $id = $repository->create(new EscalationRule(
+        $id = $repository->create(new RuleData(
             null,
             'Update Rule',
             'icinga2',
@@ -151,7 +151,7 @@ class EscalationRuleRepositoryTest extends TestCase
         ));
 
         // Rename the rule, set an object filter
-        $repository->update(new EscalationRule(
+        $repository->update(new RuleData(
             $id,
             'Renamed Rule',
             'icinga2',
@@ -168,7 +168,7 @@ class EscalationRuleRepositoryTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        (new EscalationRuleRepository($db))->update(new EscalationRule(999, 'Nope', 'icinga2', null));
+        (new EscalationRuleRepository($db))->update(new RuleData(999, 'Nope', 'icinga2', null));
     }
 
     #[DataProvider('sharedDatabases')]
@@ -176,7 +176,7 @@ class EscalationRuleRepositoryTest extends TestCase
     {
         $repository = new EscalationRuleRepository($db);
 
-        $id = $repository->create(new EscalationRule(
+        $id = $repository->create(new RuleData(
             null,
             'Delete Rule',
             'icinga2',
@@ -210,14 +210,14 @@ class EscalationRuleRepositoryTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        (new EscalationRuleRepository($db))->duplicate(new EscalationRule(999, 'Copy', 'test', null));
+        (new EscalationRuleRepository($db))->duplicate(new RuleData(999, 'Copy', 'test', null));
     }
 
     #[DataProvider('sharedDatabases')]
     public function testDuplicateAlsoCopiesEscalations(Connection $db): void
     {
         $repository = new EscalationRuleRepository($db);
-        $originalId = $repository->create(new EscalationRule(null, 'Original', 'test', null));
+        $originalId = $repository->create(new RuleData(null, 'Original', 'test', null));
 
         (new EscalationRepository($db))->create($this->escalation(null, 1, 'incident_age>1h', $originalId));
 
@@ -225,7 +225,7 @@ class EscalationRuleRepositoryTest extends TestCase
         $toRemove = (new EscalationRepository($db))->create($this->escalation(null, 0, null, $originalId));
         (new EscalationRepository($db))->delete($toRemove);
 
-        $copyId = $repository->duplicate(new EscalationRule($originalId, 'Copy', 'test', null));
+        $copyId = $repository->duplicate(new RuleData($originalId, 'Copy', 'test', null));
         $this->assertNotSame($originalId, $copyId);
 
         $copyEscalations = $this->escalationsOf($db, $copyId);

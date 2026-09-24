@@ -5,7 +5,7 @@
 
 namespace Icinga\Module\Notifications\Form\Data;
 
-readonly class EscalationRule
+readonly class Rule
 {
     /**
      * @param ?int $id The primary database key value, NULL for new rules

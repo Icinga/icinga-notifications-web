@@ -9,7 +9,7 @@ use Icinga\Exception\NotImplementedError;
 use Icinga\Module\Notifications\Common\EntityManager;
 use Icinga\Module\Notifications\Form\Data\Escalation;
 use Icinga\Module\Notifications\Form\Data\EscalationRecipient;
-use Icinga\Module\Notifications\Form\Data\EscalationRule;
+use Icinga\Module\Notifications\Form\Data\Rule as RuleData;
 use Icinga\Module\Notifications\Model\Rule;
 use InvalidArgumentException;
 use ipl\Sql\Connection;
@@ -44,11 +44,11 @@ final class EscalationRuleRepository
     /**
      * Store a new escalation rule
      *
-     * @param EscalationRule $rule
+     * @param RuleData $rule
      *
      * @return int The rule's ID
      */
-    public function create(EscalationRule $rule): int
+    public function create(RuleData $rule): int
     {
         $model = (new Rule())->setNew();
 
@@ -64,13 +64,13 @@ final class EscalationRuleRepository
     /**
      * Update the given escalation rule
      *
-     * @param EscalationRule $rule
+     * @param RuleData $rule
      *
      * @return void
      *
      * @throws InvalidArgumentException if the rule does not exist
      */
-    public function update(EscalationRule $rule): void
+    public function update(RuleData $rule): void
     {
         $model = $this->find($rule->id)?->setNew(false);
         if ($model === null) {
@@ -119,11 +119,11 @@ final class EscalationRuleRepository
     /**
      * Duplicate an escalation rule
      *
-     * @param EscalationRule $rule
+     * @param RuleData $rule
      *
      * @return int
      */
-    public function duplicate(EscalationRule $rule): int
+    public function duplicate(RuleData $rule): int
     {
         $original = $this->find($rule->id);
         if ($original === null) {
@@ -136,7 +136,7 @@ final class EscalationRuleRepository
             );
         }
 
-        $ruleId = $this->create(new EscalationRule(
+        $ruleId = $this->create(new RuleData(
             null,
             $rule->name,
             $rule->sourceType,
