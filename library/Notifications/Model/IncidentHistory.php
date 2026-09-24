@@ -25,7 +25,7 @@ use ipl\Sql\Select;
  * @property int $id
  * @property int $incident_id
  * @property ?int $rule_id
- * @property ?int $rule_escalation_id
+ * @property ?int $rule_entry_id
  * @property DateTime $time
  * @property IncidentHistoryType $type
  * @property ?int $contact_id
@@ -46,7 +46,7 @@ use ipl\Sql\Select;
  * @property Query<Contactgroup>|Contactgroup $contactgroup
  * @property Query<Schedule>|Schedule $schedule
  * @property Query<Rule>|Rule $rule
- * @property Query<RuleEscalation>|RuleEscalation $rule_escalation
+ * @property Query<RuleEntry>|RuleEntry $rule_entry
  * @property Query<Channel>|Channel $channel
  * @property Query<NotificationHistory>|Collection<NotificationHistory> $notification_history
  */
@@ -67,7 +67,7 @@ class IncidentHistory extends Model
         return [
             'incident_id',
             'rule_id',
-            'rule_escalation_id',
+            'rule_entry_id',
             'time',
             'type',
             'contact_id',
@@ -89,7 +89,7 @@ class IncidentHistory extends Model
     {
         return [
             'incident_id'        => t('Incident Id'),
-            'rule_escalation_id' => t('Rule Escalation Id'),
+            'rule_entry_id'      => t('Rule Entry Id'),
             'time'               => t('Time'),
             'type'               => t('Type'),
             'new_severity'       => t('New Severity'),
@@ -137,7 +137,7 @@ class IncidentHistory extends Model
         $relations->belongsTo('contactgroup', Contactgroup::class)->setJoinType('LEFT');
         $relations->belongsTo('schedule', Schedule::class)->setJoinType('LEFT');
         $relations->belongsTo('rule', Rule::class)->setJoinType('LEFT');
-        $relations->belongsTo('rule_escalation', RuleEscalation::class)->setJoinType('LEFT');
+        $relations->belongsTo('rule_entry', RuleEntry::class)->setJoinType('LEFT');
         $relations->belongsTo('channel', Channel::class)->setJoinType('LEFT');
         $relations->hasMany('notification_history', NotificationHistory::class)->setJoinType('LEFT');
     }

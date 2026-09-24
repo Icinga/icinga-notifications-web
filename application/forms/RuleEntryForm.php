@@ -6,17 +6,17 @@
 namespace Icinga\Module\Notifications\Forms;
 
 use Icinga\Module\Notifications\Form\ConfigProviderInterface;
-use Icinga\Module\Notifications\Form\Data\Escalation;
-use Icinga\Module\Notifications\Forms\EscalationForm\EscalationConditions;
-use Icinga\Module\Notifications\Forms\EscalationForm\EscalationRecipients;
-use Icinga\Module\Notifications\Model\RuleEscalation;
+use Icinga\Module\Notifications\Form\Data\RuleEntry as RuleEntryData;
+use Icinga\Module\Notifications\Forms\RuleEntryForm\EscalationConditions;
+use Icinga\Module\Notifications\Forms\RuleEntryForm\RuleEntryRecipients;
+use Icinga\Module\Notifications\Model\RuleEntry;
 use ipl\Html\Attributes;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
 
-class EscalationForm extends CompatForm
+class RuleEntryForm extends CompatForm
 {
     use CsrfCounterMeasure;
 
@@ -30,26 +30,26 @@ class EscalationForm extends CompatForm
     public function __construct(
         private readonly ConfigProviderInterface $configProvider,
     ) {
-        $this->addElementLoader('Icinga\\Module\\Notifications\\Forms\\EscalationForm');
+        $this->addElementLoader('Icinga\\Module\\Notifications\\Forms\\RuleEntryForm');
         $this->applyDefaultElementDecorators();
     }
 
     /**
-     * Load the given escalation into the form
+     * Load the given rule entry into the form
      *
-     * @param RuleEscalation $escalation
+     * @param RuleEntry $escalation
      *
      * @return $this
      */
-    public function setEscalation(RuleEscalation $escalation): static
+    public function setEntry(RuleEntry $escalation): static
     {
         $this->populate([
             'id' => $escalation->id,
             'rule_id' => $escalation->rule_id,
             'position' => $escalation->position,
             'conditions' => EscalationConditions::prepare($escalation->condition ?? ''),
-            'recipients' => EscalationRecipients::prepare(
-                $escalation->rule_escalation_recipient
+            'recipients' => RuleEntryRecipients::prepare(
+                $escalation->rule_entry_recipient
                     ->columns(['id', 'contact_id', 'contactgroup_id', 'schedule_id', 'channel_id'])
             ),
         ]);
@@ -58,11 +58,11 @@ class EscalationForm extends CompatForm
     }
 
     /**
-     * Get the escalation as currently configured by the user
+     * Get the rule entry as currently configured by the user
      *
-     * @return Escalation
+     * @return RuleEntryData
      */
-    public function getEscalation(): Escalation
+    public function getEntry(): RuleEntryData
     {
         $escalationId = null;
         if ($this->getElement('id')->hasValue()) {
@@ -74,7 +74,7 @@ class EscalationForm extends CompatForm
             $condition = $this->getElement('conditions')->getConditions();
         }
 
-        return new Escalation(
+        return new RuleEntryData(
             $escalationId,
             (int) $this->getValue('position'),
             $condition,
@@ -130,7 +130,7 @@ class EscalationForm extends CompatForm
 
         $this->addHtml(new HtmlElement('div', Attributes::create(['class' => 'connector'])));
 
-        $this->addElement('escalationRecipients', 'recipients', [
+        $this->addElement('ruleEntryRecipients', 'recipients', [
             'label' => $this->translate('Recipients') . ' *',
             'provider' => $this->configProvider,
             'required' => true,

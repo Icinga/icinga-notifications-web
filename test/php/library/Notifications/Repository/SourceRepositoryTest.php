@@ -322,11 +322,17 @@ class SourceRepositoryTest extends TestCase
         $sourceId = $this->insertSource($db, 'icingadb1');
         $sourceId2 = $this->insertSource($db, 'icingadb2');
         $db->insert('rule', [
-            'name' => 'Linked Rule', 'source_type' => 'icingadb', 'changed_at' => (int) (new DateTime())->format('Uv')
+            'name' => 'Linked Rule',
+            'type' => 'escalation',
+            'source_type' => 'icingadb',
+            'changed_at' => (int) (new DateTime())->format('Uv')
         ]);
         $ruleId = (int) $db->lastInsertId();
         $db->insert('rule', [
-            'name' => 'Unaffected Rule', 'source_type' => 'test', 'changed_at' => (int) (new DateTime())->format('Uv')
+            'name' => 'Unaffected Rule',
+            'type' => 'escalation',
+            'source_type' => 'test',
+            'changed_at' => (int) (new DateTime())->format('Uv')
         ]);
         $unaffectedRuleId = (int) $db->lastInsertId();
 

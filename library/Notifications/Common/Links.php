@@ -74,12 +74,12 @@ abstract class Links
 
     public static function escalationEdit(int $id): Url
     {
-        return Url::fromPath('notifications/rule-escalation/edit', ['id' => $id]);
+        return Url::fromPath('notifications/escalation-rule/edit', ['id' => $id]);
     }
 
     public static function escalationAdd(int $ruleId, int $position): Url
     {
-        return Url::fromPath('notifications/rule-escalations/add', [
+        return Url::fromPath('notifications/escalation-rule/add', [
             'rule' => $ruleId,
             'position' => $position
         ]);

@@ -7,7 +7,7 @@ namespace Icinga\Module\Notifications\Forms;
 
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\SourceHookLocator;
-use Icinga\Module\Notifications\Form\Data\EscalationRule;
+use Icinga\Module\Notifications\Form\Data\Rule as RuleData;
 use Icinga\Module\Notifications\Model\Rule;
 use ipl\Html\Contract\Form;
 use ipl\Html\FormDecoration\DescriptionDecorator;
@@ -58,16 +58,16 @@ class EventRuleForm extends CompatForm
     /**
      * Get the rule as it's currently configured
      *
-     * @return EscalationRule
+     * @return RuleData
      */
-    public function getRule(): EscalationRule
+    public function getRule(): RuleData
     {
         $id = $this->getValue('id');
         if ($id !== null) {
             $id = (int) $id;
         }
 
-        return new EscalationRule(
+        return new RuleData(
             $id,
             $this->getValue('name'),
             $this->getValue('source_type'),

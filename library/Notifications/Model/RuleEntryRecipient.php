@@ -16,7 +16,7 @@ use ipl\Stdlib\Filter;
 
 /**
  * @property int $id
- * @property int $rule_escalation_id
+ * @property int $rule_entry_id
  * @property ?int $contact_id
  * @property ?int $contactgroup_id
  * @property ?int $schedule_id
@@ -24,17 +24,17 @@ use ipl\Stdlib\Filter;
  * @property DateTime $changed_at
  * @property bool $deleted
  *
- * @property Query<RuleEscalation>|RuleEscalation $rule_escalation
+ * @property Query<RuleEntry>|RuleEntry $rule_entry
  * @property Query<Contact>|Contact $contact
  * @property Query<Schedule>|Schedule $schedule
  * @property Query<Contactgroup>|Contactgroup $contactgroup
  * @property Query<Channel>|Channel $channel
  */
-class RuleEscalationRecipient extends Model
+class RuleEntryRecipient extends Model
 {
     public function getTableName(): string
     {
-        return 'rule_escalation_recipient';
+        return 'rule_entry_recipient';
     }
 
     public function getKeyName(): string
@@ -45,7 +45,7 @@ class RuleEscalationRecipient extends Model
     public function getColumns(): array
     {
         return [
-            'rule_escalation_id',
+            'rule_entry_id',
             'contact_id',
             'contactgroup_id',
             'schedule_id',
@@ -58,7 +58,7 @@ class RuleEscalationRecipient extends Model
     public function getColumnDefinitions(): array
     {
         return [
-            'rule_escalation_id' => t('Rule Escalation ID'),
+            'rule_entry_id'      => t('Rule Entry ID'),
             'contact_id'         => t('Contact ID'),
             'contactgroup_id'    => t('Contactgroup ID'),
             'schedule_id'        => t('Schedule ID'),
@@ -69,7 +69,7 @@ class RuleEscalationRecipient extends Model
 
     public function getDefaultSort(): array
     {
-        return ['rule_escalation_id'];
+        return ['rule_entry_id'];
     }
 
     public function createBehaviors(Behaviors $behaviors): void
@@ -80,7 +80,7 @@ class RuleEscalationRecipient extends Model
 
     public function createRelations(Relations $relations): void
     {
-        $relations->belongsTo('rule_escalation', RuleEscalation::class);
+        $relations->belongsTo('rule_entry', RuleEntry::class);
         $relations->belongsTo('contact', Contact::class)->setJoinType('LEFT');
         $relations->belongsTo('schedule', Schedule::class)->setJoinType('LEFT');
         $relations->belongsTo('contactgroup', Contactgroup::class)->setJoinType('LEFT');
