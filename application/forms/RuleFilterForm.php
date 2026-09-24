@@ -26,6 +26,13 @@ use Throwable;
 
 class RuleFilterForm extends SearchEditor
 {
+    /**
+     * Whether a source integration has been registered for validation and enrichment of the filter
+     *
+     * @var bool
+     */
+    private bool $hookRegistered = false;
+
     public function __construct()
     {
         $this->getAttribute('class')
@@ -83,6 +90,8 @@ class RuleFilterForm extends SearchEditor
             $values['filter_name'] = $parsedFilter['filter_name'] ?? null;
         }
 
+        $this->registerHookIntegration($rule->source_type);
+
         $this->populate($values);
 
         return $this;
@@ -132,44 +141,9 @@ class RuleFilterForm extends SearchEditor
         $this->addElement('hidden', 'rule_name', ['required' => true]);
         $this->addElement('hidden', 'source_type', ['required' => true]);
 
-        $hook = $this->getHook($this->getValue('source_type'));
-        if ($hook !== null) {
-            $this->on(
-                SearchEditor::ON_VALIDATE_COLUMN,
-                function (Filter\Condition $condition) use ($hook) {
-                    try {
-                        $hook->assertValidCondition($condition);
-                    } catch (SearchException $e) {
-                        throw $e;
-                    } catch (Throwable $e) {
-                        Logger::error(
-                            'Source hook %s failed to validate filter condition: %s',
-                            get_class($hook),
-                            $e
-                        );
+        $this->registerHookIntegration($this->getValue('source_type'));
 
-                        throw new SearchException($this->translate(
-                            'Failed to validate column. Please contact your system administrator.'
-                        ));
-                    }
-                }
-            );
-
-            $this->getParser()->on(
-                QueryString::ON_CONDITION,
-                function (Filter\Condition $condition) use ($hook) {
-                    try {
-                        $hook->enrichCondition($condition);
-                    } catch (Throwable $e) {
-                        Logger::error(
-                            'Source hook %s failed to enrich filter condition: %s',
-                            get_class($hook),
-                            $e
-                        );
-                    }
-                }
-            );
-        } else {
+        if (! $this->hookRegistered) {
             $this->addHtml(
                 new Callout(
                     CalloutType::Info,
@@ -209,6 +183,59 @@ class RuleFilterForm extends SearchEditor
         parent::assemble();
 
         $this->getElement('btn_submit')->setLabel($this->translate('Save Changes'));
+    }
+
+    /**
+     * Integrate the source hook's validation and enrichment into the form
+     *
+     * @param string $type
+     *
+     * @return void
+     */
+    private function registerHookIntegration(string $type): void
+    {
+        $hook = $this->getHook($type);
+        if ($hook === null || $this->hookRegistered) {
+            return;
+        }
+
+        $this->on(
+            SearchEditor::ON_VALIDATE_COLUMN,
+            function (Filter\Condition $condition) use ($hook) {
+                try {
+                    $hook->assertValidCondition($condition);
+                } catch (SearchException $e) {
+                    throw $e;
+                } catch (Throwable $e) {
+                    Logger::error(
+                        'Source hook %s failed to validate filter condition: %s',
+                        get_class($hook),
+                        $e
+                    );
+
+                    throw new SearchException($this->translate(
+                        'Failed to validate column. Please contact your system administrator.'
+                    ));
+                }
+            }
+        );
+
+        $this->getParser()->on(
+            QueryString::ON_CONDITION,
+            function (Filter\Condition $condition) use ($hook) {
+                try {
+                    $hook->enrichCondition($condition);
+                } catch (Throwable $e) {
+                    Logger::error(
+                        'Source hook %s failed to enrich filter condition: %s',
+                        get_class($hook),
+                        $e
+                    );
+                }
+            }
+        );
+
+        $this->hookRegistered = true;
     }
 
     /**
