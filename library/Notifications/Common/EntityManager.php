@@ -733,7 +733,7 @@ class EntityManager
         bool $replace
     ): void {
         [$sourceToJunction, $junctionToTarget] = iterator_to_array(
-            $relation->setSource($source)->resolve(),
+            $relation->bindTo($source, $relation->getName(), $this->resolver)->resolve(),
             false
         );
 
