@@ -44,13 +44,13 @@ class EscalationCondition extends HtmlDocument
     /**
      * Create an HTML representation for the given escalation condition
      *
-     * @param string $queryString
+     * @param string $json
      *
      * @return static
      */
-    public static function fromQueryString(string $queryString): static
+    public static function fromJson(string $json): static
     {
-        return new static(QueryString::parse($queryString));
+        return new static(QueryString::parse(json_decode($json, true)['qs']));
     }
 
     protected function assemble(): void
