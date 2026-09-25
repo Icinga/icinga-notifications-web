@@ -10,7 +10,7 @@ use Icinga\Module\Notifications\Form\Data\Channel as ChannelData;
 use Icinga\Module\Notifications\Model\AvailableChannelType;
 use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\Contact;
-use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
+use Icinga\Module\Notifications\Model\RuleEntryRecipient;
 use Icinga\Web\Session;
 use ipl\Html\Attributes;
 use ipl\Html\Contract\Form;
@@ -177,7 +177,7 @@ class ChannelForm extends CompatForm
                 ->first();
 
             if ($isInUse === null) {
-                $isInUse = RuleEscalationRecipient::on($this->db)
+                $isInUse = RuleEntryRecipient::on($this->db)
                     ->columns([new Expression('1')])
                     ->filter(Filter::equal('channel_id', $channelId))
                     ->first();
@@ -195,7 +195,7 @@ class ChannelForm extends CompatForm
                     'title'          => $isInUse
                         ? $this->translate(
                             "Channel is still referenced as a contact's default"
-                            . " channel or in an event rule's escalation"
+                            . " channel or in an event rule's entry"
                         )
                         : null
                 ]

@@ -5,17 +5,19 @@
 
 namespace Icinga\Module\Notifications\Form\Data;
 
-readonly class EscalationRule
+readonly class Rule
 {
     /**
      * @param ?int $id The primary database key value, NULL for new rules
      * @param string $name The name of the rule
+     * @param string $type The type of the rule
      * @param string $sourceType The source type the rule belongs to
      * @param ?string $objectFilter The object filter of the rule, NULL for no change
      */
     public function __construct(
         public ?int $id,
         public string $name,
+        public string $type,
         public string $sourceType,
         public ?string $objectFilter
     ) {

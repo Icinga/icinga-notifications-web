@@ -7,17 +7,17 @@ namespace Icinga\Module\Notifications\Repository;
 
 use Icinga\Module\Notifications\Common\Collection;
 use Icinga\Module\Notifications\Common\EntityManager;
-use Icinga\Module\Notifications\Form\Data\Escalation;
-use Icinga\Module\Notifications\Model\RuleEscalation;
-use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
+use Icinga\Module\Notifications\Form\Data\RuleEntry as RuleEntryData;
+use Icinga\Module\Notifications\Model\RuleEntry;
+use Icinga\Module\Notifications\Model\RuleEntryRecipient;
 use InvalidArgumentException;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
 
-final class EscalationRepository
+final class RuleEntryRepository
 {
     /**
-     * Create a `EscalationRepository` instance
+     * Create a `RuleEntryRepository` instance
      *
      * @param Connection $db Database to operate on
      */
@@ -27,36 +27,36 @@ final class EscalationRepository
     }
 
     /**
-     * Fetch the escalation with the given ID
+     * Fetch the entry with the given ID
      *
      * @param int $id
      *
-     * @return ?RuleEscalation
+     * @return ?RuleEntry
      */
-    public function find(int $id): ?RuleEscalation
+    public function find(int $id): ?RuleEntry
     {
-        return RuleEscalation::on($this->db)
+        return RuleEntry::on($this->db)
             ->filter(Filter::equal('id', $id))
             ->first();
     }
 
     /**
-     * Store a new escalation
+     * Store a new entry
      *
-     * @param Escalation $escalation
+     * @param RuleEntryData $entry
      *
-     * @return int The escalation's ID
+     * @return int The entry's ID
      */
-    public function create(Escalation $escalation): int
+    public function create(RuleEntryData $entry): int
     {
-        $model = (new RuleEscalation())->setNew();
-        $model->rule_id = $escalation->ruleId;
-        $model->position = $escalation->position;
-        $model->condition = $escalation->condition;
+        $model = (new RuleEntry())->setNew();
+        $model->rule_id = $entry->ruleId;
+        $model->position = $entry->position;
+        $model->condition = $entry->condition;
 
         $recipients = [];
-        foreach ($escalation->recipients as $recipient) {
-            $recipientModel = (new RuleEscalationRecipient())->setNew();
+        foreach ($entry->recipients as $recipient) {
+            $recipientModel = (new RuleEntryRecipient())->setNew();
             $typeId = match ($recipient->type) {
                 'contact' => 'contact_id',
                 'contact_group' => 'contactgroup_id',
@@ -69,7 +69,7 @@ final class EscalationRepository
             $recipients[] = $recipientModel;
         }
 
-        $model->rule_escalation_recipient = Collection::create(RuleEscalationRecipient::class, $recipients);
+        $model->rule_entry_recipient = Collection::create(RuleEntryRecipient::class, $recipients);
 
         (new EntityManager($this->db))->save($model);
 
@@ -77,32 +77,32 @@ final class EscalationRepository
     }
 
     /**
-     * Update the given escalation
+     * Update the given entry
      *
-     * @param Escalation $escalation
+     * @param RuleEntryData $entry
      *
      * @return void
      *
-     * @throws InvalidArgumentException if the escalation does not exist
+     * @throws InvalidArgumentException if the entry does not exist
      */
-    public function update(Escalation $escalation): void
+    public function update(RuleEntryData $entry): void
     {
-        $model = $this->find($escalation->id)?->setNew(false);
+        $model = $this->find($entry->id)?->setNew(false);
         if ($model === null) {
-            throw new InvalidArgumentException('Cannot update an escalation that does not exist');
+            throw new InvalidArgumentException('Cannot update a rule entry that does not exist');
         }
 
-        $model->position = $escalation->position;
-        $model->condition = $escalation->condition;
+        $model->position = $entry->position;
+        $model->condition = $entry->condition;
 
         $recipientsToKeep = [];
-        foreach ($escalation->recipients as $recipient) {
+        foreach ($entry->recipients as $recipient) {
             if (isset($recipient->id)) {
                 $recipientsToKeep[$recipient->id] = $recipient;
             }
         }
 
-        foreach ($model->rule_escalation_recipient as $recipientModel) {
+        foreach ($model->rule_entry_recipient as $recipientModel) {
             if (isset($recipientsToKeep[$recipientModel->id])) {
                 $recipient = $recipientsToKeep[$recipientModel->id];
                 [$typeId, $oppositeKeys] = match ($recipient->type) {
@@ -116,16 +116,16 @@ final class EscalationRepository
                     $recipientModel->{$oppositeKey} = null;
                 }
             } else {
-                $model->rule_escalation_recipient->detach($recipientModel);
+                $model->rule_entry_recipient->detach($recipientModel);
             }
         }
 
-        foreach ($escalation->recipients as $recipient) {
+        foreach ($entry->recipients as $recipient) {
             if (isset($recipient->id)) {
                 continue;
             }
 
-            $recipientModel = (new RuleEscalationRecipient())->setNew();
+            $recipientModel = (new RuleEntryRecipient())->setNew();
             $typeId = match ($recipient->type) {
                 'contact' => 'contact_id',
                 'contact_group' => 'contactgroup_id',
@@ -135,40 +135,40 @@ final class EscalationRepository
             $recipientModel->{$typeId} = $recipient->recipientId;
             $recipientModel->channel_id = $recipient->channelId;
 
-            $model->rule_escalation_recipient->attach($recipientModel);
+            $model->rule_entry_recipient->attach($recipientModel);
         }
 
         (new EntityManager($this->db))->save($model);
     }
 
     /**
-     * Delete the escalation with the given ID
+     * Delete the entry with the given ID
      *
      * @param int $id
      *
      * @return void
      *
-     * @throws InvalidArgumentException if the escalation does not exist
+     * @throws InvalidArgumentException if the entry does not exist
      */
     public function delete(int $id): void
     {
-        $escalation = $this->find($id)?->setNew(false);
-        if ($escalation === null) {
-            throw new InvalidArgumentException('Cannot delete an escalation that does not exist');
+        $entry = $this->find($id)?->setNew(false);
+        if ($entry === null) {
+            throw new InvalidArgumentException('Cannot delete a rule entry that does not exist');
         }
 
         $entityManager = new EntityManager($this->db);
-        $freedPosition = $escalation->position;
+        $freedPosition = $entry->position;
 
-        $escalation->position = null;
-        $escalation->rule_escalation_recipient = [];
-        $escalation->delete();
+        $entry->position = null;
+        $entry->rule_entry_recipient = [];
+        $entry->delete();
 
-        $entityManager->save($escalation);
+        $entityManager->save($entry);
 
-        $siblings = RuleEscalation::on($this->db)
+        $siblings = RuleEntry::on($this->db)
             ->columns(['id', 'position'])
-            ->filter(Filter::equal('rule_id', $escalation->rule_id))
+            ->filter(Filter::equal('rule_id', $entry->rule_id))
             ->filter(Filter::greaterThan('position', $freedPosition))
             ->orderBy('position', SORT_ASC);
         foreach ($siblings as $sibling) {

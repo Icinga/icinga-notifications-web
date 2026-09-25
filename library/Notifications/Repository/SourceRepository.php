@@ -118,7 +118,7 @@ class SourceRepository
             );
 
         foreach ($orphanRules as $rule) {
-            (new EscalationRuleRepository($this->db))->delete($rule->id);
+            (new RuleRepository($this->db))->delete($rule->id);
         }
     }
 

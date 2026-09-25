@@ -260,11 +260,11 @@ class IncidentHistoryRenderer implements ItemRenderer
             case IncidentHistoryType::ESCALATION_TRIGGERED:
                 if (isset($item->rule->name)) {
                     // TODO: No name is no reason to claim an unknown escalation, describe conditions instead
-                    if (isset($item->rule_escalation->name)) {
+                    if (isset($item->rule_entry->name)) {
                         $message = sprintf(
                             $this->translate('Rule %s reached escalation %s'),
                             $item->rule->name,
-                            $item->rule_escalation->name
+                            $item->rule_entry->name
                         );
                     } else {
                         $message = sprintf(

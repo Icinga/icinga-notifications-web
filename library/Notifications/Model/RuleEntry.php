@@ -30,14 +30,14 @@ use ipl\Stdlib\Filter;
  * @property Query<Contact>|Collection<Contact> $contact
  * @property Query<Contactgroup>|Collection<Contactgroup> $contactgroup
  * @property Query<Schedule>|Collection<Schedule> $schedule
- * @property Query<RuleEscalationRecipient>|Collection<RuleEscalationRecipient> $rule_escalation_recipient
+ * @property Query<RuleEntryRecipient>|Collection<RuleEntryRecipient> $rule_entry_recipient
  * @property Query<IncidentHistory>|Collection<IncidentHistory> $incident_history
  */
-class RuleEscalation extends Model
+class RuleEntry extends Model
 {
     public function getTableName(): string
     {
-        return 'rule_escalation';
+        return 'rule_entry';
     }
 
     public function getKeyName(): string
@@ -92,22 +92,22 @@ class RuleEscalation extends Model
 
         $relations
             ->belongsToMany('incident', Incident::class)
-            ->through('incident_rule_escalation_state');
+            ->through('incident_rule_entry_state');
 
         $relations->belongsToMany('contact', Contact::class)
-            ->through(RuleEscalationRecipient::class)
+            ->through(RuleEntryRecipient::class)
             ->setTargetForeignKey('contact_id')
             ->setJoinType('LEFT');
         $relations->belongsToMany('contactgroup', Contactgroup::class)
-            ->through(RuleEscalationRecipient::class)
+            ->through(RuleEntryRecipient::class)
             ->setTargetForeignKey('contactgroup_id')
             ->setJoinType('LEFT');
         $relations->belongsToMany('schedule', Schedule::class)
-            ->through(RuleEscalationRecipient::class)
+            ->through(RuleEntryRecipient::class)
             ->setTargetForeignKey('schedule_id')
             ->setJoinType('LEFT');
 
-        $relations->hasMany('rule_escalation_recipient', RuleEscalationRecipient::class)
+        $relations->hasMany('rule_entry_recipient', RuleEntryRecipient::class)
             ->setJoinType('LEFT');
         $relations->hasMany('incident_history', IncidentHistory::class)
             ->setJoinType('LEFT');

@@ -8,15 +8,15 @@ namespace Tests\Icinga\Module\Notifications\Repository;
 use DateTime;
 use DateTimeImmutable;
 use DateTimeZone;
-use Icinga\Module\Notifications\Form\Data\Escalation;
-use Icinga\Module\Notifications\Form\Data\EscalationRecipient;
+use Icinga\Module\Notifications\Form\Data\RuleEntry;
+use Icinga\Module\Notifications\Form\Data\RuleEntryRecipient;
 use Icinga\Module\Notifications\Form\Data\Rotation as RotationData;
 use Icinga\Module\Notifications\Form\Data\Schedule as ScheduleData;
 use Icinga\Module\Notifications\Model\Rotation;
 use Icinga\Module\Notifications\Model\RotationMember;
 use Icinga\Module\Notifications\Model\Schedule;
 use Icinga\Module\Notifications\Model\TimeperiodEntry;
-use Icinga\Module\Notifications\Repository\EscalationRepository;
+use Icinga\Module\Notifications\Repository\RuleEntryRepository;
 use Icinga\Module\Notifications\Repository\RotationRepository;
 use Icinga\Module\Notifications\Repository\ScheduleRepository;
 use Icinga\Module\Notifications\Test\DbTestBackends;
@@ -153,14 +153,14 @@ class ScheduleRepositoryTest extends TestCase
     {
         $now = (int) (new DateTime())->format('Uv');
         $db->insert('source', ['type' => 'icinga2', 'name' => 'S', 'listener_username' => 'ls', 'changed_at' => $now]);
-        $db->insert('rule', ['name' => 'R', 'source_type' => 'icinga2', 'changed_at' => $now]);
+        $db->insert('rule', ['name' => 'R', 'type' => 'escalation', 'source_type' => 'icinga2', 'changed_at' => $now]);
         $ruleId = (int) $db->lastInsertId();
 
-        return (new EscalationRepository($db))->create(new Escalation(
+        return (new RuleEntryRepository($db))->create(new RuleEntry(
             null,
             0,
             null,
-            [new EscalationRecipient(null, 'schedule', $scheduleId, null)],
+            [new RuleEntryRecipient(null, 'schedule', $scheduleId, null)],
             $ruleId
         ));
     }
@@ -428,7 +428,7 @@ class ScheduleRepositoryTest extends TestCase
             'The schedule\'s rotation should be soft-deleted'
         );
         $this->assertNull(
-            (new EscalationRepository($db))->find($escalationId),
+            (new RuleEntryRepository($db))->find($escalationId),
             'An escalation solely targeting the schedule should be dereferenced/removed'
         );
     }

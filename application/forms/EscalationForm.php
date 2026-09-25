@@ -6,10 +6,11 @@
 namespace Icinga\Module\Notifications\Forms;
 
 use Icinga\Module\Notifications\Form\ConfigProviderInterface;
-use Icinga\Module\Notifications\Form\Data\Escalation;
+use Icinga\Module\Notifications\Form\Data\RuleEntry as RuleEntryData;
 use Icinga\Module\Notifications\Forms\EscalationForm\EscalationConditions;
 use Icinga\Module\Notifications\Forms\EscalationForm\EscalationRecipients;
-use Icinga\Module\Notifications\Model\RuleEscalation;
+use Icinga\Module\Notifications\Forms\EscalationForm\EventTypes;
+use Icinga\Module\Notifications\Model\RuleEntry;
 use ipl\Html\Attributes;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
@@ -20,15 +21,23 @@ class EscalationForm extends CompatForm
 {
     use CsrfCounterMeasure;
 
+    public const ESCALATION_RULE = 'escalation';
+
+    public const NOTIFICATION_RULE = 'notification';
+
     protected $defaultAttributes = [
         'class' => ['escalation-form'],
     ];
 
     /**
      * @param ConfigProviderInterface $configProvider
+     * @param 'escalation'|'notification' $ruleType
+     * @param ?string $submitButtonLabel Defaults to "Save Changes"
      */
     public function __construct(
         private readonly ConfigProviderInterface $configProvider,
+        private readonly string $ruleType,
+        private readonly ?string $submitButtonLabel = null
     ) {
         $this->addElementLoader('Icinga\\Module\\Notifications\\Forms\\EscalationForm');
         $this->applyDefaultElementDecorators();
@@ -37,19 +46,25 @@ class EscalationForm extends CompatForm
     /**
      * Load the given escalation into the form
      *
-     * @param RuleEscalation $escalation
+     * @param RuleEntry $escalation
      *
      * @return $this
      */
-    public function setEscalation(RuleEscalation $escalation): static
+    public function setEscalation(RuleEntry $escalation): static
     {
+        /** @var class-string<EscalationConditions|EventTypes> $conditionElementClass */
+        $conditionElementClass = $this->loadPlugin('element', match ($this->ruleType) {
+            self::ESCALATION_RULE => 'escalationConditions',
+            self::NOTIFICATION_RULE => 'eventTypes'
+        });
+
         $this->populate([
             'id' => $escalation->id,
             'rule_id' => $escalation->rule_id,
             'position' => $escalation->position,
-            'conditions' => EscalationConditions::prepare($escalation->condition ?? ''),
+            'condition' => $conditionElementClass::prepare($escalation->condition ?? ''),
             'recipients' => EscalationRecipients::prepare(
-                $escalation->rule_escalation_recipient
+                $escalation->rule_entry_recipient
                     ->columns(['id', 'contact_id', 'contactgroup_id', 'schedule_id', 'channel_id'])
             ),
         ]);
@@ -60,9 +75,9 @@ class EscalationForm extends CompatForm
     /**
      * Get the escalation as currently configured by the user
      *
-     * @return Escalation
+     * @return RuleEntryData
      */
-    public function getEscalation(): Escalation
+    public function getEscalation(): RuleEntryData
     {
         $escalationId = null;
         if ($this->getElement('id')->hasValue()) {
@@ -70,11 +85,11 @@ class EscalationForm extends CompatForm
         }
 
         $condition = null;
-        if ($this->hasElement('conditions')) {
-            $condition = $this->getElement('conditions')->getConditions();
+        if ($this->hasElement('condition')) {
+            $condition = $this->getElement('condition')->getCondition();
         }
 
-        return new Escalation(
+        return new RuleEntryData(
             $escalationId,
             (int) $this->getValue('position'),
             $condition,
@@ -113,17 +128,26 @@ class EscalationForm extends CompatForm
 
         $this->addElement('hidden', 'rule_id', ['required' => true]);
 
-        if ($position === 0) {
-            $this->addHtml(
-                new HtmlElement(
-                    'div',
-                    Attributes::create(['class' => 'immediate-hint']),
-                    Text::create($this->translate('Delivered immediately'))
-                )
-            );
+        if ($this->ruleType === self::ESCALATION_RULE) {
+            if ($position === 0) {
+                $this->addHtml(
+                    new HtmlElement(
+                        'div',
+                        Attributes::create(['class' => 'immediate-hint']),
+                        Text::create($this->translate('Delivered immediately'))
+                    )
+                );
+            } else {
+                $this->addElement('escalationConditions', 'condition', [
+                    'label' => $this->translate('Condition') . ' *',
+                    'required' => true
+                ]);
+            }
         } else {
-            $this->addElement('escalationConditions', 'conditions', [
-                'label' => $this->translate('Condition') . ' *',
+            $this->addElement('eventTypes', 'condition', [
+                'label' => $this->translate('Event Types') . ' *',
+                'rule_id' => $this->getValue('rule_id'),
+                'provider' => $this->configProvider,
                 'required' => true
             ]);
         }
@@ -137,9 +161,7 @@ class EscalationForm extends CompatForm
         ]);
 
         $this->addElement('submit', 'btn_submit', [
-            'label' => $escalationId === null
-                ? $this->translate('Create Escalation')
-                : $this->translate('Save Changes')
+            'label' => $this->submitButtonLabel ?? $this->translate('Save Changes')
         ]);
 
         $primaryButtonWrapper = new HtmlElement('div', Attributes::create(['class' => 'icinga-controls']));

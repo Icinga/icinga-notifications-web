@@ -16,7 +16,7 @@ use ipl\Stdlib\Filter;
  *
  * Unlike {@see GadgetTag} (whose primary key is the natural pair of foreign keys, mirroring
  * contactgroup_member), this junction is keyed by a standalone `id` and carries a `deleted` column,
- * mirroring the real rule_escalation_recipient table. The surrogate key is not part of the source or
+ * mirroring the real rule_entry_recipient table. The surrogate key is not part of the source or
  * target columns, so reviving or soft-deleting a link must load and carry it to scope the UPDATE.
  */
 class GadgetBadge extends Model

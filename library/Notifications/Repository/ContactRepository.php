@@ -176,7 +176,7 @@ final class ContactRepository
             ->query()
             ->withColumns(['schedule.timezone'])
             ->orderBy('priority', SORT_DESC); // Important, MUST BE DESC to not open gaps when deleting one below
-        $model->rule_escalation->query()->columns('id');
+        $model->rule_entry->query()->columns('id');
 
         foreach ($model->rotation as $rotation) {
             $rotation->member
@@ -219,16 +219,16 @@ final class ContactRepository
             }
         }
 
-        foreach ($model->rule_escalation as $escalation) {
-            $model->rule_escalation->detach($escalation);
+        foreach ($model->rule_entry as $entry) {
+            $model->rule_entry->detach($entry);
 
-            $otherRecipient = $escalation->rule_escalation_recipient
+            $otherRecipient = $entry->rule_entry_recipient
                 ->query()
                 ->columns([new Expression('1')])
                 ->filter(Filter::unequal('contact_id', $id))
                 ->first();
             if ($otherRecipient === null) {
-                (new EscalationRepository($this->db))->delete($escalation->id);
+                (new RuleEntryRepository($this->db))->delete($entry->id);
             }
         }
 

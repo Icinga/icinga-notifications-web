@@ -9,7 +9,7 @@ use Icinga\Application\Logger;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\Json\JsonEncodeException;
 use Icinga\Module\Notifications\Common\SourceHookLocator;
-use Icinga\Module\Notifications\Form\Data\EscalationRule;
+use Icinga\Module\Notifications\Form\Data\Rule as RuleData;
 use Icinga\Module\Notifications\Hook\V2\SourceHook;
 use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Util\RuleSerializer;
@@ -53,6 +53,7 @@ class RuleFilterForm extends SearchEditor
         $values = [
             'rule_id' => $rule->id,
             'rule_name' => $rule->name,
+            'rule_type' => $rule->type,
             'source_type' => $rule->source_type
         ];
 
@@ -100,11 +101,11 @@ class RuleFilterForm extends SearchEditor
     /**
      * Get the rule as it's currently configured
      *
-     * @return EscalationRule
+     * @return RuleData
      *
      * @throws JsonEncodeException
      */
-    public function getRule(): EscalationRule
+    public function getRule(): RuleData
     {
         $filter = $this->getFilter();
 
@@ -122,9 +123,10 @@ class RuleFilterForm extends SearchEditor
             }
         }
 
-        return new EscalationRule(
+        return new RuleData(
             $this->getValue('rule_id'),
             $this->getValue('rule_name'),
+            $this->getValue('rule_type'),
             $this->getValue('source_type'),
             (new RuleSerializer(
                 $filter,
@@ -139,6 +141,7 @@ class RuleFilterForm extends SearchEditor
     {
         $this->addElement('hidden', 'rule_id', ['required' => true]);
         $this->addElement('hidden', 'rule_name', ['required' => true]);
+        $this->addElement('hidden', 'rule_type', ['required' => true]);
         $this->addElement('hidden', 'source_type', ['required' => true]);
 
         $this->registerHookIntegration($this->getValue('source_type'));

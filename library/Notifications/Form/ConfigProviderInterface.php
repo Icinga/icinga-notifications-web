@@ -75,4 +75,13 @@ interface ConfigProviderInterface
      * @return iterable<Contact>
      */
     public function findContactsByIds(array $ids): iterable;
+
+    /**
+     * Find event types that are associated with the given rule ID
+     *
+     * @param int $ruleId
+     *
+     * @return iterable<string, string>
+     */
+    public function findNotificationEventTypesByRuleId(int $ruleId): iterable;
 }

@@ -118,7 +118,7 @@ final class ScheduleRepository
     }
 
     /**
-     * Delete a schedule and de-reference it from any escalation rules
+     * Delete a schedule and de-reference it from any event rules
      *
      * @param int $id
      *
@@ -138,17 +138,17 @@ final class ScheduleRepository
             (new RotationRepository($this->db))->delete($rotation->id);
         }
 
-        $schedule->rule_escalation->query()->columns('id');
-        foreach ($schedule->rule_escalation as $escalation) {
-            $schedule->rule_escalation->detach($escalation);
+        $schedule->rule_entry->query()->columns('id');
+        foreach ($schedule->rule_entry as $entry) {
+            $schedule->rule_entry->detach($entry);
 
-            $otherRecipients = $escalation->rule_escalation_recipient
+            $otherRecipients = $entry->rule_entry_recipient
                 ->query()
                 ->columns([new Expression('1')])
                 ->filter(Filter::unequal('schedule_id', $schedule->id))
                 ->first();
             if ($otherRecipients === null) {
-                (new EscalationRepository($this->db))->delete($escalation->id);
+                (new RuleEntryRepository($this->db))->delete($entry->id);
             }
         }
 
