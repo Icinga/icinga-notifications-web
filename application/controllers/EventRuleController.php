@@ -13,7 +13,7 @@ use Icinga\Module\Notifications\Forms\EventRuleForm;
 use Icinga\Module\Notifications\Forms\RuleFilterForm;
 use Icinga\Module\Notifications\Model\Source;
 use Icinga\Module\Notifications\Repository\RuleRepository;
-use Icinga\Module\Notifications\Widget\EscalationRule;
+use Icinga\Module\Notifications\Widget\EventRule;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\Contract\Form;
@@ -59,7 +59,7 @@ class EventRuleController extends CompatController
             ])
         ]));
 
-        $this->addContent(new EscalationRule($rule));
+        $this->addContent(new EventRule($rule));
     }
 
     public function searchEditorAction(): void

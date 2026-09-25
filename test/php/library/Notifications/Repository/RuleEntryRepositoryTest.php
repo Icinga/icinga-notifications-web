@@ -151,16 +151,13 @@ class RuleEntryRepositoryTest extends TestCase
         $ruleId = $this->createRule($db);
         $repository = new RuleEntryRepository($db);
 
-        $condition = EscalationConditions::serialize(
-            Filter::greaterThanOrEqual('incident_severity', 'crit')
-        );
-        $id = $repository->create($this->escalation($ruleId, 0, $condition));
+        $id = $repository->create($this->escalation($ruleId, 0, null));
 
         $escalation = $repository->find($id);
         $this->assertNotNull($escalation, 'The created escalation was not found');
         $this->assertEquals($ruleId, $escalation->rule_id);
         $this->assertSame(0, (int) $escalation->position);
-        $this->assertSame($condition, $escalation->condition);
+        $this->assertNull($escalation->condition);
 
         $recipients = $this->recipientsOf($db, $id);
         $this->assertCount(1, $recipients);
@@ -176,9 +173,7 @@ class RuleEntryRepositoryTest extends TestCase
         $id = $repository->create($this->escalation($ruleId, 0, null));
 
         // Change the condition and replace the recipient set (drop the old contact recipient, add a fresh one)
-        $condition = EscalationConditions::serialize(
-            Filter::greaterThanOrEqual('incident_age', '5m')
-        );
+        $condition = 'bogus';
         $repository->update(new RuleEntryData(
             $id,
             0,

@@ -42,6 +42,11 @@ class TestSource implements SourceHook
         return [];
     }
 
+    public function getEventTypes(): array
+    {
+        return [];
+    }
+
     public function getValueSuggestions(string $column, string $searchTerm, Chain $searchFilter): Traversable
     {
         return new EmptyIterator();

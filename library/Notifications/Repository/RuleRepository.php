@@ -53,7 +53,7 @@ final class RuleRepository
         $model = (new Rule())->setNew();
 
         $model->name = $rule->name;
-        $model->type = 'escalation';
+        $model->type = $rule->type;
         $model->source_type = $rule->sourceType;
         $model->object_filter = $rule->objectFilter;
 
@@ -78,15 +78,24 @@ final class RuleRepository
             throw new InvalidArgumentException('Cannot update an event rule that does not exist');
         }
 
+        $em = new EntityManager($this->db);
+
         $model->name = $rule->name;
         if ($rule->sourceType !== $model->source_type) {
             $model->source_type = $rule->sourceType;
             $model->object_filter = null;
+
+            if ($model->type === 'notification') {
+                foreach ($model->rule_entry as $entry) {
+                    $entry->condition = null;
+                    $em->save($entry);
+                }
+            }
         } elseif ($rule->objectFilter !== null) {
             $model->object_filter = $rule->objectFilter ?: null;
         }
 
-        (new EntityManager($this->db))->save($model);
+        $em->save($model);
     }
 
     /**
@@ -140,6 +149,7 @@ final class RuleRepository
         $ruleId = $this->create(new RuleData(
             null,
             $rule->name,
+            $rule->type,
             $rule->sourceType,
             $rule->objectFilter ?? $original->object_filter
         ));

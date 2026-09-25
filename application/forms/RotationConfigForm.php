@@ -262,7 +262,7 @@ class RotationConfigForm extends CompatForm
         ];
 
         $modeList = new HtmlElement('ul', Attributes::create([
-            'class' => ['rotation-mode', $this->disableModeSelection ? 'disabled' : '']
+            'class' => ['pictogram-selection', $this->disableModeSelection ? 'disabled' : '']
         ]));
         foreach ($modes as $mode => $label) {
             $radio = $this->createElement('input', 'mode', [
@@ -336,7 +336,7 @@ class RotationConfigForm extends CompatForm
                     'label',
                     null,
                     $radio,
-                    new HtmlElement('div', Attributes::create(['class' => ['mode-img', 'img-' . $mode]])),
+                    new HtmlElement('div', Attributes::create(['class' => ['pictogram', 'img-' . $mode]])),
                     Text::create($label),
                     ...$labelDescription
                 )

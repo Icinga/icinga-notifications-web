@@ -12,6 +12,7 @@ use Icinga\Module\Notifications\Widget\RuleEntryRecipientBadge;
 use ipl\Html\Attributes;
 use ipl\Html\HtmlDocument;
 use ipl\Html\Text;
+use ipl\I18n\Translation;
 use ipl\Web\Common\ItemRenderer;
 use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
@@ -19,6 +20,8 @@ use ipl\Web\Widget\Link;
 /** @implements ItemRenderer<Rule> */
 class EventRuleRenderer implements ItemRenderer
 {
+    use Translation;
+
     public function assembleAttributes($item, Attributes $attributes, string $layout): void
     {
         $attributes->get('class')->addValue('rule');
@@ -31,6 +34,10 @@ class EventRuleRenderer implements ItemRenderer
     public function assembleTitle($item, HtmlDocument $title, string $layout): void
     {
         $title->addHtml(new Link($item->name, Links::eventRule($item->id), ['class' => 'subject']));
+        $title->addHtml(Text::create(match ($item->type) {
+            'escalation' => $this->translate('Escalation Rule'),
+            'notification' => $this->translate('Notification Rule')
+        }));
     }
 
     public function assembleCaption($item, HtmlDocument $caption, string $layout): void

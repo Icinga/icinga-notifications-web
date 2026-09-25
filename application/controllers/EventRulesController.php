@@ -26,7 +26,7 @@ use ipl\Web\Compat\SearchControls;
 use ipl\Web\Control\LimitControl;
 use ipl\Web\Control\SortControl;
 use ipl\Web\Filter\QueryString;
-use ipl\Web\Layout\DetailedItemLayout;
+use ipl\Web\Layout\MinimalItemLayout;
 use ipl\Web\Url;
 use ipl\Web\Widget\ActionLink;
 use ipl\Web\Widget\ButtonLink;
@@ -111,7 +111,7 @@ class EventRulesController extends CompatController
 
         $this->addContent(
             (new ObjectList($eventRules, new EventRuleRenderer()))
-                ->setItemLayoutClass(DetailedItemLayout::class)
+                ->setItemLayoutClass(MinimalItemLayout::class)
                 ->setEmptyStateMessage($emptyStateMessage)
         );
 

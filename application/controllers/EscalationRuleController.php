@@ -29,7 +29,11 @@ class EscalationRuleController extends CompatController
 
     public function addAction(): void
     {
-        $form = (new RuleEntryForm(new NotificationConfigProvider()))
+        (new RuleEntryForm(
+            new NotificationConfigProvider(),
+            RuleEntryForm::ESCALATION_RULE,
+            $this->translate('Create Escalation')
+        ))
             ->setCsrfCounterMeasureId(Session::getSession()->getId())
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->on(Form::ON_REQUEST, function ($_, RuleEntryForm $form) {
@@ -37,6 +41,8 @@ class EscalationRuleController extends CompatController
                     'rule_id' => $this->params->getRequired('rule'),
                     'position' => $this->params->getRequired('position')
                 ]);
+
+                $this->getDocument()->addHtml($form);
             })->on(Form::ON_SUBMIT, function (RuleEntryForm $form) {
                 $escalation = $form->getEntry();
 
@@ -46,16 +52,23 @@ class EscalationRuleController extends CompatController
 
                 Notification::success($this->translate('Created escalation'));
                 $this->closeModalAndRefreshRemainingViews(Links::eventRule($escalation->ruleId));
+            })->on(Form::ON_ERROR, function ($_, RuleEntryForm $form) {
+                $this->sendMultipartUpdates($form);
+            })->on(Form::ON_SENT, function (RuleEntryForm $form) {
+                if (! $form->hasBeenSubmitted()) {
+                    $this->sendMultipartUpdates($form);
+                }
             })->handleRequest($this->getServerRequest());
 
         $this->setTitle($this->translate('Create Escalation'));
-
-        $this->getDocument()->addHtml($form);
     }
 
     public function editAction(): void
     {
-        $form = (new RuleEntryForm(new NotificationConfigProvider()))
+        (new RuleEntryForm(
+            new NotificationConfigProvider(),
+            RuleEntryForm::ESCALATION_RULE
+        ))
             ->setCsrfCounterMeasureId(Session::getSession()->getId())
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->on(Form::ON_REQUEST, function ($_, RuleEntryForm $form) {
@@ -66,6 +79,8 @@ class EscalationRuleController extends CompatController
                 }
 
                 $form->setEntry($escalation);
+
+                $this->getDocument()->addHtml($form);
             })->on(Form::ON_SUBMIT, function (RuleEntryForm $form) {
                 $escalation = $form->getEntry();
 
@@ -84,10 +99,26 @@ class EscalationRuleController extends CompatController
                 }
 
                 $this->closeModalAndRefreshRemainingViews(Links::eventRule($escalation->ruleId));
+            })->on(Form::ON_ERROR, function ($_, RuleEntryForm $form) {
+                $this->sendMultipartUpdates($form);
+            })->on(Form::ON_SENT, function (RuleEntryForm $form) {
+                if (! $form->hasBeenSubmitted()) {
+                    $this->sendMultipartUpdates($form);
+                }
             })->handleRequest($this->getServerRequest());
 
         $this->setTitle($this->translate('Edit Escalation'));
+    }
 
-        $this->getDocument()->addHtml($form);
+    private function sendMultipartUpdates(RuleEntryForm $form): void
+    {
+        $updates = $form->getMultipartUpdates();
+        if (empty($updates)) {
+            $updates[] = [$form, 'modal-content'];
+        }
+
+        foreach ($updates as $update) {
+            $this->addPart(...$update);
+        }
     }
 }

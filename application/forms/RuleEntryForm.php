@@ -5,20 +5,31 @@
 
 namespace Icinga\Module\Notifications\Forms;
 
+use Icinga\Application\Logger;
+use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Notifications\Form\ConfigProviderInterface;
 use Icinga\Module\Notifications\Form\Data\RuleEntry as RuleEntryData;
 use Icinga\Module\Notifications\Forms\RuleEntryForm\EscalationConditions;
 use Icinga\Module\Notifications\Forms\RuleEntryForm\RuleEntryRecipients;
+use Icinga\Module\Notifications\Forms\RuleEntryForm\EventTypes;
 use Icinga\Module\Notifications\Model\RuleEntry;
+use Icinga\Module\Notifications\Util\RuleSerializer;
 use ipl\Html\Attributes;
+use ipl\Html\Contract\Form;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
+use JsonException;
+use UnexpectedValueException;
 
 class RuleEntryForm extends CompatForm
 {
     use CsrfCounterMeasure;
+
+    public const ESCALATION_RULE = 'escalation';
+
+    public const NOTIFICATION_RULE = 'notification';
 
     protected $defaultAttributes = [
         'class' => ['escalation-form'],
@@ -26,9 +37,13 @@ class RuleEntryForm extends CompatForm
 
     /**
      * @param ConfigProviderInterface $configProvider
+     * @param 'escalation'|'notification' $ruleType
+     * @param ?string $submitButtonLabel Defaults to "Save Changes"
      */
     public function __construct(
         private readonly ConfigProviderInterface $configProvider,
+        private readonly string $ruleType,
+        private readonly ?string $submitButtonLabel = null
     ) {
         $this->addElementLoader('Icinga\\Module\\Notifications\\Forms\\RuleEntryForm');
         $this->applyDefaultElementDecorators();
@@ -43,11 +58,41 @@ class RuleEntryForm extends CompatForm
      */
     public function setEntry(RuleEntry $escalation): static
     {
+        /** @var class-string<EscalationConditions|EventTypes> $conditionElementClass */
+        $conditionElementClass = $this->loadPlugin('element', match ($this->ruleType) {
+            self::ESCALATION_RULE => 'escalationConditions',
+            self::NOTIFICATION_RULE => 'eventTypes'
+        });
+
+        try {
+            $condition = RuleSerializer::decode($escalation->condition ?? '');
+        } catch (JsonException $e) {
+            Logger::error('Failed to parse rule entry condition: %s (Error: %s)', $escalation->condition, $e);
+            throw new ConfigurationError($this->translate(
+                'Failed to parse rule entry condition. Please contact your system administrator.'
+            ));
+        } catch (UnexpectedValueException $e) {
+            Logger::error('Cannot load condition for rule entry with id %d: %s', $escalation->id, $e->getMessage());
+            throw new ConfigurationError($this->translate(
+                'Unsupported rule entry condition version. Please contact your system administrator.'
+            ));
+        }
+
+        if (
+            ($condition['assisted'] ?? false)
+            && $this->configProvider->locateSourceHookByRuleId($escalation->rule_id) === null
+        ) {
+            throw new ConfigurationError($this->translate(
+                'The rule entry condition was created with a source integration'
+                . ' that is no longer available. Please contact your system administrator.'
+            ));
+        }
+
         $this->populate([
             'id' => $escalation->id,
             'rule_id' => $escalation->rule_id,
             'position' => $escalation->position,
-            'conditions' => EscalationConditions::prepare($escalation->condition ?? ''),
+            'condition' => $conditionElementClass::prepare($condition['qs'] ?? ''),
             'recipients' => RuleEntryRecipients::prepare(
                 $escalation->rule_entry_recipient
                     ->columns(['id', 'contact_id', 'contactgroup_id', 'schedule_id', 'channel_id'])
@@ -70,8 +115,17 @@ class RuleEntryForm extends CompatForm
         }
 
         $condition = null;
-        if ($this->hasElement('conditions')) {
-            $condition = $this->getElement('conditions')->getConditions();
+        if ($this->hasElement('condition')) {
+            [$filter, $queryString] = $this->getElement('condition')->getCondition();
+            $condition = (new RuleSerializer(
+                $filter,
+                $queryString,
+                assisted: match ($this->ruleType) {
+                    self::ESCALATION_RULE => false,
+                    self::NOTIFICATION_RULE => $this->configProvider
+                        ->locateSourceHookByRuleId((int) $this->getValue('rule_id')) !== null
+                }
+            ))->getJson();
         }
 
         return new RuleEntryData(
@@ -113,17 +167,25 @@ class RuleEntryForm extends CompatForm
 
         $this->addElement('hidden', 'rule_id', ['required' => true]);
 
-        if ($position === 0) {
-            $this->addHtml(
-                new HtmlElement(
-                    'div',
-                    Attributes::create(['class' => 'immediate-hint']),
-                    Text::create($this->translate('Delivered immediately'))
-                )
-            );
+        if ($this->ruleType === self::ESCALATION_RULE) {
+            if ($position === 0) {
+                $this->addHtml(
+                    new HtmlElement(
+                        'div',
+                        Attributes::create(['class' => 'immediate-hint']),
+                        Text::create($this->translate('Delivered immediately'))
+                    )
+                );
+            } else {
+                $this->addElement('escalationConditions', 'condition', [
+                    'label' => $this->translate('Condition') . ' *',
+                    'required' => true
+                ]);
+            }
         } else {
-            $this->addElement('escalationConditions', 'conditions', [
-                'label' => $this->translate('Condition') . ' *',
+            $this->addElement('eventTypes', 'condition', [
+                'label' => $this->translate('Event Types') . ' *',
+                'hook' => $this->configProvider->locateSourceHookByRuleId((int) $this->getValue('rule_id')),
                 'required' => true
             ]);
         }
@@ -137,10 +199,11 @@ class RuleEntryForm extends CompatForm
         ]);
 
         $this->addElement('submit', 'btn_submit', [
-            'label' => $escalationId === null
-                ? $this->translate('Create Escalation')
-                : $this->translate('Save Changes')
+            'label' => $this->submitButtonLabel ?? $this->translate('Save Changes')
         ]);
+
+        // Explicitly done, as CompatForm only does it in case of multiple submit elements, which is not the case here
+        $this->prependHtml($this->duplicateSubmitButton($this->getElement('btn_submit')));
 
         $primaryButtonWrapper = new HtmlElement('div', Attributes::create(['class' => 'icinga-controls']));
         $this->getElement('btn_submit')->prependWrapper($primaryButtonWrapper);
@@ -160,5 +223,45 @@ class RuleEntryForm extends CompatForm
     public function hasBeenSubmitted()
     {
         return parent::hasBeenSubmitted() || ($this->hasBeenSent() && $this->hasBeenDeleted());
+    }
+
+    protected function onError()
+    {
+        parent::onError();
+
+        // TODO: I feel like this should be the case in ipl-html already
+        if (! $this->hasMessages()) {
+            // Trigger the event in case only validation failed
+            $this->emit(Form::ON_ERROR, [null, $this]);
+        }
+    }
+
+    /**
+     * Get multipart updates for the form's elements
+     *
+     * @return array
+     */
+    public function getMultipartUpdates(): array
+    {
+        $this->ensureAssembled();
+
+        $ruleEntryRecipients = $this->getElement('recipients');
+
+        if ($this->hasBeenSubmitted() || $ruleEntryRecipients->wantsMultipartUpdate) {
+            // The controller must send the entire form in this case. Initially I wanted to only transmit the new
+            // fieldset content, but this is not possible as the client will disable all submit buttons as it does
+            // not detect that the add/remove buttons are no actual submit buttons and actually carry the same
+            // semantics as any other autosubmit element.
+            return [];
+        }
+
+        $eventTypes = $this->getElement('condition');
+        if (! $eventTypes instanceof EventTypes) {
+            return [];
+        }
+
+        $eventTypes->ensureAssembled();
+
+        return $eventTypes->getElement('types')->prepareMultipartUpdate($this->getRequest());
     }
 }
