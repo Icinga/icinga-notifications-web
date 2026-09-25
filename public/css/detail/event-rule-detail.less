@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2023 Icinga GmbH <https://icinga.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-.escalation-rule {
+.event-rule {
   @connectorHeight: .5em;
   @connectorBg: @gray-lighter;
   @connectorHoverBg: @gray-light;
@@ -78,13 +78,13 @@
   // Layout
 
   @outlineGridColumns: minmax(0, 1fr) minmax(1em, 10em) minmax(0, 1fr);
-  @escalationsGridColumns: 3em minmax(1em, 4em) @outlineGridColumns;
+  @entriesGridColumns: 3em minmax(1em, 4em) @outlineGridColumns;
 
   display: grid;
-  grid-template-columns: minmax(1em, 4em) 20em minmax(1em, 4em) @escalationsGridColumns;
+  grid-template-columns: minmax(1em, 4em) 20em minmax(1em, 4em) @entriesGridColumns;
   grid-template-areas:
     ". object-filter-title . . . condition-title . recipients-title"
-    "c1 object-filter c2 escalations escalations escalations escalations escalations";
+    "c1 object-filter c2 entries entries entries entries entries";
 
   ol, ul {
     margin: 0;
@@ -203,27 +203,29 @@
     min-width: 12em;
   }
 
-  .escalations {
+  .entries {
     position: relative;
-    grid-area: escalations;
+    grid-area: entries;
     display: grid;
-    grid-template-columns: @escalationsGridColumns;
+    grid-template-columns: @entriesGridColumns;
     grid-template-columns: subgrid;
 
     > li {
       display: contents;
     }
 
-    > li > div:first-child {
-      .vertical-line();
-    }
-
-    // The first escalation isn't connected to anything on top of it
-    > li:first-child {
-      > div:first-child::before {
-        top: 2.75em;
+    &:has(> li:nth-of-type(2)) {
+      > li > div:first-child {
+        .vertical-line();
       }
 
+      > li:first-child > div:first-child::before {
+        top: 2.75em;
+      }
+    }
+
+    // The first entry isn't connected to anything on top of it
+    > li:first-child {
       .connector-line {
         margin-top: 2.75em;
       }
@@ -295,12 +297,12 @@
 #layout.compact-layout,
 #layout.poor-layout,
 #layout.minimal-layout {
-  .escalation-rule {
-    @escalationsGridColumns: 3em 1em minmax(0, 1fr) 1em minmax(0, 1fr);
-    grid-template-columns: 1em min-content 1em @escalationsGridColumns;
+  .event-rule {
+    @entriesGridColumns: 3em 1em minmax(0, 1fr) 1em minmax(0, 1fr);
+    grid-template-columns: 1em min-content 1em @entriesGridColumns;
 
-    .escalations {
-      grid-template-columns: @escalationsGridColumns;
+    .entries {
+      grid-template-columns: @entriesGridColumns;
       grid-template-columns: subgrid;
     }
 

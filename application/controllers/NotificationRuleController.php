@@ -18,7 +18,7 @@ use ipl\Sql\Connection;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Url;
 
-class EscalationRuleController extends CompatController
+class NotificationRuleController extends CompatController
 {
     use Auth;
 
@@ -31,28 +31,28 @@ class EscalationRuleController extends CompatController
     {
         $form = (new RuleEntryForm(
             new NotificationConfigProvider(),
-            RuleEntryForm::ESCALATION_RULE,
-            $this->translate('Create Escalation')
+            RuleEntryForm::NOTIFICATION_RULE,
+            $this->translate('Add Recipients')
         ))
             ->setCsrfCounterMeasureId(Session::getSession()->getId())
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->on(Form::ON_REQUEST, function ($_, RuleEntryForm $form) {
                 $form->populate([
                     'rule_id' => $this->params->getRequired('rule'),
-                    'position' => $this->params->getRequired('position')
+                    'position' => 0
                 ]);
             })->on(Form::ON_SUBMIT, function (RuleEntryForm $form) {
-                $escalation = $form->getEntry();
+                $entry = $form->getEntry();
 
                 Database::get()->transaction(
-                    fn(Connection $db) => (new RuleEntryRepository($db))->create($escalation)
+                    fn(Connection $db) => (new RuleEntryRepository($db))->create($entry)
                 );
 
-                Notification::success($this->translate('Created escalation'));
-                $this->closeModalAndRefreshRemainingViews(Links::eventRule($escalation->ruleId));
+                Notification::success($this->translate('Added notification recipients'));
+                $this->closeModalAndRefreshRemainingViews(Links::eventRule($entry->ruleId));
             })->handleRequest($this->getServerRequest());
 
-        $this->setTitle($this->translate('Create Escalation'));
+        $this->setTitle($this->translate('Add Notification Recipients'));
 
         $this->getDocument()->addHtml($form);
     }
@@ -61,39 +61,39 @@ class EscalationRuleController extends CompatController
     {
         $form = (new RuleEntryForm(
             new NotificationConfigProvider(),
-            RuleEntryForm::ESCALATION_RULE
+            RuleEntryForm::NOTIFICATION_RULE
         ))
             ->setCsrfCounterMeasureId(Session::getSession()->getId())
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->on(Form::ON_REQUEST, function ($_, RuleEntryForm $form) {
-                $escalation = (new RuleEntryRepository(Database::get()))
+                $entry = (new RuleEntryRepository(Database::get()))
                     ->find((int) $this->params->getRequired('id'));
-                if ($escalation === null) {
-                    $this->httpNotFound($this->translate('Escalation not found.'));
+                if ($entry === null) {
+                    $this->httpNotFound($this->translate('No notification recipients found.'));
                 }
 
-                $form->setEntry($escalation);
+                $form->setEntry($entry);
             })->on(Form::ON_SUBMIT, function (RuleEntryForm $form) {
-                $escalation = $form->getEntry();
+                $entry = $form->getEntry();
 
                 if ($form->hasBeenDeleted()) {
                     Database::get()->transaction(
-                        fn(Connection $db) => (new RuleEntryRepository($db))->delete($escalation->id)
+                        fn(Connection $db) => (new RuleEntryRepository($db))->delete($entry->id)
                     );
 
-                    Notification::success($this->translate('Deleted escalation'));
+                    Notification::success($this->translate('Deleted notification recipients.'));
                 } else {
                     Database::get()->transaction(
-                        fn(Connection $db) => (new RuleEntryRepository($db))->update($escalation)
+                        fn(Connection $db) => (new RuleEntryRepository($db))->update($entry)
                     );
 
-                    Notification::success($this->translate('Updated escalation'));
+                    Notification::success($this->translate('Updated notification recipients'));
                 }
 
-                $this->closeModalAndRefreshRemainingViews(Links::eventRule($escalation->ruleId));
+                $this->closeModalAndRefreshRemainingViews(Links::eventRule($entry->ruleId));
             })->handleRequest($this->getServerRequest());
 
-        $this->setTitle($this->translate('Edit Escalation'));
+        $this->setTitle($this->translate('Edit Notification Recipients'));
 
         $this->getDocument()->addHtml($form);
     }

@@ -52,7 +52,7 @@ final class RuleEntryRepository
         $model = (new RuleEntry())->setNew();
         $model->rule_id = $entry->ruleId;
         $model->position = $entry->position;
-        $model->condition = $entry->condition;
+        $model->condition = $entry->condition ?: null;
 
         $recipients = [];
         foreach ($entry->recipients as $recipient) {
@@ -93,7 +93,7 @@ final class RuleEntryRepository
         }
 
         $model->position = $entry->position;
-        $model->condition = $entry->condition;
+        $model->condition = $entry->condition ?: null;
 
         $recipientsToKeep = [];
         foreach ($entry->recipients as $recipient) {
