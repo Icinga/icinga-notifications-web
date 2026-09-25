@@ -140,7 +140,7 @@ class EventRulesController extends CompatController
                 );
 
                 Notification::success(sprintf(
-                    $this->translate('Created escalation rule "%s"'),
+                    $this->translate('Created event rule "%s"'),
                     $rule->name
                 ));
 

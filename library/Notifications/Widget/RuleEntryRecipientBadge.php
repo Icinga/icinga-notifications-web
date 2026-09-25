@@ -6,28 +6,28 @@
 namespace Icinga\Module\Notifications\Widget;
 
 use Icinga\Module\Notifications\Model\Contact;
-use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
+use Icinga\Module\Notifications\Model\RuleEntryRecipient;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use ipl\Web\Widget\Icon;
 
-class RuleEscalationRecipientBadge extends BaseHtmlElement
+class RuleEntryRecipientBadge extends BaseHtmlElement
 {
-    protected RuleEscalationRecipient $recipient;
+    protected RuleEntryRecipient $recipient;
 
     protected ?int $moreCount = null;
 
     protected $tag = 'span';
 
-    protected $defaultAttributes = ['class' => 'rule-escalation-recipient-badge'];
+    protected $defaultAttributes = ['class' => 'rule-entry-recipient-badge'];
 
     /**
-     * Create the rule escalation recipient badge with icon
+     * Create the rule entry recipient badge with icon
      *
-     * @param RuleEscalationRecipient $recipient
+     * @param RuleEntryRecipient $recipient
      * @param ?int $moreCount The more count to show
      */
-    public function __construct(RuleEscalationRecipient $recipient, ?int $moreCount = null)
+    public function __construct(RuleEntryRecipient $recipient, ?int $moreCount = null)
     {
         $this->recipient = $recipient;
         $this->moreCount = $moreCount;

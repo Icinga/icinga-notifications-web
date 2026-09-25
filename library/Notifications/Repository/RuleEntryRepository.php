@@ -27,7 +27,7 @@ final class RuleEntryRepository
     }
 
     /**
-     * Fetch the escalation with the given ID
+     * Fetch the entry with the given ID
      *
      * @param int $id
      *
@@ -41,11 +41,11 @@ final class RuleEntryRepository
     }
 
     /**
-     * Store a new escalation
+     * Store a new entry
      *
      * @param RuleEntryData $entry
      *
-     * @return int The escalation's ID
+     * @return int The entry's ID
      */
     public function create(RuleEntryData $entry): int
     {
@@ -77,19 +77,19 @@ final class RuleEntryRepository
     }
 
     /**
-     * Update the given escalation
+     * Update the given entry
      *
      * @param RuleEntryData $entry
      *
      * @return void
      *
-     * @throws InvalidArgumentException if the escalation does not exist
+     * @throws InvalidArgumentException if the entry does not exist
      */
     public function update(RuleEntryData $entry): void
     {
         $model = $this->find($entry->id)?->setNew(false);
         if ($model === null) {
-            throw new InvalidArgumentException('Cannot update an escalation that does not exist');
+            throw new InvalidArgumentException('Cannot update a rule entry that does not exist');
         }
 
         $model->position = $entry->position;
@@ -142,33 +142,33 @@ final class RuleEntryRepository
     }
 
     /**
-     * Delete the escalation with the given ID
+     * Delete the entry with the given ID
      *
      * @param int $id
      *
      * @return void
      *
-     * @throws InvalidArgumentException if the escalation does not exist
+     * @throws InvalidArgumentException if the entry does not exist
      */
     public function delete(int $id): void
     {
-        $escalation = $this->find($id)?->setNew(false);
-        if ($escalation === null) {
-            throw new InvalidArgumentException('Cannot delete an escalation that does not exist');
+        $entry = $this->find($id)?->setNew(false);
+        if ($entry === null) {
+            throw new InvalidArgumentException('Cannot delete a rule entry that does not exist');
         }
 
         $entityManager = new EntityManager($this->db);
-        $freedPosition = $escalation->position;
+        $freedPosition = $entry->position;
 
-        $escalation->position = null;
-        $escalation->rule_entry_recipient = [];
-        $escalation->delete();
+        $entry->position = null;
+        $entry->rule_entry_recipient = [];
+        $entry->delete();
 
-        $entityManager->save($escalation);
+        $entityManager->save($entry);
 
         $siblings = RuleEntry::on($this->db)
             ->columns(['id', 'position'])
-            ->filter(Filter::equal('rule_id', $escalation->rule_id))
+            ->filter(Filter::equal('rule_id', $entry->rule_id))
             ->filter(Filter::greaterThan('position', $freedPosition))
             ->orderBy('position', SORT_ASC);
         foreach ($siblings as $sibling) {

@@ -28,7 +28,7 @@ final class RuleRepository
     }
 
     /**
-     * Fetch the escalation rule with the given ID
+     * Fetch the event rule with the given ID
      *
      * @param int $id
      *
@@ -42,7 +42,7 @@ final class RuleRepository
     }
 
     /**
-     * Store a new escalation rule
+     * Store a new event rule
      *
      * @param RuleData $rule
      *
@@ -63,7 +63,7 @@ final class RuleRepository
     }
 
     /**
-     * Update the given escalation rule
+     * Update the given event rule
      *
      * @param RuleData $rule
      *
@@ -75,7 +75,7 @@ final class RuleRepository
     {
         $model = $this->find($rule->id)?->setNew(false);
         if ($model === null) {
-            throw new InvalidArgumentException('Cannot update an escalation rule that does not exist');
+            throw new InvalidArgumentException('Cannot update an event rule that does not exist');
         }
 
         $model->name = $rule->name;
@@ -90,7 +90,7 @@ final class RuleRepository
     }
 
     /**
-     * Delete the escalation rule with the given ID
+     * Delete the event rule with the given ID
      *
      * @param int $id
      *
@@ -102,7 +102,7 @@ final class RuleRepository
     {
         $rule = $this->find($id)?->setNew(false);
         if ($rule === null) {
-            throw new InvalidArgumentException('Cannot delete an escalation rule that does not exist');
+            throw new InvalidArgumentException('Cannot delete an event rule that does not exist');
         }
 
         $entryRepository = new RuleEntryRepository($this->db);
@@ -118,7 +118,7 @@ final class RuleRepository
     }
 
     /**
-     * Duplicate an escalation rule
+     * Duplicate an event rule
      *
      * @param RuleData $rule
      *
@@ -129,11 +129,11 @@ final class RuleRepository
         $original = $this->find($rule->id);
         if ($original === null) {
             throw new InvalidArgumentException(
-                'Cannot duplicate an escalation rule that does not exist in the database'
+                'Cannot duplicate an event rule that does not exist in the database'
             );
         } elseif (isset($original->timeperiod_id)) {
             throw new NotImplementedError(
-                'Duplicating escalation rules with time periods is not yet supported'
+                'Duplicating event rules with time periods is not yet supported'
             );
         }
 

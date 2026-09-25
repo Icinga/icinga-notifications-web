@@ -118,7 +118,7 @@ final class ScheduleRepository
     }
 
     /**
-     * Delete a schedule and de-reference it from any escalation rules
+     * Delete a schedule and de-reference it from any event rules
      *
      * @param int $id
      *

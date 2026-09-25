@@ -84,7 +84,7 @@ class EventRuleController extends CompatController
                 );
 
                 Notification::success(sprintf(
-                    $this->translate('Updated filter for escalation rule "%s"'),
+                    $this->translate('Updated filter for event rule "%s"'),
                     $rule->name
                 ));
                 $this->redirectNow(Links::eventRule($rule->id));
@@ -169,7 +169,7 @@ class EventRuleController extends CompatController
                     )->name;
 
                     Notification::success(sprintf(
-                        $this->translate('Deleted escalation rule "%s"'),
+                        $this->translate('Deleted event rule "%s"'),
                         $ruleName
                     ));
                     $this->switchToSingleColumnLayout();
@@ -179,7 +179,7 @@ class EventRuleController extends CompatController
                     );
 
                     Notification::success(sprintf(
-                        $this->translate('Created escalation rule "%s"'),
+                        $this->translate('Created event rule "%s"'),
                         $rule->name
                     ));
                     $this->sendExtraUpdates(['#col1']);
@@ -190,7 +190,7 @@ class EventRuleController extends CompatController
                     );
 
                     Notification::success(sprintf(
-                        $this->translate('Updated escalation rule "%s"'),
+                        $this->translate('Updated event rule "%s"'),
                         $rule->name
                     ));
                     $this->closeModalAndRefreshRemainingViews(Links::eventRule($rule->id));

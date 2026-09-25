@@ -195,7 +195,7 @@ class ChannelForm extends CompatForm
                     'title'          => $isInUse
                         ? $this->translate(
                             "Channel is still referenced as a contact's default"
-                            . " channel or in an event rule's escalation"
+                            . " channel or in an event rule's entry"
                         )
                         : null
                 ]
