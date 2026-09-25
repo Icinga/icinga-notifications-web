@@ -29,7 +29,10 @@ class RuleEscalationController extends CompatController
 
     public function editAction(): void
     {
-        $form = (new EscalationForm(new NotificationConfigProvider()))
+        $form = (new EscalationForm(
+            new NotificationConfigProvider(),
+            EscalationForm::ESCALATION_RULE
+        ))
             ->setCsrfCounterMeasureId(Session::getSession()->getId())
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->on(Form::ON_REQUEST, function ($_, EscalationForm $form) {

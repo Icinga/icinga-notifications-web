@@ -62,6 +62,13 @@ interface SourceHook
     public function getJsonPaths(string ...$columns): array;
 
     /**
+     * Get all event types the source may emit outside an incident
+     *
+     * @return array<string, string> Labels keyed by the event type
+     */
+    public function getEventTypes(): array;
+
+    /**
      * Get suggestions for a value field
      *
      * @param string $column

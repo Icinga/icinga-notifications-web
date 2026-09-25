@@ -126,6 +126,7 @@ class EscalationRuleRepositoryTest extends TestCase
         $id = $repository->create(new RuleData(
             null,
             'Create Rule',
+            'escalation',
             'icinga2',
             'host.name=foo'
         ));
@@ -146,6 +147,7 @@ class EscalationRuleRepositoryTest extends TestCase
         $id = $repository->create(new RuleData(
             null,
             'Update Rule',
+            'escalation',
             'icinga2',
             null
         ));
@@ -154,6 +156,7 @@ class EscalationRuleRepositoryTest extends TestCase
         $repository->update(new RuleData(
             $id,
             'Renamed Rule',
+            'escalation',
             'icinga2',
             'service.name=bar'
         ));
@@ -168,7 +171,7 @@ class EscalationRuleRepositoryTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        (new RuleRepository($db))->update(new RuleData(999, 'Nope', 'icinga2', null));
+        (new RuleRepository($db))->update(new RuleData(999, 'Nope', 'escalation', 'icinga2', null));
     }
 
     #[DataProvider('sharedDatabases')]
@@ -179,6 +182,7 @@ class EscalationRuleRepositoryTest extends TestCase
         $id = $repository->create(new RuleData(
             null,
             'Delete Rule',
+            'escalation',
             'icinga2',
             null
         ));
@@ -210,14 +214,14 @@ class EscalationRuleRepositoryTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        (new RuleRepository($db))->duplicate(new RuleData(999, 'Copy', 'test', null));
+        (new RuleRepository($db))->duplicate(new RuleData(999, 'Copy', 'escalation', 'test', null));
     }
 
     #[DataProvider('sharedDatabases')]
     public function testDuplicateAlsoCopiesEscalations(Connection $db): void
     {
         $repository = new RuleRepository($db);
-        $originalId = $repository->create(new RuleData(null, 'Original', 'test', null));
+        $originalId = $repository->create(new RuleData(null, 'Original', 'escalation', 'test', null));
 
         (new RuleEntryRepository($db))->create($this->escalation(null, 1, 'incident_age>1h', $originalId));
 
@@ -225,7 +229,7 @@ class EscalationRuleRepositoryTest extends TestCase
         $toRemove = (new RuleEntryRepository($db))->create($this->escalation(null, 0, null, $originalId));
         (new RuleEntryRepository($db))->delete($toRemove);
 
-        $copyId = $repository->duplicate(new RuleData($originalId, 'Copy', 'test', null));
+        $copyId = $repository->duplicate(new RuleData($originalId, 'Copy', 'escalation', 'test', null));
         $this->assertNotSame($originalId, $copyId);
 
         $copyEscalations = $this->escalationsOf($db, $copyId);

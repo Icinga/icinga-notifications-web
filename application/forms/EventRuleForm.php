@@ -9,9 +9,12 @@ use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\SourceHookLocator;
 use Icinga\Module\Notifications\Form\Data\Rule as RuleData;
 use Icinga\Module\Notifications\Model\Rule;
+use ipl\Html\Attributes;
 use ipl\Html\Contract\Form;
 use ipl\Html\FormDecoration\DescriptionDecorator;
 use ipl\Html\HtmlDocument;
+use ipl\Html\HtmlElement;
+use ipl\Html\Text;
 use ipl\Stdlib\Filter;
 use ipl\Validator\CallbackValidator;
 use ipl\Web\Common\CsrfCounterMeasure;
@@ -70,6 +73,7 @@ class EventRuleForm extends CompatForm
         return new RuleData(
             $id,
             $this->getValue('name'),
+            $this->getValue('type'),
             $this->getValue('source_type'),
             null
         );
@@ -153,6 +157,8 @@ class EventRuleForm extends CompatForm
                 ->replaceDecorator('Description', DescriptionDecorator::class, ['class' => 'description']);
         }
 
+        $this->assembleTypeSelection($ruleId !== null);
+
         $this->addElement('submit', 'btn_submit', [
             'label' => $ruleId === null
                 ? $this->translate('Create Event Rule')
@@ -179,6 +185,77 @@ class EventRuleForm extends CompatForm
         }
     }
 
+    protected function assembleTypeSelection(bool $disabled): void
+    {
+        $value = $this->getPopulatedValue('type');
+
+        $types = [
+            'notification' => $this->translate('Notification Rule'),
+            'escalation' => $this->translate('Escalation Rule')
+        ];
+
+        $modeList = new HtmlElement('ul', Attributes::create([
+            'class' => ['pictogram-selection', $disabled ? 'disabled' : '']
+        ]));
+        foreach ($types as $type => $label) {
+            $radio = $this->createElement('input', 'type', [
+                'type' => 'radio',
+                'value' => $type,
+                'required' => true,
+                'disabled' => $disabled,
+                'id' => 'rule-type-' . $type
+            ]);
+            if ($value === null || $type === $value) {
+                $radio->getAttributes()->set('checked', true);
+                $this->registerElement($radio);
+                $value = $type;
+            }
+
+            $labelDescription = match ($type) {
+                'notification' => new HtmlElement(
+                    'span',
+                    null,
+                    Text::create($this->translate(
+                        'Notify a fixed set of recipients as soon as an event matches the filter.'
+                    ))
+                ),
+                'escalation' => new HtmlElement(
+                    'span',
+                    null,
+                    Text::create($this->translate(
+                        'Notify recipients in stages and escalate based on incident age or severity.'
+                    ))
+                )
+            };
+
+            $modeList->addHtml(new HtmlElement(
+                'li',
+                null,
+                new HtmlElement(
+                    'label',
+                    null,
+                    $radio,
+                    new HtmlElement('div', Attributes::create(['class' => ['pictogram', 'img-' . $type]])),
+                    Text::create($label),
+                    $labelDescription
+                )
+            ));
+        }
+
+        $this->addHtml(new HtmlElement(
+            'div',
+            Attributes::create([
+                'class' => ['control-group']
+            ]),
+            new HtmlElement(
+                'div',
+                Attributes::create(['class' => 'control-label-group']),
+                Text::create($this->translate('Rule Type') . ' *')
+            ),
+            $modeList
+        ));
+    }
+
     /**
      * Transform the given rule into form data
      *
@@ -191,6 +268,7 @@ class EventRuleForm extends CompatForm
         return [
             'id' => $rule->id,
             'name' => $rule->name,
+            'type' => $rule->type,
             'source_type' => $rule->source_type
         ];
     }

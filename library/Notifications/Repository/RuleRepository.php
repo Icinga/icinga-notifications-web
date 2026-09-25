@@ -53,7 +53,7 @@ final class RuleRepository
         $model = (new Rule())->setNew();
 
         $model->name = $rule->name;
-        $model->type = 'escalation';
+        $model->type = $rule->type;
         $model->source_type = $rule->sourceType;
         $model->object_filter = $rule->objectFilter;
 
@@ -140,6 +140,7 @@ final class RuleRepository
         $ruleId = $this->create(new RuleData(
             null,
             $rule->name,
+            $rule->type,
             $rule->sourceType,
             $rule->objectFilter ?? $original->object_filter
         ));

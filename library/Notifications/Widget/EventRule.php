@@ -10,7 +10,8 @@ use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Model\RuleEntry;
 use Icinga\Module\Notifications\Model\RuleEntryRecipient;
-use Icinga\Module\Notifications\Widget\EscalationRule\EscalationCondition;
+use Icinga\Module\Notifications\Widget\EventRule\EscalationCondition;
+use Icinga\Module\Notifications\Widget\EventRule\EventTypes;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\FormattedString;
@@ -24,20 +25,24 @@ use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
 use JsonException;
 
-class EscalationRule extends BaseHtmlElement
+class EventRule extends BaseHtmlElement
 {
     use Translation;
+
+    private const ESCALATION_RULE = 'escalation';
+
+    private const NOTIFICATION_RULE = 'notification';
 
     protected $tag = 'div';
 
     protected $defaultAttributes = [
-        'class' => 'escalation-rule',
+        'class' => 'event-rule',
     ];
 
     /**
-     * Create a new escalation rule detail
+     * Create a new event rule detail
      *
-     * @param Rule $rule The escalation rule to render
+     * @param Rule $rule The event rule to render
      */
     public function __construct(
         private readonly Rule $rule,
@@ -55,7 +60,10 @@ class EscalationRule extends BaseHtmlElement
             new HtmlElement(
                 'div',
                 Attributes::create(['class' => ['title', 'condition-title']]),
-                Text::create($this->translate('Escalation Conditions'))
+                Text::create(match ($this->rule->type) {
+                    self::ESCALATION_RULE => $this->translate('Escalation Conditions'),
+                    self::NOTIFICATION_RULE => $this->translate('Event Types'),
+                })
             ),
             new HtmlElement(
                 'div',
@@ -74,30 +82,42 @@ class EscalationRule extends BaseHtmlElement
             new HtmlElement('div', Attributes::create(['class' => 'connector-line']))
         );
 
-        /** @var RuleEntry[] $escalations */
-        $escalations = iterator_to_array($this->rule->rule_entry->execute());
+        /** @var RuleEntry[] $entries */
+        $entries = iterator_to_array($this->rule->rule_entry->execute());
 
-        $immediateEscalation = null;
-        if (! empty($escalations) && (int) $escalations[0]->position === 0) {
-            $immediateEscalation = array_shift($escalations);
+        $firstEntry = null;
+        if (! empty($entries) && (int) $entries[0]->position === 0) {
+            $firstEntry = array_shift($entries);
         }
 
         $listStyle = new StyleWithNonce();
 
-        $immediateEscalationButton = (new Link(
-            $immediateEscalation === null
-                ? [new Icon('plus'), $this->translate('Add Escalation')]
-                : [new Icon('edit'), $this->translate('Edit Escalation')],
-            $immediateEscalation === null
-                ? Links::escalationAdd($this->rule->id, 0)
-                : Links::escalationEdit($immediateEscalation->id),
+        $firstEntryButton = (new Link(
+            $firstEntry === null
+                ? [new Icon('plus'), match ($this->rule->type) {
+                    self::ESCALATION_RULE => $this->translate('Add Escalation'),
+                    self::NOTIFICATION_RULE => $this->translate('Add Recipients'),
+                }]
+                : [new Icon('edit'), match ($this->rule->type) {
+                    self::ESCALATION_RULE => $this->translate('Edit Escalation'),
+                    self::NOTIFICATION_RULE => $this->translate('Edit Recipients'),
+                }],
+            $firstEntry === null
+                ? match ($this->rule->type) {
+                    self::ESCALATION_RULE => Links::escalationAdd($this->rule->id, 0),
+                    self::NOTIFICATION_RULE => Links::notificationRecipientsAdd($this->rule->id, 0),
+                }
+                : match ($this->rule->type) {
+                    self::ESCALATION_RULE => Links::escalationEdit($firstEntry->id),
+                    self::NOTIFICATION_RULE => Links::notificationRecipientsEdit($firstEntry->id),
+                },
             Attributes::create([
                 'class' => 'button-link'
             ])
         ))->openInModal();
-        $listStyle->addFor($immediateEscalationButton, ['grid-row' => '~"1 / span 1"']);
+        $listStyle->addFor($firstEntryButton, ['grid-row' => '~"1 / span 1"']);
 
-        $immediateEscalationItem = new HtmlElement(
+        $firstEntryItem = new HtmlElement(
             'li',
             null,
             new HtmlElement(
@@ -112,82 +132,94 @@ class EscalationRule extends BaseHtmlElement
                 new HtmlElement(
                     'div',
                     Attributes::create(['class' => ['description', 'condition']]),
-                    Text::create($this->translate('Immediate'))
+                    $firstEntry?->condition === null
+                        ? Text::create(match ($this->rule->type) {
+                            self::ESCALATION_RULE => $this->translate('Immediate'),
+                            self::NOTIFICATION_RULE => $this->translate('None', 'event.types'),
+                        })
+                        : EventTypes::fromCommaSeparatedString($this->rule->source_type, $firstEntry->condition)
                 ),
                 new HtmlElement('div', Attributes::create(['class' => 'connector-line'])),
                 new HtmlElement(
                     'div',
                     Attributes::create(['class' => ['description', 'recipients']]),
-                    $immediateEscalation === null
-                        ? Text::create($this->translate(
-                            'No recipients will be notified immediately.'
-                        ))
-                        : $this->describeRecipients($immediateEscalation->rule_entry_recipient)
+                    $firstEntry === null
+                        ? Text::create(match ($this->rule->type) {
+                            self::ESCALATION_RULE => $this->translate(
+                                'No recipients will be notified immediately.'
+                            ),
+                            self::NOTIFICATION_RULE => $this->translate(
+                                'No recipients will be notified.'
+                            )
+                        })
+                        : $this->describeRecipients($firstEntry->rule_entry_recipient)
                 ),
-                $immediateEscalationButton
+                $firstEntryButton
             )
         );
 
-        $escalationList = new HtmlElement(
+        $entryList = new HtmlElement(
             'ol',
-            Attributes::create(['class' => 'escalations']),
-            $immediateEscalationItem
+            Attributes::create(['class' => 'entries']),
+            $firstEntryItem
         );
 
-        $nextPosition = 1;
-        foreach ($escalations as $i => $escalation) {
-            $escalationButton = (new Link(
-                [new Icon('edit'), $this->translate('Edit Escalation')],
-                Links::escalationEdit($escalation->id),
-                Attributes::create([
-                    'class' => 'button-link'
-                ])
-            ))->openInModal();
-            $listStyle->addFor($escalationButton, ['grid-row' => sprintf('~"%d / span 1"', $i + 2)]);
+        if ($this->rule->type === self::ESCALATION_RULE) {
+            $nextPosition = 1;
+            foreach ($entries as $i => $entry) {
+                $entryButton = (new Link(
+                    [new Icon('edit'), $this->translate('Edit Escalation')],
+                    Links::escalationEdit($entry->id),
+                    Attributes::create([
+                        'class' => 'button-link'
+                    ])
+                ))->openInModal();
+                $listStyle->addFor($entryButton, ['grid-row' => sprintf('~"%d / span 1"', $i + 2)]);
 
-            $escalationList->addHtml(new HtmlElement(
-                'li',
-                null,
-                new HtmlElement( // TODO: Replace this with the drag handle
-                    'div',
+                $entryList->addHtml(new HtmlElement(
+                    'li',
                     null,
-                    new HtmlElement('div', Attributes::create(['class' => 'connector-line']))
-                ),
-                new HtmlElement('div', Attributes::create(['class' => 'connector-line'])),
-                new HtmlElement(
-                    'div',
-                    Attributes::create(['class' => 'outline']),
-                    new HtmlElement(
+                    new HtmlElement( // TODO: Replace this with the drag handle
                         'div',
-                        Attributes::create(['class' => ['description', 'condition']]),
-                        EscalationCondition::fromQueryString($escalation->condition)
+                        null,
+                        new HtmlElement('div', Attributes::create(['class' => 'connector-line']))
                     ),
                     new HtmlElement('div', Attributes::create(['class' => 'connector-line'])),
                     new HtmlElement(
                         'div',
-                        Attributes::create(['class' => ['description', 'recipients']]),
-                        $this->describeRecipients($escalation->rule_entry_recipient)
-                    ),
-                    $escalationButton
-                )
-            ));
+                        Attributes::create(['class' => 'outline']),
+                        new HtmlElement(
+                            'div',
+                            Attributes::create(['class' => ['description', 'condition']]),
+                            EscalationCondition::fromQueryString($entry->condition)
+                        ),
+                        new HtmlElement('div', Attributes::create(['class' => 'connector-line'])),
+                        new HtmlElement(
+                            'div',
+                            Attributes::create(['class' => ['description', 'recipients']]),
+                            $this->describeRecipients($entry->rule_entry_recipient)
+                        ),
+                        $entryButton
+                    )
+                ));
 
-            $nextPosition++;
+                $nextPosition++;
+            }
+
+            $entryList->addHtml(new HtmlElement(
+                'li',
+                content: (new Link(
+                    new Icon('plus'),
+                    Links::escalationAdd($this->rule->id, $nextPosition),
+                    Attributes::create([
+                        'class' => ['button-link', 'add-button'],
+                        'title' => $this->translate('Add Escalation')
+                    ])
+                ))->openInModal()
+            ));
         }
 
-        $escalationList->addHtml(new HtmlElement(
-            'li',
-            content: (new Link(
-                new Icon('plus'),
-                Links::escalationAdd($this->rule->id, $nextPosition),
-                Attributes::create([
-                    'class' => ['button-link', 'add-button'],
-                    'title' => $this->translate('Add Escalation')
-                ])
-            ))->openInModal()
-        ));
-
-        $this->addHtml($escalationList);
+        $this->addHtml($entryList);
         $this->addHtml($listStyle);
     }
 
@@ -242,7 +274,7 @@ class EscalationRule extends BaseHtmlElement
     }
 
     /**
-     * Return a textual representation for the given escalation recipients
+     * Return a textual representation for the given entry recipients
      *
      * @param Query<RuleEntryRecipient> $query
      *

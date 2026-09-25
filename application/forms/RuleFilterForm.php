@@ -53,6 +53,7 @@ class RuleFilterForm extends SearchEditor
         $values = [
             'rule_id' => $rule->id,
             'rule_name' => $rule->name,
+            'rule_type' => $rule->type,
             'source_type' => $rule->source_type
         ];
 
@@ -125,6 +126,7 @@ class RuleFilterForm extends SearchEditor
         return new RuleData(
             $this->getValue('rule_id'),
             $this->getValue('rule_name'),
+            $this->getValue('rule_type'),
             $this->getValue('source_type'),
             (new RuleSerializer(
                 $filter,
@@ -139,6 +141,7 @@ class RuleFilterForm extends SearchEditor
     {
         $this->addElement('hidden', 'rule_id', ['required' => true]);
         $this->addElement('hidden', 'rule_name', ['required' => true]);
+        $this->addElement('hidden', 'rule_type', ['required' => true]);
         $this->addElement('hidden', 'source_type', ['required' => true]);
 
         $this->registerHookIntegration($this->getValue('source_type'));

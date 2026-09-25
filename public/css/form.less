@@ -34,42 +34,42 @@
   }
 }
 
-.rotation-config {
-  .rotation-mode {
-    display: flex;
-    justify-content: space-between;
+.pictogram-selection {
+  display: flex;
+  justify-content: space-between;
+  flex: 1 1 auto;
+  list-style: none;
+  margin: 0 1em 0 0;
+  padding: 0;
+
+  li {
     flex: 1 1 auto;
-    list-style: none;
-    margin: 0 1em 0 0;
-    padding: 0;
+    width: 0;
 
-    li {
-      flex: 1 1 auto;
-      width: 0;
-
-      &:not(:last-child) {
-        margin-right: 1em;
-      }
-    }
-
-    label {
-      display: flex;
-      flex-direction: column;
-      width: auto;
-
-      input {
-        display: none;
-      }
-
-      .mode-img {
-        width: 8em;
-        margin-bottom: .5em;
-        outline: 3px solid @icinga-blue;
-      }
+    &:not(:last-child) {
+      margin-right: 1em;
     }
   }
 
-  .control-group:not(:has(.rotation-mode)) {
+  label {
+    display: flex;
+    flex-direction: column;
+    width: auto;
+
+    input {
+      display: none;
+    }
+
+    .pictogram {
+      width: 8em;
+      margin-bottom: .5em;
+      outline: 3px solid @icinga-blue;
+    }
+  }
+}
+
+.rotation-config {
+  .control-group:not(:has(.pictogram-selection)) {
     align-items: baseline;
   }
 
@@ -98,7 +98,8 @@
     height: 3em;
   }
 
-  fieldset,
+  .dynamic-list,
+  .event-types,
   .immediate-hint {
     padding: .5em;
     .rounded-corners();
@@ -174,7 +175,8 @@
     }
   }
 
-  .dynamic-list {
+  .dynamic-list,
+  .event-types {
     margin: 2em 0 0 0;
     position: relative;
 
@@ -182,7 +184,9 @@
       position: absolute;
       top: -1.75em;
     }
+  }
 
+  .dynamic-list {
     .dynamic-item {
       display: grid;
       align-items: baseline;
@@ -252,68 +256,78 @@
   }
 }
 
-.rotation-mode {
+.pictogram-selection {
   --img-24-7: url('../img/notifications/pictogram/24-7-dark.jpg');
   --img-partial: url("../img/notifications/pictogram/partial-dark.jpg");
   --img-multi: url("../img/notifications/pictogram/multi-dark.jpg");
+  --img-notification: url('../img/notifications/pictogram/notification-rule-dark.jpg');
+  --img-escalation: url("../img/notifications/pictogram/escalation-rule-dark.jpg");
 }
 
 @light-mode: {
-  .rotation-mode {
+  .pictogram-selection {
     --img-24-7: url("../img/notifications/pictogram/24-7-light.jpg");
     --img-partial: url("../img/notifications/pictogram/partial-light.jpg");
     --img-multi: url("../img/notifications/pictogram/multi-light.jpg");
+    --img-notification: url("../img/notifications/pictogram/notification-rule-light.jpg");
+    --img-escalation: url("../img/notifications/pictogram/escalation-rule-light.jpg");
   }
 };
 
-.rotation-config {
-  .rotation-mode {
-    padding: .75em;
-    border: 1px solid @gray-light;
+.pictogram-selection {
+  padding: .75em;
+  border: 1px solid @gray-light;
+  .rounded-corners();
+
+  &.disabled {
+    background-color: @gray-lighter;
+  }
+
+  label {
+    font-weight: bold;
+
+    * {
+      font-weight: normal;
+    }
+
+    .example {
+       font-style: italic;
+       color: @text-color-light;
+     }
+  }
+
+  .pictogram {
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    aspect-ratio: 2;
+
     .rounded-corners();
 
-    &.disabled {
-      background-color: @gray-lighter;
+    &.img-24-7 {
+      background-image: var(--img-24-7);
     }
 
-    label {
-      font-weight: bold;
-
-      * {
-        font-weight: normal;
-      }
-
-      .example {
-         font-style: italic;
-         color: @text-color-light;
-       }
+    &.img-partial {
+      background-image: var(--img-partial);
     }
 
-    .mode-img {
-      background-position: center;
-      background-repeat: no-repeat;
-      background-size: contain;
-      aspect-ratio: 2;
-
-      .rounded-corners();
-
-      &.img-24-7 {
-        background-image: var(--img-24-7);
-      }
-
-      &.img-partial {
-        background-image: var(--img-partial);
-      }
-
-      &.img-multi {
-        background-image: var(--img-multi);
-      }
+    &.img-multi {
+      background-image: var(--img-multi);
     }
 
-    input:not(:checked) + .mode-img {
-      filter: grayscale(100%);
-      outline: 1px solid @gray-light;
+    &.img-notification {
+      background-image: var(--img-notification);
     }
+
+    &.img-escalation {
+      background-image: var(--img-escalation);
+    }
+  }
+
+  input:not(:checked) + .pictogram {
+    filter: grayscale(100%);
+    outline: 1px solid @gray-light;
   }
 }
 
