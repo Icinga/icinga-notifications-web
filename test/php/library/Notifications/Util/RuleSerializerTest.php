@@ -7,8 +7,10 @@ namespace Tests\Icinga\Module\Notifications\Util;
 
 use Icinga\Module\Notifications\Util\RuleSerializer;
 use ipl\Stdlib\Filter;
+use JsonException;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use UnexpectedValueException;
 
 class RuleSerializerTest extends TestCase
 {
@@ -118,5 +120,35 @@ class RuleSerializerTest extends TestCase
         $result = json_decode((new RuleSerializer($filter, ['a' => ['$.a']], true))->getJson(), true);
 
         $this->assertNotContains('filter_name', $result);
+    }
+
+    public function testDecodeReturnsWhatGetJsonEncoded()
+    {
+        $filter = Filter::equal('a', 'x');
+        $json = (new RuleSerializer($filter, ['a' => ['$.a']], true, 'my filter'))->getJson();
+
+        $this->assertSame(json_decode($json, true), RuleSerializer::decode($json));
+    }
+
+    public function testDecodeThrowsOnInvalidJson()
+    {
+        $this->expectException(JsonException::class);
+
+        RuleSerializer::decode('a=x');
+    }
+
+    public function testDecodeThrowsOnUnsupportedVersion()
+    {
+        $this->expectException(UnexpectedValueException::class);
+        $this->expectExceptionMessage('Filter version \'1\' is not supported');
+
+        RuleSerializer::decode(json_encode(['version' => 1, 'qs' => 'a=x']));
+    }
+
+    public function testDecodeThrowsOnMissingVersion()
+    {
+        $this->expectException(UnexpectedValueException::class);
+
+        RuleSerializer::decode(json_encode(['qs' => 'a=x']));
     }
 }

@@ -23,6 +23,7 @@ use ipl\Web\Filter\QueryString;
 use ipl\Web\Widget\Callout;
 use JsonException;
 use Throwable;
+use UnexpectedValueException;
 
 class RuleFilterForm extends SearchEditor
 {
@@ -58,22 +59,14 @@ class RuleFilterForm extends SearchEditor
 
         if ($rule->object_filter) {
             try {
-                $parsedFilter = json_decode($rule->object_filter, true, flags: JSON_THROW_ON_ERROR);
+                $parsedFilter = RuleSerializer::decode($rule->object_filter);
             } catch (JsonException $e) {
                 Logger::error('Failed to parse rule filter configuration: %s (Error: %s)', $rule->object_filter, $e);
                 throw new ConfigurationError($this->translate(
                     'Failed to parse rule filter configuration. Please contact your system administrator.'
                 ));
-            }
-
-            $version = $parsedFilter['version'] ?? null;
-            if ($version !== RuleSerializer::VERSION) {
-                Logger::error(
-                    'Cannot load filter for rule with id %d: filter version \'%s\' is not supported (expected %d)',
-                    $rule->id,
-                    $version,
-                    RuleSerializer::VERSION
-                );
+            } catch (UnexpectedValueException $e) {
+                Logger::error('Cannot load filter for rule with id %d: %s', $rule->id, $e->getMessage());
                 throw new ConfigurationError($this->translate(
                     'Unsupported rule filter version. Please contact your system administrator.'
                 ));

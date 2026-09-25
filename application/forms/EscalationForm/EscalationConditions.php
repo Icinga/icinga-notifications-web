@@ -5,7 +5,7 @@
 
 namespace Icinga\Module\Notifications\Forms\EscalationForm;
 
-use Icinga\Module\Notifications\Web\FilterRenderer;
+use Icinga\Module\Notifications\Util\RuleSerializer;
 use ipl\Html\Attributes;
 use ipl\Html\Contract\FormElement;
 use ipl\Html\FormElement\FieldsetElement;
@@ -16,6 +16,8 @@ use ipl\Stdlib\Filter;
 use ipl\Stdlib\Filter\Condition;
 use ipl\Web\Filter\QueryString;
 use ipl\Web\Widget\Icon;
+use JsonException;
+use UnexpectedValueException;
 
 /**
  * @phpstan-import-type ConditionValues from EscalationCondition
@@ -25,6 +27,22 @@ class EscalationConditions extends FieldsetElement
     use DynamicElements;
 
     protected $defaultAttributes = ['class' => 'escalation-conditions'];
+
+    /**
+     * Serialize the given conditions
+     *
+     * @param Filter\Rule $filter
+     *
+     * @return string
+     */
+    public static function serialize(Filter\Rule $filter): string
+    {
+        return (new RuleSerializer(
+            $filter,
+            ['incident_age' => ['incident_age'], 'incident_severity' => ['incident_severity']],
+            false
+        ))->getJson();
+    }
 
     protected function createAddButton(): SubmitButtonElement
     {
@@ -56,13 +74,20 @@ class EscalationConditions extends FieldsetElement
     /**
      * Prepare the conditions for display
      *
-     * @param string $query The query string
+     * @param string $json The stored condition as JSON
      *
      * @return array<ConditionValues>
+     *
+     * @throws JsonException If the condition is not valid JSON
+     * @throws UnexpectedValueException If the condition's version is not supported
      */
-    public static function prepare(string $query): array
+    public static function prepare(string $json): array
     {
-        $filters = QueryString::parse($query);
+        if ($json === '') {
+            return [];
+        }
+
+        $filters = QueryString::parse(RuleSerializer::decode($json)['qs']);
         if ($filters instanceof Condition) {
             $filters = [$filters];
         }
@@ -93,6 +118,6 @@ class EscalationConditions extends FieldsetElement
             return null;
         }
 
-        return (new FilterRenderer($filters))->render();
+        return static::serialize($filters);
     }
 }

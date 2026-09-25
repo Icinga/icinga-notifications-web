@@ -9,6 +9,7 @@ use DateTime;
 use Icinga\Module\Notifications\Form\Data\Escalation;
 use Icinga\Module\Notifications\Form\Data\EscalationRecipient;
 use Icinga\Module\Notifications\Form\Data\EscalationRule;
+use Icinga\Module\Notifications\Forms\EscalationForm\EscalationConditions;
 use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Model\RuleEscalation;
 use Icinga\Module\Notifications\Repository\EscalationRepository;
@@ -219,7 +220,10 @@ class EscalationRuleRepositoryTest extends TestCase
         $repository = new EscalationRuleRepository($db);
         $originalId = $repository->create(new EscalationRule(null, 'Original', 'test', null));
 
-        (new EscalationRepository($db))->create($this->escalation(null, 1, 'incident_age>1h', $originalId));
+        $condition = EscalationConditions::serialize(
+            Filter::greaterThan('incident_age', '1h')
+        );
+        (new EscalationRepository($db))->create($this->escalation(null, 1, $condition, $originalId));
 
         // Create and directly remove an escalation to verify it is not revived by the duplication
         $toRemove = (new EscalationRepository($db))->create($this->escalation(null, 0, null, $originalId));
@@ -236,7 +240,7 @@ class EscalationRuleRepositoryTest extends TestCase
         );
 
         $this->assertSame(
-            'incident_age>1h',
+            $condition,
             $copyEscalations[0]->condition,
             'The copied escalation should have the same condition as the original'
         );
