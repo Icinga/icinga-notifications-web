@@ -7,7 +7,7 @@ namespace Icinga\Module\Notifications\View;
 
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Rule;
-use Icinga\Module\Notifications\Model\RuleEscalation;
+use Icinga\Module\Notifications\Model\RuleEntry;
 use Icinga\Module\Notifications\Widget\RuleEscalationRecipientBadge;
 use ipl\Html\Attributes;
 use ipl\Html\HtmlDocument;
@@ -39,13 +39,13 @@ class EventRuleRenderer implements ItemRenderer
 
     public function assembleExtendedInfo($item, HtmlDocument $info, string $layout): void
     {
-        /** @var ?RuleEscalation $rs */
-        $rs = $item->rule_escalation->first();
+        /** @var ?RuleEntry $rs */
+        $rs = $item->rule_entry->first();
         if ($rs) {
-            $recipientCount = $rs->rule_escalation_recipient->count();
+            $recipientCount = $rs->rule_entry_recipient->count();
             if ($recipientCount) {
                 $info->addHtml(new RuleEscalationRecipientBadge(
-                    $rs->rule_escalation_recipient->first(),
+                    $rs->rule_entry_recipient->first(),
                     $recipientCount - 1
                 ));
             }
@@ -58,7 +58,7 @@ class EventRuleRenderer implements ItemRenderer
             $footer->addHtml(new Icon('filter'));
         }
 
-        $escalationCount = $item->rule_escalation->count();
+        $escalationCount = $item->rule_entry->count();
         if ($escalationCount > 1) {
             $footer->addHtml(new Icon('code-branch'), new Text($escalationCount));
         }

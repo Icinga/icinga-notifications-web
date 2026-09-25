@@ -12,7 +12,7 @@ use Icinga\Module\Notifications\Common\SourceHookLocator;
 use Icinga\Module\Notifications\Forms\EventRuleForm;
 use Icinga\Module\Notifications\Forms\RuleFilterForm;
 use Icinga\Module\Notifications\Model\Source;
-use Icinga\Module\Notifications\Repository\EscalationRuleRepository;
+use Icinga\Module\Notifications\Repository\RuleRepository;
 use Icinga\Module\Notifications\Widget\EscalationRule;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
@@ -39,7 +39,7 @@ class EventRuleController extends CompatController
 
     public function indexAction(): void
     {
-        $rule = (new EscalationRuleRepository(Database::get()))
+        $rule = (new RuleRepository(Database::get()))
             ->find((int) $this->params->getRequired('id'));
         if ($rule === null) {
             $this->httpNotFound($this->translate('Rule not found'));
@@ -69,7 +69,7 @@ class EventRuleController extends CompatController
         $form = (new RuleFilterForm())
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->on(Form::ON_REQUEST, function ($_, RuleFilterForm $form) {
-                $rule = (new EscalationRuleRepository(Database::get()))
+                $rule = (new RuleRepository(Database::get()))
                     ->find((int) $this->params->getRequired('id'));
                 if ($rule === null) {
                     $this->httpNotFound($this->translate('Rule not found'));
@@ -80,7 +80,7 @@ class EventRuleController extends CompatController
                 $rule = $form->getRule();
 
                 Database::get()->transaction(
-                    fn(Connection $db) => (new EscalationRuleRepository(Database::get()))->update($rule)
+                    fn(Connection $db) => (new RuleRepository(Database::get()))->update($rule)
                 );
 
                 Notification::success(sprintf(
@@ -150,7 +150,7 @@ class EventRuleController extends CompatController
             )
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->on(Form::ON_REQUEST, function ($_, EventRuleForm $form) {
-                $rule = (new EscalationRuleRepository(Database::get()))
+                $rule = (new RuleRepository(Database::get()))
                     ->find((int) $this->params->getRequired('id'));
                 if ($rule === null) {
                     $this->httpNotFound($this->translate('Rule not found'));
@@ -165,7 +165,7 @@ class EventRuleController extends CompatController
 
                 if ($form->hasBeenDeleted()) {
                     $ruleName = Database::get()->transaction(
-                        fn(Connection $db) => (new EscalationRuleRepository(Database::get()))->delete($rule->id)
+                        fn(Connection $db) => (new RuleRepository(Database::get()))->delete($rule->id)
                     )->name;
 
                     Notification::success(sprintf(
@@ -175,7 +175,7 @@ class EventRuleController extends CompatController
                     $this->switchToSingleColumnLayout();
                 } elseif ($form->hasBeenDuplicated()) {
                     $ruleId = Database::get()->transaction(
-                        fn(Connection $db) => (new EscalationRuleRepository(Database::get()))->duplicate($rule)
+                        fn(Connection $db) => (new RuleRepository(Database::get()))->duplicate($rule)
                     );
 
                     Notification::success(sprintf(
@@ -186,7 +186,7 @@ class EventRuleController extends CompatController
                     $this->redirectNow(Links::eventRule($ruleId));
                 } else {
                     Database::get()->transaction(
-                        fn(Connection $db) => (new EscalationRuleRepository($db))->update($rule)
+                        fn(Connection $db) => (new RuleRepository($db))->update($rule)
                     );
 
                     Notification::success(sprintf(

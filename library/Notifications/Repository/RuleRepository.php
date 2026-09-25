@@ -7,18 +7,18 @@ namespace Icinga\Module\Notifications\Repository;
 
 use Icinga\Exception\NotImplementedError;
 use Icinga\Module\Notifications\Common\EntityManager;
-use Icinga\Module\Notifications\Form\Data\Escalation;
-use Icinga\Module\Notifications\Form\Data\EscalationRecipient;
+use Icinga\Module\Notifications\Form\Data\RuleEntry;
+use Icinga\Module\Notifications\Form\Data\RuleEntryRecipient;
 use Icinga\Module\Notifications\Form\Data\Rule as RuleData;
 use Icinga\Module\Notifications\Model\Rule;
 use InvalidArgumentException;
 use ipl\Sql\Connection;
 use ipl\Stdlib\Filter;
 
-final class EscalationRuleRepository
+final class RuleRepository
 {
     /**
-     * Create a `EscalationRuleRepository` instance
+     * Create a `RuleRepository` instance
      *
      * @param Connection $db Database to operate on
      */
@@ -53,6 +53,7 @@ final class EscalationRuleRepository
         $model = (new Rule())->setNew();
 
         $model->name = $rule->name;
+        $model->type = 'escalation';
         $model->source_type = $rule->sourceType;
         $model->object_filter = $rule->objectFilter;
 
@@ -104,11 +105,11 @@ final class EscalationRuleRepository
             throw new InvalidArgumentException('Cannot delete an escalation rule that does not exist');
         }
 
-        $escalationRepository = new EscalationRepository($this->db);
+        $entryRepository = new RuleEntryRepository($this->db);
 
-        $escalations = $rule->rule_escalation->query()->columns('id');
-        foreach ($escalations as $escalation) {
-            $escalationRepository->delete($escalation->id);
+        $entries = $rule->rule_entry->query()->columns('id');
+        foreach ($entries as $entry) {
+            $entryRepository->delete($entry->id);
         }
 
         (new EntityManager($this->db))->save($rule->delete());
@@ -143,18 +144,18 @@ final class EscalationRuleRepository
             $rule->objectFilter ?? $original->object_filter
         ));
 
-        $escalationRepository = new EscalationRepository($this->db);
+        $entryRepository = new RuleEntryRepository($this->db);
 
-        foreach ($original->rule_escalation as $escalation) {
+        foreach ($original->rule_entry as $entry) {
             $recipients = [];
-            foreach ($escalation->rule_escalation_recipient as $recipient) {
+            foreach ($entry->rule_entry_recipient as $recipient) {
                 [$recipientType, $recipientId] = match (true) {
                     isset($recipient->contactgroup_id) => ['contact_group', $recipient->contactgroup_id],
                     isset($recipient->schedule_id) => ['schedule', $recipient->schedule_id],
                     default => ['contact', $recipient->contact_id]
                 };
 
-                $recipients[] = new EscalationRecipient(
+                $recipients[] = new RuleEntryRecipient(
                     null,
                     $recipientType,
                     $recipientId,
@@ -162,10 +163,10 @@ final class EscalationRuleRepository
                 );
             }
 
-            $escalationRepository->create(new Escalation(
+            $entryRepository->create(new RuleEntry(
                 null,
-                $escalation->position,
-                $escalation->condition,
+                $entry->position,
+                $entry->condition,
                 $recipients,
                 $ruleId
             ));

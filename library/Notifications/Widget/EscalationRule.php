@@ -8,8 +8,8 @@ namespace Icinga\Module\Notifications\Widget;
 use Icinga\Module\Notifications\Common\Icons;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Rule;
-use Icinga\Module\Notifications\Model\RuleEscalation;
-use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
+use Icinga\Module\Notifications\Model\RuleEntry;
+use Icinga\Module\Notifications\Model\RuleEntryRecipient;
 use Icinga\Module\Notifications\Widget\EscalationRule\EscalationCondition;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
@@ -74,8 +74,8 @@ class EscalationRule extends BaseHtmlElement
             new HtmlElement('div', Attributes::create(['class' => 'connector-line']))
         );
 
-        /** @var RuleEscalation[] $escalations */
-        $escalations = iterator_to_array($this->rule->rule_escalation->execute());
+        /** @var RuleEntry[] $escalations */
+        $escalations = iterator_to_array($this->rule->rule_entry->execute());
 
         $immediateEscalation = null;
         if (! empty($escalations) && (int) $escalations[0]->position === 0) {
@@ -122,7 +122,7 @@ class EscalationRule extends BaseHtmlElement
                         ? Text::create($this->translate(
                             'No recipients will be notified immediately.'
                         ))
-                        : $this->describeRecipients($immediateEscalation->rule_escalation_recipient)
+                        : $this->describeRecipients($immediateEscalation->rule_entry_recipient)
                 ),
                 $immediateEscalationButton
             )
@@ -166,7 +166,7 @@ class EscalationRule extends BaseHtmlElement
                     new HtmlElement(
                         'div',
                         Attributes::create(['class' => ['description', 'recipients']]),
-                        $this->describeRecipients($escalation->rule_escalation_recipient)
+                        $this->describeRecipients($escalation->rule_entry_recipient)
                     ),
                     $escalationButton
                 )
@@ -244,7 +244,7 @@ class EscalationRule extends BaseHtmlElement
     /**
      * Return a textual representation for the given escalation recipients
      *
-     * @param Query<RuleEscalationRecipient> $query
+     * @param Query<RuleEntryRecipient> $query
      *
      * @return ValidHtml
      */

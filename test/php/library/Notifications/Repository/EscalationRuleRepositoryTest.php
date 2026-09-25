@@ -6,13 +6,13 @@
 namespace Tests\Icinga\Module\Notifications\Repository;
 
 use DateTime;
-use Icinga\Module\Notifications\Form\Data\Escalation;
-use Icinga\Module\Notifications\Form\Data\EscalationRecipient;
+use Icinga\Module\Notifications\Form\Data\RuleEntry as RuleEntryData;
+use Icinga\Module\Notifications\Form\Data\RuleEntryRecipient as RuleEntryRecipientData;
 use Icinga\Module\Notifications\Form\Data\Rule as RuleData;
 use Icinga\Module\Notifications\Model\Rule;
-use Icinga\Module\Notifications\Model\RuleEscalation;
-use Icinga\Module\Notifications\Repository\EscalationRepository;
-use Icinga\Module\Notifications\Repository\EscalationRuleRepository;
+use Icinga\Module\Notifications\Model\RuleEntry;
+use Icinga\Module\Notifications\Repository\RuleEntryRepository;
+use Icinga\Module\Notifications\Repository\RuleRepository;
 use Icinga\Module\Notifications\Test\DbTestBackends;
 use InvalidArgumentException;
 use ipl\Sql\Connection;
@@ -23,14 +23,14 @@ use PHPUnit\Framework\TestCase;
 use Tests\Icinga\Module\Notifications\Lib\DatabaseUtils;
 
 /**
- * Tests for {@see EscalationRuleRepository}.
+ * Tests for {@see RuleRepository}.
  *
  * Unlike the mocked-connection repository tests, these run against real databases — once for MySQL and once for
  * PostgreSQL (see {@see DbTestBackends} / `#[DataProvider('sharedDatabases')]`). Each test performs an operation and
  * reads the result back from the database to verify what was persisted.
  *
  * The repository manages the escalation rule itself and orchestrates its escalations, delegating the escalation and
- * recipient details to {@see \Icinga\Module\Notifications\Repository\EscalationRepository} (covered by its own test).
+ * recipient details to {@see \Icinga\Module\Notifications\Repository\RuleEntryRepository} (covered by its own test).
  * These tests therefore focus on the rule and on the escalations being created, kept and removed as a whole.
  *
  * Each test runs inside its own transaction which is rolled back afterwards, so its writes don't leak into the next
@@ -82,15 +82,15 @@ class EscalationRuleRepositoryTest extends TestCase
      * @param ?string $condition
      * @param ?int $ruleId
      *
-     * @return Escalation
+     * @return RuleEntryData
      */
-    private function escalation(?int $id, int $position, ?string $condition, ?int $ruleId): Escalation
+    private function escalation(?int $id, int $position, ?string $condition, ?int $ruleId): RuleEntryData
     {
-        return new Escalation(
+        return new RuleEntryData(
             $id,
             $position,
             $condition,
-            [new EscalationRecipient(null, 'contact', self::$contactId, self::$channelId)],
+            [new RuleEntryRecipientData(null, 'contact', self::$contactId, self::$channelId)],
             $ruleId
         );
     }
@@ -101,12 +101,12 @@ class EscalationRuleRepositoryTest extends TestCase
      * @param Connection $db
      * @param int $ruleId
      *
-     * @return RuleEscalation[]
+     * @return RuleEntry[]
      */
     private function escalationsOf(Connection $db, int $ruleId): array
     {
         return iterator_to_array(
-            RuleEscalation::on($db)
+            RuleEntry::on($db)
                 ->filter(Filter::equal('rule_id', $ruleId))
                 ->orderBy('position')
         );
@@ -115,13 +115,13 @@ class EscalationRuleRepositoryTest extends TestCase
     #[DataProvider('sharedDatabases')]
     public function testFindReturnsNullIfTheRuleDoesNotExist(Connection $db): void
     {
-        $this->assertNull((new EscalationRuleRepository($db))->find(999));
+        $this->assertNull((new RuleRepository($db))->find(999));
     }
 
     #[DataProvider('sharedDatabases')]
     public function testCreateStoresTheRuleAndItsEscalations(Connection $db): void
     {
-        $repository = new EscalationRuleRepository($db);
+        $repository = new RuleRepository($db);
 
         $id = $repository->create(new RuleData(
             null,
@@ -141,7 +141,7 @@ class EscalationRuleRepositoryTest extends TestCase
     #[DataProvider('sharedDatabases')]
     public function testUpdateChangesTheRule(Connection $db): void
     {
-        $repository = new EscalationRuleRepository($db);
+        $repository = new RuleRepository($db);
 
         $id = $repository->create(new RuleData(
             null,
@@ -168,13 +168,13 @@ class EscalationRuleRepositoryTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        (new EscalationRuleRepository($db))->update(new RuleData(999, 'Nope', 'icinga2', null));
+        (new RuleRepository($db))->update(new RuleData(999, 'Nope', 'icinga2', null));
     }
 
     #[DataProvider('sharedDatabases')]
     public function testDeleteSoftDeletesTheRuleAndItsEscalations(Connection $db): void
     {
-        $repository = new EscalationRuleRepository($db);
+        $repository = new RuleRepository($db);
 
         $id = $repository->create(new RuleData(
             null,
@@ -182,7 +182,7 @@ class EscalationRuleRepositoryTest extends TestCase
             'icinga2',
             null
         ));
-        (new EscalationRepository($db))->create($this->escalation(null, 0, null, $id));
+        (new RuleEntryRepository($db))->create($this->escalation(null, 0, null, $id));
 
         $repository->delete($id);
 
@@ -202,7 +202,7 @@ class EscalationRuleRepositoryTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        (new EscalationRuleRepository($db))->delete(999);
+        (new RuleRepository($db))->delete(999);
     }
 
     #[DataProvider('sharedDatabases')]
@@ -210,20 +210,20 @@ class EscalationRuleRepositoryTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        (new EscalationRuleRepository($db))->duplicate(new RuleData(999, 'Copy', 'test', null));
+        (new RuleRepository($db))->duplicate(new RuleData(999, 'Copy', 'test', null));
     }
 
     #[DataProvider('sharedDatabases')]
     public function testDuplicateAlsoCopiesEscalations(Connection $db): void
     {
-        $repository = new EscalationRuleRepository($db);
+        $repository = new RuleRepository($db);
         $originalId = $repository->create(new RuleData(null, 'Original', 'test', null));
 
-        (new EscalationRepository($db))->create($this->escalation(null, 1, 'incident_age>1h', $originalId));
+        (new RuleEntryRepository($db))->create($this->escalation(null, 1, 'incident_age>1h', $originalId));
 
         // Create and directly remove an escalation to verify it is not revived by the duplication
-        $toRemove = (new EscalationRepository($db))->create($this->escalation(null, 0, null, $originalId));
-        (new EscalationRepository($db))->delete($toRemove);
+        $toRemove = (new RuleEntryRepository($db))->create($this->escalation(null, 0, null, $originalId));
+        (new RuleEntryRepository($db))->delete($toRemove);
 
         $copyId = $repository->duplicate(new RuleData($originalId, 'Copy', 'test', null));
         $this->assertNotSame($originalId, $copyId);
@@ -248,7 +248,7 @@ class EscalationRuleRepositoryTest extends TestCase
         }
 
         // Recipients are copied and mapped by type
-        $recipient = $copyEscalations[0]->rule_escalation_recipient->first();
+        $recipient = $copyEscalations[0]->rule_entry_recipient->first();
         $this->assertSame(self::$contactId, $recipient->contact_id);
     }
 }

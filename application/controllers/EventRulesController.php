@@ -11,7 +11,7 @@ use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\EventRuleForm;
 use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Model\Source;
-use Icinga\Module\Notifications\Repository\EscalationRuleRepository;
+use Icinga\Module\Notifications\Repository\RuleRepository;
 use Icinga\Module\Notifications\View\EventRuleRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
@@ -136,7 +136,7 @@ class EventRulesController extends CompatController
                 $rule = $form->getRule();
 
                 $ruleId = Database::get()->transaction(
-                    fn(Connection $db) => (new EscalationRuleRepository($db))->create($rule)
+                    fn(Connection $db) => (new RuleRepository($db))->create($rule)
                 );
 
                 Notification::success(sprintf(

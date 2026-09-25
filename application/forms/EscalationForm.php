@@ -6,10 +6,10 @@
 namespace Icinga\Module\Notifications\Forms;
 
 use Icinga\Module\Notifications\Form\ConfigProviderInterface;
-use Icinga\Module\Notifications\Form\Data\Escalation;
+use Icinga\Module\Notifications\Form\Data\RuleEntry as RuleEntryData;
 use Icinga\Module\Notifications\Forms\EscalationForm\EscalationConditions;
 use Icinga\Module\Notifications\Forms\EscalationForm\EscalationRecipients;
-use Icinga\Module\Notifications\Model\RuleEscalation;
+use Icinga\Module\Notifications\Model\RuleEntry;
 use ipl\Html\Attributes;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
@@ -37,11 +37,11 @@ class EscalationForm extends CompatForm
     /**
      * Load the given escalation into the form
      *
-     * @param RuleEscalation $escalation
+     * @param RuleEntry $escalation
      *
      * @return $this
      */
-    public function setEscalation(RuleEscalation $escalation): static
+    public function setEscalation(RuleEntry $escalation): static
     {
         $this->populate([
             'id' => $escalation->id,
@@ -49,7 +49,7 @@ class EscalationForm extends CompatForm
             'position' => $escalation->position,
             'conditions' => EscalationConditions::prepare($escalation->condition ?? ''),
             'recipients' => EscalationRecipients::prepare(
-                $escalation->rule_escalation_recipient
+                $escalation->rule_entry_recipient
                     ->columns(['id', 'contact_id', 'contactgroup_id', 'schedule_id', 'channel_id'])
             ),
         ]);
@@ -60,9 +60,9 @@ class EscalationForm extends CompatForm
     /**
      * Get the escalation as currently configured by the user
      *
-     * @return Escalation
+     * @return RuleEntryData
      */
-    public function getEscalation(): Escalation
+    public function getEscalation(): RuleEntryData
     {
         $escalationId = null;
         if ($this->getElement('id')->hasValue()) {
@@ -74,7 +74,7 @@ class EscalationForm extends CompatForm
             $condition = $this->getElement('conditions')->getConditions();
         }
 
-        return new Escalation(
+        return new RuleEntryData(
             $escalationId,
             (int) $this->getValue('position'),
             $condition,

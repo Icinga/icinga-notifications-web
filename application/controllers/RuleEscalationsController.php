@@ -10,7 +10,7 @@ use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Data\NotificationConfigProvider;
 use Icinga\Module\Notifications\Forms\EscalationForm;
-use Icinga\Module\Notifications\Repository\EscalationRepository;
+use Icinga\Module\Notifications\Repository\RuleEntryRepository;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
 use ipl\Html\Contract\Form;
@@ -41,7 +41,7 @@ class RuleEscalationsController extends CompatController
                 $escalation = $form->getEscalation();
 
                 Database::get()->transaction(
-                    fn(Connection $db) => (new EscalationRepository($db))->create($escalation)
+                    fn(Connection $db) => (new RuleEntryRepository($db))->create($escalation)
                 );
 
                 Notification::success($this->translate('Created escalation'));
