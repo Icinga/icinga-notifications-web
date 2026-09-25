@@ -160,7 +160,7 @@ class EscalationRule extends BaseHtmlElement
                     new HtmlElement(
                         'div',
                         Attributes::create(['class' => ['description', 'condition']]),
-                        EscalationCondition::fromQueryString($escalation->condition)
+                        EscalationCondition::fromJson($escalation->condition)
                     ),
                     new HtmlElement('div', Attributes::create(['class' => 'connector-line'])),
                     new HtmlElement(

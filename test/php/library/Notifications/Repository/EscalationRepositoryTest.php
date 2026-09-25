@@ -8,6 +8,7 @@ namespace Tests\Icinga\Module\Notifications\Repository;
 use DateTime;
 use Icinga\Module\Notifications\Form\Data\Escalation;
 use Icinga\Module\Notifications\Form\Data\EscalationRecipient;
+use Icinga\Module\Notifications\Forms\EscalationForm\EscalationConditions;
 use Icinga\Module\Notifications\Model\RuleEscalation;
 use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
 use Icinga\Module\Notifications\Repository\EscalationRepository;
@@ -148,13 +149,16 @@ class EscalationRepositoryTest extends TestCase
         $ruleId = $this->createRule($db);
         $repository = new EscalationRepository($db);
 
-        $id = $repository->create($this->escalation($ruleId, 0, 'incident_severity>=crit'));
+        $condition = EscalationConditions::serialize(
+            Filter::greaterThanOrEqual('incident_severity', 'crit')
+        );
+        $id = $repository->create($this->escalation($ruleId, 0, $condition));
 
         $escalation = $repository->find($id);
         $this->assertNotNull($escalation, 'The created escalation was not found');
         $this->assertEquals($ruleId, $escalation->rule_id);
         $this->assertSame(0, (int) $escalation->position);
-        $this->assertSame('incident_severity>=crit', $escalation->condition);
+        $this->assertSame($condition, $escalation->condition);
 
         $recipients = $this->recipientsOf($db, $id);
         $this->assertCount(1, $recipients);
@@ -170,16 +174,19 @@ class EscalationRepositoryTest extends TestCase
         $id = $repository->create($this->escalation($ruleId, 0, null));
 
         // Change the condition and replace the recipient set (drop the old contact recipient, add a fresh one)
+        $condition = EscalationConditions::serialize(
+            Filter::greaterThanOrEqual('incident_age', '5m')
+        );
         $repository->update(new Escalation(
             $id,
             0,
-            'incident_age>=5m',
+            $condition,
             [new EscalationRecipient(null, 'contact', self::$contactId, null)],
             $ruleId
         ));
 
         $escalation = $repository->find($id);
-        $this->assertSame('incident_age>=5m', $escalation->condition);
+        $this->assertSame($condition, $escalation->condition);
 
         $recipients = $this->recipientsOf($db, $id);
         $this->assertCount(1, $recipients, 'The recipient set should have been synced');
