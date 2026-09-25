@@ -8,7 +8,10 @@ namespace Icinga\Module\Notifications\View;
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Icons;
 use Icinga\Module\Notifications\Common\Links;
+use Icinga\Module\Notifications\Model\Contact;
+use Icinga\Module\Notifications\Model\Contactgroup;
 use Icinga\Module\Notifications\Model\IncidentContact;
+use Icinga\Module\Notifications\Model\Schedule;
 use ipl\Html\Attributes;
 use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
@@ -47,18 +50,42 @@ class IncidentContactRenderer implements ItemRenderer
 
     public function assembleVisual($item, HtmlDocument $visual, string $layout): void
     {
-        $visual->addHtml(new Icon($item->role === 'manager' ? Icons::USER_MANAGER : Icons::USER));
+        if ($item instanceof Contact) {
+            $icon = new Icon(Icons::USER);
+        }
+        if ($item instanceof Contactgroup) {
+            $icon = new Icon(Icons::CONTACTGROUP);
+        }
+        if ($item instanceof Schedule) {
+            $icon = new Icon(Icons::SCHEDULE);
+        }
+
+        $visual->addHtml($icon);
     }
 
     public function assembleTitle($item, HtmlDocument $title, string $layout): void
     {
+        if (isset($item->name)) {
+            $name = $item->name;
+        }
+        if (isset($item->full_name)) {
+            $name = $item->full_name;
+        }
         if (! $this->disableContactLink) {
-            $title->addHtml(new Link($item->full_name, Links::contact($item->id), ['class' => 'subject']));
+            if ($item instanceof Contact) {
+                $title->addHtml(new Link($name, Links::contact($item->id), ['class' => 'subject']));
+            }
+            if ($item instanceof Contactgroup) {
+                $title->addHtml(new Link($name, Links::contactgroup($item->id), ['class' => 'subject']));
+            }
+            if ($item instanceof Schedule) {
+                $title->addHtml(new Link($name, Links::schedule($item->id), ['class' => 'subject']));
+            }
         } else {
             $title->addHtml(new HtmlElement(
                 'span',
                 Attributes::create(['class' => 'subject']),
-                Text::create($item->full_name)
+                Text::create($name)
             ));
         }
 

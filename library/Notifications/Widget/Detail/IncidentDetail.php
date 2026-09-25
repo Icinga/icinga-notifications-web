@@ -10,6 +10,7 @@ use Icinga\Application\Config;
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\SourceHookLocator;
 use Icinga\Module\Notifications\Model\Incident;
+use Icinga\Module\Notifications\Integrations\Incident as IntegratedIncident;
 use Icinga\Module\Notifications\View\IncidentContactRenderer;
 use Icinga\Module\Notifications\View\IncidentHistoryRenderer;
 use Icinga\Module\Notifications\Widget\EventSourceBadge;
@@ -25,6 +26,7 @@ use ipl\Web\Layout\MinimalItemLayout;
 use ipl\Web\Url;
 use ipl\Web\Widget\CopyToClipboard;
 use ipl\Web\Widget\EmptyState;
+use ipl\Web\Widget\HorizontalKeyValue;
 use ipl\Web\Widget\Link;
 
 class IncidentDetail extends BaseHtmlElement
@@ -49,28 +51,48 @@ class IncidentDetail extends BaseHtmlElement
     /** @return ValidHtml[] */
     protected function createContacts(): array
     {
-        $contacts = [];
+        $subscribers = [];
+        $recipients = [];
+
         $query = $this->incident->incident_contact
-            ->with('contact')
+            ->with(['contact', 'contactgroup', 'schedule'])
             ->orderBy('role', SORT_DESC);
 
         foreach ($query as $incident_contact) {
             if (isset($incident_contact->contact->id)) {
                 $contact = $incident_contact->contact;
-                $contact->role = $incident_contact->role;
-
-                $contacts[] = $contact;
+            } elseif (isset($incident_contact->contactgroup->id)) {
+                $contact = $incident_contact->contactgroup;
+            } else {
+                $contact = $incident_contact->schedule;
+            }
+            $contact->role = $incident_contact->role;
+            if ($incident_contact->role === "subscriber" || $incident_contact->role === "manager") {
+                $subscribers[] = $contact;
+            }
+            if ($incident_contact->role === "recipient") {
+                $recipients[] = $contact;
             }
         }
 
         $disableContactLink = ! $this->getAuth()->hasPermission('notifications/view/contacts')
-            || ! $this->getAuth()->hasPermission('notifications/config/contacts');
+            || ! $this->getAuth()->hasPermission('notifications/config/contacts')
+            || ! $this->getAuth()->hasPermission('notifications/view/contactgroups')
+            || ! $this->getAuth()->hasPermission('notifications/view/schedule');
+
+        $subscriberList = (new ObjectList($subscribers, (new IncidentContactRenderer())
+                ->disableContactLink($disableContactLink)))
+                ->setItemLayoutClass(MinimalItemLayout::class)
+                ->setDetailActionsDisabled($disableContactLink);
+        $recipientList = (new ObjectList($recipients, (new IncidentContactRenderer())
+                ->disableContactLink($disableContactLink)))
+                ->setItemLayoutClass(MinimalItemLayout::class)
+                ->setDetailActionsDisabled($disableContactLink);
 
         return [
-            Html::tag('h2', $this->translate('Subscribers')),
-            (new ObjectList($contacts, (new IncidentContactRenderer())->disableContactLink($disableContactLink)))
-                ->setItemLayoutClass(MinimalItemLayout::class)
-                ->setDetailActionsDisabled($disableContactLink)
+            Html::tag('h2', t('Notification Recipients')),
+            new HorizontalKeyValue(t('Subscribers'), $subscriberList),
+            new HorizontalKeyValue(t('Recipients'), $recipientList),
         ];
     }
 
