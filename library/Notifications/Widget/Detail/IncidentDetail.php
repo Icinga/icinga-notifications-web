@@ -69,30 +69,28 @@ class IncidentDetail extends BaseHtmlElement
             $contact->role = $incident_contact->role;
             if ($incident_contact->role === "subscriber" || $incident_contact->role === "manager") {
                 $subscribers[] = $contact;
-            }
-            if ($incident_contact->role === "recipient") {
+            } else {
                 $recipients[] = $contact;
             }
         }
 
         $disableContactLink = ! $this->getAuth()->hasPermission('notifications/view/contacts')
             || ! $this->getAuth()->hasPermission('notifications/config/contacts');
-        $disableContactGroupLink = ! $this->getAuth()->hasPermission('notifications/config/contactgroups');
         $disableScheduleLink = ! $this->getAuth()->hasPermission('notifications/config/schedules');
 
         $subscriberList = (new ObjectList($subscribers, (new IncidentContactRenderer())
                 ->disableContactLink($disableContactLink)
-                ->disableScheduleLink($disableScheduleLink)
-                ->disableContactGroupLink($disableContactGroupLink)))
+                ->disableScheduleLink($disableScheduleLink)))
                 ->setItemLayoutClass(MinimalItemLayout::class)
-                ->setDetailActionsDisabled($disableContactLink)
+                ->setDetailActionsDisabled(true)
+                ->setEmptyStateMessage($this->translate('No subscribers'))
                 ->setAttribute("class", "incident-contact-list");
         $recipientList = (new ObjectList($recipients, (new IncidentContactRenderer())
                 ->disableContactLink($disableContactLink)
-                ->disableScheduleLink($disableScheduleLink)
-                ->disableContactGroupLink($disableContactGroupLink)))
+                ->disableScheduleLink($disableScheduleLink)))
                 ->setItemLayoutClass(MinimalItemLayout::class)
-                ->setDetailActionsDisabled($disableContactLink)
+                ->setDetailActionsDisabled(true)
+                ->setEmptyStateMessage($this->translate('No recipients'))
                 ->setAttribute("class", "incident-contact-list");
 
         return [

@@ -5,7 +5,6 @@
 
 namespace Icinga\Module\Notifications\View;
 
-use Couchbase\UserManager;
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Icons;
 use Icinga\Module\Notifications\Common\Links;
@@ -69,14 +68,13 @@ class IncidentContactRenderer implements ItemRenderer
     {
 
         [$icon, $title] = match (true) {
-            $item->role === 'manager' => [new Icon(Icons::USER_MANAGER), "[Manager]"],
-            $item instanceof Contact => [new Icon(Icons::USER), "[User]"],
-            $item instanceof Contactgroup => [new Icon(Icons::CONTACTGROUP), "[Contactgroup]"],
-            $item instanceof Schedule => [new Icon(Icons::SCHEDULE), "[Schedule]"],
+            $item->role === 'manager' => [new Icon(Icons::USER_MANAGER), $this->translate("Manager")],
+            $item instanceof Contact => [new Icon(Icons::USER), $this->translate("User")],
+            $item instanceof Contactgroup => [new Icon(Icons::CONTACTGROUP), $this->translate("Contact Group")],
+            $item instanceof Schedule => [new Icon(Icons::SCHEDULE), $this->translate("Schedule")],
         };
 
-        $icon->getAttribute('title')
-            ->addValue(sprintf("%s %s", $title, $item->name ?? $item->full_name));
+        $icon->setAttribute('title', sprintf("[%s] %s", $title, $item->name ?? $item->full_name));
 
         $visual->addHtml($icon);
     }
@@ -86,7 +84,7 @@ class IncidentContactRenderer implements ItemRenderer
         $name = $item->full_name ?? $item->name;
         $link = match (true) {
             $item instanceof Contact && ! $this->disableContactLink => Links::contact($item->id),
-            $item instanceof Contactgroup && ! $this->disableContactGroupLink => Links::contactgroup($item->id),
+            $item instanceof Contactgroup && ! $this->disableContactLink => Links::contactGroup($item->id),
             $item instanceof Schedule && ! $this->disableScheduleLink => Links::schedule($item->id),
             default => null
         };
@@ -102,7 +100,7 @@ class IncidentContactRenderer implements ItemRenderer
         }
 
         if ($item->role === 'manager') {
-            $title->addHtml(new Text($this->translate(' manages this incident')));
+            $title->addHtml(new Text($this->translate(' ' . 'manages this incident')));
         }
     }
 
