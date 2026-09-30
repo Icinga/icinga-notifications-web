@@ -23,9 +23,9 @@ use ipl\Stdlib\Filter;
  * @property bool $deleted
  *
  * @property Query<Rotation>|Collection<Rotation> $rotation
- * @property Query<RuleEscalationRecipient>|Collection<RuleEscalationRecipient> $rule_escalation_recipient
+ * @property Query<RuleEntryRecipient>|Collection<RuleEntryRecipient> $rule_entry_recipient
  * @property Query<IncidentHistory>|Collection<IncidentHistory> $incident_history
- * @property Query<RuleEscalation>|Collection<RuleEscalation> $rule_escalation
+ * @property Query<RuleEntry>|Collection<RuleEntry> $rule_entry
  * @property Query<NotificationHistory>|Collection<NotificationHistory> $notification_history
  */
 class Schedule extends Model
@@ -79,13 +79,13 @@ class Schedule extends Model
     {
         $relations->hasMany('rotation', Rotation::class)
             ->setJoinType('LEFT');
-        $relations->hasMany('rule_escalation_recipient', RuleEscalationRecipient::class)
+        $relations->hasMany('rule_entry_recipient', RuleEntryRecipient::class)
             ->setJoinType('LEFT');
         $relations->hasMany('incident_history', IncidentHistory::class)
             ->setJoinType('LEFT');
 
-        $relations->belongsToMany('rule_escalation', RuleEscalation::class)
-            ->through(RuleEscalationRecipient::class)
+        $relations->belongsToMany('rule_entry', RuleEntry::class)
+            ->through(RuleEntryRecipient::class)
             ->setJoinType('LEFT');
         $relations->hasMany('notification_history', NotificationHistory::class)
             ->setJoinType('LEFT');

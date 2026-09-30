@@ -54,7 +54,7 @@ class EscalationConditions extends FieldsetElement
     }
 
     /**
-     * Prepare the conditions for display
+     * Prepare the condition for display
      *
      * @param string $query The query string
      *
@@ -76,11 +76,11 @@ class EscalationConditions extends FieldsetElement
     }
 
     /**
-     * Get the conditions to store
+     * Get the condition to store
      *
      * @return ?string
      */
-    public function getConditions(): ?string
+    public function getCondition(): ?string
     {
         $filters = Filter::all();
         foreach ($this->ensureAssembled()->getElements() as $element) {

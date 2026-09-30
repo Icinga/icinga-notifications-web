@@ -5,8 +5,8 @@
 
 namespace Icinga\Module\Notifications\Forms\EscalationForm;
 
-use Icinga\Module\Notifications\Form\Data\EscalationRecipient as EscalationRecipientData;
-use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
+use Icinga\Module\Notifications\Form\Data\RuleEntryRecipient as EscalationRecipientData;
+use Icinga\Module\Notifications\Model\RuleEntryRecipient;
 use ipl\Html\Attributes;
 use ipl\Html\Contract\FormElement;
 use ipl\Html\FormElement\FieldsetElement;
@@ -55,7 +55,7 @@ class EscalationRecipients extends FieldsetElement
     /**
      * Prepare the recipients for display
      *
-     * @param iterable<RuleEscalationRecipient> $recipients
+     * @param iterable<RuleEntryRecipient> $recipients
      *
      * @return array<RecipientValues>
      */

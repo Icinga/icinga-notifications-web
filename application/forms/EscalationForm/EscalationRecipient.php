@@ -5,8 +5,8 @@
 
 namespace Icinga\Module\Notifications\Forms\EscalationForm;
 
-use Icinga\Module\Notifications\Form\Data\EscalationRecipient as EscalationRecipientData;
-use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
+use Icinga\Module\Notifications\Form\Data\RuleEntryRecipient as EscalationRecipientData;
+use Icinga\Module\Notifications\Model\RuleEntryRecipient;
 use ipl\Html\Attributes;
 use ipl\Html\FormElement\FieldsetElement;
 use ipl\Html\FormElement\SubmitButtonElement;
@@ -44,11 +44,11 @@ class EscalationRecipient extends FieldsetElement
     /**
      * Prepare the recipient for display
      *
-     * @param RuleEscalationRecipient $recipient
+     * @param RuleEntryRecipient $recipient
      *
      * @return RecipientValues
      */
-    public static function prepare(RuleEscalationRecipient $recipient): array
+    public static function prepare(RuleEntryRecipient $recipient): array
     {
         if ($recipient->contact_id !== null) {
             $typeAndId = sprintf('contact:%u', $recipient->contact_id);

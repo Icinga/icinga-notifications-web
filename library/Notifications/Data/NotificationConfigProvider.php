@@ -6,11 +6,13 @@
 namespace Icinga\Module\Notifications\Data;
 
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Common\SourceHookLocator;
 use Icinga\Module\Notifications\Form\ConfigProviderInterface;
 use Icinga\Module\Notifications\Model\AvailableChannelType;
 use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Contactgroup;
+use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Model\Schedule;
 use ipl\Orm\ResultSet;
 use ipl\Stdlib\Filter;
@@ -100,5 +102,23 @@ class NotificationConfigProvider implements ConfigProviderInterface
         return Contact::on(Database::get())
             ->filter(Filter::equal('id', $ids))
             ->execute();
+    }
+
+    public function findNotificationEventTypesByRuleId(int $ruleId): iterable
+    {
+        $sourceType = Rule::on(Database::get())
+            ->columns('source_type')
+            ->filter(Filter::equal('id', $ruleId))
+            ->first()?->source_type;
+        if ($sourceType === null) {
+            return [];
+        }
+
+        $hook = SourceHookLocator::forType($sourceType);
+        if ($hook === null) {
+            return [];
+        }
+
+        return $hook->getEventTypes();
     }
 }
