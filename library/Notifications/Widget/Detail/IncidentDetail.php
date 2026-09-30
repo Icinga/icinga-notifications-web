@@ -25,6 +25,7 @@ use ipl\Web\Layout\MinimalItemLayout;
 use ipl\Web\Url;
 use ipl\Web\Widget\CopyToClipboard;
 use ipl\Web\Widget\EmptyState;
+use ipl\Web\Widget\HorizontalKeyValue;
 use ipl\Web\Widget\Link;
 
 class IncidentDetail extends BaseHtmlElement
@@ -47,30 +48,56 @@ class IncidentDetail extends BaseHtmlElement
     }
 
     /** @return ValidHtml[] */
-    protected function createContacts(): array
+    protected function createNotificationRecipients(): array
     {
-        $contacts = [];
+        $subscribers = [];
+        $recipients = [];
+
         $query = $this->incident->incident_contact
-            ->with('contact')
+            ->with(['contact', 'contactgroup', 'schedule'])
             ->orderBy('role', SORT_DESC);
 
         foreach ($query as $incident_contact) {
             if (isset($incident_contact->contact->id)) {
                 $contact = $incident_contact->contact;
-                $contact->role = $incident_contact->role;
+            } elseif (isset($incident_contact->contactgroup->id)) {
+                $contact = $incident_contact->contactgroup;
+            } elseif (isset($incident_contact->schedule->id)) {
+                $contact = $incident_contact->schedule;
+            } else {
+                continue;
+            }
 
-                $contacts[] = $contact;
+            $contact->role = $incident_contact->role;
+            if ($incident_contact->role === "subscriber" || $incident_contact->role === "manager") {
+                $subscribers[] = $contact;
+            } else {
+                $recipients[] = $contact;
             }
         }
 
         $disableContactLink = ! $this->getAuth()->hasPermission('notifications/view/contacts')
             || ! $this->getAuth()->hasPermission('notifications/config/contacts');
+        $disableScheduleLink = ! $this->getAuth()->hasPermission('notifications/config/schedules');
 
-        return [
-            Html::tag('h2', $this->translate('Subscribers')),
-            (new ObjectList($contacts, (new IncidentContactRenderer())->disableContactLink($disableContactLink)))
+        $subscriberList = (new ObjectList($subscribers, (new IncidentContactRenderer())
+                ->disableContactLink($disableContactLink)
+                ->disableScheduleLink($disableScheduleLink)))
                 ->setItemLayoutClass(MinimalItemLayout::class)
-                ->setDetailActionsDisabled($disableContactLink)
+                ->setDetailActionsDisabled(true)
+                ->setEmptyStateMessage($this->translate('No subscribers.'))
+                ->addAttributes(Attributes::create(["class" => "incident-contact-list"]));
+        $recipientList = (new ObjectList($recipients, (new IncidentContactRenderer())
+                ->disableContactLink($disableContactLink)
+                ->disableScheduleLink($disableScheduleLink)))
+                ->setItemLayoutClass(MinimalItemLayout::class)
+                ->setDetailActionsDisabled(true)
+                ->setEmptyStateMessage($this->translate('No recipients.'))
+                ->addAttributes(Attributes::create(["class" => "incident-contact-list"]));
+        return [
+            Html::tag('h2', $this->translate('Notification Recipients')),
+            new HorizontalKeyValue($this->translate('Subscribers'), $subscriberList),
+            new HorizontalKeyValue($this->translate('Recipients'), $recipientList),
         ];
     }
 
@@ -187,7 +214,7 @@ class IncidentDetail extends BaseHtmlElement
     protected function assemble(): void
     {
         $this->add([
-            $this->createContacts(),
+            $this->createNotificationRecipients(),
             $this->createHistory(),
             $this->createRelatedObject(),
             $this->createMessage(),

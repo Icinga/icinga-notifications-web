@@ -14,17 +14,39 @@
     }
   }
 
+  ul.incident-contact-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+  }
+
   .list-item.incident-contact {
-    &:not(:first-child) > .main {
+    align-items: center;
+
+    > .main {
+      flex: none;
+      width: auto;
       border-top: 0;
+      padding: 0;
+
+      header,
+      .title {
+        display: inline;
+        margin: 0;
+      }
     }
 
     .visual {
-      align-self: center;
+      padding: 0;
+      margin-right: 0.4em;
 
       i.icon {
         font-size: 1em;
       }
+    }
+
+    &:not(:last-child)::after {
+      content: ",";
     }
   }
 
