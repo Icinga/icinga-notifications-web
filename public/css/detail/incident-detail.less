@@ -2,29 +2,57 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 .incident-detail {
-  ul.source-list {
+  ul.incident-contact-list {
     display: flex;
-
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.5em;
     list-style-type: none;
     margin: 0;
     padding: 0;
-
-    > li:not(:last-of-type) {
-      margin-right: 1em;
-    }
   }
 
   .list-item.incident-contact {
-    &:not(:first-child) > .main {
+    display: flex;
+    align-items: center;
+    flex: none;
+    width: auto;
+    padding: 0;
+    border: 0;
+
+    > .main {
+      flex: none;
+      width: auto;
+      min-width: auto;
+      overflow: visible;
       border-top: 0;
+      padding: 0;
+      margin: 0;
+
+      header,
+      .title {
+        display: inline;
+        overflow: visible;
+        white-space: nowrap;
+        margin: 0;
+      }
+    }
+
+    .caption {
+      display: none;
     }
 
     .visual {
-      align-self: center;
+      padding: 0;
+      margin-right: 0.4em;
 
       i.icon {
         font-size: 1em;
       }
+    }
+
+    &:not(:last-child)::after {
+      content: ",";
     }
   }
 
