@@ -10,7 +10,9 @@ use Icinga\Util\Json;
 use ipl\Stdlib\Filter;
 use ipl\Stdlib\Filter\Chain;
 use ipl\Web\Filter\QueryString;
+use JsonException;
 use RuntimeException;
+use UnexpectedValueException;
 
 class RuleSerializer
 {
@@ -43,6 +45,31 @@ class RuleSerializer
         $this->jsonPaths = $jsonPaths;
         $this->assisted = $assisted;
         $this->filterName = $filterName;
+    }
+
+    /**
+     * Decode a serialized rule and verify its version
+     *
+     * @param string $json The serialized rule, as created by {@see static::getJson()}
+     *
+     * @return array{version: int, qs: string, assisted: bool, filter_name?: string, ast: array}
+     *
+     * @throws JsonException
+     * @throws UnexpectedValueException If the version does not match {@see static::VERSION}
+     */
+    public static function decode(string $json): array
+    {
+        $decoded = json_decode($json, true, flags: JSON_THROW_ON_ERROR);
+        $version = $decoded['version'] ?? null;
+        if ($version !== self::VERSION) {
+            throw new UnexpectedValueException(sprintf(
+                'Filter version \'%s\' is not supported (expected %d)',
+                $version,
+                self::VERSION
+            ));
+        }
+
+        return $decoded;
     }
 
     /**
