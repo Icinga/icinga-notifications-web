@@ -5,22 +5,31 @@
 
 namespace Icinga\Module\Notifications\Widget\Detail;
 
-use DateTime;
 use Exception;
+use Icinga\Application\Logger;
+use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Icons;
-use Icinga\Module\Notifications\Model\Incident;
-use Icinga\Module\Notifications\Model\IncidentContact;
+use Icinga\Module\Notifications\Integrations\Incident;
+use Icinga\Module\Notifications\Integrations\JobTracker;
+use Icinga\Module\Notifications\Model\Incident as IncidentModel;
 use Icinga\Web\Notification;
 use Icinga\Web\Session;
-use InvalidArgumentException;
 use ipl\Html\Form;
-use ipl\Stdlib\Filter;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Widget\Icon;
 
+/**
+ * Quick actions to change the current user's role for an incident
+ *
+ * The role changes are requested from the daemon, which processes them asynchronously.
+ *
+ * Only to be used for open incidents. The daemon applies the requests to the currently open incident of the
+ * incident's object, so they have no effect for a recovered incident.
+ */
 class IncidentQuickActions extends Form
 {
+    use Auth;
     use CsrfCounterMeasure;
 
     protected $defaultAttributes = [
@@ -30,15 +39,9 @@ class IncidentQuickActions extends Form
 
     protected Incident $incident;
 
-    /** @var int Current logged-in user's id */
-    protected int $currentUserId;
-
-    protected ?IncidentContact $incidentContact = null;
-
-    public function __construct(Incident $incident, int $currentUserId)
+    public function __construct(IncidentModel $incident, JobTracker $jobTracker)
     {
-        $this->incident = $incident;
-        $this->currentUserId = $currentUserId;
+        $this->incident = Incident::fromModel($incident, Database::get(), $jobTracker);
     }
 
     public function hasBeenSubmitted(): bool
@@ -98,14 +101,37 @@ class IncidentQuickActions extends Form
         );
     }
 
+    protected function assemblePendingButton(string $action, array $attributes): void
+    {
+        match ($action) {
+            'manage' => $this->assembleManageButton(),
+            'unmanage' => $this->assembleUnmanageButton(),
+            'subscribe' => $this->assembleSubscribeButton(),
+            'unsubscribe' => $this->assembleUnsubscribeButton()
+        };
+        $this->getElement($action)->getAttributes()
+            ->add('class', 'active')
+            ->set($attributes);
+    }
+
     protected function assemble(): void
     {
         $this->addElement($this->createCsrfCounterMeasure(Session::getSession()->getId()));
 
-        switch ($this->fetchIncidentContact()->role) {
+        $pendingAction = $this->incident->getPendingAction();
+        if ($pendingAction !== null) {
+            $this->assemblePendingButton($pendingAction, $this->incident->getPendingJobAttributes());
+
+            return;
+        }
+
+        switch ($this->incident->getRole($this->getAuth()->getUser())) {
             case null:
             case 'recipient':
-                $this->assembleManageButton();
+                if (! $this->incident->hasManager()) {
+                    $this->assembleManageButton();
+                }
+
                 $this->assembleSubscribeButton();
                 break;
             case 'manager':
@@ -113,7 +139,10 @@ class IncidentQuickActions extends Form
                 break;
 
             case 'subscriber':
-                $this->assembleManageButton();
+                if (! $this->incident->hasManager()) {
+                    $this->assembleManageButton();
+                }
+
                 $this->assembleUnsubscribeButton();
                 break;
         }
@@ -121,157 +150,35 @@ class IncidentQuickActions extends Form
 
     protected function onSuccess(): void
     {
-        $incidentContact = $this->fetchIncidentContact();
+        if ($this->incident->getPendingAction() !== null) {
+            return;
+        }
+
         $pressedButton = $this->getPressedSubmitElement()->getName();
+        $username = $this->getAuth()->getUser()->getUsername();
 
-        switch ($pressedButton) {
-            case 'manage':
-                $this->addEntry($incidentContact, 'manager');
-                break;
-            case 'subscribe':
-            case 'unmanage':
-                $this->addEntry($incidentContact, 'subscriber');
-                break;
-            case 'unsubscribe':
-                $this->unsubscribe($incidentContact);
-                break;
-        }
-    }
-
-    /**
-     * Add the incident's contact role of given contact
-     *
-     * @param IncidentContact $incidentContact The incident contact to add
-     * @param string $roleName The role to add
-     *
-     * @return void
-     */
-    protected function addEntry(IncidentContact $incidentContact, string $roleName): void
-    {
-        Database::get()->beginTransaction();
         try {
-            if ($incidentContact->contact_id !== null) {
-                Database::get()->update(
-                    'incident_contact',
-                    [
-                        'role' => $roleName,
-                        'changed_at' => (int) (new DateTime())->format("Uv")
-                    ],
-                    [
-                        'contact_id = ?'    => $incidentContact->contact_id,
-                        'incident_id = ?'   => $this->incident->id
-                    ]
-                );
-            } else {
-                Database::get()->insert('incident_contact', [
-                    'incident_id'   => $this->incident->id,
-                    'contact_id'    => $this->currentUserId,
-                    'role'          => $roleName,
-                    'changed_at'    => (int) (new DateTime())->format("Uv")
-                ]);
+            switch ($pressedButton) {
+                case 'manage':
+                    $this->incident->addManager($username);
+                    break;
+                case 'subscribe':
+                    $this->incident->addSubscriber($username);
+                    break;
+                case 'unmanage':
+                    $this->incident->removeManager();
+                    break;
+                case 'unsubscribe':
+                    $this->incident->removeSubscriber($username);
+                    break;
             }
-
-            $this->updateHistory($incidentContact, $roleName);
         } catch (Exception $e) {
-            Database::get()->rollBackTransaction();
-            Notification::error(sprintf(t('Failed to change role to %s'), $roleName));
+            Logger::error('Failed to request quick action "%s" for user "%s": %s', $pressedButton, $username, $e);
+            Notification::error(t('Failed to submit your request'));
 
             return;
         }
 
-        Database::get()->commitTransaction();
-        Notification::success(sprintf(t('Changed role to %s'), $roleName));
-    }
-
-    /**
-     * Unsubscribe the contact from incident
-     *
-     * @param IncidentContact $incidentContact The contact to unsubscribe from the incident
-     *
-     * @return void
-     */
-    protected function unsubscribe(IncidentContact $incidentContact): void
-    {
-        if ($incidentContact->contact_id === null) {
-            throw new InvalidArgumentException('$incidentContact must be a valid contact');
-        }
-
-        Database::get()->beginTransaction();
-        try {
-            Database::get()->delete('incident_contact', [
-                'incident_id = ?'   => $this->incident->id,
-                'contact_id = ?'    => $incidentContact->contact_id,
-                'role = ?'          => 'subscriber'
-            ]);
-
-            $this->updateHistory($incidentContact);
-        } catch (Exception $e) {
-            Database::get()->rollBackTransaction();
-            Notification::error(t('Failed to unsubscribe'));
-
-            return;
-        }
-
-        Database::get()->commitTransaction();
-        Notification::success(t('Unsubscribed from this incident'));
-    }
-
-    /**
-     * Update the incident history
-     *
-     * @param IncidentContact $incidentContact
-     * @param string|null $newRole
-     *
-     * @return void
-     */
-    protected function updateHistory(IncidentContact $incidentContact, ?string $newRole = null): void
-    {
-        $oldRole = $incidentContact->role;
-        $contactId = $incidentContact->contact_id ?? $this->currentUserId;
-
-        Database::get()->insert(
-            'incident_history',
-            [
-                'incident_id'           => $this->incident->id,
-                'contact_id'            => $contactId,
-                'type'                  => 'recipient_role_changed',
-                'new_recipient_role'    => $newRole,
-                'old_recipient_role'    => $oldRole,
-                'time'                  => (int) (new DateTime())->format("Uv")
-            ]
-        );
-    }
-
-    /**
-     * Fetch the incident's current logged-in user
-     *
-     * @return IncidentContact
-     */
-    protected function fetchIncidentContact(): IncidentContact
-    {
-        if ($this->incidentContact === null) {
-            $contact = IncidentContact::on(Database::get())
-                ->filter(
-                    Filter::all(
-                        Filter::equal('contact_id', $this->currentUserId),
-                        Filter::equal('incident_id', $this->incident->id)
-                    )
-                )
-                ->first();
-
-            if ($contact) {
-                $this->incidentContact = $contact;
-            } else {
-                $this->incidentContact = new IncidentContact();
-
-                // Too bad that models have no values for their columns by default...
-                $this->incidentContact->setProperties(array_fill_keys(
-                    $this->incidentContact->getColumns(),
-                    null
-                ));
-            }
-        }
-
-        return $this->incidentContact;
+        Notification::success(t('Your request has been submitted'));
     }
 }

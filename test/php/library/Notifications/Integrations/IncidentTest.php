@@ -8,22 +8,25 @@ namespace Tests\Icinga\Module\Notifications\Integrations;
 use DateTime;
 use Icinga\Module\Notifications\Integrations\Exception\IncidentNotFoundException;
 use Icinga\Module\Notifications\Integrations\Incident;
+use Icinga\Module\Notifications\Integrations\JobTracker;
 use Icinga\Module\Notifications\Model\Incident as IncidentModel;
+use Icinga\Module\Notifications\Model\JobQueue;
 use Icinga\Module\Notifications\Test\DbTestBackends;
 use Icinga\User;
+use Icinga\Web\Session\SessionNamespace;
 use InvalidArgumentException;
 use ipl\Sql\Adapter\Pgsql;
 use ipl\Sql\Connection;
 use ipl\Sql\Test\SharedDatabases\TransactionIsolation;
 use ipl\Stdlib\Filter;
-use PDO;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Ramsey\Uuid\Uuid;
 
 /**
  * Contract of the integration-facing {@see Incident}: it is identified by usernames (never Contact
- * instances), and every write operation persists immediately, so the change is in the database the
- * moment the call returns.
+ * instances), and every write operation queues a quick action job for the daemon, unless it is a no-op.
+ * Applying the role change and recording it in the history is up to the daemon.
  *
  * Its two recipient readers split the incident's `incident_contact` rows by role: {@see Incident::getSubscribers()}
  * yields the active subscribers (roles `manager` and `subscriber`), {@see Incident::getRecipients()} the
@@ -53,14 +56,18 @@ class IncidentTest extends TestCase
     /** @var int Millisecond timestamp every seeded `incident_contact` row is stamped with */
     private const ROLE_CHANGED_AT = 1700000000000;
 
+    /** @var array<string, string> The id tags of the object every incident belongs to */
+    private const TAGS = ['host' => 'test-host', 'service' => 'test-service'];
+
     /** @var Connection The database of the current test, set by every test */
     private Connection $db;
 
     /**
      * Seed the channel every contact refers to and the object every incident belongs to
      *
-     * Neither is seeded per test, as no test changes them and none of them cares about the object beyond that
-     * it exists. This runs before a test's transaction starts, so both survive its rollback.
+     * Neither is seeded per test, as no test changes them. Of the object, the tests only care about its
+     * {@see self::TAGS}, which every queued job must carry. This runs before a test's transaction starts,
+     * so both survive its rollback.
      */
     protected static function initializeNotificationsDb(Connection $db): void
     {
@@ -79,27 +86,29 @@ class IncidentTest extends TestCase
             'id'   => self::objectId($db),
             'name' => 'test'
         ]);
+
+        foreach (self::TAGS as $tag => $value) {
+            $db->insert('object_id_tag', [
+                'object_id' => self::objectId($db),
+                'tag'       => $tag,
+                'value'     => $value
+            ]);
+        }
     }
 
     #[DataProvider('sharedDatabases')]
-    public function testAddManagerAddsTheContactAsManagerByUsername(Connection $db): void
+    public function testAddManagerQueuesAManageJob(Connection $db): void
     {
         $this->db = $db;
 
         $id = $this->seedIncident();
-        $this->seedContact('uname');
+        $contactId = $this->seedContact('uname');
 
-        $incident = $this->incident($id);
-        $incident->addManager('uname');
+        $this->incident($id)->addManager('uname');
 
         $this->assertSame(
-            [['name' => 'Uname Example', 'username' => 'uname', 'role' => 'manager']],
-            $this->withoutRoleChangedAt($incident->getSubscribers())
-        );
-        $this->assertSame(
-            [['username' => 'uname', 'role' => 'manager']],
-            $this->storedContactRoles(),
-            'addManager() persists immediately'
+            [['action' => 'manage', 'contact_id' => $contactId, 'object_tags' => self::TAGS]],
+            $this->storedJobs()
         );
     }
 
@@ -116,52 +125,41 @@ class IncidentTest extends TestCase
     }
 
     #[DataProvider('sharedDatabases')]
-    public function testRemoveManagerDemotesTheManagerToSubscriber(Connection $db): void
+    public function testRemoveManagerQueuesAnUnmanageJob(Connection $db): void
+    {
+        $this->db = $db;
+
+        $id = $this->seedIncident();
+        $managerId = $this->seedContact('uname');
+        $this->seedIncidentContact($id, $managerId, 'manager');
+        $this->seedIncidentContact($id, $this->seedContact('sub'), 'subscriber');
+
+        $this->incident($id)->removeManager();
+
+        $this->assertSame(
+            [['action' => 'unmanage', 'contact_id' => $managerId, 'object_tags' => self::TAGS]],
+            $this->storedJobs()
+        );
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testAddSubscriberQueuesASubscribeJob(Connection $db): void
     {
         $this->db = $db;
 
         $id = $this->seedIncident();
         $contactId = $this->seedContact('uname');
-        $this->seedIncidentContact($id, $contactId, 'manager');
 
-        $incident = $this->incident($id);
-        $incident->removeManager('uname');
+        $this->incident($id)->addSubscriber('uname');
 
         $this->assertSame(
-            [['name' => 'Uname Example', 'username' => 'uname', 'role' => 'subscriber']],
-            $this->withoutRoleChangedAt($incident->getSubscribers())
-        );
-        $this->assertSame(
-            [['username' => 'uname', 'role' => 'subscriber']],
-            $this->storedContactRoles(),
-            'removeManager() persists the demotion immediately'
+            [['action' => 'subscribe', 'contact_id' => $contactId, 'object_tags' => self::TAGS]],
+            $this->storedJobs()
         );
     }
 
     #[DataProvider('sharedDatabases')]
-    public function testAddSubscriberAddsTheContactAsSubscriberByUsername(Connection $db): void
-    {
-        $this->db = $db;
-
-        $id = $this->seedIncident();
-        $this->seedContact('uname');
-
-        $incident = $this->incident($id);
-        $incident->addSubscriber('uname');
-
-        $this->assertSame(
-            [['name' => 'Uname Example', 'username' => 'uname', 'role' => 'subscriber']],
-            $this->withoutRoleChangedAt($incident->getSubscribers())
-        );
-        $this->assertSame(
-            [['username' => 'uname', 'role' => 'subscriber']],
-            $this->storedContactRoles(),
-            'addSubscriber() persists immediately'
-        );
-    }
-
-    #[DataProvider('sharedDatabases')]
-    public function testRemoveSubscriberDeletesTheSubscriberEntry(Connection $db): void
+    public function testRemoveSubscriberQueuesAnUnsubscribeJob(Connection $db): void
     {
         $this->db = $db;
 
@@ -169,15 +167,76 @@ class IncidentTest extends TestCase
         $contactId = $this->seedContact('uname');
         $this->seedIncidentContact($id, $contactId, 'subscriber');
 
-        $incident = $this->incident($id);
-        $incident->removeSubscriber('uname');
+        $this->incident($id)->removeSubscriber('uname');
 
-        $this->assertSame([], iterator_to_array($incident->getSubscribers(), false));
         $this->assertSame(
-            [],
-            $this->storedContactRoles(),
-            'removeSubscriber() deletes the entry immediately'
+            [['action' => 'unsubscribe', 'contact_id' => $contactId, 'object_tags' => self::TAGS]],
+            $this->storedJobs()
         );
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testRoleChangesQueueJobsWhenTheIncidentIsFetchedLazily(Connection $db): void
+    {
+        $this->db = $db;
+
+        $id = $this->seedIncident();
+        $contactId = $this->seedContact('uname');
+
+        $this->incidentFromQuery($id)->addManager('uname');
+
+        $this->assertSame(
+            [['action' => 'manage', 'contact_id' => $contactId, 'object_tags' => self::TAGS]],
+            $this->storedJobs(),
+            'The lazily fetched incident lacks the id tags of its object'
+        );
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testARoleChangeIsPendingUntilItsJobIsProcessed(Connection $db): void
+    {
+        $this->db = $db;
+
+        $id = $this->seedIncident();
+        $this->seedContact('uname');
+        $session = new SessionNamespace();
+
+        $incident = $this->incident($id, $session);
+
+        $this->assertNull($incident->getPendingAction(), 'A role change is pending before any was requested');
+
+        $incident->addSubscriber('uname');
+
+        $this->assertSame('subscribe', $incident->getPendingAction());
+        $this->assertSame(
+            'subscribe',
+            $this->incident($id, $session)->getPendingAction(),
+            'The pending role change is not remembered across requests'
+        );
+
+        $this->db->update('job_queue', ['state' => JobQueue::STATE_DONE]);
+
+        $this->assertNull(
+            $this->incident($id, $session)->getPendingAction(),
+            'A role change is still pending after its job was processed'
+        );
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testARoleChangeUsesTheGivenUuidAsTheJobsId(Connection $db): void
+    {
+        $this->db = $db;
+
+        $id = $this->seedIncident();
+        $this->seedContact('uname');
+        $uuid = Uuid::uuid4();
+
+        $this->incident($id)->addSubscriber('uname', $uuid);
+
+        /** @var JobQueue $job */
+        $job = JobQueue::on($this->db)->first();
+
+        $this->assertSame($uuid->toString(), $job->id->toString());
     }
 
     #[DataProvider('sharedDatabases')]
@@ -494,11 +553,9 @@ class IncidentTest extends TestCase
     {
         $this->db = $db;
 
-        $this->seedContact('uname');
-
         $this->expectException(IncidentNotFoundException::class);
 
-        $this->incidentFromQuery(0)->removeManager('uname');
+        $this->incidentFromQuery(0)->removeManager();
     }
 
     #[DataProvider('sharedDatabases')]
@@ -553,77 +610,13 @@ class IncidentTest extends TestCase
     }
 
     #[DataProvider('sharedDatabases')]
-    public function testAddManagerWritesRoleChangedHistory(Connection $db): void
+    public function testChainedRoleChangesEachQueueAJob(Connection $db): void
     {
         $this->db = $db;
 
         $id = $this->seedIncident();
-        $this->seedContact('uname');
-
-        $this->incident($id)->addManager('uname');
-
-        $this->assertSame(
-            [['username' => 'uname', 'old_role' => null, 'new_role' => 'manager']],
-            $this->storedRoleHistory()
-        );
-    }
-
-    #[DataProvider('sharedDatabases')]
-    public function testRemoveManagerWritesRoleChangedHistory(Connection $db): void
-    {
-        $this->db = $db;
-
-        $id = $this->seedIncident();
-        $this->seedIncidentContact($id, $this->seedContact('uname'), 'manager');
-
-        $this->incident($id)->removeManager('uname');
-
-        $this->assertSame(
-            [['username' => 'uname', 'old_role' => 'manager', 'new_role' => 'subscriber']],
-            $this->storedRoleHistory()
-        );
-    }
-
-    #[DataProvider('sharedDatabases')]
-    public function testAddSubscriberWritesRoleChangedHistory(Connection $db): void
-    {
-        $this->db = $db;
-
-        $id = $this->seedIncident();
-        $this->seedContact('uname');
-
-        $this->incident($id)->addSubscriber('uname');
-
-        $this->assertSame(
-            [['username' => 'uname', 'old_role' => null, 'new_role' => 'subscriber']],
-            $this->storedRoleHistory()
-        );
-    }
-
-    #[DataProvider('sharedDatabases')]
-    public function testRemoveSubscriberWritesRoleChangedHistory(Connection $db): void
-    {
-        $this->db = $db;
-
-        $id = $this->seedIncident();
-        $this->seedIncidentContact($id, $this->seedContact('uname'), 'subscriber');
-
-        $this->incident($id)->removeSubscriber('uname');
-
-        $this->assertSame(
-            [['username' => 'uname', 'old_role' => 'subscriber', 'new_role' => null]],
-            $this->storedRoleHistory()
-        );
-    }
-
-    #[DataProvider('sharedDatabases')]
-    public function testChainedRoleChangesEachWriteAHistoryRow(Connection $db): void
-    {
-        $this->db = $db;
-
-        $id = $this->seedIncident();
-        $this->seedContact('alice');
-        $this->seedContact('bob');
+        $aliceId = $this->seedContact('alice');
+        $bobId = $this->seedContact('bob');
 
         $this->incident($id)
             ->addManager('alice')
@@ -631,21 +624,21 @@ class IncidentTest extends TestCase
 
         $this->assertSame(
             [
-                ['username' => 'alice', 'old_role' => null, 'new_role' => 'manager'],
-                ['username' => 'bob', 'old_role' => null, 'new_role' => 'subscriber'],
+                ['action' => 'manage', 'contact_id' => $aliceId, 'object_tags' => self::TAGS],
+                ['action' => 'subscribe', 'contact_id' => $bobId, 'object_tags' => self::TAGS]
             ],
-            $this->storedRoleHistory()
+            $this->storedJobs()
         );
     }
 
     #[DataProvider('sharedDatabases')]
-    public function testASecondWriteDoesNotDuplicateHistoryFromAnEarlierWrite(Connection $db): void
+    public function testASecondWriteDoesNotQueueTheEarlierJobAgain(Connection $db): void
     {
         $this->db = $db;
 
         $id = $this->seedIncident();
-        $this->seedContact('alice');
-        $this->seedContact('bob');
+        $aliceId = $this->seedContact('alice');
+        $bobId = $this->seedContact('bob');
 
         $incident = $this->incident($id);
         $incident->addManager('alice');
@@ -653,10 +646,27 @@ class IncidentTest extends TestCase
 
         $this->assertSame(
             [
-                ['username' => 'alice', 'old_role' => null, 'new_role' => 'manager'],
-                ['username' => 'bob', 'old_role' => null, 'new_role' => 'subscriber'],
+                ['action' => 'manage', 'contact_id' => $aliceId, 'object_tags' => self::TAGS],
+                ['action' => 'subscribe', 'contact_id' => $bobId, 'object_tags' => self::TAGS]
             ],
-            $this->storedRoleHistory()
+            $this->storedJobs()
+        );
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testAddManagerOfASubscriberQueuesAManageJob(Connection $db): void
+    {
+        $this->db = $db;
+
+        $id = $this->seedIncident();
+        $contactId = $this->seedContact('uname');
+        $this->seedIncidentContact($id, $contactId, 'subscriber');
+
+        $this->incident($id)->addManager('uname');
+
+        $this->assertSame(
+            [['action' => 'manage', 'contact_id' => $contactId, 'object_tags' => self::TAGS]],
+            $this->storedJobs()
         );
     }
 
@@ -670,25 +680,7 @@ class IncidentTest extends TestCase
 
         $this->incident($id)->addSubscriber('uname');
 
-        $this->assertSame([['username' => 'uname', 'role' => 'manager']], $this->storedContactRoles());
-        $this->assertSame([], $this->storedRoleHistory());
-    }
-
-    #[DataProvider('sharedDatabases')]
-    public function testAddManagerPromotesAnExistingSubscriberInPlace(Connection $db): void
-    {
-        $this->db = $db;
-
-        $id = $this->seedIncident();
-        $this->seedIncidentContact($id, $this->seedContact('uname'), 'subscriber');
-
-        $this->incident($id)->addManager('uname');
-
-        $this->assertSame([['username' => 'uname', 'role' => 'manager']], $this->storedContactRoles());
-        $this->assertSame(
-            [['username' => 'uname', 'old_role' => 'subscriber', 'new_role' => 'manager']],
-            $this->storedRoleHistory()
-        );
+        $this->assertSame([], $this->storedJobs(), 'A no-op queued a job');
     }
 
     #[DataProvider('sharedDatabases')]
@@ -701,8 +693,21 @@ class IncidentTest extends TestCase
 
         $this->incident($id)->addManager('uname');
 
-        $this->assertSame([['username' => 'uname', 'role' => 'manager']], $this->storedContactRoles());
-        $this->assertSame([], $this->storedRoleHistory(), 'A no-op records no role change');
+        $this->assertSame([], $this->storedJobs(), 'A no-op queued a job');
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testAddManagerWithAnotherManagerIsANoop(Connection $db): void
+    {
+        $this->db = $db;
+
+        $id = $this->seedIncident();
+        $this->seedContact('uname');
+        $this->seedIncidentContact($id, $this->seedContact('other'), 'manager');
+
+        $this->incident($id)->addManager('uname');
+
+        $this->assertSame([], $this->storedJobs(), 'A no-op queued a job');
     }
 
     #[DataProvider('sharedDatabases')]
@@ -715,37 +720,32 @@ class IncidentTest extends TestCase
 
         $this->incident($id)->addSubscriber('uname');
 
-        $this->assertSame([['username' => 'uname', 'role' => 'subscriber']], $this->storedContactRoles());
-        $this->assertSame([], $this->storedRoleHistory(), 'A no-op records no role change');
+        $this->assertSame([], $this->storedJobs(), 'A no-op queued a job');
     }
 
     #[DataProvider('sharedDatabases')]
-    public function testRemoveManagerOfANonManagerIsANoop(Connection $db): void
+    public function testRemoveManagerWithOnlySubscribersIsANoop(Connection $db): void
     {
         $this->db = $db;
 
         $id = $this->seedIncident();
         $this->seedIncidentContact($id, $this->seedContact('uname'), 'subscriber');
 
-        $this->incident($id)->removeManager('uname');
+        $this->incident($id)->removeManager();
 
-        // A subscriber must not be demoted by removeManager, and no history is written.
-        $this->assertSame([['username' => 'uname', 'role' => 'subscriber']], $this->storedContactRoles());
-        $this->assertSame([], $this->storedRoleHistory());
+        $this->assertSame([], $this->storedJobs(), 'A no-op queued a job');
     }
 
     #[DataProvider('sharedDatabases')]
-    public function testRemoveManagerWithoutAnEntryIsANoop(Connection $db): void
+    public function testRemoveManagerWithoutRecipientsIsANoop(Connection $db): void
     {
         $this->db = $db;
 
         $id = $this->seedIncident();
-        $this->seedContact('uname');
 
-        $this->incident($id)->removeManager('uname');
+        $this->incident($id)->removeManager();
 
-        $this->assertSame([], $this->storedContactRoles());
-        $this->assertSame([], $this->storedRoleHistory());
+        $this->assertSame([], $this->storedJobs(), 'A no-op queued a job');
     }
 
     #[DataProvider('sharedDatabases')]
@@ -758,9 +758,7 @@ class IncidentTest extends TestCase
 
         $this->incident($id)->removeSubscriber('uname');
 
-        // A manager entry must not be deleted by removeSubscriber.
-        $this->assertSame([['username' => 'uname', 'role' => 'manager']], $this->storedContactRoles());
-        $this->assertSame([], $this->storedRoleHistory());
+        $this->assertSame([], $this->storedJobs(), 'A no-op queued a job');
     }
 
     #[DataProvider('sharedDatabases')]
@@ -773,23 +771,28 @@ class IncidentTest extends TestCase
 
         $this->incident($id)->removeSubscriber('uname');
 
-        $this->assertSame([], $this->storedContactRoles());
-        $this->assertSame([], $this->storedRoleHistory());
+        $this->assertSame([], $this->storedJobs(), 'A no-op queued a job');
     }
 
     /**
      * Wrap the seeded incident in the integration object under test.
      *
+     * The incident is loaded along with its object's id tags, as every caller of {@see Incident::fromModel()}
+     * does, since a queued job carries them.
+     *
      * @param int $id
+     * @param SessionNamespace $session Where the instance's {@see JobTracker} remembers jobs, pass the same one
+     *     to simulate subsequent requests of the same user
      */
-    private function incident(int $id): Incident
+    private function incident(int $id, SessionNamespace $session = new SessionNamespace()): Incident
     {
         /** @var IncidentModel $model */
         $model = IncidentModel::on($this->db)
+            ->withColumns('object.id_tags')
             ->filter(Filter::equal('id', $id))
             ->first();
 
-        return Incident::fromModel($model, $this->db);
+        return Incident::fromModel($model, $this->db, new JobTracker($this->db, $session));
     }
 
     /**
@@ -801,7 +804,10 @@ class IncidentTest extends TestCase
      */
     private function incidentFromQuery(int $id): Incident
     {
-        return Incident::fromQuery(IncidentModel::on($this->db)->filter(Filter::equal('id', $id)));
+        return Incident::fromQuery(
+            IncidentModel::on($this->db)->filter(Filter::equal('id', $id)),
+            new JobTracker($this->db, new SessionNamespace())
+        );
     }
 
     /**
@@ -830,31 +836,34 @@ class IncidentTest extends TestCase
     }
 
     /**
-     * Read the stored contact roles as `[['username' => ..., 'role' => ...], ...]`, ordered by username.
+     * Read the queued quick action jobs as `[['action' => ..., 'contact_id' => ..., 'object_tags' => ...], ...]`
      *
-     * @return list<array<string, mixed>>
+     * Ordered by contact id and action, as jobs queued within the same millisecond have no reliable order.
+     * The object tags are sorted by name, as the database aggregates them in no particular order.
+     * Asserts each envelope's version and format, as the daemon would not process the job otherwise.
+     *
+     * @return list<array{action: string, contact_id: int, object_tags: array<string, string>}>
      */
-    private function storedContactRoles(): array
+    private function storedJobs(): array
     {
-        return $this->db->prepexec(
-            'SELECT c.username, ic.role FROM incident_contact ic'
-            . ' JOIN contact c ON c.id = ic.contact_id ORDER BY c.username'
-        )->fetchAll(PDO::FETCH_ASSOC);
-    }
+        $jobs = [];
+        foreach (JobQueue::on($this->db) as $job) {
+            $envelope = json_decode($job->envelope, true, flags: JSON_THROW_ON_ERROR);
 
-    /**
-     * Read the stored `recipient_role_changed` history as
-     * `[['username' => ..., 'old_role' => ..., 'new_role' => ...], ...]`, in insertion order.
-     *
-     * @return list<array<string, mixed>>
-     */
-    private function storedRoleHistory(): array
-    {
-        return $this->db->prepexec(
-            'SELECT c.username, h.old_recipient_role AS old_role, h.new_recipient_role AS new_role'
-            . ' FROM incident_history h JOIN contact c ON c.id = h.contact_id'
-            . ' WHERE h.type = \'recipient_role_changed\' ORDER BY h.id'
-        )->fetchAll(PDO::FETCH_ASSOC);
+            $this->assertSame(JobQueue::ENVELOPE_VERSION, $envelope['version']);
+            $this->assertSame('quick_action', $envelope['format']);
+
+            $payload = $envelope['payload'];
+            ksort($payload['object_tags']);
+            $jobs[] = $payload;
+        }
+
+        usort(
+            $jobs,
+            fn(array $a, array $b): int => [$a['contact_id'], $a['action']] <=> [$b['contact_id'], $b['action']]
+        );
+
+        return $jobs;
     }
 
     /**

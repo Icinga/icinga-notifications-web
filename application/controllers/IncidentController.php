@@ -10,6 +10,7 @@ use ipl\Web\Compat\SearchControls;
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
+use Icinga\Module\Notifications\Integrations\JobTracker;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\Model\NotificationHistory;
@@ -67,9 +68,9 @@ class IncidentController extends CompatController
             ->filter(Filter::equal('username', $this->Auth()->getUser()->getUsername()))
             ->first();
 
-        if ($contact !== null) {
+        if ($contact !== null && $incident->recovered_at === null) {
             $this->addControl(
-                (new IncidentQuickActions($incident, $contact->id))
+                (new IncidentQuickActions($incident, JobTracker::instance()))
                     ->on(Form::ON_SUBMIT, function () use ($incident) {
                         $this->redirectNow(Links::incident($incident->id));
                     })
