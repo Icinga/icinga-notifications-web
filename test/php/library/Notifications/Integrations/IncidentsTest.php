@@ -8,8 +8,11 @@ namespace Tests\Icinga\Module\Notifications\Integrations;
 use DateTime;
 use Icinga\Module\Notifications\Integrations\Incident;
 use Icinga\Module\Notifications\Integrations\Incidents;
+use Icinga\Module\Notifications\Integrations\JobTracker;
 use Icinga\Module\Notifications\Model\Incident as IncidentModel;
+use Icinga\Module\Notifications\Model\JobQueue;
 use Icinga\Module\Notifications\Test\DbTestBackends;
+use Icinga\Web\Session\SessionNamespace;
 use InvalidArgumentException;
 use ipl\Orm\Query;
 use ipl\Sql\Adapter\Pgsql;
@@ -232,6 +235,38 @@ class IncidentsTest extends TestCase
         );
     }
 
+    #[DataProvider('sharedDatabases')]
+    public function testYieldedIncidentsQueueJobsCarryingTheirObjectsIdTags(Connection $db): void
+    {
+        $this->db = $db;
+
+        $this->seedIncident(['host' => 'a']);
+        $this->seedIncident(['host' => 'b', 'service' => 'http']);
+        $contactId = $this->seedContact('uname');
+
+        foreach ($this->incidents($db, [['host' => 'a'], ['host' => 'b', 'service' => 'http']], true) as $incident) {
+            $incident->addManager('uname');
+        }
+
+        $tags = [];
+        foreach (JobQueue::on($db) as $job) {
+            $payload = json_decode($job->envelope, true, flags: JSON_THROW_ON_ERROR)['payload'];
+
+            $this->assertSame($contactId, $payload['contact_id']);
+
+            ksort($payload['object_tags']);
+            $tags[] = $payload['object_tags'];
+        }
+
+        sort($tags);
+
+        $this->assertSame(
+            [['host' => 'a'], ['host' => 'b', 'service' => 'http']],
+            $tags,
+            'Not every yielded incident queued a job carrying the id tags of its object'
+        );
+    }
+
     /**
      * Build the query {@see Incidents} would run for the given tags and return its filter
      *
@@ -255,7 +290,10 @@ class IncidentsTest extends TestCase
      */
     private function incidents(Connection $db, iterable $tagSets, bool $exactMatches = false): Incidents
     {
-        return new Incidents($this->query($db, $tagSets, $exactMatches));
+        return new Incidents(
+            $this->query($db, $tagSets, $exactMatches),
+            new JobTracker($db, new SessionNamespace())
+        );
     }
 
     /**
@@ -412,6 +450,35 @@ class IncidentsTest extends TestCase
         }
 
         return hex2bin($id);
+    }
+
+    /**
+     * Insert a contact with the given username and return its generated id
+     *
+     * Also inserts the channel the contact requires as its default channel, as no other test needs it.
+     */
+    private function seedContact(string $username): int
+    {
+        $this->db->insert('available_channel_type', [
+            'type' => 'email', 'name' => 'Email', 'version' => '1', 'author' => 'Test', 'config_attrs' => ''
+        ]);
+        $this->db->insert('channel', [
+            'external_uuid' => static::transformUUIDForDB($this->db, '00000000-0000-0000-0000-0000000000c1'),
+            'name'          => 'Test',
+            'type'          => 'email',
+            'changed_at'    => (int) (new DateTime())->format('Uv')
+        ]);
+        $channelId = (int) $this->db->lastInsertId();
+
+        $this->db->insert('contact', [
+            'external_uuid'      => static::transformUUIDForDB($this->db, '00000000-0000-0000-0000-000000000001'),
+            'full_name'          => 'Test Contact',
+            'username'           => $username,
+            'default_channel_id' => $channelId,
+            'changed_at'         => (int) (new DateTime())->format('Uv')
+        ]);
+
+        return (int) $this->db->lastInsertId();
     }
 
     /**
