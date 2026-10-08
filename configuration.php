@@ -132,3 +132,4 @@ foreach ($cssFiles as $path) {
 }
 
 $this->provideJsFile('notifications.js');
+$this->provideJsFile('quick-action.js');
