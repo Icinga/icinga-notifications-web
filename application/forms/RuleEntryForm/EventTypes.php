@@ -27,6 +27,8 @@ class EventTypes extends FieldsetElement
 
     protected function registerAttributeCallbacks(Attributes $attributes): void
     {
+        parent::registerAttributeCallbacks($attributes);
+
         $attributes->registerAttributeCallback(
             'hook',
             null,
