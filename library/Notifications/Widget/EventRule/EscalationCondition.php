@@ -3,11 +3,10 @@
 // SPDX-FileCopyrightText: 2026 Icinga GmbH <https://icinga.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-namespace Icinga\Module\Notifications\Widget\EscalationRule;
+namespace Icinga\Module\Notifications\Widget\EventRule;
 
 use Icinga\Exception\NotImplementedError;
 use Icinga\Module\Notifications\Common\Severity;
-use Icinga\Module\Notifications\Util\RuleSerializer;
 use InvalidArgumentException;
 use ipl\Html\Attributes;
 use ipl\Html\HtmlDocument;
@@ -19,10 +18,8 @@ use ipl\Stdlib\Filter;
 use ipl\Web\Common\CalloutType;
 use ipl\Web\Filter\QueryString;
 use ipl\Web\Widget\Callout;
-use JsonException;
 use LogicException;
 use RuntimeException;
-use UnexpectedValueException;
 
 /**
  * HTML representation for an escalation condition
@@ -47,16 +44,13 @@ class EscalationCondition extends HtmlDocument
     /**
      * Create an HTML representation for the given escalation condition
      *
-     * @param string $json
+     * @param string $query
      *
      * @return static
-     *
-     * @throws JsonException If the condition is not valid JSON
-     * @throws UnexpectedValueException If the condition's version is not supported
      */
-    public static function fromJson(string $json): static
+    public static function fromQueryString(string $query): static
     {
-        return new static(QueryString::parse(RuleSerializer::decode($json)['qs']));
+        return new static(QueryString::parse($query));
     }
 
     protected function assemble(): void

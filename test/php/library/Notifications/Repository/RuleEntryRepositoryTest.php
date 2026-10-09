@@ -6,24 +6,23 @@
 namespace Tests\Icinga\Module\Notifications\Repository;
 
 use DateTime;
-use Icinga\Module\Notifications\Form\Data\Escalation;
-use Icinga\Module\Notifications\Form\Data\EscalationRecipient;
-use Icinga\Module\Notifications\Forms\EscalationForm\EscalationConditions;
-use Icinga\Module\Notifications\Model\RuleEscalation;
-use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
-use Icinga\Module\Notifications\Repository\EscalationRepository;
+use Icinga\Module\Notifications\Form\Data\RuleEntry as RuleEntryData;
+use Icinga\Module\Notifications\Form\Data\RuleEntryRecipient as RuleEntryRecipientData;
+use Icinga\Module\Notifications\Forms\RuleEntryForm\EscalationConditions;
+use Icinga\Module\Notifications\Model\RuleEntry;
+use Icinga\Module\Notifications\Model\RuleEntryRecipient;
+use Icinga\Module\Notifications\Repository\RuleEntryRepository;
 use Icinga\Module\Notifications\Test\DbTestBackends;
 use InvalidArgumentException;
 use ipl\Sql\Connection;
 use ipl\Sql\Test\SharedDatabases\TransactionIsolation;
 use ipl\Stdlib\Filter;
-use LogicException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Tests\Icinga\Module\Notifications\Lib\DatabaseUtils;
 
 /**
- * Tests for {@see EscalationRepository}.
+ * Tests for {@see RuleEntryRepository}.
  *
  * These run against real databases — once for MySQL and once for PostgreSQL (see {@see DbTestBackends} /
  * `#[DataProvider('sharedDatabases')]`). Each test runs inside its own transaction which is rolled back afterwards,
@@ -36,7 +35,7 @@ use Tests\Icinga\Module\Notifications\Lib\DatabaseUtils;
  * escalation there.
  */
 #[TransactionIsolation]
-class EscalationRepositoryTest extends TestCase
+class RuleEntryRepositoryTest extends TestCase
 {
     use DatabaseUtils;
     use DbTestBackends;
@@ -95,7 +94,10 @@ class EscalationRepositoryTest extends TestCase
     private function createRule(Connection $db): int
     {
         $db->insert('rule', [
-            'name' => 'Rule', 'source_type' => 'icinga2', 'changed_at' => (int) (new DateTime())->format('Uv')
+            'name' => 'Rule',
+            'type' => 'escalation',
+            'source_type' => 'icinga2',
+            'changed_at' => (int) (new DateTime())->format('Uv')
         ]);
 
         return (int) $db->lastInsertId();
@@ -108,15 +110,15 @@ class EscalationRepositoryTest extends TestCase
      * @param int $position
      * @param ?string $condition
      *
-     * @return Escalation
+     * @return RuleEntryData
      */
-    private function escalation(int $ruleId, int $position, ?string $condition): Escalation
+    private function escalation(int $ruleId, int $position, ?string $condition): RuleEntryData
     {
-        return new Escalation(
+        return new RuleEntryData(
             null,
             $position,
             $condition,
-            [new EscalationRecipient(null, 'contact', self::$contactId, self::$channelId)],
+            [new RuleEntryRecipientData(null, 'contact', self::$contactId, self::$channelId)],
             $ruleId
         );
     }
@@ -127,38 +129,35 @@ class EscalationRepositoryTest extends TestCase
      * @param Connection $db
      * @param int $escalationId
      *
-     * @return RuleEscalationRecipient[]
+     * @return RuleEntryRecipient[]
      */
     private function recipientsOf(Connection $db, int $escalationId): array
     {
         return iterator_to_array(
-            RuleEscalationRecipient::on($db)
-                ->filter(Filter::equal('rule_escalation_id', $escalationId))
+            RuleEntryRecipient::on($db)
+                ->filter(Filter::equal('rule_entry_id', $escalationId))
         );
     }
 
     #[DataProvider('sharedDatabases')]
     public function testFindReturnsNullIfTheEscalationDoesNotExist(Connection $db): void
     {
-        $this->assertNull((new EscalationRepository($db))->find(999));
+        $this->assertNull((new RuleEntryRepository($db))->find(999));
     }
 
     #[DataProvider('sharedDatabases')]
     public function testCreateStoresTheEscalationWithRecipients(Connection $db): void
     {
         $ruleId = $this->createRule($db);
-        $repository = new EscalationRepository($db);
+        $repository = new RuleEntryRepository($db);
 
-        $condition = EscalationConditions::serialize(
-            Filter::greaterThanOrEqual('incident_severity', 'crit')
-        );
-        $id = $repository->create($this->escalation($ruleId, 0, $condition));
+        $id = $repository->create($this->escalation($ruleId, 0, null));
 
         $escalation = $repository->find($id);
         $this->assertNotNull($escalation, 'The created escalation was not found');
         $this->assertEquals($ruleId, $escalation->rule_id);
         $this->assertSame(0, (int) $escalation->position);
-        $this->assertSame($condition, $escalation->condition);
+        $this->assertNull($escalation->condition);
 
         $recipients = $this->recipientsOf($db, $id);
         $this->assertCount(1, $recipients);
@@ -170,18 +169,16 @@ class EscalationRepositoryTest extends TestCase
     public function testUpdateChangesTheEscalationAndSyncsRecipients(Connection $db): void
     {
         $ruleId = $this->createRule($db);
-        $repository = new EscalationRepository($db);
+        $repository = new RuleEntryRepository($db);
         $id = $repository->create($this->escalation($ruleId, 0, null));
 
         // Change the condition and replace the recipient set (drop the old contact recipient, add a fresh one)
-        $condition = EscalationConditions::serialize(
-            Filter::greaterThanOrEqual('incident_age', '5m')
-        );
-        $repository->update(new Escalation(
+        $condition = 'bogus';
+        $repository->update(new RuleEntryData(
             $id,
             0,
             $condition,
-            [new EscalationRecipient(null, 'contact', self::$contactId, null)],
+            [new RuleEntryRecipientData(null, 'contact', self::$contactId, null)],
             $ruleId
         ));
 
@@ -199,14 +196,14 @@ class EscalationRepositoryTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        (new EscalationRepository($db))->update(new Escalation(999, 0, null, [], 1));
+        (new RuleEntryRepository($db))->update(new RuleEntryData(999, 0, null, [], 1));
     }
 
     #[DataProvider('sharedDatabases')]
     public function testDeleteSoftDeletesTheEscalationAndItsRecipients(Connection $db): void
     {
         $ruleId = $this->createRule($db);
-        $repository = new EscalationRepository($db);
+        $repository = new RuleEntryRepository($db);
         $id = $repository->create($this->escalation($ruleId, 0, null));
 
         $repository->delete($id);
@@ -215,7 +212,7 @@ class EscalationRepositoryTest extends TestCase
         $this->assertNull($repository->find($id), 'A deleted escalation must not be found anymore');
 
         // But it's only soft-deleted: the row still exists, flagged deleted with its position freed
-        $escalation = $this->loadRawEntity($db, $id, RuleEscalation::class);
+        $escalation = $this->loadRawEntity($db, $id, RuleEntry::class);
         $this->assertNotNull($escalation, 'The escalation row should still exist');
         $this->assertSame('y', $escalation->deleted, 'The escalation should be soft-deleted, not removed');
         $this->assertNull($escalation->position, 'The freed position should be nulled');
@@ -228,20 +225,20 @@ class EscalationRepositoryTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        (new EscalationRepository($db))->delete(999);
+        (new RuleEntryRepository($db))->delete(999);
     }
 
     #[DataProvider('sharedDatabases')]
     public function testCreateStoresAContactGroupRecipient(Connection $db): void
     {
         $ruleId = $this->createRule($db);
-        $repository = new EscalationRepository($db);
+        $repository = new RuleEntryRepository($db);
 
-        $id = $repository->create(new Escalation(
+        $id = $repository->create(new RuleEntryData(
             null,
             0,
             null,
-            [new EscalationRecipient(null, 'contact_group', self::$contactgroupId, self::$channelId)],
+            [new RuleEntryRecipientData(null, 'contact_group', self::$contactgroupId, self::$channelId)],
             $ruleId
         ));
 
@@ -256,13 +253,13 @@ class EscalationRepositoryTest extends TestCase
     public function testCreateStoresAScheduleRecipient(Connection $db): void
     {
         $ruleId = $this->createRule($db);
-        $repository = new EscalationRepository($db);
+        $repository = new RuleEntryRepository($db);
 
-        $id = $repository->create(new Escalation(
+        $id = $repository->create(new RuleEntryData(
             null,
             0,
             null,
-            [new EscalationRecipient(null, 'schedule', self::$scheduleId, self::$channelId)],
+            [new RuleEntryRecipientData(null, 'schedule', self::$scheduleId, self::$channelId)],
             $ruleId
         ));
 
@@ -277,18 +274,18 @@ class EscalationRepositoryTest extends TestCase
     public function testUpdateUpdatesAKeptRecipientInPlaceAndNullsOppositeKeys(Connection $db): void
     {
         $ruleId = $this->createRule($db);
-        $repository = new EscalationRepository($db);
+        $repository = new RuleEntryRepository($db);
 
         // Start with a contact recipient (using its default channel)
         $id = $repository->create($this->escalation($ruleId, 0, null));
         $recipientId = (int) $this->recipientsOf($db, $id)[0]->id;
 
         // Keep the very same recipient row (by id) but turn it into a schedule recipient
-        $repository->update(new Escalation(
+        $repository->update(new RuleEntryData(
             $id,
             0,
             null,
-            [new EscalationRecipient($recipientId, 'schedule', self::$scheduleId, null)],
+            [new RuleEntryRecipientData($recipientId, 'schedule', self::$scheduleId, null)],
             $ruleId
         ));
 

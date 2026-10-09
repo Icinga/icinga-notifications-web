@@ -11,7 +11,7 @@ use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\EventRuleForm;
 use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Model\Source;
-use Icinga\Module\Notifications\Repository\EscalationRuleRepository;
+use Icinga\Module\Notifications\Repository\RuleRepository;
 use Icinga\Module\Notifications\View\EventRuleRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
@@ -26,7 +26,7 @@ use ipl\Web\Compat\SearchControls;
 use ipl\Web\Control\LimitControl;
 use ipl\Web\Control\SortControl;
 use ipl\Web\Filter\QueryString;
-use ipl\Web\Layout\DetailedItemLayout;
+use ipl\Web\Layout\MinimalItemLayout;
 use ipl\Web\Url;
 use ipl\Web\Widget\ActionLink;
 use ipl\Web\Widget\ButtonLink;
@@ -111,7 +111,7 @@ class EventRulesController extends CompatController
 
         $this->addContent(
             (new ObjectList($eventRules, new EventRuleRenderer()))
-                ->setItemLayoutClass(DetailedItemLayout::class)
+                ->setItemLayoutClass(MinimalItemLayout::class)
                 ->setEmptyStateMessage($emptyStateMessage)
         );
 
@@ -136,11 +136,11 @@ class EventRulesController extends CompatController
                 $rule = $form->getRule();
 
                 $ruleId = Database::get()->transaction(
-                    fn(Connection $db) => (new EscalationRuleRepository($db))->create($rule)
+                    fn(Connection $db) => (new RuleRepository($db))->create($rule)
                 );
 
                 Notification::success(sprintf(
-                    $this->translate('Created escalation rule "%s"'),
+                    $this->translate('Created event rule "%s"'),
                     $rule->name
                 ));
 

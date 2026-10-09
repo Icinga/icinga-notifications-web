@@ -3,10 +3,10 @@
 // SPDX-FileCopyrightText: 2025 Icinga GmbH <https://icinga.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-namespace Icinga\Module\Notifications\Forms\EscalationForm;
+namespace Icinga\Module\Notifications\Forms\RuleEntryForm;
 
-use Icinga\Module\Notifications\Form\Data\EscalationRecipient as EscalationRecipientData;
-use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
+use Icinga\Module\Notifications\Form\Data\RuleEntryRecipient as RuleEntryRecipientData;
+use Icinga\Module\Notifications\Model\RuleEntryRecipient as RuleEntryRecipientModel;
 use ipl\Html\Attributes;
 use ipl\Html\Contract\FormElement;
 use ipl\Html\FormElement\FieldsetElement;
@@ -16,9 +16,9 @@ use ipl\Html\Text;
 use ipl\Web\Widget\Icon;
 
 /**
- * @phpstan-import-type RecipientValues from EscalationRecipient
+ * @phpstan-import-type RecipientValues from RuleEntryRecipient
  */
-class EscalationRecipients extends FieldsetElement
+class RuleEntryRecipients extends FieldsetElement
 {
     use ConfigProvider;
     use DynamicElements;
@@ -44,7 +44,7 @@ class EscalationRecipients extends FieldsetElement
 
     protected function createDynamicElement(int $no, ?SubmitButtonElement $removeButton): FormElement
     {
-        $recipient = new EscalationRecipient($no, ['provider' => $this->provider]);
+        $recipient = new RuleEntryRecipient($no, ['provider' => $this->provider]);
         if ($removeButton !== null) {
             $recipient->setRemoveButton($removeButton);
         }
@@ -55,7 +55,7 @@ class EscalationRecipients extends FieldsetElement
     /**
      * Prepare the recipients for display
      *
-     * @param iterable<RuleEscalationRecipient> $recipients
+     * @param iterable<RuleEntryRecipientModel> $recipients
      *
      * @return array<RecipientValues>
      */
@@ -63,7 +63,7 @@ class EscalationRecipients extends FieldsetElement
     {
         $values = [];
         foreach ($recipients as $recipient) {
-            $values[] = EscalationRecipient::prepare($recipient);
+            $values[] = RuleEntryRecipient::prepare($recipient);
         }
 
         return $values;
@@ -72,13 +72,13 @@ class EscalationRecipients extends FieldsetElement
     /**
      * Get the recipients to store
      *
-     * @return EscalationRecipientData[]
+     * @return RuleEntryRecipientData[]
      */
     public function getRecipients(): array
     {
         $recipients = [];
         foreach ($this->ensureAssembled()->getElements() as $element) {
-            if ($element instanceof EscalationRecipient) {
+            if ($element instanceof RuleEntryRecipient) {
                 $recipients[] = $element->getRecipient();
             }
         }

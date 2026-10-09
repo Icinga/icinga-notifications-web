@@ -28,9 +28,9 @@ use Ramsey\Uuid\UuidInterface;
  *
  * @property Query<Contact>|Collection<Contact> $contact
  * @property Query<Rotation>|Collection<Rotation> $rotation
- * @property Query<RuleEscalation>|Collection<RuleEscalation> $rule_escalation
+ * @property Query<RuleEntry>|Collection<RuleEntry> $rule_entry
  * @property Query<ContactgroupMember>|Collection<ContactgroupMember> $contactgroup_member
- * @property Query<RuleEscalationRecipient>|Collection<RuleEscalationRecipient> $rule_escalation_recipient
+ * @property Query<RuleEntryRecipient>|Collection<RuleEntryRecipient> $rule_entry_recipient
  * @property Query<IncidentHistory>|Collection<IncidentHistory> $incident_history
  * @property Query<NotificationHistory>|Collection<NotificationHistory> $notification_history
  */
@@ -79,7 +79,7 @@ class Contactgroup extends Model
 
     public function createRelations(Relations $relations): void
     {
-        $relations->hasMany('rule_escalation_recipient', RuleEscalationRecipient::class)
+        $relations->hasMany('rule_entry_recipient', RuleEntryRecipient::class)
             ->setJoinType('LEFT');
         $relations->hasMany('incident_history', IncidentHistory::class)
             ->setJoinType('LEFT');
@@ -92,8 +92,8 @@ class Contactgroup extends Model
         $relations->belongsToMany('rotation', Rotation::class)
             ->through(RotationMember::class)
             ->setJoinType('LEFT');
-        $relations->belongsToMany('rule_escalation', RuleEscalation::class)
-            ->through(RuleEscalationRecipient::class)
+        $relations->belongsToMany('rule_entry', RuleEntry::class)
+            ->through(RuleEntryRecipient::class)
             ->setJoinType('LEFT');
         $relations->hasMany('notification_history', NotificationHistory::class)
             ->setJoinType('LEFT');
