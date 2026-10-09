@@ -150,9 +150,16 @@ class EventRuleForm extends CompatForm
         ]);
         if ($ruleId !== null) {
             $this->getElement('source_type')
-                ->setDescription($this->translate(
-                    'Choosing a different source type will reset all filters of the rule'
-                ))
+                ->setDescription(
+                    match ($this->getPopulatedValue('type')) {
+                        'escalation' => $this->translate(
+                            'Choosing a different source type will reset all filters of the rule'
+                        ),
+                        'notification' => $this->translate(
+                            'Choosing a different source type will reset all filters and event types of the rule'
+                        )
+                    }
+                )
                 ->getDecorators()
                 ->replaceDecorator('Description', DescriptionDecorator::class, ['class' => 'description']);
         }

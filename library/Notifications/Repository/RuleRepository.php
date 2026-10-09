@@ -78,15 +78,24 @@ final class RuleRepository
             throw new InvalidArgumentException('Cannot update an event rule that does not exist');
         }
 
+        $em = new EntityManager($this->db);
+
         $model->name = $rule->name;
         if ($rule->sourceType !== $model->source_type) {
             $model->source_type = $rule->sourceType;
             $model->object_filter = null;
+
+            if ($model->type === 'notification') {
+                foreach ($model->rule_entry as $entry) {
+                    $entry->condition = null;
+                    $em->save($entry);
+                }
+            }
         } elseif ($rule->objectFilter !== null) {
             $model->object_filter = $rule->objectFilter ?: null;
         }
 
-        (new EntityManager($this->db))->save($model);
+        $em->save($model);
     }
 
     /**
