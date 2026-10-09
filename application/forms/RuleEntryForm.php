@@ -119,7 +119,11 @@ class RuleEntryForm extends CompatForm
             $condition = (new RuleSerializer(
                 $filter,
                 $queryString,
-                assisted: $this->configProvider->locateSourceHookByRuleId((int) $this->getValue('rule_id')) !== null
+                assisted: match ($this->ruleType) {
+                    self::ESCALATION_RULE => false,
+                    self::NOTIFICATION_RULE => $this->configProvider
+                        ->locateSourceHookByRuleId((int) $this->getValue('rule_id')) !== null
+                }
             ))->getJson();
         }
 
