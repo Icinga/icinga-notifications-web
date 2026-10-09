@@ -8,7 +8,8 @@ namespace Icinga\Module\Notifications\Widget;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\RuleEntryRecipient;
 use ipl\Html\BaseHtmlElement;
-use ipl\Html\Html;
+use ipl\Html\HtmlElement;
+use ipl\Html\Text;
 use ipl\Web\Widget\Icon;
 
 class RuleEntryRecipientBadge extends BaseHtmlElement
@@ -33,7 +34,7 @@ class RuleEntryRecipientBadge extends BaseHtmlElement
         $this->moreCount = $moreCount;
     }
 
-    public function createBadge()
+    protected function assembleBadge(): void
     {
         $recipientModel = $this->recipient->getRecipient();
         if ($recipientModel === null) {
@@ -48,15 +49,24 @@ class RuleEntryRecipientBadge extends BaseHtmlElement
             $icon = 'user';
         }
 
-        return Html::tag('span', ['class' => 'badge'], [new Icon($icon), $recipientModel->$nameColumn]);
+        $this->addHtml(new HtmlElement(
+            'span',
+            null,
+            new Icon($icon),
+            Text::create($recipientModel->$nameColumn)
+        ));
     }
 
     protected function assemble(): void
     {
-        $this->add($this->createBadge());
+        $this->assembleBadge();
 
         if ($this->moreCount) {
-            $this->add(Html::tag('span', sprintf(' + %d more', $this->moreCount)));
+            $this->add(new HtmlElement(
+                'span',
+                null,
+                Text::create(sprintf(' + %d more', $this->moreCount))
+            ));
         }
     }
 }

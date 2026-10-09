@@ -353,8 +353,13 @@
   display: flex;
   gap: .417em;
 
-  .badge {
+  span {
+    .rounded-corners();
     .text-ellipsis();
+    min-width: 2em;
     max-width: 16em;
+    padding: .25em;
+    line-height: 1.2;
+    background: @gray-lighter;
   }
 }
