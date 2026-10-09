@@ -90,7 +90,7 @@ class EventTypes extends FieldsetElement
                 array_values($eventTypes)
             )));
 
-            $termValidator = function (array $terms) use ($eventTypes) {
+            $termInput->on(TermInput::ON_ENRICH, function (array $terms) use ($eventTypes) {
                 foreach ($terms as $term) {
                     /** @var TermInput\RegisteredTerm $term */
                     if (! isset($eventTypes[$term->getSearchValue()])) {
@@ -102,13 +102,7 @@ class EventTypes extends FieldsetElement
                         $term->setLabel($eventTypes[$term->getSearchValue()]);
                     }
                 }
-            };
-
-            $termInput
-                ->on(TermInput::ON_ENRICH, $termValidator)
-                ->on(TermInput::ON_ADD, $termValidator)
-                ->on(TermInput::ON_PASTE, $termValidator)
-                ->on(TermInput::ON_SAVE, $termValidator);
+            });
         }
 
         $this->addElement($termInput);
