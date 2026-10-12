@@ -5,9 +5,12 @@
 
 namespace Icinga\Module\Notifications\View;
 
+use Icinga\Application\Logger;
 use Icinga\Module\Notifications\Common\Icons;
 use Icinga\Module\Notifications\Common\IncidentHistoryType;
 use Icinga\Module\Notifications\Model\IncidentHistory;
+use Icinga\Module\Notifications\Util\RuleSerializer;
+use Icinga\Module\Notifications\Widget\EventRule\EscalationCondition;
 use Icinga\Module\Notifications\Widget\IconBall;
 use ipl\Html\Attributes;
 use ipl\Html\FormattedString;
@@ -18,6 +21,7 @@ use ipl\Html\ValidHtml;
 use ipl\I18n\Translation;
 use ipl\Web\Common\ItemRenderer;
 use ipl\Web\Widget\TimeAgo;
+use Throwable;
 use UnhandledMatchError;
 
 /** @implements ItemRenderer<IncidentHistory> */
@@ -259,21 +263,31 @@ class IncidentHistoryRenderer implements ItemRenderer
                 break;
             case IncidentHistoryType::ESCALATION_TRIGGERED:
                 if (isset($item->rule->name)) {
-                    // TODO: No name is no reason to claim an unknown escalation, describe conditions instead
-                    if (isset($item->rule_entry->name)) {
-                        $message = sprintf(
-                            $this->translate('Rule %s reached escalation %s'),
-                            $item->rule->name,
-                            $item->rule_entry->name
-                        );
+                    if ($item->rule_entry->condition === null) {
+                        $message = sprintf($this->translate('Rule %s escalated immediately'), $item->rule->name);
                     } else {
-                        $message = sprintf(
-                            $this->translate('Rule %s reached unknown escalation'),
-                            $item->rule->name
-                        );
+                        try {
+                            $message = FormattedString::create(
+                                $this->translate('Rule %s escalated: %s'),
+                                $item->rule->name,
+                                EscalationCondition::fromQueryString(
+                                    RuleSerializer::decode($item->rule_entry->condition)['qs']
+                                )->usePastTense()
+                            );
+                        } catch (Throwable $e) {
+                            Logger::error(
+                                'Failed to describe the condition of rule_entry %d: %s',
+                                $item->rule_entry->id,
+                                $e
+                            );
+                            $message = sprintf(
+                                $this->translate('Rule %s escalated: Unable to describe the escalation condition'),
+                                $item->rule->name
+                            );
+                        }
                     }
                 } else {
-                    $message = $this->translate('Unknown rule reached escalation');
+                    $message = $this->translate('Unknown rule escalated');
                 }
 
                 break;
