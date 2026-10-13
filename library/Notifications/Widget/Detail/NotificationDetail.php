@@ -138,6 +138,13 @@ class NotificationDetail extends BaseHtmlElement
 
     protected function createIncident(): array
     {
+        if (! isset($this->notificationHistory->incident_id)) {
+            return [];
+        }
+
+        // Prepare incident so that the object relation is available required by the incident renderer
+        $this->notificationHistory->incident->object = $this->notificationHistory->object;
+
         return [
             new HtmlElement('h2', content: Text::create($this->translate('Related Incident'))),
             new ObjectList([$this->notificationHistory->incident], new IncidentRenderer())

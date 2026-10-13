@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: 2025 Icinga GmbH <https://icinga.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-namespace Icinga\Module\Notifications\Forms\EscalationForm;
+namespace Icinga\Module\Notifications\Forms\RuleEntryForm;
 
 use ipl\Html\Attributes;
 use ipl\Html\Contract\FormElement;
@@ -11,6 +11,9 @@ use ipl\Html\FormElement\SubmitButtonElement;
 
 trait DynamicElements
 {
+    /** @var bool Whether a multipart update is desired */
+    public bool $wantsMultipartUpdate = false;
+
     /**
      * Create a button to add a new element
      *
@@ -71,6 +74,7 @@ trait DynamicElements
         while ($count < $expectedCount) {
             $remove = $this->createRemoveButton($count);
             if ($remove->hasBeenPressed()) {
+                $this->wantsMultipartUpdate = true;
                 $this->clearPopulatedValue($remove->getName());
                 $this->clearPopulatedValue($count);
 
@@ -91,6 +95,7 @@ trait DynamicElements
         $add = $this->createAddButton()->addAttributes(Attributes::create(['formnovalidate' => true]));
         $this->registerElement($add);
         if ($add->hasBeenPressed()) {
+            $this->wantsMultipartUpdate = true;
             $this->createRemoveButton($newCount);
             $newCount++;
         }

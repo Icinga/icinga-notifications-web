@@ -3,14 +3,14 @@
 // SPDX-FileCopyrightText: 2025 Icinga GmbH <https://icinga.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-namespace Icinga\Module\Notifications\Forms\EscalationForm;
+namespace Icinga\Module\Notifications\Forms\RuleEntryForm;
 
 use Icinga\Module\Notifications\Form\ConfigProviderInterface;
-use Icinga\Module\Notifications\Forms\EscalationForm;
+use Icinga\Module\Notifications\Forms\RuleEntryForm;
 use ipl\Html\Attributes;
 
 /**
- * @internal This trait is only intended for use by the {@see EscalationForm} classes.
+ * @internal This trait is only intended for use by the {@see RuleEntryForm} classes.
  */
 trait ConfigProvider
 {

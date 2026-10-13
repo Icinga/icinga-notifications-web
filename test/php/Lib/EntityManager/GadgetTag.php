@@ -16,7 +16,7 @@ use ipl\Stdlib\Filter;
  *
  * Carries a `deleted` column (and `changed_at`), so the EntityManager syncs the link table with
  * soft-deletes and revives rather than hard deletes — mirroring the real contactgroup_member and
- * rule_escalation_recipient junctions.
+ * rule_entry_recipient junctions.
  */
 class GadgetTag extends Model
 {

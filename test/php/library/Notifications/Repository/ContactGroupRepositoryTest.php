@@ -9,15 +9,15 @@ use DateTime;
 use DateTimeImmutable;
 use DateTimeZone;
 use Icinga\Module\Notifications\Form\Data\ContactGroup as ContactGroupData;
-use Icinga\Module\Notifications\Form\Data\Escalation;
-use Icinga\Module\Notifications\Form\Data\EscalationRecipient;
+use Icinga\Module\Notifications\Form\Data\RuleEntry;
+use Icinga\Module\Notifications\Form\Data\RuleEntryRecipient;
 use Icinga\Module\Notifications\Form\Data\Rotation as RotationData;
 use Icinga\Module\Notifications\Model\Contactgroup;
 use Icinga\Module\Notifications\Model\ContactgroupMember;
 use Icinga\Module\Notifications\Model\Rotation;
 use Icinga\Module\Notifications\Model\RotationMember;
 use Icinga\Module\Notifications\Repository\ContactGroupRepository;
-use Icinga\Module\Notifications\Repository\EscalationRepository;
+use Icinga\Module\Notifications\Repository\RuleEntryRepository;
 use Icinga\Module\Notifications\Repository\RotationRepository;
 use Icinga\Module\Notifications\Test\DbTestBackends;
 use InvalidArgumentException;
@@ -200,7 +200,7 @@ class ContactGroupRepositoryTest extends TestCase
 
         $this->assertNull($repository->find($groupId), 'The group should have been deleted');
         $this->assertNull(
-            (new EscalationRepository($db))->find($escalationId),
+            (new RuleEntryRepository($db))->find($escalationId),
             'An escalation solely targeting the deleted group should be dereferenced/removed'
         );
     }
@@ -215,7 +215,7 @@ class ContactGroupRepositoryTest extends TestCase
         $escalationId = $this->createEscalationTargeting($db, $groupId);
 
         // The escalation is removed independently first (e.g. via its rule) …
-        (new EscalationRepository($db))->delete($escalationId);
+        (new RuleEntryRepository($db))->delete($escalationId);
 
         // … deleting the group must still succeed and not choke on the already soft-deleted escalation
         $repository->delete($groupId);
@@ -336,14 +336,14 @@ class ContactGroupRepositoryTest extends TestCase
     {
         $now = (int) (new DateTime())->format('Uv');
         $db->insert('source', ['type' => 'icinga2', 'name' => 'S', 'listener_username' => 'ls', 'changed_at' => $now]);
-        $db->insert('rule', ['name' => 'R', 'source_type' => 'icinga2', 'changed_at' => $now]);
+        $db->insert('rule', ['name' => 'R', 'type' => 'escalation', 'source_type' => 'icinga2', 'changed_at' => $now]);
         $ruleId = (int) $db->lastInsertId();
 
-        return (new EscalationRepository($db))->create(new Escalation(
+        return (new RuleEntryRepository($db))->create(new RuleEntry(
             null,
             0,
             null,
-            [new EscalationRecipient(null, 'contact_group', $groupId, null)],
+            [new RuleEntryRecipient(null, 'contact_group', $groupId, null)],
             $ruleId
         ));
     }

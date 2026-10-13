@@ -31,9 +31,9 @@ class NotificationController extends CompatController
                 'schedule',
                 'channel',
                 'incident',
-                'incident.object',
+                'object',
             ])
-            ->withColumns(['incident.object.sources'])
+            ->withColumns(['object.sources'])
             ->filter(Filter::equal('id', $id));
 
         $this->applyRestrictions($query);

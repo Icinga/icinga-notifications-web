@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: 2023 Icinga GmbH <https://icinga.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-namespace Icinga\Module\Notifications\Forms\EscalationForm;
+namespace Icinga\Module\Notifications\Forms\RuleEntryForm;
 
 use Icinga\Module\Notifications\Common\Severity;
 use ipl\Html\Attributes;

@@ -103,7 +103,8 @@ class NotificationHistory extends Model
     public function createRelations(Relations $relations): void
     {
         $relations->belongsTo('object', Objects::class);
-        $relations->belongsTo('incident', Incident::class);
+        $relations->belongsTo('incident', Incident::class)
+            ->setJoinType('LEFT');
         $relations->belongsTo('contact', Contact::class)
             ->setJoinType('LEFT');
         $relations->belongsTo('channel', Channel::class)

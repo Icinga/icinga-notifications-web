@@ -5,14 +5,14 @@
 
 namespace Icinga\Module\Notifications\Form\Data;
 
-readonly class Escalation
+readonly class RuleEntry
 {
     /**
-     * @param ?int $id The primary database key value, NULL for new escalations
-     * @param int $position The position of the escalation in the rule
-     * @param ?string $condition The conditions of the escalation
-     * @param EscalationRecipient[] $recipients Escalation recipients
-     * @param int $ruleId The ID of the rule the escalation belongs to
+     * @param ?int $id The primary database key value, NULL for new entries
+     * @param int $position The position of the entry in the rule
+     * @param ?string $condition The conditions of the entry
+     * @param RuleEntryRecipient[] $recipients Entry recipients
+     * @param int $ruleId The ID of the rule the entry belongs to
      */
     public function __construct(
         public ?int $id,

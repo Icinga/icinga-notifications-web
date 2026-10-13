@@ -5,6 +5,7 @@
 
 namespace Icinga\Module\Notifications\Common;
 
+use InvalidArgumentException;
 use ipl\Web\Url;
 
 /**
@@ -74,14 +75,30 @@ abstract class Links
 
     public static function escalationEdit(int $id): Url
     {
-        return Url::fromPath('notifications/rule-escalation/edit', ['id' => $id]);
+        return Url::fromPath('notifications/escalation-rule/edit', ['id' => $id]);
     }
 
     public static function escalationAdd(int $ruleId, int $position): Url
     {
-        return Url::fromPath('notifications/rule-escalations/add', [
+        return Url::fromPath('notifications/escalation-rule/add', [
             'rule' => $ruleId,
             'position' => $position
+        ]);
+    }
+
+    public static function notificationRecipientsEdit(int $id): Url
+    {
+        return Url::fromPath('notifications/notification-rule/edit', ['id' => $id]);
+    }
+
+    public static function notificationRecipientsAdd(int $ruleId, int $position): Url
+    {
+        if ($position !== 0) {
+            throw new InvalidArgumentException('Position must be 0 when adding a new notification recipient');
+        }
+
+        return Url::fromPath('notifications/notification-rule/add', [
+            'rule' => $ruleId
         ]);
     }
 

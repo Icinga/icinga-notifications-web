@@ -3,10 +3,10 @@
 // SPDX-FileCopyrightText: 2023 Icinga GmbH <https://icinga.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-namespace Icinga\Module\Notifications\Forms\EscalationForm;
+namespace Icinga\Module\Notifications\Forms\RuleEntryForm;
 
-use Icinga\Module\Notifications\Form\Data\EscalationRecipient as EscalationRecipientData;
-use Icinga\Module\Notifications\Model\RuleEscalationRecipient;
+use Icinga\Module\Notifications\Form\Data\RuleEntryRecipient as RuleEntryRecipientData;
+use Icinga\Module\Notifications\Model\RuleEntryRecipient as RuleEntryRecipientModel;
 use ipl\Html\Attributes;
 use ipl\Html\FormElement\FieldsetElement;
 use ipl\Html\FormElement\SubmitButtonElement;
@@ -20,7 +20,7 @@ use ipl\Web\Widget\Icon;
  *     recipient: string
  * }
  */
-class EscalationRecipient extends FieldsetElement
+class RuleEntryRecipient extends FieldsetElement
 {
     use ConfigProvider;
 
@@ -44,11 +44,11 @@ class EscalationRecipient extends FieldsetElement
     /**
      * Prepare the recipient for display
      *
-     * @param RuleEscalationRecipient $recipient
+     * @param RuleEntryRecipientModel $recipient
      *
      * @return RecipientValues
      */
-    public static function prepare(RuleEscalationRecipient $recipient): array
+    public static function prepare(RuleEntryRecipientModel $recipient): array
     {
         if ($recipient->contact_id !== null) {
             $typeAndId = sprintf('contact:%u', $recipient->contact_id);
@@ -68,9 +68,9 @@ class EscalationRecipient extends FieldsetElement
     /**
      * Get the recipient to store
      *
-     * @return EscalationRecipientData
+     * @return RuleEntryRecipientData
      */
-    public function getRecipient(): EscalationRecipientData
+    public function getRecipient(): RuleEntryRecipientData
     {
         $typeAndId = $this->getElement('recipient')->getValue();
         [$type, $id] = explode(':', $typeAndId, 2);
@@ -85,7 +85,7 @@ class EscalationRecipient extends FieldsetElement
             $channelId = (int) $this->getElement('channel_id')->getValue();
         }
 
-        return new EscalationRecipientData(
+        return new RuleEntryRecipientData(
             $recipientId,
             $type,
             (int) $id,

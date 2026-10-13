@@ -36,7 +36,7 @@ use ipl\Sql\Select;
  * @property Query<IncidentHistory>|Collection<IncidentHistory> $incident_history
  * @property Query<NotificationHistory>|Collection<NotificationHistory> $notification_history
  * @property Query<Rule>|Collection<Rule> $rule
- * @property Query<RuleEscalation>|Collection<RuleEscalation> $rule_escalation
+ * @property Query<RuleEntry>|Collection<RuleEntry> $rule_entry
  */
 class Incident extends Model
 {
@@ -128,8 +128,8 @@ class Incident extends Model
             ->setJoinType('LEFT');
 
         $relations
-            ->belongsToMany('rule_escalation', RuleEscalation::class)
-            ->through('incident_rule_escalation_state')
+            ->belongsToMany('rule_entry', RuleEntry::class)
+            ->through('incident_rule_entry_state')
             ->setJoinType('LEFT');
     }
 }

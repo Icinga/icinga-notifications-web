@@ -3,9 +3,8 @@
 // SPDX-FileCopyrightText: 2025 Icinga GmbH <https://icinga.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-namespace Icinga\Module\Notifications\Forms\EscalationForm;
+namespace Icinga\Module\Notifications\Forms\RuleEntryForm;
 
-use Icinga\Module\Notifications\Util\RuleSerializer;
 use ipl\Html\Attributes;
 use ipl\Html\Contract\FormElement;
 use ipl\Html\FormElement\FieldsetElement;
@@ -16,8 +15,6 @@ use ipl\Stdlib\Filter;
 use ipl\Stdlib\Filter\Condition;
 use ipl\Web\Filter\QueryString;
 use ipl\Web\Widget\Icon;
-use JsonException;
-use UnexpectedValueException;
 
 /**
  * @phpstan-import-type ConditionValues from EscalationCondition
@@ -27,22 +24,6 @@ class EscalationConditions extends FieldsetElement
     use DynamicElements;
 
     protected $defaultAttributes = ['class' => 'escalation-conditions'];
-
-    /**
-     * Serialize the given conditions
-     *
-     * @param Filter\Rule $filter
-     *
-     * @return string
-     */
-    public static function serialize(Filter\Rule $filter): string
-    {
-        return (new RuleSerializer(
-            $filter,
-            ['incident_age' => ['incident_age'], 'incident_severity' => ['incident_severity']],
-            false
-        ))->getJson();
-    }
 
     protected function createAddButton(): SubmitButtonElement
     {
@@ -72,22 +53,15 @@ class EscalationConditions extends FieldsetElement
     }
 
     /**
-     * Prepare the conditions for display
+     * Prepare the condition for display
      *
-     * @param string $json The stored condition as JSON
+     * @param string $query The query string
      *
      * @return array<ConditionValues>
-     *
-     * @throws JsonException If the condition is not valid JSON
-     * @throws UnexpectedValueException If the condition's version is not supported
      */
-    public static function prepare(string $json): array
+    public static function prepare(string $query): array
     {
-        if ($json === '') {
-            return [];
-        }
-
-        $filters = QueryString::parse(RuleSerializer::decode($json)['qs']);
+        $filters = QueryString::parse($query);
         if ($filters instanceof Condition) {
             $filters = [$filters];
         }
@@ -101,11 +75,11 @@ class EscalationConditions extends FieldsetElement
     }
 
     /**
-     * Get the conditions to store
+     * Get the condition to store
      *
-     * @return ?string
+     * @return array{0: Filter\Rule, 1: string}
      */
-    public function getConditions(): ?string
+    public function getCondition(): array
     {
         $filters = Filter::all();
         foreach ($this->ensureAssembled()->getElements() as $element) {
@@ -114,10 +88,6 @@ class EscalationConditions extends FieldsetElement
             }
         }
 
-        if ($filters->isEmpty()) {
-            return null;
-        }
-
-        return static::serialize($filters);
+        return [$filters, QueryString::render($filters)];
     }
 }

@@ -82,7 +82,7 @@ final class ChannelRepository
      * Delete the channel with the given ID
      *
      * The caller is responsible to ensure that the channel is not referenced anymore,
-     * neither as a contact's default channel nor in an event rule's escalation.
+     * neither as a contact's default channel nor in an event rule's entry.
      *
      * @param int $id
      *

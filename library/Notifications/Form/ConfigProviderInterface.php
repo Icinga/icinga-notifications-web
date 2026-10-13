@@ -5,6 +5,7 @@
 
 namespace Icinga\Module\Notifications\Form;
 
+use Icinga\Module\Notifications\Hook\V2\SourceHook;
 use Icinga\Module\Notifications\Model\AvailableChannelType;
 use Icinga\Module\Notifications\Model\Channel;
 use Icinga\Module\Notifications\Model\Contact;
@@ -75,4 +76,13 @@ interface ConfigProviderInterface
      * @return iterable<Contact>
      */
     public function findContactsByIds(array $ids): iterable;
+
+    /**
+     * Locate a source hook by the given rule ID
+     *
+     * @param int $ruleId
+     *
+     * @return ?SourceHook
+     */
+    public function locateSourceHookByRuleId(int $ruleId): ?SourceHook;
 }

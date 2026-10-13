@@ -176,7 +176,7 @@ class IncidentDetail extends BaseHtmlElement
             ->with([
                 'contact',
                 'rule',
-                'rule_escalation',
+                'rule_entry',
                 'contactgroup',
                 'schedule',
                 'channel'

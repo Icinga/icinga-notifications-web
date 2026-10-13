@@ -38,7 +38,7 @@ class Gadget extends Model
             ->through(GadgetTag::class);
 
         // Like `tag`, but its junction model is keyed by a surrogate `id` rather than the natural
-        // gadget_id/badge_id pair, mirroring the real rule_escalation_recipient table.
+        // gadget_id/badge_id pair, mirroring the real rule_entry_recipient table.
         $relations->belongsToMany('badge', Badge::class)
             ->through(GadgetBadge::class);
     }

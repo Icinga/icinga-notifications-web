@@ -18,6 +18,7 @@ use ipl\Stdlib\Filter;
 /**
  * @property int $id
  * @property string $name
+ * @property string $type
  * @property string $source_type
  * @property ?int $timeperiod_id
  * @property ?string $object_filter
@@ -25,7 +26,7 @@ use ipl\Stdlib\Filter;
  * @property bool $deleted
  *
  * @property Query<Source>|Collection<Source> $source
- * @property Query<RuleEscalation>|Collection<RuleEscalation> $rule_escalation
+ * @property Query<RuleEntry>|Collection<RuleEntry> $rule_entry
  * @property Query<Incident>|Collection<Incident> $incident
  * @property Query<IncidentHistory>|Collection<IncidentHistory> $incident_history
  */
@@ -45,6 +46,7 @@ class Rule extends Model
     {
         return [
             'name',
+            'type',
             'source_type',
             'timeperiod_id',
             'object_filter',
@@ -57,6 +59,7 @@ class Rule extends Model
     {
         return [
             'name'          => t('Name'),
+            'type'          => t('Rule Type'),
             'source_type'   => t('Source Type'),
             'timeperiod_id' => t('Timeperiod ID'),
             'object_filter' => t('Object Filter'),
@@ -85,7 +88,7 @@ class Rule extends Model
         $relations->hasMany('source', Source::class)
             ->setCandidateKey('source_type')
             ->setForeignKey('type');
-        $relations->hasMany('rule_escalation', RuleEscalation::class)
+        $relations->hasMany('rule_entry', RuleEntry::class)
             ->setJoinType('LEFT');
 
         $relations

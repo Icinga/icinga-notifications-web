@@ -28,7 +28,7 @@ use Ramsey\Uuid\UuidInterface;
  * @property bool $deleted
  *
  * @property Query<IncidentHistory>|Collection<IncidentHistory> $incident_history
- * @property Query<RuleEscalationRecipient>|Collection<RuleEscalationRecipient> $rule_escalation_recipient
+ * @property Query<RuleEntryRecipient>|Collection<RuleEntryRecipient> $rule_entry_recipient
  * @property Query<Contact>|Collection<Contact> $contact
  * @property Query<AvailableChannelType>|AvailableChannelType $available_channel_type
  * @property Query<NotificationHistory>|Collection<NotificationHistory> $notification_history
@@ -88,7 +88,7 @@ class Channel extends Model
     public function createRelations(Relations $relations): void
     {
         $relations->hasMany('incident_history', IncidentHistory::class)->setJoinType('LEFT');
-        $relations->hasMany('rule_escalation_recipient', RuleEscalationRecipient::class)->setJoinType('LEFT');
+        $relations->hasMany('rule_entry_recipient', RuleEntryRecipient::class)->setJoinType('LEFT');
         $relations->hasMany('contact', Contact::class)
             ->setJoinType('LEFT')
             ->setForeignKey('default_channel_id');
