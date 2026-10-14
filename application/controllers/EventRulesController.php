@@ -37,6 +37,8 @@ class EventRulesController extends CompatController
     public function init(): void
     {
         $this->assertPermission('notifications/config/event-rules');
+
+        parent::init();
     }
 
     public function indexAction(): void

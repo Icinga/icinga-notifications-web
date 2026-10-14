@@ -25,6 +25,8 @@ class NotificationRuleController extends CompatController
     public function init(): void
     {
         $this->assertPermission('notifications/config/event-rules');
+
+        parent::init();
     }
 
     public function addAction(): void

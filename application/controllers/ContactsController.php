@@ -40,6 +40,8 @@ class ContactsController extends CompatController
         $this->assertPermission('notifications/config/contacts');
 
         $this->db = Database::get();
+
+        parent::init();
     }
 
     public function indexAction(): void

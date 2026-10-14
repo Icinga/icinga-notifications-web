@@ -25,6 +25,8 @@ class SchedulesController extends CompatController
     public function init(): void
     {
         $this->assertPermission('notifications/config/schedules');
+
+        parent::init();
     }
 
     public function indexAction(): void

@@ -26,6 +26,8 @@ class ContactController extends CompatController
     public function init(): void
     {
         $this->assertPermission('notifications/config/contacts');
+
+        parent::init();
     }
 
     public function indexAction(): void
