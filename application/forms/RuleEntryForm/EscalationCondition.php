@@ -26,7 +26,8 @@ use ipl\Web\Widget\Icon;
  *     operator: string,
  *     severity?: string,
  *     no_of?: string,
- *     unit?: string
+ *     unit?: string,
+ *     is_managed?: string
  * }
  */
 class EscalationCondition extends FieldsetElement
@@ -63,6 +64,8 @@ class EscalationCondition extends FieldsetElement
         ];
         if ($data['column'] === 'incident_severity') {
             $data['severity'] = $condition->getValue();
+        } elseif ($data['column'] === 'is_managed') {
+            $data['is_managed'] = $condition->getValue();
         } else {
             preg_match('/^(\d+)([hms])$/', $condition->getValue(), $matches);
             $data['no_of'] = $matches[1];
@@ -86,7 +89,8 @@ class EscalationCondition extends FieldsetElement
         $value = match ($column) {
             'incident_severity' => $this->getElement('severity')->getValue(),
             'incident_age' => $this->getElement('no_of')->getValue()
-                . $this->getElement('unit')->getValue()
+                . $this->getElement('unit')->getValue(),
+            'is_managed' => $this->getElement('is_managed')->getValue()
         };
 
         return match ($this->getElement('operator')->getValue()) {
@@ -106,7 +110,8 @@ class EscalationCondition extends FieldsetElement
             'options' => [
                 '' => sprintf(' - %s - ', $this->translate('Please choose')),
                 'incident_severity' => $this->translate('Incident Severity'),
-                'incident_age' => $this->translate('Incident Age')
+                'incident_age' => $this->translate('Incident Age'),
+                'is_managed' => $this->translate('Incident Is Managed')
             ],
             'class' => 'autosubmit',
             'disabledOptions' => [''],
@@ -120,7 +125,9 @@ class EscalationCondition extends FieldsetElement
         ]));
 
         $selectedColumn = $this->getPopulatedValue('column');
-        if ($selectedColumn === 'incident_age') {
+        if ($selectedColumn === 'is_managed') {
+            $operators = ['=' => '='];
+        } elseif ($selectedColumn === 'incident_age') {
             $operators = ['>' => '>'];
         } else {
             $operators = [
@@ -137,7 +144,7 @@ class EscalationCondition extends FieldsetElement
             'required' => true,
             'options' => $operators,
             'value' => array_key_first($operators),
-            'disabled' => $selectedColumn === 'incident_age'
+            'disabled' => count($operators) === 1
         ]);
 
         if ($selectedColumn === 'incident_severity') {
@@ -170,6 +177,14 @@ class EscalationCondition extends FieldsetElement
             $this->registerElement($unit);
 
             $this->addHtml(new HtmlElement('div', Attributes::create(['class' => 'age-inputs']), $noOf, $unit));
+        } elseif ($selectedColumn === 'is_managed') {
+            $this->addElement('select', 'is_managed', [
+                'required' => true,
+                'options' => [
+                    'y' => $this->translate('Yes'),
+                    'n' => $this->translate('No')
+                ]
+            ]);
         } else {
             $this->addElement('text', 'noop', [
                 'required' => true,

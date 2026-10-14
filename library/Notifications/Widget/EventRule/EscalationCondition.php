@@ -69,20 +69,24 @@ class EscalationCondition extends HtmlDocument
             }
         }
 
-        if (isset($byColumn['incident_severity'])) {
-            try {
-                $this->assembleSeverityRepresentation($byColumn['incident_severity']);
-            } catch (InvalidArgumentException $e) {
-                $this->addHtml(new Callout(
-                    CalloutType::Warning,
-                    Text::create(sprintf(
-                        $this->translate('Impossible match: %s'),
-                        $e->getMessage()
-                    ))
-                ));
-
-                return;
+        try {
+            if (isset($byColumn['is_managed'])) {
+                $this->assembleIsManagedRepresentation($byColumn['is_managed']);
             }
+
+            if (isset($byColumn['incident_severity'])) {
+                $this->assembleSeverityRepresentation($byColumn['incident_severity']);
+            }
+        } catch (InvalidArgumentException $e) {
+            $this->addHtml(new Callout(
+                CalloutType::Warning,
+                Text::create(sprintf(
+                    $this->translate('Impossible match: %s'),
+                    $e->getMessage()
+                ))
+            ));
+
+            return;
         }
 
         if (isset($byColumn['incident_age'])) {
@@ -99,6 +103,28 @@ class EscalationCondition extends HtmlDocument
                 Text::create($this->translate('This escalation will never match any incident. Check its condition.'))
             ));
         }
+    }
+
+    /**
+     * Assemble the representation for the given is_managed condition
+     *
+     * @param array $conditions
+     *
+     * @return void
+     *
+     * @throws InvalidArgumentException In case the given conditions cannot be described
+     */
+    protected function assembleIsManagedRepresentation(array $conditions): void
+    {
+        if (count($conditions) > 1) {
+            throw new InvalidArgumentException('Cannot describe more than one is_managed condition');
+        }
+
+        match ($conditions[0]->getValue()) {
+            'y' => $this->addPhrase(Text::create($this->translate('Incident has an assigned manager'))),
+            'n' => $this->addPhrase(Text::create($this->translate('Incident has no assigned manager'))),
+            default => throw new InvalidArgumentException('Cannot describe an invalid is_managed condition')
+        };
     }
 
     /**
