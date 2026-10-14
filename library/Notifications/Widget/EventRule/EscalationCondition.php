@@ -28,6 +28,9 @@ class EscalationCondition extends HtmlDocument
 {
     use Translation;
 
+    /** @var bool Whether to describe the condition in the past tense */
+    private bool $usePastTense = false;
+
     /**
      * Create an HTML representation for the given escalation condition
      *
@@ -51,6 +54,22 @@ class EscalationCondition extends HtmlDocument
     public static function fromQueryString(string $query): static
     {
         return new static(QueryString::parse($query));
+    }
+
+    /**
+     * Describe the condition in the past tense
+     *
+     * This describes the state of an incident at the time the condition matched, e.g. for an escalation that
+     * already triggered. To keep the result more compact, a single severity condition is described as is,
+     * instead of listing all severities it matches.
+     *
+     * @return $this
+     */
+    public function usePastTense(): static
+    {
+        $this->usePastTense = true;
+
+        return $this;
     }
 
     protected function assemble(): void
@@ -121,8 +140,20 @@ class EscalationCondition extends HtmlDocument
         }
 
         match ($conditions[0]->getValue()) {
-            'y' => $this->addPhrase(Text::create($this->translate('Incident has an assigned manager'))),
-            'n' => $this->addPhrase(Text::create($this->translate('Incident has no assigned manager'))),
+            'y' => $this->addPhrase(
+                Text::create(
+                    $this->usePastTense
+                        ? $this->translate('Incident had an assigned manager')
+                        : $this->translate('Incident has an assigned manager')
+                )
+            ),
+            'n' => $this->addPhrase(
+                Text::create(
+                    $this->usePastTense
+                        ? $this->translate('Incident had no assigned manager')
+                        : $this->translate('Incident has no assigned manager')
+                )
+            ),
             default => throw new InvalidArgumentException('Cannot describe an invalid is_managed condition')
         };
     }
@@ -138,6 +169,29 @@ class EscalationCondition extends HtmlDocument
      */
     protected function assembleSeverityRepresentation(array $conditions): void
     {
+        if ($this->usePastTense && count($conditions) === 1) {
+            $condition = $conditions[0];
+            $severity = $condition->getValue();
+            $operator = QueryString::getRuleSymbol($condition);
+            $this->addPhrase(
+                Text::create(
+                    sprintf(
+                        match ($operator) {
+                            '>' => $this->translate('Incident severity was worse than %s'),
+                            '>=' => $this->translate('Incident severity was %s or worse'),
+                            '<' => $this->translate('Incident severity was better than %s'),
+                            '<=' => $this->translate('Incident severity was %s or better'),
+                            '=' => $this->translate('Incident severity was %s'),
+                            '!=' => $this->translate('Incident severity was not %s'),
+                        },
+                        Severity::from($severity)->getLabel()
+                    )
+                )
+            );
+
+            return;
+        }
+
         $byOperator = [];
         foreach ($conditions as $condition) {
             $byOperator[QueryString::getRuleSymbol($condition)][] = $condition;
@@ -180,10 +234,10 @@ class EscalationCondition extends HtmlDocument
         }
 
         if (isset($byOperator['<']) || isset($byOperator['<='])) {
-            if (isset($byOperator['>']) && isset($byOperator['<='])) {
+            if (isset($byOperator['<']) && isset($byOperator['<='])) {
                 throw new InvalidArgumentException('Either `<` or `<=` should be used, but not both');
-            } elseif (isset($byOperator['>']) && count($byOperator['>']) > 1) {
-                throw new InvalidArgumentException('Only one condition may use the `>` range operator');
+            } elseif (isset($byOperator['<']) && count($byOperator['<']) > 1) {
+                throw new InvalidArgumentException('Only one condition may use the `<` range operator');
             } elseif (isset($byOperator['<=']) && count($byOperator['<=']) > 1) {
                 throw new InvalidArgumentException('Only one condition may use the `<=` range operator');
             }
@@ -229,11 +283,17 @@ class EscalationCondition extends HtmlDocument
 
         if (! empty($severities)) {
             $this->addPhrase(Text::create(sprintf(
-                $this->translatePlural(
-                    'Incident severity is %1$s',
-                    'Incident severity is %2$s or %1$s',
-                    count($severities)
-                ),
+                $this->usePastTense
+                    ? $this->translatePlural(
+                        'Incident severity was %1$s',
+                        'Incident severity was %2$s or %1$s',
+                        count($severities)
+                    )
+                    : $this->translatePlural(
+                        'Incident severity is %1$s',
+                        'Incident severity is %2$s or %1$s',
+                        count($severities)
+                    ),
                 array_pop($severities)->getLabel(),
                 implode(', ', array_map(
                     fn (Severity $severity) => $severity->getLabel(),
@@ -275,27 +335,27 @@ class EscalationCondition extends HtmlDocument
             if ($days > 0 || $hours > 0) {
                 // Be lazy for edge cases…
                 $this->addPhrase(Text::create(sprintf($this->translate(
-                    'Incident was opened %1$d days, %2$d hours, %3$d minutes and %4$d seconds ago'
+                    'Incident was open for at least %1$d days, %2$d hours, %3$d minutes and %4$d seconds'
                 ), $days, $hours, $minutes, $seconds)));
             } else {
                 if ($minutes > 0) {
                     if ($minutes === 1) {
                         $this->addPhrase(Text::create(sprintf($this->translatePlural(
-                            'Incident was opened a minute and a second ago',
-                            'Incident was opened a minute and %d seconds ago',
+                            'Incident was open for at least a minute and a second',
+                            'Incident was open for at least a minute and %d seconds',
                             $seconds
                         ), $seconds)));
                     } else {
                         $this->addPhrase(Text::create(sprintf($this->translatePlural(
-                            'Incident was opened %1$d minutes and a second ago',
-                            'Incident was opened %1$d minutes and %2$d seconds ago',
+                            'Incident was open for at least %1$d minutes and a second',
+                            'Incident was open for at least %1$d minutes and %2$d seconds',
                             $seconds
                         ), $minutes, $seconds)));
                     }
                 } else {
                     $this->addPhrase(Text::create(sprintf($this->translatePlural(
-                        'Incident was opened a second ago',
-                        'Incident was opened %d seconds ago',
+                        'Incident was open for at least a second',
+                        'Incident was open for at least %d seconds',
                         $seconds
                     ), $seconds)));
                 }
@@ -305,21 +365,21 @@ class EscalationCondition extends HtmlDocument
                 if ($days > 0) {
                     // Be lazy for edge cases…
                     $this->addPhrase(Text::create(sprintf($this->translatePlural(
-                        'Incident was opened %1$d days, %2$d hours and a minute ago',
-                        'Incident was opened %1$d days, %2$d hours and %3$d minutes ago',
+                        'Incident was open for at least %1$d days, %2$d hours and a minute',
+                        'Incident was open for at least %1$d days, %2$d hours and %3$d minutes',
                         $minutes
                     ), $days, $hours, $minutes)));
                 } else {
                     if ($hours === 1) {
                         $this->addPhrase(Text::create(sprintf($this->translatePlural(
-                            'Incident was opened an hour and a minute ago',
-                            'Incident was opened an hour and %d minutes ago',
+                            'Incident was open for at least an hour and a minute',
+                            'Incident was open for at least an hour and %d minutes',
                             $minutes
                         ), $minutes)));
                     } else {
                         $this->addPhrase(Text::create(sprintf($this->translatePlural(
-                            'Incident was opened %1$d hours and a minute ago',
-                            'Incident was opened %1$d hours and %2$d minutes ago',
+                            'Incident was open for at least %1$d hours and a minute',
+                            'Incident was open for at least %1$d hours and %2$d minutes',
                             $minutes
                         ), $hours, $minutes)));
                     }
@@ -328,21 +388,21 @@ class EscalationCondition extends HtmlDocument
                 if ($days > 0) {
                     if ($days === 1) {
                         $this->addPhrase(Text::create(sprintf($this->translatePlural(
-                            'Incident was opened a day and a minute ago',
-                            'Incident was opened a day and %d minutes ago',
+                            'Incident was open for at least a day and a minute',
+                            'Incident was open for at least a day and %d minutes',
                             $minutes
                         ), $minutes)));
                     } else {
                         $this->addPhrase(Text::create(sprintf($this->translatePlural(
-                            'Incident was opened %1$d days and a minute ago',
-                            'Incident was opened %1$d days and %2$d minutes ago',
+                            'Incident was open for at least %1$d days and a minute',
+                            'Incident was open for at least %1$d days and %2$d minutes',
                             $minutes
                         ), $days, $minutes)));
                     }
                 } else {
                     $this->addPhrase(Text::create(sprintf($this->translatePlural(
-                        'Incident was opened a minute ago',
-                        'Incident was opened %d minutes ago',
+                        'Incident was open for at least a minute',
+                        'Incident was open for at least %d minutes',
                         $minutes
                     ), $minutes)));
                 }
@@ -351,28 +411,28 @@ class EscalationCondition extends HtmlDocument
             if ($days > 0) {
                 if ($days === 1) {
                     $this->addPhrase(Text::create(sprintf($this->translatePlural(
-                        'Incident was opened a day and an hour ago',
-                        'Incident was opened a day and %d hours ago',
+                        'Incident was open for at least a day and an hour',
+                        'Incident was open for at least a day and %d hours',
                         $hours
                     ), $hours)));
                 } else {
                     $this->addPhrase(Text::create(sprintf($this->translatePlural(
-                        'Incident was opened %1$d days and an hour ago',
-                        'Incident was opened %1$d days and %2$d hours ago',
+                        'Incident was open for at least %1$d days and an hour',
+                        'Incident was open for at least %1$d days and %2$d hours',
                         $hours
                     ), $days, $hours)));
                 }
             } else {
                 $this->addPhrase(Text::create(sprintf($this->translatePlural(
-                    'Incident was opened an hour ago',
-                    'Incident was opened %d hours ago',
+                    'Incident was open for at least an hour',
+                    'Incident was open for at least %d hours',
                     $hours
                 ), $hours)));
             }
         } else { // $days > 0
             $this->addPhrase(Text::create(sprintf($this->translatePlural(
-                'Incident was opened a day ago',
-                'Incident was opened %d days ago',
+                'Incident was open for at least a day',
+                'Incident was open for at least %d days',
                 $days
             ), $days)));
         }
