@@ -28,6 +28,13 @@ class IncidentsController extends CompatController
     use SearchControls;
     use Controls;
 
+    public function init()
+    {
+        $this->assertPermission('notifications/view/incidents');
+
+        parent::init();
+    }
+
     public function indexAction(): void
     {
         $this->addTitleTab(t('Incidents'));

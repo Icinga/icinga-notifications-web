@@ -28,6 +28,11 @@ abstract class Links
         return Url::fromPath('notifications/incident', ['id' => $id]);
     }
 
+    public static function history(): Url
+    {
+        return Url::fromPath('notifications/history');
+    }
+
     public static function contacts(): Url
     {
         return Url::fromPath('notifications/contacts');

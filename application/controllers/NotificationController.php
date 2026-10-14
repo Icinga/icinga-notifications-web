@@ -18,6 +18,13 @@ class NotificationController extends CompatController
 {
     use Auth;
 
+    public function init()
+    {
+        $this->assertPermission('notifications/view/history');
+
+        parent::init();
+    }
+
     public function indexAction(): void
     {
         $this->addTitleTab(t('Notification'));

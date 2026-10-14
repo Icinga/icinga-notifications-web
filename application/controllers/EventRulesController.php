@@ -5,7 +5,6 @@
 
 namespace Icinga\Module\Notifications\Controllers;
 
-use Icinga\Module\Notifications\Common\ConfigurationTabs;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Forms\EventRuleForm;
@@ -33,7 +32,6 @@ use ipl\Web\Widget\ButtonLink;
 
 class EventRulesController extends CompatController
 {
-    use ConfigurationTabs;
     use SearchControls;
 
     public function init(): void
@@ -43,8 +41,7 @@ class EventRulesController extends CompatController
 
     public function indexAction(): void
     {
-        $this->setTitle($this->translate('Event Rules'));
-        $this->getTabs()->activate('event-rules');
+        $this->addTitleTab($this->translate('Event Rules'));
 
         $eventRules = Rule::on(Database::get());
 
