@@ -26,11 +26,11 @@ $section = $this->menuSection(
 
 if ($auth->hasPermission('notifications/view/incidents')) {
     $section->add(
-        N_('Open Incidents'),
+        N_('Incidents'),
         [
             'icon'          => 'th-list',
-            'description'   => $this->translate('List open incidents.'),
-            'url'           => 'notifications/incidents?incident.severity!=ok',
+            'description'   => $this->translate('List open and closed incidents.'),
+            'url'           => Links::incidents(),
             'priority'      => 10
         ]
     );
