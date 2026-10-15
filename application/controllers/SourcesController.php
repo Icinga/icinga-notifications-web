@@ -33,6 +33,8 @@ class SourcesController extends CompatController
     public function init(): void
     {
         $this->assertPermission('config/modules');
+
+        parent::init();
     }
 
     public function indexAction(): void

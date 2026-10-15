@@ -5,7 +5,6 @@
 
 namespace Icinga\Module\Notifications\Controllers;
 
-use Icinga\Module\Notifications\Common\ConfigurationTabs;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Data\NotificationConfigProvider;
@@ -32,7 +31,6 @@ use ipl\Web\Widget\ButtonLink;
 
 class ContactsController extends CompatController
 {
-    use ConfigurationTabs;
     use SearchControls;
 
     private Connection $db;
@@ -42,12 +40,13 @@ class ContactsController extends CompatController
         $this->assertPermission('notifications/config/contacts');
 
         $this->db = Database::get();
+
+        parent::init();
     }
 
     public function indexAction(): void
     {
-        $this->setTitle($this->translate('Contacts'));
-        $this->getTabs()->activate('contacts');
+        $this->addTitleTab($this->translate('Contacts'));
 
         $contacts = Contact::on($this->db);
 

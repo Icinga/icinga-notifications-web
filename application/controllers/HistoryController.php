@@ -28,6 +28,13 @@ class HistoryController extends CompatController
     use SearchControls;
     use Controls;
 
+    public function init()
+    {
+        $this->assertPermission('notifications/view/history');
+
+        parent::init();
+    }
+
     public function indexAction(): void
     {
         $this->addTitleTab(t('Notification History'));

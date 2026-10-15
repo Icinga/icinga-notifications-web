@@ -5,6 +5,7 @@
 
 namespace Icinga\Module\Notifications\Widget\Detail;
 
+use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Icons;
 use Icinga\Module\Notifications\Model\NotificationHistory;
 use Icinga\Module\Notifications\View\IncidentRenderer;
@@ -22,6 +23,7 @@ use ipl\Web\Widget\Time;
 
 class NotificationDetail extends BaseHtmlElement
 {
+    use Auth;
     use Translation;
 
     protected NotificationHistory $notificationHistory;
@@ -138,7 +140,10 @@ class NotificationDetail extends BaseHtmlElement
 
     protected function createIncident(): array
     {
-        if (! isset($this->notificationHistory->incident_id)) {
+        if (
+            ! isset($this->notificationHistory->incident_id)
+            || ! $this->getAuth()->hasPermission('notifications/view/incidents')
+        ) {
             return [];
         }
 

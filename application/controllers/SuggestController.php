@@ -66,6 +66,8 @@ class SuggestController extends CompatController
 
     public function recipientAction(): void
     {
+        $this->assertPermission('notifications/view/contacts');
+
         $suggestions = new SearchSuggestions(
             (function () use (&$suggestions) {
                 $createExcludeFilter = function (string $for, array $from): Filter\None {

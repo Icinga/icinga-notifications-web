@@ -5,7 +5,6 @@
 
 namespace Icinga\Module\Notifications\Controllers;
 
-use Icinga\Module\Notifications\Common\ConfigurationTabs;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Schedule;
@@ -21,18 +20,18 @@ use ipl\Web\Widget\ButtonLink;
 
 class SchedulesController extends CompatController
 {
-    use ConfigurationTabs;
     use SearchControls;
 
     public function init(): void
     {
         $this->assertPermission('notifications/config/schedules');
+
+        parent::init();
     }
 
     public function indexAction(): void
     {
-        $this->setTitle(t('Schedules'));
-        $this->getTabs()->activate('schedules');
+        $this->addTitleTab($this->translate('Schedules'));
 
         $schedules = Schedule::on(Database::get());
 

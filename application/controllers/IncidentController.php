@@ -37,6 +37,13 @@ class IncidentController extends CompatController
     use SearchControls;
     use Controls;
 
+    public function init()
+    {
+        $this->assertPermission('notifications/view/incidents');
+
+        parent::init();
+    }
+
     public function indexAction(): void
     {
         $this->setTitle(t('Incident'));
@@ -82,6 +89,8 @@ class IncidentController extends CompatController
 
     public function notificationHistoryAction(): void
     {
+        $this->assertPermission('notifications/view/history');
+
         $this->setTitle(t('Notification History'));
         $this->setTitleTab($this->getRequest()->getActionName());
 
@@ -187,15 +196,20 @@ class IncidentController extends CompatController
     protected function setTitleTab(string $name): void
     {
         $id = $this->params->getRequired('id');
-        $this->getTabs()
-            ->add('index', [
-                'label'  => $this->translate('Incident'),
-                'url'    => Links::incident($id)
-            ])
-            ->add('notification-history', [
+
+        $tabs = $this->getTabs();
+        $tabs->add('index', [
+            'label'  => $this->translate('Incident'),
+            'url'    => Links::incident($id)
+        ]);
+
+        if ($this->hasPermission('notifications/view/history')) {
+            $tabs->add('notification-history', [
                 'label'  => $this->translate('Notification History'),
                 'url'    => Url::fromPath('notifications/incident/notification-history', ['id' => $id])
-            ])
-            ->activate($name);
+            ]);
+        }
+
+        $tabs->activate($name);
     }
 }
