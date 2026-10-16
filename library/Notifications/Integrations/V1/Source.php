@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: 2026 Icinga GmbH <https://icinga.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-namespace Icinga\Module\Notifications\Integrations;
+namespace Icinga\Module\Notifications\Integrations\V1;
 
 use Closure;
 use Icinga\Module\Notifications\Common\Database;

@@ -3,11 +3,12 @@
 // SPDX-FileCopyrightText: 2026 Icinga GmbH <https://icinga.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-namespace Icinga\Module\Notifications\Integrations;
+namespace Icinga\Module\Notifications\Integrations\V1;
 
 use Countable;
 use Generator;
 use Icinga\Module\Notifications\Common\Database;
+use Icinga\Module\Notifications\Common\JobTracker;
 use Icinga\Module\Notifications\Integrations\Exception\IncidentNotFoundException;
 use Icinga\Module\Notifications\Model\Incident as IncidentModel;
 use Icinga\Module\Notifications\Repository\ContactRepository;
@@ -31,16 +32,21 @@ class Incidents implements IteratorAggregate, Countable
     /** @var Query<IncidentModel> The query to get the matching incidents */
     private Query $query;
 
+    /** @var JobTracker The tracker passed on to each yielded incident */
+    private JobTracker $jobTracker;
+
     /**
      * Create new Incidents from the given query
      *
      * The query is used as is, if it is intended to be used otherwise it should be cloned before passing it.
      *
      * @param Query<IncidentModel> $query
+     * @param JobTracker $jobTracker
      */
-    public function __construct(Query $query)
+    public function __construct(Query $query, JobTracker $jobTracker)
     {
         $this->query = $query;
+        $this->jobTracker = $jobTracker;
     }
 
     /**
@@ -58,7 +64,8 @@ class Incidents implements IteratorAggregate, Countable
     public static function get(array $tags): Incident
     {
         return Incident::fromQuery(
-            static::openIncidents(Database::get())->filter(static::tagSetFilterExactMatches([$tags]))
+            static::openIncidents(Database::get())->filter(static::tagSetFilterExactMatches([$tags])),
+            JobTracker::instance()
         );
     }
 
@@ -73,7 +80,10 @@ class Incidents implements IteratorAggregate, Countable
      */
     public static function getAll(iterable $tagSets): static
     {
-        return new static(static::openIncidents(Database::get())->filter(static::tagSetFilterExactMatches($tagSets)));
+        return new static(
+            static::openIncidents(Database::get())->filter(static::tagSetFilterExactMatches($tagSets)),
+            JobTracker::instance()
+        );
     }
 
     /**
@@ -99,7 +109,10 @@ class Incidents implements IteratorAggregate, Countable
      */
     public static function matchAll(iterable $tagSets): static
     {
-        return new static(static::openIncidents(Database::get())->filter(static::tagSetFilterPartialMatches($tagSets)));
+        return new static(
+            static::openIncidents(Database::get())->filter(static::tagSetFilterPartialMatches($tagSets)),
+            JobTracker::instance()
+        );
     }
 
     /**
@@ -135,7 +148,7 @@ class Incidents implements IteratorAggregate, Countable
     public function getIterator(): Generator
     {
         foreach ($this->incidents() as $incident) {
-            yield Incident::fromModel($incident, $this->query->getDb());
+            yield Incident::fromModel($incident, $this->query->getDb(), $this->jobTracker);
         }
     }
 
@@ -161,7 +174,9 @@ class Incidents implements IteratorAggregate, Countable
      */
     private static function openIncidents(Connection $db): Query
     {
-        return IncidentModel::on($db)->filter(Filter::unlike('recovered_at', '*'));
+        return IncidentModel::on($db)
+            ->withColumns('object.id_tags')
+            ->filter(Filter::unlike('recovered_at', '*'));
     }
 
     /**

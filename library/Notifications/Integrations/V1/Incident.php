@@ -3,29 +3,47 @@
 // SPDX-FileCopyrightText: 2026 Icinga GmbH <https://icinga.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-namespace Icinga\Module\Notifications\Integrations;
+namespace Icinga\Module\Notifications\Integrations\V1;
 
 use DateTime;
-use Generator;
 use Icinga\Module\Notifications\Common\EntityManager;
+use Icinga\Module\Notifications\Common\JobTracker;
 use Icinga\Module\Notifications\Integrations\Exception\IncidentNotFoundException;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Incident as IncidentModel;
 use Icinga\Module\Notifications\Model\IncidentContact;
-use Icinga\Module\Notifications\Model\IncidentHistory;
+use Icinga\Module\Notifications\Model\JobQueue;
 use Icinga\User;
 use InvalidArgumentException;
+use ipl\I18n\Translation;
 use ipl\Orm\Query;
 use ipl\Sql\Connection;
 use ipl\Sql\Expression;
 use ipl\Stdlib\Filter;
+use ipl\Web\Url;
 use LogicException;
+use PDOException;
+use Ramsey\Uuid\UuidInterface;
 
 /**
  * Manage an incident's recipients and read its state
+ *
+ * Role changes are not applied immediately. Each of them is queued as a job, which the daemon processes
+ * asynchronously, usually within a few seconds. Until then, reading the incident's state, e.g. with
+ * {@see static::getRole()} or {@see static::getSubscribers()}, does not reflect the change.
+ * The jobs are tracked for the current user, so the requested change can be shown as pending until it is
+ * processed, see {@see static::getPendingAction()} and {@see static::getPendingJobAttributes()}.
+ *
+ * The daemon applies a role change to the currently open incident of the incident's object. So if the incident
+ * recovers in the meantime, the change has no effect, or if the object has a newer open incident, applies to that.
+ *
+ * A role change requested with a uuid that was already used is ignored, as it is assumed to represent the
+ * same event, e.g. one that is delivered again. So a uuid must never be reused for a different role change.
  */
 class Incident
 {
+    use Translation;
+
     /** @var ?IncidentModel The managed incident, null if it wasn't fetched yet */
     private ?IncidentModel $incident = null;
 
@@ -34,6 +52,9 @@ class Incident
 
     /** @var Connection The database connection to use */
     private Connection $db;
+
+    /** @var JobTracker The tracker to remember queued jobs in across requests */
+    private JobTracker $jobTracker;
 
     private function __construct()
     {
@@ -46,14 +67,16 @@ class Incident
      * {@see IncidentNotFoundException}
      *
      * @param Query<IncidentModel> $query
+     * @param JobTracker $jobTracker
      *
      * @return static
      */
-    public static function fromQuery(Query $query): static
+    public static function fromQuery(Query $query, JobTracker $jobTracker): static
     {
         $incident = new static();
         $incident->query = $query;
         $incident->db = $query->getDb();
+        $incident->jobTracker = $jobTracker;
 
         return $incident;
     }
@@ -65,14 +88,16 @@ class Incident
      *
      * @param IncidentModel $model
      * @param Connection $db
+     * @param JobTracker $jobTracker
      *
      * @return static
      */
-    public static function fromModel(IncidentModel $model, Connection $db): static
+    public static function fromModel(IncidentModel $model, Connection $db, JobTracker $jobTracker): static
     {
         $incident = new static();
         $incident->incident = $model;
         $incident->db = $db;
+        $incident->jobTracker = $jobTracker;
 
         return $incident;
     }
@@ -121,87 +146,155 @@ class Incident
     }
 
     /**
-     * Add the contact with the given username as manager
+     * Get the full set of id tags of the incident's object
      *
-     * Has no effect if the contact is already a manager.
-     *
-     * @param string $username
-     *
-     * @return $this
+     * @return array<string, string>
      *
      * @throws IncidentNotFoundException If the query passed to {@see static::fromQuery()} has no result
-     * @throws InvalidArgumentException If no contact with that username exists
      */
-    public function addManager(string $username): static
+    public function getObjectIdTags(): array
     {
-        $this->assignRole($username, 'manager', ['manager']);
-
-        return $this;
+        return $this->incident()->object->id_tags;
     }
 
     /**
-     * Add the contact with the given username as subscriber
+     * Request to add the contact with the given username as manager
      *
-     * Has no effect if the contact is already a subscriber or a manager.
+     * Nothing is requested if the incident already has a manager, whether it is that contact or another one,
+     * see {@see static::hasManager()}. The change is applied asynchronously, see {@see static::getPendingAction()}.
      *
      * @param string $username
+     * @param ?UuidInterface $uuid The id of the event this role change represents, to correlate it with the history of
+     *                             its source, e.g. an acknowledgement. A new one is generated if not given, a reused
+     *                             one is ignored.
      *
      * @return $this
      *
      * @throws IncidentNotFoundException If the query passed to {@see static::fromQuery()} has no result
      * @throws InvalidArgumentException If no contact with that username exists
      */
-    public function addSubscriber(string $username): static
+    public function addManager(string $username, ?UuidInterface $uuid = null): static
     {
-        $this->assignRole($username, 'subscriber', ['subscriber', 'manager']);
-
-        return $this;
-    }
-
-    /**
-     * Demote the manager with the given username to subscriber
-     *
-     * Has no effect if the contact is not a manager of the incident.
-     *
-     * @param string $username
-     *
-     * @return $this
-     *
-     * @throws IncidentNotFoundException If the query passed to {@see static::fromQuery()} has no result
-     * @throws InvalidArgumentException If no contact with that username exists
-     */
-    public function removeManager(string $username): static
-    {
-        $this->assignRole($username, 'subscriber', [null, 'recipient', 'subscriber']);
-
-        return $this;
-    }
-
-    /**
-     * Remove the subscriber with the given username
-     *
-     * Has no effect if the contact is not a subscriber.
-     *
-     * @param string $username
-     *
-     * @return $this
-     *
-     * @throws IncidentNotFoundException If the query passed to {@see static::fromQuery()} has no result
-     * @throws InvalidArgumentException If no contact with that username exists
-     */
-    public function removeSubscriber(string $username): static
-    {
-        $contact = $this->getContactByName($username);
-        $existing = $this->existingContact($contact->id);
-
-        if ($existing?->role !== 'subscriber') {
-            return $this;
+        if (! $this->hasManager()) {
+            $this->requestRoleChange($username, 'manage', ['manager'], $uuid);
         }
 
-        (new EntityManager($this->db))->save($existing->delete());
-        $this->addRoleChangedHistory($contact->id, 'subscriber', null);
+        return $this;
+    }
+
+    /**
+     * Request to add the contact with the given username as subscriber
+     *
+     * Nothing is requested if the contact is already a subscriber or a manager. The change is applied asynchronously,
+     * see {@see static::getPendingAction()}.
+     *
+     * @param string $username
+     * @param ?UuidInterface $uuid The id of the event this role change represents, to correlate it with the history of
+     *                             its source, e.g. an acknowledgement. A new one is generated if not given, a reused
+     *                             one is ignored.
+     *
+     * @return $this
+     *
+     * @throws IncidentNotFoundException If the query passed to {@see static::fromQuery()} has no result
+     * @throws InvalidArgumentException If no contact with that username exists
+     */
+    public function addSubscriber(string $username, ?UuidInterface $uuid = null): static
+    {
+        $this->requestRoleChange($username, 'subscribe', ['subscriber', 'manager'], $uuid);
 
         return $this;
+    }
+
+    /**
+     * Request to demote the incident's manager to subscriber, whoever it is
+     *
+     * Nothing is requested if the incident has no manager. To only demote a specific user, check their role with
+     * {@see static::getRole()} first. The change is applied asynchronously, see {@see static::getPendingAction()}.
+     *
+     * @param ?UuidInterface $uuid The id of the event this role change represents, to correlate it with the history of
+     *                             its source, e.g. an acknowledgement. A new one is generated if not given, a reused
+     *                             one is ignored.
+     *
+     * @return $this
+     *
+     * @throws IncidentNotFoundException If the query passed to {@see static::fromQuery()} has no result
+     */
+    public function removeManager(?UuidInterface $uuid = null): static
+    {
+        $managerId = $this->managerId();
+        if ($managerId !== null) {
+            $this->queueJob('unmanage', $managerId, $uuid);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Request to remove the subscriber with the given username
+     *
+     * Nothing is requested if the contact is not a subscriber. The change is applied asynchronously,
+     * see {@see static::getPendingAction()}.
+     *
+     * @param string $username
+     * @param ?UuidInterface $uuid The id of the event this role change represents, to correlate it with the history of
+     *                             its source, e.g. an acknowledgement. A new one is generated if not given, a reused
+     *                             one is ignored.
+     *
+     * @return $this
+     *
+     * @throws IncidentNotFoundException If the query passed to {@see static::fromQuery()} has no result
+     * @throws InvalidArgumentException If no contact with that username exists
+     */
+    public function removeSubscriber(string $username, ?UuidInterface $uuid = null): static
+    {
+        $this->requestRoleChange($username, 'unsubscribe', [null, 'recipient', 'manager'], $uuid);
+
+        return $this;
+    }
+
+    /**
+     * Get the pending role change for the current user
+     *
+     * This is based on the current user's session, in which role changes requested by them
+     * (e.g. via {@see static::addSubscriber()}) are tracked. If a role change is queued in the
+     * `job_queue` table but not tracked in the session, `null` is returned.
+     *
+     * @return 'manage'|'unmanage'|'subscribe'|'unsubscribe'|null `null` if no role change is pending
+     *
+     * @throws IncidentNotFoundException If the query passed to {@see static::fromQuery()} has no result
+     */
+    public function getPendingAction(): ?string
+    {
+        return $this->jobTracker->getPending($this->incident()->id)['action'] ?? null;
+    }
+
+    /**
+     * Get the attributes to render the element of a quick action while a role change is pending
+     *
+     * They disable the element and mark it so quick-action.js polls the state of its job and reloads the element's
+     * container once the job has been processed.
+     *
+     * This is based on the current user's session, in which role changes requested by them
+     * (e.g. via {@see static::addSubscriber()}) are tracked. If a role change is queued in the
+     * `job_queue` table but not tracked in the session, an empty array is returned.
+     *
+     * @return array
+     *
+     * @throws IncidentNotFoundException If the query passed to {@see static::fromQuery()} has no result
+     */
+    public function getPendingJobAttributes(): array
+    {
+        $job = $this->jobTracker->getPending($this->incident()->id);
+        if ($job === null) {
+            return [];
+        }
+
+        return [
+            'disabled' => true,
+            'title' => $this->translate('Your request is being processed'),
+            'data-notifications-job' => Url::fromPath('notifications/job/state', ['id' => $job['job_id']])
+                ->getAbsoluteUrl()
+        ];
     }
 
     /**
@@ -269,6 +362,35 @@ class Incident
     }
 
     /**
+     * Get whether the incident has a manager
+     *
+     * @return bool
+     *
+     * @throws IncidentNotFoundException If the query passed to {@see static::fromQuery()} has no result
+     */
+    public function hasManager(): bool
+    {
+        return $this->managerId() !== null;
+    }
+
+    /**
+     * Get the contact id of the incident's manager
+     *
+     * @return ?int null if the incident has no manager
+     */
+    private function managerId(): ?int
+    {
+        return IncidentContact::on($this->db)
+            ->columns('contact_id')
+            ->filter(Filter::all(
+                Filter::equal('incident_id', $this->incident()->id),
+                Filter::equal('role', 'manager')
+            ))
+            ->first()
+            ?->contact_id;
+    }
+
+    /**
      * Load the contact with the given username
      *
      * @param string $username
@@ -288,24 +410,22 @@ class Incident
     }
 
     /**
-     * Load the incident's `incident_contact` entry for the given contact id
+     * Get the role of the given contact for the incident, null if the contact has no `incident_contact` entry
      *
      * @param int $contactId
      *
-     * @return ?IncidentContact
+     * @return ?string
      */
-    private function existingContact(int $contactId): ?IncidentContact
+    private function existingRole(int $contactId): ?string
     {
-        /** @var ?IncidentContact $entry */
-        $entry = IncidentContact::on($this->db)
+        return IncidentContact::on($this->db)
+            ->columns('role')
             ->filter(Filter::all(
                 Filter::equal('incident_id', $this->incident()->id),
                 Filter::equal('contact_id', $contactId)
             ))
             ->first()
-            ?->setNew(false);
-
-        return $entry;
+            ?->role;
     }
 
     /**
@@ -369,60 +489,56 @@ class Incident
     }
 
     /**
-     * Set the contact's role, appending a new `incident_contact` entry if it has none yet
+     * Request the given role change for the contact with the given username, unless it is a no-op
+     *
+     * The no-op checks are required as the daemon's rules differ from the ones documented on the public methods.
+     * It e.g. accepts a `subscribe` of the manager, and then demotes the manager to subscriber.
      *
      * @param string $username
-     * @param string $role The role to assign
+     * @param 'manage'|'subscribe'|'unsubscribe' $action The action to perform
      * @param array<?string> $noopRoles Existing roles for which this is a no-op, `null` matches an absent contact
+     * @param ?UuidInterface $uuid The job's id, a new one is generated if not given
      *
      * @return $this
      */
-    private function assignRole(string $username, string $role, array $noopRoles): static
-    {
-        $contact = $this->getContactByName($username);
-        $existing = $this->existingContact($contact->id);
-
-        if (in_array($existing?->role, $noopRoles, true)) {
-            return $this;
+    private function requestRoleChange(
+        string $username,
+        string $action,
+        array $noopRoles,
+        ?UuidInterface $uuid = null
+    ): static {
+        $contactId = $this->getContactByName($username)->id;
+        if (! in_array($this->existingRole($contactId), $noopRoles, true)) {
+            $this->queueJob($action, $contactId, $uuid);
         }
-
-        $oldRole = $existing?->role;
-
-        if ($existing !== null) {
-            $existing->role = $role;
-            (new EntityManager($this->db))->save($existing);
-        } else {
-            $incidentContact = (new IncidentContact())->setNew();
-            $incidentContact->incident_id = $this->incident()->id;
-            $incidentContact->contact_id = $contact->id;
-            $incidentContact->role = $role;
-            (new EntityManager($this->db))->save($incidentContact);
-        }
-
-        $this->addRoleChangedHistory($contact->id, $oldRole, $role);
 
         return $this;
     }
 
     /**
-     * Persist a `recipient_role_changed` history entry for the incident
+     * Queue a job to perform the given action for the given contact in the `job_queue` table and track it
      *
-     * @param int $contactId
-     * @param ?string $oldRole
-     * @param ?string $newRole
+     * The job identifies the incident by the object's id tags, so the incident must have been loaded with
+     * `object.id_tags`. {@see static::consumeQuery()} and {@see Incidents} take care of that.
+     *
+     * @param 'manage'|'unmanage'|'subscribe'|'unsubscribe' $action The action to perform
+     * @param int $contactId The id of the contact whose role is changed
+     * @param ?UuidInterface $uuid The job's id, a new one is generated if not given
      *
      * @return void
      */
-    private function addRoleChangedHistory(int $contactId, ?string $oldRole, ?string $newRole): void
+    private function queueJob(string $action, int $contactId, ?UuidInterface $uuid = null): void
     {
-        $history = (new IncidentHistory())->setNew();
-        $history->incident_id = $this->incident()->id;
-        $history->contact_id = $contactId;
-        $history->type = 'recipient_role_changed';
-        $history->old_recipient_role = $oldRole;
-        $history->new_recipient_role = $newRole;
-        $history->time = new DateTime();
-        (new EntityManager($this->db))->save($history);
+        $job = JobQueue::fromQuickAction($action, $contactId, $this->incident()->object->id_tags, $uuid);
+        try {
+            (new EntityManager($this->db))->save($job);
+        } catch (PDOException $e) {
+            if ($uuid === null || ! static::isDuplicateKeyError($e)) {
+                throw $e;
+            }
+        }
+
+        $this->jobTracker->track($this->incident()->id, $action, $job->id);
     }
 
     /**
@@ -461,9 +577,32 @@ class Incident
             );
         }
 
-        $query = $this->query;
+        $query = $this->query->withColumns('object.id_tags');
         $this->query = null;
 
         return $query;
+    }
+
+    /**
+     * Get whether the given exception was caused by a duplicate key
+     *
+     * PostgreSQL reports it as SQLSTATE `23505`. MySQL uses the generic `23000` for all integrity
+     * constraint violations, so its error number `1062` (ER_DUP_ENTRY) is checked as well.
+     *
+     * @link https://www.php.net/manual/en/pdo.errorinfo.php
+     * @link https://www.postgresql.org/docs/current/errcodes-appendix.html
+     * @link https://dev.mysql.com/doc/mysql-errors/9.7/en/server-error-reference.html
+     *
+     * @param PDOException $e
+     *
+     * @return bool
+     */
+    private static function isDuplicateKeyError(PDOException $e): bool
+    {
+        return match ($e->errorInfo[0] ?? null) {
+            '23505' => true,
+            '23000' => ($e->errorInfo[1] ?? null) === 1062,
+            default => false
+        };
     }
 }
