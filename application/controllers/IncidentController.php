@@ -10,6 +10,7 @@ use ipl\Web\Compat\SearchControls;
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Links;
+use Icinga\Module\Notifications\Common\JobTracker;
 use Icinga\Module\Notifications\Model\Contact;
 use Icinga\Module\Notifications\Model\Incident;
 use Icinga\Module\Notifications\Model\NotificationHistory;
@@ -68,20 +69,22 @@ class IncidentController extends CompatController
 
         $this->controls->addAttributes(Attributes::create(['class' => 'incident-detail']));
 
-        /** @var ?Contact $contact */
-        $contact = Contact::on(Database::get())
-            ->columns('id')
-            ->filter(Filter::equal('username', $this->Auth()->getUser()->getUsername()))
-            ->first();
+        if ($incident->recovered_at === null) {
+            /** @var ?Contact $contact */
+            $contact = Contact::on(Database::get())
+                ->columns('id')
+                ->filter(Filter::equal('username', $this->Auth()->getUser()->getUsername()))
+                ->first();
 
-        if ($contact !== null) {
-            $this->addControl(
-                (new IncidentQuickActions($incident, $contact->id))
-                    ->on(Form::ON_SUBMIT, function () use ($incident) {
-                        $this->redirectNow(Links::incident($incident->id));
-                    })
-                    ->handleRequest($this->getServerRequest())
-            );
+            if ($contact !== null) {
+                $this->addControl(
+                    (new IncidentQuickActions($incident, JobTracker::instance()))
+                        ->on(Form::ON_SUBMIT, function () use ($incident) {
+                            $this->redirectNow(Links::incident($incident->id));
+                        })
+                        ->handleRequest($this->getServerRequest())
+                );
+            }
         }
 
         $this->addContent(new IncidentDetail($incident));

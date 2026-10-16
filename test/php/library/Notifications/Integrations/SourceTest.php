@@ -5,7 +5,7 @@
 
 namespace Tests\Icinga\Module\Notifications\Integrations;
 
-use Icinga\Module\Notifications\Integrations\Source;
+use Icinga\Module\Notifications\Integrations\V1\Source;
 use Icinga\Module\Notifications\Repository\SourceRepository;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
