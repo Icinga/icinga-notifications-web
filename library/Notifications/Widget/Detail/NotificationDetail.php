@@ -112,7 +112,6 @@ class NotificationDetail extends BaseHtmlElement
             new HtmlElement(
                 'div',
                 Attributes::create(['class' => 'channel']),
-                $channel->getIcon(),
                 Text::create(sprintf(
                     '%s (%s)',
                     $channel->name ?? $this->translate('unknown'),
