@@ -213,21 +213,23 @@ class IncidentHistoryRenderer implements ItemRenderer
             case IncidentHistoryType::RECIPIENT_ROLE_CHANGED:
                 $newRole = $item->new_recipient_role;
                 $message = '';
-                if ($newRole === 'manager' || (! $newRole && $item->old_recipient_role === 'manager')) {
+                if ($newRole === 'manager' || $item->old_recipient_role === 'manager') {
                     if (isset($item->contact->full_name)) {
-                        $message = ! $newRole
-                            ? sprintf(
+                        $message = match ($newRole) {
+                            'manager' => sprintf(
+                                $this->translate('Contact %s started managing this incident'),
+                                $item->contact->full_name
+                            ),
+                            'subscriber' => sprintf(
                                 $this->translate('Contact %s stopped managing this incident'),
                                 $item->contact->full_name
                             )
-                            : sprintf(
-                                $this->translate('Contact %s started managing this incident'),
-                                $item->contact->full_name
-                            );
+                        };
                     } else {
-                        $message = ! $newRole
-                            ? $this->translate('Unknown recipient stopped managing this incident')
-                            : $this->translate('Unknown recipient started managing this incident');
+                        $message = match ($newRole) {
+                            'manager' => $this->translate('Unknown recipient started managing this incident'),
+                            'subscriber' => $this->translate('Unknown recipient stopped managing this incident')
+                        };
                     }
                 } elseif (
                     $newRole === 'subscriber'
