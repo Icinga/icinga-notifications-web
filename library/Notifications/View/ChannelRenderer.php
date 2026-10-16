@@ -9,7 +9,9 @@ use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Channel;
 use ipl\Html\Attributes;
 use ipl\Html\HtmlDocument;
+use ipl\Html\Text;
 use ipl\Web\Common\ItemRenderer;
+use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
 
 /** @implements ItemRenderer<Channel> */
@@ -22,7 +24,11 @@ class ChannelRenderer implements ItemRenderer
 
     public function assembleVisual($item, HtmlDocument $visual, string $layout): void
     {
-        $visual->addHtml($item->getIcon());
+        if (isset($item->validation_result)) {
+            $visual->addHtml(new Icon('circle-xmark', ['class' => 'error']));
+        } else {
+            $visual->addHtml(new Icon('check'));
+        }
     }
 
     public function assembleTitle($item, HtmlDocument $title, string $layout): void
@@ -32,6 +38,9 @@ class ChannelRenderer implements ItemRenderer
 
     public function assembleCaption($item, HtmlDocument $caption, string $layout): void
     {
+        if (isset($item->validation_result)) {
+            $caption->addHtml(Text::create($item->validation_result));
+        }
     }
 
     public function assembleExtendedInfo($item, HtmlDocument $info, string $layout): void

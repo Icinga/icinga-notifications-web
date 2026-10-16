@@ -26,6 +26,7 @@ use Ramsey\Uuid\UuidInterface;
  * @property ?string $config
  * @property DateTime $changed_at
  * @property bool $deleted
+ * @property ?string $validation_result
  *
  * @property Query<IncidentHistory>|Collection<IncidentHistory> $incident_history
  * @property Query<RuleEntryRecipient>|Collection<RuleEntryRecipient> $rule_entry_recipient
@@ -53,17 +54,19 @@ class Channel extends Model
             'config',
             'changed_at',
             'deleted',
-            'external_uuid'
+            'external_uuid',
+            'validation_result'
         ];
     }
 
     public function getColumnDefinitions(): array
     {
         return [
-            'name'          => t('Name'),
-            'type'          => t('Type'),
-            'changed_at'    => t('Changed At'),
-            'external_uuid' => t('UUID')
+            'name'              => t('Name'),
+            'type'              => t('Type'),
+            'changed_at'        => t('Changed At'),
+            'external_uuid'     => t('UUID'),
+            'validation_result' => t('Validation Result')
         ];
     }
 
