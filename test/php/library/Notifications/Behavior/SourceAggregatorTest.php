@@ -30,9 +30,29 @@ class SourceAggregatorTest extends TestCase
     /** @var int Number of sources seeded so far, keeps `source.listener_username` unique across all tests */
     private static int $sourceCount = 0;
 
+    /**
+     * @var int Id of the source every incident was opened by, it is linked to no object
+     *
+     * It is set explicitly and far beyond the ids of the sources the tests seed, as PostgreSQL doesn't advance
+     * the sequence for an explicit id, which would make the first seeded source collide with it.
+     */
+    private const INCIDENT_SOURCE_ID = 1000;
+
+    /**
+     * Seed the source every incident was opened by
+     *
+     * It is linked to no object, so it is never aggregated and doesn't interfere with the sources a test seeds.
+     * This runs before a test's transaction starts, so it survives its rollback.
+     */
     protected static function initializeNotificationsDb(Connection $db): void
     {
-        // Neither objects nor sources have prerequisites of their own
+        $db->insert('source', [
+            'id'                => self::INCIDENT_SOURCE_ID,
+            'type'              => 'icinga2',
+            'name'              => 'Incident opener',
+            'listener_username' => 'incident-opener',
+            'changed_at'        => (int) (new DateTime())->format('Uv')
+        ]);
     }
 
     #[DataProvider('sharedDatabases')]
@@ -288,8 +308,10 @@ class SourceAggregatorTest extends TestCase
     {
         $this->db->insert('incident', [
             'object_id'  => $objectId,
+            'source_id'  => self::INCIDENT_SOURCE_ID,
             'severity'   => 'crit',
-            'started_at' => (int) (new DateTime())->format('Uv')
+            'started_at' => (int) (new DateTime())->format('Uv'),
+            'summary'    => 'Test'
         ]);
 
         return (int) $this->db->lastInsertId();
