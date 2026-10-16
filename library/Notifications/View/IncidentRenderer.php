@@ -57,7 +57,7 @@ class IncidentRenderer implements ItemRenderer
 
     public function assembleCaption($item, HtmlDocument $caption, string $layout): void
     {
-        $caption->addHtml(new Text(substr($item->message ?? '', 0, 1000)));
+        $caption->addHtml(new Text($item->summary));
     }
 
     public function assembleExtendedInfo($item, HtmlDocument $info, string $layout): void
