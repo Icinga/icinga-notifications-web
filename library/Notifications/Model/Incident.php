@@ -29,6 +29,7 @@ use ipl\Sql\Select;
  * @property Severity $severity
  * @property ?string $mute_reason
  * @property ?string $message
+ * @property string $summary
  *
  * @property Query<Objects>|Objects $object
  * @property Query<Contact>|Collection<Contact> $contact
@@ -58,7 +59,8 @@ class Incident extends Model
             'recovered_at',
             'severity',
             'mute_reason',
-            'message'
+            'message',
+            'summary'
         ];
     }
 
@@ -70,7 +72,8 @@ class Incident extends Model
             'recovered_at' => t('Recovered At'),
             'severity'     => t('Severity'),
             'mute_reason'  => t('Mute Reason'),
-            'message'      => t('Message')
+            'message'      => t('Message'),
+            'summary'      => t('Summary')
         ];
     }
 
