@@ -166,15 +166,17 @@ final class RuleEntryRepository
 
         $entityManager->save($entry);
 
-        $siblings = RuleEntry::on($this->db)
-            ->columns(['id', 'position'])
-            ->filter(Filter::equal('rule_id', $entry->rule_id))
-            ->filter(Filter::greaterThan('position', $freedPosition))
-            ->orderBy('position', SORT_ASC);
-        foreach ($siblings as $sibling) {
-            $sibling->setNew(false);
-            $sibling->position -= 1;
-            $entityManager->save($sibling);
+        if ($freedPosition > 0) {
+            $siblings = RuleEntry::on($this->db)
+                ->columns(['id', 'position'])
+                ->filter(Filter::equal('rule_id', $entry->rule_id))
+                ->filter(Filter::greaterThan('position', $freedPosition))
+                ->orderBy('position', SORT_ASC);
+            foreach ($siblings as $sibling) {
+                $sibling->setNew(false);
+                $sibling->position -= 1;
+                $entityManager->save($sibling);
+            }
         }
     }
 }

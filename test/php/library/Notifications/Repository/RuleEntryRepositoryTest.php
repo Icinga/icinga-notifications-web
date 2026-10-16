@@ -296,4 +296,21 @@ class RuleEntryRepositoryTest extends TestCase
         $this->assertNull($recipients[0]->contact_id, 'The former contact_id must be nulled');
         $this->assertNull($recipients[0]->channel_id, 'The channel should have been cleared');
     }
+
+    #[DataProvider('sharedDatabases')]
+    public function testDeletingTheImmediateEscalationKeepsPositionZeroUnoccupied(Connection $db): void
+    {
+        $ruleId = $this->createRule($db);
+        $repository = new RuleEntryRepository($db);
+
+        $immediateId = $repository->create($this->escalation($ruleId, 0, null));
+        $otherId = $repository->create($this->escalation($ruleId, 1, 'bogus'));
+
+        $repository->delete($immediateId);
+
+        $other = $repository->find($otherId);
+
+        $this->assertSame(1, $other->position);
+        $this->assertSame('bogus', $other->condition);
+    }
 }
