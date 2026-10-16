@@ -140,7 +140,7 @@ class Controls extends Form
         $this->addElement('hidden', $param, ['required' => true]);
 
         $chosenMode = $this->getPopulatedValue('mode');
-        $viewModeSwitcher = HtmlElement::create('fieldset', ['class' => 'view-mode-switcher']);
+        $viewModeSwitcher = HtmlElement::create('fieldset', ['class' => 'mode-switcher']);
         foreach ($options as $value => $label) {
             $input = $this->createElement('input', $param, [
                 'class' => 'autosubmit',
