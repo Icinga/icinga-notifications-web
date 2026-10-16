@@ -15,7 +15,6 @@ use ipl\Orm\Behaviors;
 use ipl\Orm\Query;
 use ipl\Orm\Relations;
 use ipl\Stdlib\Filter;
-use ipl\Web\Widget\Icon;
 use Ramsey\Uuid\UuidInterface;
 
 /**
@@ -100,20 +99,6 @@ class Channel extends Model
             ->setJoinType('LEFT');
         $relations->hasMany('notification_history', NotificationHistory::class)
             ->setJoinType('LEFT');
-    }
-
-    /**
-     * Get the channel icon
-     *
-     * @return Icon
-     */
-    public function getIcon(): Icon
-    {
-        return match ($this->type) {
-            'rocketchat' => new Icon('comment-dots'),
-            'email'      => new Icon('at'),
-            default      => new Icon('envelope')
-        };
     }
 
     public function createVisibilityFilter(Filter\Chain $filter): void
