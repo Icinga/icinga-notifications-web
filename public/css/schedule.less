@@ -39,12 +39,20 @@
       line-height: 1;
     }
 
-    .view-mode-switcher {
-      margin-bottom: 0;
+    .mode-switcher {
+      display: inline-flex;
+      border: none;
+      margin: 0;
+      padding: 0;
+
+      input {
+        display: none;
+      }
 
       label {
         min-width: 6em;
         text-align: center;
+        padding: 14/16*.25em 14/16*.5em;
       }
     }
   }
@@ -111,6 +119,36 @@
 }
 
 /* Design */
+
+.schedule-detail-controls {
+  .mode-switcher {
+    label {
+      color: @control-color;
+      background: @default-input-bg;
+      cursor: pointer;
+
+      &:first-of-type {
+        border-top-left-radius: 0.25em;
+        border-bottom-left-radius: 0.25em;
+      }
+
+      &:last-of-type {
+        border-top-right-radius: 0.25em;
+        border-bottom-right-radius: 0.25em;
+      }
+
+      &:not(:last-of-type) {
+        border-right: 1px solid @default-input-hover-bg;
+      }
+    }
+
+    input[checked] + label {
+      background-color: @control-color;
+      color: @default-text-color-inverted;
+      cursor: default;
+    }
+  }
+}
 
 .schedule-detail {
   .entry.highlighted {
