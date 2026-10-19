@@ -40,7 +40,7 @@ class NotificationController extends CompatController
                 'incident',
                 'object',
             ])
-            ->withColumns(['object.sources'])
+            ->withColumns(['object.sources', 'channel_label' => 'channel.available_channel_type.name'])
             ->filter(Filter::equal('id', $id));
 
         $this->applyRestrictions($query);

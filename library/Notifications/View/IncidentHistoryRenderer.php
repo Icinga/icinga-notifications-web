@@ -134,11 +134,11 @@ class IncidentHistoryRenderer implements ItemRenderer
                 break;
             case IncidentHistoryType::NOTIFIED:
                 if (isset($item->contactgroup->name) && isset($item->contact->full_name)) {
-                    if (isset($item->channel->type)) {
+                    if (isset($item->channel_label)) {
                         $message = sprintf(
                             $this->translate('Contact %s notified via %s as member of contact group %s'),
                             $item->contact->full_name,
-                            $item->channel->type,
+                            $item->channel_label,
                             $item->contactgroup->name
                         );
                     } else {
@@ -149,11 +149,11 @@ class IncidentHistoryRenderer implements ItemRenderer
                         );
                     }
                 } elseif (isset($item->schedule->name) && isset($item->contact->full_name)) {
-                    if (isset($item->channel->type)) {
+                    if (isset($item->channel_label)) {
                         $message = sprintf(
                             $this->translate('Contact %s notified via %s as member of schedule %s'),
                             $item->contact->full_name,
-                            $item->channel->type,
+                            $item->channel_label,
                             $item->schedule->name
                         );
                     } else {
@@ -164,11 +164,11 @@ class IncidentHistoryRenderer implements ItemRenderer
                         );
                     }
                 } elseif (isset($item->contact->full_name)) {
-                    if (isset($item->channel->type)) {
+                    if (isset($item->channel_label)) {
                         $message = sprintf(
                             $this->translate('Contact %s notified via %s'),
                             $item->contact->full_name,
-                            $item->channel->type
+                            $item->channel_label
                         );
                     } else {
                         $message = sprintf(
@@ -177,10 +177,10 @@ class IncidentHistoryRenderer implements ItemRenderer
                         );
                     }
                 } else {
-                    if (isset($item->channel->type)) {
+                    if (isset($item->channel_label)) {
                         $message = sprintf(
                             $this->translate('Unknown recipient notified via %s'),
-                            $item->channel->type
+                            $item->channel_label
                         );
                     } else {
                         $message = $this->translate('Unknown recipient notified');
