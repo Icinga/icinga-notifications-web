@@ -19,7 +19,6 @@ use ipl\Web\Common\CalloutType;
 use ipl\Web\Filter\QueryString;
 use ipl\Web\Widget\Callout;
 use LogicException;
-use RuntimeException;
 
 /**
  * HTML representation for an escalation condition
@@ -110,7 +109,14 @@ class EscalationCondition extends HtmlDocument
 
         if (isset($byColumn['incident_age'])) {
             if (count($byColumn['incident_age']) > 1) {
-                throw new RuntimeException('Cannot describe more than one incident_age condition');
+                $this->addHtml(
+                    new Callout(
+                        CalloutType::Warning,
+                        Text::create($this->translate('Cannot describe more than one incident_age condition.'))
+                    )
+                );
+
+                return;
             }
 
             $this->assembleAgeRepresentation((string) $byColumn['incident_age'][0]->getValue());
