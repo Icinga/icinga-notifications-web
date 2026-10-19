@@ -115,7 +115,7 @@ class NotificationDetail extends BaseHtmlElement
                 Text::create(sprintf(
                     '%s (%s)',
                     $channel->name ?? $this->translate('unknown'),
-                    $channel->type ?? $this->translate('deleted')
+                    $this->notificationHistory->channel_label ?? $this->translate('deleted')
                 ))
             )
         ];

@@ -179,8 +179,8 @@ class IncidentDetail extends BaseHtmlElement
                 'rule_entry',
                 'contactgroup',
                 'schedule',
-                'channel'
-            ]);
+            ])
+            ->withColumns(['channel_label' => 'channel.available_channel_type.name']);
 
         return [
             Html::tag('h2', $this->translate('Incident History')),

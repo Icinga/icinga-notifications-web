@@ -98,7 +98,8 @@ class IncidentController extends CompatController
         $this->setTitleTab($this->getRequest()->getActionName());
 
         $notificationHistory = NotificationHistory::on(Database::get())
-            ->with(['channel', 'contact', 'contactgroup', 'schedule'])
+            ->with(['contact', 'contactgroup', 'schedule'])
+            ->withColumns(['channel_label' => 'channel.available_channel_type.name'])
             ->filter(Filter::equal('notification_history.incident_id', $this->params->shiftRequired('id')));
         $this->applyRestrictions($notificationHistory);
 

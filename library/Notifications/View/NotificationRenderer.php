@@ -99,7 +99,7 @@ class NotificationRenderer implements ItemRenderer
      */
     protected function buildMessage(NotificationHistory $item): string
     {
-        $pluginName = $item->channel->available_channel_type->name ?? $this->translate('unknown');
+        $pluginName = $item->channel_label ?? $this->translate('unknown');
         $contactName = $item->contact->full_name ?? $this->translate('unknown');
 
         $format = match ($item->state) {
