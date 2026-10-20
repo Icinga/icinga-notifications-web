@@ -5,15 +5,19 @@
 
 namespace Icinga\Module\Notifications\View;
 
+use Exception;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Model\RuleEntry;
+use Icinga\Module\Notifications\Util\RuleSerializer;
 use Icinga\Module\Notifications\Widget\RuleEntryRecipientBadge;
 use ipl\Html\Attributes;
 use ipl\Html\HtmlDocument;
+use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\I18n\Translation;
 use ipl\Web\Common\ItemRenderer;
+use ipl\Web\Url;
 use ipl\Web\Widget\Icon;
 use ipl\Web\Widget\Link;
 
@@ -33,11 +37,40 @@ class EventRuleRenderer implements ItemRenderer
 
     public function assembleTitle($item, HtmlDocument $title, string $layout): void
     {
-        $title->addHtml(new Link($item->name, Links::eventRule($item->id), ['class' => 'subject']));
-        $title->addHtml(Text::create(match ($item->type) {
-            'escalation' => $this->translate('Escalation Rule'),
-            'notification' => $this->translate('Notification Rule')
-        }));
+        $migrationRequired = false;
+        if ($item->object_filter) {
+            try {
+                RuleSerializer::decode($item->object_filter);
+            } catch (Exception) {
+                $migrationRequired = true;
+            }
+        }
+
+        if ($migrationRequired) {
+            /** TODO: Drop this or re-factor this together with {@see EventRuleController::migrateAction()} */
+            $title->addHtml(
+                new Link(
+                    $item->name,
+                    Url::fromPath('notifications/event-rule/migrate', ['id' => $item->id]),
+                    ['class' => 'subject']
+                ),
+                new HtmlElement(
+                    'span',
+                    Attributes::create(['class' => 'migration-alert']),
+                    new Icon('triangle-exclamation'),
+                    Text::create($this->translate(
+                        'This rule is outdated. Click here to migrate it.'
+                    )),
+                    new Icon('triangle-exclamation')
+                )
+            );
+        } else {
+            $title->addHtml(new Link($item->name, Links::eventRule($item->id), ['class' => 'subject']));
+            $title->addHtml(Text::create(match ($item->type) {
+                'escalation' => $this->translate('Escalation Rule'),
+                'notification' => $this->translate('Notification Rule')
+            }));
+        }
     }
 
     public function assembleCaption($item, HtmlDocument $caption, string $layout): void
