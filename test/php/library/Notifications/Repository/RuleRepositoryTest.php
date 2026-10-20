@@ -257,4 +257,53 @@ class RuleRepositoryTest extends TestCase
         $recipient = $copyEscalations[0]->rule_entry_recipient->first();
         $this->assertSame(self::$contactId, $recipient->contact_id);
     }
+
+    #[DataProvider('sharedDatabases')]
+    public function testDuplicateResetsFiltersOfANotificationRuleIfTheSourceTypeChanged(Connection $db): void
+    {
+        $repository = new RuleRepository($db);
+        $originalId = $repository->create(
+            new RuleData(null, 'Original', 'notification', 'test', 'host.name=foo')
+        );
+        (new RuleEntryRepository($db))->create($this->escalation(null, 0, 'host.name=bar', $originalId));
+
+        $copyId = $repository->duplicate(new RuleData($originalId, 'Copy', 'notification', 'icinga2', 'host.name=foo'));
+
+        $copy = $repository->find($copyId);
+        $this->assertSame('icinga2', $copy->source_type);
+        $this->assertNull($copy->object_filter, 'The object filter must not be copied if the source type changed');
+
+        $copyEscalations = $this->escalationsOf($db, $copyId);
+        $this->assertCount(1, $copyEscalations);
+        $this->assertNull(
+            $copyEscalations[0]->condition,
+            'The filter of a notification rule\'s entry must not be copied if the source type changed'
+        );
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testDuplicateKeepsEscalationConditionsIfTheSourceTypeChanged(Connection $db): void
+    {
+        $repository = new RuleRepository($db);
+        $originalId = $repository->create(
+            new RuleData(null, 'Original', 'escalation', 'test', 'host.name=foo')
+        );
+        $condition = 'incident_age>5m';
+        (new RuleEntryRepository($db))->create($this->escalation(null, 0, $condition, $originalId));
+
+        $copyId = $repository->duplicate(new RuleData($originalId, 'Copy', 'escalation', 'icinga2', 'host.name=foo'));
+
+        $this->assertNull(
+            $repository->find($copyId)->object_filter,
+            'The object filter must not be copied if the source type changed'
+        );
+
+        $copyEscalations = $this->escalationsOf($db, $copyId);
+        $this->assertCount(1, $copyEscalations);
+        $this->assertSame(
+            $condition,
+            $copyEscalations[0]->condition,
+            'Escalation conditions are independent of the source type and must be copied'
+        );
+    }
 }

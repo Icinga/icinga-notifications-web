@@ -146,12 +146,14 @@ final class RuleRepository
             );
         }
 
+        $sourceTypeChanged = $original->source_type !== $rule->sourceType;
+
         $ruleId = $this->create(new RuleData(
             null,
             $rule->name,
             $rule->type,
             $rule->sourceType,
-            $rule->objectFilter ?? $original->object_filter
+            $sourceTypeChanged ? null : ($rule->objectFilter ?? $original->object_filter)
         ));
 
         $entryRepository = new RuleEntryRepository($this->db);
@@ -176,7 +178,7 @@ final class RuleRepository
             $entryRepository->create(new RuleEntry(
                 null,
                 $entry->position,
-                $entry->condition,
+                $sourceTypeChanged && $original->type === 'notification' ? null : $entry->condition,
                 $recipients,
                 $ruleId
             ));
