@@ -90,10 +90,6 @@ class RuleEntry extends Model
     {
         $relations->belongsTo('rule', Rule::class);
 
-        $relations
-            ->belongsToMany('incident', Incident::class)
-            ->through('incident_rule_entry_state');
-
         $relations->belongsToMany('contact', Contact::class)
             ->through(RuleEntryRecipient::class)
             ->setTargetForeignKey('contact_id')

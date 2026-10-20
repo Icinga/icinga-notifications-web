@@ -129,10 +129,5 @@ class Incident extends Model
             ->belongsToMany('rule', Rule::class)
             ->through('incident_rule')
             ->setJoinType('LEFT');
-
-        $relations
-            ->belongsToMany('rule_entry', RuleEntry::class)
-            ->through('incident_rule_entry_state')
-            ->setJoinType('LEFT');
     }
 }
