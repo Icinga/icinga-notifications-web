@@ -242,7 +242,7 @@ class EventRule extends BaseHtmlElement
      */
     private function createObjectFilterControls(?string $json): ValidHtml
     {
-        if ($json !== null) {
+        if (! empty($json)) {
             $parsedFilter = json_decode($json, true, flags: JSON_THROW_ON_ERROR);
 
             $icon = 'filter';

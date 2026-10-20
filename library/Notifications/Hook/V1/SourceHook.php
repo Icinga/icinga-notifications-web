@@ -8,6 +8,9 @@ namespace Icinga\Module\Notifications\Hook\V1;
 use ipl\Html\Contract\Form;
 use ipl\Web\Widget\Icon;
 
+/**
+ * @deprecated Use {@see Icinga\Module\Notifications\Hook\V2\SourceHook} instead
+ */
 interface SourceHook
 {
     /**
