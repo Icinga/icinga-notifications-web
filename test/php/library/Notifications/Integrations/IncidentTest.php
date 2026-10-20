@@ -920,7 +920,7 @@ class IncidentTest extends TestCase
         $this->db->insert('incident', [
             'object_id'   => self::objectId($this->db),
             'source_id'   => self::SOURCE_ID,
-            'severity'    => 'crit',
+            'severity'    => 'critical',
             'started_at'  => (int) (new DateTime())->format('Uv'),
             'mute_reason' => $muteReason,
             'summary'     => 'Test'

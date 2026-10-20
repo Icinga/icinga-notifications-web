@@ -25,14 +25,9 @@ class SeverityTest extends TestCase
     {
         return [
             'ok' => [Severity::OK, 'ok'],
-            'critical' => [Severity::CRITICAL, 'crit'],
+            'critical' => [Severity::CRITICAL, 'critical'],
             'warning' => [Severity::WARNING, 'warning'],
-            'error' => [Severity::ERROR, 'err'],
-            'debug' => [Severity::DEBUG, 'debug'],
-            'info' => [Severity::INFO, 'info'],
-            'alert' => [Severity::ALERT, 'alert'],
-            'emergency' => [Severity::EMERGENCY, 'emerg'],
-            'notice' => [Severity::NOTICE, 'notice']
+            'error' => [Severity::ERROR, 'error']
         ];
     }
 
@@ -43,14 +38,9 @@ class SeverityTest extends TestCase
     {
         return [
             'ok' => [Severity::OK, 'fa-circle-check', 'severity-ok'],
-            'critical' => [Severity::CRITICAL, 'fa-circle-exclamation', 'severity-crit'],
+            'critical' => [Severity::CRITICAL, 'fa-circle-exclamation', 'severity-critical'],
             'warning' => [Severity::WARNING, 'fa-triangle-exclamation', 'severity-warning'],
-            'error' => [Severity::ERROR, 'fa-circle-xmark', 'severity-err'],
-            'debug' => [Severity::DEBUG, 'fa-bug-slash', 'severity-debug'],
-            'info' => [Severity::INFO, 'fa-circle-info', 'severity-info'],
-            'alert' => [Severity::ALERT, 'fa-bell', 'severity-alert'],
-            'emergency' => [Severity::EMERGENCY, 'fa-bullhorn', 'severity-emerg'],
-            'notice' => [Severity::NOTICE, 'fa-envelope', 'severity-notice']
+            'error' => [Severity::ERROR, 'fa-circle-xmark', 'severity-error']
         ];
     }
 
@@ -72,11 +62,6 @@ class SeverityTest extends TestCase
         $this->assertSame('Critical', Severity::CRITICAL->getLabel());
         $this->assertSame('Warning', Severity::WARNING->getLabel());
         $this->assertSame('Error', Severity::ERROR->getLabel());
-        $this->assertSame('Debug', Severity::DEBUG->getLabel());
-        $this->assertSame('Information', Severity::INFO->getLabel());
-        $this->assertSame('Alert', Severity::ALERT->getLabel());
-        $this->assertSame('Emergency', Severity::EMERGENCY->getLabel());
-        $this->assertSame('Notice', Severity::NOTICE->getLabel());
     }
 
     #[DataProvider('iconProvider')]
@@ -103,14 +88,9 @@ class SeverityTest extends TestCase
         $this->assertSame(
             [
                 Severity::OK,
-                Severity::DEBUG,
-                Severity::INFO,
-                Severity::NOTICE,
                 Severity::WARNING,
                 Severity::ERROR,
-                Severity::CRITICAL,
-                Severity::ALERT,
-                Severity::EMERGENCY
+                Severity::CRITICAL
             ],
             Severity::cases(),
             'A Severity case was added, removed, or reordered — update the test providers and this assertion'
