@@ -309,7 +309,7 @@ class SourceAggregatorTest extends TestCase
         $this->db->insert('incident', [
             'object_id'  => $objectId,
             'source_id'  => self::INCIDENT_SOURCE_ID,
-            'severity'   => 'crit',
+            'severity'   => 'critical',
             'started_at' => (int) (new DateTime())->format('Uv'),
             'summary'    => 'Test'
         ]);

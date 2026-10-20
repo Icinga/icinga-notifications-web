@@ -17,15 +17,9 @@ use ipl\Web\Widget\Icon;
 enum Severity: string
 {
     case OK        = 'ok';
-    case DEBUG     = 'debug';
-    case INFO      = 'info';
-    case NOTICE    = 'notice';
     case WARNING   = 'warning';
-    case ERROR     = 'err';
-    case CRITICAL  = 'crit';
-    case ALERT     = 'alert';
-    case EMERGENCY = 'emerg';
-
+    case ERROR     = 'error';
+    case CRITICAL  = 'critical';
 
     /**
      * Get the backing string value
@@ -48,12 +42,7 @@ enum Severity: string
             self::OK        => t('Ok', 'notifications.severity'),
             self::CRITICAL  => t('Critical', 'notifications.severity'),
             self::WARNING   => t('Warning', 'notifications.severity'),
-            self::ERROR     => t('Error', 'notifications.severity'),
-            self::DEBUG     => t('Debug', 'notifications.severity'),
-            self::INFO      => t('Information', 'notifications.severity'),
-            self::ALERT     => t('Alert', 'notifications.severity'),
-            self::EMERGENCY => t('Emergency', 'notifications.severity'),
-            self::NOTICE    => t('Notice', 'notifications.severity'),
+            self::ERROR     => t('Error', 'notifications.severity')
         };
     }
 
@@ -68,12 +57,7 @@ enum Severity: string
             self::OK        => 'circle-check',
             self::CRITICAL  => 'circle-exclamation',
             self::WARNING   => 'triangle-exclamation',
-            self::ERROR     => 'circle-xmark',
-            self::DEBUG     => 'bug-slash',
-            self::INFO      => 'circle-info',
-            self::ALERT     => 'bell',
-            self::EMERGENCY => 'bullhorn',
-            self::NOTICE    => 'envelope'
+            self::ERROR     => 'circle-xmark'
         };
 
         return new Icon($icon, [

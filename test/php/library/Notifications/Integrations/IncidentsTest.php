@@ -436,7 +436,7 @@ class IncidentsTest extends TestCase
         $this->db->insert('incident', [
             'object_id'    => $objectId,
             'source_id'    => self::SOURCE_ID,
-            'severity'     => 'crit',
+            'severity'     => 'critical',
             'started_at'   => ($recoveredAt ?? $now) - 1000,
             'recovered_at' => $recoveredAt,
             'summary'      => 'Test'

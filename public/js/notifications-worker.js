@@ -126,7 +126,7 @@ function processMessage(event) {
                     case 'warning':
                         severity = 'warning';
                         break;
-                    case 'crit':
+                    case 'critical':
                         severity = 'critical';
                         break;
                 }
