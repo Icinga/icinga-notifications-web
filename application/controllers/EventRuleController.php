@@ -69,6 +69,7 @@ class EventRuleController extends CompatController
         $this->setTitle($this->translate('Adjust Filter'));
 
         $form = (new RuleFilterForm())
+            ->setCsrfCounterMeasureId(Session::getSession()->getId())
             ->setAction(Url::fromRequest()->getAbsoluteUrl())
             ->on(Form::ON_REQUEST, function ($_, RuleFilterForm $form) {
                 $rule = (new RuleRepository(Database::get()))

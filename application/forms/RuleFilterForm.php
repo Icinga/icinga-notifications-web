@@ -17,6 +17,7 @@ use ipl\Html\Text;
 use ipl\Stdlib\Filter;
 use ipl\Stdlib\Seq;
 use ipl\Web\Common\CalloutType;
+use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Control\SearchBar\SearchException;
 use ipl\Web\Control\SearchEditor;
 use ipl\Web\Filter\QueryString;
@@ -27,6 +28,8 @@ use UnexpectedValueException;
 
 class RuleFilterForm extends SearchEditor
 {
+    use CsrfCounterMeasure;
+
     /**
      * Whether a source integration has been registered for validation and enrichment of the filter
      *
@@ -137,6 +140,7 @@ class RuleFilterForm extends SearchEditor
         $this->addElement('hidden', 'rule_name', ['required' => true]);
         $this->addElement('hidden', 'rule_type', ['required' => true]);
         $this->addElement('hidden', 'source_type', ['required' => true]);
+        $this->addCsrfCounterMeasure();
 
         $this->registerHookIntegration($this->getValue('source_type'));
 
