@@ -5,7 +5,7 @@ documentation before switching to a new version.
 
 ## 0.3.0 (2026-07-07)
 
-This release ensures compatiblity with PHP 8.5 and icinga-php-thirdparty 1.0.
+This release ensures compatibility with PHP 8.5 and icinga-php-thirdparty 1.0.
 
 ## 0.2.0 (2025-11-19)
 

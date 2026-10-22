@@ -3,8 +3,9 @@
 Icinga Notifications Web provides a REST API that allows you to manage notification-related resources programmatically.
 
 With this API, you can:
-- Manage **contacts** and **contact groups**
-- Read available **notification channels**
+
+* Manage **contacts** and **contact groups**
+* Read available **notification channels**
 
 This API enables easy integration with external tools, automation workflows, and configuration management systems.
 
@@ -21,7 +22,8 @@ Future versions will be accessible under corresponding paths (for example, `/api
 The complete API reference for version `v1` is available in [`api/v1.md`](api/v1.md).
 
 It contains an OpenAPI v3.1 description with detailed information about all endpoints, including:
-- Request and response schemas
-- Example payloads
-- Authentication requirements
-- Error handling
+
+* Request and response schemas
+* Example payloads
+* Authentication requirements
+* Error handling
