@@ -19,7 +19,7 @@ interface open. This means that if the browser is closed, no notifications will 
 For this reason, desktop notifications are not meant to be a primary notification method. This is also the reason
 why they will only show up for incidents a contact is notified about by other means, e.g. email.
 
-In order to link a contact to the currently logged-in user, both the contact's and the user's username must match.
+In order to link a contact to the currently logged-in user, the contact's `Icinga Web User` must match the user's username.
 
 ### Supported Browsers
 
@@ -99,13 +99,15 @@ location ~ ^/icingaweb2/notifications/v(\d+)/subscribe$ {
 
 ### Enable The Daemon
 
-The default `systemd` service, shipped with the package `icinga-desktop-notifications`, runs the background daemon.
+The module ships a `systemd` service named `icinga-desktop-notifications.service`, which runs the background daemon.
+
+<!-- TODO(verify): Whether and into which path the distribution packages install the unit file. The name of the package that ships it could not be confirmed; there is no package named `icinga-desktop-notifications` in this repository. -->
 
 <!-- {% if not icingaDocs %} -->
 
 > **Note**
 >
-> If you haven't installed this module from packages, you have to configure this as a `systemd` service yourself by just
+> If you haven't installed this module from packages, you have to configure this as a `systemd` service yourself by
 > copying the example service definition from `/usr/share/icingaweb2/modules/notifications/config/systemd/icinga-desktop-notifications.service`
 > to `/etc/systemd/system/icinga-desktop-notifications.service`.
 <!-- {% endif %} -->
