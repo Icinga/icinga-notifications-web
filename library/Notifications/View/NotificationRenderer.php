@@ -51,7 +51,7 @@ class NotificationRenderer implements ItemRenderer
 
     public function assembleCaption($item, HtmlDocument $caption, string $layout): void
     {
-        $caption->addHtml(Text::create($item->event_message));
+        $caption->addHtml(Text::create($item->event_summary));
     }
 
     public function assembleExtendedInfo($item, HtmlDocument $info, string $layout): void
