@@ -16,7 +16,7 @@ The steps are the same for it.
 | Event rules                   | Bound to a source                                                       | Bound to a source type                                                  |
 | Managing the source           | By hand in Icinga Notifications Web                                     | Optionally by the integration, `Integrations\V1\Source`                 |
 | Incidents in your own views   | Not possible                                                            | `Integrations\V1\Incidents`, `Incident`                                 |
-| Event submission              | `/process-event` with `rule_ids` and `rules_version`                    | `/v1/process-event` with `relations`                                    |
+| Event submission              | `/process-event` with `rule_ids` and `rules_version`                    | `/v1/process-event` with `relations`, see [Daemon Changes](#daemon-changes) |
 
 !!! note
 
@@ -257,31 +257,14 @@ sources of that type. For an integration this means:
 ### 7. Adjust How Events Are Submitted
 
 If your integration belongs to a process that submits events, that process has to be upgraded as well, as the daemon
-rejects events in the old format. The details are in the
-[HTTP API documentation](https://icinga.com/docs/icinga-notifications/latest/doc/20-HTTP-API/) and in the
-[upgrading notes][daemon-upgrading] of the daemon. What you have to do:
-
-| v0.2.0                                                   | v1.0                                                                          |
-|----------------------------------------------------------|-------------------------------------------------------------------------------|
-| `POST /process-event`                                    | `POST /v1/process-event`. The unversioned endpoint is no longer served       |
-| `rule_ids` and `rules_version`. The daemon answered with `412` and the current rules if the version was outdated | Removed. The daemon evaluates rules itself. If `relations` are incomplete, the daemon answers with `422` and lists what is missing, see below |
-| `extra_tags`, `username`                                 | Removed. Put what rules need into `relations`                                 |
-| `type` (`state`, …), severities like `crit` and `err`    | `type` is only for events with `incident: false`. Severities are `ok`, `warning`, `error` and `critical`, and may only be set together with `incident: true` |
-| `mute`, `mute_reason`                                    | `muted`, `muted_reason`                                                        |
-| —                                                        | `incident`, `close`, `notify`, `relations`, `complete_relations`, `summary`, `id` |
-| A relative `url` was completed using the configured `icingaweb2-url` of the daemon | `url` has to be absolute, or empty. The daemon rejects relative ones with `400` and the option is gone |
-| Authentication by username and password                 | Unchanged. In addition, a source can connect via the daemon's Unix socket, or authenticate with a TLS client certificate |
+rejects events in the old format. What changed is listed in [Listener API](#listener-api) below, together with the
+other changes of the daemon that concern a source.
 
 Rules are evaluated against `relations` now, so the source has to put everything into events that the columns of
 your hook (step 3) refer to, and has to be prepared to be asked for what is missing. A rule on a custom variable,
 for example, needs that variable in the `relations` of the events it should match. Icinga DB lets users configure
 which relations are sent by default, and extends them if the daemon answers with `422`. Check
 [Consistency](30-Integrations.md#consistency-between-hooks-and-events) afterwards.
-
-<!-- TODO(verify): The lists of removed and new event fields were derived from icinga-go-library v0.8.1 (used by Icinga
-Notifications v0.2.0) and the revision pinned by Icinga Notifications main (0a1f3d0c0b67). The daemon's upgrading notes
-do not list them. Confirm with the daemon maintainers that this is the complete list of breaking changes, in
-particular the severity names. -->
 
 ### 8. Optional: Use the New Capabilities
 
@@ -315,4 +298,171 @@ Then test the following with a v1.0 setup:
 5. If you use `Incidents`, subscribe and unsubscribe on an object with an open incident, and verify that the pending
    state resolves.
 
+## Daemon Changes
+
+The documentation of Icinga Notifications only describes the current state. This part lists what changed for a
+**source** since v0.2.0, so you know what to adjust in the process that submits events. It is derived from the daemon
+at the tag v0.2.0 and at its current main branch, and from the Icinga Go library (`icinga-go-library`, IGL) at v0.8.1,
+the version the daemon used in v0.2.0, and at the revision the daemon pins now. For the complete current reference, see
+the [HTTP API documentation][daemon-api]. How to operate the daemon is covered by its
+[configuration][daemon-config] and [upgrading notes][daemon-upgrading].
+
+If your source is written in Go, use the `source.Client` of IGL (package `notifications/source`). It already speaks the
+current API, e.g. `ProcessEvent()` takes a flag to reject incomplete relations and returns the missing ones.
+
+### Listener API
+
+| Topic | v0.2.0 | v1.0 |
+|-------|--------|------|
+| Endpoints | `/process-event`, `/incidents` | `/v1/process-event`, `/v1/incidents`. The unversioned ones are no longer served. The `/debug/…` endpoints stay unversioned |
+| Transport | HTTP only, configured by `listen` | TCP, optionally with TLS, and Unix socket. The options live in the `listener` section of the daemon's configuration |
+| Authentication | HTTP Basic Authentication | Unchanged for TCP. Also a TLS client certificate, which identifies the source by its subject (sending a certificate and Basic Authentication together is rejected with `400`), and, on the Unix socket, the OS user of the process, which identifies the source by its listener username |
+| Rule handling | The source evaluated the rules and submitted `rule_ids` and `rules_version`. With an outdated version, the daemon answered `412` and the current rules of the source | The daemon evaluates the rules against the event's `relations`. `rule_ids`, `rules_version` and the `412` are gone |
+| Missing data for rules | — | `relations`, `complete_relations`, and the header `X-Icinga-Reject-If-Relations-Incomplete`. If set, the daemon answers `422` with the missing relations as JSONPaths, see [Submitting Events](30-Integrations.md#submitting-events) |
+| Success | `202` with a text body, after the event has been processed | `204` without a body, as soon as the event is **queued**. Processing happens afterwards, see [High Availability](#high-availability) |
+| Errors | `406` for superfluous state or mute events, `412` | `400` for invalid JSON, **unknown fields** and invalid events, `401`, `405`, `422` for incomplete relations, `500` if the event could not be queued. Events that turn out to be invalid during processing are dropped and only logged |
+| `/incidents` | `GET`, no filter, the JSON array of all open incidents of the source | `GET` and `POST` on `/v1/incidents`, both require the query parameter `filter`. The response is a stream of JSON objects, one per line |
+
+#### Event Fields
+
+| Field | v0.2.0 | v1.0 |
+|-------|--------|------|
+| `rules_version`, `rule_ids`, `extra_tags`, `username` | Used | **Removed**, the daemon rejects them as unknown fields |
+| `type` | An enumeration: `state`, `acknowledgement-set`, `acknowledgement-cleared`, `mute`, `unmute`, `downtime-start`, `downtime-end`, `downtime-removed`, `flapping-start`, `flapping-end`, `incident-age` and `custom`. The daemon assumed `state` if it was missing | A free-form string that is **only** allowed, and then required, for events with `incident: false`. It has to match a key of [`getEventTypes()`](31-Integrations-Sources.md#geteventtypes) |
+| `severity` | `ok`, `debug`, `info`, `notice`, `warning`, `err`, `crit`, `alert`, `emerg` | `ok`, `warning`, `error`, `critical`. Required if, and only if, `incident` is `true` |
+| `mute`, `mute_reason` | `mute` and a reason | `muted` and `muted_reason`. The reason is required whenever `muted` is set |
+| `id` | — | A UUID that identifies the event, see below |
+| `summary` | — | **Required**. A single line of at most 1024 characters |
+| `incident` | — | `true` opens or escalates an incident, `false` only triggers notification rules, see [Submitting Events](30-Integrations.md#submitting-events) |
+| `close`, `notify` | — | Only `true` or omitted, and only together with `incident: true` |
+| `relations`, `complete_relations` | — | See above |
+| `url` | Could be relative, the daemon completed it with its option `icingaweb2-url` | **Absolute** or empty. Relative URLs are rejected with `400` and the option is gone |
+
+An event has to set at least one of `incident` and `muted`. `muted` cannot be combined with `incident: false`, and
+`muted: true` not with `close`. The state of the event, i.e. open, update or close an incident, is expressed by
+`incident`, `close` and `severity`, not by `type`.
+
+The `id` is what makes events and the history of the daemon correlate:
+
+* It is the `event_id` in the [notification history](#history-api), and what the `$uuid` of a role change through
+  [`Incident`](32-Integrations-Incidents.md#correlating-role-changes-with-source-events) refers to.
+* If you resubmit an event, e.g. after a timeout, keep its `id`. The daemon ignores an event with an `id` that it has
+  already processed or queued. A new event gets a new `id`, even if it looks the same.
+* If the `id` is missing, the daemon derives it from a hash of the event as it was submitted. An identical event without
+  an `id` is therefore treated as the same event.
+
+**Acknowledgements and managers.** In v0.2.0 the daemon made the author of an acknowledgement the manager of the
+incident when it received an `acknowledgement-set` event. This special handling is gone. Events no longer change who
+manages an incident. A role change is requested with [`Incident`](32-Integrations-Incidents.md), by the user who
+caused it, and processed by the daemon like an event. If the source also submits an event for the acknowledgement,
+give both the same `id`.
+
+**`/v1/incidents`.** The new endpoint can also modify incidents of the source, and its responses are streamed:
+
+| | v0.2.0 | v1.0 |
+|-|--------|------|
+| Request | `GET /incidents` | `GET` or `POST /v1/incidents?filter=…`. The filter is a JSON object, or an array of objects, matched against the object's ID tags. `null` as a value requires the tag to be absent |
+| `POST` | — | Closes the incident without notifying (`close`), or updates its message (`message`) |
+| Response | One JSON array | NDJSON. Each line is `{"status": "success"\|"error", "result": {…}}` |
+| Per incident | `incident` and `severity` and `object_tags`, with severities like `crit` and `err` | `is_muted`, `severity` and `object_tags`, with the severities above. There is no incident number |
+
+<!-- The v0.2.0 documentation of GET /incidents names the identifier "incident_id", the code of v0.2.0 returns it as
+"incident". The table follows the code. -->
+
+#### An Event, Migrated
+
+A v0.2.0 event for a service problem:
+
+```
+curl -u 'source-2:insecureinsecure' -d '@-' 'http://localhost:5680/process-event' <<EOF
+{
+  "name": "dummy-809: random fortune",
+  "url": "http://localhost/icingaweb2/icingadb/service?name=random%20fortune&host.name=dummy-809",
+  "tags": {"host": "dummy-809", "service": "random fortune"},
+  "extra_tags": {"hostgroup/app-container": null, "servicegroup/app-mail": null},
+  "type": "state",
+  "severity": "crit",
+  "username": "",
+  "message": "Something went somewhere very wrong.",
+  "rules_version": "23",
+  "rule_ids": ["0"]
+}
+EOF
+```
+
+The same event for v1.0. This is **simplified**, a real source sends everything its rules may refer to:
+
+```
+curl -u 'source-2:insecureinsecure' -H 'X-Icinga-Reject-If-Relations-Incomplete: true' -d '@-' \
+  'http://localhost:5680/v1/process-event' <<EOF
+{
+  "id": "9c2f6d9e-4b53-5f5e-a1a4-3f0d1c7b9d11",
+  "name": "dummy-809: random fortune",
+  "url": "http://localhost/icingaweb2/icingadb/service?name=random%20fortune&host.name=dummy-809",
+  "tags": {"host": "dummy-809", "service": "random fortune"},
+  "incident": true,
+  "severity": "critical",
+  "summary": "Something went somewhere very wrong.",
+  "message": "Something went somewhere very wrong.",
+  "relations": {
+    "host": {"name": "dummy-809"},
+    "services": [{"name": "random fortune"}],
+    "hostgroups": [{"name": "app-container"}],
+    "servicegroups": [{"name": "app-mail"}]
+  },
+  "complete_relations": ["host", "services", "hostgroups", "servicegroups"]
+}
+EOF
+```
+
+What was a `hostgroup/…` entry of `extra_tags` is an element of `relations.hostgroups` now, and the paths that your
+[`getJsonPaths()`](31-Integrations-Sources.md#getjsonpaths) returns have to point there.
+
+### History API
+
+`/v1/notification-history` is new. A source can ask the daemon which notifications it **sent** for its objects, and
+show them in its own views. Icinga DB Web, for example, shows them in the event history and in the detail of an event.
+
+* `GET /v1/notification-history` requires the query parameters `filter`, which works like the one of `/v1/incidents`,
+  and `since`, a timestamp in milliseconds. Only entries triggered at or after `since` are returned.
+* The response is NDJSON, in the same format as `/v1/incidents`. Only notifications that were successfully sent are
+  included, not failed attempts.
+* Each entry carries the `event_id` of the event that triggered the notification. This is how a source links it to
+  its own history: the `id` that the source gave the event, or the one derived by the daemon. A source that wants to
+  show notifications next to its events has to submit its events with stable `id`s.
+* The entries have the contact, the group or schedule it was resolved from, the channel, the message and summary of
+  the event, and whether the incident was closed then. See the
+  [reference][daemon-history] for the fields. For Go sources, `source.Client` has `GetNotificationHistory()` and
+  `YieldNotificationHistory()`, and the entries are `source.NotificationHistory` (`history_entry.go` in IGL).
+
+There is no wrapper for this endpoint in the classes of Icinga Notifications Web. A PHP integration has to call the HTTP
+API itself, with the credentials of its source.
+
+### High Availability
+
+v0.2.0 had no support for several daemons, the page about distributed setups consisted of "To be done". Since v1.0
+multiple daemon instances can share one database, see [Distributed Setups][daemon-ha]. For a source, this means:
+
+* There is no leader. A daemon that receives an event only writes it to a queue in the shared database. Workers on
+  any instance claim and process the entries. So `204` means **queued**, not processed. The incident and the
+  notifications appear shortly afterwards. Do not wait for their effects in the same request.
+* A source may submit to any instance, e.g. through a load balancer. The instances need synchronized clocks (NTP), as
+  the time of the submission matters.
+* Resubmitting an event after a failure or a timeout is safe, **if it keeps its `id`**. Without one, the daemon derives
+  it from the content, which is a bad base to tell two similar events apart. A new event always needs a new `id`.
+* Role changes requested with [`Incident`](32-Integrations-Incidents.md#role-changes-are-asynchronous) use the same
+  queue. Whichever instance claims one applies it to the object's incident that is open at that time.
+* On the side of the source, e.g. two Icinga DB instances in a high availability setup, objects are identified by their
+  ID tags only, and sources are linked to objects through the events they submit. Rules are bound to a source **type**
+  (see step 6). Several sources of the same type, e.g. one per node, share objects, incidents and rules. Each node needs
+  its own source with its own listener username (or OS user), unless the nodes share that username.
+  [`Source::get($username)`](31-Integrations-Sources.md#managing-the-source) is keyed by it.
+* What a source does if the daemon is unreachable is up to the source. Icinga DB, for example, retries and, in a high
+  availability setup, gives up its responsibility as the active instance after about five minutes of an unhealthy
+  Icinga Notifications, so that another Icinga DB instance can take over. This is an example, not a requirement.
+
+[daemon-api]: https://icinga.com/docs/icinga-notifications/latest/doc/20-HTTP-API/
+[daemon-config]: https://icinga.com/docs/icinga-notifications/latest/doc/03-Configuration/#http-api-configuration
+[daemon-history]: https://icinga.com/docs/icinga-notifications/latest/doc/20-HTTP-API/#notification-history
+[daemon-ha]: https://icinga.com/docs/icinga-notifications/latest/doc/05-Distributed-Setups/
 [daemon-upgrading]: https://icinga.com/docs/icinga-notifications/latest/doc/04-Upgrading/#upgrading-to-icinga-notifications-v10
