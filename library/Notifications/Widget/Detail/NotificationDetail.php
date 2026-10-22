@@ -5,6 +5,7 @@
 
 namespace Icinga\Module\Notifications\Widget\Detail;
 
+use Icinga\Application\Config;
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Icons;
 use Icinga\Module\Notifications\Model\NotificationHistory;
@@ -48,7 +49,14 @@ class NotificationDetail extends BaseHtmlElement
                 'class' => ['message', 'collapsible'],
                 'data-visible-height' => 100
             ]),
-            Text::create($this->notificationHistory->event_message)
+            Text::create(
+                substr(
+                    $this->notificationHistory->event_message,
+                    0,
+                    (int) Config::module('notifications')
+                        ->get('settings', 'event_message_character_limit', 10000)
+                )
+            )
         );
 
         CopyToClipboard::attachTo($message);
