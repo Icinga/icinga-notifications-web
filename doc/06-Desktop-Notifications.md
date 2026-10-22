@@ -101,8 +101,6 @@ location ~ ^/icingaweb2/notifications/v(\d+)/subscribe$ {
 
 The module ships a `systemd` service named `icinga-desktop-notifications.service`, which runs the background daemon.
 
-<!-- TODO(verify): Whether and into which path the distribution packages install the unit file. The name of the package that ships it could not be confirmed; there is no package named `icinga-desktop-notifications` in this repository. -->
-
 <!-- {% if not icingaDocs %} -->
 
 > **Note**

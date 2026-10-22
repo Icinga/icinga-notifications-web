@@ -10,10 +10,6 @@ first and follow its
 [upgrading notes](https://icinga.com/docs/icinga-notifications/latest/doc/04-Upgrading/#upgrading-to-icinga-notifications-v10),
 which include the database schema upgrade and changes to its configuration file.
 
-<!-- TODO(verify): The daemon's v1.0 upgrading section still contains a placeholder ("Something about the schema upgrade"). Check the anchor and content again before release. -->
-
-<!-- TODO(verify): Minimum versions of Icinga DB and Icinga DB Web that are released alongside v1.0 are not known yet. -->
-
 ### Permissions
 
 The `Notifications → Configuration` menu entry no longer exists. `Incidents`, `History`, `Event Rules`, `Schedules`,
@@ -38,8 +34,6 @@ incidents in Icinga Notifications Web.
   Icinga Notifications. Recreate them with another channel type, such as `webhook`, and update the event rules that
   used them.
 
-<!-- TODO(verify): The local checkout of the daemon still ships Rocket.Chat and no schema upgrade that drops its channels. Removal (daemon#581) and its effect on event rule recipients could not be confirmed. -->
-
 ### Event Rules
 
 Event rules are now bound to a **source type** instead of an individual source. A rule applies to all sources of that
@@ -49,8 +43,6 @@ If your event rules still contain filters in the format used before v1.0, they a
 `Notifications → Event Rules` as outdated. Click on the rule to migrate its filter. Review the converted filter and
 save it. This is only possible if the integration of the source supports it.
 
-<!-- TODO(verify): Whether Icinga DB Web ships the filter migration with its v1.0-compatible release (icingadb-web#1433). -->
-
 Event rules can now be of the type _escalation rule_ or _notification rule_. Existing rules are escalation rules.
 
 ### Sources
@@ -58,11 +50,8 @@ Event rules can now be of the type _escalation rule_ or _notification rule_. Exi
 Sources no longer require an integration in Icinga Web. A source that is maintained by an integration, such as Icinga
 DB Web, is now shown as locked and read-only in Icinga Notifications Web.
 
-If you have configured an Icinga DB source manually, enable notifications in the module configuration of Icinga DB
-Web (`Configuration → Modules → icingadb → General`, section _Icinga Notifications_) instead. See
-[Adding Icinga DB as a Source](03-Configuration.md#adding-icinga-db-as-a-source).
-
-<!-- TODO(verify): How an existing, manually configured Icinga DB source and its `notifications` section in Icinga DB's config.yml behave after the upgrade. -->
+If you have configured an Icinga DB source manually, please consult their upgrade documentation for a detailed
+description of the recommended migration steps: https://icinga.com/docs/icinga-db/latest/doc/04-Upgrading/#upgrading-to-icinga-db-v160
 
 ## Upgrading to Icinga Notifications Web 0.2.0
 

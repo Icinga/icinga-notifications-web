@@ -131,7 +131,7 @@ automatically. Schedules can also be used as recipients of event rules.
 
 A schedule has a `Schedule Name` and a `Schedule Timezone`. A schedule contains rotations. You can define multiple
 rotations with different patterns to set priorities. For each rotation you set a `Rotation Name`, the `Rotation Members`
-and a `Rotation Start`. Members can take turns after a configurable handoff interval, which may also be 0.
+and a `Rotation Start`. Members can take turns after a configurable handoff interval.
 
 Use `Duplicate Schedule` to create a copy of a schedule. Rotations can be duplicated as well.
 

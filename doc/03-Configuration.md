@@ -129,17 +129,12 @@ type are deleted as well.
 
 ### Adding Icinga DB as a Source
 
-Icinga DB Web creates and maintains the source for Icinga DB. To enable it, navigate to
-`Configuration → Modules → icingadb → General`, and switch on `Enable notifications` in the section
-_Icinga Notifications_. Because Icinga DB Web maintains the source, it appears as locked in Icinga Notifications Web.
+Icinga DB Web creates and maintains the source for Icinga DB, if it is installed on the same system alongside Icinga
+Notifications. To enable it, navigate to `Configuration → Modules → icingadb → General Settings`, and switch on
+`Enable notifications` in the section _Icinga Notifications_. Because Icinga DB Web maintains the source, it appears
+as locked in Icinga Notifications Web.
 
-For the remaining steps, see the documentation of
-[Icinga DB](https://icinga.com/docs/icinga-db/latest/doc/03-Configuration/) and
-[Icinga DB Web](https://icinga.com/docs/icinga-db-web/latest/doc/03-Configuration/).
-
-<!-- TODO(verify): Exact wording of the Icinga DB Web toggle and section label; the Icinga DB Web code is not part of this repository. -->
-
-Icinga for Kubernetes is available as an integration as well. See its documentation for the setup.
+For a detailed explanation, see https://icinga.com/docs/icinga-db-web/latest/doc/03-Configuration/.
 
 ## General Configuration
 
@@ -149,17 +144,17 @@ Settings go into the section `[settings]`.
 
 ### Available Settings and defaults
 
-| Option                            | Description                                                            | Default   |
-|-----------------------------------|------------------------------------------------------------------------|-----------|
-| incident_message_character_limit  | Sets the maximum number of characters to display in incident messages. | **10000** |
+| Option                         | Description                                                         | Default   |
+|--------------------------------|---------------------------------------------------------------------|-----------|
+| event_message_character_limit  | Sets the maximum number of characters to display in event messages. | **10000** |
 
 ### Example
 
-Setting the incident message character limit to 500000.
+Setting the event message character limit to 500000.
 
 ```ini
 [settings]
-incident_message_character_limit = 500000
+event_message_character_limit = 500000
 ```
 
 The same file contains the `[database]` section, which is written by the database configuration, and the optional
