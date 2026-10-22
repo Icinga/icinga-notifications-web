@@ -59,13 +59,10 @@ if ($this::exists('notifications')) {
 }
 ```
 
-| Before                                                                      | After                                                                              |
-|-----------------------------------------------------------------------------|------------------------------------------------------------------------------------|
-| `library/Icingadb/ProvidedHook/Notifications/V1/Source.php`                 | `library/Icingadb/ProvidedHook/Notifications/V2/Icinga2Source.php`                 |
-| `Icinga\Module\Icingadb\ProvidedHook\Notifications\V1\Source`               | `Icinga\Module\Icingadb\ProvidedHook\Notifications\V2\Icinga2Source`               |
-| `implements Icinga\Module\Notifications\Hook\V1\SourceHook`                 | `implements Icinga\Module\Notifications\Hook\V2\SourceHook`                        |
+Move the class to the location the new hook name implies, e.g. `ProvidedHook/Notifications/V2/Icinga2Source.php`,
+and let it implement `Hook\V2\SourceHook` instead of `Hook\V1\SourceHook`.
 
-How `<Type>` is derived from the source type is described in
+How the hook name and class location are derived from the source type is described in
 [Registering the Hook](31-Integrations-Sources.md#registering-the-hook). If your module supports several source
 types, register one hook per type.
 
