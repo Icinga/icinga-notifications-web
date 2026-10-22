@@ -30,6 +30,7 @@ use ipl\Sql\Select;
  * @property int $channel_id
  * @property ?int $incident_id
  * @property string $event_message
+ * @property string $event_summary
  * @property NotificationTransmissionState $state
  * @property DateTime $triggered_at
  *
@@ -63,6 +64,7 @@ class NotificationHistory extends Model
             'channel_id',
             'incident_id',
             'event_message',
+            'event_summary',
             'state',
             'triggered_at'
         ];
@@ -78,6 +80,7 @@ class NotificationHistory extends Model
             'channel_id'        => t('Channel ID'),
             'incident_id'       => t('Incident Id'),
             'event_message'     => t('Event Message'),
+            'event_summary'     => t('Event Summary'),
             'state'             => t('State'),
             'triggered_at'      => t('Triggered At')
         ];
