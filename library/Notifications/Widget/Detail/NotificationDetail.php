@@ -43,7 +43,7 @@ class NotificationDetail extends BaseHtmlElement
     protected function createMessage(): array
     {
         $message = new HtmlElement(
-            'div',
+            'pre',
             Attributes::create([
                 'class' => ['message', 'collapsible'],
                 'data-visible-height' => 100
