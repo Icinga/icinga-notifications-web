@@ -77,10 +77,15 @@ class RuleFilterForm extends SearchEditor
             }
 
             if (($parsedFilter['assisted'] ?? false) && $this->getHook($rule->source_type) === null) {
-                throw new ConfigurationError($this->translate(
-                    'No source integration available. Either the module supporting sources of type "%s" is not'
-                    . ' enabled or you have insufficient privileges. Please contact your system administrator.'
-                ));
+                throw new ConfigurationError(
+                    sprintf(
+                        $this->translate(
+                            'No source integration available. Either the module supporting sources of type "%s" is not'
+                            . ' enabled or you have insufficient privileges. Please contact your system administrator.'
+                        ),
+                        $rule->source_type
+                    )
+                );
             }
 
             $this->setQueryString($parsedFilter['qs'] ?? '');
