@@ -57,6 +57,10 @@ class QueryColumnsProvider implements IteratorAggregate
             }
         }
 
+        if (! $this->query->getResolver()->getRelations($model)->has('object')) {
+            return;
+        }
+
         // Object tags only after the columns are exhausted and there's actually a chance the user sees them
         /** @var ObjectIdTag $tag */
         foreach ($this->queryTags(new ObjectIdTag(), $this->searchTerm) as $tag) {
