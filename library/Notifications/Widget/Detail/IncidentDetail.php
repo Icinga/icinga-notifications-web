@@ -154,7 +154,7 @@ class IncidentDetail extends BaseHtmlElement
                         $this->incident->message,
                         0,
                         (int) Config::module('notifications')
-                            ->get('settings', 'incident_message_character_limit', 10000)
+                            ->get('settings', 'event_message_character_limit', 10000)
                     )
                 )
         );
