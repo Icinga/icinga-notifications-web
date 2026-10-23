@@ -30,6 +30,7 @@ use ipl\Sql\Select;
  * @property ?string $mute_reason
  * @property ?string $message
  * @property string $summary
+ * @property int $source_id
  *
  * @property Query<Objects>|Objects $object
  * @property Query<Contact>|Collection<Contact> $contact
@@ -38,6 +39,7 @@ use ipl\Sql\Select;
  * @property Query<NotificationHistory>|Collection<NotificationHistory> $notification_history
  * @property Query<Rule>|Collection<Rule> $rule
  * @property Query<RuleEntry>|Collection<RuleEntry> $rule_entry
+ * @property Query<Source>|Source $source
  */
 class Incident extends Model
 {
@@ -60,7 +62,8 @@ class Incident extends Model
             'severity',
             'mute_reason',
             'message',
-            'summary'
+            'summary',
+            'source_id'
         ];
     }
 
@@ -73,7 +76,8 @@ class Incident extends Model
             'severity'     => t('Severity'),
             'mute_reason'  => t('Mute Reason'),
             'message'      => t('Message'),
-            'summary'      => t('Summary')
+            'summary'      => t('Summary'),
+            'source_id'    => t('Source ID'),
         ];
     }
 
@@ -129,5 +133,7 @@ class Incident extends Model
             ->belongsToMany('rule', Rule::class)
             ->through('incident_rule')
             ->setJoinType('LEFT');
+
+        $relations->belongsTo('source', Source::class);
     }
 }

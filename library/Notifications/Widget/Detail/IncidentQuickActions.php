@@ -10,6 +10,7 @@ use Icinga\Application\Logger;
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Icons;
+use Icinga\Module\Notifications\Common\SourceHookLocator;
 use Icinga\Module\Notifications\Integrations\V1\Incident;
 use Icinga\Module\Notifications\Common\JobTracker;
 use Icinga\Module\Notifications\Model\Incident as IncidentModel;
@@ -39,9 +40,13 @@ class IncidentQuickActions extends Form
 
     protected Incident $incident;
 
+    /** @var string The type of the source that opened the incident */
+    protected string $sourceType;
+
     public function __construct(IncidentModel $incident, JobTracker $jobTracker)
     {
         $this->incident = Incident::fromModel($incident, Database::get(), $jobTracker);
+        $this->sourceType = $incident->source->type;
     }
 
     public function hasBeenSubmitted(): bool
@@ -158,8 +163,8 @@ class IncidentQuickActions extends Form
 
         try {
             match ($pressedButton) {
-                'manage' => $this->incident->addManager($username),
-                'subscribe' => $this->incident->addSubscriber($username),
+                'manage' => $this->incident->addManager($username, $this->getEventTypes()),
+                'subscribe' => $this->incident->addSubscriber($username, $this->getEventTypes()),
                 'unmanage' => $this->incident->removeManager(),
                 'unsubscribe' => $this->incident->removeSubscriber($username)
             };
@@ -171,5 +176,12 @@ class IncidentQuickActions extends Form
         }
 
         Notification::success(t('Your request has been submitted'));
+    }
+
+    protected function getEventTypes(): array
+    {
+        return array_keys(
+            SourceHookLocator::forType($this->sourceType)?->getEventTypes() ?? []
+        );
     }
 }
