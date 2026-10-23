@@ -344,7 +344,7 @@ while the module is enabled. The state is only reported for requests of the user
 
 ## Example
 
-This is a **simplified** end-to-end example, modelled after Icinga DB Web. It has an object with the ID tags
+This is a **simplified** end-to-end example, modeled after Icinga DB Web. It has an object with the ID tags
 `host` and `service`, shows a subscribe or unsubscribe action in the detail view of the object and handles it.
 Permissions of the integration itself are omitted, add them. It uses only the public API.
 
