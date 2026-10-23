@@ -303,47 +303,6 @@ or its list is empty, saving the filter fails.
 ]
 ```
 
-To understand what the paths are, you need to know what happens with them.
-
-1. The source submits an event with a `relations` object, e.g. the host and its services:
-
-   ```json
-   {
-     "tags": {"host": "web-01", "service": "ssh"},
-     "relations": {
-       "host": {"name": "web-01", "vars": {"os": "linux"}},
-       "services": [{"name": "ssh"}, {"name": "http"}]
-     },
-     "complete_relations": ["host", "services"]
-   }
-   ```
-
-2. A user creates the filter `host.name=web*&service.name=ssh` in the editor. Icinga Notifications Web asks the hook
-   for the paths of `host.name` and `service.name`, and stores the filter together with them. The stored value is a
-   JSON object (simplified):
-
-   ```json
-   {
-     "version": 2,
-     "qs": "host.name=web*&service.name=ssh",
-     "assisted": true,
-     "ast": {
-       "op": "&",
-       "rules": [
-         {"op": "=", "attributes": ["host.name"], "regex": "^web.*$"},
-         {"op": "=", "attributes": ["services[*].name"], "value": "ssh"}
-       ]
-     }
-   }
-   ```
-
-   `qs` is the filter as the user wrote it, `assisted` records that a hook was involved when saving. The daemon only
-   reads `ast`. Each condition carries the paths as `attributes`. Conditions with wildcards become a `regex`.
-
-3. The daemon evaluates every `ast` against the `relations` of each event. A path is a JSONPath relative to
-   `relations`. `[*]` selects all elements of an array, so `services[*].name=ssh` is true if *any* service is named
-   `ssh`.
-
 Rules for the paths you return:
 
 * A column can map to **several paths**. The daemon tries them in the given order and uses the first one that selects
@@ -354,8 +313,7 @@ Rules for the paths you return:
   not load the rule at all and it never matches. Test your paths.
 * The paths must point to places that the source actually fills in `relations`. If the path is not in the event, the
   condition cannot match, and the daemon asks the source for the missing relation, see
-  [Consistency](30-Integrations.md#consistency-between-hooks-and-events). The source avoids this by listing
-  everything it knows to be complete in `complete_relations`.
+  [Consistency](30-Integrations.md#consistency-between-hooks-and-events).
 * The returned paths are stored, they are not recomputed. If the structure of your `relations` changes later, existing
   rules keep the old paths.
 

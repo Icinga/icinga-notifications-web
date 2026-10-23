@@ -177,7 +177,7 @@ or a TLS certificate this is the login. With a Unix socket it is the operating s
 `Source::get($username)` looks the source up by exactly this username, see
 [Managing the Source](31-Integrations-Sources.md#managing-the-source). If it is not the one the source uses, you
 manage a source that nobody submits events with, and the events of the real one are rejected. A
-certificate subject cannot be managed with this class, only users with a username and optional password.
+certificate subject cannot be managed with this class, only sources with a username and optional password.
 
 ### Names, URLs and IDs of Events
 
