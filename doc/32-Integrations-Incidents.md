@@ -239,8 +239,8 @@ notified.
 ## Changing Roles
 
 ```php
-public function addManager(string $username, ?UuidInterface $uuid = null): static
-public function addSubscriber(string $username, ?UuidInterface $uuid = null): static
+public function addManager(string $username, array $eventTypes, ?UuidInterface $uuid = null): static
+public function addSubscriber(string $username, array $eventTypes, ?UuidInterface $uuid = null): static
 public function removeManager(?UuidInterface $uuid = null): static
 public function removeSubscriber(string $username, ?UuidInterface $uuid = null): static
 ```
@@ -249,12 +249,12 @@ Each method *requests* a role change and returns the incident. They throw an `In
 is no open incident, and an `InvalidArgumentException` if there is no contact with the given username
 (`addManager()`, `addSubscriber()` and `removeSubscriber()`). Database failures are thrown as they are.
 
-| Method                        | Requests                                                     | Nothing is requested if                                                      |
-|-------------------------------|--------------------------------------------------------------|------------------------------------------------------------------------------|
-| `addManager($username)`       | Make the contact the manager                                 | The incident already **has a manager**, whoever it is, including the contact |
-| `addSubscriber($username)`    | Make the contact a subscriber                                | The contact already is a subscriber or the manager                           |
-| `removeManager()`             | Demote the **current manager**, whoever it is, to subscriber | The incident has no manager                                                  |
-| `removeSubscriber($username)` | Remove the subscription of the contact                       | The contact is not a subscriber, e.g. the manager or a recipient             |
+| Method                                         | Requests                                                          | Nothing is requested if                                                      |
+|------------------------------------------------|-------------------------------------------------------------------|------------------------------------------------------------------------------|
+| `addManager($username, [])`                    | Make the contact the manager, only subscribed to incident updates | The incident already **has a manager**, whoever it is, including the contact |
+| `addSubscriber($username, ['downtime_start'])` | Make the contact a subscriber, also subscribed to downtime starts | The contact already is a subscriber or the manager                           |
+| `removeManager()`                              | Demote the **current manager**, whoever it is, to subscriber      | The incident has no manager                                                  |
+| `removeSubscriber($username)`                  | Remove the subscription of the contact                            | The contact is not a subscriber, e.g. the manager or a recipient             |
 
 Notes on the semantics:
 
@@ -262,18 +262,11 @@ Notes on the semantics:
   manager, there is nothing to take over, the request is silently skipped.
 * `removeManager()` has no username. It demotes whoever the manager is. If you want to demote only a specific user,
   check `getRole($user) === 'manager'` before.
-* The daemon is more permissive than this API, e.g. it accepts a subscription of the manager and then demotes the
-  manager to a subscriber. The checks above exist so that such requests never reach it. They can be stale by the time
-  the request is processed, the daemon decides in the end.
-* Role changes requested through this API do not choose event types. The daemon only notifies subscribers and managers
-  about events with `incident: false` for the event types they chose, so contacts that got their role this way do not
-  receive such notifications. They still receive the notifications of the incident itself.
+* Role changes requested through this API have to pass event types. The daemon only notifies subscribers and managers
+  about events with `incident: false` for the event types they chose, so contacts that got their role this way only
+  receive such notifications they want. They still receive the notifications of the incident itself in any case.
 * The change is for the contact with the given `$username`, which is usually the current user's. You may pass other
   usernames, but the pending state described below is only tracked for the session that requested the change.
-
-<!-- TODO(verify): Derived from the daemon code: the queued role change carries no `event_types`, and
-`internal/incident/incident.go` only notifies subscribers and managers of `incident: false` events if the event's type
-is in their event types. Confirm that this is the intended behavior for v1.0. -->
 
 ### Role Changes Are Asynchronous
 
@@ -300,8 +293,7 @@ the role change represents an **event of your source**, so that the change can b
 The typical case is an acknowledgement. When a user acknowledges a problem in Icinga DB Web, Icinga DB Web makes them
 the manager of the incident (`addManager()`), and Icinga DB submits an event for the acknowledgement it sees in
 Icinga 2. Both stand for the same occurrence and should have the same ID. Icinga DB Web derives the ID of the
-acknowledgement event from the same information that Icinga DB uses (the event type, the object and the time the
-acknowledgement was set), and passes it as `$uuid`.
+acknowledgement event from the same information that Icinga DB uses, and passes it as `$uuid`.
 
 * The UUID is used as the ID of the event the daemon creates for the role change, which appears in its history. Events
   and role changes share one queue, and the daemon ignores an ID it already processed, to protect against events that
@@ -521,50 +513,3 @@ For a multi-select of objects, use `getAll()` and iterate the result, as in the 
 Web does that in its `library/Icingadb/Notifications/` namespace. See `SubscribeIncidents` for subscribing and
 `ManagesIncidents` for managing, which also derives the UUIDs of acknowledgements. Its quick actions are in
 `library/Icingadb/Widget/Detail/QuickActions.php`.
-
-## Reference
-
-### Incidents
-
-| Method                                | Description                                                                      |
-|---------------------------------------|----------------------------------------------------------------------------------|
-| `get(array $tags): Incident`          | The open incident of one object, full ID tags. Lazy, throws on first use if none |
-| `getAll(iterable $tagSets): static`   | The open incidents of many objects, full ID tags                                 |
-| `matchAll(iterable $tagSets): static` | The open incidents of all objects that match the partial tags, `null` = absent   |
-| `canManage(User $user): bool`         | Whether the user has a contact and thus can manage incidents                     |
-| `canSubscribe(User $user): bool`      | Whether the user has a contact and thus can subscribe to incidents               |
-| `getIterator(): Generator`            | Yields an `Incident` for each match                                              |
-| `count(): int`                        | The number of matches                                                            |
-
-`get()`, `getAll()` and `matchAll()` throw `InvalidArgumentException` for empty tags or tag sets. The constructor of
-`Incidents` takes types that are not part of the public API. Do not call it, use the factories.
-
-### Incident
-
-| Method                                                                    | Description                                                           |
-|---------------------------------------------------------------------------|-----------------------------------------------------------------------|
-| `getRole(User $user): ?string`                                            | `manager`, `subscriber`, `recipient` or `null`                        |
-| `getObjectIdTags(): array`                                                | The full ID tags of the object                                        |
-| `isMuted(): bool`                                                         | Whether the incident is muted                                         |
-| `hasManager(): bool`                                                      | Whether the incident has a manager                                    |
-| `getSubscribers(): array`                                                 | Managers and subscribers: `name`, `username`, `role`, `roleChangedAt` |
-| `getRecipients(): array`                                                  | Configured recipients: `type`, `name`, `username`, `roleChangedAt`    |
-| `addManager(string $username, ?UuidInterface $uuid = null): static`       | Request to make the contact the manager                               |
-| `addSubscriber(string $username, ?UuidInterface $uuid = null): static`    | Request to subscribe the contact                                      |
-| `removeManager(?UuidInterface $uuid = null): static`                      | Request to demote the current manager to subscriber                   |
-| `removeSubscriber(string $username, ?UuidInterface $uuid = null): static` | Request to unsubscribe the contact                                    |
-| `getPendingAction(): ?string`                                             | The requested action of the current session that is still pending     |
-| `getPendingJobAttributes(): array`                                        | Attributes for the quick action element while a request is pending    |
-
-All methods except the factories throw an `IncidentNotFoundException` if the instance was created by
-`Incidents::get()` and there is no open incident. `Incident::fromQuery()` and `Incident::fromModel()` are used by
-Icinga Notifications Web to create instances. They take types that are not part of the public API.
-Do not call them.
-
-<!-- TODO(verify): Incident::fromQuery(), Incident::fromModel() and Incidents::__construct() are public but take
-internal types (Query, JobTracker, the Incident model). They are documented here as "not for integrations". Confirm. -->
-
-### IncidentNotFoundException
-
-`Icinga\Module\Notifications\Integrations\Exception\IncidentNotFoundException` extends `Exception` and has no
-additional API. It is thrown when an `Incident` of `Incidents::get()` has no matching open incident.
