@@ -241,6 +241,18 @@ class EventRuleController extends CompatController
             $this->httpBadRequest('Migration is not required for this rule');
         }
 
+        if (SourceHookLocator::forType($rule->source_type) === null) {
+            $this->addContent(new Callout(
+                CalloutType::Error,
+                sprintf($this->translate(
+                    'No source integration available. Either the module supporting sources of type "%s" is not'
+                    . ' enabled or you have insufficient privileges. Please contact your system administrator.'
+                ), $rule->source_type)
+            ));
+
+            return;
+        }
+
         /** @var ?V1FilterMigrationHook $hook */
         $hook = null;
         foreach (Hook::all('notifications/V2/V1FilterMigration') as $candidate) {
