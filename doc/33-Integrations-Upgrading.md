@@ -49,14 +49,10 @@ Replace the registration and move the class. The type is the one your `getSource
 
 ```php
 // Before, run.php
-if ($this::exists('notifications')) {
-    $this->provideHook('Notifications/v1/Source');
-}
+$this->provideHook('Notifications/v1/Source');
 
 // After, run.php
-if ($this::exists('notifications')) {
-    $this->provideHook('Notifications/V2/Icinga2Source');
-}
+$this->provideHook('Notifications/V2/Icinga2Source');
 ```
 
 Move the class to the location the new hook name implies, e.g. `ProvidedHook/Notifications/V2/Icinga2Source.php`,
@@ -157,9 +153,8 @@ $this->provideHook('Notifications/V2/V1FilterMigration');
 ```
 
 The class is by convention `ProvidedHook\Notifications\V2\V1FilterMigration`. Unlike the source hook, the name of this
-hook is the same for all source types. If your module has several, register one class for each with its own
-implementation class, and Icinga Notifications Web picks the one whose `getSourceType()` matches the type of the rule.
-The permission rules of [Permissions](30-Integrations.md#permissions) apply as for any hook.
+hook is the same for all source types. Icinga Notifications Web picks the one whose `getSourceType()` matches the type
+of the rule. The permission rules of [Permissions](30-Integrations.md#permissions) apply as for any hook.
 
 #### The v0.2.0 Format
 
@@ -269,15 +264,8 @@ Receives the filter exactly as the v0.2.0 `serializeRuleFilter()` returned it, a
 3. The user reviews the filter and saves it. On saving, the filter is validated and stored by the regular
    mechanisms, i.e. `assertValidCondition()` and `getJsonPaths()` of the source hook.
 
-If there is no migration hook for the type, or it throws, the user sees a message, "No migration hook found for source
-type …" or the one of your exception, and has to recreate the filter manually.
-
-Provide the source hook as well: the saved filter is created with the help of that hook. With a source hook the filter
-is stored as *assisted*, without it as a plain filter.
-
-<!-- TODO(verify): web#596 says the migration is only offered if both hooks are provided. The code
-(EventRuleController::migrateAction()) only looks for the migration hook and does not require a source hook.
-Confirm which is intended. -->
+If there is neither of both hooks available, or any one throws, the user sees a message, "No migration hook found for
+source type …" or the one of your exception, and is unable to complete the migration.
 
 ### 5. Stop Implementing `ObjectsRendererHook`
 
