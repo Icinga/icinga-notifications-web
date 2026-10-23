@@ -140,15 +140,28 @@ Be aware of what this means for the columns you offer:
 
 ### 4. Provide a Filter Migration Hook
 
-Existing rule filters cannot be read by v1.0. Icinga Notifications Web marks such rules as outdated, and lets the user
-migrate them, if the integration provides a `V1FilterMigrationHook`. Without it, users have to recreate the filter of
-every rule by hand.
+In v0.2.0, the filter of an event rule was a string that only the integration could interpret and evaluate. Since
+v1.0, the daemon evaluates a JSON filter by itself, and filters created by a v0.2.0 integration cannot be read anymore.
+Icinga Notifications Web marks rules that still have such a filter as outdated, and lets the user migrate them, if the
+integration provides a `Icinga\Module\Notifications\Hook\V2\V1FilterMigrationHook`. Without it, users have to
+recreate the filter of every rule by hand.
 
-Register `Notifications/V2/V1FilterMigration` (see the `run.php` in the
-[overview](30-Integrations.md#optional-dependency) and in
-[Registering the Hook](31-Integrations-Sources.md#registering-the-hook)) and implement it.
+#### Registering the Hook
 
-#### Migrate Existing Rule Filters
+Register it as `Notifications/V2/V1FilterMigration`, next to the source hook, and put the class where provided hooks
+go:
+
+```php
+// run.php
+$this->provideHook('Notifications/V2/V1FilterMigration');
+```
+
+The class is by convention `ProvidedHook\Notifications\V2\V1FilterMigration`. Unlike the source hook, the name of this
+hook is the same for all source types. If your module has several, register one class for each with its own
+implementation class, and Icinga Notifications Web picks the one whose `getSourceType()` matches the type of the rule.
+The permission rules of [Permissions](30-Integrations.md#permissions) apply as for any hook.
+
+#### The v0.2.0 Format
 
 `migrateFilter()` receives the string your v0.2.0 `serializeRuleFilter()` returned. You wrote that format, so you know
 how to read it. Icinga DB Web wrote this (shortened):
@@ -167,9 +180,21 @@ how to read it. Icinga DB Web wrote this (shortened):
 ```
 
 `config.type` was the target (`host`, `service` or `all`), `config.filter` the filter in the query string syntax of
-the editor, and `queries` what the source evaluated. Only the first two are of interest to the migration:
+the editor, and `queries` what the source evaluated. Only the first two are of interest to the migration.
+
+#### Implementing the Hook
+
+This is the migration of Icinga DB Web, slightly **simplified**:
 
 ```php
+namespace Icinga\Module\Icingadb\ProvidedHook\Notifications\V2;
+
+use Icinga\Module\Notifications\Hook\V2\V1FilterMigrationHook;
+use InvalidArgumentException;
+use ipl\Stdlib\Filter;
+use ipl\Web\Filter\Parser;
+use JsonException;
+
 class V1FilterMigration implements V1FilterMigrationHook
 {
     public function getSourceType(): string
@@ -210,17 +235,49 @@ class V1FilterMigration implements V1FilterMigrationHook
 }
 ```
 
-The hook does not have to validate the result. The user reviews the filter in the editor, and the source hook
-validates it as for any other filter. Columns that no longer exist, like the contact columns above, then show up as
-invalid, and the user has to correct them. If you can map them, do. If a filter cannot be converted at all, throw an
-`InvalidArgumentException` with a message the user can act on.
+#### getSourceType()
 
-See [Filter Migration Hook](31-Integrations-Sources.md#filter-migration-hook) for the contract and what users see.
+```php
+public function getSourceType(): string
+```
 
-!!! note
+The source type this hook migrates filters for, the same as the type of your
+[source hook](31-Integrations-Sources.md#registering-the-hook).
 
-    Icinga DB Web, for example, ships the migration for the filters its v0.2.0 hook wrote. Filters that are empty
-    do not need to be migrated and are never passed to the hook.
+#### migrateFilter()
+
+```php
+public function migrateFilter(string $v1Filter): \ipl\Stdlib\Filter\Chain
+```
+
+Receives the filter exactly as the v0.2.0 `serializeRuleFilter()` returned it, and returns it as a filter chain.
+
+* Throw `InvalidArgumentException` if the filter cannot be migrated, e.g. because it is invalid or uses something that
+  no longer exists. The message is shown to the user and the exception is logged. Make the message understandable.
+* The result **should** only contain conditions that your source hook's `assertValidCondition()` accepts, so convert
+  columns that were renamed. It does not have to, as the user reviews the result and every change is validated by the
+  source hook as usual. Columns that no longer exist, like the contact columns above, then show up as invalid, and the
+  user has to correct them. If you can map them, do.
+* A rule without a filter does not need a migration, and the hook is not called for it.
+
+#### What Users See
+
+1. In the list of event rules, a rule that still has a v0.2.0 filter is marked as outdated. Clicking it opens the
+   migration instead of the regular rule detail.
+2. Icinga Notifications Web calls your hook and shows the result in the filter editor, together with a note that the
+   filter is in an old format and has to be reviewed.
+3. The user reviews the filter and saves it. On saving, the filter is validated and stored by the regular
+   mechanisms, i.e. `assertValidCondition()` and `getJsonPaths()` of the source hook.
+
+If there is no migration hook for the type, or it throws, the user sees a message, "No migration hook found for source
+type …" or the one of your exception, and has to recreate the filter manually.
+
+Provide the source hook as well: the saved filter is created with the help of that hook. With a source hook the filter
+is stored as *assisted*, without it as a plain filter.
+
+<!-- TODO(verify): web#596 says the migration is only offered if both hooks are provided. The code
+(EventRuleController::migrateAction()) only looks for the migration hook and does not require a source hook.
+Confirm which is intended. -->
 
 ### 5. Stop Implementing `ObjectsRendererHook`
 

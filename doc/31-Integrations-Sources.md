@@ -1,8 +1,9 @@
 # Integrating Sources
 
 This page covers everything an integration does for a *source*: the source hook that makes the event rule editor aware
-of your objects, the hook that migrates old rule filters and the class that lets you create and maintain the source in
-Icinga Notifications Web. See the [overview](30-Integrations.md) for prerequisites and the public API boundary.
+of your objects and the class that lets you create and maintain the source in Icinga Notifications Web. See the
+[overview](30-Integrations.md) for prerequisites and the public API boundary. The hook that migrates event rule filters
+of v0.2.0 is part of [Upgrading](33-Integrations-Upgrading.md#4-provide-a-filter-migration-hook).
 
 ## Source Hook
 
@@ -42,7 +43,6 @@ hooks (`library/<Module>/ProvidedHook/Notifications/V2/<Type>Source.php`):
 /** @var $this \Icinga\Application\Modules\Module */
 
 $this->provideHook('Notifications/V2/ExampleSource');
-$this->provideHook('Notifications/V2/V1FilterMigration');
 ```
 
 The class implements `Hook\V2\SourceHook`, nothing else is required. Icinga Notifications Web makes the hook name
@@ -373,94 +373,6 @@ source.
 | `getEventTypes(): array`                                                               | Event types outside of incidents, with label | Not caught                                   |
 | `createObjectLink(array $idTags): ?ValidHtml`                                          | Link to the object, `null` if not found      | Not caught                                   |
 
-## Filter Migration Hook
-
-In v0.2.0, the filter of an event rule was a string that only the integration could interpret and evaluate. Since
-v1.0, the daemon evaluates a JSON filter by itself. Filters created by a v0.2.0 integration cannot be read anymore.
-
-Your integration can offer to convert them with `Icinga\Module\Notifications\Hook\V2\V1FilterMigrationHook`.
-Register it as `Notifications/V2/V1FilterMigration`, see the `run.php` above. By convention, the class is
-`ProvidedHook\Notifications\V2\V1FilterMigration`.
-
-```php
-namespace Icinga\Module\Example\ProvidedHook\Notifications\V2;
-
-use Icinga\Module\Notifications\Hook\V2\V1FilterMigrationHook;
-use InvalidArgumentException;
-use ipl\Stdlib\Filter;
-use ipl\Web\Filter\QueryString;
-use JsonException;
-
-class V1FilterMigration implements V1FilterMigrationHook
-{
-    public function getSourceType(): string
-    {
-        return 'example';
-    }
-
-    public function migrateFilter(string $v1Filter): Filter\Chain
-    {
-        try {
-            $data = json_decode($v1Filter, true, flags: JSON_THROW_ON_ERROR);
-        } catch (JsonException $e) {
-            throw new InvalidArgumentException('Invalid JSON: ' . $e->getMessage(), previous: $e);
-        }
-
-        // Simplified, assumes the integration stored the editor's query string below config.filter
-        if (! isset($data['config']['filter'])) {
-            throw new InvalidArgumentException('Invalid v1 filter format');
-        }
-
-        $filter = QueryString::parse($data['config']['filter']);
-
-        return $filter instanceof Filter\Chain ? $filter : Filter::all($filter);
-    }
-}
-```
-
-### getSourceType()
-
-```php
-public function getSourceType(): string
-```
-
-Returns the source type this hook migrates filters for, the same as the type of the `V2\SourceHook`. Unlike the
-source hook, the name of this hook is the same for all types. Icinga Notifications Web goes through all registered
-migration hooks and picks the first one whose type matches the type of the rule.
-
-### migrateFilter()
-
-```php
-public function migrateFilter(string $v1Filter): \ipl\Stdlib\Filter\Chain
-```
-
-Receives the filter exactly as the old `V1\SourceHook::serializeRuleFilter()` returned it, and returns it as a filter
-chain. See [Upgrading](33-Integrations-Upgrading.md#migrate-existing-rule-filters) for the format Icinga DB Web
-stored.
-
-* Throw `InvalidArgumentException` if the filter cannot be migrated, e.g. because it is invalid or uses something that
-  no longer exists. The message is shown to the user and the exception is logged. Make the message understandable.
-* The result **should** only contain conditions that `assertValidCondition()` accepts. It does not have to, as the user
-  reviews the result and every change is validated by the source hook as usual. Convert columns that were renamed.
-* The filter of a rule is optional, a rule without a filter does not need migration, and the hook is not called for it.
-
-What happens to the user:
-
-1. In the list of event rules, a rule that still has a v0.2.0 filter is marked as outdated. Clicking it opens the
-   migration instead of the regular rule detail.
-2. Icinga Notifications Web calls your hook and shows the result in the filter editor, together with a note that the
-   filter is in an old format and has to be reviewed.
-3. The user reviews the filter and saves it. On saving, the filter is validated and stored by the regular
-   mechanisms, i.e. `assertValidCondition()` and `getJsonPaths()` of the source hook.
-
-Without a migration hook for the type, the user sees "No migration hook found for source type …" and has to recreate
-the filter manually. Provide the source hook as well: the saved filter is created with the help of that hook. With a
-source hook the filter is stored as *assisted*, without it as a plain filter.
-
-<!-- TODO(verify): web#596 says the migration is only offered if both hooks are provided. The code
-(EventRuleController::migrateAction()) only looks for the migration hook and does not require a source hook.
-Confirm which is intended. -->
-
 ## Managing the Source
 
 An integration can create, update and delete the source in Icinga Notifications Web, so that users do not have to
@@ -600,5 +512,3 @@ has no source for it (yet), and tells the user.
 | `Source::setPassword(string $password): self`              | Set the listener password                                     | —                    |
 | `Source::save(): void`                                     | Persist the source, always locked                             | `RuntimeException`, `InvalidArgumentException`, database errors |
 | `Source::delete(): void`                                   | Delete the source and, if it was the last of its type, its rules | `InvalidArgumentException`, database errors |
-| `Hook\V2\V1FilterMigrationHook::getSourceType(): string`   | Source type the hook migrates filters for                     | —                    |
-| `Hook\V2\V1FilterMigrationHook::migrateFilter(string): Chain` | Convert a v0.2.0 filter                                    | `InvalidArgumentException` |
