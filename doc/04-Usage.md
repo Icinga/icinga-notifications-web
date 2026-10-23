@@ -8,14 +8,7 @@ management, use the web integration of your source, e.g. Icinga DB Web. See
 The menu section `Notifications` contains the following entries. Which of them you see depends on your
 [permissions](03-Configuration.md#permissions).
 
-| Menu entry     | Purpose                                                  | Permission                       |
-|----------------|----------------------------------------------------------|----------------------------------|
-| Incidents      | List open and closed incidents.                          | notifications/view/incidents     |
-| History        | List sent and failed notifications.                      | notifications/view/history       |
-| Event Rules    | Define rules when to route events to whom.               | notifications/config/event-rules |
-| Schedules      | Organize contacts in time-based schedules.               | notifications/config/schedules   |
-| Contacts       | Configure contacts and their channel specific addresses. | notifications/config/contacts    |
-| Contact Groups | Combine multiple contacts in groups.                     | notifications/config/contacts    |
+![Icinga Notifications Web Menu](res/notifications-menu.png)
 
 Channels, sources and the database connection are configured in `Configuration → Modules → notifications` instead.
 See [Configuration](03-Configuration.md).
