@@ -295,9 +295,6 @@ sources of that type. For an integration this means:
 * An incident can have more than one source. [`createObjectLink()`](31-Integrations-Sources.md#createobjectlink) is
   called for the first source type that has a hook, and has to be able to find the object regardless of the source
   that reported it.
-* When you manage the source, changing its type with [`setType()`](31-Integrations-Sources.md#choosing-the-type) moves
-  it to other rules, and deleting the **last** source of a type deletes the rules of that type.
-  See [Managing the Source](31-Integrations-Sources.md#managing-the-source).
 
 ### 7. Adjust How Events Are Submitted
 
@@ -307,9 +304,8 @@ other changes of the daemon that concern a source.
 
 Rules are evaluated against `relations` now, so the source has to put everything into events that the columns of
 your hook (step 3) refer to, and has to be prepared to be asked for what is missing. A rule on a custom variable,
-for example, needs that variable in the `relations` of the events it should match. Icinga DB lets users configure
-which relations are sent by default, and extends them if the daemon answers with `422`. Check
-[Consistency](30-Integrations.md#consistency-between-hooks-and-events) afterwards.
+for example, needs that variable in the `relations` of the events it should match.
+Check [Consistency](30-Integrations.md#consistency-between-hooks-and-events) afterwards.
 
 ### 8. Optional: Use the New Capabilities
 
@@ -345,43 +341,40 @@ Then test the following with a v1.0 setup:
 
 ## Daemon Changes
 
-The documentation of Icinga Notifications only describes the current state. This part lists what changed for a
-**source** since v0.2.0, so you know what to adjust in the process that submits events. It is derived from the daemon
-at the tag v0.2.0 and at its current main branch, and from the Icinga Go library (`icinga-go-library`, IGL) at v0.8.1,
-the version the daemon used in v0.2.0, and at the revision the daemon pins now. For the complete current reference, see
-the [HTTP API documentation][daemon-api]. How to operate the daemon is covered by its
-[configuration][daemon-config] and [upgrading notes][daemon-upgrading].
+This part lists what changed for a **source** since v0.2.0, so you know what to adjust in the process that submits
+events. For the complete current reference, see the [HTTP API documentation][daemon-api]. How to operate the daemon
+is covered by its [configuration][daemon-config] and [upgrading notes][daemon-upgrading].
 
 If your source is written in Go, use the `source.Client` of IGL (package `notifications/source`). It already speaks the
 current API, e.g. `ProcessEvent()` takes a flag to reject incomplete relations and returns the missing ones.
 
 ### Listener API
 
-| Topic | v0.2.0 | v1.0 |
-|-------|--------|------|
-| Endpoints | `/process-event`, `/incidents` | `/v1/process-event`, `/v1/incidents`. The unversioned ones are no longer served. The `/debug/…` endpoints stay unversioned |
-| Transport | HTTP only, configured by `listen` | TCP, optionally with TLS, and Unix socket. The options live in the `listener` section of the daemon's configuration |
-| Authentication | HTTP Basic Authentication | Unchanged for TCP. Also a TLS client certificate, which identifies the source by its subject (sending a certificate and Basic Authentication together is rejected with `400`), and, on the Unix socket, the OS user of the process, which identifies the source by its listener username |
-| Rule handling | The source evaluated the rules and submitted `rule_ids` and `rules_version`. With an outdated version, the daemon answered `412` and the current rules of the source | The daemon evaluates the rules against the event's `relations`. `rule_ids`, `rules_version` and the `412` are gone |
-| Missing data for rules | — | `relations`, `complete_relations`, and the header `X-Icinga-Reject-If-Relations-Incomplete`. If set, the daemon answers `422` with the missing relations as JSONPaths, see [Incomplete Relations][daemon-incomplete] and [Consistency](30-Integrations.md#consistency-between-hooks-and-events) |
-| Success | `202` with a text body, after the event has been processed | `204` without a body, as soon as the event is **queued**. Processing happens afterwards, see [High Availability](#high-availability) |
-| Errors | `406` for superfluous state or mute events, `412` | `400` for invalid JSON, **unknown fields** and invalid events, `401`, `405`, `422` for incomplete relations, `500` if the event could not be queued. Events that turn out to be invalid during processing are dropped and only logged |
-| `/incidents` | `GET`, no filter, the JSON array of all open incidents of the source | `GET` and `POST` on `/v1/incidents`, both require the query parameter `filter`. The response is a stream of JSON objects, one per line |
+| Topic                  | v0.2.0                                                                                                                                                               | v1.0                                                                                                                                                                                                                                                                                            |
+|------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Endpoints              | `/process-event`, `/incidents`                                                                                                                                       | `/v1/process-event`, `/v1/incidents`. The unversioned ones are no longer served. The `/debug/…` endpoints stay unversioned                                                                                                                                                                      |
+| Transport              | HTTP only, configured by `listen`                                                                                                                                    | TCP, optionally with TLS, and Unix socket. The options live in the `listener` section of the daemon's configuration                                                                                                                                                                             |
+| Authentication         | HTTP Basic Authentication                                                                                                                                            | Unchanged for TCP. Also a TLS client certificate, which identifies the source by its subject (sending a certificate and Basic Authentication together is rejected with `400`), and, on the Unix socket, the OS user of the process, which identifies the source by its listener username        |
+| Rule handling          | The source evaluated the rules and submitted `rule_ids` and `rules_version`. With an outdated version, the daemon answered `412` and the current rules of the source | The daemon evaluates the rules against the event's `relations`. `rule_ids`, `rules_version` and the `412` are gone                                                                                                                                                                              |
+| Missing data for rules | —                                                                                                                                                                    | `relations`, `complete_relations`, and the header `X-Icinga-Reject-If-Relations-Incomplete`. If set, the daemon answers `422` with the missing relations as JSONPaths, see [Incomplete Relations][daemon-incomplete] and [Consistency](30-Integrations.md#consistency-between-hooks-and-events) |
+| Success                | `202` with a text body, after the event has been processed                                                                                                           | `204` without a body, as soon as the event is **queued**. Processing happens afterwards, see [High Availability](#high-availability)                                                                                                                                                            |
+| Errors                 | `406` for superfluous state or mute events, `412`                                                                                                                    | `400` for invalid JSON, **unknown fields** and invalid events, `401`, `405`, `422` for incomplete relations, `500` if the event could not be queued. Events that turn out to be invalid during processing are dropped and only logged                                                           |
+| `/incidents`           | `GET`, no filter, the JSON array of all open incidents of the source                                                                                                 | `GET` and `POST` on `/v1/incidents`, both require the query parameter `filter`. The response is a stream of JSON objects, one per line                                                                                                                                                          |
 
 #### Event Fields
 
-| Field | v0.2.0 | v1.0 |
-|-------|--------|------|
-| `rules_version`, `rule_ids`, `extra_tags`, `username` | Used | **Removed**, the daemon rejects them as unknown fields |
-| `type` | An enumeration: `state`, `acknowledgement-set`, `acknowledgement-cleared`, `mute`, `unmute`, `downtime-start`, `downtime-end`, `downtime-removed`, `flapping-start`, `flapping-end`, `incident-age` and `custom`. The daemon assumed `state` if it was missing | A free-form string that is **only** allowed, and then required, for events with `incident: false`. It has to match a key of [`getEventTypes()`](31-Integrations-Sources.md#geteventtypes) |
-| `severity` | `ok`, `debug`, `info`, `notice`, `warning`, `err`, `crit`, `alert`, `emerg` | `ok`, `warning`, `error`, `critical`. Required if, and only if, `incident` is `true` |
-| `mute`, `mute_reason` | `mute` and a reason | `muted` and `muted_reason`. The reason is required whenever `muted` is set |
-| `id` | — | A UUID that identifies the event, see below |
-| `summary` | — | **Required**. A single line of at most 1024 characters |
-| `incident` | — | `true` opens or escalates an incident, `false` only triggers notification rules, see [Rule Evaluation][daemon-rules] |
-| `close`, `notify` | — | Only `true` or omitted, and only together with `incident: true` |
-| `relations`, `complete_relations` | — | See above |
-| `url` | Could be relative, the daemon completed it with its option `icingaweb2-url` | **Absolute** or empty. Relative URLs are rejected with `400` and the option is gone |
+| Field                                                 | v0.2.0                                                                                                                                                                                                                                                         | v1.0                                                                                                                                                                                      |
+|-------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `rules_version`, `rule_ids`, `extra_tags`, `username` | Used                                                                                                                                                                                                                                                           | **Removed**, the daemon rejects them as unknown fields                                                                                                                                    |
+| `type`                                                | An enumeration: `state`, `acknowledgement-set`, `acknowledgement-cleared`, `mute`, `unmute`, `downtime-start`, `downtime-end`, `downtime-removed`, `flapping-start`, `flapping-end`, `incident-age` and `custom`. The daemon assumed `state` if it was missing | A free-form string that is **only** allowed, and then required, for events with `incident: false`. It has to match a key of [`getEventTypes()`](31-Integrations-Sources.md#geteventtypes) |
+| `severity`                                            | `ok`, `debug`, `info`, `notice`, `warning`, `err`, `crit`, `alert`, `emerg`                                                                                                                                                                                    | `ok`, `warning`, `error`, `critical`. Required if, and only if, `incident` is `true`                                                                                                      |
+| `mute`, `mute_reason`                                 | `mute` and a reason                                                                                                                                                                                                                                            | `muted` and `muted_reason`. The reason is required whenever `muted` is set                                                                                                                |
+| `id`                                                  | —                                                                                                                                                                                                                                                              | A UUID that identifies the event, see below                                                                                                                                               |
+| `summary`                                             | —                                                                                                                                                                                                                                                              | **Required**. A single line of at most 1024 characters                                                                                                                                    |
+| `incident`                                            | —                                                                                                                                                                                                                                                              | `true` opens or escalates an incident, `false` only triggers notification rules, see [Rule Evaluation][daemon-rules]                                                                      |
+| `close`, `notify`                                     | —                                                                                                                                                                                                                                                              | Only `true` or omitted, and only together with `incident: true`                                                                                                                           |
+| `relations`, `complete_relations`                     | —                                                                                                                                                                                                                                                              | See above                                                                                                                                                                                 |
+| `url`                                                 | Could be relative, the daemon completed it with its option `icingaweb2-url`                                                                                                                                                                                    | **Absolute** or empty. Relative URLs are rejected with `400` and the option is gone                                                                                                       |
 
 An event has to set at least one of `incident` and `muted`. `muted` cannot be combined with `incident: false`, and
 `muted: true` not with `close`. The state of the event, i.e. open, update or close an incident, is expressed by
@@ -404,12 +397,12 @@ give both the same `id`.
 
 **`/v1/incidents`.** The new endpoint can also modify incidents of the source, and its responses are streamed:
 
-| | v0.2.0 | v1.0 |
-|-|--------|------|
-| Request | `GET /incidents` | `GET` or `POST /v1/incidents?filter=…`. The filter is a JSON object, or an array of objects, matched against the object's ID tags. `null` as a value requires the tag to be absent |
-| `POST` | — | Closes the incident without notifying (`close`), or updates its message (`message`) |
-| Response | One JSON array | NDJSON. Each line is `{"status": "success"\|"error", "result": {…}}` |
-| Per incident | `incident` and `severity` and `object_tags`, with severities like `crit` and `err` | `is_muted`, `severity` and `object_tags`, with the severities above. There is no incident number |
+|              | v0.2.0                                                                             | v1.0                                                                                                                                                                               |
+|--------------|------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Request      | `GET /incidents`                                                                   | `GET` or `POST /v1/incidents?filter=…`. The filter is a JSON object, or an array of objects, matched against the object's ID tags. `null` as a value requires the tag to be absent |
+| `POST`       | —                                                                                  | Closes the incident without notifying (`close`), or updates its message (`message`)                                                                                                |
+| Response     | One JSON array                                                                     | NDJSON. Each line is `{"status": "success"\|"error", "result": {…}}`                                                                                                               |
+| Per incident | `incident` and `severity` and `object_tags`, with severities like `crit` and `err` | `is_muted`, `severity` and `object_tags`, with the severities above. There is no incident number                                                                                   |
 
 <!-- The v0.2.0 documentation of GET /incidents names the identifier "incident_id", the code of v0.2.0 returns it as
 "incident". The table follows the code. -->
