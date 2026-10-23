@@ -54,7 +54,7 @@ class IncidentController extends CompatController
 
         $query = Incident::on(Database::get())
             ->with('object')
-            ->withColumns(['object.id_tags', 'object.sources'])
+            ->withColumns(['object.id_tags', 'object.sources', 'source.type'])
             ->filter(Filter::equal('incident.id', $id));
 
         $this->applyRestrictions($query);

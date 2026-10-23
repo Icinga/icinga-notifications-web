@@ -258,7 +258,7 @@ class IncidentsTest extends TestCase
         $contactId = $this->seedContact('uname');
 
         foreach ($this->incidents($db, [['host' => 'a'], ['host' => 'b', 'service' => 'http']], true) as $incident) {
-            $incident->addManager('uname');
+            $incident->addManager('uname', []);
         }
 
         $tags = [];

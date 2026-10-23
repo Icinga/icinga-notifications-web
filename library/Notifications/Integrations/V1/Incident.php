@@ -164,6 +164,9 @@ class Incident
      * see {@see static::hasManager()}. The change is applied asynchronously, see {@see static::getPendingAction()}.
      *
      * @param string $username
+     * @param string[] $eventTypes The non-state event types the manager is notified about, see
+     *                             {@see \Icinga\Module\Notifications\Hook\V2\SourceHook::getEventTypes()}.
+     *                             None if empty.
      * @param ?UuidInterface $uuid The id of the event this role change represents, to correlate it with the history of
      *                             its source, e.g. an acknowledgement. A new one is generated if not given, a reused
      *                             one is ignored.
@@ -173,10 +176,10 @@ class Incident
      * @throws IncidentNotFoundException If the query passed to {@see static::fromQuery()} has no result
      * @throws InvalidArgumentException If no contact with that username exists
      */
-    public function addManager(string $username, ?UuidInterface $uuid = null): static
+    public function addManager(string $username, array $eventTypes, ?UuidInterface $uuid = null): static
     {
         if (! $this->hasManager()) {
-            $this->requestRoleChange($username, 'manage', ['manager'], $uuid);
+            $this->requestRoleChange($username, 'manage', ['manager'], $eventTypes, $uuid);
         }
 
         return $this;
@@ -189,6 +192,9 @@ class Incident
      * see {@see static::getPendingAction()}.
      *
      * @param string $username
+     * @param string[] $eventTypes The non-state event types the subscriber is notified about, see
+     *                             {@see \Icinga\Module\Notifications\Hook\V2\SourceHook::getEventTypes()}.
+     *                             None if empty.
      * @param ?UuidInterface $uuid The id of the event this role change represents, to correlate it with the history of
      *                             its source, e.g. an acknowledgement. A new one is generated if not given, a reused
      *                             one is ignored.
@@ -198,9 +204,9 @@ class Incident
      * @throws IncidentNotFoundException If the query passed to {@see static::fromQuery()} has no result
      * @throws InvalidArgumentException If no contact with that username exists
      */
-    public function addSubscriber(string $username, ?UuidInterface $uuid = null): static
+    public function addSubscriber(string $username, array $eventTypes, ?UuidInterface $uuid = null): static
     {
-        $this->requestRoleChange($username, 'subscribe', ['subscriber', 'manager'], $uuid);
+        $this->requestRoleChange($username, 'subscribe', ['subscriber', 'manager'], $eventTypes, $uuid);
 
         return $this;
     }
@@ -223,7 +229,7 @@ class Incident
     {
         $managerId = $this->managerId();
         if ($managerId !== null) {
-            $this->queueJob('unmanage', $managerId, $uuid);
+            $this->queueJob('unmanage', $managerId, null, $uuid);
         }
 
         return $this;
@@ -247,7 +253,7 @@ class Incident
      */
     public function removeSubscriber(string $username, ?UuidInterface $uuid = null): static
     {
-        $this->requestRoleChange($username, 'unsubscribe', [null, 'recipient', 'manager'], $uuid);
+        $this->requestRoleChange($username, 'unsubscribe', [null, 'recipient', 'manager'], null, $uuid);
 
         return $this;
     }
@@ -497,6 +503,7 @@ class Incident
      * @param string $username
      * @param 'manage'|'subscribe'|'unsubscribe' $action The action to perform
      * @param array<?string> $noopRoles Existing roles for which this is a no-op, `null` matches an absent contact
+     * @param ?string[] $eventTypes The non-state event types the contact is notified about, none if null or empty
      * @param ?UuidInterface $uuid The job's id, a new one is generated if not given
      *
      * @return $this
@@ -505,11 +512,12 @@ class Incident
         string $username,
         string $action,
         array $noopRoles,
+        ?array $eventTypes = null,
         ?UuidInterface $uuid = null
     ): static {
         $contactId = $this->getContactByName($username)->id;
         if (! in_array($this->existingRole($contactId), $noopRoles, true)) {
-            $this->queueJob($action, $contactId, $uuid);
+            $this->queueJob($action, $contactId, $eventTypes, $uuid);
         }
 
         return $this;
@@ -523,13 +531,18 @@ class Incident
      *
      * @param 'manage'|'unmanage'|'subscribe'|'unsubscribe' $action The action to perform
      * @param int $contactId The id of the contact whose role is changed
+     * @param ?string[] $eventTypes The non-state event types the contact is notified about, none if null or empty
      * @param ?UuidInterface $uuid The job's id, a new one is generated if not given
      *
      * @return void
      */
-    private function queueJob(string $action, int $contactId, ?UuidInterface $uuid = null): void
-    {
-        $job = JobQueue::fromQuickAction($action, $contactId, $this->incident()->object->id_tags, $uuid);
+    private function queueJob(
+        string $action,
+        int $contactId,
+        ?array $eventTypes = null,
+        ?UuidInterface $uuid = null
+    ): void {
+        $job = JobQueue::fromQuickAction($action, $contactId, $this->incident()->object->id_tags, $eventTypes, $uuid);
         try {
             (new EntityManager($this->db))->save($job);
         } catch (PDOException $e) {

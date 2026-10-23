@@ -43,13 +43,15 @@ class JobQueue extends Model
     /**
      * Create a new, pending job that represents the given quick action
      *
-     * The daemon decodes the envelope strictly by type, so `contact_id` must be an integer and `object_tags` a
-     * non-empty object. It also ignores unknown keys silently, a misspelled key results in a job that is marked as
-     * done without having any effect.
+     * The daemon decodes the envelope strictly by type, so `contact_id` must be an integer, `object_tags` a
+     * non-empty object and `event_types` an array. It also ignores unknown keys silently, a misspelled key results
+     * in a job that is marked as done without having any effect.
      *
      * @param 'manage'|'unmanage'|'subscribe'|'unsubscribe' $action The type of action to perform
      * @param int $contactId The id of the contact whose role is changed
      * @param array<string, string> $objectTags The object's full id tags
+     * @param ?string[] $eventTypes The non-state event types the contact is notified about, none if null or empty.
+     *                              Omitted from the envelope in that case.
      * @param ?UuidInterface $uuid The job's id, a new one is generated if not given
      *
      * @return static
@@ -61,6 +63,7 @@ class JobQueue extends Model
         string $action,
         int $contactId,
         array $objectTags,
+        ?array $eventTypes = null,
         ?UuidInterface $uuid = null
     ): static {
         if (empty($objectTags)) {
@@ -72,15 +75,21 @@ class JobQueue extends Model
         $job->id = $uuid ?? Uuid::uuid4();
         $job->last_update = $now;
         $job->state = static::STATE_PENDING;
+        $payload = [
+            'action' => $action,
+            'contact_id' => $contactId,
+            'object_tags' => $objectTags,
+        ];
+
+        if (! empty($eventTypes)) {
+            $payload['event_types'] = array_values($eventTypes);
+        }
+
         $job->envelope = json_encode([
             'version' => static::ENVELOPE_VERSION,
             'format' => 'quick_action',
             'time' => (int) $now->format('Uv'),
-            'payload' => [
-                'action' => $action,
-                'contact_id' => $contactId,
-                'object_tags' => $objectTags
-            ]
+            'payload' => $payload,
         ], JSON_THROW_ON_ERROR);
 
         return $job;

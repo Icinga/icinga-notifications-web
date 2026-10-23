@@ -118,7 +118,7 @@ class IncidentTest extends TestCase
         $id = $this->seedIncident();
         $contactId = $this->seedContact('uname');
 
-        $this->incident($id)->addManager('uname');
+        $this->incident($id)->addManager('uname', []);
 
         $this->assertSame(
             [['action' => 'manage', 'contact_id' => $contactId, 'object_tags' => self::TAGS]],
@@ -135,7 +135,7 @@ class IncidentTest extends TestCase
 
         $this->expectException(InvalidArgumentException::class);
 
-        $this->incident($id)->addManager('ghost');
+        $this->incident($id)->addManager('ghost', []);
     }
 
     #[DataProvider('sharedDatabases')]
@@ -164,10 +164,52 @@ class IncidentTest extends TestCase
         $id = $this->seedIncident();
         $contactId = $this->seedContact('uname');
 
-        $this->incident($id)->addSubscriber('uname');
+        $this->incident($id)->addSubscriber('uname', []);
 
         $this->assertSame(
             [['action' => 'subscribe', 'contact_id' => $contactId, 'object_tags' => self::TAGS]],
+            $this->storedJobs()
+        );
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testAddManagerQueuesAManageJobWithTheEventTypes(Connection $db): void
+    {
+        $this->db = $db;
+
+        $id = $this->seedIncident();
+        $contactId = $this->seedContact('uname');
+
+        $this->incident($id)->addManager('uname', ['downtime_start', 'flapping_start']);
+
+        $this->assertSame(
+            [[
+                'action'      => 'manage',
+                'contact_id'  => $contactId,
+                'object_tags' => self::TAGS,
+                'event_types' => ['downtime_start', 'flapping_start']
+            ]],
+            $this->storedJobs()
+        );
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testAddSubscriberQueuesASubscribeJobWithTheEventTypes(Connection $db): void
+    {
+        $this->db = $db;
+
+        $id = $this->seedIncident();
+        $contactId = $this->seedContact('uname');
+
+        $this->incident($id)->addSubscriber('uname', ['downtime_start', 'flapping_start']);
+
+        $this->assertSame(
+            [[
+                'action'      => 'subscribe',
+                'contact_id'  => $contactId,
+                'object_tags' => self::TAGS,
+                'event_types' => ['downtime_start', 'flapping_start']
+            ]],
             $this->storedJobs()
         );
     }
@@ -197,7 +239,7 @@ class IncidentTest extends TestCase
         $id = $this->seedIncident();
         $contactId = $this->seedContact('uname');
 
-        $this->incidentFromQuery($id)->addManager('uname');
+        $this->incidentFromQuery($id)->addManager('uname', []);
 
         $this->assertSame(
             [['action' => 'manage', 'contact_id' => $contactId, 'object_tags' => self::TAGS]],
@@ -219,7 +261,7 @@ class IncidentTest extends TestCase
 
         $this->assertNull($incident->getPendingAction(), 'A role change is pending before any was requested');
 
-        $incident->addSubscriber('uname');
+        $incident->addSubscriber('uname', []);
 
         $this->assertSame('subscribe', $incident->getPendingAction());
         $this->assertSame(
@@ -245,7 +287,7 @@ class IncidentTest extends TestCase
         $this->seedContact('uname');
         $uuid = Uuid::uuid4();
 
-        $this->incident($id)->addSubscriber('uname', $uuid);
+        $this->incident($id)->addSubscriber('uname', [], $uuid);
 
         /** @var JobQueue $job */
         $job = JobQueue::on($this->db)->first();
@@ -257,10 +299,10 @@ class IncidentTest extends TestCase
     public function testADuplicatePrimaryKeyIsADuplicateKeyError(Connection $db): void
     {
         $uuid = Uuid::uuid4();
-        (new EntityManager($db))->save(JobQueue::fromQuickAction('subscribe', 42, self::TAGS, $uuid));
+        (new EntityManager($db))->save(JobQueue::fromQuickAction('subscribe', 42, self::TAGS, null, $uuid));
 
         $e = $this->catchPdoException(
-            fn() => (new EntityManager($db))->save(JobQueue::fromQuickAction('subscribe', 42, self::TAGS, $uuid))
+            fn() => (new EntityManager($db))->save(JobQueue::fromQuickAction('subscribe', 42, self::TAGS, null, $uuid))
         );
 
         $this->assertTrue(
@@ -577,7 +619,7 @@ class IncidentTest extends TestCase
 
         $this->expectException(IncidentNotFoundException::class);
 
-        $this->incidentFromQuery(0)->addManager('uname');
+        $this->incidentFromQuery(0)->addManager('uname', []);
     }
 
     #[DataProvider('sharedDatabases')]
@@ -589,7 +631,7 @@ class IncidentTest extends TestCase
 
         $this->expectException(IncidentNotFoundException::class);
 
-        $this->incidentFromQuery(0)->addSubscriber('uname');
+        $this->incidentFromQuery(0)->addSubscriber('uname', []);
     }
 
     #[DataProvider('sharedDatabases')]
@@ -663,8 +705,8 @@ class IncidentTest extends TestCase
         $bobId = $this->seedContact('bob');
 
         $this->incident($id)
-            ->addManager('alice')
-            ->addSubscriber('bob');
+            ->addManager('alice', [])
+            ->addSubscriber('bob', []);
 
         $this->assertSame(
             [
@@ -685,8 +727,8 @@ class IncidentTest extends TestCase
         $bobId = $this->seedContact('bob');
 
         $incident = $this->incident($id);
-        $incident->addManager('alice');
-        $incident->addSubscriber('bob');
+        $incident->addManager('alice', []);
+        $incident->addSubscriber('bob', []);
 
         $this->assertSame(
             [
@@ -706,7 +748,7 @@ class IncidentTest extends TestCase
         $contactId = $this->seedContact('uname');
         $this->seedIncidentContact($id, $contactId, 'subscriber');
 
-        $this->incident($id)->addManager('uname');
+        $this->incident($id)->addManager('uname', []);
 
         $this->assertSame(
             [['action' => 'manage', 'contact_id' => $contactId, 'object_tags' => self::TAGS]],
@@ -722,7 +764,7 @@ class IncidentTest extends TestCase
         $id = $this->seedIncident();
         $this->seedIncidentContact($id, $this->seedContact('uname'), 'manager');
 
-        $this->incident($id)->addSubscriber('uname');
+        $this->incident($id)->addSubscriber('uname', []);
 
         $this->assertSame([], $this->storedJobs(), 'A no-op queued a job');
     }
@@ -735,7 +777,7 @@ class IncidentTest extends TestCase
         $id = $this->seedIncident();
         $this->seedIncidentContact($id, $this->seedContact('uname'), 'manager');
 
-        $this->incident($id)->addManager('uname');
+        $this->incident($id)->addManager('uname', []);
 
         $this->assertSame([], $this->storedJobs(), 'A no-op queued a job');
     }
@@ -749,7 +791,7 @@ class IncidentTest extends TestCase
         $this->seedContact('uname');
         $this->seedIncidentContact($id, $this->seedContact('other'), 'manager');
 
-        $this->incident($id)->addManager('uname');
+        $this->incident($id)->addManager('uname', []);
 
         $this->assertSame([], $this->storedJobs(), 'A no-op queued a job');
     }
@@ -762,7 +804,7 @@ class IncidentTest extends TestCase
         $id = $this->seedIncident();
         $this->seedIncidentContact($id, $this->seedContact('uname'), 'subscriber');
 
-        $this->incident($id)->addSubscriber('uname');
+        $this->incident($id)->addSubscriber('uname', []);
 
         $this->assertSame([], $this->storedJobs(), 'A no-op queued a job');
     }
@@ -882,11 +924,18 @@ class IncidentTest extends TestCase
     /**
      * Read the queued quick action jobs as `[['action' => ..., 'contact_id' => ..., 'object_tags' => ...], ...]`
      *
+     * A job additionally carries `event_types` if any were requested.
+     *
      * Ordered by contact id and action, as jobs queued within the same millisecond have no reliable order.
      * The object tags are sorted by name, as the database aggregates them in no particular order.
      * Asserts each envelope's version and format, as the daemon would not process the job otherwise.
      *
-     * @return list<array{action: string, contact_id: int, object_tags: array<string, string>}>
+     * @return list<array{
+     *     action: string,
+     *     contact_id: int,
+     *     object_tags: array<string, string>,
+     *     event_types?: list<string>
+     * }>
      */
     private function storedJobs(): array
     {

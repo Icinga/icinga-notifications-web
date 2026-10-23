@@ -50,6 +50,48 @@ class JobQueueTest extends TestCase
         );
     }
 
+    public function testFromQuickActionAddsTheEventTypesToThePayload(): void
+    {
+        $envelope = $this->envelope(
+            JobQueue::fromQuickAction('subscribe', 42, self::TAGS, ['downtime_start', 'flapping_start'])
+        );
+
+        $this->assertSame(
+            [
+                'action' => 'subscribe',
+                'contact_id' => 42,
+                'object_tags' => self::TAGS,
+                'event_types' => ['downtime_start', 'flapping_start']
+            ],
+            $envelope['payload']
+        );
+    }
+
+    public function testFromQuickActionOmitsMissingEventTypes(): void
+    {
+        $envelope = $this->envelope(JobQueue::fromQuickAction('subscribe', 42, self::TAGS, null));
+
+        $this->assertArrayNotHasKey('event_types', $envelope['payload']);
+    }
+
+    public function testFromQuickActionOmitsEmptyEventTypes(): void
+    {
+        $envelope = $this->envelope(JobQueue::fromQuickAction('subscribe', 42, self::TAGS, []));
+
+        $this->assertArrayNotHasKey('event_types', $envelope['payload']);
+    }
+
+    public function testFromQuickActionEncodesTheEventTypesAsAList(): void
+    {
+        $job = JobQueue::fromQuickAction('subscribe', 42, self::TAGS, [1 => 'downtime_start', 3 => 'flapping_start']);
+
+        $this->assertStringContainsString(
+            '"event_types":["downtime_start","flapping_start"]',
+            $job->envelope,
+            'The event types are not encoded as a JSON array, which the daemon fails to decode'
+        );
+    }
+
     public function testFromQuickActionStampsTheTimeInMilliseconds(): void
     {
         $before = (int) (new DateTime())->format('Uv');
