@@ -3,6 +3,57 @@
 Specific version upgrades are described below. Please note that version upgrades are incremental.
 If you are upgrading across multiple versions, make sure to follow the steps for each of them.
 
+## Upgrading to Icinga Notifications Web v1.0
+
+Icinga Notifications Web v1.0 is released alongside Icinga Notifications v1.0 and requires it. Upgrade the daemon
+first and follow its
+[upgrading notes](https://icinga.com/docs/icinga-notifications/latest/doc/04-Upgrading/#upgrading-to-icinga-notifications-v10),
+which include the database schema upgrade and changes to its configuration file.
+
+### Permissions
+
+The `Notifications → Configuration` menu entry no longer exists. `Incidents`, `History`, `Event Rules`, `Schedules`,
+`Contacts` and `Contact Groups` are now separate entries under `Notifications`. Channels, sources and the database
+connection remain available as tabs under `Configuration → Modules → notifications`.
+
+The new permissions `notifications/view/incidents` and `notifications/view/history` control access to incidents and
+the notification history. Existing roles do not have them. Add them to all roles whose users need to keep seeing
+incidents in Icinga Notifications Web.
+
+!!! warning
+
+    Restricting users to certain objects is not supported. Only grant these permissions to users who are allowed to
+    see **all** events and incidents. Regular users should work with incidents in the web integration of the source.
+    See [Access Control](03-Configuration.md#access-control).
+
+### Removed Features
+
+* The `Events` list and the event detail view have been removed. The daemon no longer stores events. Use the incident
+  history and the notification history to analyze its behavior.
+* The channel type Rocket.Chat has been removed. Make sure no contact uses it as default channel and no event rule
+  notifies through it, as the schema upgrade fails otherwise. Once the schema upgrade has been successfully applied,
+  the Rocket.Chat channel configurations are gone.
+
+### Event Rules
+
+Event rules are now bound to a **source type** instead of an individual source. A rule applies to all sources of that
+type. Deleting a source only deletes its event rules if it is the last source of its type.
+
+If your event rules still contain filters in the format used before v1.0, they are marked in
+`Notifications → Event Rules` as outdated. Click on the rule to migrate its filter. Review the converted filter and
+save it. This is only possible if the integration of the source supports it.
+
+Event rules can now be of the type _escalation rule_ or _notification rule_. Existing rules are escalation rules.
+
+### Sources
+
+Sources no longer require an integration in Icinga Web. A source that is maintained by an integration, such as Icinga
+DB Web, is now shown as locked and read-only in Icinga Notifications Web.
+
+If you have configured an Icinga DB source manually, please consult their
+[upgrade documentation](https://icinga.com/docs/icinga-db/latest/doc/04-Upgrading/#upgrading-to-icinga-db-v160)
+for a detailed description of the recommended migration steps.
+
 ## Upgrading to Icinga Notifications Web 0.2.0
 
 With Icinga Notifications 0.2.0 we changed how event rule filters are configured and processed.
