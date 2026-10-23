@@ -18,13 +18,13 @@ If you already have an integration for v0.2.0, start with [Upgrading](33-Integra
 Everything an integration does is optional. A source works without any integration, you only gain convenience for
 your users by providing one. The parts are independent of each other.
 
-| Capability                                                      | What your users get                                                                                         | Page                                                                |
-|-----------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
-| Provide a source hook (`Hook\V2\SourceHook`)                    | Column and value suggestions and validation in the event rule filter editor, the label and icon of the source, event types for notification rules and a link to the object in incident details | [Sources](31-Integrations-Sources.md#source-hook)                   |
-| Provide a filter migration hook (`Hook\V2\V1FilterMigrationHook`) | A way to convert event rule filters created before v1.0 instead of having to recreate them               | [Sources](31-Integrations-Sources.md#filter-migration-hook)         |
-| Manage the source (`Integrations\V1\Source`)                    | A source that is created and kept up to date by your module, e.g. by a single toggle in its configuration   | [Sources](31-Integrations-Sources.md#managing-the-source)           |
-| Show and manage incidents (`Integrations\V1\Incidents`, `Incident`) | Subscribing, unsubscribing, acknowledging and listing recipients in your own object views                | [Incidents](32-Integrations-Incidents.md)                           |
-| Submit events (a process, not part of the module)               | Incidents and notifications for your objects                                                                | [HTTP API of the daemon][daemon-api], [Consistency](#consistency-between-hooks-and-events) |
+| Capability                                                          | What your users get                                                                                                                                                                            | Page                                                                                       |
+|---------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
+| Provide a source hook (`Hook\V2\SourceHook`)                        | Column and value suggestions and validation in the event rule filter editor, the label and icon of the source, event types for notification rules and a link to the object in incident details | [Sources](31-Integrations-Sources.md#source-hook)                                          |
+| Provide a filter migration hook (`Hook\V2\V1FilterMigrationHook`)   | A way to convert event rule filters created before v1.0 instead of having to recreate them                                                                                                     | [Sources](31-Integrations-Sources.md#filter-migration-hook)                                |
+| Manage the source (`Integrations\V1\Source`)                        | A source that is created and kept up to date by your module, e.g. by a single toggle in its configuration                                                                                      | [Sources](31-Integrations-Sources.md#managing-the-source)                                  |
+| Show and manage incidents (`Integrations\V1\Incidents`, `Incident`) | Subscribing, unsubscribing, acknowledging and listing recipients in your own object views                                                                                                      | [Incidents](32-Integrations-Incidents.md)                                                  |
+| Submit events (a process, not part of the module)                   | Incidents and notifications for your objects                                                                                                                                                   | [HTTP API of the daemon][daemon-api], [Consistency](#consistency-between-hooks-and-events) |
 
 A source without a source hook also works. Its users get a plain filter editor without suggestions and validation, and
 event types have to be typed in manually. Incident details only link to the object if the event carried an `url`.
@@ -106,13 +106,13 @@ Both halves describe the same objects, and nothing checks that they agree. If th
 do not match, incidents are not found, links are missing. The reference for the events is the daemon's
 [HTTP API documentation][daemon-api]. This section lists what has to be the same on both sides.
 
-| Declared in the integration                                                         | Must match what the source submits                                        |
-|-------------------------------------------------------------------------------------|---------------------------------------------------------------------------|
-| ID tags passed to `Incidents::get()`, `getAll()` and received by `createObjectLink()` | The `tags` of the event, **all** of them                                |
-| Keys of `getEventTypes()`                                                           | The `type` of `incident: false` events                                    |
-| JSONPaths returned by `getJsonPaths()`, columns accepted by `assertValidCondition()` | The structure of `relations` and `complete_relations`                    |
-| `Source::get($username)`                                                            | The username (or OS user) the source authenticates as                     |
-| The `$uuid` of a role change through `Incident`                                     | The `id` of the corresponding event                                       |
+| Declared in the integration                                                           | Must match what the source submits                    |
+|---------------------------------------------------------------------------------------|-------------------------------------------------------|
+| ID tags passed to `Incidents::get()`, `getAll()` and received by `createObjectLink()` | The `tags` of the event, **all** of them              |
+| Keys of `getEventTypes()`                                                             | The `type` of `incident: false` events                |
+| JSONPaths returned by `getJsonPaths()`, columns accepted by `assertValidCondition()`  | The structure of `relations` and `complete_relations` |
+| `Source::get($username)`                                                              | The username (or OS user) the source authenticates as |
+| The `$uuid` of a role change through `Incident`                                       | The `id` of the corresponding event                   |
 
 ### ID Tags
 
@@ -155,11 +155,11 @@ Rule filters connect your hook with the events in three places:
 
 A column is only useful if all three agree. These are the ways it goes wrong:
 
-| What is wrong                                           | What happens                                                                    |
-|---------------------------------------------------------|---------------------------------------------------------------------------------|
-| You offer a column, the source never sends the data     | The condition never matches, and the rule never triggers                        |
-| The path points to another place than the data          | The same. The daemon cannot find anything where the path says                  |
-| A path is not valid JSONPath                            | The daemon ignores it. If none of a condition's paths is valid, it does not load the rule at all |
+| What is wrong                                                       | What happens                                                                                               |
+|---------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
+| You offer a column, the source never sends the data                 | The condition never matches, and the rule never triggers                                                   |
+| The path points to another place than the data                      | The same. The daemon cannot find anything where the path says                                              |
+| A path is not valid JSONPath                                        | The daemon ignores it. If none of a condition's paths is valid, it does not load the rule at all           |
 | The structure of `relations` changes in a new version of the source | Existing rules keep the paths that were stored when they were saved. They have to be migrated or recreated |
 
 The daemon helps with the first two: a source can ask it to reject an event and a list of the missing relations if the
