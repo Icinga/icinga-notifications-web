@@ -50,8 +50,9 @@ Event rules can now be of the type _escalation rule_ or _notification rule_. Exi
 Sources no longer require an integration in Icinga Web. A source that is maintained by an integration, such as Icinga
 DB Web, is now shown as locked and read-only in Icinga Notifications Web.
 
-If you have configured an Icinga DB source manually, please consult their upgrade documentation for a detailed
-description of the recommended migration steps: https://icinga.com/docs/icinga-db/latest/doc/04-Upgrading/#upgrading-to-icinga-db-v160
+If you have configured an Icinga DB source manually, please consult their
+[upgrade documentation](https://icinga.com/docs/icinga-db/latest/doc/04-Upgrading/#upgrading-to-icinga-db-v160)
+for a detailed description of the recommended migration steps.
 
 ## Upgrading to Icinga Notifications Web 0.2.0
 
