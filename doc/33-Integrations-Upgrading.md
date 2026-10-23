@@ -318,7 +318,7 @@ current API, e.g. `ProcessEvent()` takes a flag to reject incomplete relations a
 | Transport | HTTP only, configured by `listen` | TCP, optionally with TLS, and Unix socket. The options live in the `listener` section of the daemon's configuration |
 | Authentication | HTTP Basic Authentication | Unchanged for TCP. Also a TLS client certificate, which identifies the source by its subject (sending a certificate and Basic Authentication together is rejected with `400`), and, on the Unix socket, the OS user of the process, which identifies the source by its listener username |
 | Rule handling | The source evaluated the rules and submitted `rule_ids` and `rules_version`. With an outdated version, the daemon answered `412` and the current rules of the source | The daemon evaluates the rules against the event's `relations`. `rule_ids`, `rules_version` and the `412` are gone |
-| Missing data for rules | — | `relations`, `complete_relations`, and the header `X-Icinga-Reject-If-Relations-Incomplete`. If set, the daemon answers `422` with the missing relations as JSONPaths, see [Submitting Events](30-Integrations.md#submitting-events) |
+| Missing data for rules | — | `relations`, `complete_relations`, and the header `X-Icinga-Reject-If-Relations-Incomplete`. If set, the daemon answers `422` with the missing relations as JSONPaths, see [Incomplete Relations][daemon-incomplete] and [Consistency](30-Integrations.md#consistency-between-hooks-and-events) |
 | Success | `202` with a text body, after the event has been processed | `204` without a body, as soon as the event is **queued**. Processing happens afterwards, see [High Availability](#high-availability) |
 | Errors | `406` for superfluous state or mute events, `412` | `400` for invalid JSON, **unknown fields** and invalid events, `401`, `405`, `422` for incomplete relations, `500` if the event could not be queued. Events that turn out to be invalid during processing are dropped and only logged |
 | `/incidents` | `GET`, no filter, the JSON array of all open incidents of the source | `GET` and `POST` on `/v1/incidents`, both require the query parameter `filter`. The response is a stream of JSON objects, one per line |
@@ -333,7 +333,7 @@ current API, e.g. `ProcessEvent()` takes a flag to reject incomplete relations a
 | `mute`, `mute_reason` | `mute` and a reason | `muted` and `muted_reason`. The reason is required whenever `muted` is set |
 | `id` | — | A UUID that identifies the event, see below |
 | `summary` | — | **Required**. A single line of at most 1024 characters |
-| `incident` | — | `true` opens or escalates an incident, `false` only triggers notification rules, see [Submitting Events](30-Integrations.md#submitting-events) |
+| `incident` | — | `true` opens or escalates an incident, `false` only triggers notification rules, see [Rule Evaluation][daemon-rules] |
 | `close`, `notify` | — | Only `true` or omitted, and only together with `incident: true` |
 | `relations`, `complete_relations` | — | See above |
 | `url` | Could be relative, the daemon completed it with its option `icingaweb2-url` | **Absolute** or empty. Relative URLs are rejected with `400` and the option is gone |
@@ -463,6 +463,8 @@ multiple daemon instances can share one database, see [Distributed Setups][daemo
 
 [daemon-api]: https://icinga.com/docs/icinga-notifications/latest/doc/20-HTTP-API/
 [daemon-config]: https://icinga.com/docs/icinga-notifications/latest/doc/03-Configuration/#http-api-configuration
+[daemon-incomplete]: https://icinga.com/docs/icinga-notifications/latest/doc/20-HTTP-API/#incomplete-relations
+[daemon-rules]: https://icinga.com/docs/icinga-notifications/latest/doc/20-HTTP-API/#rule-evaluation
 [daemon-history]: https://icinga.com/docs/icinga-notifications/latest/doc/20-HTTP-API/#notification-history
 [daemon-ha]: https://icinga.com/docs/icinga-notifications/latest/doc/05-Distributed-Setups/
 [daemon-upgrading]: https://icinga.com/docs/icinga-notifications/latest/doc/04-Upgrading/#upgrading-to-icinga-notifications-v10

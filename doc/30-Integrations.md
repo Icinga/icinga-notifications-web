@@ -123,68 +123,133 @@ as the Icinga Web user, see [Incidents](32-Integrations-Incidents.md#who-can-sub
 *allowed* to do it in your module, e.g. by a permission of your own, is up to you. Icinga DB Web has the permissions
 `icingadb/notifications/subscribe` and `icingadb/notifications/manage` for this.
 
-## Submitting Events
+## Consistency Between Hooks and Events
 
-If your integration belongs to a process that *is* a source, that process has to submit events to the daemon.
-That is not part of the module's API, it is a plain HTTP request. The full reference is the daemon's
-[HTTP API documentation](https://icinga.com/docs/icinga-notifications/latest/doc/20-HTTP-API/). This is what an
-integration needs to know.
-
-* **Endpoint and versioning:** `POST /v1/process-event`. The former unversioned `/process-event` is no longer served.
-  A successful submission returns `204`.
-* **Authentication:** Depends on how the source reaches the daemon.
-  Over TCP it is HTTP Basic Authentication with the username and password of the source, optionally with a TLS client
-  certificate instead. Over a Unix socket, no credentials are involved: the daemon identifies the source by the
-  operating system user of the connecting process and matches it with the **listener username** of the source.
-  See [managing the source](31-Integrations-Sources.md#managing-the-source) for what that means for you.
-* **Which rules apply** depends on the event's `incident` field:
-
-  | `incident` | Rules evaluated    | Effect                                                              |
-  |------------|--------------------|---------------------------------------------------------------------|
-  | `true`     | Escalation rules   | Opens or updates an incident, triggers escalations and notifications |
-  | `false`    | Notification rules | Notifies the recipients right away, no incident is opened or changed |
-  | omitted    | None               | Only updates an already open incident, e.g. its message             |
-
-* **Relations:** A rule filter is evaluated by the daemon against the event's `relations`, a free-form JSON object.
-  Rules reference it via JSONPath expressions. Your source hook is what translates the columns a user picks into
-  these JSONPath expressions, see [`getJsonPaths()`](31-Integrations-Sources.md#getjsonpaths).
-  Only events with the `incident` field set are checked for missing relations. If the source sets the header
-  `X-Icinga-Reject-If-Relations-Incomplete: true`, the daemon responds with `422` whenever relations that the
-  rules need are missing, and lists them in the response body. The source can then resubmit the event with them.
-  Without the header, such an event is still accepted if it has `incident: true`, if the object already has an open
-  incident or if the source has a rule of the evaluated type without an object filter. Relations the source knows to
-  be complete, even though they do not contain a referenced value, are declared with `complete_relations`, otherwise
-  the daemon keeps asking for them.
-* **Human readable names:** The event's `name` (the display name of the object) and `summary` (a single line, e.g. for
-  email subjects) are shown to users and sent to channels. The module no longer asks an integration to render object
-  names, the source has to send them. This replaces `ObjectsRendererHook`.
-* **URLs:** `url` is optional, but if set it must be absolute, e.g.
-  `https://example.com/icingaweb2/icingadb/host?name=example`. The daemon cannot resolve a relative URL and rejects
-  the event with `400`. It is used for contacts in notifications and as fallback for the link to the object in
-  incident details, if your hook cannot create one.
-* **Event type:** Events with `incident: false` carry a `type`, e.g. `downtime_start`. Notification rules can restrict
-  their entries by type, and your hook offers the list to choose from with
-  [`getEventTypes()`](31-Integrations-Sources.md#geteventtypes).
-* **Event IDs:** An optional `id` identifies an event. Resubmitting an event keeps its ID, a new event gets a new one.
-  Role changes through `Incident` can carry such an ID as well, see
-  [Incidents](32-Integrations-Incidents.md#correlating-role-changes-with-source-events).
-
-### Consistency Between Hooks and Events
-
-The hooks and the events are two views on the same thing, but nothing checks that they match. If they do not,
-rules silently do not match, or objects cannot be found. Make sure the following holds:
+An integration has two halves. The PHP side, i.e. your hooks and the classes you call, is evaluated by Icinga
+Notifications Web. The source process submits events to the Icinga Notifications daemon, which never calls into PHP.
+Both halves describe the same objects, and nothing checks that they agree. If they do not, nothing fails loudly: rules
+do not match, incidents are not found, links are missing. The reference for the events is the daemon's
+[HTTP API documentation][daemon-api]. This section lists what has to be the same on both sides.
 
 | Declared in the integration                                                         | Must match what the source submits                                        |
 |-------------------------------------------------------------------------------------|---------------------------------------------------------------------------|
-| Hook name `Notifications/V2/<Type>Source`, `V1FilterMigrationHook::getSourceType()`, `Source::setType()` | The source type of the source, as configured in Icinga Notifications Web |
-| ID tags passed to `Incidents::get()`, `getAll()` and received by `createObjectLink()` | The `tags` of the event, **all** of them. The identity of an object is derived from the complete set of tags |
+| Hook name `Notifications/V2/<Type>Source`, `V1FilterMigrationHook::getSourceType()`, `Source::setType()` | The type of the source, as configured in Icinga Notifications Web |
+| ID tags passed to `Incidents::get()`, `getAll()` and received by `createObjectLink()` | The `tags` of the event, **all** of them                                |
 | Keys of `getEventTypes()`                                                           | The `type` of `incident: false` events                                    |
-| JSONPaths returned by `getJsonPaths()`                                              | The structure of `relations`                                              |
-| Columns accepted by `assertValidCondition()`                                        | The relations the source is able to provide, or `complete_relations`      |
+| JSONPaths returned by `getJsonPaths()`, columns accepted by `assertValidCondition()` | The structure of `relations` and `complete_relations`                    |
 | `Source::get($username)`                                                            | The username (or OS user) the source authenticates as                     |
+| The `$uuid` of a role change through `Incident`                                     | The `id` of the corresponding event                                       |
+
+### Source Type
+
+The type of a source is what everything is keyed by. Event rules are bound to it, and the hook is found by it.
+So the type you pass to `Source::setType()`, the type in the name of your source hook, and the type returned by
+`getSourceType()` of the migration hook have to be the same, e.g. `icinga2`. Users that configure a source manually
+have to enter it too, so document it.
+
+If they differ, nothing notices: Icinga Notifications Web does not find your hook for the source, and treats it as
+one without an integration. The filter editor has no suggestions, the type is shown as it is, and the event types have
+to be typed. Remember that the hook name is derived from the type in a way that ignores case and delimiters, see
+[Registering the Hook](31-Integrations-Sources.md#registering-the-hook).
+
+### ID Tags
+
+The `tags` of an event identify the object it is about, e.g. `host` and `service`. Icinga Notifications derives the
+identity of an object from the **complete set** of tags, and its incidents belong to that object. This is what you work
+with on the PHP side:
+
+* `Incidents::get()` and `Incidents::getAll()` require the complete set of the object, see
+  [Finding Incidents](32-Integrations-Incidents.md#finding-incidents). If you leave a tag out, add one or spell a value
+  differently, you ask for another object and find no incident.
+* `createObjectLink()` receives the complete set of the object. It can rely on the tags it knows, as the source
+  submits them.
+
+Because of that, the tags have to be **stable**. If a source starts to add a tag to the events of existing objects, they
+become different objects with their own incidents. Do not put anything into the tags that can change, or that differs
+between sources of the same object. In a setup with several sources of the same type, e.g. one per node of a high
+availability cluster, the object must have the same tags, whichever source reports it. Icinga DB, for example, uses
+`host`, `service` and `environment`. The environment is what tells apart objects with the same name in different Icinga
+environments.
 
 !!! tip
 
     Define the ID tags of your objects in exactly one place of your integration and use it for both, the code that
-    builds events and the code that looks up incidents. Icinga DB Web, for example, derives the tags `host`,
-    `service` and `environment` for both.
+    builds events and the code that looks up incidents. Icinga DB Web, for example, derives them in one class for all
+    of its views.
+
+### Event Types
+
+Notification rules can restrict their entries to event types. The events they apply to are those with
+`incident: false`, which carry the type in `type`, as a free-form string. The keys of `getEventTypes()` are what users
+pick from, and what is compared with `type` of the events:
+
+* If a key is not what the source submits, a rule with it never matches.
+* If the source submits a type that is not a key, users cannot select it, and rules that were created by typing it
+  are marked as invalid.
+
+Use the same names for both and keep them stable, as rules store them.
+
+### Columns, JSONPaths and Relations
+
+Rule filters connect your hook with the events in three places:
+
+* [`assertValidCondition()`](31-Integrations-Sources.md#assertvalidcondition) decides which **columns** users can use,
+* [`getJsonPaths()`](31-Integrations-Sources.md#getjsonpaths) maps each column to JSONPaths, and
+* the source puts the data into the event's `relations`, a free-form JSON object that the paths are evaluated against.
+
+A column is only useful if all three agree. These are the ways it goes wrong:
+
+| What is wrong                                           | What happens                                                                    |
+|---------------------------------------------------------|---------------------------------------------------------------------------------|
+| You offer a column, the source never sends the data     | The condition never matches, and the rule never triggers                        |
+| The path points to another place than the data          | The same. The daemon cannot find anything where the path says                  |
+| A path is not valid JSONPath                            | The daemon ignores it. If none of a condition's paths is valid, it does not load the rule at all |
+| The structure of `relations` changes in a new version of the source | Existing rules keep the paths that were stored when they were saved. They have to be migrated or recreated |
+
+The daemon helps with the first two: a source can ask it to reject an event with `422` and a list of the missing
+relations if the rules need data that the event does not contain, with the header
+`X-Icinga-Reject-If-Relations-Incomplete: true`. The source then resubmits the event with these relations added. If the
+source knows that a relation is complete although it does not contain what a rule refers to, e.g. a host without
+custom variables, it lists it in `complete_relations`, otherwise it is asked again and again. See
+[Incomplete Relations][daemon-incomplete] for when events are rejected, and how.
+
+As a consequence, the source has to be able to produce every column your hook offers, on demand. Icinga DB, for
+example, sends a default set of relations with each event and adds what is missing when the daemon asks.
+Do not offer columns that the source cannot provide.
+
+### Listener Username
+
+The source authenticates with a username, and the daemon identifies it by its **listener username**. With a password
+or a TLS certificate this is the login. With a Unix socket it is the operating system user of the source's process.
+`Source::get($username)` looks the source up by exactly this username, see
+[Managing the Source](31-Integrations-Sources.md#managing-the-source). If it is not the one the source uses, you
+manage a source that nobody submits events with, and the events of the real one are rejected with `401`. A
+certificate subject cannot be managed with this class, only users with a username.
+
+### Names, URLs and IDs of Events
+
+Three more things in the events matter to the integration:
+
+* **Names:** The event's `name` is the display name of the object and `summary` a single line about the event. They are
+  shown in incident lists and details and sent to notified contacts. Since v1.0, the source has to send them, the
+  integration is not asked to render them anymore. Use the names your own views use for the object.
+* **URLs:** `url` is optional, but if set it must be absolute, e.g.
+  `https://example.com/icingaweb2/icingadb/host?name=example`, or the event is rejected. Icinga Notifications Web uses
+  it as fallback if [`createObjectLink()`](31-Integrations-Sources.md#createobjectlink) returns `null`, so it should
+  lead to the same object as your hook's link.
+* **Event IDs:** `id` is optional but identifies an event. A resubmitted event keeps its `id`, a new one gets a new
+  `id`. If a role change through `Incident` stands for an event of the source, e.g. an acknowledgement, it gets the
+  same value as `$uuid`, see
+  [Correlating Role Changes](32-Integrations-Incidents.md#correlating-role-changes-with-source-events).
+
+### Checking It
+
+Check it with real data, as no tool can do it for you:
+
+1. Create a source of the type, and an event rule that filters by a column of each kind your hook offers.
+2. Submit an event for an object that must match, and one that must not. Send them the way your source does it.
+3. Check that the incident opens only for the first, that its detail shows the right name, the object link and the
+   source, and that `Incidents::get()` with the tags of the object finds it.
+
+[daemon-api]: https://icinga.com/docs/icinga-notifications/latest/doc/20-HTTP-API/
+[daemon-incomplete]: https://icinga.com/docs/icinga-notifications/latest/doc/20-HTTP-API/#incomplete-relations
