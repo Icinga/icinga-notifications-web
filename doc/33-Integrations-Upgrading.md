@@ -40,9 +40,6 @@ called by v0.2.0. Keeping both only adds code that one of the two versions never
 * Release the change together with, or after, the v1.0 releases. Upgrade the daemon first, see its
   [upgrading notes][daemon-upgrading].
 
-<!-- TODO(verify): There is no verified mechanism to express "requires Icinga Notifications Web >= 1.0, if it is
-enabled" for an optional module dependency. See the corresponding TODO in 30-Integrations.md. -->
-
 ### 2. Register `Notifications/V2/<Type>Source`
 
 Replace the registration and move the class. The type is the one your `getSourceType()` returned.

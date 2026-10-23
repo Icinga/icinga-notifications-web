@@ -70,9 +70,6 @@ lives in a different namespace and may exist side by side. The classes `Hook\V1\
 `Hook\ObjectsRendererHook` of v0.2.0 still exist but are deprecated and **no longer called**. Implementing them has no
 effect. They are only covered in [Upgrading](33-Integrations-Upgrading.md).
 
-<!-- TODO(verify): The compatibility policy within a namespace (e.g. whether new methods may be added to the V2 hook
-interfaces) is not documented in the repository. Confirm with the maintainers before stating a guarantee here. -->
-
 ## Prerequisites
 
 ### The Database
