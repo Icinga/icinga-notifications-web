@@ -33,7 +33,7 @@ camel case (delimiters are `-`, `_` and space) and its first letter is upper-cas
 | `icinga2`            | `Notifications/V2/Icinga2Source`           | `Icinga\Module\Icingadb\ProvidedHook\Notifications\V2\Icinga2Source` |
 | `my-app`             | `Notifications/V2/MyAppSource`             | `Icinga\Module\Example\ProvidedHook\Notifications\V2\MyAppSource` |
 
-Register it in `run.php`, guarded by the check for the module, and put the class in the usual place for provided
+Register it in `run.php` and put the class in the usual place for provided
 hooks (`library/<Module>/ProvidedHook/Notifications/V2/<Type>Source.php`):
 
 ```php
@@ -41,10 +41,8 @@ hooks (`library/<Module>/ProvidedHook/Notifications/V2/<Type>Source.php`):
 
 /** @var $this \Icinga\Application\Modules\Module */
 
-if ($this::exists('notifications')) {
-    $this->provideHook('Notifications/V2/ExampleSource');
-    $this->provideHook('Notifications/V2/V1FilterMigration');
-}
+$this->provideHook('Notifications/V2/ExampleSource');
+$this->provideHook('Notifications/V2/V1FilterMigration');
 ```
 
 The class implements `Hook\V2\SourceHook`, nothing else is required. Icinga Notifications Web makes the hook name

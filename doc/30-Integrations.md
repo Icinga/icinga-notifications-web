@@ -75,31 +75,6 @@ interfaces) is not documented in the repository. Confirm with the maintainers be
 
 ## Prerequisites
 
-### Optional Dependency
-
-Icinga Notifications Web is an optional dependency of your module. Never reference its classes unconditionally.
-Check at runtime before you use `Integrations\V1\*` classes:
-
-```php
-// run.php of the integration
-
-$this->provideHook('Notifications/V2/ExampleSource');
-$this->provideHook('Notifications/V2/V1FilterMigration');
-```
-
-```php
-use Icinga\Application\Icinga;
-
-// In a view of the integration
-
-if (Icinga::app()->getModuleManager()->hasEnabled('notifications')) {
-    // Safe to use Icinga\Module\Notifications\Integrations\V1\* here
-}
-```
-
-Because the hook name carries the version (`V2`), registering the v1.0 hooks is harmless on older versions of
-Icinga Notifications Web: they never look them up.
-
 ### The Database
 
 Icinga Notifications Web has its own database resource, configured by the administrator in
@@ -133,24 +108,11 @@ do not match, incidents are not found, links are missing. The reference for the 
 
 | Declared in the integration                                                         | Must match what the source submits                                        |
 |-------------------------------------------------------------------------------------|---------------------------------------------------------------------------|
-| Hook name `Notifications/V2/<Type>Source`, `V1FilterMigrationHook::getSourceType()`, `Source::setType()` | The type of the source, as configured in Icinga Notifications Web |
 | ID tags passed to `Incidents::get()`, `getAll()` and received by `createObjectLink()` | The `tags` of the event, **all** of them                                |
 | Keys of `getEventTypes()`                                                           | The `type` of `incident: false` events                                    |
 | JSONPaths returned by `getJsonPaths()`, columns accepted by `assertValidCondition()` | The structure of `relations` and `complete_relations`                    |
 | `Source::get($username)`                                                            | The username (or OS user) the source authenticates as                     |
 | The `$uuid` of a role change through `Incident`                                     | The `id` of the corresponding event                                       |
-
-### Source Type
-
-The type of a source is what everything is keyed by. Event rules are bound to it, and the hook is found by it.
-So the type you pass to `Source::setType()`, the type in the name of your source hook, and the type returned by
-`getSourceType()` of the migration hook have to be the same, e.g. `icinga2`. Users that configure a source manually
-have to enter it too, so document it.
-
-If they differ, nothing notices: Icinga Notifications Web does not find your hook for the source, and treats it as
-one without an integration. The filter editor has no suggestions, the type is shown as it is, and the event types have
-to be typed. Remember that the hook name is derived from the type in a way that ignores case and delimiters, see
-[Registering the Hook](31-Integrations-Sources.md#registering-the-hook).
 
 ### ID Tags
 
@@ -170,12 +132,6 @@ between sources of the same object. In a setup with several sources of the same 
 availability cluster, the object must have the same tags, whichever source reports it. Icinga DB, for example, uses
 `host`, `service` and `environment`. The environment is what tells apart objects with the same name in different Icinga
 environments.
-
-!!! tip
-
-    Define the ID tags of your objects in exactly one place of your integration and use it for both, the code that
-    builds events and the code that looks up incidents. Icinga DB Web, for example, derives them in one class for all
-    of its views.
 
 ### Event Types
 
@@ -206,12 +162,9 @@ A column is only useful if all three agree. These are the ways it goes wrong:
 | A path is not valid JSONPath                            | The daemon ignores it. If none of a condition's paths is valid, it does not load the rule at all |
 | The structure of `relations` changes in a new version of the source | Existing rules keep the paths that were stored when they were saved. They have to be migrated or recreated |
 
-The daemon helps with the first two: a source can ask it to reject an event with `422` and a list of the missing
-relations if the rules need data that the event does not contain, with the header
-`X-Icinga-Reject-If-Relations-Incomplete: true`. The source then resubmits the event with these relations added. If the
-source knows that a relation is complete although it does not contain what a rule refers to, e.g. a host without
-custom variables, it lists it in `complete_relations`, otherwise it is asked again and again. See
-[Incomplete Relations][daemon-incomplete] for when events are rejected, and how.
+The daemon helps with the first two: a source can ask it to reject an event and a list of the missing relations if the
+rules need data that the event does not contain. The source then resubmits the event with these relations added.
+See [Incomplete Relations][daemon-incomplete] for when events are rejected, and how.
 
 As a consequence, the source has to be able to produce every column your hook offers, on demand. Icinga DB, for
 example, sends a default set of relations with each event and adds what is missing when the daemon asks.
@@ -223,16 +176,15 @@ The source authenticates with a username, and the daemon identifies it by its **
 or a TLS certificate this is the login. With a Unix socket it is the operating system user of the source's process.
 `Source::get($username)` looks the source up by exactly this username, see
 [Managing the Source](31-Integrations-Sources.md#managing-the-source). If it is not the one the source uses, you
-manage a source that nobody submits events with, and the events of the real one are rejected with `401`. A
-certificate subject cannot be managed with this class, only users with a username.
+manage a source that nobody submits events with, and the events of the real one are rejected. A
+certificate subject cannot be managed with this class, only users with a username and optional password.
 
 ### Names, URLs and IDs of Events
 
 Three more things in the events matter to the integration:
 
 * **Names:** The event's `name` is the display name of the object and `summary` a single line about the event. They are
-  shown in incident lists and details and sent to notified contacts. Since v1.0, the source has to send them, the
-  integration is not asked to render them anymore. Use the names your own views use for the object.
+  shown in incident lists and details and sent to notified contacts. Use the names your own views use for the object.
 * **URLs:** `url` is optional, but if set it must be absolute, e.g.
   `https://example.com/icingaweb2/icingadb/host?name=example`, or the event is rejected. Icinga Notifications Web uses
   it as fallback if [`createObjectLink()`](31-Integrations-Sources.md#createobjectlink) returns `null`, so it should
@@ -241,15 +193,6 @@ Three more things in the events matter to the integration:
   `id`. If a role change through `Incident` stands for an event of the source, e.g. an acknowledgement, it gets the
   same value as `$uuid`, see
   [Correlating Role Changes](32-Integrations-Incidents.md#correlating-role-changes-with-source-events).
-
-### Checking It
-
-Check it with real data, as no tool can do it for you:
-
-1. Create a source of the type, and an event rule that filters by a column of each kind your hook offers.
-2. Submit an event for an object that must match, and one that must not. Send them the way your source does it.
-3. Check that the incident opens only for the first, that its detail shows the right name, the object link and the
-   source, and that `Incidents::get()` with the tags of the object finds it.
 
 [daemon-api]: https://icinga.com/docs/icinga-notifications/latest/doc/20-HTTP-API/
 [daemon-incomplete]: https://icinga.com/docs/icinga-notifications/latest/doc/20-HTTP-API/#incomplete-relations
