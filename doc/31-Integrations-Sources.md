@@ -359,20 +359,6 @@ resolve the object independent of which of its sources reported it. This is one 
 object and not the source. The same applies to event rules, which are bound to a source type and not to an individual
 source.
 
-### Reference
-
-| Method                                                                                 | Purpose                                      | On failure                                   |
-|----------------------------------------------------------------------------------------|----------------------------------------------|----------------------------------------------|
-| `getSourceLabel(): string`                                                             | Name of the source type                      | Logged, the source type is shown instead     |
-| `getSourceIcon(): Icon`                                                                | Icon of the source type                      | Logged, a generic icon is used instead       |
-| `assertValidCondition(Condition): void`                                                | Validate the column of a filter condition    | `SearchException`: message shown to the user. Others: logged, generic message |
-| `enrichCondition(Condition): void`                                                     | Add metadata, e.g. `columnLabel`             | Logged and ignored                           |
-| `getColumnSuggestions(string $searchTerm): Traversable`                                | Suggestions for the column input             | Not caught                                   |
-| `getValueSuggestions(string $column, string $searchTerm, Chain $searchFilter): Traversable` | Suggestions for the value input         | Not caught                                   |
-| `getJsonPaths(string ...$columns): array`                                              | JSONPaths into `relations` per column        | Not caught. A column without a path makes saving the filter fail |
-| `getEventTypes(): array`                                                               | Event types outside of incidents, with label | Not caught                                   |
-| `createObjectLink(array $idTags): ?ValidHtml`                                          | Link to the object, `null` if not found      | Not caught                                   |
-
 ## Managing the Source
 
 An integration can create, update and delete the source in Icinga Notifications Web, so that users do not have to
@@ -500,15 +486,3 @@ has no source for it (yet), and tells the user.
     Disabling the integration does not delete the source in the Icinga DB Web example. Whether to call `delete()` is
     your decision. Deleting also stops event processing for the source, and its rules are lost with it if it was the
     last of its type. Prefer leaving it alone unless the user explicitly asks to remove it.
-
-### Reference
-
-| Class / Method                                             | Purpose                                                       | Throws               |
-|------------------------------------------------------------|---------------------------------------------------------------|----------------------|
-| `Integrations\V1\Source::get(string $username): self`      | Load or prepare the source for the listener username          | Configuration or database errors |
-| `Source::getName(): ?string`                               | Name of the source                                            | —                    |
-| `Source::setName(string $name): self`                      | Set the name                                                  | —                    |
-| `Source::setType(string $type): self`                      | Set the type                                                  | —                    |
-| `Source::setPassword(string $password): self`              | Set the listener password                                     | —                    |
-| `Source::save(): void`                                     | Persist the source, always locked                             | `RuntimeException`, `InvalidArgumentException`, database errors |
-| `Source::delete(): void`                                   | Delete the source and, if it was the last of its type, its rules | `InvalidArgumentException`, database errors |
