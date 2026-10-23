@@ -30,9 +30,9 @@ incidents in Icinga Notifications Web.
 
 * The `Events` list and the event detail view have been removed. The daemon no longer stores events. Use the incident
   history and the notification history to analyze its behavior.
-* The channel type Rocket.Chat has been removed. Existing Rocket.Chat channels are dropped during the schema upgrade of
-  Icinga Notifications. Recreate them with another channel type, such as `webhook`, and update the event rules that
-  used them.
+* The channel type Rocket.Chat has been removed. Make sure no contact uses it as default channel and no event rule
+  notifies through it, as the schema upgrade fails otherwise. Once the schema upgrade has been successfully applied,
+  the Rocket.Chat channel configurations are gone.
 
 ### Event Rules
 

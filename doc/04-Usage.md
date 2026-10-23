@@ -46,7 +46,7 @@ The detail view offers the actions `Manage` and `Subscribe` for the user who is 
 asynchronously by the Icinga Notifications daemon. While a request is pending, its button is disabled.
 
 * An incident has at most one manager. `Manage` is only offered if the incident has no manager yet.
-  Otherwise, `Unmanage` is offered, which removes the current manager.
+  Otherwise, `Unmanage` is offered, which demotes the current manager to subscriber.
 * `Unsubscribe` is offered if you are subscribed.
 
 Quick actions are associated with a user via the field `Icinga Web User` of a [contact](#contacts).

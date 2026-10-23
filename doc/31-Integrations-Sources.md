@@ -62,7 +62,7 @@ Things to be aware of:
   a method needs it.
 * Only the first registered hook of a name is used. Do not register the same type from two modules.
 * The user's permissions apply, see [Permissions](30-Integrations.md#permissions).
-* Icinga Notifications Web only guards some of the methods against exceptions, see the [reference](#reference).
+* Icinga Notifications Web only guards some of the methods against exceptions, see the [reference](#method-reference).
   Exceptions from the others end in the regular Icinga Web error handling of the request.
 
 ### A Minimal Source Hook

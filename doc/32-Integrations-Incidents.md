@@ -124,7 +124,7 @@ $incidents = Incidents::getAll(array_map(
 ));
 
 foreach ($incidents as $incident) {
-    $incident->addSubscriber($user->getUsername());
+    $incident->addSubscriber($user->getUsername(), []);
 }
 ```
 
@@ -490,7 +490,7 @@ class ObjectController extends Controller
         $form = (new SubscriptionForm(true))
             ->on(Form::ON_SUBMIT, function () use ($object, $username) {
                 try {
-                    IncidentFinder::forObject($object)->addSubscriber($username);
+                    IncidentFinder::forObject($object)->addSubscriber($username, []);
                     Notification::success($this->translate('Your request has been submitted'));
                 } catch (IncidentNotFoundException) {
                     // The incident was closed in the meantime

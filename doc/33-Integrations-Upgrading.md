@@ -8,15 +8,14 @@ The steps are the same for it.
 
 ## What Changed
 
-| Topic                         | v0.2.0                                                                  | v1.0                                                                    |
-|-------------------------------|-------------------------------------------------------------------------|-------------------------------------------------------------------------|
-| Source hook                   | `Notifications/v1/Source`, `Hook\V1\SourceHook`, one per integration    | `Notifications/V2/<Type>Source`, `Hook\V2\SourceHook`, one per source type |
-| Rule filter                   | The integration provided the editor, serialized the filter and (via the source) evaluated it | Icinga Notifications Web provides the editor, the integration validates and suggests, the daemon evaluates the filter against `relations` |
-| Object names and links        | `Hook\ObjectsRendererHook`                                              | The source submits `name` and `summary` with each event, the object link is part of the source hook |
-| Event rules                   | Bound to a source                                                       | Bound to a source type                                                  |
-| Managing the source           | By hand in Icinga Notifications Web                                     | Optionally by the integration, `Integrations\V1\Source`                 |
-| Incidents in your own views   | Not possible                                                            | `Integrations\V1\Incidents`, `Incident`                                 |
-| Event submission              | `/process-event` with `rule_ids` and `rules_version`                    | `/v1/process-event` with `relations`, see [Daemon Changes](#daemon-changes) |
+| Topic                       | v0.2.0                                                                                       | v1.0                                                                                                                                      |
+|-----------------------------|----------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
+| Source hook                 | `Notifications/v1/Source`, `Hook\V1\SourceHook`, one per integration                         | `Notifications/V2/<Type>Source`, `Hook\V2\SourceHook`, one per source type                                                                |
+| Rule filter                 | The integration provided the editor, serialized the filter and (via the source) evaluated it | Icinga Notifications Web provides the editor, the integration validates and suggests, the daemon evaluates the filter against `relations` |
+| Object names and links      | `Hook\ObjectsRendererHook`                                                                   | The source submits `name` and `summary` with each event, the object link is part of the source hook                                       |
+| Event rules                 | Bound to a source                                                                            | Bound to a source type                                                                                                                    |
+| Managing the source         | By hand in Icinga Notifications Web                                                          | Optionally by the integration, `Integrations\V1\Source`                                                                                   |
+| Incidents in your own views | Not possible                                                                                 | `Integrations\V1\Incidents`, `Incident`                                                                                                   |
 
 !!! note
 
@@ -37,8 +36,7 @@ called by v0.2.0. Keeping both only adds code that one of the two versions never
 
 * Raise the version of Icinga Notifications Web that your integration documents as required to **v1.0**. Icinga
   Notifications Web v1.0 itself requires Icinga Notifications v1.0.
-* Release the change together with, or after, the v1.0 releases. Upgrade the daemon first, see its
-  [upgrading notes][daemon-upgrading].
+* Release the change together with, or after, the v1.0 releases.
 
 ### 2. Register `Notifications/V2/<Type>Source`
 
@@ -296,8 +294,8 @@ sources of that type. For an integration this means:
 ### 7. Adjust How Events Are Submitted
 
 If your integration belongs to a process that submits events, that process has to be upgraded as well, as the daemon
-rejects events in the old format. What changed is listed in [Listener API](#listener-api) below, together with the
-other changes of the daemon that concern a source.
+rejects events in the old format. See the daemon's
+[HTTP API documentation](https://icinga.com/docs/icinga-notifications/latest/doc/20-HTTP-API/).
 
 Rules are evaluated against `relations` now, so the source has to put everything into events that the columns of
 your hook (step 3) refer to, and has to be prepared to be asked for what is missing. A rule on a custom variable,
