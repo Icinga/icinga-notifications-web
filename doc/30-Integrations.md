@@ -24,41 +24,22 @@ your users by providing one. The parts are independent of each other.
 | Provide a filter migration hook (`Hook\V2\V1FilterMigrationHook`) | A way to convert event rule filters created before v1.0 instead of having to recreate them               | [Sources](31-Integrations-Sources.md#filter-migration-hook)         |
 | Manage the source (`Integrations\V1\Source`)                    | A source that is created and kept up to date by your module, e.g. by a single toggle in its configuration   | [Sources](31-Integrations-Sources.md#managing-the-source)           |
 | Show and manage incidents (`Integrations\V1\Incidents`, `Incident`) | Subscribing, unsubscribing, acknowledging and listing recipients in your own object views                | [Incidents](32-Integrations-Incidents.md)                           |
-| Submit events (a process, not part of the module)               | Incidents and notifications for your objects                                                                | [Submitting Events](#submitting-events)                             |
+| Submit events (a process, not part of the module)               | Incidents and notifications for your objects                                                                | [HTTP API of the daemon][daemon-api], [Consistency](#consistency-between-hooks-and-events) |
 
-A source without a source hook, e.g. one of the built-in type `generic`, still works. Its users get a plain filter
-editor without suggestions and validation, and event types have to be typed in manually. Incident details only link
-to the object if the event carried an `url`.
+A source without a source hook also works. Its users get a plain filter editor without suggestions and validation, and
+event types have to be typed in manually. Incident details only link to the object if the event carried an `url`.
 
 ## Architecture
 
-```
-  Source process         Icinga Notifications        Icinga Notifications Web
-  (e.g. Icinga DB)       daemon                      (Icinga Web module)
-
-  +--------------+       +-------------------+       +------------------------+
-  |              | ----> |                   |       |                        |
-  |              | <---- |                   | <---> |                        |
-  +--------------+       +-------------------+       +------------------------+
-   events (HTTP),         shared database                 ^            |
-   422 if relations                                       | hooks      | classes
-   are missing                                            | Hook\V2\*  | Integrations\V1\*
-                                                          |            v
-                                                    +------------------------+
-                                                    | Integration module     |
-                                                    | (e.g. Icinga DB Web)   |
-                                                    +------------------------+
-```
+![Icinga Notifications Architecture](res/notifications-architecture.png)
 
 There are three parties. An integration module belongs to the web side, and usually has a source process next to it:
 
 * The **source** is a process, e.g. the Icinga DB daemon. It submits events to the Icinga Notifications **daemon**
   over HTTP and is the one that has to be configured with credentials or a Unix socket.
-* The **daemon** evaluates events against the event rules, opens incidents and sends notifications. It also applies
-  role changes (acknowledge, subscribe, …) that users request.
-* **Icinga Notifications Web** is the configuration interface of the daemon and the only thing your PHP code talks to.
-  It and the daemon share a database. Your module never connects to the daemon directly. It calls hooks that
-  Icinga Notifications Web invokes, and classes that Icinga Notifications Web provides.
+* **Icinga Notifications** evaluates events against the event rules, opens incidents and sends notifications.
+* **Icinga Notifications Web** is the configuration interface of it and the only thing your PHP code talks to.
+  Both share the same database by which they communicate.
 
 This has two consequences you need to keep in mind:
 
@@ -96,18 +77,14 @@ interfaces) is not documented in the repository. Confirm with the maintainers be
 
 ### Optional Dependency
 
-Icinga Notifications Web is an optional dependency of your module. Never reference its classes unconditionally. Register
-your hooks only if the module is enabled, and check again at runtime before you use `Integrations\V1\*` classes:
+Icinga Notifications Web is an optional dependency of your module. Never reference its classes unconditionally.
+Check at runtime before you use `Integrations\V1\*` classes:
 
 ```php
 // run.php of the integration
 
-/** @var $this \Icinga\Application\Modules\Module */
-
-if ($this::exists('notifications')) {
-    $this->provideHook('Notifications/V2/ExampleSource');
-    $this->provideHook('Notifications/V2/V1FilterMigration');
-}
+$this->provideHook('Notifications/V2/ExampleSource');
+$this->provideHook('Notifications/V2/V1FilterMigration');
 ```
 
 ```php
@@ -119,10 +96,6 @@ if (Icinga::app()->getModuleManager()->hasEnabled('notifications')) {
     // Safe to use Icinga\Module\Notifications\Integrations\V1\* here
 }
 ```
-
-<!-- TODO(verify): There is no verified way to express "if Icinga Notifications Web is installed, it must be at least
-v1.0" for an optional module. Icinga DB Web does not do it either, its hook names (`Notifications/V2/…`) simply are
-never looked up by older versions. Confirm the recommended approach. -->
 
 Because the hook name carries the version (`V2`), registering the v1.0 hooks is harmless on older versions of
 Icinga Notifications Web: they never look them up.
