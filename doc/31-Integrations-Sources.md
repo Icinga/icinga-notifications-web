@@ -10,13 +10,13 @@ of v0.2.0 is part of [Upgrading](33-Integrations-Upgrading.md#4-provide-a-filter
 The source hook, `Icinga\Module\Notifications\Hook\V2\SourceHook`, teaches Icinga Notifications Web about one **source
 type**. Without it, a source of that type is still fully functional, but treated generically.
 
-| Feature                                  | Without a hook                                                    | With a hook                                                             |
-|------------------------------------------|-------------------------------------------------------------------|-------------------------------------------------------------------------|
-| Name of the source type                  | The raw type, e.g. `icinga2`                                      | `getSourceLabel()`                                                      |
-| Icon of the source                       | A generic icon                                                    | `getSourceIcon()`                                                       |
-| Filter editor of event rules             | Plain editor. A notice asks the user to make sure the columns are valid JSON paths | Suggestions for columns and values, validation, labels for columns |
-| Event types of notification rules        | Free text, no validation                                          | A list to choose from, validated against `getEventTypes()`              |
-| Object in incident details               | A link only if the event carried an `url`                         | `createObjectLink()` renders the object, `url` is the fallback          |
+| Feature                           | Without a hook                                                                     | With a hook                                                        |
+|-----------------------------------|------------------------------------------------------------------------------------|--------------------------------------------------------------------|
+| Name of the source type           | The raw type, e.g. `icinga2`                                                       | `getSourceLabel()`                                                 |
+| Icon of the source                | A generic icon                                                                     | `getSourceIcon()`                                                  |
+| Filter editor of event rules      | Plain editor. A notice asks the user to make sure the columns are valid JSON paths | Suggestions for columns and values, validation, labels for columns |
+| Event types of notification rules | Free text, no validation                                                           | A list to choose from, validated against `getEventTypes()`         |
+| Object in incident details        | A link only if the event carried an `url`                                          | `createObjectLink()` renders the object, `url` is the fallback     |
 
 ### Registering the Hook
 
@@ -29,10 +29,10 @@ Notifications/V2/<Type>Source
 `<Type>` is derived from the type of the source as stored in Icinga Notifications Web: it is lowercased, converted to
 camel case (delimiters are `-`, `_` and space) and its first letter is upper-cased:
 
-| Source type          | Hook name                                  | Class                                                                |
-|----------------------|--------------------------------------------|----------------------------------------------------------------------|
-| `icinga2`            | `Notifications/V2/Icinga2Source`           | `Icinga\Module\Icingadb\ProvidedHook\Notifications\V2\Icinga2Source` |
-| `my-app`             | `Notifications/V2/MyAppSource`             | `Icinga\Module\Example\ProvidedHook\Notifications\V2\MyAppSource` |
+| Source type | Hook name                        | Class                                                                |
+|-------------|----------------------------------|----------------------------------------------------------------------|
+| `icinga2`   | `Notifications/V2/Icinga2Source` | `Icinga\Module\Icingadb\ProvidedHook\Notifications\V2\Icinga2Source` |
+| `my-app`    | `Notifications/V2/MyAppSource`   | `Icinga\Module\Example\ProvidedHook\Notifications\V2\MyAppSource`    |
 
 Register it in `run.php` and put the class in the usual place for provided
 hooks (`library/<Module>/ProvidedHook/Notifications/V2/<Type>Source.php`):
@@ -384,15 +384,15 @@ $source->setType('icinga2')
 
 ### Methods
 
-| Method                                      | Description                                                                             |
-|---------------------------------------------|-----------------------------------------------------------------------------------------|
-| `Source::get(string $username): self`       | Load the source with the given listener username. If there is none, prepare a new one   |
-| `getName(): ?string`                        | The name of the source, `null` if the source does not exist yet and no name was set     |
-| `setName(string $name): self`               | Set the name, shown to users                                                            |
-| `setType(string $type): self`               | Set the type. Rules are bound to it, and it selects the hook, see below                 |
-| `setPassword(string $password): self`       | Set the password for the listener, the daemon verifies it with HTTP Basic Authentication |
-| `save(): void`                              | Create or update the source and lock it                                                 |
-| `delete(): void`                            | Delete the source. Does nothing for a source that does not exist                        |
+| Method                                | Description                                                                              |
+|---------------------------------------|------------------------------------------------------------------------------------------|
+| `Source::get(string $username): self` | Load the source with the given listener username. If there is none, prepare a new one    |
+| `getName(): ?string`                  | The name of the source, `null` if the source does not exist yet and no name was set      |
+| `setName(string $name): self`         | Set the name, shown to users                                                             |
+| `setType(string $type): self`         | Set the type. Rules are bound to it, and it selects the hook, see below                  |
+| `setPassword(string $password): self` | Set the password for the listener, the daemon verifies it with HTTP Basic Authentication |
+| `save(): void`                        | Create or update the source and lock it                                                  |
+| `delete(): void`                      | Delete the source. Does nothing for a source that does not exist                         |
 
 The constructor of the class is not meant to be called by integrations, use `Source::get()`.
 
@@ -434,10 +434,6 @@ to check:
 
 `delete()` also deletes the event rules of the source's type if this was **the last source of its type**, and
 removes the username from the source so it can be reused. If other sources of the type remain, the rules stay.
-
-<!-- TODO(verify): The PHPDoc of Source::delete() says it "will also dereference it from any rules". The repository
-actually deletes all rules of the source's type if no other source of the type is left. The description above follows
-the implementation. -->
 
 ### Choosing the Type
 

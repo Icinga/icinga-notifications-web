@@ -22,12 +22,12 @@ You always look incidents up by ID tags, never by an ID of Icinga Notifications 
 
 **Roles.** A user (via the contact with the same username) has at most one of these roles for an incident:
 
-| Role         | Meaning                                                                                                     |
-|--------------|-------------------------------------------------------------------------------------------------------------|
-| `recipient`  | The contact is a configured recipient, i.e. an escalation of an event rule notifies the contact directly   |
-| `subscriber` | The contact has subscribed to the incident and receives its notifications                                   |
-| `manager`    | The contact has taken the incident over, e.g. by acknowledging the problem. There is at most one manager     |
-| `null`       | The contact has no role for the incident, or there is no contact for the user                               |
+| Role         | Meaning                                                                                                  |
+|--------------|----------------------------------------------------------------------------------------------------------|
+| `recipient`  | The contact is a configured recipient, i.e. an escalation of an event rule notifies the contact directly |
+| `subscriber` | The contact has subscribed to the incident and receives its notifications                                |
+| `manager`    | The contact has taken the incident over, e.g. by acknowledging the problem. There is at most one manager |
+| `null`       | The contact has no role for the incident, or there is no contact for the user                            |
 
 The manager is a special subscriber. In Icinga DB Web, acknowledging a problem makes the user the manager of its
 incident, removing the acknowledgement removes the manager.
@@ -62,11 +62,11 @@ tooltip that says that no Icinga Notifications contact is configured for the acc
 
 There are three factories on `Incidents`. Choose by what you know about the objects.
 
-| Factory                         | You pass                                  | Returns                         | Typical use                              |
-|---------------------------------|-------------------------------------------|---------------------------------|------------------------------------------|
-| `Incidents::get($tags)`         | The **full** ID tags of one object        | One `Incident`, lazy            | Detail view of an object                 |
-| `Incidents::getAll($tagSets)`   | The **full** ID tags of many objects      | `Incidents`, iterable, countable | Multi-select actions, lists              |
-| `Incidents::matchAll($tagSets)` | **Partial** tags, `null` means "absent"   | `Incidents`, iterable, countable | Everything below a host, filters         |
+| Factory                         | You pass                                | Returns                          | Typical use                      |
+|---------------------------------|-----------------------------------------|----------------------------------|----------------------------------|
+| `Incidents::get($tags)`         | The **full** ID tags of one object      | One `Incident`, lazy             | Detail view of an object         |
+| `Incidents::getAll($tagSets)`   | The **full** ID tags of many objects    | `Incidents`, iterable, countable | Multi-select actions, lists      |
+| `Incidents::matchAll($tagSets)` | **Partial** tags, `null` means "absent" | `Incidents`, iterable, countable | Everything below a host, filters |
 
 All three read through the module's database, only return open incidents and throw `InvalidArgumentException` if
 `$tags`/`$tagSets` is empty or contains an empty set.
@@ -249,12 +249,12 @@ Each method *requests* a role change and returns the incident. They throw an `In
 is no open incident, and an `InvalidArgumentException` if there is no contact with the given username
 (`addManager()`, `addSubscriber()` and `removeSubscriber()`). Database failures are thrown as they are.
 
-| Method                       | Requests                                                    | Nothing is requested if                       |
-|------------------------------|-------------------------------------------------------------|-----------------------------------------------|
-| `addManager($username)`      | Make the contact the manager                                | The incident already **has a manager**, whoever it is, including the contact |
-| `addSubscriber($username)`   | Make the contact a subscriber                               | The contact already is a subscriber or the manager |
-| `removeManager()`            | Demote the **current manager**, whoever it is, to subscriber | The incident has no manager                  |
-| `removeSubscriber($username)`| Remove the subscription of the contact                      | The contact is not a subscriber, e.g. the manager or a recipient |
+| Method                        | Requests                                                     | Nothing is requested if                                                      |
+|-------------------------------|--------------------------------------------------------------|------------------------------------------------------------------------------|
+| `addManager($username)`       | Make the contact the manager                                 | The incident already **has a manager**, whoever it is, including the contact |
+| `addSubscriber($username)`    | Make the contact a subscriber                                | The contact already is a subscriber or the manager                           |
+| `removeManager()`             | Demote the **current manager**, whoever it is, to subscriber | The incident has no manager                                                  |
+| `removeSubscriber($username)` | Remove the subscription of the contact                       | The contact is not a subscriber, e.g. the manager or a recipient             |
 
 Notes on the semantics:
 
@@ -526,35 +526,35 @@ Web does that in its `library/Icingadb/Notifications/` namespace. See `Subscribe
 
 ### Incidents
 
-| Method                                                  | Description                                                                          |
-|---------------------------------------------------------|--------------------------------------------------------------------------------------|
-| `get(array $tags): Incident`                            | The open incident of one object, full ID tags. Lazy, throws on first use if none     |
-| `getAll(iterable $tagSets): static`                     | The open incidents of many objects, full ID tags                                      |
-| `matchAll(iterable $tagSets): static`                   | The open incidents of all objects that match the partial tags, `null` = absent       |
-| `canManage(User $user): bool`                           | Whether the user has a contact and thus can manage incidents                         |
-| `canSubscribe(User $user): bool`                        | Whether the user has a contact and thus can subscribe to incidents                   |
-| `getIterator(): Generator`                              | Yields an `Incident` for each match                                                  |
-| `count(): int`                                          | The number of matches                                                                |
+| Method                                | Description                                                                      |
+|---------------------------------------|----------------------------------------------------------------------------------|
+| `get(array $tags): Incident`          | The open incident of one object, full ID tags. Lazy, throws on first use if none |
+| `getAll(iterable $tagSets): static`   | The open incidents of many objects, full ID tags                                 |
+| `matchAll(iterable $tagSets): static` | The open incidents of all objects that match the partial tags, `null` = absent   |
+| `canManage(User $user): bool`         | Whether the user has a contact and thus can manage incidents                     |
+| `canSubscribe(User $user): bool`      | Whether the user has a contact and thus can subscribe to incidents               |
+| `getIterator(): Generator`            | Yields an `Incident` for each match                                              |
+| `count(): int`                        | The number of matches                                                            |
 
 `get()`, `getAll()` and `matchAll()` throw `InvalidArgumentException` for empty tags or tag sets. The constructor of
 `Incidents` takes types that are not part of the public API. Do not call it, use the factories.
 
 ### Incident
 
-| Method                                                   | Description                                                                         |
-|----------------------------------------------------------|-------------------------------------------------------------------------------------|
-| `getRole(User $user): ?string`                           | `manager`, `subscriber`, `recipient` or `null`                                      |
-| `getObjectIdTags(): array`                               | The full ID tags of the object                                                      |
-| `isMuted(): bool`                                        | Whether the incident is muted                                                       |
-| `hasManager(): bool`                                     | Whether the incident has a manager                                                  |
-| `getSubscribers(): array`                                | Managers and subscribers: `name`, `username`, `role`, `roleChangedAt`               |
-| `getRecipients(): array`                                 | Configured recipients: `type`, `name`, `username`, `roleChangedAt`                  |
-| `addManager(string $username, ?UuidInterface $uuid = null): static`        | Request to make the contact the manager       |
-| `addSubscriber(string $username, ?UuidInterface $uuid = null): static`     | Request to subscribe the contact              |
-| `removeManager(?UuidInterface $uuid = null): static`                       | Request to demote the current manager to subscriber |
-| `removeSubscriber(string $username, ?UuidInterface $uuid = null): static`  | Request to unsubscribe the contact           |
-| `getPendingAction(): ?string`                            | The requested action of the current session that is still pending                  |
-| `getPendingJobAttributes(): array`                       | Attributes for the quick action element while a request is pending                 |
+| Method                                                                    | Description                                                           |
+|---------------------------------------------------------------------------|-----------------------------------------------------------------------|
+| `getRole(User $user): ?string`                                            | `manager`, `subscriber`, `recipient` or `null`                        |
+| `getObjectIdTags(): array`                                                | The full ID tags of the object                                        |
+| `isMuted(): bool`                                                         | Whether the incident is muted                                         |
+| `hasManager(): bool`                                                      | Whether the incident has a manager                                    |
+| `getSubscribers(): array`                                                 | Managers and subscribers: `name`, `username`, `role`, `roleChangedAt` |
+| `getRecipients(): array`                                                  | Configured recipients: `type`, `name`, `username`, `roleChangedAt`    |
+| `addManager(string $username, ?UuidInterface $uuid = null): static`       | Request to make the contact the manager                               |
+| `addSubscriber(string $username, ?UuidInterface $uuid = null): static`    | Request to subscribe the contact                                      |
+| `removeManager(?UuidInterface $uuid = null): static`                      | Request to demote the current manager to subscriber                   |
+| `removeSubscriber(string $username, ?UuidInterface $uuid = null): static` | Request to unsubscribe the contact                                    |
+| `getPendingAction(): ?string`                                             | The requested action of the current session that is still pending     |
+| `getPendingJobAttributes(): array`                                        | Attributes for the quick action element while a request is pending    |
 
 All methods except the factories throw an `IncidentNotFoundException` if the instance was created by
 `Incidents::get()` and there is no open incident. `Incident::fromQuery()` and `Incident::fromModel()` are used by
