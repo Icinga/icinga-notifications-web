@@ -124,13 +124,17 @@ class EventRuleForm extends CompatForm
 
                         $rules = Rule::on(Database::get())
                             ->columns('id')
+                            ->filter(Filter::equal('type', $this->getValue('type')))
                             ->filter(Filter::equal('name', $value));
                         if ($ruleId !== null && ! $this->hasBeenDuplicated()) {
                             $rules->filter(Filter::unequal('id', $ruleId));
                         }
 
                         if ($rules->first() !== null) {
-                            $validator->addMessage($this->translate('An event rule with this name already exists'));
+                            $validator->addMessage(match ($this->getValue('type')) {
+                                'escalation' => $this->translate('An escalation rule with this name already exists.'),
+                                'notification' => $this->translate('A notification rule with this name already exists.')
+                            });
 
                             return false;
                         }
