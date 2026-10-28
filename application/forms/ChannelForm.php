@@ -17,6 +17,7 @@ use ipl\Html\Contract\Form;
 use ipl\Html\Contract\FormSubmitElement;
 use ipl\Html\FormElement\BaseFormElement;
 use ipl\Html\FormElement\FieldsetElement;
+use ipl\Html\FormElement\PasswordElement;
 use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
 use ipl\I18n\GettextTranslator;
@@ -286,6 +287,12 @@ class ChannelForm extends CompatForm
             }
 
             $configFieldset->addElement($elem);
+            if ($elem instanceof PasswordElement) {
+                $elem->setValueCandidates(
+                    array_column($this->getPopulatedValues('config'), $elem->getName())
+                );
+            }
+
             $hasChildren = isset($elementConfig['children']);
             $hasAutosubmitted = ($autosubmittedBy !== null)
                 && $this->parseElementName($autosubmittedBy) === $elementConfig['name'];

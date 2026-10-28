@@ -26,16 +26,15 @@ class ChannelController extends CompatController
 
     public function indexAction(): void
     {
+        $channel = (new ChannelRepository(Database::get()))
+            ->find((int) $this->params->getRequired('id'));
+        if ($channel === null) {
+            $this->httpNotFound($this->translate('Channel not found'));
+        }
+
         (new ChannelForm(Database::get()))
-            ->on(Form::ON_REQUEST, function ($_, ChannelForm $form) {
-                $channel = (new ChannelRepository(Database::get()))
-                    ->find((int) $this->params->getRequired('id'));
-                if ($channel === null) {
-                    $this->httpNotFound($this->translate('Channel not found'));
-                }
-
-                $form->setChannel($channel);
-
+            ->setChannel($channel)
+            ->on(Form::ON_REQUEST, function ($_, ChannelForm $form) use ($channel) {
                 $this->addTitleTab(sprintf($this->translate('Channel: %s'), $channel->name));
 
                 if (isset($channel->validation_result)) {
