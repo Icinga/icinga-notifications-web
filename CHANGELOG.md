@@ -3,6 +3,22 @@
 Please make sure to always read our [Upgrading](https://icinga.com/docs/icinga-notifications-web/latest/doc/05-Upgrading/)
 documentation before switching to a new version.
 
+## 1.0.0 (2026-10-29)
+
+Icinga Notifications Web 1.0.0 is released alongside Icinga Notifications 1.0.0 and requires it.
+
+If you came along with us and upgrade from v0.2.0 or v0.3.0, please read the
+[upgrading documentation](https://icinga.com/docs/icinga-notifications-web/latest/doc/05-Upgrading/#upgrading-to-icinga-notifications-web-v10)
+carefully, especially regarding the new permissions and the changed navigation.
+
+This is our first stable release, and there are certain key changes:
+
+* Sources no longer require a module for Icinga Web and event rules are no longer bound to a single source.
+* Event rules are now separated into _escalation rules_ and _notification rules_
+* The UI of Icinga Notifications Web is now meant only for configuration and analysis, as Icinga Web modules
+  (now called _integrations_) are expected to provide access for day-to-day usage instead. 
+* Icinga Notifications Web is now licensed under `GPL-3.0-only`
+
 ## 0.3.0 (2026-07-07)
 
 This release ensures compatibility with PHP 8.5 and icinga-php-thirdparty 1.0.
