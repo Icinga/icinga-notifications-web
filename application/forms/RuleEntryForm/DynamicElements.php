@@ -14,12 +14,25 @@ trait DynamicElements
     /** @var bool Whether a multipart update is desired */
     public bool $wantsMultipartUpdate = false;
 
+    /** @var array Populated values of dynamic elements */
+    private array $populatedValues = [];
+
+    /**
+     * Get populated values of all dynamic elements
+     *
+     * @return array
+     */
+    private function getAllPopulatedValues(): array
+    {
+        return $this->populatedValues;
+    }
+
     /**
      * Create a button to add a new element
      *
-     * @return SubmitButtonElement
+     * @return ?SubmitButtonElement
      */
-    abstract protected function createAddButton(): SubmitButtonElement;
+    abstract protected function createAddButton(): ?SubmitButtonElement;
 
     /**
      * Create a new element
@@ -62,6 +75,10 @@ trait DynamicElements
             $values['count'] = count($values);
         }
 
+        $populatedValues = $values;
+        unset($populatedValues['count']);
+        $this->populatedValues = $populatedValues;
+
         return parent::populate($values);
     }
 
@@ -92,12 +109,14 @@ trait DynamicElements
             $count++;
         }
 
-        $add = $this->createAddButton()->addAttributes(Attributes::create(['formnovalidate' => true]));
-        $this->registerElement($add);
-        if ($add->hasBeenPressed()) {
-            $this->wantsMultipartUpdate = true;
-            $this->createRemoveButton($newCount);
-            $newCount++;
+        $add = $this->createAddButton()?->addAttributes(Attributes::create(['formnovalidate' => true]));
+        if ($add !== null) {
+            $this->registerElement($add);
+            if ($add->hasBeenPressed()) {
+                $this->wantsMultipartUpdate = true;
+                $this->createRemoveButton($newCount);
+                $newCount++;
+            }
         }
 
         if ($newCount === 1 && $this->isRequired()) {
@@ -116,7 +135,9 @@ trait DynamicElements
             }
         }
 
-        $this->addElement($add);
+        if ($add !== null) {
+            $this->addElement($add);
+        }
 
         $this->clearPopulatedValue('count');
         $this->addElement('hidden', 'count', ['ignore' => true, 'value' => $newCount]);
