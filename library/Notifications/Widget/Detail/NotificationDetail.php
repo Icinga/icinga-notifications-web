@@ -5,9 +5,12 @@
 
 namespace Icinga\Module\Notifications\Widget\Detail;
 
+use DateTime;
+use Exception;
 use Icinga\Application\Config;
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Icons;
+use Icinga\Module\Notifications\Common\Severity;
 use Icinga\Module\Notifications\Model\NotificationHistory;
 use Icinga\Module\Notifications\View\IncidentRenderer;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
@@ -19,7 +22,9 @@ use ipl\Html\Text;
 use ipl\Html\ValidHtml;
 use ipl\I18n\Translation;
 use ipl\Web\Widget\CopyToClipboard;
+use ipl\Web\Widget\HorizontalKeyValue;
 use ipl\Web\Widget\Icon;
+use ipl\Web\Widget\Link;
 use ipl\Web\Widget\Time;
 
 class NotificationDetail extends BaseHtmlElement
@@ -145,6 +150,69 @@ class NotificationDetail extends BaseHtmlElement
         ];
     }
 
+    protected function createDelivery(): array
+    {
+        $delivery = $this->notificationHistory->delivery_result;
+        if ($delivery === null) {
+            return [];
+        }
+
+        $deliveryData = json_decode($delivery, true);
+        $deliveryDetail = array_map(function ($deliveryItem) {
+            $value = match ($deliveryItem['type']) {
+                'boolean' => $deliveryItem['value'] ? $this->translate('Yes') : $this->translate('No'),
+                'severity' => $this->createSeverity($deliveryItem),
+                'url' => $this->createLink($deliveryItem),
+                'datetime' => $this->createDateTime($deliveryItem),
+                default => $deliveryItem['value']
+            };
+
+            return new HorizontalKeyValue($deliveryItem['label'], $value);
+        }, $deliveryData);
+
+        return [
+            new HtmlElement('h2', content: Text::create($this->translate('Delivery'))),
+            new HtmlElement('div', Attributes::create(['class' => 'delivery']), ...$deliveryDetail)
+        ];
+    }
+
+    protected function createSeverity(array $item): ValidHtml
+    {
+        $severity = Severity::tryFrom((string) $item['value']);
+        if ($severity === null) {
+            return new Text($item['value']);
+        }
+
+        return new HtmlElement(
+            'span',
+            Attributes::create(['class' => 'severity']),
+            $severity->getIcon(),
+            Text::create($severity->getLabel())
+        );
+    }
+
+    protected function createDateTime(array $item): ValidHtml
+    {
+        try {
+            return new Time(new DateTime($item['value']));
+        } catch (Exception) {
+            return new Text($item['value']);
+        }
+    }
+
+    protected function createLink(array $item): ValidHtml
+    {
+        if (in_array(strtolower((string) parse_url($item['value'], PHP_URL_SCHEME)), ['http', 'https'], true)) {
+            return new Link(
+                $item['anchor_text'] ?? $item['value'],
+                $item['value'],
+                ['target' => '_blank', 'rel' => 'noopener noreferrer']
+            );
+        }
+
+        return new Text($item['value']);
+    }
+
     protected function createIncident(): array
     {
         if (
@@ -169,6 +237,7 @@ class NotificationDetail extends BaseHtmlElement
             $this->createRecipient(),
             $this->createChannel(),
             $this->createTransmission(),
+            $this->createDelivery(),
             $this->createIncident(),
             $this->createMessage()
         ]);
