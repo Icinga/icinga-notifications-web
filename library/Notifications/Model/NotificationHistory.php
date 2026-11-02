@@ -33,6 +33,7 @@ use ipl\Sql\Select;
  * @property string $event_summary
  * @property NotificationTransmissionState $state
  * @property DateTime $triggered_at
+ * @property ?string $delivery_result
  *
  * @property Query<Objects>|Objects $object
  * @property Query<Incident>|Incident $incident
@@ -66,7 +67,8 @@ class NotificationHistory extends Model
             'event_message',
             'event_summary',
             'state',
-            'triggered_at'
+            'triggered_at',
+            'delivery_result',
         ];
     }
 

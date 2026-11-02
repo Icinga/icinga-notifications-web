@@ -19,6 +19,11 @@
     column-gap: 0.5em;
   }
 
+  .delivery .severity {
+    display: inline-flex;
+    align-items: baseline;
+  }
+
   // style
   .message {
     background-color: @gray-lighter;
@@ -31,5 +36,16 @@
 
   .transmission {
     .notification-icon-ball-state();
+  }
+
+  .delivery {
+    a {
+      font-weight: bold;
+
+      &:hover {
+        color: var(--link-hover-color, @link-hover-color);
+        text-decoration: none;
+      }
+    }
   }
 }
