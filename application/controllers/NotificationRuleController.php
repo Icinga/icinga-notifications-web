@@ -52,7 +52,7 @@ class NotificationRuleController extends CompatController
                     fn(Connection $db) => (new RuleEntryRepository($db))->create($entry)
                 );
 
-                Notification::success($this->translate('Added notification recipients'));
+                Notification::success($this->translate('Added notification recipients successfully'));
                 $this->closeModalAndRefreshRemainingViews(Links::eventRule($entry->ruleId));
             })->on(Form::ON_ERROR, function ($_, RuleEntryForm $form) {
                 $this->sendMultipartUpdates($form);
@@ -91,13 +91,13 @@ class NotificationRuleController extends CompatController
                         fn(Connection $db) => (new RuleEntryRepository($db))->delete($entry->id)
                     );
 
-                    Notification::success($this->translate('Deleted notification recipients.'));
+                    Notification::success($this->translate('Deleted notification recipients successfully'));
                 } else {
                     Database::get()->transaction(
                         fn(Connection $db) => (new RuleEntryRepository($db))->update($entry)
                     );
 
-                    Notification::success($this->translate('Updated notification recipients'));
+                    Notification::success($this->translate('Updated notification recipients successfully'));
                 }
 
                 $this->closeModalAndRefreshRemainingViews(Links::eventRule($entry->ruleId));

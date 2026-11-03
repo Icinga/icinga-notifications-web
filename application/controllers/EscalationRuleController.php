@@ -52,7 +52,7 @@ class EscalationRuleController extends CompatController
                     fn(Connection $db) => (new RuleEntryRepository($db))->create($escalation)
                 );
 
-                Notification::success($this->translate('Created escalation'));
+                Notification::success($this->translate('Created escalation successfully'));
                 $this->closeModalAndRefreshRemainingViews(Links::eventRule($escalation->ruleId));
             })->on(Form::ON_ERROR, function ($_, RuleEntryForm $form) {
                 $this->sendMultipartUpdates($form);
@@ -91,13 +91,13 @@ class EscalationRuleController extends CompatController
                         fn(Connection $db) => (new RuleEntryRepository($db))->delete($escalation->id)
                     );
 
-                    Notification::success($this->translate('Deleted escalation'));
+                    Notification::success($this->translate('Deleted escalation successfully'));
                 } else {
                     Database::get()->transaction(
                         fn(Connection $db) => (new RuleEntryRepository($db))->update($escalation)
                     );
 
-                    Notification::success($this->translate('Updated escalation'));
+                    Notification::success($this->translate('Updated escalation successfully'));
                 }
 
                 $this->closeModalAndRefreshRemainingViews(Links::eventRule($escalation->ruleId));

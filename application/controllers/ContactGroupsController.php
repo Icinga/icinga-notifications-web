@@ -165,7 +165,7 @@ class ContactGroupsController extends CompatController
                 $groupId = Database::get()->transaction(
                     fn(Connection $db) => (new ContactGroupRepository($db))->create($group)
                 );
-                Notification::success($this->translate('New contact group has been successfully added'));
+                Notification::success($this->translate('Added new contact group successfully'));
                 $this->sendExtraUpdates(['#col1']);
                 $this->getResponse()->setHeader('X-Icinga-Container', 'col2');
                 $this->redirectNow(Links::contactGroup($groupId));

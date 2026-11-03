@@ -136,7 +136,7 @@ class ContactsController extends CompatController
             ->on(Form::ON_SUBMIT, function (ContactForm $form) {
                 $contact = $form->getContact();
                 Database::get()->transaction(fn(Connection $db) => (new ContactRepository($db))->create($contact));
-                Notification::success($this->translate('New contact has successfully been added'));
+                Notification::success($this->translate('Added new contact successfully'));
                 $this->switchToSingleColumnLayout();
             })->on(Form::ON_ERROR, function ($_, ContactForm $form) {
                 // TODO: I feel this should be part of CompatForm or CompatController (e.g. $this->sendForm())
