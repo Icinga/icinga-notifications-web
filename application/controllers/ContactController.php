@@ -50,7 +50,7 @@ class ContactController extends CompatController
                 $contact = $form->getContact();
                 Database::get()->transaction(fn(Connection $db) => (new ContactRepository($db))->update($contact));
                 Notification::success(sprintf(
-                    $this->translate('Contact "%s" has successfully been saved'),
+                    $this->translate('Saved contact "%s" successfully'),
                     $contact->fullName
                 ));
 

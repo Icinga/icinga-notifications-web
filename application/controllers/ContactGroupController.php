@@ -105,14 +105,14 @@ class ContactGroupController extends CompatController
                     $groupId = Database::get()->transaction(
                         fn (Connection $db) => (new ContactGroupRepository($db))->create($group)
                     );
-                    Notification::success(sprintf(t('Successfully duplicated contact group %s'), $group->name));
+                    Notification::success(sprintf(t('Duplicated contact group %s successfully'), $group->name));
                     $this->sendExtraUpdates(['#col1']);
                     $this->redirectNow(Links::contactGroup($groupId));
                 } else {
                     Database::get()->transaction(
                         fn (Connection $db) => (new ContactGroupRepository($db))->update($group)
                     );
-                    Notification::success(sprintf(t('Successfully updated contact group %s'), $group->name));
+                    Notification::success(sprintf(t('Updated contact group %s successfully'), $group->name));
                     $this->closeModalAndRefreshRemainingViews(Links::contactGroup($group->id));
                 }
             })

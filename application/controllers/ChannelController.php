@@ -65,7 +65,7 @@ class ChannelController extends CompatController
                         fn(Connection $db) => (new ChannelRepository($db))->update($channel)
                     );
                     Notification::success(sprintf(
-                        $this->translate('Channel "%s" has successfully been saved'),
+                        $this->translate('Saved channel "%s" successfully'),
                         $channel->name
                     ));
                 }

@@ -139,7 +139,7 @@ class EventRulesController extends CompatController
                 );
 
                 Notification::success(sprintf(
-                    $this->translate('Created event rule "%s"'),
+                    $this->translate('Created event rule "%s" successfully'),
                     $rule->name
                 ));
 

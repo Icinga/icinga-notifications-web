@@ -119,7 +119,7 @@ class ChannelsController extends CompatController
                 Database::get()->transaction(fn(Connection $db) => (new ChannelRepository($db))->create($channel));
                 Notification::success(
                     sprintf(
-                        t('New channel %s has successfully been added'),
+                        t('Added new channel %s successfully'),
                         $channel->name
                     )
                 );
