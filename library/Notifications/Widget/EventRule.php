@@ -250,18 +250,18 @@ class EventRule extends BaseHtmlElement
                 $text = $parsedFilter['filter_name'];
                 $title = sprintf(
                     '%s (%s: %s)',
-                    $this->translate('Adjust Filter'),
+                    $this->translate('Adjust filter'),
                     $this->translate('Name'),
                     $parsedFilter['filter_name']
                 );
             } else {
-                $text = $this->translate('Adjust Filter');
+                $text = $this->translate('Adjust filter');
                 $title = $text;
             }
         } else {
             $icon = 'plus';
-            $text = $this->translate('Add Filter');
-            $title = $text;
+            $text = $this->translate('Add filter');
+            $title = $this->translate('Choose conditions for the rule');
         }
 
         return new HtmlElement(

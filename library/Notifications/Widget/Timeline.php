@@ -395,11 +395,11 @@ class Timeline extends BaseHtmlElement implements EntryProvider
 
             if (empty($this->rotations)) {
                 $newRotationMsg = $this->translate(
-                    'No rotations configured, yet. {{#button}}Add your first Rotation{{/button}}'
+                    'No rotations configured yet. {{#button}}Add your first rotation{{/button}}'
                 );
             } else {
                 $newRotationMsg = $this->translate(
-                    '{{#button}}Add another Rotation{{/button}} to override rotations above'
+                    '{{#button}}Add another rotation{{/button}} to override rotations above'
                 );
             }
 

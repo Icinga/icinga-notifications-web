@@ -62,7 +62,7 @@ class IncidentQuickActions extends Form
             [
                 'class' => ['control-button', 'spinner'],
                 'label' => [new Icon(Icons::MANAGE), t('Manage')],
-                'title' => t('Add yourself as manager of this incident')
+                'title' => t('Assume responsibility for resolving this incident')
             ]
         );
     }
@@ -76,8 +76,8 @@ class IncidentQuickActions extends Form
                 'class' => ['control-button', 'spinner'],
                 'label' => [new Icon(Icons::UNMANAGE), t('Unmanage')],
                 'title' => $userIsManager
-                    ? t('Remove yourself as manager of this incident')
-                    : t('Remove the current manager of this incident')
+                    ? t('Decline responsibility for resolving this incident')
+                    : t('Remove the user responsible for resolving this incident')
             ]
         );
     }
@@ -90,7 +90,7 @@ class IncidentQuickActions extends Form
             [
                 'class' => ['control-button', 'spinner'],
                 'label' => [new Icon(Icons::SUBSCRIBED), t('Subscribe')],
-                'title' => t('Subscribe to this incident')
+                'title' => t('Stay informed until the incident is resolved')
             ]
         );
     }
@@ -103,7 +103,7 @@ class IncidentQuickActions extends Form
             [
                 'class' => ['control-button', 'spinner'],
                 'label' => [new Icon(Icons::UNSUBSCRIBED), t('Unsubscribe')],
-                'title' => t('Unsubscribe from this incident')
+                'title' => t('No longer receive information about this incident')
             ]
         );
     }
