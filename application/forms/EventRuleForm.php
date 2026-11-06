@@ -12,13 +12,16 @@ use Icinga\Module\Notifications\Model\Rule;
 use ipl\Html\Attributes;
 use ipl\Html\Contract\Form;
 use ipl\Html\FormDecoration\DescriptionDecorator;
+use ipl\Html\Html;
 use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\Stdlib\Filter;
 use ipl\Validator\CallbackValidator;
+use ipl\Web\Common\CalloutType;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
+use ipl\Web\Widget\Callout;
 
 class EventRuleForm extends CompatForm
 {
@@ -145,13 +148,40 @@ class EventRuleForm extends CompatForm
             ]
         );
 
+        $isNotificationRule = $ruleId !== null && $this->getPopulatedValue('type') === "notification";
+        $disabledOptions = [''];
+        if ($isNotificationRule) {
+            foreach ($this->sourceTypes as $key => $type) {
+                if (! $this->hasEventTypes($key) && $this->getPopulatedValue('source_type') !== $key) {
+                    $disabledOptions[] = $key;
+                }
+            }
+        }
+
         $this->addElement('select', 'source_type', [
             'label' => $this->translate('Source Type'),
             'required' => true,
             'options' => ['' => ' - ' . $this->translate('Please choose') . ' - '] + $this->sourceTypes,
-            'disabledOptions' => [''],
-            'value' => ''
+            'disabledOptions' => $disabledOptions,
+            'value' => '',
+            'class' => 'autosubmit',
         ]);
+
+        $chosenSource = $this->getValue('source_type') ?? "";
+        $hasEventTypes = $this->hasEventTypes($chosenSource);
+
+        // In case the source is a hook but provides no event types, display warning
+        if (! $hasEventTypes) {
+            $warnMessage = $this->translate(
+                'Notification rules are not supported for this source type, as it provides no event types.'
+            );
+            if ($isNotificationRule) {
+                $warnMessage .= " " . $this->translate(
+                    'This rule should be deleted, because it will never match.'
+                );
+            }
+        }
+
         if ($ruleId !== null) {
             $this->getElement('source_type')
                 ->setDescription(
@@ -168,7 +198,17 @@ class EventRuleForm extends CompatForm
                 ->replaceDecorator('Description', DescriptionDecorator::class, ['class' => 'description']);
         }
 
-        $this->assembleTypeSelection($ruleId !== null);
+        if (! $hasEventTypes && ($isNotificationRule || $ruleId === null)) {
+            $this->addHtml(Html::tag('div', ['class' => 'control-group'], [
+                Html::tag('div', ['class' => 'control-label-group']),
+                new Callout(
+                    $isNotificationRule ? CalloutType::Warning : CalloutType::Info,
+                    Html::tag('span', [$warnMessage])
+                ),
+            ]));
+        }
+
+        $this->assembleTypeSelection($ruleId !== null, $hasEventTypes);
 
         $this->addElement('submit', 'btn_submit', [
             'label' => $ruleId === null
@@ -196,7 +236,7 @@ class EventRuleForm extends CompatForm
         }
     }
 
-    protected function assembleTypeSelection(bool $disabled): void
+    protected function assembleTypeSelection(bool $disabled, bool $hasEventTypes): void
     {
         $value = $this->getPopulatedValue('type');
         if ($disabled) {
@@ -212,15 +252,25 @@ class EventRuleForm extends CompatForm
         $modeList = new HtmlElement('ul', Attributes::create([
             'class' => ['pictogram-selection', $disabled ? 'disabled' : '']
         ]));
+
+        // Clear populated value if it was on a type that is not available
+        if (! $disabled && $value === 'notification' && ! $hasEventTypes) {
+            $this->clearPopulatedValue('type');
+            $value = null;
+        }
+
         foreach ($types as $type => $label) {
+            $typeUnavailable = ! $disabled && $type === 'notification' && ! $hasEventTypes;
             $radio = $this->createElement('input', 'type', [
                 'type' => 'radio',
                 'value' => $type,
                 'required' => true,
-                'disabled' => $disabled,
+                'disabled' => $disabled || $typeUnavailable,
                 'id' => 'rule-type-' . $type
             ]);
-            if ($value === null || $type === $value) {
+
+            // Check type if it is available and if rule existed before
+            if (! $typeUnavailable && ($type === $value || $value === null)) {
                 $radio->getAttributes()->set('checked', true);
                 $this->registerElement($radio);
                 $value = $type;
@@ -286,6 +336,20 @@ class EventRuleForm extends CompatForm
             'type' => $rule->type,
             'source_type' => $rule->source_type
         ];
+    }
+
+    /**
+     * Check if the hook has event types
+     *
+     * @param string $type
+     *
+     * @return bool
+     */
+    private function hasEventTypes(string $type): bool
+    {
+        $hook = SourceHookLocator::forType($type);
+
+        return $hook === null || ! empty($hook->getEventTypes());
     }
 
     public function hasBeenSubmitted()
