@@ -25,7 +25,7 @@ class RuleEntryRecipients extends FieldsetElement
 
     protected $defaultAttributes = ['class' => 'escalation-recipients'];
 
-    protected function createAddButton(): SubmitButtonElement
+    protected function createAddButton(): ?SubmitButtonElement
     {
         /** @var SubmitButtonElement $button */
         $button = $this->createElement('submitButton', 'add-button', [

@@ -37,6 +37,20 @@ class EscalationCondition extends FieldsetElement
     /** @var ?SubmitButtonElement The button to remove this condition */
     protected ?SubmitButtonElement $removeButton = null;
 
+    private array $allowedColumns = [];
+
+    private array $allowedSeverities = [];
+
+    public function setAllowedColumns(array $columns): void
+    {
+        $this->allowedColumns = array_flip($columns);
+    }
+
+    public function setAllowedSeverities(array $severities): void
+    {
+        $this->allowedSeverities = $severities;
+    }
+
     /**
      * Set the button to remove this condition
      *
@@ -108,11 +122,15 @@ class EscalationCondition extends FieldsetElement
         $this->addElement('select', 'column', [
             'required' => true,
             'options' => [
-                '' => sprintf(' - %s - ', $this->translate('Please choose')),
-                'incident_severity' => $this->translate('Incident Severity'),
-                'incident_age' => $this->translate('Incident Age'),
-                'is_managed' => $this->translate('Incident Is Managed')
-            ],
+                '' => sprintf(' - %s - ', $this->translate('Please choose'))
+            ] + array_intersect_key(
+                [
+                    'incident_severity' => $this->translate('Incident Severity'),
+                    'incident_age' => $this->translate('Incident Age'),
+                    'is_managed' => $this->translate('Incident Is Managed')
+                ],
+                $this->allowedColumns
+            ),
             'class' => 'autosubmit',
             'disabledOptions' => [''],
             'value' => ''
@@ -142,6 +160,7 @@ class EscalationCondition extends FieldsetElement
 
         $this->addElement('select', 'operator', [
             'required' => true,
+            'class' => 'autosubmit',
             'options' => $operators,
             'value' => array_key_first($operators),
             'disabled' => count($operators) === 1
@@ -149,12 +168,13 @@ class EscalationCondition extends FieldsetElement
 
         if ($selectedColumn === 'incident_severity') {
             $severityOptions = [];
-            foreach (Severity::cases() as $severity) {
+            foreach ($this->allowedSeverities as $severity) {
                 $severityOptions[$severity->getValue()] = $severity->getLabel();
             }
 
             $this->addElement('select', 'severity', [
                 'required' => true,
+                'class' => 'autosubmit',
                 'options'  => $severityOptions
             ]);
         } elseif ($selectedColumn === 'incident_age') {
