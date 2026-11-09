@@ -65,14 +65,18 @@ class IncidentsController extends CompatController
                 'closed' => Filter::like('incident.recovered_at', '*')
             });
 
+        $sortColumns = [
+            'incident.severity desc, incident.started_at' => t('Severity'),
+            'incident.started_at desc'                    => t('Opened On'),
+        ];
+        if ($stateType === 'closed') {
+            $sortColumns['incident.recovered_at'] = t('Recovered At');
+        }
+
         $limitControl = $this->createLimitControl();
         $sortControl = $this->createSortControl(
             $incidents,
-            [
-                'incident.severity desc, incident.started_at' => t('Severity'),
-                'incident.started_at desc'                    => t('Opened On'),
-                'incident.recovered_at'                       => t('Recovered At'),
-            ],
+            $sortColumns,
             match ($stateType) {
                 'open' => null,
                 'closed' => 'incident.recovered_at desc'
