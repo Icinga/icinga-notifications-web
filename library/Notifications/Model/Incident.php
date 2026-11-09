@@ -88,7 +88,7 @@ class Incident extends Model
 
     public function getDefaultSort(): array
     {
-        return ['incident.severity desc, incident.started_at'];
+        return ['incident.severity desc, incident.started_at desc'];
     }
 
     public static function on(Connection $db): Query

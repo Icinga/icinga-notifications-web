@@ -66,8 +66,8 @@ class IncidentsController extends CompatController
             });
 
         $sortColumns = [
-            'incident.severity desc, incident.started_at' => t('Severity'),
-            'incident.started_at desc'                    => t('Opened On'),
+            'incident.severity desc, incident.started_at desc' => t('Severity'),
+            'incident.started_at desc'                         => t('Opened On'),
         ];
         if ($stateType === 'closed') {
             $sortColumns['incident.recovered_at'] = t('Recovered At');
