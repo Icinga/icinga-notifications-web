@@ -10,6 +10,7 @@ use Exception;
 use Icinga\Application\Config;
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Icons;
+use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Common\Severity;
 use Icinga\Module\Notifications\Model\NotificationHistory;
 use Icinga\Module\Notifications\View\IncidentRenderer;
@@ -72,8 +73,11 @@ class NotificationDetail extends BaseHtmlElement
         ];
     }
 
-    protected function createRecipient(): array
+    protected function createRecipient(): HorizontalKeyValue
     {
+        $contact = $this->notificationHistory->contact;
+        $name = $contact->full_name ?? $this->translate('unknown');
+
         $recipient = new HtmlElement(
             'div',
             Attributes::create(['class' => 'recipient']),
@@ -81,7 +85,9 @@ class NotificationDetail extends BaseHtmlElement
                 'span',
                 Attributes::create(['class' => 'contact']),
                 new Icon(Icons::USER, ['title' => $this->translate('Notified contact')]),
-                Text::create($this->notificationHistory->contact->full_name ?? $this->translate('unknown'))
+                isset($contact->id) && $this->getAuth()->hasPermission('notifications/config/contacts')
+                    ? new Link($name, Links::contact($contact->id), ['data-base-target' => '_next'])
+                    : Text::create($name)
             )
         );
 
@@ -90,10 +96,10 @@ class NotificationDetail extends BaseHtmlElement
             $recipient->addHtml(FormattedString::create($this->translate('(Member of %s)'), $membership));
         }
 
-        return [
-            new HtmlElement('h2', content: Text::create($this->translate('Recipient'))),
+        return new HorizontalKeyValue(
+            $this->translate('Recipient'),
             $recipient
-        ];
+        );
     }
 
     protected function createMembership(): ?ValidHtml
@@ -101,9 +107,17 @@ class NotificationDetail extends BaseHtmlElement
         if (isset($this->notificationHistory->contactgroup_id)) {
             $icon = new Icon(Icons::CONTACTGROUP, ['title' => $this->translate('Contact group')]);
             $name = $this->notificationHistory->contactgroup->name ?? $this->translate('unknown');
+            $url = isset($this->notificationHistory->contactgroup->id)
+                && $this->getAuth()->hasPermission('notifications/config/contacts')
+                ? Links::contactGroup($this->notificationHistory->contactgroup->id)
+                : null;
         } elseif (isset($this->notificationHistory->schedule_id)) {
             $icon = new Icon(Icons::SCHEDULE, ['title' => $this->translate('Schedule')]);
             $name = $this->notificationHistory->schedule->name ?? $this->translate('unknown');
+            $url = isset($this->notificationHistory->schedule->id)
+                && $this->getAuth()->hasPermission('notifications/config/schedules')
+                ? Links::schedule($this->notificationHistory->schedule->id)
+                : null;
         } else {
             return null;
         }
@@ -112,34 +126,33 @@ class NotificationDetail extends BaseHtmlElement
             'span',
             Attributes::create(['class' => 'membership']),
             $icon,
-            Text::create($name)
+            $url !== null ? new Link($name, $url, ['data-base-target' => '_next']) : Text::create($name)
         );
     }
 
-    protected function createChannel(): array
+    protected function createChannel(): HorizontalKeyValue
     {
         $channel = $this->notificationHistory->channel;
 
-        return [
-            new HtmlElement('h2', content: Text::create($this->translate('Channel'))),
+        return new HorizontalKeyValue(
+            $this->translate('Channel'),
             new HtmlElement(
                 'div',
                 Attributes::create(['class' => 'channel']),
-                Text::create(sprintf(
-                    '%s (%s)',
-                    $channel->name ?? $this->translate('unknown'),
-                    $this->notificationHistory->channel_label ?? $this->translate('deleted')
-                ))
+                isset($channel->id) && $this->getAuth()->hasPermission('config/modules')
+                    ? new Link($channel->name, Links::channel($channel->id), ['data-base-target' => '_next'])
+                    : Text::create($channel->name ?? $this->translate('unknown')),
+                Text::create(sprintf(' (%s)', $this->notificationHistory->channel_label ?? $this->translate('deleted')))
             )
-        ];
+        );
     }
 
-    protected function createTransmission(): array
+    protected function createTransmission(): HorizontalKeyValue
     {
         $state = $this->notificationHistory->state;
 
-        return [
-            new HtmlElement('h2', content: Text::create($this->translate('Transmission'))),
+        return new HorizontalKeyValue(
+            $this->translate('Transmission'),
             new HtmlElement(
                 'div',
                 Attributes::create(['class' => 'transmission']),
@@ -147,7 +160,7 @@ class NotificationDetail extends BaseHtmlElement
                 Text::create($state->getLabel()),
                 new Time($this->notificationHistory->triggered_at)
             )
-        ];
+        );
     }
 
     protected function createDelivery(): array
@@ -171,7 +184,7 @@ class NotificationDetail extends BaseHtmlElement
         }, $deliveryData);
 
         return [
-            new HtmlElement('h2', content: Text::create($this->translate('Delivery'))),
+            new HtmlElement('h2', content: Text::create($this->translate('Delivery Result'))),
             new HtmlElement('div', Attributes::create(['class' => 'delivery']), ...$deliveryDetail)
         ];
     }
@@ -234,6 +247,7 @@ class NotificationDetail extends BaseHtmlElement
     protected function assemble(): void
     {
         $this->add([
+            new HtmlElement('h2', content: Text::create($this->translate('Delivery Overview'))),
             $this->createRecipient(),
             $this->createChannel(),
             $this->createTransmission(),
