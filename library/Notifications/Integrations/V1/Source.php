@@ -26,7 +26,8 @@ final class Source
      *
      * @param Closure $transactionWrapper Callback to execute a transaction
      * @param SourceRepository $repository Repository to work with
-     * @param string $listenerUsername The source's listener username
+     * @param ?string $listenerUsername The source's listener username
+     * @param ?string $clientCertificateSubject The source's certificate subject
      * @param ?int $id The source ID, NULL for a new source
      * @param ?string $type The source type, NULL for a new source
      * @param ?string $name The source name, NULL for a new source
@@ -34,7 +35,8 @@ final class Source
     public function __construct(
         private Closure $transactionWrapper,
         private SourceRepository $repository,
-        private string $listenerUsername,
+        private ?string $listenerUsername,
+        private ?string $clientCertificateSubject,
         private ?int $id,
         private ?string $type,
         private ?string $name
@@ -61,6 +63,33 @@ final class Source
             $db->transaction(...),
             $repo,
             $username,
+            null,
+            $source->id ?? null,
+            $source->type ?? null,
+            $source->name ?? null
+        );
+    }
+
+    /**
+     * Get a source-managing instance with the given certificate subject
+     *
+     * If the source does not exist in the database, a new source is created.
+     * To store the source in the database, {@see self::save()} must be called.
+     *
+     * @param string $certificateSubject
+     *
+     * @return self
+     */
+    public static function getByCertificateSubject(string $certificateSubject): self
+    {
+        $db = Database::get();
+        $repo = new SourceRepository($db);
+        $source = $repo->findByCertificateSubject($certificateSubject);
+        return new self(
+            $db->transaction(...),
+            $repo,
+            null,
+            $certificateSubject,
             $source->id ?? null,
             $source->type ?? null,
             $source->name ?? null
@@ -140,7 +169,7 @@ final class Source
             name: $this->name,
             listenerUsername: $this->listenerUsername,
             listenerPassword: $this->listenerPassword,
-            clientCertificateSubject: null,
+            clientCertificateSubject: $this->clientCertificateSubject,
             locked: true
         );
 
