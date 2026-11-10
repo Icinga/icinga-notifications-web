@@ -124,6 +124,27 @@ class SourceRepositoryTest extends TestCase
     }
 
     #[DataProvider('sharedDatabases')]
+    public function testFindByCertificateSubjectReturnsTheSource(Connection $db): void
+    {
+        $id = $this->insertSource($db, '', [
+            'listener_username' => null,
+            'client_certificate_subject' => 'CN=source.example.com'
+        ]);
+
+        $source = (new SourceRepository($db))->findByCertificateSubject('CN=source.example.com');
+
+        $this->assertNotNull($source, 'findByCertificateSubject() did not return the source');
+        $this->assertEquals($id, $source->id);
+        $this->assertSame('CN=source.example.com', $source->client_certificate_subject);
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testFindByCertificateSubjectReturnsNullIfNotFound(Connection $db): void
+    {
+        $this->assertNull((new SourceRepository($db))->findByCertificateSubject('no_subject'));
+    }
+
+    #[DataProvider('sharedDatabases')]
     public function testCreateStoresTheSource(Connection $db): void
     {
         $sourceId = (new SourceRepository($db))->create(new SourceData(

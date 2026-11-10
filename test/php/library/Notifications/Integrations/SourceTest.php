@@ -21,6 +21,7 @@ class SourceTest extends TestCase
             '',
             null,
             null,
+            null,
             null
         ))->getName());
     }
@@ -31,6 +32,7 @@ class SourceTest extends TestCase
             fn() => null,
             $this->createStub(SourceRepository::class),
             '',
+            null,
             null,
             null,
             null
@@ -68,6 +70,7 @@ class SourceTest extends TestCase
             'icingadb',
             null,
             null,
+            null,
             null
         ))
             ->setName('N')
@@ -102,6 +105,7 @@ class SourceTest extends TestCase
             $transactionWrapper(...),
             $db,
             'icingadb',
+            null,
             null,
             'icingadb',
             'N'
@@ -138,6 +142,7 @@ class SourceTest extends TestCase
             $transactionWrapper(...),
             $db,
             'u',
+            null,
             5,
             'icingadb',
             'N'
@@ -155,6 +160,7 @@ class SourceTest extends TestCase
             '',
             null,
             null,
+            null,
             null
         ))->save();
     }
@@ -170,6 +176,7 @@ class SourceTest extends TestCase
             '',
             null,
             null,
+            null,
             null
         ))->setType('icingadb')->save();
     }
@@ -183,6 +190,7 @@ class SourceTest extends TestCase
             fn() => null,
             $this->createStub(SourceRepository::class),
             '',
+            null,
             null,
             null,
             null

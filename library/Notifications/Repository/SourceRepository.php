@@ -57,6 +57,20 @@ class SourceRepository
     }
 
     /**
+     * Fetch the source with the given certificate subject
+     *
+     * @param string $certificateSubject client certificate subject
+     *
+     * @return ?Source
+     */
+    public function findByCertificateSubject(string $certificateSubject): ?Source
+    {
+        return Source::on($this->db)
+            ->filter(Filter::equal('source.client_certificate_subject', $certificateSubject))
+            ->first();
+    }
+
+    /**
      * Create a new source
      *
      * @param SourceData $source
