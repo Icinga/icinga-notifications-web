@@ -40,8 +40,8 @@ class IncidentQuickActions extends Form
 
     protected Incident $incident;
 
-    /** @var string The type of the source that opened the incident */
-    protected string $sourceType;
+    /** @var ?string The type of the source that opened the incident, `null` if the source has been deleted */
+    protected ?string $sourceType;
 
     public function __construct(IncidentModel $incident, JobTracker $jobTracker)
     {
@@ -180,8 +180,10 @@ class IncidentQuickActions extends Form
 
     protected function getEventTypes(): array
     {
-        return array_keys(
-            SourceHookLocator::forType($this->sourceType)?->getEventTypes() ?? []
-        );
+        if ($this->sourceType === null) {
+            return [];
+        }
+
+        return array_keys(SourceHookLocator::forType($this->sourceType)?->getEventTypes() ?? []);
     }
 }

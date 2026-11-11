@@ -134,6 +134,7 @@ class Incident extends Model
             ->through('incident_rule')
             ->setJoinType('LEFT');
 
-        $relations->belongsTo('source', Source::class);
+        $relations->belongsTo('source', Source::class)
+            ->setJoinType('LEFT');
     }
 }
