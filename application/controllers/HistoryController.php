@@ -8,9 +8,9 @@ namespace Icinga\Module\Notifications\Controllers;
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Model\NotificationHistory;
-use Icinga\Module\Notifications\View\NotificationRenderer;
 use Icinga\Module\Notifications\Web\Control\SearchBar\ObjectSuggestions;
-use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
+use Icinga\Module\Notifications\Widget\ItemList\HistoryList;
+use ipl\Stdlib\Filter;
 use ipl\Web\Common\Controls;
 use ipl\Web\Compat\CompatController;
 use ipl\Web\Compat\SearchControls;
@@ -21,6 +21,7 @@ use ipl\Web\Filter\QueryString;
 use ipl\Web\Layout\DetailedItemLayout;
 use ipl\Web\Layout\ItemLayout;
 use ipl\Web\Layout\MinimalItemLayout;
+use ipl\Web\Url;
 
 class HistoryController extends CompatController
 {
@@ -39,6 +40,8 @@ class HistoryController extends CompatController
     {
         $this->addTitleTab(t('Notification History'));
 
+        $before = $this->params->shift('before');
+
         $notificationHistory = NotificationHistory::on(Database::get())
             ->with(['contact', 'contactgroup', 'schedule'])
             ->withColumns(['channel_label' => 'channel.available_channel_type.name']);
@@ -54,11 +57,12 @@ class HistoryController extends CompatController
 
         $paginationControl = $this->createPaginationControl($notificationHistory);
         $viewModeSwitcher = $this->createViewModeSwitcher();
-        $searchBar = $this->createSearchBar($notificationHistory, [
+        $preserveParams = [
             $limitControl->getLimitParam(),
             $sortControl->getSortParam(),
-            $viewModeSwitcher->getViewModeParam()
-        ]);
+            $viewModeSwitcher->getViewModeParam(),
+        ];
+        $searchBar = $this->createSearchBar($notificationHistory, $preserveParams);
 
         $this->handleControls($this->getServerRequest());
 
@@ -77,20 +81,49 @@ class HistoryController extends CompatController
         $this->applyRestrictions($notificationHistory);
         $notificationHistory->filter($filter);
 
-        $this->addControl($paginationControl);
+        // Keep newly inserted notifications out of later pages, even if their trigger times are older.
+        $before ??= NotificationHistory::on(Database::get())
+            ->columns('id')
+            ->orderBy('id', 'DESC')
+            ->limit(1)
+            ->first()->id ?? 0;
+
+        $notificationHistory->filter(Filter::lessThanOrEqual('id', $before))
+            ->orderBy('id', 'DESC')
+            ->peekAhead();
+
+        // Treat zero and negative page numbers as page 1 when calculating the query limit.
+        $page = max(1, $paginationControl->getCurrentPageNumber());
+
+        // Append only the requested page on Load More. Full requests rebuild all loaded pages.
+        $appendPage = $page > 1 && ! empty($this->view->compact);
+
+        if (! $appendPage) {
+            $notificationHistory->resetOffset()->limit($page * $limitControl->getLimit());
+        }
+
         $this->addControl($sortControl);
         $this->addControl($limitControl);
         $this->addControl($viewModeSwitcher);
         $this->addControl($searchBar);
 
-        $this->addContent(
-            (new ObjectList($notificationHistory, new NotificationRenderer()))
-                ->setItemLayoutClass(match ($viewModeSwitcher->getViewMode()->getName()) {
-                    'minimal' => MinimalItemLayout::class,
-                    'detailed' => DetailedItemLayout::class,
-                    'common' => ItemLayout::class
-                })
-        );
+        $historyList = (new HistoryList($notificationHistory->execute()))
+            ->setPageSize($limitControl->getLimit())
+            ->setLoadMoreUrl(
+                Url::fromRequest()->onlyWith($preserveParams)->setFilter($filter)->setParam('before', $before),
+            )
+            ->setItemLayoutClass(match ($viewModeSwitcher->getViewMode()->getName()) {
+                'minimal'  => MinimalItemLayout::class,
+                'detailed' => DetailedItemLayout::class,
+                default    => ItemLayout::class,
+            });
+
+        if ($appendPage) {
+            $historyList->setPageNumber($page);
+            $this->getDocument()->addFrom($historyList);
+        } else {
+            $this->addContent($historyList);
+        }
 
         if (! $searchBar->hasBeenSubmitted() && $searchBar->hasBeenSent()) {
             $this->sendMultipartUpdate();
