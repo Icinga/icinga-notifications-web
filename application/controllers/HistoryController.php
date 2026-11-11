@@ -39,6 +39,7 @@ class HistoryController extends CompatController
     public function indexAction(): void
     {
         $this->addTitleTab(t('Notification History'));
+        $this->getTabs()->setRefreshUrl(Url::fromRequest()->without(['before', 'page'])->setAnchor(''));
 
         $before = $this->params->shift('before');
 
