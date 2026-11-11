@@ -3,13 +3,23 @@
 
 .event-source-badge {
   display: inline-flex;
-  background: @gray;
+  background: @gray-lighter;
   border-radius: 1em;
   padding-right: .5em;
   line-height: 2em;
-  color: @text-color-inverted;
+  color: @text-color;
 
   .source-icon {
     padding: 0
+  }
+
+  a {
+    color: inherit;
+    font-weight: bold;
+
+    &:hover {
+      color: var(--link-hover-color, @link-hover-color);
+      text-decoration: none;
+    }
   }
 }
