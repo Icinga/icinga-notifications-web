@@ -67,16 +67,18 @@ trait LoadMore
      *
      * Add the page separator and the "LoadMore" button at the desired position
      *
-     * @param ResultSet $result
+     * @template TRow of \ipl\Orm\Model
      *
-     * @return Generator
+     * @param ResultSet<TRow> $result
+     *
+     * @return Generator<int, TRow, void, void>
      */
     protected function getIterator(ResultSet $result): Generator
     {
         $count = 0;
         $pageNumber = $this->pageNumber ?: 1;
 
-        if ($pageNumber > 1) {
+        if ($pageNumber > 1 && $result->hasResult()) {
             $this->add(new PageSeparatorItem($pageNumber));
         }
 
@@ -94,7 +96,7 @@ trait LoadMore
         if ($count > 0 && $this->loadMoreUrl !== null) {
             $showMore = (new ShowMore(
                 $result,
-                $this->loadMoreUrl->setParam('page', $pageNumber)
+                $this->loadMoreUrl->setParam('page', (string) $pageNumber)
                     ->setAnchor('page-' . ($pageNumber))
             ))
                 ->setLabel(t('Load More'))
