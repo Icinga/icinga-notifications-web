@@ -201,10 +201,10 @@ class EventRuleForm extends CompatForm
         if (! $hasEventTypes && ($isNotificationRule || $ruleId === null)) {
             $this->addHtml(Html::tag('div', ['class' => 'control-group'], [
                 Html::tag('div', ['class' => 'control-label-group']),
-                new Callout(
+                Html::tag('div', ['class' => 'display-form-element'], new Callout(
                     $isNotificationRule ? CalloutType::Warning : CalloutType::Info,
                     Html::tag('span', [$warnMessage])
-                ),
+                ))
             ]));
         }
 
