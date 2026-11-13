@@ -21,6 +21,7 @@ use ipl\Validator\CallbackValidator;
 use ipl\Web\Common\CalloutType;
 use ipl\Web\Common\CsrfCounterMeasure;
 use ipl\Web\Compat\CompatForm;
+use ipl\Web\Compat\DisplayFormElement;
 use ipl\Web\Widget\Callout;
 
 class EventRuleForm extends CompatForm
@@ -199,13 +200,12 @@ class EventRuleForm extends CompatForm
         }
 
         if (! $hasEventTypes && ($isNotificationRule || $ruleId === null)) {
-            $this->addHtml(Html::tag('div', ['class' => 'control-group'], [
-                Html::tag('div', ['class' => 'control-label-group']),
+            $this->addHtml(new DisplayFormElement(
                 new Callout(
                     $isNotificationRule ? CalloutType::Warning : CalloutType::Info,
                     Html::tag('span', [$warnMessage])
-                ),
-            ]));
+                )
+            ));
         }
 
         $this->assembleTypeSelection($ruleId !== null, $hasEventTypes);
