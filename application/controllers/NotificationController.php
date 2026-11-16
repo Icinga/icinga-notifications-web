@@ -39,6 +39,8 @@ class NotificationController extends CompatController
                 'channel',
                 'incident',
                 'object',
+                'rule',
+                'rule_entry',
             ])
             ->withColumns(['object.sources', 'channel_label' => 'channel.available_channel_type.name'])
             ->filter(Filter::equal('id', $id));
