@@ -6,6 +6,7 @@
 namespace Tests\Icinga\Module\Notifications\Repository;
 
 use DateTime;
+use ErrorException;
 use Icinga\Module\Notifications\Form\Data\Source as SourceData;
 use Icinga\Module\Notifications\Model\Rule;
 use Icinga\Module\Notifications\Model\Source;
@@ -72,6 +73,29 @@ class SourceRepositoryTest extends TestCase
     private function loadSource(Connection $db, int $id): ?Source
     {
         return Source::on($db)->filter(Filter::equal('source.id', $id))->first();
+    }
+
+    /**
+     * Insert two rules sharing a source type
+     *
+     * @param Connection $db
+     *
+     * @return list<int> The rule IDs
+     */
+    private function insertTypeRelationRules(Connection $db): array
+    {
+        $ruleIds = [];
+        foreach (['First rule', 'Second rule'] as $name) {
+            $db->insert('rule', [
+                'name'        => $name,
+                'type'        => 'escalation',
+                'source_type' => 'icingadb',
+                'changed_at'  => (int) (new DateTime())->format('Uv'),
+            ]);
+            $ruleIds[] = (int) $db->lastInsertId();
+        }
+
+        return $ruleIds;
     }
 
     public function testTheUsedHashAlgorithmIsStillPhpsDefault(): void
@@ -338,6 +362,73 @@ class SourceRepositoryTest extends TestCase
     }
 
     #[DataProvider('sharedDatabases')]
+    public function testTypeRelationsPreserveMultipleMatchesAndSupportOrphanFilters(Connection $db): void
+    {
+        $sourceId = $this->insertSource($db, 'type-relation-first');
+        $sourceId2 = $this->insertSource($db, 'type-relation-second');
+        $unmatchedSourceId = $this->insertSource($db, 'type-relation-unmatched', ['type' => 'without-rules']);
+        $ruleIds = [];
+        foreach (['icingadb', 'icingadb', 'without-sources'] as $index => $type) {
+            $db->insert('rule', [
+                'name'        => "Type relation $index",
+                'type'        => 'escalation',
+                'source_type' => $type,
+                'changed_at'  => (int) (new DateTime())->format('Uv'),
+            ]);
+            $ruleIds[] = (int) $db->lastInsertId();
+        }
+
+        set_error_handler(static function (int $severity, string $message, string $file, int $line): never {
+            throw new ErrorException($message, 0, $severity, $file, $line);
+        }, E_USER_DEPRECATED);
+        try {
+            $rules = Rule::on($db)->filter(Filter::equal('source.id', $sourceId));
+            $this->assertEqualsCanonicalizing(
+                [$ruleIds[0], $ruleIds[1]],
+                array_column(iterator_to_array($rules), 'id'),
+            );
+            $sources = Source::on($db)->filter(Filter::equal('rule.id', $ruleIds[0]));
+            $this->assertEqualsCanonicalizing(
+                [$sourceId, $sourceId2],
+                array_column(iterator_to_array($sources), 'id'),
+            );
+
+            $orphanRules = Rule::on($db)->filter(Filter::unlike('source.id', '*'));
+            $this->assertEquals([$ruleIds[2]], array_column(iterator_to_array($orphanRules), 'id'));
+            $unmatchedSources = Source::on($db)->filter(Filter::unlike('rule.id', '*'));
+            $this->assertEquals([$unmatchedSourceId], array_column(iterator_to_array($unmatchedSources), 'id'));
+        } finally {
+            restore_error_handler();
+        }
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testLazySourceRulesContainEachRuleOnce(Connection $db): void
+    {
+        $sourceId = $this->insertSource($db, 'lazy-rules-first');
+        $this->insertSource($db, 'lazy-rules-second');
+        $ruleIds = $this->insertTypeRelationRules($db);
+
+        $source = Source::on($db)->filter(Filter::equal('id', $sourceId))->first();
+
+        $this->assertEqualsCanonicalizing($ruleIds, array_column(iterator_to_array($source->rule), 'id'));
+    }
+
+    #[DataProvider('sharedDatabases')]
+    public function testLazyRuleSourcesContainEachSourceOnce(Connection $db): void
+    {
+        $sourceIds = [
+            $this->insertSource($db, 'lazy-sources-first'),
+            $this->insertSource($db, 'lazy-sources-second'),
+        ];
+        $ruleIds = $this->insertTypeRelationRules($db);
+
+        $rule = Rule::on($db)->filter(Filter::equal('id', $ruleIds[0]))->first();
+
+        $this->assertEqualsCanonicalizing($sourceIds, array_column(iterator_to_array($rule->source), 'id'));
+    }
+
+    #[DataProvider('sharedDatabases')]
     public function testDeleteSoftDeletesLinkedRulesOnlyIfTheSourceIsTheLastOfItsType(Connection $db): void
     {
         $sourceId = $this->insertSource($db, 'icingadb1');
@@ -349,6 +440,13 @@ class SourceRepositoryTest extends TestCase
             'changed_at' => (int) (new DateTime())->format('Uv')
         ]);
         $ruleId = (int) $db->lastInsertId();
+        $db->insert('rule', [
+            'name'        => 'Second linked rule',
+            'type'        => 'escalation',
+            'source_type' => 'icingadb',
+            'changed_at'  => (int) (new DateTime())->format('Uv'),
+        ]);
+        $secondRuleId = (int) $db->lastInsertId();
         $db->insert('rule', [
             'name' => 'Unaffected Rule',
             'type' => 'escalation',
@@ -362,7 +460,11 @@ class SourceRepositoryTest extends TestCase
         $rule = $this->loadRawEntity($db, $ruleId, Rule::class);
         $this->assertSame('n', $rule->deleted, 'The rule must not be deleted if a source of its type still exists');
 
+        $this->assertSame('n', $this->loadRawEntity($db, $secondRuleId, Rule::class)->deleted);
+
         (new SourceRepository($db))->delete($sourceId2);
+
+        $this->assertSame('y', $this->loadRawEntity($db, $secondRuleId, Rule::class)->deleted);
 
         // The linked rule is soft-deleted along with last source of its type
         $rule = $this->loadRawEntity($db, $ruleId, Rule::class);
