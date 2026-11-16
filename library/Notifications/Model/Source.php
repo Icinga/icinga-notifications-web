@@ -16,6 +16,7 @@ use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Query;
+use ipl\Orm\Relation\HasMany;
 use ipl\Orm\Relations;
 use ipl\Stdlib\Filter;
 use ipl\Web\Widget\Icon;
@@ -99,7 +100,9 @@ class Source extends Model
         $relations->belongsToMany('object', Objects::class)
             ->through('object_source')
             ->setJoinType('LEFT');
+        // Multiple sources and rules can share the same source type.
         $relations->hasMany('rule', Rule::class)
+            ->setReverseClass(HasMany::class)
             ->setCandidateKey('type')
             ->setForeignKey('source_type')
             ->setJoinType('LEFT');

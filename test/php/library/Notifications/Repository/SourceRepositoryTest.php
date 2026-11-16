@@ -350,6 +350,13 @@ class SourceRepositoryTest extends TestCase
         ]);
         $ruleId = (int) $db->lastInsertId();
         $db->insert('rule', [
+            'name'        => 'Second linked rule',
+            'type'        => 'escalation',
+            'source_type' => 'icingadb',
+            'changed_at'  => (int) (new DateTime())->format('Uv'),
+        ]);
+        $secondRuleId = (int) $db->lastInsertId();
+        $db->insert('rule', [
             'name' => 'Unaffected Rule',
             'type' => 'escalation',
             'source_type' => 'test',
@@ -359,8 +366,16 @@ class SourceRepositoryTest extends TestCase
 
         (new SourceRepository($db))->delete($sourceId);
 
-        $rule = $this->loadRawEntity($db, $ruleId, Rule::class);
-        $this->assertSame('n', $rule->deleted, 'The rule must not be deleted if a source of its type still exists');
+        $this->assertSame(
+            'n',
+            $this->loadRawEntity($db, $ruleId, Rule::class)->deleted,
+            'The rule must not be deleted if a source of its type still exists'
+        );
+        $this->assertSame(
+            'n',
+            $this->loadRawEntity($db, $secondRuleId, Rule::class)->deleted,
+            'Both rules must not be deleted if a source of their type still exists'
+        );
 
         (new SourceRepository($db))->delete($sourceId2);
 
@@ -371,6 +386,14 @@ class SourceRepositoryTest extends TestCase
             'y',
             $rule->deleted,
             'The rule must be soft-deleted when the last source of its type is deleted'
+        );
+
+        $rule2 = $this->loadRawEntity($db, $secondRuleId, Rule::class);
+        $this->assertNotNull($rule2, 'The second rule row should still exist');
+        $this->assertSame(
+            'y',
+            $rule2->deleted,
+            'Both rules must be soft-deleted when the last source of their type is deleted'
         );
 
         $this->assertSame(
