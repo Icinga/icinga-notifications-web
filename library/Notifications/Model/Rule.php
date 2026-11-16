@@ -12,6 +12,7 @@ use ipl\Orm\Behavior\BoolCast;
 use ipl\Orm\Behavior\MillisecondTimestamp;
 use ipl\Orm\Behaviors;
 use ipl\Orm\Query;
+use ipl\Orm\Relation\HasMany;
 use ipl\Orm\Relations;
 use ipl\Stdlib\Filter;
 
@@ -85,7 +86,9 @@ class Rule extends Model
 
     public function createRelations(Relations $relations): void
     {
+        // Multiple sources and rules can share the same source type.
         $relations->hasMany('source', Source::class)
+            ->setReverseClass(HasMany::class)
             ->setCandidateKey('source_type')
             ->setForeignKey('type');
         $relations->hasMany('rule_entry', RuleEntry::class)
