@@ -32,6 +32,7 @@ use ipl\Stdlib\Filter;
  * @property Query<Schedule>|Collection<Schedule> $schedule
  * @property Query<RuleEntryRecipient>|Collection<RuleEntryRecipient> $rule_entry_recipient
  * @property Query<IncidentHistory>|Collection<IncidentHistory> $incident_history
+ * @property Query<SkippedNotificationHistory>|Collection<SkippedNotificationHistory> $skipped_notification_history
  */
 class RuleEntry extends Model
 {
@@ -106,6 +107,8 @@ class RuleEntry extends Model
         $relations->hasMany('rule_entry_recipient', RuleEntryRecipient::class)
             ->setJoinType('LEFT');
         $relations->hasMany('incident_history', IncidentHistory::class)
+            ->setJoinType('LEFT');
+        $relations->hasMany('skipped_notification_history', SkippedNotificationHistory::class)
             ->setJoinType('LEFT');
     }
 
