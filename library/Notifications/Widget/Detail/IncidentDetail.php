@@ -211,6 +211,20 @@ class IncidentDetail extends BaseHtmlElement
         ];
     }
 
+    /** @return ValidHtml[] */
+    protected function createObjectTags(): array
+    {
+        $list = [];
+        foreach ($this->incident->object->id_tags as $tag => $value) {
+            $list[] = new HorizontalKeyValue($tag, $value);
+        }
+
+        return [
+            Html::tag('h2', $this->translate('Tags')),
+            $list
+        ];
+    }
+
     protected function assemble(): void
     {
         $this->add([
@@ -219,6 +233,7 @@ class IncidentDetail extends BaseHtmlElement
             $this->createRelatedObject(),
             $this->createMessage(),
             $this->createSources(),
+            $this->createObjectTags(),
         ]);
     }
 }
