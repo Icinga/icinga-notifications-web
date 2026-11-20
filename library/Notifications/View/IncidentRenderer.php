@@ -77,7 +77,9 @@ class IncidentRenderer implements ItemRenderer
                         ->addAttributes(
                             Attributes::create(
                                 [
-                                    'class' => 'source-icon',
+                                    'class' => $item->source_id === $source->id
+                                        ? 'source-icon opened-by'
+                                        : 'source-icon',
                                     'title' => sprintf(
                                         '%s (%s)',
                                         $source->name,

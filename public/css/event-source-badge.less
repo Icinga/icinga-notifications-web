@@ -1,21 +1,41 @@
 // SPDX-FileCopyrightText: 2023 Icinga GmbH <https://icinga.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+@event-source-badge-bg: @default-bg;
+@opened-by-bg: #404d72;
+@source-icon-bg: #6c7cac;
+@source-icon-opened-by-bg: @base-primary-dark;
+
+.horizontal-key-value > .value {
+  min-width: 0;
+}
+
 .event-source-badge {
   display: inline-flex;
-  background: @gray-lighter;
+  background: @event-source-badge-bg;
   border-radius: 1em;
+  outline: solid 0.1em var(--source-icon-bg, @source-icon-bg);
+
+  max-width: 100%;
+  white-space: nowrap;
+
   padding-right: .5em;
   line-height: 2em;
   color: @text-color;
 
   .source-icon {
-    padding: 0
+    padding: 0;
+    background: var(--source-icon-bg, @source-icon-bg);
+    color: @default-bg;
+    flex-shrink: 0;
   }
 
   a {
     color: inherit;
     font-weight: bold;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
 
     &:hover {
       color: var(--link-hover-color, @link-hover-color);
@@ -23,3 +43,28 @@
     }
   }
 }
+
+.event-source-badge.opened-by {
+  background: var(--opened-by-bg, @opened-by-bg);
+  outline: var(--opened-by-bg, @opened-by-bg) solid 0.1em;
+
+  .source-icon {
+    background: @source-icon-opened-by-bg;
+    color: #F5F9FA;
+  }
+}
+
+.opened-by-timestamp {
+  opacity: 0.75;
+  align-self: center;
+}
+
+@light-mode: {
+  .event-source-badge {
+    --opened-by-bg: #deecf1;
+    --source-icon-bg: #84b0c1;
+  }
+  .source-icon {
+    --source-icon-bg: #84b0c1;
+  }
+};
