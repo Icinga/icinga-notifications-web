@@ -27,6 +27,7 @@ use ipl\Web\Widget\CopyToClipboard;
 use ipl\Web\Widget\EmptyState;
 use ipl\Web\Widget\HorizontalKeyValue;
 use ipl\Web\Widget\Link;
+use ipl\Web\Widget\Time;
 
 class IncidentDetail extends BaseHtmlElement
 {
@@ -193,6 +194,7 @@ class IncidentDetail extends BaseHtmlElement
     /** @return ValidHtml[] */
     protected function createSources(): array
     {
+        $openedById = $this->incident->source_id;
         if (empty($this->incident->object->sources)) {
             return [
                 Html::tag('h2', $this->translate('Event Source')),
@@ -201,13 +203,27 @@ class IncidentDetail extends BaseHtmlElement
         }
 
         $list = new HtmlElement('ul', Attributes::create(['class' => 'source-list']));
+        $openedByList = new HtmlElement('ul', Attributes::create(['class' => 'source-list']));
         foreach ($this->incident->object->sources as $source) {
-            $list->addHtml(new HtmlElement('li', null, new EventSourceBadge($source)));
+            if ($source->id === $openedById) {
+                $openedByList->addHtml((new HtmlElement('li', null, (new EventSourceBadge($source))
+                    ->addAttributes(
+                        Attributes::create(['class' => 'event-source-badge-main'])
+                    ))));
+                $openedByList->addHtml((new HtmlElement(
+                    'li',
+                    Attributes::create(['class' => 'key-value-list key']),
+                    new Text($this->incident->started_at->format('M d, G:i'))
+                )));
+            } else {
+                $list->addHtml(new HtmlElement('li', null, new EventSourceBadge($source)));
+            }
         }
 
         return [
             Html::tag('h2', $this->translate('Event Sources')),
-            $list
+            new HorizontalKeyValue($this->translate('Opened by'), $openedByList),
+            new HorizontalKeyValue($this->translate('Further sources'), $list),
         ];
     }
 

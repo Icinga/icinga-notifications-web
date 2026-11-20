@@ -17,9 +17,9 @@
 }
 
 .source-icon {
-  .ball-solid(@gray-light);
+  .ball-solid(@source-icon-bg);
 
-  color: @text-color;
+  color: @white;
   margin-right: 0.2em;
 
   i.icon {
@@ -29,6 +29,10 @@
   i.icon:before {
     margin: unset;
   }
+}
+
+.source-icon.source-icon-main {
+  background: @source-icon-main-bg;
 }
 
 .icon-ball {
