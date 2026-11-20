@@ -3,14 +3,18 @@
 
 .event-source-badge {
   display: inline-flex;
-  background: @gray-lighter;
+  background: @event-source-badge-bg;
   border-radius: 1em;
+  outline: solid 0.1em @source-icon-bg;
+
   padding-right: .5em;
   line-height: 2em;
   color: @text-color;
 
   .source-icon {
-    padding: 0
+    padding: 0;
+    background: @source-icon-bg;
+    color: @default-bg;
   }
 
   a {
@@ -22,4 +26,17 @@
       text-decoration: none;
     }
   }
+
+
+}
+
+.event-source-badge.event-source-badge-main {
+  background: @event-source-badge-main-bg;
+  outline: @event-source-badge-main-bg solid 0.1em;
+
+  .source-icon {
+    background: @source-icon-main-bg;
+    color: #F5F9FA;
+  }
+
 }
