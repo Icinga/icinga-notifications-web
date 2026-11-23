@@ -92,6 +92,10 @@ class EscalationCondition extends HtmlDocument
                 $this->assembleIsManagedRepresentation($byColumn['is_managed']);
             }
 
+            if (isset($byColumn['is_muted'])) {
+                $this->assembleIsMutedRepresentation($byColumn['is_muted']);
+            }
+
             if (isset($byColumn['incident_severity'])) {
                 $this->assembleSeverityRepresentation($byColumn['incident_severity']);
             }
@@ -161,6 +165,40 @@ class EscalationCondition extends HtmlDocument
                 )
             ),
             default => throw new InvalidArgumentException('Cannot describe an invalid is_managed condition')
+        };
+    }
+
+    /**
+     * Assemble the representation for the given is_muted condition
+     *
+     * @param array $conditions
+     *
+     * @return void
+     *
+     * @throws InvalidArgumentException In case the given conditions cannot be described
+     */
+    protected function assembleIsMutedRepresentation(array $conditions): void
+    {
+        if (count($conditions) > 1) {
+            throw new InvalidArgumentException('Cannot describe more than one is_muted condition');
+        }
+
+        match ($conditions[0]->getValue()) {
+            'y' => $this->addPhrase(
+                Text::create(
+                    $this->usePastTense
+                        ? $this->translate('Incident was muted')
+                        : $this->translate('Incident is muted')
+                )
+            ),
+            'n' => $this->addPhrase(
+                Text::create(
+                    $this->usePastTense
+                        ? $this->translate('Incident was not muted')
+                        : $this->translate('Incident is not muted')
+                )
+            ),
+            default => throw new InvalidArgumentException('Cannot describe an invalid is_muted condition')
         };
     }
 
