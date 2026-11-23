@@ -24,6 +24,7 @@ use ipl\Stdlib\Filter;
  *
  * @property Query<Rotation>|Collection<Rotation> $rotation
  * @property Query<RuleEntryRecipient>|Collection<RuleEntryRecipient> $rule_entry_recipient
+ * @property Query<IncidentHistory>|Collection<IncidentHistory> $incident_history
  * @property Query<RuleEntry>|Collection<RuleEntry> $rule_entry
  * @property Query<NotificationHistory>|Collection<NotificationHistory> $notification_history
  */
@@ -79,6 +80,8 @@ class Schedule extends Model
         $relations->hasMany('rotation', Rotation::class)
             ->setJoinType('LEFT');
         $relations->hasMany('rule_entry_recipient', RuleEntryRecipient::class)
+            ->setJoinType('LEFT');
+        $relations->hasMany('incident_history', IncidentHistory::class)
             ->setJoinType('LEFT');
 
         $relations->belongsToMany('rule_entry', RuleEntry::class)

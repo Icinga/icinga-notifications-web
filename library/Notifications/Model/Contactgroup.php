@@ -31,6 +31,7 @@ use Ramsey\Uuid\UuidInterface;
  * @property Query<RuleEntry>|Collection<RuleEntry> $rule_entry
  * @property Query<ContactgroupMember>|Collection<ContactgroupMember> $contactgroup_member
  * @property Query<RuleEntryRecipient>|Collection<RuleEntryRecipient> $rule_entry_recipient
+ * @property Query<IncidentHistory>|Collection<IncidentHistory> $incident_history
  * @property Query<NotificationHistory>|Collection<NotificationHistory> $notification_history
  */
 class Contactgroup extends Model
@@ -79,6 +80,8 @@ class Contactgroup extends Model
     public function createRelations(Relations $relations): void
     {
         $relations->hasMany('rule_entry_recipient', RuleEntryRecipient::class)
+            ->setJoinType('LEFT');
+        $relations->hasMany('incident_history', IncidentHistory::class)
             ->setJoinType('LEFT');
         $relations->hasMany('contactgroup_member', ContactgroupMember::class)
             ->setJoinType('LEFT');
