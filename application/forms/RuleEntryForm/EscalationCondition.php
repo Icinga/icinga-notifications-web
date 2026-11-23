@@ -27,7 +27,8 @@ use ipl\Web\Widget\Icon;
  *     severity?: string,
  *     no_of?: string,
  *     unit?: string,
- *     is_managed?: string
+ *     is_managed?: string,
+ *     is_muted?: string
  * }
  */
 class EscalationCondition extends FieldsetElement
@@ -66,6 +67,8 @@ class EscalationCondition extends FieldsetElement
             $data['severity'] = $condition->getValue();
         } elseif ($data['column'] === 'is_managed') {
             $data['is_managed'] = $condition->getValue();
+        } elseif ($data['column'] === 'is_muted') {
+            $data['is_muted'] = $condition->getValue();
         } else {
             preg_match('/^(\d+)([hms])$/', $condition->getValue(), $matches);
             $data['no_of'] = $matches[1];
@@ -90,7 +93,8 @@ class EscalationCondition extends FieldsetElement
             'incident_severity' => $this->getElement('severity')->getValue(),
             'incident_age' => $this->getElement('no_of')->getValue()
                 . $this->getElement('unit')->getValue(),
-            'is_managed' => $this->getElement('is_managed')->getValue()
+            'is_managed' => $this->getElement('is_managed')->getValue(),
+            'is_muted' => $this->getElement('is_muted')->getValue()
         };
 
         return match ($this->getElement('operator')->getValue()) {
@@ -111,7 +115,8 @@ class EscalationCondition extends FieldsetElement
                 '' => sprintf(' - %s - ', $this->translate('Please choose')),
                 'incident_severity' => $this->translate('Incident Severity'),
                 'incident_age' => $this->translate('Incident Age'),
-                'is_managed' => $this->translate('Incident Is Managed')
+                'is_managed' => $this->translate('Incident Is Managed'),
+                'is_muted' => $this->translate('Incident Is Muted')
             ],
             'class' => 'autosubmit',
             'disabledOptions' => [''],
@@ -125,7 +130,7 @@ class EscalationCondition extends FieldsetElement
         ]));
 
         $selectedColumn = $this->getPopulatedValue('column');
-        if ($selectedColumn === 'is_managed') {
+        if ($selectedColumn === 'is_managed' || $selectedColumn === 'is_muted') {
             $operators = ['=' => '='];
         } elseif ($selectedColumn === 'incident_age') {
             $operators = ['>' => '>'];
@@ -184,6 +189,15 @@ class EscalationCondition extends FieldsetElement
                     'y' => $this->translate('Yes'),
                     'n' => $this->translate('No')
                 ]
+            ]);
+        } elseif ($selectedColumn === 'is_muted') {
+            $this->addElement('select', 'is_muted', [
+                'required' => true,
+                'options' => [
+                    'y' => $this->translate('Yes'),
+                    'n' => $this->translate('No')
+                ],
+                'value' => 'n'
             ]);
         } else {
             $this->addElement('text', 'noop', [

@@ -121,6 +121,12 @@ need a `Condition`. Add a condition with `Add Condition` and choose from:
 | Incident Severity   | The severity of the incident, e.g. critical or worse.                                |
 | Incident Age        | The time since the incident was opened, in hours, minutes or seconds.                |
 | Incident Is Managed | Whether the incident has an assigned manager.                                        |
+| Incident Is Muted   | Whether the incident is muted.                                                       |
+
+When you add the `Incident Is Muted` condition, `No` is preselected. An escalation whose condition doesn't match is
+not triggered. With `No`, it is therefore not triggered while the incident is muted, and with `Yes`, only while it is
+muted. The escalation is evaluated again as soon as the muted state of the incident changes, so it triggers right away
+once the state matches.
 
 Escalations open in a modal. If you combine conditions that can never be met, a warning tells you that the
 escalation will never match any incident.
