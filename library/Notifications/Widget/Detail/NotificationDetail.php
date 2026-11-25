@@ -22,6 +22,8 @@ use ipl\Html\HtmlElement;
 use ipl\Html\Text;
 use ipl\Html\ValidHtml;
 use ipl\I18n\Translation;
+use ipl\Web\Common\CalloutType;
+use ipl\Web\Widget\Callout;
 use ipl\Web\Widget\CopyToClipboard;
 use ipl\Web\Widget\HorizontalKeyValue;
 use ipl\Web\Widget\Icon;
@@ -41,6 +43,9 @@ class NotificationDetail extends BaseHtmlElement
     ];
 
     protected $tag = 'div';
+
+    /** @var ?array The decoded delivery details of the notification, null if they haven't been decoded yet */
+    protected ?array $deliveryDetails = null;
 
     public function __construct(NotificationHistory $notificationHistory)
     {
@@ -165,12 +170,11 @@ class NotificationDetail extends BaseHtmlElement
 
     protected function createDelivery(): array
     {
-        $delivery = $this->notificationHistory->delivery_result;
-        if ($delivery === null) {
+        $deliveryDetails = $this->getDeliveryDetails();
+        if (empty($deliveryDetails)) {
             return [];
         }
 
-        $deliveryData = json_decode($delivery, true);
         $deliveryDetail = array_map(function ($deliveryItem) {
             $value = match ($deliveryItem['type']) {
                 'boolean' => $deliveryItem['value'] ? $this->translate('Yes') : $this->translate('No'),
@@ -181,12 +185,49 @@ class NotificationDetail extends BaseHtmlElement
             };
 
             return new HorizontalKeyValue($deliveryItem['label'], $value);
-        }, $deliveryData);
+        }, $deliveryDetails);
 
         return [
-            new HtmlElement('h2', content: Text::create($this->translate('Delivery Result'))),
+            new HtmlElement('h2', content: Text::create($this->translate('Delivery Details'))),
             new HtmlElement('div', Attributes::create(['class' => 'delivery']), ...$deliveryDetail)
         ];
+    }
+
+    /**
+     * Get the delivery details of the notification, decoding them on first access
+     *
+     * @return array
+     */
+    protected function getDeliveryDetails(): array
+    {
+        if ($this->deliveryDetails === null) {
+            $this->deliveryDetails = $this->decodeDeliveryResult();
+        }
+
+        return $this->deliveryDetails;
+    }
+
+    protected function decodeDeliveryResult(): array
+    {
+        $delivery = $this->notificationHistory->delivery_result;
+        if ($delivery === null) {
+            return [];
+        }
+
+        return json_decode($delivery, true);
+    }
+
+    protected function createTransmissionError(): ?ValidHtml
+    {
+        foreach ($this->getDeliveryDetails() as $key => $item) {
+            if ($item['type'] === 'error') {
+                unset($this->deliveryDetails[$key]);
+
+                return new Callout(CalloutType::Error, new Text($item['value']), $item['label']);
+            }
+        }
+
+        return null;
     }
 
     protected function createSeverity(array $item): ValidHtml
@@ -248,6 +289,7 @@ class NotificationDetail extends BaseHtmlElement
     {
         $this->add([
             new HtmlElement('h2', content: Text::create($this->translate('Delivery Overview'))),
+            $this->createTransmissionError(),
             $this->createRecipient(),
             $this->createChannel(),
             $this->createTransmission(),
