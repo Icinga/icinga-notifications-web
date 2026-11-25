@@ -10,10 +10,14 @@ use Exception;
 use Icinga\Application\Config;
 use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Icons;
+use Icinga\Module\Notifications\Common\IncidentHistoryType;
 use Icinga\Module\Notifications\Common\Links;
 use Icinga\Module\Notifications\Common\Severity;
 use Icinga\Module\Notifications\Model\NotificationHistory;
+use Icinga\Module\Notifications\Model\Rule;
+use Icinga\Module\Notifications\Model\RuleEntry;
 use Icinga\Module\Notifications\View\IncidentRenderer;
+use Icinga\Module\Notifications\Widget\EventRule\EscalationTriggered;
 use Icinga\Module\Notifications\Widget\ItemList\ObjectList;
 use ipl\Html\Attributes;
 use ipl\Html\BaseHtmlElement;
@@ -189,6 +193,94 @@ class NotificationDetail extends BaseHtmlElement
         ];
     }
 
+    protected function createReason(): array
+    {
+        $rule = $this->notificationHistory->rule;
+        $ruleEntry = $this->notificationHistory->rule_entry;
+        $triggerChain = new HtmlElement('div', Attributes::create(['class' => 'trigger-chain']));
+
+        if ($rule->id !== null) {
+            $triggerChain->addHtml(
+                new HtmlElement(
+                    'span',
+                    Attributes::create(['class' => 'item']),
+                    Text::create(sprintf($this->translate('Rule %s matched'), $rule->name))
+                ),
+                new HtmlElement(
+                    'span',
+                    Attributes::create(['class' => 'item']),
+                    new EscalationTriggered($rule, $ruleEntry)
+                )
+            );
+        } else {
+            $triggerChain->addHtml(
+                new HtmlElement(
+                    'span',
+                    Attributes::create(['class' => 'item']),
+                    Text::create($this->translate('Contact was subscribed to the incident or was its manager.'))
+                ),
+            );
+        }
+
+        $triggerChain->addHtml(
+            new HtmlElement(
+                'span',
+                Attributes::create(['class' => 'item']),
+                $this->notificationHistory->state->getIcon()
+            )
+        );
+
+        $query = $this->notificationHistory->skipped
+            ->with([
+                'contactgroup',
+                'schedule',
+                'rule',
+                'rule_entry'
+            ]);
+        $skip = [];
+        foreach ($query as $skipped) {
+            $escalation = new EscalationTriggered($skipped->rule, $skipped->rule_entry);
+
+            if (isset($skipped->contactgroup_id)) {
+                $text = FormattedString::create(
+                    $this->translate('%s (Contact group: %s)'),
+                    $escalation,
+                    $skipped->contactgroup->name ?? $this->translate('unknown')
+                );
+            } elseif (isset($skipped->schedule_id)) {
+                $text = FormattedString::create(
+                    $this->translate('%s (Schedule: %s)'),
+                    $escalation,
+                    $skipped->schedule->name ?? $this->translate('unknown')
+                );
+            } else {
+                $text = FormattedString::create(
+                    $this->translate('%s (Contact: %s)'),
+                    $escalation,
+                    $this->notificationHistory->contact->full_name ?? $this->translate('unknown')
+                );
+            }
+
+            $skip[] = new HtmlElement('li', Attributes::create(['class' => 'popup-item']), $text);
+        }
+
+        if (! empty($skip)) {
+            $triggerChain->addHtml(
+                new HtmlElement(
+                    'ul',
+                    Attributes::create(['class' => 'skipped']),
+                    Text::create(sprintf($this->translate('(%s Skipped)'), count($skip))),
+                    new HtmlElement('div', Attributes::create(['class' => ['popup']]), ...$skip)
+                )
+            );
+        }
+
+        return [
+            new HtmlElement('h2', content: Text::create($this->translate('Trigger Chain'))),
+            $triggerChain
+        ];
+    }
+
     protected function createSeverity(array $item): ValidHtml
     {
         $severity = Severity::tryFrom((string) $item['value']);
@@ -252,6 +344,7 @@ class NotificationDetail extends BaseHtmlElement
             $this->createChannel(),
             $this->createTransmission(),
             $this->createDelivery(),
+            $this->createReason(),
             $this->createIncident(),
             $this->createMessage()
         ]);

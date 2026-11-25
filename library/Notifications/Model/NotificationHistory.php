@@ -6,6 +6,7 @@
 namespace Icinga\Module\Notifications\Model;
 
 use DateTime;
+use Icinga\Module\Notifications\Common\Collection;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Model;
 use Icinga\Module\Notifications\Common\NotificationTransmissionState;
@@ -29,6 +30,8 @@ use ipl\Sql\Select;
  * @property ?int $schedule_id
  * @property int $channel_id
  * @property ?int $incident_id
+ * @property ?int $rule_id
+ * @property ?int $rule_entry_id
  * @property string $event_message
  * @property string $event_summary
  * @property NotificationTransmissionState $state
@@ -41,6 +44,9 @@ use ipl\Sql\Select;
  * @property Query<Contactgroup>|Contactgroup $contactgroup
  * @property Query<Channel>|Channel $channel
  * @property Query<Schedule>|Schedule $schedule
+ * @property Query<SkippedNotificationHistory>|Collection<SkippedNotificationHistory> $skipped
+ * @property Query<Rule>|Rule $rule
+ * @property Query<RuleEntry>|RuleEntry $rule_entry
  */
 class NotificationHistory extends Model
 {
@@ -64,6 +70,8 @@ class NotificationHistory extends Model
             'schedule_id',
             'channel_id',
             'incident_id',
+            'rule_id',
+            'rule_entry_id',
             'event_message',
             'event_summary',
             'state',
@@ -81,6 +89,8 @@ class NotificationHistory extends Model
             'schedule_id'       => t('Schedule Id'),
             'channel_id'        => t('Channel ID'),
             'incident_id'       => t('Incident Id'),
+            'rule_id'           => t('Rule Id'),
+            'rule_entry_id'     => t('Rule Entry Id'),
             'event_message'     => t('Event Message'),
             'event_summary'     => t('Event Summary'),
             'state'             => t('State'),
@@ -117,6 +127,14 @@ class NotificationHistory extends Model
 
         $relations->belongsTo('contactgroup', Contactgroup::class)->setJoinType('LEFT');
         $relations->belongsTo('schedule', Schedule::class)->setJoinType('LEFT');
+
+        $relations->belongsTo('rule', Rule::class)
+            ->setJoinType('LEFT');
+        $relations->belongsTo('rule_entry', RuleEntry::class)
+            ->setJoinType('LEFT');
+
+        $relations->hasMany('skipped', SkippedNotificationHistory::class)
+            ->setJoinType('LEFT');
     }
 
     public static function on(Connection $db): Query

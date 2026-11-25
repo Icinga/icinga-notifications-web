@@ -33,6 +33,7 @@ use Ramsey\Uuid\UuidInterface;
  * @property Query<RuleEntryRecipient>|Collection<RuleEntryRecipient> $rule_entry_recipient
  * @property Query<IncidentHistory>|Collection<IncidentHistory> $incident_history
  * @property Query<NotificationHistory>|Collection<NotificationHistory> $notification_history
+ * @property Query<SkippedNotificationHistory>|Collection<SkippedNotificationHistory> $skipped_notification_history
  */
 class Contactgroup extends Model
 {
@@ -96,6 +97,8 @@ class Contactgroup extends Model
             ->through(RuleEntryRecipient::class)
             ->setJoinType('LEFT');
         $relations->hasMany('notification_history', NotificationHistory::class)
+            ->setJoinType('LEFT');
+        $relations->hasMany('skipped_notification_history', SkippedNotificationHistory::class)
             ->setJoinType('LEFT');
     }
 
