@@ -31,9 +31,9 @@ Click on an incident to open its detail view. It shows:
 
 * The related object and the incident's message
 * The notification recipients. _Recipients_ are the contacts, contact groups and schedules that are notified due to
- event rules. _Subscribers_ are users who subscribed to the incident and are listed separately.
+event rules. _Subscribers_ are users who subscribed to the incident and are listed separately.
 * The incident history, e.g. severity changes, notified contacts, changes of the manager and subscribers, and matched
- event rules. When an escalation is reached, the history describes its condition.
+event rules. When an escalation is reached, the history describes its condition.
 * The event sources the incident relates to
 
 The tab `Notification History` of an incident lists all notifications sent for it.
@@ -48,7 +48,7 @@ The detail view offers the actions `Manage` and `Subscribe` for the user who is 
 asynchronously by the Icinga Notifications daemon. While a request is pending, its button is disabled.
 
 * An incident has at most one manager. `Manage` is only offered if the incident has no manager yet.
- Otherwise, `Unmanage` is offered, which demotes the current manager to subscriber.
+Otherwise, `Unmanage` is offered, which demotes the current manager to subscriber.
 * `Unsubscribe` is offered if you are subscribed.
 
 Quick actions are associated with a user via the field `Icinga Web User` of a [contact](#contacts).
