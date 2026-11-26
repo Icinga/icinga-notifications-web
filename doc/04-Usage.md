@@ -186,9 +186,13 @@ Use `Duplicate Schedule` to create a copy of a schedule. Rotations can be duplic
 | Default Channel     | The channel used if an event rule does not specify one.                                             |
 | Channels            | The address for each channel the contact can be notified through.                                   |
 
+Contacts and contact groups can also be provisioned automatically, e.g. from LDAP, see
+[Contact Sync with Icinga Director](07-Contact-Sync-With-Director.md).
+
 ## Contact Groups
 
 `Notifications → Contact Groups` combines multiple contacts in groups. A contact group has a `Name` and `Members`.
 Use `Duplicate Contact Group` to create a copy.
 
 Contact groups can be used as recipients of event rules and as members of schedules.
+
