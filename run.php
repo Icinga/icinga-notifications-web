@@ -3,9 +3,12 @@
 // SPDX-FileCopyrightText: 2024 Icinga GmbH <https://icinga.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+use Icinga\Module\Notifications\ProvidedHook\Director\ContactSyncJob;
+
 /** @var \Icinga\Application\Modules\Module $this */
 
 $this->provideHook('authentication', 'SessionStorage', true);
+$this->provideHook('director/Job', ContactSyncJob::class);
 $this->addRoute(
     'static-file',
     new Zend_Controller_Router_Route_Regex(
