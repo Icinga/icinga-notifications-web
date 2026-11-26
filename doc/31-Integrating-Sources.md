@@ -366,7 +366,7 @@ copy credentials between the two. Icinga DB Web, for example, creates the source
 user enables notifications in its configuration.
 
 The class `Icinga\Module\Notifications\Integrations\V1\Source` is the interface to that. It is a handle to the source
-with a given **listener username**. Changes are in memory until you call `save()`.
+with a given **listener username** or **certificate subject**. Changes are in memory until you call `save()`.
 
 ```php
 use Icinga\Module\Notifications\Integrations\V1\Source;
@@ -382,19 +382,35 @@ $source->setType('icinga2')
     ->save();
 ```
 
+This is an example for sources with certificate subject authentication. Note the absence of `setPassword()` – it is not 
+possible to set both and will result in an error.
+
+```php
+use Icinga\Module\Notifications\Integrations\V1\Source;
+
+$source = Source::getByCertificateSubject($yourClientCertSubject);   // the source with the given certificate subject, or a new one
+
+if ($source->getName() === null) {   // the source does not exist yet
+    $source->setName('Source with certificate');
+}
+
+$source->setType('icinga2') // no password or username can be set
+    ->save();
+```
 ### Methods
 
-| Method                                | Description                                                                              |
-|---------------------------------------|------------------------------------------------------------------------------------------|
-| `Source::get(string $username): self` | Load the source with the given listener username. If there is none, prepare a new one    |
-| `getName(): ?string`                  | The name of the source, `null` if the source does not exist yet and no name was set      |
-| `setName(string $name): self`         | Set the name, shown to users                                                             |
-| `setType(string $type): self`         | Set the type. Rules are bound to it, and it selects the hook, see below                  |
-| `setPassword(string $password): self` | Set the password for the listener, the daemon verifies it with HTTP Basic Authentication |
-| `save(): void`                        | Create or update the source and lock it                                                  |
-| `delete(): void`                      | Delete the source. Does nothing for a source that does not exist                         |
+| Method                                                              | Description                                                                              |
+|---------------------------------------------------------------------|------------------------------------------------------------------------------------------|
+| `Source::get(string $username): self`                               | Load the source with the given listener username. If there is none, prepare a new one    |
+| `Source::getByCertificateSubject(string $certificateSubject): self` | Load the source with the given certificate subject. If there is none, prepare a new one  |
+| `getName(): ?string`                                                | The name of the source, `null` if the source does not exist yet and no name was set      |
+| `setName(string $name): self`                                       | Set the name, shown to users                                                             |
+| `setType(string $type): self`                                       | Set the type. Rules are bound to it, and it selects the hook, see below                  |
+| `setPassword(string $password): self`                               | Set the password for the listener, the daemon verifies it with HTTP Basic Authentication |
+| `save(): void`                                                      | Create or update the source and lock it                                                  |
+| `delete(): void`                                                    | Delete the source. Does nothing for a source that does not exist                         |
 
-The constructor of the class is not meant to be called by integrations, use `Source::get()`.
+The constructor of the class is not meant to be called by integrations, use `Source::get()` or `Source::getByCertificateSubject`.
 
 `get()` identifies the source by its **listener username** only, you cannot look it up by its name or type. The username
 is the login of the source if it uses HTTP Basic Authentication, and the **operating system user** of the source's
@@ -403,19 +419,28 @@ for sources whose listener username equals the process' OS username, no password
 managed for the socket needs no password: call `setPassword()` only if the source connects via TCP. For a new source
 without one, no password is stored. Usernames are unique, there is at most one source per listener username.
 
+`getByCertificateSubject()` identifies the source by its **certificate subject** instead of username or password. 
+Sources can share a certificate as long as the subject stays the same, which is important to keep in mind if your CA 
+issues certificates widely.
+
+Note that you cannot use both username/password and certificate subject at the same time. For existing sources,
+changing authentication type will clear all credentials – username and password will be removed from the database as 
+soon as you switch to certificate subject authentication.
+
 ### Locked Sources
 
 `save()` **always locks** the source. A locked source is shown as read-only in Icinga Notifications Web, as it is
 maintained by an integration. Users cannot change its name, type or credentials there. They can still delete it,
 after a warning that this may cause a malfunction unless the integration is disabled first. You have to handle that
-case: after a deletion, `Source::get()` finds nothing, and `getName()` returns `null`. Icinga DB Web uses this to detect
-that its source is missing. It shows a notice and treats notifications as disabled, so that enabling them creates the
-source again.
+case: after a deletion, `Source::get()` or `Source::getByCertificateSubject()` find nothing, and `getName()` returns 
+`null`. Icinga DB Web uses this to detect that its source is missing. It shows a notice and treats notifications as 
+disabled, so that enabling them creates the source again.
 
 Be aware of what `save()` writes:
 
-* It always writes name, type, username and the locked flag. If the source already existed and was created by hand,
-  it is taken over, and a TLS client certificate subject stored with it is removed. Users cannot undo this.
+* It always writes name, type, username or certificate subject and the locked flag. If the source already existed and 
+was created by hand, it is taken over, and a TLS client certificate subject stored with it is removed. Users cannot 
+undo this. 
 * The plain text password is kept in memory only until `save()` stored its hash. You can call `setPassword()` once,
   and it is gone afterwards. If you do not call `setPassword()` for an existing source, its password does not change.
 * Changing the type of an existing source moves it to other event rules, as they are bound to the type.
