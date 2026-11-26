@@ -109,6 +109,7 @@ do not match, incidents are not found, links are missing. The reference for the 
 | Keys of `getEventTypes()`                                                             | The `type` of `incident: false` events                |
 | JSONPaths returned by `getJsonPaths()`, columns accepted by `assertValidCondition()`  | The structure of `relations` and `complete_relations` |
 | `Source::get($username)`                                                              | The username (or OS user) the source authenticates as |
+| `Source::getByCertificateSubject($certificateSubject)`                                | The certificate subject the source authenticates with |
 | The `$uuid` of a role change through `Incident`                                       | The `id` of the corresponding event                   |
 
 ### ID Tags
@@ -171,10 +172,15 @@ Do not offer columns that the source cannot provide.
 
 The source authenticates with a username, and the daemon identifies it by its **listener username**. With a password
 or a TLS certificate this is the login. With a Unix socket it is the operating system user of the source's process.
-`Source::get($username)` looks the source up by exactly this username, see
-[Managing the Source](31-Integrating-Sources.md#managing-the-source). If it is not the one the source uses, you
-manage a source that nobody submits events with, and the events of the real one are rejected. A
-certificate subject cannot be managed with this class, only sources with a username and optional password.
+`Source::get($username)` looks the source up by exactly this username, see [Managing the Source](31-Integrating-Sources.md#managing-the-source). If it is not 
+the one the source uses, you manage a source that nobody submits events with, and the events of the real one are rejected. 
+
+### Certificate Subject
+
+The source can also authenticate with a **client certificate subject**. The subject is turned into a string, and it
+must match the data from the source exactly. Otherwise, just like with a username mismatch, you manage the source that 
+nobody submits events with, and the events of the real one are rejected.
+The correct format of the subject's string is like in RFC 2253 – `CN=...,OU=...,O=...,C=DE`, commas, no spaces.
 
 ### Names, URLs and IDs of Events
 
