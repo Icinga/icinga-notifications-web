@@ -76,6 +76,10 @@
                     this.icinga.loader.createNotice('error', data.message);
                 }
 
+                if (data.finished && data.success) {
+                    this.icinga.loader.createNotice('success', data.success)
+                }
+
                 const $container = $(element.closest('.container'));
                 this.icinga.loader.loadUrl(
                     $container.data('icingaUrl'),

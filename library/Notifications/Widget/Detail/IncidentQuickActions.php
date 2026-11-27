@@ -171,7 +171,7 @@ class IncidentQuickActions extends Form
             };
         } catch (IncidentNotFoundException) {
             Notification::error(t('You cannot perform this action as the incident has been closed,'));
-        } catch (InvalidArgumentException){
+        } catch (InvalidArgumentException) {
             Notification::error(t(
                 'You cannot perform this action, as there is no Icinga Notifications contact " 
                 . "configured for your account.'
