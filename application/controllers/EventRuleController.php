@@ -95,7 +95,7 @@ class EventRuleController extends CompatController
                 );
 
                 Notification::success(sprintf(
-                    $this->translate('Updated filter for event rule "%s" successfully'),
+                    $this->translate('Filter for event rule "%s" updated'),
                     $rule->name
                 ));
                 $this->redirectNow(Links::eventRule($rule->id));
@@ -180,7 +180,7 @@ class EventRuleController extends CompatController
                     )->name;
 
                     Notification::success(sprintf(
-                        $this->translate('Deleted event rule "%s" successfully'),
+                        $this->translate('Event rule "%s" deleted'),
                         $ruleName
                     ));
                     $this->switchToSingleColumnLayout();
@@ -190,7 +190,7 @@ class EventRuleController extends CompatController
                     );
 
                     Notification::success(sprintf(
-                        $this->translate('Duplicated event rule "%s" successfully'),
+                        $this->translate('Event rule "%s" created'),
                         $rule->name
                     ));
                     $this->sendExtraUpdates(['#col1']);
@@ -201,7 +201,7 @@ class EventRuleController extends CompatController
                     );
 
                     Notification::success(sprintf(
-                        $this->translate('Updated event rule "%s" successfully'),
+                        $this->translate('Event rule "%s" updated'),
                         $rule->name
                     ));
                     $this->closeModalAndRefreshRemainingViews(Links::eventRule($rule->id));
@@ -300,7 +300,7 @@ class EventRuleController extends CompatController
                 );
 
                 Notification::success(sprintf(
-                    $this->translate('Migrated filter for event rule "%s" successfully'),
+                    $this->translate('Filter for event rule "%s" migrated'),
                     $rule->name
                 ));
 

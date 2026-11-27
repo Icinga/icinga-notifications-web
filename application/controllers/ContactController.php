@@ -50,7 +50,7 @@ class ContactController extends CompatController
                 $contact = $form->getContact();
                 Database::get()->transaction(fn(Connection $db) => (new ContactRepository($db))->update($contact));
                 Notification::success(sprintf(
-                    $this->translate('Saved contact "%s" successfully'),
+                    $this->translate('Contact "%s" updated'),
                     $contact->fullName
                 ));
 
@@ -59,7 +59,7 @@ class ContactController extends CompatController
                 $contact = $form->getContact();
                 Database::get()->transaction(fn(Connection $db) => (new ContactRepository($db))->delete($contact->id));
                 Notification::success(sprintf(
-                    $this->translate('Deleted contact "%s" successfully'),
+                    $this->translate('Contact "%s" deleted'),
                     $contact->fullName
                 ));
 

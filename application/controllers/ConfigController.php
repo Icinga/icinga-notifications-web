@@ -30,7 +30,7 @@ class ConfigController extends CompatController
                 $moduleConfig->setSection('database', $form->getValues());
                 $moduleConfig->saveIni();
 
-                Notification::success(t('Stored new configuration successfully'));
+                Notification::success(t('Configuration updated'));
             })->handleRequest($this->getServerRequest());
 
         $this->mergeTabs($this->Module()->getConfigTabs()->activate('database'));

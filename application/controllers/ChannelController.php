@@ -57,7 +57,7 @@ class ChannelController extends CompatController
                         fn(Connection $db) => (new ChannelRepository($db))->delete($channel->id)
                     );
                     Notification::success(sprintf(
-                        $this->translate('Deleted channel "%s" successfully'),
+                        $this->translate('Channel "%s" deleted'),
                         $channel->name
                     ));
                 } else {
@@ -65,7 +65,7 @@ class ChannelController extends CompatController
                         fn(Connection $db) => (new ChannelRepository($db))->update($channel)
                     );
                     Notification::success(sprintf(
-                        $this->translate('Saved channel "%s" successfully'),
+                        $this->translate('Channel "%s" updated'),
                         $channel->name
                     ));
                 }

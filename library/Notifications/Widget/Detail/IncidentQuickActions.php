@@ -11,6 +11,7 @@ use Icinga\Module\Notifications\Common\Auth;
 use Icinga\Module\Notifications\Common\Database;
 use Icinga\Module\Notifications\Common\Icons;
 use Icinga\Module\Notifications\Common\SourceHookLocator;
+use Icinga\Module\Notifications\Integrations\Exception\IncidentNotFoundException;
 use Icinga\Module\Notifications\Integrations\V1\Incident;
 use Icinga\Module\Notifications\Common\JobTracker;
 use Icinga\Module\Notifications\Model\Incident as IncidentModel;
@@ -168,14 +169,21 @@ class IncidentQuickActions extends Form
                 'unmanage' => $this->incident->removeManager(),
                 'unsubscribe' => $this->incident->removeSubscriber($username)
             };
+        } catch (IncidentNotFoundException) {
+            Notification::error(t('You cannot perform this action as the incident has been closed,'));
+        } catch (InvalidArgumentException){
+            Notification::error(t(
+                'You cannot perform this action, as there is no Icinga Notifications contact " 
+                . "configured for your account.'
+            ));
         } catch (Exception $e) {
             Logger::error('Failed to request quick action "%s" for user "%s": %s', $pressedButton, $username, $e);
-            Notification::error(t('Failed to submit your request'));
+            Notification::error(t('Failed to submit your request. Check Icinga Notifications logs for more details.'));
 
             return;
         }
 
-        Notification::success(t('Your request has been submitted'));
+        Notification::success(t('Request submitted, please be patient...'));
     }
 
     protected function getEventTypes(): array
