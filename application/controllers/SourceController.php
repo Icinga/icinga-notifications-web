@@ -54,7 +54,7 @@ class SourceController extends CompatController
 
                 Database::get()->transaction(fn(Connection $db) => (new SourceRepository($db))->update($source));
                 Notification::success(sprintf(
-                    $this->translate('Updated source "%s" successfully'),
+                    $this->translate('Source "%s" updated'),
                     $source->name
                 ));
 
@@ -98,7 +98,7 @@ class SourceController extends CompatController
             })
             ->on(Form::ON_SUBMIT, function () use ($sourceId): never {
                 Database::get()->transaction(fn(Connection $db) => (new SourceRepository($db))->delete($sourceId));
-                Notification::success($this->translate('Deleted source successfully'));
+                Notification::success($this->translate('Source "%s" deleted'));
                 $this->switchToSingleColumnLayout();
             })
             ->on(Form::ON_ERROR, function ($_, DeleteSourceForm $form) {

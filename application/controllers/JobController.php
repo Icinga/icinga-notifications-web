@@ -32,6 +32,21 @@ class JobController extends ActionController
         $tracker = JobTracker::instance();
         $state = $tracker->getState($jobId);
 
+        [$successMessage, $failureMessage] = match ($tracker->getAction($jobId)) {
+            'subscribe' => [
+                'You are now subscribed to this incident', 'Could not subscribe you to this incident'
+            ],
+            'unsubscribe' => [
+                'You have unsubscribed from this incident', 'Could not unsubscribe you from this incident'
+            ],
+            'manage' => [
+                'You are now managing this incident', 'Could not assign you a manager of this incident'
+            ],
+            'unmanage' => [
+                'You are no longer managing this incident', 'Could not remove you as a manager of this incident'
+            ],
+        };
+
         if ($state !== null && JobTracker::isFinished($state)) {
             $tracker->forget($jobId);
             Session::getSession()->write();
@@ -40,12 +55,18 @@ class JobController extends ActionController
         $this->getResponse()->json()->setSuccessData([
             'finished' => $state === null || JobTracker::isFinished($state),
             'message'  => match ($state) {
-                JobQueue::STATE_ERROR => $this->translate('Your request could not be processed'),
-                JobTracker::STATE_TIMED_OUT => $this->translate(
-                    'Your request timed out, the notifications daemon might not be running'
-                ),
+                JobQueue::STATE_ERROR =>
+                    $this->translate($failureMessage) .
+                    ': ' .
+                    $this->translate('see Icinga Notifications logs for more details')
+                ,
+                JobTracker::STATE_TIMED_OUT =>
+                    $this->translate($failureMessage) .
+                    ': ' .
+                    $this->translate('make sure that Icinga Notifications is running'),
                 default => null
-            }
+            },
+            'success' => $this->translate($successMessage) ?? null,
         ])->sendResponse();
     }
 }

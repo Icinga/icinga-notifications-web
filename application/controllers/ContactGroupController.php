@@ -90,7 +90,7 @@ class ContactGroupController extends CompatController
                     Database::get()->transaction(
                         fn(Connection $db) => (new ContactGroupRepository($db))->delete($group->id)
                     );
-                    Notification::success(sprintf(t('Deleted contact group "%s" successfully'), $group->name));
+                    Notification::success(sprintf(t('Contact group "%s" deleted'), $group->name));
                     $this->switchToSingleColumnLayout();
                 } elseif (! $form->hasBeenSubmitted() && ! $form->hasBeenDuplicated()) {
                     foreach ($form->getPartUpdates() as $update) {
@@ -105,14 +105,14 @@ class ContactGroupController extends CompatController
                     $groupId = Database::get()->transaction(
                         fn (Connection $db) => (new ContactGroupRepository($db))->create($group)
                     );
-                    Notification::success(sprintf(t('Duplicated contact group %s successfully'), $group->name));
+                    Notification::success(sprintf(t('Contact group "%s" created'), $group->name));
                     $this->sendExtraUpdates(['#col1']);
                     $this->redirectNow(Links::contactGroup($groupId));
                 } else {
                     Database::get()->transaction(
                         fn (Connection $db) => (new ContactGroupRepository($db))->update($group)
                     );
-                    Notification::success(sprintf(t('Updated contact group %s successfully'), $group->name));
+                    Notification::success(sprintf(t('Contact group "%s" updated'), $group->name));
                     $this->closeModalAndRefreshRemainingViews(Links::contactGroup($group->id));
                 }
             })

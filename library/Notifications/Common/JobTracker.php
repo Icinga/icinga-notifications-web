@@ -146,6 +146,24 @@ class JobTracker
     }
 
     /**
+     * Get the action the job was created for with the given id, `null` if it isn't tracked
+     *
+     * @param string $jobId
+     *
+     * @return ?string
+     */
+    public function getAction(string $jobId): ?string
+    {
+        foreach ($this->jobs() as $job) {
+            if ($job['job_id'] === $jobId) {
+                return $job['action'];
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * @return array<int, array{action: string, job_id: string, time: int, state: int}>
      */
     private function jobs(): array
